@@ -6,7 +6,9 @@ lint:
 	&& golangci-lint run
 
 test:
-	@go test -v ./...
+	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \
+	COMPILE_PROTOCOL=${COMPILE_PROTOCOL} \
+		./integration_tests/entrypoint.sh
 
 .PHONY: build \
 				lint \
