@@ -10,7 +10,7 @@ import (
 	"github.com/taikochain/taiko-client/core/beacon"
 )
 
-func TestNewRPCClientWithAuth(t *testing.T) {
+func TestDialEngineClient(t *testing.T) {
 	jwtSecret, err := util.ParseJWTSecretFromFile(os.Getenv("JWT_SECRET"))
 
 	require.Nil(t, err)

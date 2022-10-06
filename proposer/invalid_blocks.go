@@ -87,6 +87,7 @@ func (p *Proposer) generateInvalidTransaction(ctx context.Context) (*types.Trans
 		return nil, err
 	}
 
+	opts.GasLimit = 300000
 	opts.NoSend = true
 	opts.Nonce = new(big.Int).SetUint64(nonce + 1024)
 
