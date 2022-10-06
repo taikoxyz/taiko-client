@@ -1,6 +1,7 @@
 build:
 	@go build -o bin/proposer proposer/cmd/main.go \
-	&& go build -o bin/prover prover/cmd/main.go
+	&& go build -o bin/prover prover/cmd/main.go \
+	&& go build -o bin/driver driver/cmd/main.go
 
 clean:
 	@rm -rf bin/*

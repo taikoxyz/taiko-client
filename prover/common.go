@@ -6,13 +6,11 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/neilotoole/errgroup"
 	"github.com/taikochain/client-mono/bindings"
 	"github.com/taikochain/taiko-client/accounts/abi/bind"
 	"github.com/taikochain/taiko-client/common"
 	"github.com/taikochain/taiko-client/core/rawdb"
 	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/ethclient"
 	"github.com/taikochain/taiko-client/log"
 	"github.com/taikochain/taiko-client/rlp"
 	"github.com/taikochain/taiko-client/trie"
@@ -86,45 +84,6 @@ func (p *Prover) getProveBlockTxOpts(ctx context.Context) (*bind.TransactOpts, e
 	opts.GasLimit = proveBlockTxGasLimit
 
 	return opts, nil
-}
-
-// getReceiptsByBlock fetches all transaction receipts in a block.
-// TODO: fetch all receipts in one GraphQL call.
-func getReceiptsByBlock(ctx context.Context, cli *ethclient.Client, block *types.Block) (types.Receipts, error) {
-	g, ctx := errgroup.WithContext(ctx)
-
-	receipts := make(types.Receipts, block.Transactions().Len())
-	for i := range block.Transactions() {
-		func(i int) {
-			g.Go(func() (err error) {
-				receipts[i], err = cli.TransactionReceipt(ctx, block.Transactions()[i].Hash())
-				return err
-			})
-		}(i)
-	}
-
-	return receipts, g.Wait()
-}
-
-// waitForTx keeps waiting until the given transaction has an execution
-// receipt to know whether it reverted or not.
-func (p *Prover) waitForTx(ctx context.Context, rpcClient *ethclient.Client, tx *types.Transaction) (*big.Int, error) {
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-
-	var height *big.Int
-	for range ticker.C {
-		receipt, err := rpcClient.TransactionReceipt(ctx, tx.Hash())
-		if err != nil {
-			continue
-		}
-		if receipt.Status != types.ReceiptStatusSuccessful {
-			return nil, fmt.Errorf("transaction reverted, hash: %s", tx.Hash())
-		}
-		height = receipt.BlockNumber
-		break
-	}
-	return height, nil
 }
 
 func (p *Prover) waitForL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1Origin, error) {

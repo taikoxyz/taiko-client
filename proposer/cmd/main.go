@@ -29,7 +29,7 @@ func main() {
 	}
 	app.Compiled = time.Now()
 	app.Copyright = "Copyright 2022 Taiko Labs"
-	app.Description = "The proposer service for Taiko protocol."
+	app.Description = "The proposer service for Taiko bindings."
 	app.EnableBashCompletion = true
 	app.Flags = proposer.Flags
 	app.Name = "proposer"

@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/neilotoole/errgroup"
 	"github.com/taikochain/taiko-client/core/types"
 	"github.com/taikochain/taiko-client/ethclient"
 	"github.com/taikochain/taiko-client/log"
@@ -59,4 +60,22 @@ func WaitForTx(ctx context.Context, client *ethclient.Client, tx *types.Transact
 	}
 
 	return height, nil
+}
+
+// GetReceiptsByBlock fetches all transaction receipts in a block.
+// TODO: fetch all receipts in one GraphQL call.
+func GetReceiptsByBlock(ctx context.Context, cli *ethclient.Client, block *types.Block) (types.Receipts, error) {
+	g, ctx := errgroup.WithContext(ctx)
+
+	receipts := make(types.Receipts, block.Transactions().Len())
+	for i := range block.Transactions() {
+		func(i int) {
+			g.Go(func() (err error) {
+				receipts[i], err = cli.TransactionReceipt(ctx, block.Transactions()[i].Hash())
+				return err
+			})
+		}(i)
+	}
+
+	return receipts, g.Wait()
 }

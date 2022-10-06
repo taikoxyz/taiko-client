@@ -7,6 +7,7 @@ import (
 	"github.com/taikochain/client-mono/bindings"
 	"github.com/taikochain/client-mono/bindings/encoding"
 	"github.com/taikochain/client-mono/prover/producer"
+	"github.com/taikochain/client-mono/util"
 	"github.com/taikochain/taiko-client/core/types"
 	"github.com/taikochain/taiko-client/crypto"
 	"github.com/taikochain/taiko-client/log"
@@ -123,7 +124,7 @@ func (p *Prover) submitInvalidBlockProof(proofWithHeader *producer.ProofWithHead
 		return fmt.Errorf("failed to send TaikoL1.proveBlockInvalid transaction: %w", err)
 	}
 
-	if _, err := p.waitForTx(p.ctx, p.l1RPC, tx); err != nil {
+	if _, err := util.WaitForTx(p.ctx, p.l1RPC, tx); err != nil {
 		return fmt.Errorf("failed to wait till transaction executed: %w", err)
 	}
 
