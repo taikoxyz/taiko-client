@@ -18,7 +18,7 @@ func TestNewRPCClientWithAuth(t *testing.T) {
 
 	client, err := DialEngineClientWithBackoff(
 		context.Background(),
-		os.Getenv("L2_NODE_AUTH_ENDPOINT"),
+		os.Getenv("L2_NODE_ENGINE_ENDPOINT"),
 		string(jwtSecret),
 	)
 

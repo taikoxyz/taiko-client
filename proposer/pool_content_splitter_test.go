@@ -40,7 +40,10 @@ func TestPoolContentSplit(t *testing.T) {
 	require.Nil(t, err)
 	require.NotEmpty(t, bytes)
 
-	splitter = &poolContentSplitter{maxTxBytesPerBlock: uint64(len(bytes) - 1)}
+	splitter = &poolContentSplitter{
+		maxTxBytesPerBlock: uint64(len(bytes) - 1),
+		minTxGasLimit:      uint64(len(bytes) - 2),
+	}
 
 	splitted = splitter.split(map[common.Address]map[*big.Int]*types.Transaction{
 		common.BytesToAddress(randomBytes(32)): {common.Big0: txBytesTooLarge},

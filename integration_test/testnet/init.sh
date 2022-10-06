@@ -27,7 +27,7 @@ if [ "$COMPILE_PROTOCOL" == "true" ]; then
     cd -
 fi
 
-echo "Waiting till testnet fully started..."
+echo "Waiting till testnet nodes fully started..."
 
 NODE_URL=localhost:18545 $DIR/../util/wait_for_node.sh
 NODE_URL=localhost:28545 $DIR/../util/wait_for_node.sh

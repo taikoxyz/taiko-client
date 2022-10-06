@@ -17,6 +17,8 @@ services:
     image: gcr.io/evmchain/taiko-client:latest
     restart: unless-stopped
     pull_policy: always
+    volumes:
+      - .:/host
     ports:
       - 28545:8545
       - 28546:8546
@@ -37,6 +39,14 @@ services:
       - "0.0.0.0"
       - --ws.origins
       - "*"
+      - --authrpc.addr
+      - "0.0.0.0"
+      - --authrpc.port
+      - "8551"
+      - --authrpc.vhosts
+      - "*"
+      - --authrpc.jwtsecret
+      - /host/jwt.hex
       - --allow-insecure-unlock
       - --syncmode
       - "full"
