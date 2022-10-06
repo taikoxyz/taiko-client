@@ -1,8 +1,8 @@
 build:
-	@go build -o ./bin/client-mono ./cmd/main.go
+	@go build -o bin/proposer proposer/cmd/main.go
 
 clean:
-	@rm -rf bin/client-mono
+	@rm -rf bin/*
 
 lint:
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2 \

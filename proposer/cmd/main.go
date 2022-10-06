@@ -31,7 +31,7 @@ func main() {
 	app.Copyright = "Copyright 2022 Taiko Labs"
 	app.Description = "The proposer service for Taiko protocol."
 	app.EnableBashCompletion = true
-	app.Flags = Flags
+	app.Flags = proposer.Flags
 	app.Name = "proposer"
 	app.Usage = "Taiko Proposer"
 	app.Version = "0.0.1"
@@ -48,7 +48,7 @@ func runProposer(ctx *cli.Context) error {
 
 	log.Info("Starting proposer")
 
-	cfg, err := NewConfigFromCliContext(ctx)
+	cfg, err := proposer.NewConfigFromCliContext(ctx)
 	if err != nil {
 		return err
 	}

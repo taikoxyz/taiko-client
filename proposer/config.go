@@ -1,7 +1,6 @@
-package main
+package proposer
 
 import (
-	"github.com/taikochain/client-mono/proposer"
 	"github.com/urfave/cli/v2"
 )
 
@@ -12,8 +11,8 @@ const (
 
 // NewConfigFromCliContext initializes a Config instance from
 // command line flags.
-func NewConfigFromCliContext(ctx *cli.Context) (*proposer.Config, error) {
-	cfg := &proposer.Config{}
+func NewConfigFromCliContext(ctx *cli.Context) (*Config, error) {
+	cfg := &Config{}
 
 	if ctx.IsSet(L1NodeFlag.Name) {
 		cfg.L1Node = ctx.String(L1NodeFlag.Name)

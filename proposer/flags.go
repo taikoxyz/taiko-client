@@ -1,4 +1,4 @@
-package main
+package proposer
 
 import (
 	"github.com/urfave/cli/v2"
