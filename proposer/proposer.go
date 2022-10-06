@@ -8,7 +8,7 @@ import (
 
 	"github.com/taikochain/client-mono/bindings"
 	"github.com/taikochain/client-mono/bindings/encoding"
-	"github.com/taikochain/client-mono/client"
+	"github.com/taikochain/client-mono/rpc"
 	"github.com/taikochain/client-mono/util"
 	"github.com/taikochain/taiko-client/accounts/abi/bind"
 	"github.com/taikochain/taiko-client/common"
@@ -65,14 +65,14 @@ func New(cfg *Config) (*Proposer, error) {
 	var err error
 
 	// RPC clients
-	if p.l1Node, err = client.DialClientWithBackoff(
+	if p.l1Node, err = rpc.DialClientWithBackoff(
 		context.Background(),
 		cfg.L1Node,
 	); err != nil {
 		return nil, fmt.Errorf("failed to connect to L1 node: %w", err)
 	}
 
-	if p.l2Node, err = client.DialClientWithBackoff(
+	if p.l2Node, err = rpc.DialClientWithBackoff(
 		context.Background(),
 		cfg.L2Node,
 	); err != nil {

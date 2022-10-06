@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/taikochain/client-mono/bindings"
-	"github.com/taikochain/client-mono/client"
 	"github.com/taikochain/client-mono/prover/producer"
+	"github.com/taikochain/client-mono/rpc"
 	"github.com/taikochain/taiko-client/accounts/abi"
 	"github.com/taikochain/taiko-client/common"
 	"github.com/taikochain/taiko-client/core/types"
@@ -75,12 +75,12 @@ type Prover struct {
 func New(ctx context.Context, cfg *Config) (*Prover, error) {
 	log.Info("Prover configurations", "config", cfg)
 	// Clients
-	l1RPC, err := client.DialClientWithBackoff(ctx, cfg.L1Endpoint)
+	l1RPC, err := rpc.DialClientWithBackoff(ctx, cfg.L1Endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	l2RPC, err := client.DialClientWithBackoff(ctx, cfg.L2Endpoint)
+	l2RPC, err := rpc.DialClientWithBackoff(ctx, cfg.L2Endpoint)
 	if err != nil {
 		return nil, err
 	}

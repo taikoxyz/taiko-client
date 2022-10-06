@@ -5,29 +5,29 @@ import (
 	"math/big"
 
 	"github.com/taikochain/client-mono/bindings"
-	"github.com/taikochain/client-mono/client"
+	"github.com/taikochain/client-mono/rpc"
 	ethereum "github.com/taikochain/taiko-client"
 	"github.com/taikochain/taiko-client/accounts/abi/bind"
 	"github.com/taikochain/taiko-client/common"
 	"github.com/taikochain/taiko-client/core/types"
 	"github.com/taikochain/taiko-client/ethclient"
 	"github.com/taikochain/taiko-client/log"
-	"github.com/taikochain/taiko-client/rpc"
+	gethRPC "github.com/taikochain/taiko-client/rpc"
 )
 
 // RPCClient contains all L1/L2 RPC clients that a driver needs.
 type RPCClient struct {
 	l1       *ethclient.Client // L1 node to communicate with
 	l2       *ethclient.Client // L2 node to communicate with
-	l2RawRPC *rpc.Client
-	l2Engine *client.EngineRPCClient   // L2 node's engine API
+	l2RawRPC *gethRPC.Client
+	l2Engine *rpc.EngineRPCClient      // L2 node's engine API
 	taikoL1  *bindings.TaikoL1Client   // TaikoL1 contract client
 	taikoL2  *bindings.V1TaikoL2Client // TaikoL2 contract client (used for anchor tx)
 }
 
 // NewRPCClient initializes all RPC clients to run a Taiko driver.
 func NewRPCClient(ctx context.Context, cfg *Config) (*RPCClient, error) {
-	l1RPC, err := client.DialClientWithBackoff(ctx, cfg.L1Endpoint)
+	l1RPC, err := rpc.DialClientWithBackoff(ctx, cfg.L1Endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -37,17 +37,17 @@ func NewRPCClient(ctx context.Context, cfg *Config) (*RPCClient, error) {
 		return nil, err
 	}
 
-	l2RPC, err := client.DialClientWithBackoff(ctx, cfg.L2Endpoint)
+	l2RPC, err := rpc.DialClientWithBackoff(ctx, cfg.L2Endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	l2RawRPC, err := rpc.Dial(cfg.L2Endpoint)
+	l2RawRPC, err := gethRPC.Dial(cfg.L2Endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	l2AuthRPC, err := client.DialEngineClientWithBackoff(
+	l2AuthRPC, err := rpc.DialEngineClientWithBackoff(
 		ctx,
 		cfg.L2AuthEndpoint,
 		cfg.JwtSecret,
