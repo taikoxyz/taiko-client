@@ -10,6 +10,12 @@ test:
 	COMPILE_PROTOCOL=${COMPILE_PROTOCOL} \
 		./integration_tests/entrypoint.sh
 
+gen_bindings:
+	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \
+	TAIKO_CLIENT_DIR=${TAIKO_CLIENT_DIR} \
+		./script/gen_bindings.sh
+
 .PHONY: build \
 				lint \
-				test
+				test \
+				gen_bindings
