@@ -1,4 +1,4 @@
-package proposer
+package main
 
 import (
 	"github.com/urfave/cli/v2"
@@ -43,7 +43,7 @@ var (
 	}
 )
 
-// Special flags for testing
+// Special flags for testing.
 var (
 	ProduceInvalidBlocksFlag = cli.BoolFlag{
 		Name:   "produceInvalidBlocks",
@@ -56,3 +56,16 @@ var (
 		Hidden: true,
 	}
 )
+
+// All flags.
+var Flags = []cli.Flag{
+	&L1NodeFlag,
+	&L2NodeFlag,
+	&TaikoL1AddressFlag,
+	&TaikoL2AddressFlag,
+	&L1ProposerPrivKeyFlag,
+	&L2SuggestedFeeRecipientFlag,
+	&ProposeIntervalFlag,
+	&ProduceInvalidBlocksFlag,
+	&ProduceInvalidBlocksInterval,
+}

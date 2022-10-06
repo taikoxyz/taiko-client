@@ -126,7 +126,7 @@ func (c *EngineRPCClient) NewPayload(ctx context.Context, payload *beacon.Execut
 	return result, nil
 }
 
-// GetPayload gets the execution payload associated with the PayloadId.
+// GetPayload gets the execution payload associated with the payloadId.
 func (c *EngineRPCClient) GetPayload(ctx context.Context, payloadID *beacon.PayloadID) (*beacon.ExecutableDataV1, error) {
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
