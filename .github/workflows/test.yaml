@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  integration_tests:
+  test:
     runs-on: ubuntu-latest
     env:
       TK_REPO_ACCESS: ${{ secrets.TK_REPO_ACCESS }}
