@@ -68,7 +68,12 @@ func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader
 		return fmt.Errorf("failed to get L2 block with given hash %s: %w", header.Hash(), err)
 	}
 
-	log.Info("Get the L2 block to prove", "blockID", blockID, "hash", block.Hash(), "transactions", len(block.Transactions()))
+	log.Info(
+		"Get the L2 block to prove",
+		"blockID", blockID,
+		"hash", block.Hash(),
+		"transactions", len(block.Transactions()),
+	)
 
 	log.Info("StateRoot", "root", header.Root.String(), "zkProof", zkProof, "block", header)
 
@@ -99,7 +104,10 @@ func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader
 	}
 
 	if txRoot != block.TxHash() || receiptRoot != block.ReceiptHash() {
-		return fmt.Errorf("txHash or receiptHash mismatch, txRoot: %s, header.TxHash: %s, receiptRoot: %s, header.ReceiptHash: %s", txRoot, header.TxHash, receiptRoot, header.ReceiptHash)
+		return fmt.Errorf(
+			"txHash or receiptHash mismatch, txRoot: %s, header.TxHash: %s, receiptRoot: %s, header.ReceiptHash: %s",
+			txRoot, header.TxHash, receiptRoot, header.ReceiptHash,
+		)
 	}
 
 	evidence := &encoding.TaikoL1Evidence{
@@ -123,7 +131,12 @@ func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader
 		return fmt.Errorf("failed to wait till transaction executed: %w", err)
 	}
 
-	log.Info("✅ New valid block proved", "blockID", proofWithHeader.BlockID, "hash", block.Hash(), "height", block.Number(), "transactions", block.Transactions().Len())
+	log.Info(
+		"✅ New valid block proved",
+		"blockID", proofWithHeader.BlockID,
+		"hash", block.Hash(), "height", block.Number(),
+		"transactions", block.Transactions().Len(),
+	)
 
 	return nil
 }

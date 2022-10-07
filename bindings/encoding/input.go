@@ -186,7 +186,11 @@ func EncodeProposeBlockInput(meta *bindings.LibDataBlockMetadata, txListBytes []
 }
 
 // EncodeProveBlockInput encodes the input params for TaikoL1.proveBlock.
-func EncodeProveBlockInput(evidence *TaikoL1Evidence, anchorTx *types.Transaction, anchorReceipt *types.Receipt) ([][]byte, error) {
+func EncodeProveBlockInput(
+	evidence *TaikoL1Evidence,
+	anchorTx *types.Transaction,
+	anchorReceipt *types.Receipt,
+) ([][]byte, error) {
 	evidenceBytes, err := EncodeEvidence(evidence)
 	if err != nil {
 		return nil, err
@@ -203,7 +207,11 @@ func EncodeProveBlockInput(evidence *TaikoL1Evidence, anchorTx *types.Transactio
 }
 
 // EncodeProveBlockInvalidInput encodes the input params for TaikoL1.proveBlockInvalid.
-func EncodeProveBlockInvalidInput(evidence *TaikoL1Evidence, target *bindings.LibDataBlockMetadata, receipt *types.Receipt) ([][]byte, error) {
+func EncodeProveBlockInvalidInput(
+	evidence *TaikoL1Evidence,
+	target *bindings.LibDataBlockMetadata,
+	receipt *types.Receipt,
+) ([][]byte, error) {
 	evidenceBytes, err := EncodeEvidence(evidence)
 	if err != nil {
 		return nil, err

@@ -59,7 +59,9 @@ func NewConfigFromCliContext(ctx *cli.Context) (*Config, error) {
 		cfg.ProduceInvalidBlocks = defaultProduceInvalidBlocks
 	}
 	if ctx.IsSet(flags.ProduceInvalidBlocksInterval.Name) {
-		cfg.ProduceInvalidBlocksInterval = ctx.Uint64(flags.ProduceInvalidBlocksInterval.Name)
+		cfg.ProduceInvalidBlocksInterval = ctx.Uint64(
+			flags.ProduceInvalidBlocksInterval.Name,
+		)
 	}
 
 	return cfg, nil

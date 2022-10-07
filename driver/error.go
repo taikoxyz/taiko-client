@@ -18,15 +18,15 @@ var (
 	errEmptyPayloadID = errors.New("empty payload ID")
 )
 
-// errGenesisHashMismatch is returned when local genesis is not matched
+// genesisHashMismatchError is returned when local genesis is not matched
 // with the remote genesis in TaikoL1 contract.
-type errGenesisHashMismatch struct {
+type genesisHashMismatchError struct {
 	Node    common.Hash
 	TaikoL1 common.Hash
 }
 
 // Error implements the error interface.
-func (e errGenesisHashMismatch) Error() string {
+func (e genesisHashMismatchError) Error() string {
 	return fmt.Sprintf(
 		"genesis header hash mismatch, node: %s, TaikoL1 contract: %s",
 		e.Node,
@@ -34,20 +34,20 @@ func (e errGenesisHashMismatch) Error() string {
 	)
 }
 
-type errForkchoiceUpdated struct {
+type forkchoiceUpdatedError struct {
 	Status string
 }
 
 // Error implements the error interface.
-func (e errForkchoiceUpdated) Error() string {
+func (e forkchoiceUpdatedError) Error() string {
 	return fmt.Sprintf("failed to update forkchoice, status: %s", e.Status)
 }
 
-type errExecPayload struct {
+type execPayloadError struct {
 	Status string
 }
 
 // Error implements the error interface.
-func (e errExecPayload) Error() string {
+func (e execPayloadError) Error() string {
 	return fmt.Sprintf("failed to execute the new built block, status: %s", e.Status)
 }

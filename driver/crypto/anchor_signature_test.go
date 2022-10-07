@@ -26,17 +26,29 @@ func TestSignAnchor(t *testing.T) {
 		{
 			name: "test1",
 			args: args{
-				hash: hexutil.MustDecode("0x44943399d1507f3ce7525e9be2f987c3db9136dc759cb7f92f742154196868b9"),
+				hash: hexutil.MustDecode(
+					"0x44943399d1507f3ce7525e9be2f987c3db9136dc759cb7f92f742154196868b9",
+				),
 			},
-			want:    sig("0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", "0x782a1e70872ecc1a9f740dd445664543f8b7598c94582720bca9a8c48d6a4766", 1),
+			want: sig(
+				"0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+				"0x782a1e70872ecc1a9f740dd445664543f8b7598c94582720bca9a8c48d6a4766",
+				1,
+			),
 			wantErr: false,
 		},
 		{
 			name: "test2",
 			args: args{
-				hash: hexutil.MustDecode("0x663d210fa6dba171546498489de1ba024b89db49e21662f91bf83cdffe788820"),
+				hash: hexutil.MustDecode(
+					"0x663d210fa6dba171546498489de1ba024b89db49e21662f91bf83cdffe788820",
+				),
 			},
-			want:    sig("0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", "0x568130fab1a3a9e63261d4278a7e130588beb51f27de7c20d0258d38a85a27ff", 1),
+			want: sig(
+				"0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+				"0x568130fab1a3a9e63261d4278a7e130588beb51f27de7c20d0258d38a85a27ff",
+				1,
+			),
 			wantErr: false,
 		},
 	}
@@ -73,17 +85,29 @@ func TestSignAnchorRS2(t *testing.T) {
 		{
 			name: "test1",
 			args: args{
-				hash: hexutil.MustDecode("0x44943399d1507f3ce7525e9be2f987c3db9136dc759cb7f92f742154196868b9"),
+				hash: hexutil.MustDecode(
+					"0x44943399d1507f3ce7525e9be2f987c3db9136dc759cb7f92f742154196868b9",
+				),
 			},
-			want:    sig("0xc6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5", "0x38940d69b21d5b088beb706e9ebabe6422307e12863997a44239774467e240d5", 1),
+			want: sig(
+				"0xc6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+				"0x38940d69b21d5b088beb706e9ebabe6422307e12863997a44239774467e240d5",
+				1,
+			),
 			wantErr: false,
 		},
 		{
 			name: "test2",
 			args: args{
-				hash: hexutil.MustDecode("0x663d210fa6dba171546498489de1ba024b89db49e21662f91bf83cdffe788820"),
+				hash: hexutil.MustDecode(
+					"0x663d210fa6dba171546498489de1ba024b89db49e21662f91bf83cdffe788820",
+				),
 			},
-			want:    sig("0xc6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5", "0x5840695138a83611aa9dac67beb95aba7323429787a78df993f1c5c7f2c0ef7f", 0),
+			want: sig(
+				"0xc6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+				"0x5840695138a83611aa9dac67beb95aba7323429787a78df993f1c5c7f2c0ef7f",
+				0,
+			),
 			wantErr: false,
 		},
 	}

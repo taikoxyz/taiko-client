@@ -46,7 +46,12 @@ func (b *L2ChainInserter) newAnchorTransactor(ctx context.Context, height *big.I
 }
 
 // prepareAnchorTx creates a signed TaikoL2.anchor transaction.
-func (b *L2ChainInserter) prepareAnchorTx(ctx context.Context, l1Height *big.Int, l1Hash common.Hash, l2Height *big.Int) (*types.Transaction, error) {
+func (b *L2ChainInserter) prepareAnchorTx(
+	ctx context.Context,
+	l1Height *big.Int,
+	l1Hash common.Hash,
+	l2Height *big.Int,
+) (*types.Transaction, error) {
 	opts, err := b.newAnchorTransactor(ctx, l2Height)
 	if err != nil {
 		return nil, err
@@ -56,7 +61,11 @@ func (b *L2ChainInserter) prepareAnchorTx(ctx context.Context, l1Height *big.Int
 }
 
 // getNonce fetches the nonce of the given account at a specified height.
-func (b *L2ChainInserter) getNonce(ctx context.Context, account common.Address, height *big.Int) (uint64, error) {
+func (b *L2ChainInserter) getNonce(
+	ctx context.Context,
+	account common.Address,
+	height *big.Int,
+) (uint64, error) {
 	var result hexutil.Uint64
 	err := b.rpc.l2RawRPC.CallContext(ctx, &result, "eth_getTransactionCount", account, hexutil.EncodeBig(height))
 	return uint64(result), err

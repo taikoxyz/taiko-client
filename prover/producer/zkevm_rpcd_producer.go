@@ -30,8 +30,18 @@ func NewZkevmRpcdProducer(rpcdEndpoint string) (*ZkevmRpcdProducer, error) {
 }
 
 // RequestProof implements the ProofProducer interface.
-func (d *ZkevmRpcdProducer) RequestProof(opts *ProofRequestOptions, blockID *big.Int, header *types.Header, resultCh chan *ProofWithHeader) error {
-	log.Info("Request proof from ZKEVM RPCD service", "blockID", blockID, "height", header.Number, "hash", header.Hash())
+func (d *ZkevmRpcdProducer) RequestProof(
+	opts *ProofRequestOptions,
+	blockID *big.Int,
+	header *types.Header,
+	resultCh chan *ProofWithHeader,
+) error {
+	log.Info(
+		"Request proof from ZKEVM RPCD service",
+		"blockID", blockID,
+		"height", header.Number,
+		"hash", header.Hash(),
+	)
 
 	// TODO: call zkevm RPCD to get a proof.
 	go func() {

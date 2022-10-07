@@ -10,21 +10,26 @@ import (
 
 // startSubscription initializes all subscriptions in current prover instance.
 func (p *Prover) startSubscription() {
-	p.blockProposedSub = event.ResubscribeErr(backoff.DefaultMaxInterval, func(ctx context.Context, err error) (event.Subscription, error) {
-		if err != nil {
-			log.Warn("Failed to subscribe TaikoL1.BlockProposed, try resubscribing", "error", err)
-		}
+	p.blockProposedSub = event.ResubscribeErr(
+		backoff.DefaultMaxInterval,
+		func(ctx context.Context, err error) (event.Subscription, error) {
+			if err != nil {
+				log.Warn("Failed to subscribe TaikoL1.BlockProposed, try resubscribing", "error", err)
+			}
 
-		return p.watchBlockProposed(ctx)
-	})
+			return p.watchBlockProposed(ctx)
+		},
+	)
 
-	p.blockFinalizedSub = event.ResubscribeErr(backoff.DefaultMaxInterval, func(ctx context.Context, err error) (event.Subscription, error) {
-		if err != nil {
-			log.Warn("Failed to subscribe TaikoL1.BlockFinalized, try resubscribing", "error", err)
-		}
+	p.blockFinalizedSub = event.ResubscribeErr(
+		backoff.DefaultMaxInterval, func(ctx context.Context, err error) (event.Subscription, error) {
+			if err != nil {
+				log.Warn("Failed to subscribe TaikoL1.BlockFinalized, try resubscribing", "error", err)
+			}
 
-		return p.watchBlockFinalized(ctx)
-	})
+			return p.watchBlockFinalized(ctx)
+		},
+	)
 
 	// TODO: whether these are necessary?
 	go func() {

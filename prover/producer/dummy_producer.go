@@ -11,8 +11,20 @@ import (
 type DummyProofProducer struct{}
 
 // RequestProof implements the ProofProducer interface.
-func (d *DummyProofProducer) RequestProof(opts *ProofRequestOptions, blockID *big.Int, header *types.Header, resultCh chan *ProofWithHeader) error {
-	log.Info("Request dummy proof", "blockID", blockID, "height", header.Number, "hash", header.Hash())
-	resultCh <- &ProofWithHeader{BlockID: blockID, Header: header, ZkProof: []byte{0xff}}
+func (d *DummyProofProducer) RequestProof(
+	opts *ProofRequestOptions,
+	blockID *big.Int,
+	header *types.Header,
+	resultCh chan *ProofWithHeader,
+) error {
+	log.Info(
+		"Request dummy proof",
+		"blockID", blockID,
+		"height", header.Number,
+		"hash", header.Hash(),
+	)
+	resultCh <- &ProofWithHeader{
+		BlockID: blockID, Header: header, ZkProof: []byte{0xff},
+	}
 	return nil
 }

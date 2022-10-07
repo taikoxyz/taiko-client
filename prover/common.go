@@ -57,7 +57,7 @@ func generateTrieProof[T types.DerivableList](list T, i uint64) (common.Hash, []
 	types.DeriveSha(list, trie)
 
 	var proof proofList
-	if err := trie.Prove(rlp.AppendUint64([]byte{}, uint64(i)), 0, &proof); err != nil {
+	if err := trie.Prove(rlp.AppendUint64([]byte{}, i), 0, &proof); err != nil {
 		return common.Hash{}, nil, err
 	}
 

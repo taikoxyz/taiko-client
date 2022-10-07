@@ -109,7 +109,7 @@ func (c *RPCClient) ensureGenesisMatched(ctx context.Context) error {
 
 		// Node's genesis header and TaikoL1 contract's genesis header must match.
 		if common.BytesToHash(l2GenesisHash[:]) != nodeGenesis.Hash() {
-			return errGenesisHashMismatch{
+			return genesisHashMismatchError{
 				Node:    nodeGenesis.Hash(),
 				TaikoL1: common.BytesToHash(l2GenesisHash[:]),
 			}

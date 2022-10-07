@@ -35,18 +35,6 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/artifacts/contracts/L2/V1TaikoL2.sol/V1T
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type V1TaikoL2Client --pkg bindings --out $DIR/../bindings/gen_v1_taiko_l2.go
 
-cat ${TAIKO_MONO_DIR}/packages/protocol/artifacts/contracts/libs/LibTxDecoder.sol/LibTxDecoder.json |
-	jq .abi |
-	${ABIGEN_BIN} --abi - --type LibTxDecoder --pkg bindings --out $DIR/../bindings/gen_lib_tx_decoder.go
-
-cat ${TAIKO_MONO_DIR}/packages/protocol/artifacts/contracts/libs/LibInvalidTxList.sol/LibInvalidTxList.json |
-	jq .abi |
-	${ABIGEN_BIN} --abi - --type LibInvalidTxList --pkg bindings --out $DIR/../bindings/gen_lib_invalid_tx_list.go
-
-cat ${TAIKO_MONO_DIR}/packages/protocol/artifacts/contracts/libs/LibConstants.sol/LibConstants.json |
-	jq .abi |
-	${ABIGEN_BIN} --abi - --type LibConstants --pkg bindings --out $DIR/../bindings/gen_lib_constants.go
-
 git -C ${TAIKO_MONO_DIR} log --format="%H" -n 1 >./bindings/.githead
 
 echo "Go contract bindings generated!"

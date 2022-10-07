@@ -2,6 +2,7 @@ package driver
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -161,7 +162,7 @@ func (d *Driver) doSync() error {
 		l1Head,
 	); err != nil {
 		log.Error("Process new L1 blocks error", "error", err)
-		if err == context.Canceled {
+		if errors.Is(err, context.Canceled) {
 			return nil
 		}
 		return err

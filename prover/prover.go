@@ -280,7 +280,12 @@ func (p *Prover) onBlockFinalized(ctx context.Context, event *bindings.TaikoL1Cl
 		return fmt.Errorf("failed to find L2 block with hash %s: %w", common.BytesToHash(event.BlockHash[:]), err)
 	}
 
-	log.Info("New finalized block", "blockID", event.Id, "height", l2BlockHeader.Number, "hash", common.BytesToHash(event.BlockHash[:]))
+	log.Info(
+		"New finalized block",
+		"blockID", event.Id,
+		"height", l2BlockHeader.Number,
+		"hash", common.BytesToHash(event.BlockHash[:]),
+	)
 
 	p.lastFinalizedHeight = l2BlockHeader.Number
 	p.lastFinalizedHeader = l2BlockHeader

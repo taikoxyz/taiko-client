@@ -52,7 +52,12 @@ type L2ChainInserter struct {
 }
 
 // NewL2ChainInserter creates a new block inserter instance.
-func NewL2ChainInserter(ctx context.Context, rpc *RPCClient, state *State, throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey) (*L2ChainInserter, error) {
+func NewL2ChainInserter(
+	ctx context.Context,
+	rpc *RPCClient,
+	state *State,
+	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
+) (*L2ChainInserter, error) {
 	taikoL1ABI, err := bindings.TaikoL1ClientMetaData.GetAbi()
 	if err != nil {
 		return nil, err
@@ -310,7 +315,7 @@ func (b *L2ChainInserter) insertNewHead(
 		return nil, err, nil
 	}
 	if fcRes.PayloadStatus.Status != beacon.VALID {
-		return nil, nil, errForkchoiceUpdated{Status: fcRes.PayloadStatus.Status}
+		return nil, nil, forkchoiceUpdatedError{Status: fcRes.PayloadStatus.Status}
 	}
 
 	return payload, nil, nil
@@ -402,7 +407,7 @@ func (b *L2ChainInserter) createExecutionPayloads(
 		return nil, err, nil
 	}
 	if fcRes.PayloadStatus.Status != beacon.VALID {
-		return nil, nil, errForkchoiceUpdated{Status: fcRes.PayloadStatus.Status}
+		return nil, nil, forkchoiceUpdatedError{Status: fcRes.PayloadStatus.Status}
 	}
 	if fcRes.PayloadID == nil {
 		return nil, nil, errEmptyPayloadID
@@ -420,7 +425,7 @@ func (b *L2ChainInserter) createExecutionPayloads(
 		return nil, err, nil
 	}
 	if execStatus.Status != beacon.VALID {
-		return nil, nil, errExecPayload{Status: execStatus.Status}
+		return nil, nil, execPayloadError{Status: execStatus.Status}
 	}
 
 	return payload, nil, nil

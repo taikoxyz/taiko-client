@@ -44,7 +44,9 @@ func (p *Prover) proveBlockInvalid(
 }
 
 // submitInvalidBlockProof submits the generated ZK proof to TaikoL1 contract.
-func (p *Prover) submitInvalidBlockProof(proofWithHeader *producer.ProofWithHeader) (err error) {
+func (p *Prover) submitInvalidBlockProof(
+	proofWithHeader *producer.ProofWithHeader,
+) (err error) {
 	log.Info(
 		"New invalid block proof",
 		"blockID", proofWithHeader.BlockID,
@@ -128,12 +130,20 @@ func (p *Prover) submitInvalidBlockProof(proofWithHeader *producer.ProofWithHead
 		return fmt.Errorf("failed to wait till transaction executed: %w", err)
 	}
 
-	log.Info("❎ New invalid block proved", "blockID", proofWithHeader.BlockID, "height", block.Number(), "hash", header.Hash())
+	log.Info(
+		"❎ New invalid block proved",
+		"blockID", proofWithHeader.BlockID,
+		"height", block.Number(),
+		"hash", header.Hash(),
+	)
 
 	return nil
 }
 
-func (p *Prover) getThrowAwayBlock(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) (*types.Block, error) {
+func (p *Prover) getThrowAwayBlock(
+	ctx context.Context,
+	event *bindings.TaikoL1ClientBlockProposed,
+) (*types.Block, error) {
 	l1Origin, err := p.waitForL1Origin(ctx, event.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.Id, err)

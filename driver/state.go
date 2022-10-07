@@ -47,7 +47,9 @@ func NewState(ctx context.Context, rpc *RPCClient) (*State, error) {
 		return nil, err
 	}
 
-	_, _, _, _, _, maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit, anchorTxGasLimit, _, _, err := rpc.taikoL1.GetConstants(nil)
+	_, _, _, _, _,
+		maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit,
+		anchorTxGasLimit, _, _, err := rpc.taikoL1.GetConstants(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -142,13 +144,16 @@ func (s *State) subL1Head(ctx context.Context) error {
 
 	s.setL1Head(l1Head)
 
-	s.l1HeadSub = event.ResubscribeErr(backoff.DefaultMaxInterval, func(ctx context.Context, err error) (event.Subscription, error) {
-		if err != nil {
-			log.Warn("Failed to subscribe L1 head, try resubscribing", "error", err)
-		}
+	s.l1HeadSub = event.ResubscribeErr(
+		backoff.DefaultMaxInterval,
+		func(ctx context.Context, err error) (event.Subscription, error) {
+			if err != nil {
+				log.Warn("Failed to subscribe L1 head, try resubscribing", "error", err)
+			}
 
-		return s.watchL1Head(ctx)
-	})
+			return s.watchL1Head(ctx)
+		},
+	)
 	go func() {
 		err, ok := <-s.l1HeadSub.Err()
 		if !ok {
@@ -222,13 +227,16 @@ func (s *State) subBlockFinalized(ctx context.Context) error {
 
 	s.setLastFinalizedBlockHash(lastFinalizedBlockHash)
 
-	s.l2BlockFinalizedSub = event.ResubscribeErr(backoff.DefaultMaxInterval, func(ctx context.Context, err error) (event.Subscription, error) {
-		if err != nil {
-			log.Warn("Failed to subscribe TaikoL1.BlockFinalized events, try resubscribing", "error", err)
-		}
+	s.l2BlockFinalizedSub = event.ResubscribeErr(
+		backoff.DefaultMaxInterval,
+		func(ctx context.Context, err error) (event.Subscription, error) {
+			if err != nil {
+				log.Warn("Failed to subscribe TaikoL1.BlockFinalized events, try resubscribing", "error", err)
+			}
 
-		return s.watchBlockFinalized(ctx)
-	})
+			return s.watchBlockFinalized(ctx)
+		},
+	)
 	go func() {
 		err, ok := <-s.l2BlockFinalizedSub.Err()
 		if !ok {
@@ -292,13 +300,16 @@ func (s *State) subLastPendingBlockID(ctx context.Context) error {
 
 	s.setHeadBlockID(new(big.Int).SetUint64(nextPendingID - 1))
 
-	s.l2BlockProposedSub = event.ResubscribeErr(backoff.DefaultMaxInterval, func(ctx context.Context, err error) (event.Subscription, error) {
-		if err != nil {
-			log.Warn("Failed to subscribe TaikoL1.BlockProposed events, try resubscribing", "error", err)
-		}
+	s.l2BlockProposedSub = event.ResubscribeErr(
+		backoff.DefaultMaxInterval,
+		func(ctx context.Context, err error) (event.Subscription, error) {
+			if err != nil {
+				log.Warn("Failed to subscribe TaikoL1.BlockProposed events, try resubscribing", "error", err)
+			}
 
-		return s.watchBlockProposed(ctx)
-	})
+			return s.watchBlockProposed(ctx)
+		},
+	)
 	go func() {
 		err, ok := <-s.l2BlockProposedSub.Err()
 		if !ok {

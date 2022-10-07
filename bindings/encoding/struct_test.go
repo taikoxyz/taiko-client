@@ -33,7 +33,6 @@ var (
 )
 
 func TestFromGethHeader(t *testing.T) {
-
 	header := FromGethHeader(testHeader)
 
 	require.Equal(t, testHeader.ParentHash, common.BytesToHash(header.ParentHash[:]))

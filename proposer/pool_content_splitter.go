@@ -103,7 +103,8 @@ func (p *poolContentSplitter) isTxBufferFull(t *types.Transaction, txs []*types.
 		return true
 	}
 
-	// Transactions list's RLP encoding error has already been checked in  `validateTx`, so no need to check the error here.
+	// Transactions list's RLP encoding error has already been checked in
+	// `validateTx`, so no need to check the error here.
 	if b, _ := rlp.EncodeToBytes(append([]*types.Transaction{t}, txs...)); len(b) > int(p.maxTxBytesPerBlock) {
 		return true
 	}
