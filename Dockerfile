@@ -13,6 +13,10 @@ RUN make build
 FROM alpine:latest
 
 RUN apk add --no-cache ca-certificates
-COPY --from=builder /client-mono/build/client-mono /usr/local/bin/
 
-ENTRYPOINT ["client-mono"]
+COPY --from=builder /client-mono/bin/driver /usr/local/bin/
+COPY --from=builder /client-mono/bin/proposer /usr/local/bin/
+COPY --from=builder /client-mono/bin/prover /usr/local/bin/
+COPY --from=builder /client-mono/script/start.sh /usr/local/bin/
+
+ENTRYPOINT ["start.sh"]
