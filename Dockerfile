@@ -1,4 +1,3 @@
-
 FROM golang:1.18-alpine as builder
 
 # Github personal token to access the private repoitories.
