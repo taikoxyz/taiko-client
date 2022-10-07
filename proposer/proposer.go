@@ -17,21 +17,24 @@ import (
 	"github.com/taikochain/taiko-client/ethclient"
 	"github.com/taikochain/taiko-client/log"
 	"github.com/taikochain/taiko-client/rlp"
+	"github.com/urfave/cli/v2"
 )
 
-// Config contains all configurations to initialize a Taiko proposer.
-type Config struct {
-	L1Node                 string
-	L2Node                 string
-	TaikoL1Address         string
-	TaikoL2Address         string
-	L1ProposerPrivKey      string
-	L2SuggestedFeeRecipien string
-	ProposeInterval        string
+// Action returns the main function that the subcommand should run.
+func Action() cli.ActionFunc {
+	return func(ctx *cli.Context) error {
+		cfg, err := NewConfigFromCliContext(ctx)
+		if err != nil {
+			return err
+		}
 
-	// Only for testing
-	ProduceInvalidBlocks         bool
-	ProduceInvalidBlocksInterval uint64
+		proposer, err := New(context.Background(), cfg)
+		if err != nil {
+			return err
+		}
+
+		return util.RunSubcommand(proposer)
+	}
 }
 
 // Proposer keep proposing new transactions from L2 node's tx pool at a fixed interval.
@@ -60,20 +63,20 @@ type Proposer struct {
 }
 
 // New initializes a new proposer instance based on the given configurations.
-func New(cfg *Config) (*Proposer, error) {
+func New(ctx context.Context, cfg *Config) (*Proposer, error) {
 	p := &Proposer{}
 	var err error
 
 	// RPC clients
 	if p.l1Node, err = rpc.DialClientWithBackoff(
-		context.Background(),
+		ctx,
 		cfg.L1Node,
 	); err != nil {
 		return nil, fmt.Errorf("failed to connect to L1 node: %w", err)
 	}
 
 	if p.l2Node, err = rpc.DialClientWithBackoff(
-		context.Background(),
+		ctx,
 		cfg.L2Node,
 	); err != nil {
 		return nil, fmt.Errorf("failed to connect to L2 node: %w", err)
@@ -141,7 +144,7 @@ func New(cfg *Config) (*Proposer, error) {
 }
 
 // Start starts the proposer's main loop.
-func (p *Proposer) Start() {
+func (p *Proposer) Start() error {
 	// TODO: make the top level context cancellable.
 	go func() {
 		ticker := time.NewTicker(p.proposingInterval)
@@ -163,7 +166,13 @@ func (p *Proposer) Start() {
 			}
 		}
 	}()
+
+	return nil
 }
+
+// Close closes the proposer instance.
+// TODO: implement this method.
+func (p *Proposer) Close() {}
 
 // proposeOp performs a proposing operation, fetching transactions
 // from L2 node's tx pool, splitting them by proposing constraints,
@@ -271,6 +280,11 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 	log.Info("📝 Propose transactions succeeded")
 
 	return nil
+}
+
+// Name returns the application name.
+func (p *Proposer) Name() string {
+	return "proposer"
 }
 
 // sumTxsGasLimit calculates the summarized gasLimit of the given transactions.

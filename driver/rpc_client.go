@@ -49,7 +49,7 @@ func NewRPCClient(ctx context.Context, cfg *Config) (*RPCClient, error) {
 
 	l2AuthRPC, err := rpc.DialEngineClientWithBackoff(
 		ctx,
-		cfg.L2AuthEndpoint,
+		cfg.L2EngineEndpoint,
 		cfg.JwtSecret,
 	)
 	if err != nil {

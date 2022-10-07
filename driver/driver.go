@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/taikochain/client-mono/util"
 	"github.com/taikochain/taiko-client/core/types"
 	"github.com/taikochain/taiko-client/event"
 	"github.com/taikochain/taiko-client/log"
+	"github.com/urfave/cli/v2"
 )
 
 const (
@@ -32,6 +34,23 @@ type Driver struct {
 	ctx      context.Context
 	ctxClose context.CancelFunc
 	wg       sync.WaitGroup
+}
+
+// Action returns the main function that the subcommand should run.
+func Action() cli.ActionFunc {
+	return func(ctx *cli.Context) error {
+		cfg, err := NewConfigFromCliContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		driver, err := New(context.Background(), cfg)
+		if err != nil {
+			return err
+		}
+
+		return util.RunSubcommand(driver)
+	}
 }
 
 // New initializes a new driver instance based on the given configurations.
@@ -74,9 +93,11 @@ func New(ctx context.Context, cfg *Config) (*Driver, error) {
 }
 
 // Start starts the driver instance.
-func (d *Driver) Start() {
+func (d *Driver) Start() error {
 	d.wg.Add(1)
 	go d.eventLoop()
+
+	return nil
 }
 
 // Close closes the driver instance.
@@ -147,4 +168,9 @@ func (d *Driver) doSync() error {
 	}
 
 	return nil
+}
+
+// Name returns the application name.
+func (d *Driver) Name() string {
+	return "driver"
 }

@@ -1,6 +1,7 @@
 package proposer
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -19,7 +20,7 @@ func TestMain(m *testing.M) {
 }
 
 func newTestProposer(t *testing.T) *Proposer {
-	proposer, err := New(&Config{
+	proposer, err := New(context.Background(), &Config{
 		L1Node:                 os.Getenv("L1_NODE_ENDPOINT"),
 		L2Node:                 os.Getenv("L2_NODE_ENDPOINT"),
 		TaikoL1Address:         os.Getenv("TAIKO_L1_ADDRESS"),

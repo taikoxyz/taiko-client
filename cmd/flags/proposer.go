@@ -1,42 +1,23 @@
-package proposer
+package flags
 
 import (
+	"github.com/taikochain/client-mono/util"
 	"github.com/urfave/cli/v2"
 )
 
-// Required flags.
+// Required flags used by proposer.
 var (
-	L1NodeFlag = cli.StringFlag{
-		Name:     "l1",
-		Usage:    "RPC endpoint of a L1 ethereum node",
-		Required: true,
-	}
-	L2NodeFlag = cli.StringFlag{
-		Name:     "l2",
-		Usage:    "RPC endpoint of a L2 ethereum node",
-		Required: true,
-	}
-	TaikoL1AddressFlag = cli.StringFlag{
-		Name:     "taikoL1",
-		Usage:    "TaikoL1 contract address",
-		Required: true,
-	}
-	TaikoL2AddressFlag = cli.StringFlag{
-		Name:     "taikoL2",
-		Usage:    "TaikoL2 contract address",
-		Required: true,
-	}
-	L1ProposerPrivKeyFlag = cli.StringFlag{
+	L1ProposerPrivKey = cli.StringFlag{
 		Name:     "l1.proposerPrivKey",
 		Usage:    "Private key for L1 proposer, who will send TaikoL1.proposeBlock transactions to the L1 node",
 		Required: true,
 	}
-	L2SuggestedFeeRecipientFlag = cli.StringFlag{
+	L2SuggestedFeeRecipient = cli.StringFlag{
 		Name:     "l2.suggestedFeeRecipient",
 		Usage:    "Address of the proposed block's suggested fee recipient",
 		Required: true,
 	}
-	ProposeIntervalFlag = cli.StringFlag{
+	ProposeInterval = cli.StringFlag{
 		Name:     "proposeInterval",
 		Usage:    "Interval for proposing L2 node's new pending transactions",
 		Required: true,
@@ -45,7 +26,7 @@ var (
 
 // Special flags for testing.
 var (
-	ProduceInvalidBlocksFlag = cli.BoolFlag{
+	ProduceInvalidBlocks = cli.BoolFlag{
 		Name:   "produceInvalidBlocks",
 		Usage:  "Special flag for testnet testing, if activated, the proposer will start producing bad blocks",
 		Hidden: true,
@@ -57,15 +38,11 @@ var (
 	}
 )
 
-// All flags.
-var Flags = []cli.Flag{
-	&L1NodeFlag,
-	&L2NodeFlag,
-	&TaikoL1AddressFlag,
-	&TaikoL2AddressFlag,
-	&L1ProposerPrivKeyFlag,
-	&L2SuggestedFeeRecipientFlag,
-	&ProposeIntervalFlag,
-	&ProduceInvalidBlocksFlag,
+// All proposer flags.
+var ProposerFlags = util.MergeFlags(CommonFlags, []cli.Flag{
+	&L1ProposerPrivKey,
+	&L2SuggestedFeeRecipient,
+	&ProposeInterval,
+	&ProduceInvalidBlocks,
 	&ProduceInvalidBlocksInterval,
-}
+})

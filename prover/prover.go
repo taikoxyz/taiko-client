@@ -12,12 +12,14 @@ import (
 	"github.com/taikochain/client-mono/bindings"
 	"github.com/taikochain/client-mono/prover/producer"
 	"github.com/taikochain/client-mono/rpc"
+	"github.com/taikochain/client-mono/util"
 	"github.com/taikochain/taiko-client/accounts/abi"
 	"github.com/taikochain/taiko-client/common"
 	"github.com/taikochain/taiko-client/core/types"
 	"github.com/taikochain/taiko-client/ethclient"
 	"github.com/taikochain/taiko-client/event"
 	"github.com/taikochain/taiko-client/log"
+	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -25,6 +27,23 @@ var (
 	// transaction is invalid.
 	errInvalidProposeBlockTx = errors.New("invalid propose block transaction")
 )
+
+// Action returns the main function that the subcommand should run.
+func Action() cli.ActionFunc {
+	return func(ctx *cli.Context) error {
+		cfg, err := NewConfigFromCliContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		prover, err := New(context.Background(), cfg)
+		if err != nil {
+			return err
+		}
+
+		return util.RunSubcommand(prover)
+	}
+}
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
 type Prover struct {
@@ -173,7 +192,7 @@ func New(ctx context.Context, cfg *Config) (*Prover, error) {
 }
 
 // Start starts the main loop of the L2 block prover.
-func (p *Prover) Start() {
+func (p *Prover) Start() error {
 	p.wg.Add(1)
 	defer p.wg.Done()
 
@@ -211,6 +230,8 @@ func (p *Prover) Start() {
 			}
 		}
 	}()
+
+	return nil
 }
 
 // Close closes the prover instance.
@@ -295,4 +316,9 @@ func (p *Prover) batchHandleBlockProposedEvents(
 	p.blockProposedEventsBuffer = []*bindings.TaikoL1ClientBlockProposed{}
 
 	return nil
+}
+
+// Name returns the application name.
+func (p *Prover) Name() string {
+	return "prover"
 }
