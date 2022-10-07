@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/beacon"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/client-mono/bindings"
-	"github.com/taikochain/taiko-client/accounts/abi"
-	"github.com/taikochain/taiko-client/accounts/abi/bind"
-	"github.com/taikochain/taiko-client/common"
-	"github.com/taikochain/taiko-client/core/beacon"
-	"github.com/taikochain/taiko-client/core/rawdb"
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/crypto"
-	"github.com/taikochain/taiko-client/log"
-	"github.com/taikochain/taiko-client/rlp"
 )
 
 // InvalidTxListReason represents a reason why a transactions list is invalid,

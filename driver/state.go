@@ -6,12 +6,12 @@ import (
 	"sync/atomic"
 
 	"github.com/cenkalti/backoff/v4"
+	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/client-mono/bindings"
-	ethereum "github.com/taikochain/taiko-client"
-	"github.com/taikochain/taiko-client/common"
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/event"
-	"github.com/taikochain/taiko-client/log"
 	"golang.org/x/sync/errgroup"
 )
 

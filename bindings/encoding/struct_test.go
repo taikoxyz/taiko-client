@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/common"
-	"github.com/taikochain/taiko-client/core/types"
 )
 
 var (

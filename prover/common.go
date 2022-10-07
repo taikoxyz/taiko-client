@@ -6,14 +6,14 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/trie"
 	"github.com/taikochain/client-mono/bindings"
-	"github.com/taikochain/taiko-client/accounts/abi/bind"
-	"github.com/taikochain/taiko-client/common"
-	"github.com/taikochain/taiko-client/core/rawdb"
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/log"
-	"github.com/taikochain/taiko-client/rlp"
-	"github.com/taikochain/taiko-client/trie"
 )
 
 const (

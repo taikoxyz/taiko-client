@@ -6,10 +6,10 @@ import (
 	"net/url"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/prysmaticlabs/prysm/network"
 	"github.com/prysmaticlabs/prysm/network/authorization"
-	"github.com/taikochain/taiko-client/ethclient"
-	"github.com/taikochain/taiko-client/rpc"
 )
 
 // DialClientWithBackoff connects a ethereum RPC client at the given URL with

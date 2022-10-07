@@ -4,11 +4,11 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikochain/client-mono/driver/crypto"
-	"github.com/taikochain/taiko-client/accounts/abi/bind"
-	"github.com/taikochain/taiko-client/common"
-	"github.com/taikochain/taiko-client/common/hexutil"
-	"github.com/taikochain/taiko-client/core/types"
 )
 
 // Address of the Taiko gold finger account.

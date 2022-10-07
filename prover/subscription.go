@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/taikochain/taiko-client/event"
-	"github.com/taikochain/taiko-client/log"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 // startSubscription initializes all subscriptions in current prover instance.

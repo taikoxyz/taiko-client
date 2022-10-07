@@ -6,11 +6,10 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.2.1
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0
-	github.com/ethereum/go-ethereum v1.10.20
+	github.com/ethereum/go-ethereum v1.10.25
 	github.com/neilotoole/errgroup v0.1.6
 	github.com/prysmaticlabs/prysm v1.4.2-0.20220805185555-4e225fc667d8
 	github.com/stretchr/testify v1.8.0
-	github.com/taikochain/taiko-client v1.10.22-0.20220930084541-afad12db912d
 	github.com/urfave/cli/v2 v2.11.1
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 )
@@ -58,3 +57,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/ethereum/go-ethereum v1.10.25 => github.com/taikochain/taiko-client v1.10.22-0.20221007135555-5e08487bdf47

@@ -3,8 +3,8 @@ package producer
 import (
 	"math/big"
 
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/log"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 // DummyProofProducer always returns a dummy proof.

@@ -6,10 +6,10 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/neilotoole/errgroup"
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/ethclient"
-	"github.com/taikochain/taiko-client/log"
 )
 
 // WaitNConfirmations won't return before N blocks confirmations have been seen

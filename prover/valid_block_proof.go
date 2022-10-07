@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/client-mono/bindings"
 	"github.com/taikochain/client-mono/bindings/encoding"
 	"github.com/taikochain/client-mono/prover/producer"
 	"github.com/taikochain/client-mono/util"
-	"github.com/taikochain/taiko-client/crypto"
-	"github.com/taikochain/taiko-client/log"
 )
 
 // proveBlockValid tries to generate a ZK proof to prove the given

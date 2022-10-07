@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/common"
 )
 
 func TestLatestL2KnownL1Header(t *testing.T) {

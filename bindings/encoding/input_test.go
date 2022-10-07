@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 	"github.com/taikochain/client-mono/bindings"
-	"github.com/taikochain/taiko-client/common"
 )
 
 func TestEncodeEvidence(t *testing.T) {

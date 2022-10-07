@@ -4,15 +4,15 @@ import (
 	"context"
 	"math/big"
 
+	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/log"
+	gethRPC "github.com/ethereum/go-ethereum/rpc"
 	"github.com/taikochain/client-mono/bindings"
 	"github.com/taikochain/client-mono/rpc"
-	ethereum "github.com/taikochain/taiko-client"
-	"github.com/taikochain/taiko-client/accounts/abi/bind"
-	"github.com/taikochain/taiko-client/common"
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/ethclient"
-	"github.com/taikochain/taiko-client/log"
-	gethRPC "github.com/taikochain/taiko-client/rpc"
 )
 
 // RPCClient contains all L1/L2 RPC clients that a driver needs.

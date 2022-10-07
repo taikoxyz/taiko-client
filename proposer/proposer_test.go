@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/log"
 )
 
 func TestMain(m *testing.M) {

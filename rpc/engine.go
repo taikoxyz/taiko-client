@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/taikochain/taiko-client/core/beacon"
-	"github.com/taikochain/taiko-client/rpc"
+	"github.com/ethereum/go-ethereum/core/beacon"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 // EngineRPCClient represents a RPC client connecting to an Ethereum Engine RPC

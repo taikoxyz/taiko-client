@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
 	"github.com/taikochain/client-mono/bindings"
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/rlp"
 )
 
 func TestProposeInvalidTxListBytes(t *testing.T) {

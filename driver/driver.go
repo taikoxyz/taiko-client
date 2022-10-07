@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/client-mono/util"
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/event"
-	"github.com/taikochain/taiko-client/log"
 	"github.com/urfave/cli/v2"
 )
 

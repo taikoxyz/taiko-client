@@ -5,8 +5,8 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
-	"github.com/taikochain/taiko-client/common/hexutil"
-	"github.com/taikochain/taiko-client/log"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 const (

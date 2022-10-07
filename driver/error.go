@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/taikochain/taiko-client/common"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 var (

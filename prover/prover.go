@@ -9,16 +9,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/client-mono/bindings"
 	"github.com/taikochain/client-mono/prover/producer"
 	"github.com/taikochain/client-mono/rpc"
 	"github.com/taikochain/client-mono/util"
-	"github.com/taikochain/taiko-client/accounts/abi"
-	"github.com/taikochain/taiko-client/common"
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/ethclient"
-	"github.com/taikochain/taiko-client/event"
-	"github.com/taikochain/taiko-client/log"
 	"github.com/urfave/cli/v2"
 )
 

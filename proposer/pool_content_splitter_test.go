@@ -4,10 +4,10 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/common"
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/rlp"
 )
 
 func TestPoolContentSplit(t *testing.T) {

@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"net/http"
 
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/log"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 var (

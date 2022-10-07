@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/core/beacon"
 	"github.com/stretchr/testify/require"
 	"github.com/taikochain/client-mono/util"
-	"github.com/taikochain/taiko-client/core/beacon"
 )
 
 func TestDialEngineClient(t *testing.T) {

@@ -4,14 +4,14 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/common"
-	"github.com/taikochain/taiko-client/consensus/ethash"
-	"github.com/taikochain/taiko-client/core"
-	"github.com/taikochain/taiko-client/core/rawdb"
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/crypto"
-	"github.com/taikochain/taiko-client/params"
 )
 
 var (

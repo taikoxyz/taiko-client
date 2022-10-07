@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 	"github.com/taikochain/client-mono/util"
-	"github.com/taikochain/taiko-client/common"
 )
 
 func newTestDriver(t *testing.T) *Driver {

@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/client-mono/bindings"
 	"github.com/taikochain/client-mono/bindings/encoding"
 	"github.com/taikochain/client-mono/prover/producer"
 	"github.com/taikochain/client-mono/util"
-	"github.com/taikochain/taiko-client/core/types"
-	"github.com/taikochain/taiko-client/crypto"
-	"github.com/taikochain/taiko-client/log"
-	"github.com/taikochain/taiko-client/rlp"
 )
 
 // proveBlockInvalid tries to generate a ZK proof to prove the given

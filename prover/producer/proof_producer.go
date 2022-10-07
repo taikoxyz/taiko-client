@@ -3,7 +3,7 @@ package producer
 import (
 	"math/big"
 
-	"github.com/taikochain/taiko-client/core/types"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 // ProofRequestOptions contains all options that need to be passed to zkEVM rpcd service.

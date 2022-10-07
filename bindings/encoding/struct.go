@@ -3,9 +3,9 @@ package encoding
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikochain/client-mono/bindings"
-	"github.com/taikochain/taiko-client/common"
-	"github.com/taikochain/taiko-client/core/types"
 )
 
 type BlockHeader struct {

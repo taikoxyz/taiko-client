@@ -3,11 +3,11 @@ package main
 import (
 	"os"
 
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/client-mono/cmd/flags"
 	"github.com/taikochain/client-mono/driver"
 	"github.com/taikochain/client-mono/proposer"
 	"github.com/taikochain/client-mono/prover"
-	"github.com/taikochain/taiko-client/log"
 	"github.com/urfave/cli/v2"
 )
 

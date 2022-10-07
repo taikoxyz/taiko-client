@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/common/hexutil"
-	"github.com/taikochain/taiko-client/crypto"
 )
 
 func sig(r, s string, v byte) []byte {

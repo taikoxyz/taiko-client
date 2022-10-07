@@ -3,9 +3,9 @@ package prover
 import (
 	"crypto/ecdsa"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikochain/client-mono/cmd/flags"
-	"github.com/taikochain/taiko-client/common"
-	"github.com/taikochain/taiko-client/crypto"
 	"github.com/urfave/cli/v2"
 )
 
