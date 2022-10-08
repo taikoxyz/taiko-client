@@ -55,7 +55,7 @@ func NewState(ctx context.Context, rpc *RPCClient) (*State, error) {
 	}
 
 	log.Info(
-		"Taiko constants",
+		"Taiko protocol constants",
 		"anchorTxGasLimit", anchorTxGasLimit,
 		"maxTxlistBytes", maxTxlistBytes,
 		"maxBlockNumTxs", maxBlockNumTxs,

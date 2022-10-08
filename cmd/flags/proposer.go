@@ -9,7 +9,7 @@ import (
 var (
 	L1ProposerPrivKey = cli.StringFlag{
 		Name:     "l1.proposerPrivKey",
-		Usage:    "Private key for L1 proposer, who will send TaikoL1.proposeBlock transactions to the L1 node",
+		Usage:    "Private key of the L1 proposer, who will send TaikoL1.proposeBlock transactions to the L1 node",
 		Required: true,
 	}
 	L2SuggestedFeeRecipient = cli.StringFlag{

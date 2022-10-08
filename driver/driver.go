@@ -111,8 +111,6 @@ func (d *Driver) Close() {
 	if d.l1HeadSub != nil {
 		d.l1HeadSub.Unsubscribe()
 	}
-
-	log.Info("Driver stopped")
 }
 
 // eventLoop starts the main loop of L2 node's chain driver.

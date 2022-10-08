@@ -9,10 +9,10 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 echo ""
 echo "TAIKO_MONO_DIR: ${TAIKO_MONO_DIR}"
-echo "TAIKO_CLIENT_DIR: ${TAIKO_CLIENT_DIR}"
+echo "TAIKO_GETH_DIR: ${TAIKO_GETH_DIR}"
 echo ""
 
-cd ${TAIKO_CLIENT_DIR} &&
+cd ${TAIKO_GETH_DIR} &&
   make all &&
   cd -
 
@@ -21,7 +21,7 @@ cd ${TAIKO_MONO_DIR}/packages/protocol &&
   yarn compile &&
   cd -
 
-ABIGEN_BIN=$TAIKO_CLIENT_DIR/build/bin/abigen
+ABIGEN_BIN=$TAIKO_GETH_DIR/build/bin/abigen
 
 echo ""
 echo "Start generating go contract bindings..."
@@ -37,4 +37,4 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/artifacts/contracts/L2/V1TaikoL2.sol/V1T
 
 git -C ${TAIKO_MONO_DIR} log --format="%H" -n 1 >./bindings/.githead
 
-echo "Go contract bindings generated!"
+echo "🍻 Go contract bindings generated!"

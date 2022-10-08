@@ -11,15 +11,22 @@ lint:
 test:
 	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \
 	COMPILE_PROTOCOL=${COMPILE_PROTOCOL} \
+	RUN_TESTS=true \
+		./integration_test/entrypoint.sh
+
+dev-net:
+	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \
+	COMPILE_PROTOCOL=${COMPILE_PROTOCOL} \
 		./integration_test/entrypoint.sh
 
 gen_bindings:
 	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \
-	TAIKO_CLIENT_DIR=${TAIKO_CLIENT_DIR} \
+	TAIKO_GETH_DIR=${TAIKO_GETH_DIR} \
 		./script/gen_bindings.sh
 
 .PHONY: build \
 				clean \
 				lint \
 				test \
+				dev-net \
 				gen_bindings

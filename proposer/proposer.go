@@ -104,7 +104,7 @@ func New(ctx context.Context, cfg *Config) (*Proposer, error) {
 	}
 
 	p.l1ProposerAddress = crypto.PubkeyToAddress(p.l1ProposerPrivKey.PublicKey)
-	p.l2SuggestedFeeRecipient = common.HexToAddress(cfg.L2SuggestedFeeRecipien)
+	p.l2SuggestedFeeRecipient = common.HexToAddress(cfg.L2SuggestedFeeRecipient)
 
 	// Proposing configuration
 	if p.proposingInterval, err = time.ParseDuration(cfg.ProposeInterval); err != nil {

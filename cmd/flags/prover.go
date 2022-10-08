@@ -18,8 +18,8 @@ var (
 		Required: true,
 	}
 	L1ProverPrivKeyFlag = cli.StringFlag{
-		Name:     "l1ProverPrivKey",
-		Usage:    "Private key for L1 prover",
+		Name:     "l1.proverPrivKey",
+		Usage:    "Private key of L1 prover, who will send TaikoL1.proveBlock / TaikoL1.proveBlockInvalid transactions to the L1 node",
 		Required: true,
 	}
 )

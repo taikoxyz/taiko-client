@@ -241,7 +241,6 @@ func (p *Prover) Close() {
 
 	p.blockFinalizedSub.Unsubscribe()
 	p.blockProposedSub.Unsubscribe()
-	log.Info("Prover stopped")
 }
 
 // onBlockProposed tries to prove that the newly proposed block is valid/invalid.

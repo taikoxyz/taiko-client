@@ -12,13 +12,13 @@ const (
 
 // Config contains all configurations to initialize a Taiko proposer.
 type Config struct {
-	L1Node                 string
-	L2Node                 string
-	TaikoL1Address         string
-	TaikoL2Address         string
-	L1ProposerPrivKey      string
-	L2SuggestedFeeRecipien string
-	ProposeInterval        string
+	L1Node                  string
+	L2Node                  string
+	TaikoL1Address          string
+	TaikoL2Address          string
+	L1ProposerPrivKey       string
+	L2SuggestedFeeRecipient string
+	ProposeInterval         string
 
 	// Only for testing
 	ProduceInvalidBlocks         bool
@@ -46,7 +46,7 @@ func NewConfigFromCliContext(ctx *cli.Context) (*Config, error) {
 		cfg.L1ProposerPrivKey = ctx.String(flags.L1ProposerPrivKey.Name)
 	}
 	if ctx.IsSet(flags.L2SuggestedFeeRecipient.Name) {
-		cfg.L2SuggestedFeeRecipien = ctx.String(flags.L2SuggestedFeeRecipient.Name)
+		cfg.L2SuggestedFeeRecipient = ctx.String(flags.L2SuggestedFeeRecipient.Name)
 	}
 	if ctx.IsSet(flags.ProposeInterval.Name) {
 		cfg.ProposeInterval = ctx.String(flags.ProposeInterval.Name)
