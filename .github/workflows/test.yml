@@ -10,13 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TK_REPO_ACCESS: ${{ secrets.TK_REPO_ACCESS }}
-      CLIENT_DIR: client-mono
+      CLIENT_DIR: taiko-client
       TAIKO_MONO_DIR: taiko-mono
 
     steps:
       - uses: actions/checkout@v3
         with:
-          repository: taikochain/client-mono
+          repository: taikochain/taiko-client
           token: ${{ secrets.TK_REPO_ACCESS }}
           path: ${{ env.CLIENT_DIR }}
 
