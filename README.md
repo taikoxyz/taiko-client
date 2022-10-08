@@ -1,3 +1,5 @@
-# client-mono
+# taiko-client
 
-[![CI checks](https://github.com/taikochain/client-mono/actions/workflows/test.yaml/badge.svg)](https://github.com/taikochain/client-mono/actions/workflows/test.yaml)
+[![CI checks](https://github.com/taikochain/taiko-client/actions/workflows/test.yml/badge.svg)](https://github.com/taikochain/taiko-client/actions/workflows/test.yml)
+
+Taiko client softwares implementations in Golang.
