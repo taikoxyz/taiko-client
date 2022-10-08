@@ -13,8 +13,9 @@ var (
 		Required: true,
 	}
 	ThrowawayBlocksBuilderPrivKey = cli.StringFlag{
-		Name:     "l2.throwawayBlockBuilderPrivKey",
-		Usage:    "Private key of the L2 throwaway blocks builder, who will be the suggested fee recipient of L2 throwaway blocks",
+		Name: "l2.throwawayBlockBuilderPrivKey",
+		Usage: "Private key of the L2 throwaway blocks builder," +
+			"who will be the suggested fee recipient of L2 throwaway blocks",
 		Required: true,
 	}
 	JWTSecret = cli.StringFlag{
