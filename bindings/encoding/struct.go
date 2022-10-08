@@ -5,7 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/taikochain/client-mono/bindings"
+	"github.com/taikochain/taiko-client/bindings"
 )
 
 type BlockHeader struct {

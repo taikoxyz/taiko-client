@@ -8,7 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/client-mono/util"
+	"github.com/taikochain/taiko-client/util"
 )
 
 func newTestDriver(t *testing.T) *Driver {

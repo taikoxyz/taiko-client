@@ -37,4 +37,4 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            gcr.io/evmchain/client-mono:latest
+            gcr.io/evmchain/taiko-client:latest

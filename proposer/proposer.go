@@ -13,10 +13,10 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/taikochain/client-mono/bindings"
-	"github.com/taikochain/client-mono/bindings/encoding"
-	"github.com/taikochain/client-mono/rpc"
-	"github.com/taikochain/client-mono/util"
+	"github.com/taikochain/taiko-client/bindings"
+	"github.com/taikochain/taiko-client/bindings/encoding"
+	"github.com/taikochain/taiko-client/rpc"
+	"github.com/taikochain/taiko-client/util"
 	"github.com/urfave/cli/v2"
 )
 

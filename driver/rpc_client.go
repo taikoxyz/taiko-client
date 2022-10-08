@@ -11,8 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
 	gethRPC "github.com/ethereum/go-ethereum/rpc"
-	"github.com/taikochain/client-mono/bindings"
-	"github.com/taikochain/client-mono/rpc"
+	"github.com/taikochain/taiko-client/bindings"
+	"github.com/taikochain/taiko-client/rpc"
 )
 
 // RPCClient contains all L1/L2 RPC clients that a driver needs.

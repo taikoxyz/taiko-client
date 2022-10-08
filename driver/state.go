@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikochain/client-mono/bindings"
+	"github.com/taikochain/taiko-client/bindings"
 	"golang.org/x/sync/errgroup"
 )
 

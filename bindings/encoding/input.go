@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/taikochain/client-mono/bindings"
+	"github.com/taikochain/taiko-client/bindings"
 )
 
 // ABI arguments marshaling components

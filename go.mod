@@ -1,4 +1,4 @@
-module github.com/taikochain/client-mono
+module github.com/taikochain/taiko-client
 
 go 1.18
 

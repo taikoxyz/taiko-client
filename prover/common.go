@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
-	"github.com/taikochain/client-mono/bindings"
+	"github.com/taikochain/taiko-client/bindings"
 )
 
 const (

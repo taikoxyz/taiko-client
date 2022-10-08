@@ -19,7 +19,7 @@ fi
 
 echo "Starting testnet..."
 
-docker compose -f $TESTNET_CONFIG down &>/dev/null
+docker compose -f $TESTNET_CONFIG down --remove-orphans &>/dev/null
 docker compose -f $TESTNET_CONFIG up -d
 
 if [ "$COMPILE_PROTOCOL" == "true" ]; then
@@ -39,6 +39,9 @@ curl \
     -H "Content-Type: application/json" \
     -d '{"jsonrpc":"2.0","id":0,"method":"hardhat_setBalance","params":["0xDf08F82De32B8d460adbE8D72043E3a7e25A3B39", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"]}' \
     localhost:18545
+
+echo ""
+echo "Premint ETHs to the contracts deployer"
 
 rm -rf $DIR/deployments/genesis_alloc.json
 
@@ -78,3 +81,6 @@ curl \
     -H "Content-Type: application/json" \
     -d '{"jsonrpc":"2.0","id":0,"method":"evm_setIntervalMining","params":[1000]}' \
     localhost:18545
+
+echo ""
+echo "Set mining interval to 1 second"

@@ -1,7 +1,7 @@
 package proposer
 
 import (
-	"github.com/taikochain/client-mono/cmd/flags"
+	"github.com/taikochain/taiko-client/cmd/flags"
 	"github.com/urfave/cli/v2"
 )
 

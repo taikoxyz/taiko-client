@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/taikochain/client-mono/driver/crypto"
+	"github.com/taikochain/taiko-client/driver/crypto"
 )
 
 // Address of the Taiko gold finger account.

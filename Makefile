@@ -1,5 +1,5 @@
 build:
-	@go build -o bin/client-mono cmd/main.go
+	@go build -o bin/taiko-client cmd/main.go
 
 clean:
 	@rm -rf bin/*

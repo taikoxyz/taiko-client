@@ -4,10 +4,10 @@ import (
 	"os"
 
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikochain/client-mono/cmd/flags"
-	"github.com/taikochain/client-mono/driver"
-	"github.com/taikochain/client-mono/proposer"
-	"github.com/taikochain/client-mono/prover"
+	"github.com/taikochain/taiko-client/cmd/flags"
+	"github.com/taikochain/taiko-client/driver"
+	"github.com/taikochain/taiko-client/proposer"
+	"github.com/taikochain/taiko-client/prover"
 	"github.com/urfave/cli/v2"
 )
 

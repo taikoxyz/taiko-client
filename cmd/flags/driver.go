@@ -1,7 +1,7 @@
 package flags
 
 import (
-	"github.com/taikochain/client-mono/util"
+	"github.com/taikochain/taiko-client/util"
 	"github.com/urfave/cli/v2"
 )
 
