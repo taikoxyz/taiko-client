@@ -23,7 +23,7 @@ func (n *proofList) Delete(key []byte) error {
 
 // generateTrieProof generates a merkle proof of the i'th item in a MPT of given
 // elements.
-func generateTrieProof[T types.DerivableList](list T, i uint64) (common.Hash, []byte, error) {
+func generateTrieProof(list types.DerivableList, i uint64) (common.Hash, []byte, error) {
 	trie := trie.NewEmpty(trie.NewDatabase(nil))
 
 	types.DeriveSha(list, trie)
