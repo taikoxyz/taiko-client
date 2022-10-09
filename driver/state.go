@@ -38,6 +38,8 @@ type State struct {
 	minTxGasLimit     *big.Int
 
 	rpc *rpc.Client // L1/L2 RPC clients
+
+	ctx context.Context
 }
 
 // NewState creates a new driver state instance.
@@ -75,6 +77,7 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 		l2HeadBlockID:       new(atomic.Value),
 		l2FinalizedHeadHash: new(atomic.Value),
 		L1Current:           latestL2KnownL1Header,
+		ctx:                 ctx,
 	}
 
 	if err := s.initSubscriptions(ctx); err != nil {
@@ -126,7 +129,7 @@ func (s *State) ConfirmL1Current(ctx context.Context) (*types.Header, error) {
 
 // initSubscriptions initializes all subscriptions in the given state instance.
 func (s *State) initSubscriptions(ctx context.Context) error {
-	g, ctx := errgroup.WithContext(ctx)
+	g := new(errgroup.Group)
 
 	g.Go(func() error { return s.subL1Head(ctx) })
 	g.Go(func() error { return s.subBlockFinalized(ctx) })
@@ -185,6 +188,8 @@ func (s *State) watchL1Head(ctx context.Context) (event.Subscription, error) {
 				s.l1HeadsFeed.Send(newHead)
 			case err := <-sub.Err():
 				return err
+			case <-s.ctx.Done():
+				return nil
 			case <-quitCh:
 				return nil
 			}
@@ -271,6 +276,8 @@ func (s *State) watchBlockFinalized(ctx context.Context) (ethereum.Subscription,
 				s.setLastFinalizedBlockHash(e.BlockHash)
 			case err := <-sub.Err():
 				return err
+			case <-s.ctx.Done():
+				return nil
 			case <-quit:
 				return nil
 			}
@@ -340,6 +347,8 @@ func (s *State) watchBlockProposed(ctx context.Context) (ethereum.Subscription, 
 				s.setHeadBlockID(e.Id)
 			case err := <-sub.Err():
 				return err
+			case <-s.ctx.Done():
+				return nil
 			case <-quit:
 				return nil
 			}

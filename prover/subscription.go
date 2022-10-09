@@ -62,6 +62,8 @@ func (p *Prover) watchBlockFinalized(ctx context.Context) (event.Subscription, e
 			select {
 			case err := <-sub.Err():
 				return err
+			case <-p.ctx.Done():
+				return nil
 			case <-quit:
 				return nil
 			}
@@ -83,6 +85,8 @@ func (p *Prover) watchBlockProposed(ctx context.Context) (event.Subscription, er
 			select {
 			case err := <-sub.Err():
 				return err
+			case <-p.ctx.Done():
+				return nil
 			case <-quit:
 				return nil
 			}
