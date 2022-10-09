@@ -16,27 +16,9 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/bindings"
 	"github.com/taikochain/taiko-client/bindings/encoding"
-	"github.com/taikochain/taiko-client/cmd/utils"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
-
-// Action returns the main function that the subcommand should run.
-func Action() cli.ActionFunc {
-	return func(ctx *cli.Context) error {
-		cfg, err := NewConfigFromCliContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		proposer, err := New(cfg)
-		if err != nil {
-			return err
-		}
-
-		return utils.RunSubcommand(proposer)
-	}
-}
 
 // Proposer keep proposing new transactions from L2 node's tx pool at a fixed interval.
 type Proposer struct {
@@ -63,19 +45,24 @@ type Proposer struct {
 	wg    sync.WaitGroup
 }
 
-// New initializes a new proposer instance based on the given configurations.
-func New(cfg *Config) (*Proposer, error) {
-	var err error
-
-	p := &Proposer{
-		l1ProposerPrivKey:       cfg.L1ProposerPrivKey,
-		l2SuggestedFeeRecipient: cfg.L2SuggestedFeeRecipient,
-		proposingInterval:       cfg.ProposeInterval,
-		wg:                      sync.WaitGroup{},
-		// Configurations for testing
-		produceInvalidBlocks:         cfg.ProduceInvalidBlocks,
-		produceInvalidBlocksInterval: cfg.ProduceInvalidBlocksInterval,
+// New initializes the given proposer instance based on the command line flags.
+func (p *Proposer) InitFromCli(c *cli.Context) error {
+	cfg, err := NewConfigFromCliContext(c)
+	if err != nil {
+		return err
 	}
+
+	return initFromConfig(p, cfg)
+}
+
+// initFromConfig initializes the proposer instance based on the given configurations.
+func initFromConfig(p *Proposer, cfg *Config) (err error) {
+	log.Info("Proposer configurations", "config", cfg)
+
+	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
+	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
+	p.proposingInterval = cfg.ProposeInterval
+	p.wg = sync.WaitGroup{}
 
 	p.ctx, p.close = context.WithCancel(context.Background())
 
@@ -86,7 +73,7 @@ func New(cfg *Config) (*Proposer, error) {
 		TaikoL1Address: cfg.TaikoL1Address,
 		TaikoL2Address: cfg.TaikoL2Address,
 	}); err != nil {
-		return nil, fmt.Errorf("initialize rpc clients error: %w", err)
+		return fmt.Errorf("initialize rpc clients error: %w", err)
 	}
 
 	// Protocol constants
@@ -94,7 +81,7 @@ func New(cfg *Config) (*Proposer, error) {
 		maxGasPerBlock, maxTxPerBlock, _, maxTxBytesPerBlock, minTxGasLimit,
 		_, _, _, err := p.rpc.TaikoL1.GetConstants(nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get TaikoL1 constants: %w", err)
+		return fmt.Errorf("failed to get TaikoL1 constants: %w", err)
 	}
 
 	log.Info(
@@ -114,7 +101,11 @@ func New(cfg *Config) (*Proposer, error) {
 		minTxGasLimit:      minTxGasLimit.Uint64(),
 	}
 
-	return p, nil
+	// Configurations for testing
+	p.produceInvalidBlocks = cfg.ProduceInvalidBlocks
+	p.produceInvalidBlocksInterval = cfg.ProduceInvalidBlocksInterval
+
+	return nil
 }
 
 // Start starts the proposer's main loop.

@@ -26,14 +26,15 @@ func newTestDriver(t *testing.T) *Driver {
 	require.Nil(t, err)
 	require.NotEmpty(t, jwtSecret)
 
-	d, err := New(&Config{
+	d := new(Driver)
+
+	require.Nil(t, initFromConfig(d, &Config{
 		L1Endpoint:       os.Getenv("L1_NODE_ENDPOINT"),
 		L2Endpoint:       os.Getenv("L2_NODE_ENDPOINT"),
 		L2EngineEndpoint: os.Getenv("L2_NODE_ENGINE_ENDPOINT"),
 		TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		JwtSecret:        string(jwtSecret),
-	})
-	require.Nil(t, err)
+	}))
 
 	return d
 }

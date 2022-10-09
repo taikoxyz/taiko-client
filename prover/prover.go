@@ -16,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/bindings"
-	"github.com/taikochain/taiko-client/cmd/utils"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 	"github.com/taikochain/taiko-client/prover/producer"
 	"github.com/urfave/cli/v2"
@@ -30,23 +29,6 @@ var (
 	// TODO: tune this value
 	proveBlocksGasLimit uint64 = 1000000
 )
-
-// Action returns the main function that the subcommand should run.
-func Action() cli.ActionFunc {
-	return func(ctx *cli.Context) error {
-		cfg, err := NewConfigFromCliContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		prover, err := New(cfg)
-		if err != nil {
-			return err
-		}
-
-		return utils.RunSubcommand(prover)
-	}
-}
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
 type Prover struct {
@@ -86,12 +68,21 @@ type Prover struct {
 	blockProposedEventsBuffer []*bindings.TaikoL1ClientBlockProposed
 }
 
-// New initializes a new prover instance based on the given configurations.
-func New(cfg *Config) (*Prover, error) {
-	log.Info("Prover configurations", "config", cfg)
-	var err error
+// New initializes the given prover instance based on the command line flags.
+func (p *Prover) InitFromCli(c *cli.Context) error {
+	cfg, err := NewConfigFromCliContext(c)
+	if err != nil {
+		return err
+	}
 
-	p := &Prover{cfg: cfg}
+	return initFromConfig(p, cfg)
+}
+
+// initFromConfig initializes the prover instance based on the given configurations.
+func initFromConfig(p *Prover, cfg *Config) (err error) {
+	log.Info("Prover configurations", "config", cfg)
+
+	p.cfg = cfg
 	p.ctx, p.close = context.WithCancel(context.Background())
 
 	// Clients
@@ -101,15 +92,15 @@ func New(cfg *Config) (*Prover, error) {
 		TaikoL1Address: cfg.TaikoL1Address,
 		TaikoL2Address: cfg.TaikoL2Address,
 	}); err != nil {
-		return nil, err
+		return err
 	}
 
 	if p.taikoL1Abi, err = bindings.TaikoL1ClientMetaData.GetAbi(); err != nil {
-		return nil, err
+		return err
 	}
 
 	if p.taikoL2Abi, err = bindings.V1TaikoL2ClientMetaData.GetAbi(); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Constants
@@ -117,7 +108,7 @@ func New(cfg *Config) (*Prover, error) {
 		maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit,
 		anchorGasLimit, _, _, err := p.rpc.TaikoL1.GetConstants(nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	log.Info(
@@ -149,11 +140,11 @@ func New(cfg *Config) (*Prover, error) {
 		p.proofProducer = new(producer.DummyProofProducer)
 	} else {
 		if p.proofProducer, err = producer.NewZkevmRpcdProducer(cfg.ZKEvmRpcdEndpoint); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return p, nil
+	return nil
 }
 
 // Start starts the main loop of the L2 block prover.

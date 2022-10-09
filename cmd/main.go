@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/cmd/flags"
+	"github.com/taikochain/taiko-client/cmd/utils"
 	"github.com/taikochain/taiko-client/driver"
 	"github.com/taikochain/taiko-client/proposer"
 	"github.com/taikochain/taiko-client/prover"
@@ -31,19 +32,19 @@ func main() {
 			Name:        "driver",
 			Flags:       flags.DriverFlags,
 			Description: "Taiko Driver software",
-			Action:      driver.Action(),
+			Action:      utils.SubcommandAction(new(driver.Driver)),
 		},
 		{
 			Name:        "proposer",
 			Flags:       flags.ProposerFlags,
 			Description: "Taiko Proposer software",
-			Action:      proposer.Action(),
+			Action:      utils.SubcommandAction(new(proposer.Proposer)),
 		},
 		{
 			Name:        "prover",
 			Flags:       flags.ProverFlags,
 			Description: "Taiko Prover software",
-			Action:      prover.Action(),
+			Action:      utils.SubcommandAction(new(prover.Prover)),
 		},
 	}
 

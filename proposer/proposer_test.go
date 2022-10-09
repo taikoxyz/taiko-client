@@ -25,7 +25,9 @@ func newTestProposer(t *testing.T) *Proposer {
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	require.Nil(t, err)
 
-	proposer, err := New(&Config{
+	p := new(Proposer)
+
+	require.Nil(t, initFromConfig(p, (&Config{
 		L1Endpoint:              os.Getenv("L1_NODE_ENDPOINT"),
 		L2Endpoint:              os.Getenv("L2_NODE_ENDPOINT"),
 		TaikoL1Address:          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
@@ -33,8 +35,7 @@ func newTestProposer(t *testing.T) *Proposer {
 		L1ProposerPrivKey:       l1ProposerPrivKey,
 		L2SuggestedFeeRecipient: common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:         1024 * time.Hour, // No need to periodically propose transactions list in unit tests
-	})
-	require.Nil(t, err)
+	})))
 
-	return proposer
+	return p
 }

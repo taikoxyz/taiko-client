@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikochain/taiko-client/cmd/utils"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
@@ -37,33 +36,23 @@ type Driver struct {
 	wg    sync.WaitGroup
 }
 
-// Action returns the main function that the subcommand should run.
-func Action() cli.ActionFunc {
-	return func(ctx *cli.Context) error {
-		cfg, err := NewConfigFromCliContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		driver, err := New(cfg)
-		if err != nil {
-			return err
-		}
-
-		return utils.RunSubcommand(driver)
+// New initializes the given driver instance based on the command line flags.
+func (d *Driver) InitFromCli(c *cli.Context) error {
+	cfg, err := NewConfigFromCliContext(c)
+	if err != nil {
+		return err
 	}
+
+	return initFromConfig(d, cfg)
 }
 
-// New initializes a new driver instance based on the given configurations.
-func New(cfg *Config) (*Driver, error) {
-	var err error
+// initFromConfig initializes the driver instance based on the given configurations.
+func initFromConfig(d *Driver, cfg *Config) (err error) {
+	log.Info("Driver configurations", "config", cfg)
 
-	d := &Driver{
-		l1HeadCh:   make(chan *types.Header, 1024),
-		wg:         sync.WaitGroup{},
-		syncNotify: make(chan struct{}, 1),
-	}
-
+	d.l1HeadCh = make(chan *types.Header, 1024)
+	d.wg = sync.WaitGroup{}
+	d.syncNotify = make(chan struct{}, 1)
 	d.ctx, d.close = context.WithCancel(context.Background())
 
 	if d.rpc, err = rpc.NewClient(d.ctx, &rpc.ClientConfig{
@@ -74,11 +63,11 @@ func New(cfg *Config) (*Driver, error) {
 		L2EngineEndpoint: cfg.L2EngineEndpoint,
 		JwtSecret:        cfg.JwtSecret,
 	}); err != nil {
-		return nil, err
+		return err
 	}
 
 	if d.state, err = NewState(d.ctx, d.rpc); err != nil {
-		return nil, err
+		return err
 	}
 
 	if d.l2ChainInserter, err = NewL2ChainInserter(
@@ -87,12 +76,12 @@ func New(cfg *Config) (*Driver, error) {
 		d.state,
 		cfg.ThrowawayBlocksBuilderPrivKey,
 	); err != nil {
-		return nil, err
+		return err
 	}
 
 	d.l1HeadSub = d.state.SubL1HeadsFeed(d.l1HeadCh)
 
-	return d, nil
+	return nil
 }
 
 // Start starts the driver instance.
