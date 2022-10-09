@@ -122,7 +122,7 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 		}
 
 		// Fetch the L2 parent block.
-		parent, err := b.rpc.ParentByBlockId(ctx, event.Id)
+		parent, err := b.rpc.L2ParentByBlockId(ctx, event.Id)
 		if err != nil {
 			return fmt.Errorf("failed to fetch L2 parent block: %w", err)
 		}

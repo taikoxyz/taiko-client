@@ -15,7 +15,7 @@ import (
 // proveBlockValid tries to generate a ZK proof to prove the given
 // block is valid.
 func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
-	l1Origin, err := p.waitForL1Origin(ctx, event.Id)
+	l1Origin, err := p.rpc.WaitL1Origin(ctx, event.Id)
 	if err != nil {
 		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.Id, err)
 	}
@@ -53,12 +53,12 @@ func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader
 		zkProof = proofWithHeader.ZkProof
 	)
 
-	meta, err := p.getBlockMetadataByID(blockID)
+	meta, err := p.rpc.GetBlockMetadataByID(blockID)
 	if err != nil {
 		return fmt.Errorf("failed to fetch L2 block with given block ID %s: %w", blockID, err)
 	}
 
-	txOpts, err := p.getProveBlockTxOpts(p.ctx)
+	txOpts, err := p.getProveBlocksTxOpts(p.ctx)
 	if err != nil {
 		return err
 	}

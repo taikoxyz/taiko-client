@@ -12,9 +12,9 @@ import (
 	"github.com/neilotoole/errgroup"
 )
 
-// WaitNConfirmations won't return before N blocks confirmations have been seen
+// WaitConfirmations won't return before N blocks confirmations have been seen
 // on destination chain.
-func WaitNConfirmations(ctx context.Context, client *ethclient.Client, confirmations uint64, begin uint64) error {
+func WaitConfirmations(ctx context.Context, client *ethclient.Client, confirmations uint64, begin uint64) error {
 	for {
 		if deadline, ok := ctx.Deadline(); ok {
 			if time.Now().After(deadline) {
@@ -63,7 +63,7 @@ func WaitForTx(ctx context.Context, client *ethclient.Client, tx *types.Transact
 }
 
 // GetReceiptsByBlock fetches all transaction receipts in a block.
-// TODO: fetch all receipts in one GraphQL call.
+// TODO: fetch all receipts in one GraphQL call?
 func GetReceiptsByBlock(ctx context.Context, cli *ethclient.Client, block *types.Block) (types.Receipts, error) {
 	g, ctx := errgroup.WithContext(ctx)
 

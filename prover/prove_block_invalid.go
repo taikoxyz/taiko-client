@@ -66,7 +66,7 @@ func (p *Prover) submitInvalidBlockProof(
 	log.Info("Throwaway block", "header", block.Header())
 
 	// Fetch the invalid block metadata
-	targetMeta, err := p.getBlockMetadataByID(blockID)
+	targetMeta, err := p.rpc.GetBlockMetadataByID(blockID)
 	if err != nil {
 		return fmt.Errorf("failed to fetch L2 block with given block ID %s: %w", blockID, err)
 	}
@@ -115,7 +115,7 @@ func (p *Prover) submitInvalidBlockProof(
 		return err
 	}
 
-	txOpts, err := p.getProveBlockTxOpts(p.ctx)
+	txOpts, err := p.getProveBlocksTxOpts(p.ctx)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (p *Prover) getThrowAwayBlock(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 ) (*types.Block, error) {
-	l1Origin, err := p.waitForL1Origin(ctx, event.Id)
+	l1Origin, err := p.rpc.WaitL1Origin(ctx, event.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.Id, err)
 	}

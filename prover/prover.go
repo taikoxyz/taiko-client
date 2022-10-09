@@ -26,6 +26,9 @@ var (
 	// errInvalidProposeBlockTx is returned when the given `proposeBlock`
 	// transaction is invalid.
 	errInvalidProposeBlockTx = errors.New("invalid propose block transaction")
+	// Gas limit of TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
+	// TODO: tune this value
+	proveBlocksGasLimit uint64 = 1000000
 )
 
 // Action returns the main function that the subcommand should run.
@@ -367,4 +370,22 @@ func (p *Prover) batchHandleBlockProposedEvents(
 // Name returns the application name.
 func (p *Prover) Name() string {
 	return "prover"
+}
+
+// getProveBlocksTxOpts creates a bind.TransactOpts instance with the sender's signatures
+// for TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
+func (p *Prover) getProveBlocksTxOpts(ctx context.Context) (*bind.TransactOpts, error) {
+	networkID, err := p.rpc.L1.ChainID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	opts, err := bind.NewKeyedTransactorWithChainID(p.cfg.L1ProverPrivKey, networkID)
+	if err != nil {
+		return nil, err
+	}
+
+	opts.GasLimit = proveBlocksGasLimit
+
+	return opts, nil
 }

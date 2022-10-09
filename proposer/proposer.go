@@ -219,7 +219,7 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 		"confirmations", p.commitDelayConfirmations,
 	)
 
-	if err := rpc.WaitNConfirmations(
+	if err := rpc.WaitConfirmations(
 		ctx, p.rpc.L1, p.commitDelayConfirmations, commitHeight.Uint64(),
 	); err != nil {
 		return fmt.Errorf("wait L1 blocks confirmations error, commitHash %s: %w", commitHash, err)

@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikochain/taiko-client/bindings"
 )
 
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
@@ -87,9 +90,9 @@ func (c *Client) GetGenesisL1Header(ctx context.Context) (*types.Header, error) 
 	return c.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(genesisHeight))
 }
 
-// ParentByBlockId fetches the block header from L2 node with the largest block id that
+// L2ParentByBlockId fetches the block header from L2 node with the largest block id that
 // smaller than the given `blockId`.
-func (c *Client) ParentByBlockId(ctx context.Context, blockID *big.Int) (*types.Header, error) {
+func (c *Client) L2ParentByBlockId(ctx context.Context, blockID *big.Int) (*types.Header, error) {
 	parentBlockId := new(big.Int).Sub(blockID, common.Big1)
 
 	log.Info("Get parent block by block ID", "parentBlockId", parentBlockId)
@@ -111,4 +114,51 @@ func (c *Client) ParentByBlockId(ctx context.Context, blockID *big.Int) (*types.
 	}
 
 	return c.L2.HeaderByNumber(ctx, common.Big0)
+}
+
+// GetBlockMetadataByID fetches the L2 block metadata with given block ID.
+// TODO: add start height and end height in filter options.
+func (c *Client) GetBlockMetadataByID(blockID *big.Int) (*bindings.LibDataBlockMetadata, error) {
+	iter, err := c.TaikoL1.FilterBlockProposed(nil, []*big.Int{blockID})
+	if err != nil {
+		return nil, err
+	}
+
+	for iter.Next() {
+		return &iter.Event.Meta, nil
+	}
+
+	return nil, fmt.Errorf("block metadata not found, id: %d", blockID)
+}
+
+func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1Origin, error) {
+	var (
+		l1Origin *rawdb.L1Origin
+		err      error
+	)
+
+	ticker := time.NewTicker(time.Second)
+	timeout := time.After(time.Minute)
+	defer ticker.Stop()
+
+	log.Info("Start fetching L1Origin from L2 node", "blockID", blockID)
+
+	for {
+		select {
+		case <-timeout:
+			return nil, fmt.Errorf("fetch L1Origin timeout")
+		case <-ticker.C:
+			l1Origin, err = c.L2.L1OriginByID(ctx, blockID)
+			if err != nil {
+				log.Warn("Failed to fetch L1Origin from L2 node", "blockID", blockID, "error", err)
+				continue
+			}
+
+			if l1Origin == nil {
+				continue
+			}
+
+			return l1Origin, nil
+		}
+	}
 }
