@@ -18,7 +18,6 @@ import (
 // block is invalid.
 func (p *Prover) proveBlockInvalid(
 	ctx context.Context,
-	txListBytes []byte,
 	event *bindings.TaikoL1ClientBlockProposed,
 	hint InvalidTxListReason,
 	invalidTxIndex int,

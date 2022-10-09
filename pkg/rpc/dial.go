@@ -31,8 +31,8 @@ func DialClientWithBackoff(ctx context.Context, url string) (*ethclient.Client, 
 
 // DialEngineClientWithBackoff connects an ethereum engine RPC client at the
 // given URL with a backoff strategy.
-func DialEngineClientWithBackoff(ctx context.Context, url string, jwtSecret string) (*EngineRPCClient, error) {
-	var engineClient *EngineRPCClient
+func DialEngineClientWithBackoff(ctx context.Context, url string, jwtSecret string) (*EngineClient, error) {
+	var engineClient *EngineClient
 	if err := backoff.Retry(
 		func() (err error) {
 			client, err := DialEngineClient(ctx, url, jwtSecret)
@@ -40,7 +40,7 @@ func DialEngineClientWithBackoff(ctx context.Context, url string, jwtSecret stri
 				return err
 			}
 
-			engineClient = &EngineRPCClient{client}
+			engineClient = &EngineClient{client}
 			return nil
 		},
 		backoff.NewExponentialBackOff(),

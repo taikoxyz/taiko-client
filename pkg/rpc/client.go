@@ -16,8 +16,8 @@ type Client struct {
 	L2 *ethclient.Client
 	// Geth raw RPC clients
 	L2RawRPC *rpc.Client
-	// geth engine RPC clients
-	L2Engine *EngineRPCClient
+	// Geth Engine API clients
+	L2Engine *EngineClient
 	// Protocol contracts clients
 	TaikoL1 *bindings.TaikoL1Client
 	TaikoL2 *bindings.V1TaikoL2Client
@@ -62,7 +62,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	var l2AuthRPC *EngineRPCClient
+	var l2AuthRPC *EngineClient
 	if len(cfg.L2EngineEndpoint) != 0 && len(cfg.JwtSecret) != 0 {
 		l2AuthRPC, err = DialEngineClientWithBackoff(
 			ctx,

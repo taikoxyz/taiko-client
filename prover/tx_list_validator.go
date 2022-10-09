@@ -1,12 +1,14 @@
 package prover
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/taikochain/taiko-client/bindings"
 )
 
 // InvalidTxListReason represents a reason why a transactions list is invalid,
@@ -34,11 +36,32 @@ const (
 	HintTxGasLimitTooSmall
 )
 
+type TxListValidator struct {
+	maxBlocksGasLimit uint64
+	maxBlockNumTxs    uint64
+	maxTxlistBytes    uint64
+	minTxGasLimit     uint64
+	chainID           *big.Int
+}
+
+func (v *TxListValidator) ValidateTxList(
+	blockID *big.Int,
+	proposeBlockTxInput []byte,
+) (hint InvalidTxListReason, txIdx int, err error) {
+	txListBytes, err := v.unpackTxListBytes(proposeBlockTxInput)
+	if err != nil {
+		return HintBinaryNotDecodable, 0, fmt.Errorf("failed to unpack raw transactions list bytes: %w", err)
+	}
+
+	hint, txIdx = v.isTxListValid(blockID, txListBytes)
+	return hint, txIdx, nil
+}
+
 // isTxListValid checks whether the transaction list is valid, must match
 // the validation rule defined in LibInvalidTxList.sol.
 // ref: https://github.com/taikochain/taiko-mono/blob/main/packages/bindings/contracts/libs/LibInvalidTxList.sol
-func (p *Prover) isTxListValid(blockID *big.Int, txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
-	if len(txListBytes) > int(p.maxTxlistBytes) {
+func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
+	if len(txListBytes) > int(v.maxTxlistBytes) {
 		log.Warn("Transactions list binary too large, length: %s", len(txListBytes), "blockID", blockID)
 		return HintBinaryTooLarge, 0
 	}
@@ -51,7 +74,7 @@ func (p *Prover) isTxListValid(blockID *big.Int, txListBytes []byte) (hint Inval
 
 	log.Info("Transactions list decoded", "blockID", blockID, "length", len(txs))
 
-	if txs.Len() > int(p.maxBlockNumTxs) {
+	if txs.Len() > int(v.maxBlockNumTxs) {
 		log.Warn("Too many transactions", "blockID", blockID, "count", txs.Len())
 		return HintBlockTooManyTxs, 0
 	}
@@ -61,12 +84,12 @@ func (p *Prover) isTxListValid(blockID *big.Int, txListBytes []byte) (hint Inval
 		sumGasLimit += tx.Gas()
 	}
 
-	if sumGasLimit > p.maxBlocksGasLimit {
+	if sumGasLimit > v.maxBlocksGasLimit {
 		log.Warn("Accumulate gas limit too large", "blockID", blockID, "sumGasLimit", sumGasLimit)
 		return HintBlockGasLimitTooLarge, 0
 	}
 
-	signer := types.LatestSignerForChainID(p.chainID)
+	signer := types.LatestSignerForChainID(v.chainID)
 
 	for i, tx := range txs {
 		sender, err := types.Sender(signer, tx)
@@ -75,7 +98,7 @@ func (p *Prover) isTxListValid(blockID *big.Int, txListBytes []byte) (hint Inval
 			return HintTxInvalidSig, i
 		}
 
-		if tx.Gas() < p.minTxGasLimit {
+		if tx.Gas() < v.minTxGasLimit {
 			log.Warn("Transaction gas limit too small", "gasLimit", tx.Gas())
 			return HintTxGasLimitTooSmall, i
 		}
@@ -86,8 +109,13 @@ func (p *Prover) isTxListValid(blockID *big.Int, txListBytes []byte) (hint Inval
 }
 
 // unpackTxListBytes unpacks the L2 transaction list from a L1 block's calldata.
-func (p *Prover) unpackTxListBytes(tx *types.Transaction) ([]byte, error) {
-	method, err := p.taikoL1Abi.MethodById(tx.Data())
+func (v *TxListValidator) unpackTxListBytes(data []byte) ([]byte, error) {
+	taikoL1Abi, err := bindings.TaikoL1ClientMetaData.GetAbi()
+	if err != nil {
+		return nil, err
+	}
+
+	method, err := taikoL1Abi.MethodById(data)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +127,7 @@ func (p *Prover) unpackTxListBytes(tx *types.Transaction) ([]byte, error) {
 
 	args := map[string]interface{}{}
 
-	if err := method.Inputs.UnpackIntoMap(args, tx.Data()[4:]); err != nil {
+	if err := method.Inputs.UnpackIntoMap(args, data[4:]); err != nil {
 		return nil, errInvalidProposeBlockTx
 	}
 

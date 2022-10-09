@@ -9,15 +9,13 @@ import (
 	"github.com/prysmaticlabs/prysm/io/file"
 )
 
+// Taken from: https://github.com/prysmaticlabs/prysm/blob/v2.1.4/cmd/beacon-chain/execution/options.go#L43
 // Parses a JWT secret from a file path. This secret is required when connecting to execution nodes
 // over HTTP, and must be the same one used in Prysm and the execution node server Prysm is connecting to.
 // The engine API specification here https://github.com/ethereum/execution-apis/blob/main/src/engine/authentication.md
 // Explains how we should validate this secret and the format of the file a user can specify.
 //
 // The secret must be stored as a hex-encoded string within a file in the filesystem.
-// If the --jwt-secret flag is provided to Prysm, but the file cannot be read, or does not contain a hex-encoded
-// key of at least 256 bits, the client should treat this as an error and abort the startup.
-// Taken from: https://github.com/prysmaticlabs/prysm/blob/v2.1.4/cmd/beacon-chain/execution/options.go#L43
 func ParseSecretFromFile(jwtSecretFile string) ([]byte, error) {
 	if jwtSecretFile == "" {
 		return nil, nil

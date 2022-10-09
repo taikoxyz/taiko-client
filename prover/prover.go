@@ -56,13 +56,10 @@ type Prover struct {
 	taikoL2Abi *abi.ABI
 
 	// Contract configurations
-	maxBlocksGasLimit uint64
-	maxBlockNumTxs    uint64
-	maxTxlistBytes    uint64
-	minTxGasLimit     uint64
-	anchorGasLimit    uint64
-	maxPendingBlocks  uint64
-	chainID           *big.Int
+	txListValidator  *TxListValidator
+	anchorGasLimit   uint64
+	maxPendingBlocks uint64
+	chainID          *big.Int
 
 	// States
 	lastFinalizedHeight *big.Int
@@ -142,14 +139,17 @@ func New(ctx context.Context, cfg *Config) (*Prover, error) {
 	withCancelCtx, cancel := context.WithCancel(ctx)
 
 	return &Prover{
-		cfg:                  cfg,
-		rpc:                  rpcClient,
-		taikoL1Abi:           taikoL1Abi,
-		taikoL2Abi:           taikoL2Abi,
-		maxBlocksGasLimit:    maxBlocksGasLimit.Uint64(),
-		maxBlockNumTxs:       maxBlockNumTxs.Uint64(),
-		maxTxlistBytes:       maxTxlistBytes.Uint64(),
-		minTxGasLimit:        minTxGasLimit.Uint64(),
+		cfg:        cfg,
+		rpc:        rpcClient,
+		taikoL1Abi: taikoL1Abi,
+		taikoL2Abi: taikoL2Abi,
+		txListValidator: &TxListValidator{
+			maxBlocksGasLimit: maxBlocksGasLimit.Uint64(),
+			maxBlockNumTxs:    maxBlockNumTxs.Uint64(),
+			maxTxlistBytes:    maxTxlistBytes.Uint64(),
+			minTxGasLimit:     minTxGasLimit.Uint64(),
+			chainID:           chainID,
+		},
 		maxPendingBlocks:     maxPendingBlocks.Uint64(),
 		anchorGasLimit:       anchorGasLimit.Uint64(),
 		chainID:              chainID,
@@ -232,20 +232,19 @@ func (p *Prover) onBlockProposed(ctx context.Context, event *bindings.TaikoL1Cli
 		return err
 	}
 
-	// Fetch the raw transactions list bytes.
-	txListBytes, err := p.unpackTxListBytes(proposeBlockTx)
+	// Check whether the transactions list is valid.
+	hint, invalidTxIndex, err := p.txListValidator.ValidateTxList(event.Id, proposeBlockTx.Data())
 	if err != nil {
 		return err
 	}
 
-	// Check whether the transactions list is valid.
-	hint, invalidTxIndex := p.isTxListValid(event.Id, txListBytes)
-
+	// Prove the proposed block valid.
 	if hint == HintOK {
 		return p.proveBlockValid(ctx, event)
 	}
 
-	return p.proveBlockInvalid(ctx, txListBytes, event, hint, invalidTxIndex)
+	// Prove the proposed block invalid.
+	return p.proveBlockInvalid(ctx, event, hint, invalidTxIndex)
 }
 
 // onBlockFinalized update the lastFinalized block in current state.
