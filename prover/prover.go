@@ -65,7 +65,6 @@ type Prover struct {
 	chainID          *big.Int
 
 	// States
-	lastFinalizedHeight *big.Int
 	lastFinalizedHeader *types.Header
 
 	// Subscriptions
@@ -74,10 +73,10 @@ type Prover struct {
 	blockFinalizedCh  chan *bindings.TaikoL1ClientBlockFinalized
 	blockFinalizedSub event.Subscription
 
-	// Prover related
-	proveValidResultCh   chan *producer.ProofWithHeader
-	proveInvalidResultCh chan *producer.ProofWithHeader
-	proofProducer        producer.ProofProducer
+	// Proof related
+	proveValidProofCh   chan *producer.ProofWithHeader
+	proveInvalidProofCh chan *producer.ProofWithHeader
+	proofProducer       producer.ProofProducer
 
 	ctx   context.Context
 	close context.CancelFunc
@@ -143,8 +142,8 @@ func New(cfg *Config) (*Prover, error) {
 	p.chainID = chainID
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.maxPendingBlocks)
 	p.blockFinalizedCh = make(chan *bindings.TaikoL1ClientBlockFinalized, p.maxPendingBlocks)
-	p.proveValidResultCh = make(chan *producer.ProofWithHeader, p.maxPendingBlocks)
-	p.proveInvalidResultCh = make(chan *producer.ProofWithHeader, p.maxPendingBlocks)
+	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.maxPendingBlocks)
+	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.maxPendingBlocks)
 
 	if cfg.Dummy {
 		p.proofProducer = new(producer.DummyProofProducer)
@@ -197,11 +196,11 @@ func (p *Prover) eventLoop() {
 			if err := p.onBlockFinalized(p.ctx, e); err != nil {
 				log.Error("Handle BlockFinalized event error", "error", err)
 			}
-		case proofWithHeader := <-p.proveValidResultCh:
+		case proofWithHeader := <-p.proveValidProofCh:
 			if err := p.submitValidBlockProof(proofWithHeader); err != nil {
 				log.Error("Prove valid block error", "error", err)
 			}
-		case proofWithHeader := <-p.proveInvalidResultCh:
+		case proofWithHeader := <-p.proveInvalidProofCh:
 			if err := p.submitInvalidBlockProof(proofWithHeader); err != nil {
 				log.Error("Prove invalid block error", "error", err)
 			}
@@ -211,8 +210,7 @@ func (p *Prover) eventLoop() {
 
 // Close closes the prover instance.
 func (p *Prover) Close() {
-	p.blockFinalizedSub.Unsubscribe()
-	p.blockProposedSub.Unsubscribe()
+	p.closeSubscription()
 	if p.close != nil {
 		p.close()
 	}
@@ -260,8 +258,6 @@ func (p *Prover) onBlockFinalized(ctx context.Context, event *bindings.TaikoL1Cl
 		"height", l2BlockHeader.Number,
 		"hash", common.BytesToHash(event.BlockHash[:]),
 	)
-
-	p.lastFinalizedHeight = l2BlockHeader.Number
 	p.lastFinalizedHeader = l2BlockHeader
 
 	return nil
@@ -365,8 +361,8 @@ func (p *Prover) Name() string {
 	return "prover"
 }
 
-// getProveBlocksTxOpts creates a bind.TransactOpts instance with the sender's signatures
-// for TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
+// getProveBlocksTxOpts creates a bind.TransactOpts instance using the given private key.
+// Used for creating TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
 func (p *Prover) getProveBlocksTxOpts(ctx context.Context) (*bind.TransactOpts, error) {
 	networkID, err := p.rpc.L1.ChainID(ctx)
 	if err != nil {

@@ -38,7 +38,7 @@ func (p *Prover) proveBlockInvalid(
 	}
 
 	return p.proofProducer.RequestProof(
-		proofOpts, event.Id, throwAwayBlock.Header(), p.proveInvalidResultCh,
+		proofOpts, event.Id, throwAwayBlock.Header(), p.proveInvalidProofCh,
 	)
 }
 

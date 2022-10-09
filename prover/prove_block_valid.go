@@ -36,7 +36,7 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 		Param:          p.cfg.ZkEvmRpcdParamsPath,
 	}
 
-	return p.proofProducer.RequestProof(opts, event.Id, header, p.proveValidResultCh)
+	return p.proofProducer.RequestProof(opts, event.Id, header, p.proveValidProofCh)
 }
 
 // submitValidBlockProof submits the generated ZK proof to TaikoL1 contract.

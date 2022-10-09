@@ -32,6 +32,12 @@ func (p *Prover) startSubscription() {
 	)
 }
 
+// closeSubscription closes all subscriptions.
+func (p *Prover) closeSubscription() {
+	p.blockFinalizedSub.Unsubscribe()
+	p.blockProposedSub.Unsubscribe()
+}
+
 // watchBlockFinalized watches newly finalized blocks from TaikoL1 contract.
 func (p *Prover) watchBlockFinalized(ctx context.Context) (event.Subscription, error) {
 	sub, err := p.rpc.TaikoL1.WatchBlockFinalized(nil, p.blockFinalizedCh, nil)

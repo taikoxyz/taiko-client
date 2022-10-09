@@ -153,7 +153,6 @@ func (p *Proposer) eventLoop() {
 }
 
 // Close closes the proposer instance.
-// TODO: implement this method.
 func (p *Proposer) Close() {
 	if p.close != nil {
 		p.close()
@@ -274,7 +273,7 @@ func (p *Proposer) Name() string {
 	return "proposer"
 }
 
-// sumTxsGasLimit calculates the summarized gasLimit of the given transactions.
+// sumTxsGasLimit calculates the accumulated gas limit of all transactions in the list.
 func sumTxsGasLimit(txs []*types.Transaction) uint64 {
 	var total uint64
 	for i := range txs {
@@ -283,7 +282,7 @@ func sumTxsGasLimit(txs []*types.Transaction) uint64 {
 	return total
 }
 
-// getTxOpts creates a bind.TransactOpts instance with the sender's signatures.
+// getTxOpts creates a bind.TransactOpts instance using the given private key.
 func getTxOpts(ctx context.Context, cli *ethclient.Client, privKey *ecdsa.PrivateKey) (*bind.TransactOpts, error) {
 	chainID, err := cli.NetworkID(ctx)
 	if err != nil {
