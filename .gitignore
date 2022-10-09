@@ -17,3 +17,6 @@ bin
 
 # Editors
 .vscode
+
+# Testing
+integration_test/testnet/deployments/genesis_alloc.json
