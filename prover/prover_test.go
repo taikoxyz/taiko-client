@@ -25,7 +25,7 @@ func newTestProver(t *testing.T) *Prover {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	require.Nil(t, err)
 
-	p, err := New(context.Background(), &Config{
+	p, err := New(&Config{
 		L1Endpoint:      os.Getenv("L1_NODE_ENDPOINT"),
 		L2Endpoint:      os.Getenv("L2_NODE_ENDPOINT"),
 		TaikoL1Address:  common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),

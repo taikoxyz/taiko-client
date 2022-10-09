@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -28,7 +29,7 @@ func Action() cli.ActionFunc {
 			return err
 		}
 
-		proposer, err := New(context.Background(), cfg)
+		proposer, err := New(cfg)
 		if err != nil {
 			return err
 		}
@@ -56,25 +57,42 @@ type Proposer struct {
 	// Flags for testing
 	produceInvalidBlocks         bool
 	produceInvalidBlocksInterval uint64
+
+	ctx   context.Context
+	close context.CancelFunc
+	wg    sync.WaitGroup
 }
 
 // New initializes a new proposer instance based on the given configurations.
-func New(ctx context.Context, cfg *Config) (*Proposer, error) {
+func New(cfg *Config) (*Proposer, error) {
+	var err error
+
+	p := &Proposer{
+		l1ProposerPrivKey:       cfg.L1ProposerPrivKey,
+		l2SuggestedFeeRecipient: cfg.L2SuggestedFeeRecipient,
+		proposingInterval:       cfg.ProposeInterval,
+		wg:                      sync.WaitGroup{},
+		// Configurations for testing
+		produceInvalidBlocks:         cfg.ProduceInvalidBlocks,
+		produceInvalidBlocksInterval: cfg.ProduceInvalidBlocksInterval,
+	}
+
+	p.ctx, p.close = context.WithCancel(context.Background())
+
 	// RPC clients
-	rpcClient, err := rpc.NewClient(ctx, &rpc.ClientConfig{
+	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
 		L1Endpoint:     cfg.L1Endpoint,
 		L2Endpoint:     cfg.L2Endpoint,
 		TaikoL1Address: cfg.TaikoL1Address,
 		TaikoL2Address: cfg.TaikoL2Address,
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, fmt.Errorf("initialize rpc clients error: %w", err)
 	}
 
 	// Protocol constants
 	_, _, _, commitDelayConfirmations, _,
 		maxGasPerBlock, maxTxPerBlock, _, maxTxBytesPerBlock, minTxGasLimit,
-		_, _, _, err := rpcClient.TaikoL1.GetConstants(nil)
+		_, _, _, err := p.rpc.TaikoL1.GetConstants(nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get TaikoL1 constants: %w", err)
 	}
@@ -88,54 +106,60 @@ func New(ctx context.Context, cfg *Config) (*Proposer, error) {
 		"minTxGasLimit", minTxGasLimit,
 	)
 
-	return &Proposer{
-		rpc:                      rpcClient,
-		l1ProposerPrivKey:        cfg.L1ProposerPrivKey,
-		l2SuggestedFeeRecipient:  cfg.L2SuggestedFeeRecipient,
-		proposingInterval:        cfg.ProposeInterval,
-		commitDelayConfirmations: commitDelayConfirmations.Uint64(),
-		poolContentSplitter: &poolContentSplitter{
-			maxTxPerBlock:      maxTxPerBlock.Uint64(),
-			maxGasPerBlock:     maxGasPerBlock.Uint64(),
-			maxTxBytesPerBlock: maxTxBytesPerBlock.Uint64(),
-			minTxGasLimit:      minTxGasLimit.Uint64(),
-		},
-		// Configurations for testing
-		produceInvalidBlocks:         cfg.ProduceInvalidBlocks,
-		produceInvalidBlocksInterval: cfg.ProduceInvalidBlocksInterval,
-	}, nil
+	p.commitDelayConfirmations = commitDelayConfirmations.Uint64()
+	p.poolContentSplitter = &poolContentSplitter{
+		maxTxPerBlock:      maxTxPerBlock.Uint64(),
+		maxGasPerBlock:     maxGasPerBlock.Uint64(),
+		maxTxBytesPerBlock: maxTxBytesPerBlock.Uint64(),
+		minTxGasLimit:      minTxGasLimit.Uint64(),
+	}
+
+	return p, nil
 }
 
 // Start starts the proposer's main loop.
 func (p *Proposer) Start() error {
-	// TODO: make the top level context cancellable.
-	go func() {
-		ticker := time.NewTicker(p.proposingInterval)
-		defer ticker.Stop()
+	p.wg.Add(1)
+	go p.eventLoop()
+	return nil
+}
 
-		for range ticker.C {
-			if err := p.proposeOp(context.Background()); err != nil {
-				log.Error("Perform proposing operation error", "error", err)
+// eventLoop starts the main loop of Taiko proposer.
+func (p *Proposer) eventLoop() {
+	ticker := time.NewTicker(p.proposingInterval)
+	defer func() {
+		ticker.Stop()
+		p.wg.Done()
+	}()
+
+	for {
+		select {
+		case <-p.ctx.Done():
+			return
+		case <-ticker.C:
+			if err := p.proposeOp(p.ctx); err != nil {
+				log.Error("Proposing operation error", "error", err)
+				continue
 			}
 
 			// Only for testing purposes
 			if p.produceInvalidBlocks {
-				if err := p.proposeInvalidBlocksOp(
-					context.Background(),
-					p.produceInvalidBlocksInterval,
-				); err != nil {
-					log.Error("Perform proposing invalid blocks operation error", "error", err)
+				if err := p.proposeInvalidBlocksOp(p.ctx, p.produceInvalidBlocksInterval); err != nil {
+					log.Error("Proposing invalid blocks operation error", "error", err)
 				}
 			}
 		}
-	}()
-
-	return nil
+	}
 }
 
 // Close closes the proposer instance.
 // TODO: implement this method.
-func (p *Proposer) Close() {}
+func (p *Proposer) Close() {
+	if p.close != nil {
+		p.close()
+	}
+	p.wg.Wait()
+}
 
 // proposeOp performs a proposing operation, fetching transactions
 // from L2 node's tx pool, splitting them by proposing constraints,

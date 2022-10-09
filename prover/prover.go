@@ -39,7 +39,7 @@ func Action() cli.ActionFunc {
 			return err
 		}
 
-		prover, err := New(context.Background(), cfg)
+		prover, err := New(cfg)
 		if err != nil {
 			return err
 		}
@@ -79,42 +79,44 @@ type Prover struct {
 	proveInvalidResultCh chan *producer.ProofWithHeader
 	proofProducer        producer.ProofProducer
 
-	ctx      context.Context
-	ctxClose context.CancelFunc
-	wg       sync.WaitGroup
+	ctx   context.Context
+	close context.CancelFunc
+	wg    sync.WaitGroup
 
 	// For testing
 	blockProposedEventsBuffer []*bindings.TaikoL1ClientBlockProposed
 }
 
 // New initializes a new prover instance based on the given configurations.
-func New(ctx context.Context, cfg *Config) (*Prover, error) {
+func New(cfg *Config) (*Prover, error) {
 	log.Info("Prover configurations", "config", cfg)
+	var err error
+
+	p := &Prover{cfg: cfg}
+	p.ctx, p.close = context.WithCancel(context.Background())
+
 	// Clients
-	rpcClient, err := rpc.NewClient(ctx, &rpc.ClientConfig{
+	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
 		L1Endpoint:     cfg.L1Endpoint,
 		L2Endpoint:     cfg.L2Endpoint,
 		TaikoL1Address: cfg.TaikoL1Address,
 		TaikoL2Address: cfg.TaikoL2Address,
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
-	taikoL1Abi, err := bindings.TaikoL1ClientMetaData.GetAbi()
-	if err != nil {
+	if p.taikoL1Abi, err = bindings.TaikoL1ClientMetaData.GetAbi(); err != nil {
 		return nil, err
 	}
 
-	taikoL2Abi, err := bindings.V1TaikoL2ClientMetaData.GetAbi()
-	if err != nil {
+	if p.taikoL2Abi, err = bindings.V1TaikoL2ClientMetaData.GetAbi(); err != nil {
 		return nil, err
 	}
 
 	// Constants
 	chainID, maxPendingBlocks, _, _, _,
 		maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit,
-		anchorGasLimit, _, _, err := rpcClient.TaikoL1.GetConstants(nil)
+		anchorGasLimit, _, _, err := p.rpc.TaikoL1.GetConstants(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -129,101 +131,90 @@ func New(ctx context.Context, cfg *Config) (*Prover, error) {
 		"chainID", chainID,
 	)
 
-	var proofProducer producer.ProofProducer
+	p.txListValidator = &TxListValidator{
+		maxBlocksGasLimit: maxBlocksGasLimit.Uint64(),
+		maxBlockNumTxs:    maxBlockNumTxs.Uint64(),
+		maxTxlistBytes:    maxTxlistBytes.Uint64(),
+		minTxGasLimit:     minTxGasLimit.Uint64(),
+		chainID:           chainID,
+	}
+	p.maxPendingBlocks = maxPendingBlocks.Uint64()
+	p.anchorGasLimit = anchorGasLimit.Uint64()
+	p.chainID = chainID
+	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.maxPendingBlocks)
+	p.blockFinalizedCh = make(chan *bindings.TaikoL1ClientBlockFinalized, p.maxPendingBlocks)
+	p.proveValidResultCh = make(chan *producer.ProofWithHeader, p.maxPendingBlocks)
+	p.proveInvalidResultCh = make(chan *producer.ProofWithHeader, p.maxPendingBlocks)
+
 	if cfg.Dummy {
-		proofProducer = new(producer.DummyProofProducer)
+		p.proofProducer = new(producer.DummyProofProducer)
 	} else {
-		proofProducer, err = producer.NewZkevmRpcdProducer(cfg.ZKEvmRpcdEndpoint)
-		if err != nil {
+		if p.proofProducer, err = producer.NewZkevmRpcdProducer(cfg.ZKEvmRpcdEndpoint); err != nil {
 			return nil, err
 		}
 	}
 
-	withCancelCtx, cancel := context.WithCancel(ctx)
-
-	return &Prover{
-		cfg:        cfg,
-		rpc:        rpcClient,
-		taikoL1Abi: taikoL1Abi,
-		taikoL2Abi: taikoL2Abi,
-		txListValidator: &TxListValidator{
-			maxBlocksGasLimit: maxBlocksGasLimit.Uint64(),
-			maxBlockNumTxs:    maxBlockNumTxs.Uint64(),
-			maxTxlistBytes:    maxTxlistBytes.Uint64(),
-			minTxGasLimit:     minTxGasLimit.Uint64(),
-			chainID:           chainID,
-		},
-		maxPendingBlocks:     maxPendingBlocks.Uint64(),
-		anchorGasLimit:       anchorGasLimit.Uint64(),
-		chainID:              chainID,
-		blockProposedCh:      make(chan *bindings.TaikoL1ClientBlockProposed, maxPendingBlocks.Uint64()),
-		blockFinalizedCh:     make(chan *bindings.TaikoL1ClientBlockFinalized, maxPendingBlocks.Uint64()),
-		proveValidResultCh:   make(chan *producer.ProofWithHeader, maxPendingBlocks.Uint64()),
-		proveInvalidResultCh: make(chan *producer.ProofWithHeader, maxPendingBlocks.Uint64()),
-		proofProducer:        proofProducer,
-		ctx:                  withCancelCtx,
-		ctxClose:             cancel,
-		wg:                   sync.WaitGroup{},
-	}, nil
+	return p, nil
 }
 
 // Start starts the main loop of the L2 block prover.
 func (p *Prover) Start() error {
 	p.wg.Add(1)
-	defer p.wg.Done()
-
 	p.startSubscription()
-
-	ticker := time.NewTicker(time.Minute)
-	defer ticker.Stop()
-
-	go func() {
-		for {
-			select {
-			case <-p.ctx.Done():
-				return
-			case <-ticker.C:
-				if err := p.onForceTimer(p.ctx); err != nil {
-					log.Error("Handle forceTimer event error", "error", err)
-				}
-			case e := <-p.blockProposedCh:
-				if p.cfg.BatchSubmit {
-					if err := p.batchHandleBlockProposedEvents(p.ctx, e); err != nil {
-						log.Error("Batch handling BlockProposed event error", "error", err)
-					}
-
-					continue
-				}
-
-				if err := p.onBlockProposed(p.ctx, e); err != nil {
-					log.Error("Handle BlockProposed event error", "error", err)
-				}
-			case e := <-p.blockFinalizedCh:
-				if err := p.onBlockFinalized(p.ctx, e); err != nil {
-					log.Error("Handle BlockFinalized event error", "error", err)
-				}
-			case proofWithHeader := <-p.proveValidResultCh:
-				if err := p.submitValidBlockProof(proofWithHeader); err != nil {
-					log.Error("Prove valid block error", "error", err)
-				}
-			case proofWithHeader := <-p.proveInvalidResultCh:
-				if err := p.submitInvalidBlockProof(proofWithHeader); err != nil {
-					log.Error("Prove invalid block error", "error", err)
-				}
-			}
-		}
-	}()
+	go p.eventLoop()
 
 	return nil
 }
 
+// eventLoop starts the main loop of Taiko prover.
+func (p *Prover) eventLoop() {
+	ticker := time.NewTicker(time.Minute)
+	defer func() {
+		ticker.Stop()
+		p.wg.Done()
+	}()
+
+	for {
+		select {
+		case <-p.ctx.Done():
+			return
+		case <-ticker.C:
+			if err := p.onForceTimer(p.ctx); err != nil {
+				log.Error("Handle forceTimer event error", "error", err)
+			}
+		case e := <-p.blockProposedCh:
+			if p.cfg.BatchSubmit {
+				if err := p.batchHandleBlockProposedEvents(p.ctx, e); err != nil {
+					log.Error("Batch handling BlockProposed event error", "error", err)
+				}
+				continue
+			}
+
+			if err := p.onBlockProposed(p.ctx, e); err != nil {
+				log.Error("Handle BlockProposed event error", "error", err)
+			}
+		case e := <-p.blockFinalizedCh:
+			if err := p.onBlockFinalized(p.ctx, e); err != nil {
+				log.Error("Handle BlockFinalized event error", "error", err)
+			}
+		case proofWithHeader := <-p.proveValidResultCh:
+			if err := p.submitValidBlockProof(proofWithHeader); err != nil {
+				log.Error("Prove valid block error", "error", err)
+			}
+		case proofWithHeader := <-p.proveInvalidResultCh:
+			if err := p.submitInvalidBlockProof(proofWithHeader); err != nil {
+				log.Error("Prove invalid block error", "error", err)
+			}
+		}
+	}
+}
+
 // Close closes the prover instance.
 func (p *Prover) Close() {
-	p.ctxClose()
+	if p.close != nil {
+		p.close()
+	}
 	p.wg.Wait()
-
-	p.blockFinalizedSub.Unsubscribe()
-	p.blockProposedSub.Unsubscribe()
 }
 
 // onBlockProposed tries to prove that the newly proposed block is valid/invalid.

@@ -10,12 +10,11 @@ import (
 
 // validateAnchorTx checks whether the given transaction is a successfully
 // executed `TaikoL2.anchor` transaction.
+// TODO: verify transaction sender
 func (p *Prover) validateAnchorTx(ctx context.Context, tx *types.Transaction) error {
 	if tx.To() == nil || *tx.To() != p.cfg.TaikoL2Address {
 		return fmt.Errorf("invalid TaikoL2.anchor to: %s", tx.To())
 	}
-
-	// TODO: verify sender
 
 	method, err := p.taikoL2Abi.MethodById(tx.Data())
 	if err != nil || method.Name != "anchor" {

@@ -21,7 +21,11 @@ func RunSubcommand(app SubcommandApp) error {
 		log.Error("Starting application error", "name", app.Name(), "error", err)
 		return err
 	}
-	defer app.Close()
+
+	defer func() {
+		app.Close()
+		log.Info("Application stopped", "name", app.Name())
+	}()
 
 	quitCh := make(chan os.Signal, 1)
 	signal.Notify(quitCh, []os.Signal{
@@ -31,8 +35,6 @@ func RunSubcommand(app SubcommandApp) error {
 		syscall.SIGQUIT,
 	}...)
 	<-quitCh
-
-	log.Info("Application stopped", "name", app.Name())
 
 	return nil
 }

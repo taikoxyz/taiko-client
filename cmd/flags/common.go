@@ -37,9 +37,9 @@ var (
 
 // MergeFlags merges the given flag slices.
 func MergeFlags(groups ...[]cli.Flag) []cli.Flag {
-	var ret []cli.Flag
+	var merged []cli.Flag
 	for _, group := range groups {
-		ret = append(ret, group...)
+		merged = append(merged, group...)
 	}
-	return ret
+	return merged
 }

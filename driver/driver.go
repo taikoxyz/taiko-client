@@ -33,9 +33,9 @@ type Driver struct {
 	l1HeadSub  event.Subscription
 	syncNotify chan struct{}
 
-	ctx      context.Context
-	ctxClose context.CancelFunc
-	wg       sync.WaitGroup
+	ctx   context.Context
+	close context.CancelFunc
+	wg    sync.WaitGroup
 }
 
 // Action returns the main function that the subcommand should run.
@@ -46,7 +46,7 @@ func Action() cli.ActionFunc {
 			return err
 		}
 
-		driver, err := New(context.Background(), cfg)
+		driver, err := New(cfg)
 		if err != nil {
 			return err
 		}
@@ -56,49 +56,44 @@ func Action() cli.ActionFunc {
 }
 
 // New initializes a new driver instance based on the given configurations.
-func New(ctx context.Context, cfg *Config) (*Driver, error) {
-	l1HeadCh := make(chan *types.Header)
+func New(cfg *Config) (*Driver, error) {
+	var err error
 
-	rpc, err := rpc.NewClient(ctx, &rpc.ClientConfig{
+	d := &Driver{
+		l1HeadCh:   make(chan *types.Header),
+		wg:         sync.WaitGroup{},
+		syncNotify: make(chan struct{}, 1),
+	}
+
+	d.ctx, d.close = context.WithCancel(context.Background())
+
+	if d.rpc, err = rpc.NewClient(d.ctx, &rpc.ClientConfig{
 		L1Endpoint:       cfg.L1Endpoint,
 		L2Endpoint:       cfg.L2Endpoint,
 		TaikoL1Address:   cfg.TaikoL1Address,
 		TaikoL2Address:   cfg.TaikoL2Address,
 		L2EngineEndpoint: cfg.L2EngineEndpoint,
 		JwtSecret:        cfg.JwtSecret,
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
-	state, err := NewState(ctx, rpc)
-	if err != nil {
+	if d.state, err = NewState(d.ctx, d.rpc); err != nil {
 		return nil, err
 	}
 
-	blockInserter, err := NewL2ChainInserter(
-		ctx,
-		rpc,
-		state,
+	if d.l2ChainInserter, err = NewL2ChainInserter(
+		d.ctx,
+		d.rpc,
+		d.state,
 		cfg.ThrowawayBlocksBuilderPrivKey,
-	)
-	if err != nil {
+	); err != nil {
 		return nil, err
 	}
 
-	withCancelCtx, cancel := context.WithCancel(ctx)
+	d.l1HeadSub = d.state.SubL1HeadsFeed(d.l1HeadCh)
 
-	return &Driver{
-		rpc:             rpc,
-		l2ChainInserter: blockInserter,
-		state:           state,
-		l1HeadCh:        l1HeadCh,
-		l1HeadSub:       state.SubL1HeadsFeed(l1HeadCh),
-		syncNotify:      make(chan struct{}, 1),
-		ctx:             withCancelCtx,
-		ctxClose:        cancel,
-		wg:              sync.WaitGroup{},
-	}, nil
+	return d, nil
 }
 
 // Start starts the driver instance.
@@ -111,14 +106,10 @@ func (d *Driver) Start() error {
 
 // Close closes the driver instance.
 func (d *Driver) Close() {
-	d.ctxClose()
+	if d.close != nil {
+		d.close()
+	}
 	d.wg.Wait()
-	if d.state != nil {
-		d.state.Close()
-	}
-	if d.l1HeadSub != nil {
-		d.l1HeadSub.Unsubscribe()
-	}
 }
 
 // eventLoop starts the main loop of L2 node's chain driver.
@@ -138,7 +129,7 @@ func (d *Driver) eventLoop() {
 	// doSyncWithBackoff performs a synchronising operation with a backoff strategy.
 	doSyncWithBackoff := func() {
 		if err := backoff.Retry(d.doSync, exponentialBackoff); err != nil {
-			log.Error("Sync L2 node block chain error", "error", err)
+			log.Error("Sync L2 node's block chain error", "error", err)
 		}
 	}
 
