@@ -14,7 +14,7 @@ test:
 	RUN_TESTS=true \
 		./integration_test/entrypoint.sh
 
-dev-net:
+dev_net:
 	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \
 	COMPILE_PROTOCOL=${COMPILE_PROTOCOL} \
 		./integration_test/entrypoint.sh
@@ -28,5 +28,5 @@ gen_bindings:
 				clean \
 				lint \
 				test \
-				dev-net \
+				dev_net \
 				gen_bindings

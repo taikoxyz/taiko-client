@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -198,11 +199,18 @@ func (p *Prover) Start() error {
 
 	p.startSubscription()
 
+	forceTimer := time.NewTimer(time.Minute)
+	defer forceTimer.Stop()
+
 	go func() {
 		for {
 			select {
 			case <-p.ctx.Done():
 				return
+			case <-forceTimer.C:
+				if err := p.onForceTimer(p.ctx); err != nil {
+					log.Error("Handle forceTimer event error", "error", err)
+				}
 			case e := <-p.blockProposedCh:
 				if p.cfg.BatchSubmit {
 					if err := p.batchHandleBlockProposedEvents(p.ctx, e); err != nil {
@@ -290,6 +298,69 @@ func (p *Prover) onBlockFinalized(ctx context.Context, event *bindings.TaikoL1Cl
 	p.lastFinalizedHeader = l2BlockHeader
 
 	return nil
+}
+
+// onForceTimer fetches the oldest unproved block and tries to prove it.
+func (p *Prover) onForceTimer(ctx context.Context) error {
+	_, _, latestFinalizedID, nextBlockID, err := p.taikoL1.GetStateVariables(nil)
+	if err != nil {
+		return fmt.Errorf("failed to get TaikoL1 state variables: %w", err)
+	}
+
+	log.Info("TaikoL1 state variables",
+		"latestFinalizedID", latestFinalizedID,
+		"nextBlockID", nextBlockID,
+	)
+
+	var oldestUnprovedBlockID *big.Int
+	for i := latestFinalizedID + 1; i < nextBlockID; i++ {
+		proposedBlock, err := p.taikoL1.GetProposedBlock(nil, new(big.Int).SetUint64(i))
+		if err != nil {
+			return fmt.Errorf("failed to get proposed block: %w", err)
+		}
+
+		// enum EverProven {
+		// 	_NO, //=0
+		// 	NO, //=1
+		// 	YES //=2
+		// }
+		if proposedBlock.EverProven == 2 {
+			oldestUnprovedBlockID = new(big.Int).SetUint64(i)
+			break
+		}
+	}
+
+	if oldestUnprovedBlockID == nil {
+		log.Info("All proposed blocks are proved")
+		return nil
+	}
+
+	log.Info("Oldest unproved block ID", "blockID", oldestUnprovedBlockID)
+
+	l1Origin, err := p.l1RPC.L1OriginByID(ctx, oldestUnprovedBlockID)
+	if err != nil {
+		return fmt.Errorf("failed to get L1Origin: %w", err)
+	}
+
+	blockProposedL1Height := l1Origin.L1BlockHeight.Uint64()
+	iter, err := p.taikoL1.FilterBlockProposed(
+		&bind.FilterOpts{
+			Start: blockProposedL1Height,
+			End:   &blockProposedL1Height,
+		},
+		[]*big.Int{oldestUnprovedBlockID},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to filter BlockProposed events: %w", err)
+	}
+
+	for iter.Next() {
+		return p.onBlockProposed(ctx, iter.Event)
+	}
+
+	return fmt.Errorf("BlockProposed events not found, blockID: %d, l1Height: %d",
+		oldestUnprovedBlockID, blockProposedL1Height,
+	)
 }
 
 // batchHandleBlockProposedEvents will randomly handle buffered BlockProposed
