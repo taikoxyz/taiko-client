@@ -7,9 +7,20 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
 	"github.com/taikochain/taiko-client/util"
 )
+
+func TestMain(m *testing.M) {
+	log.Root().SetHandler(
+		log.LvlFilterHandler(
+			log.LvlDebug,
+			log.StreamHandler(os.Stdout, log.TerminalFormat(true)),
+		),
+	)
+	os.Exit(m.Run())
+}
 
 func newTestDriver(t *testing.T) *Driver {
 	jwtSecret, err := util.ParseJWTSecretFromFile(os.Getenv("JWT_SECRET"))

@@ -12,8 +12,8 @@ const (
 
 // Config contains all configurations to initialize a Taiko proposer.
 type Config struct {
-	L1Node                  string
-	L2Node                  string
+	L1Endpoint              string
+	L2Endpoint              string
 	TaikoL1Address          string
 	TaikoL2Address          string
 	L1ProposerPrivKey       string
@@ -31,10 +31,10 @@ func NewConfigFromCliContext(ctx *cli.Context) (*Config, error) {
 	cfg := &Config{}
 
 	if ctx.IsSet(flags.L1NodeEndpoint.Name) {
-		cfg.L1Node = ctx.String(flags.L1NodeEndpoint.Name)
+		cfg.L1Endpoint = ctx.String(flags.L1NodeEndpoint.Name)
 	}
 	if ctx.IsSet(flags.L2NodeEndpoint.Name) {
-		cfg.L2Node = ctx.String(flags.L2NodeEndpoint.Name)
+		cfg.L2Endpoint = ctx.String(flags.L2NodeEndpoint.Name)
 	}
 	if ctx.IsSet(flags.TaikoL1Address.Name) {
 		cfg.TaikoL1Address = ctx.String(flags.TaikoL1Address.Name)

@@ -70,14 +70,14 @@ func New(ctx context.Context, cfg *Config) (*Proposer, error) {
 	// RPC clients
 	if p.l1Node, err = rpc.DialClientWithBackoff(
 		ctx,
-		cfg.L1Node,
+		cfg.L1Endpoint,
 	); err != nil {
 		return nil, fmt.Errorf("failed to connect to L1 node: %w", err)
 	}
 
 	if p.l2Node, err = rpc.DialClientWithBackoff(
 		ctx,
-		cfg.L2Node,
+		cfg.L2Endpoint,
 	); err != nil {
 		return nil, fmt.Errorf("failed to connect to L2 node: %w", err)
 	}

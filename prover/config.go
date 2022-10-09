@@ -15,8 +15,7 @@ type Config struct {
 	L2Endpoint          string
 	TaikoL1Address      common.Address
 	TaikoL2Address      common.Address
-	L2TxlistValidator   common.Address
-	L1ProverPrivKey     ecdsa.PrivateKey
+	L1ProverPrivKey     *ecdsa.PrivateKey
 	ZKEvmRpcdEndpoint   string
 	ZkEvmRpcdParamsPath string
 	Dummy               bool
@@ -38,7 +37,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L2Endpoint:          c.String(flags.L2NodeEndpoint.Name),
 		TaikoL1Address:      common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:      common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-		L1ProverPrivKey:     *l1ProverPrivKey,
+		L1ProverPrivKey:     l1ProverPrivKey,
 		ZKEvmRpcdEndpoint:   c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath: c.String(flags.ZkEvmRpcdParamsPath.Name),
 		Dummy:               c.Bool(flags.Dummy.Name),

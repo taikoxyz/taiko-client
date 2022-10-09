@@ -76,7 +76,7 @@ func (p *Prover) getProveBlockTxOpts(ctx context.Context) (*bind.TransactOpts, e
 		return nil, err
 	}
 
-	opts, err := bind.NewKeyedTransactorWithChainID(&p.cfg.L1ProverPrivKey, networkID)
+	opts, err := bind.NewKeyedTransactorWithChainID(p.cfg.L1ProverPrivKey, networkID)
 	if err != nil {
 		return nil, err
 	}

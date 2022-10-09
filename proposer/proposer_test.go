@@ -21,8 +21,8 @@ func TestMain(m *testing.M) {
 
 func newTestProposer(t *testing.T) *Proposer {
 	proposer, err := New(context.Background(), &Config{
-		L1Node:                  os.Getenv("L1_NODE_ENDPOINT"),
-		L2Node:                  os.Getenv("L2_NODE_ENDPOINT"),
+		L1Endpoint:              os.Getenv("L1_NODE_ENDPOINT"),
+		L2Endpoint:              os.Getenv("L2_NODE_ENDPOINT"),
 		TaikoL1Address:          os.Getenv("TAIKO_L1_ADDRESS"),
 		TaikoL2Address:          os.Getenv("TAIKO_L2_ADDRESS"),
 		L1ProposerPrivKey:       os.Getenv("L1_PROPOSER_PRIVATE_KEY"),
