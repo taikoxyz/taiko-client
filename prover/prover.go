@@ -199,15 +199,14 @@ func (p *Prover) Start() error {
 
 	p.startSubscription()
 
-	forceTimer := time.NewTimer(time.Minute)
-	defer forceTimer.Stop()
+	forceTimer := time.Tick(time.Minute)
 
 	go func() {
 		for {
 			select {
 			case <-p.ctx.Done():
 				return
-			case <-forceTimer.C:
+			case <-forceTimer:
 				if err := p.onForceTimer(p.ctx); err != nil {
 					log.Error("Handle forceTimer event error", "error", err)
 				}
