@@ -82,34 +82,21 @@ func New(ctx context.Context, cfg *Config) (*Proposer, error) {
 		return nil, fmt.Errorf("failed to connect to L2 node: %w", err)
 	}
 
-	if p.taikoL1, err = bindings.NewTaikoL1Client(
-		common.HexToAddress(cfg.TaikoL1Address),
-		p.l1Node,
-	); err != nil {
+	if p.taikoL1, err = bindings.NewTaikoL1Client(cfg.TaikoL1Address, p.l1Node); err != nil {
 		return nil, fmt.Errorf("failed to create TaikoL1 client: %w", err)
 	}
 
-	if p.taikoL2, err = bindings.NewV1TaikoL2Client(
-		common.HexToAddress(cfg.TaikoL2Address),
-		p.l2Node,
-	); err != nil {
+	if p.taikoL2, err = bindings.NewV1TaikoL2Client(cfg.TaikoL2Address, p.l2Node); err != nil {
 		return nil, fmt.Errorf("failed to create TaikoL2 client: %w", err)
 	}
 
 	// Private keys and account addresses
-	if p.l1ProposerPrivKey, err = crypto.ToECDSA(
-		common.Hex2Bytes(cfg.L1ProposerPrivKey),
-	); err != nil {
-		return nil, fmt.Errorf("invalid L1 proposer private key: %w", err)
-	}
-
+	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
 	p.l1ProposerAddress = crypto.PubkeyToAddress(p.l1ProposerPrivKey.PublicKey)
-	p.l2SuggestedFeeRecipient = common.HexToAddress(cfg.L2SuggestedFeeRecipient)
+	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
 
 	// Proposing configuration
-	if p.proposingInterval, err = time.ParseDuration(cfg.ProposeInterval); err != nil {
-		return nil, fmt.Errorf("invalid propose interval: %w", err)
-	}
+	p.proposingInterval = cfg.ProposeInterval
 
 	// Protocol constants
 	_, _, _, commitDelayConfirmations, _,

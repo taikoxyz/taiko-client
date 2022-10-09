@@ -4,7 +4,10 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
 )
@@ -20,16 +23,18 @@ func TestMain(m *testing.M) {
 }
 
 func newTestProposer(t *testing.T) *Proposer {
+	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	require.Nil(t, err)
+
 	proposer, err := New(context.Background(), &Config{
 		L1Endpoint:              os.Getenv("L1_NODE_ENDPOINT"),
 		L2Endpoint:              os.Getenv("L2_NODE_ENDPOINT"),
-		TaikoL1Address:          os.Getenv("TAIKO_L1_ADDRESS"),
-		TaikoL2Address:          os.Getenv("TAIKO_L2_ADDRESS"),
-		L1ProposerPrivKey:       os.Getenv("L1_PROPOSER_PRIVATE_KEY"),
-		L2SuggestedFeeRecipient: os.Getenv("L2_SUGGESTED_FEE_RECIPIENT"),
-		ProposeInterval:         "1024h", // No need to periodically propose transactions list in unit tests
+		TaikoL1Address:          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:          common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1ProposerPrivKey:       l1ProposerPrivKey,
+		L2SuggestedFeeRecipient: common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		ProposeInterval:         1024 * time.Hour, // No need to periodically propose transactions list in unit tests
 	})
-
 	require.Nil(t, err)
 
 	return proposer
