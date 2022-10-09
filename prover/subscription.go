@@ -30,22 +30,6 @@ func (p *Prover) startSubscription() {
 			return p.watchBlockFinalized(ctx)
 		},
 	)
-
-	// TODO: whether these are necessary?
-	go func() {
-		err, ok := <-p.blockProposedSub.Err()
-		if !ok {
-			return
-		}
-		log.Error("Subscribe TaikoL1.BlockProposed error", "error", err)
-	}()
-	go func() {
-		err, ok := <-p.blockFinalizedSub.Err()
-		if !ok {
-			return
-		}
-		log.Error("Subscribe TaikoL1.BlockFinalized error", "error", err)
-	}()
 }
 
 // watchBlockFinalized watches newly finalized blocks from TaikoL1 contract.
@@ -56,19 +40,14 @@ func (p *Prover) watchBlockFinalized(ctx context.Context) (event.Subscription, e
 		return nil, err
 	}
 
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case err := <-sub.Err():
-				return err
-			case <-p.ctx.Done():
-				return nil
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
+	defer sub.Unsubscribe()
+
+	select {
+	case err := <-sub.Err():
+		return sub, err
+	case <-ctx.Done():
+		return sub, nil
+	}
 }
 
 // watchBlockProposed watches newly proposed blocks from TaikoL1 contract.
@@ -79,17 +58,14 @@ func (p *Prover) watchBlockProposed(ctx context.Context) (event.Subscription, er
 		return nil, err
 	}
 
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case err := <-sub.Err():
-				return err
-			case <-p.ctx.Done():
-				return nil
-			case <-quit:
-				return nil
-			}
+	defer sub.Unsubscribe()
+
+	for {
+		select {
+		case err := <-sub.Err():
+			return sub, err
+		case <-ctx.Done():
+			return sub, nil
 		}
-	}), nil
+	}
 }

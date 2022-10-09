@@ -2,7 +2,6 @@ package driver
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"time"
 
@@ -60,7 +59,7 @@ func New(cfg *Config) (*Driver, error) {
 	var err error
 
 	d := &Driver{
-		l1HeadCh:   make(chan *types.Header),
+		l1HeadCh:   make(chan *types.Header, 1024),
 		wg:         sync.WaitGroup{},
 		syncNotify: make(chan struct{}, 1),
 	}
@@ -109,6 +108,9 @@ func (d *Driver) Close() {
 	if d.close != nil {
 		d.close()
 	}
+
+	d.state.Close()
+
 	d.wg.Wait()
 }
 
@@ -152,6 +154,12 @@ func (d *Driver) eventLoop() {
 // L1 sync cursor to the L1 head, and then applies all corresponding
 // L2 blocks into node's local block chain.
 func (d *Driver) doSync() error {
+	// Check whether the application is closing.
+	if d.ctx.Err() != nil {
+		log.Warn("Driver context error", "error", d.ctx.Err())
+		return nil
+	}
+
 	l1Head := d.state.getL1Head()
 
 	if err := d.l2ChainInserter.ProcessL1Blocks(
@@ -159,9 +167,6 @@ func (d *Driver) doSync() error {
 		l1Head,
 	); err != nil {
 		log.Error("Process new L1 blocks error", "error", err)
-		if errors.Is(err, context.Canceled) {
-			return nil
-		}
 		return err
 	}
 

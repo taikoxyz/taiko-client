@@ -38,8 +38,6 @@ type State struct {
 	minTxGasLimit     *big.Int
 
 	rpc *rpc.Client // L1/L2 RPC clients
-
-	ctx context.Context
 }
 
 // NewState creates a new driver state instance.
@@ -77,7 +75,6 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 		l2HeadBlockID:       new(atomic.Value),
 		l2FinalizedHeadHash: new(atomic.Value),
 		L1Current:           latestL2KnownL1Header,
-		ctx:                 ctx,
 	}
 
 	if err := s.initSubscriptions(ctx); err != nil {
@@ -88,11 +85,14 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 }
 
 // Close closes all inner subscriptions.
-func (s *State) Close() error {
+func (s *State) Close() {
+	log.Info("state close")
 	s.l1HeadSub.Unsubscribe()
+	log.Info("ok1")
 	s.l2BlockFinalizedSub.Unsubscribe()
+	log.Info("ok2")
 	s.l2BlockProposedSub.Unsubscribe()
-	return nil
+	log.Info("ok")
 }
 
 // ConfirmL1Current ensures that the local L1 sync cursor has not been reorged.
@@ -158,13 +158,6 @@ func (s *State) subL1Head(ctx context.Context) error {
 			return s.watchL1Head(ctx)
 		},
 	)
-	go func() {
-		err, ok := <-s.l1HeadSub.Err()
-		if !ok {
-			return
-		}
-		log.Error("Subscribe L1 head error", "error", err)
-	}()
 
 	return nil
 }
@@ -173,28 +166,26 @@ func (s *State) subL1Head(ctx context.Context) error {
 // driver state.
 func (s *State) watchL1Head(ctx context.Context) (event.Subscription, error) {
 	newL1HeadCh := make(chan *types.Header, 10)
-	sub, err := s.rpc.L1.SubscribeNewHead(context.Background(), newL1HeadCh)
+
+	sub, err := s.rpc.L1.SubscribeNewHead(ctx, newL1HeadCh)
 	if err != nil {
 		log.Error("Create L1 heads subscription error", "error", err)
 		return nil, err
 	}
 
-	return event.NewSubscription(func(quitCh <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case newHead := <-newL1HeadCh:
-				s.setL1Head(newHead)
-				s.l1HeadsFeed.Send(newHead)
-			case err := <-sub.Err():
-				return err
-			case <-s.ctx.Done():
-				return nil
-			case <-quitCh:
-				return nil
-			}
+	defer sub.Unsubscribe()
+
+	for {
+		select {
+		case newHead := <-newL1HeadCh:
+			s.setL1Head(newHead)
+			s.l1HeadsFeed.Send(newHead)
+		case err := <-sub.Err():
+			return sub, err
+		case <-ctx.Done():
+			return sub, nil
 		}
-	}), nil
+	}
 }
 
 // setL1Head sets the L1 head concurrent safely.
@@ -243,13 +234,6 @@ func (s *State) subBlockFinalized(ctx context.Context) error {
 			return s.watchBlockFinalized(ctx)
 		},
 	)
-	go func() {
-		err, ok := <-s.l2BlockFinalizedSub.Err()
-		if !ok {
-			return
-		}
-		log.Error("Subscribe TaikoL1.BlockFinalized error", "error", err)
-	}()
 
 	return nil
 }
@@ -258,31 +242,29 @@ func (s *State) subBlockFinalized(ctx context.Context) error {
 // driver state.
 func (s *State) watchBlockFinalized(ctx context.Context) (ethereum.Subscription, error) {
 	newBlockFinalizedCh := make(chan *bindings.TaikoL1ClientBlockFinalized, 10)
+
 	sub, err := s.rpc.TaikoL1.WatchBlockFinalized(nil, newBlockFinalizedCh, nil)
 	if err != nil {
 		log.Error("Create TaikoL1.BlockFinalized subscription error", "error", err)
 		return nil, err
 	}
 
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case e := <-newBlockFinalizedCh:
-				if e.BlockHash == (common.Hash{}) {
-					log.Info("Ignore BlockFinalized event of invalid transaction list", "blockID", e.Id)
-					continue
-				}
-				s.setLastFinalizedBlockHash(e.BlockHash)
-			case err := <-sub.Err():
-				return err
-			case <-s.ctx.Done():
-				return nil
-			case <-quit:
-				return nil
+	defer sub.Unsubscribe()
+
+	for {
+		select {
+		case e := <-newBlockFinalizedCh:
+			if e.BlockHash == (common.Hash{}) {
+				log.Info("Ignore BlockFinalized event of invalid transaction list", "blockID", e.Id)
+				continue
 			}
+			s.setLastFinalizedBlockHash(e.BlockHash)
+		case err := <-sub.Err():
+			return sub, err
+		case <-ctx.Done():
+			return sub, nil
 		}
-	}), nil
+	}
 }
 
 // setLastFinalizedBlockHash sets the last finalized L2 block hash concurrent safely.
@@ -318,13 +300,6 @@ func (s *State) subLastPendingBlockID(ctx context.Context) error {
 			return s.watchBlockProposed(ctx)
 		},
 	)
-	go func() {
-		err, ok := <-s.l2BlockProposedSub.Err()
-		if !ok {
-			return
-		}
-		log.Error("Subscribe TaikoL1.BlockProposed error", "error", err)
-	}()
 
 	return nil
 }
@@ -339,21 +314,18 @@ func (s *State) watchBlockProposed(ctx context.Context) (ethereum.Subscription, 
 		return nil, err
 	}
 
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case e := <-newBlockProposedCh:
-				s.setHeadBlockID(e.Id)
-			case err := <-sub.Err():
-				return err
-			case <-s.ctx.Done():
-				return nil
-			case <-quit:
-				return nil
-			}
+	defer sub.Unsubscribe()
+
+	for {
+		select {
+		case e := <-newBlockProposedCh:
+			s.setHeadBlockID(e.Id)
+		case err := <-sub.Err():
+			return sub, err
+		case <-ctx.Done():
+			return sub, nil
 		}
-	}), nil
+	}
 }
 
 // setHeadBlockID sets the last pending block ID concurrent safely.

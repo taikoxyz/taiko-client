@@ -211,6 +211,8 @@ func (p *Prover) eventLoop() {
 
 // Close closes the prover instance.
 func (p *Prover) Close() {
+	p.blockFinalizedSub.Unsubscribe()
+	p.blockProposedSub.Unsubscribe()
 	if p.close != nil {
 		p.close()
 	}

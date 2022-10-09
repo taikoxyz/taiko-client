@@ -429,8 +429,6 @@ func (b *L2ChainInserter) createExecutionPayloads(
 		return nil, nil, execPayloadError{Status: execStatus.Status}
 	}
 
-	log.Info("CreateExecutionPayloads", "payload", payload, "execStatus", execStatus)
-
 	return payload, nil, nil
 }
 
