@@ -1,7 +1,6 @@
 package flags
 
 import (
-	"github.com/taikochain/taiko-client/util"
 	"github.com/urfave/cli/v2"
 )
 
@@ -38,7 +37,7 @@ var (
 )
 
 // All prover flags.
-var ProverFlags = util.MergeFlags(CommonFlags, []cli.Flag{
+var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&ZkEvmRpcdEndpoint,
 	&ZkEvmRpcdParamsPath,
 	&L1ProverPrivKeyFlag,

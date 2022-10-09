@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/bindings"
-	"github.com/taikochain/taiko-client/rpc"
+	"github.com/taikochain/taiko-client/pkg/rpc"
 	"golang.org/x/sync/errgroup"
 )
 

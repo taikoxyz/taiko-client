@@ -10,8 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/bindings"
 	"github.com/taikochain/taiko-client/bindings/encoding"
+	"github.com/taikochain/taiko-client/pkg/rpc"
 	"github.com/taikochain/taiko-client/prover/producer"
-	"github.com/taikochain/taiko-client/util"
 )
 
 // proveBlockInvalid tries to generate a ZK proof to prove the given
@@ -126,7 +126,7 @@ func (p *Prover) submitInvalidBlockProof(
 		return fmt.Errorf("failed to send TaikoL1.proveBlockInvalid transaction: %w", err)
 	}
 
-	if _, err := util.WaitForTx(p.ctx, p.rpc.L1, tx); err != nil {
+	if _, err := rpc.WaitForTx(p.ctx, p.rpc.L1, tx); err != nil {
 		return fmt.Errorf("failed to wait till transaction executed: %w", err)
 	}
 

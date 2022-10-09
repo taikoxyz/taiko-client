@@ -1,4 +1,4 @@
-package util
+package utils
 
 import (
 	"os"
@@ -6,22 +6,12 @@ import (
 	"syscall"
 
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/urfave/cli/v2"
 )
 
 type SubcommandApp interface {
 	Name() string
 	Start() error
 	Close()
-}
-
-// MergeFlags merges the given flag slices.
-func MergeFlags(groups ...[]cli.Flag) []cli.Flag {
-	var ret []cli.Flag
-	for _, group := range groups {
-		ret = append(ret, group...)
-	}
-	return ret
 }
 
 func RunSubcommand(app SubcommandApp) error {

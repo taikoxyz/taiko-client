@@ -16,9 +16,9 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/bindings"
+	"github.com/taikochain/taiko-client/cmd/utils"
+	"github.com/taikochain/taiko-client/pkg/rpc"
 	"github.com/taikochain/taiko-client/prover/producer"
-	"github.com/taikochain/taiko-client/rpc"
-	"github.com/taikochain/taiko-client/util"
 	"github.com/urfave/cli/v2"
 )
 
@@ -41,7 +41,7 @@ func Action() cli.ActionFunc {
 			return err
 		}
 
-		return util.RunSubcommand(prover)
+		return utils.RunSubcommand(prover)
 	}
 }
 

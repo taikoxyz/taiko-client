@@ -1,4 +1,4 @@
-package util
+package jwt
 
 import (
 	"encoding/hex"
@@ -18,7 +18,7 @@ import (
 // If the --jwt-secret flag is provided to Prysm, but the file cannot be read, or does not contain a hex-encoded
 // key of at least 256 bits, the client should treat this as an error and abort the startup.
 // Taken from: https://github.com/prysmaticlabs/prysm/blob/v2.1.4/cmd/beacon-chain/execution/options.go#L43
-func ParseJWTSecretFromFile(jwtSecretFile string) ([]byte, error) {
+func ParseSecretFromFile(jwtSecretFile string) ([]byte, error) {
 	if jwtSecretFile == "" {
 		return nil, nil
 	}

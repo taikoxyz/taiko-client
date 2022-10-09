@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/util"
+	"github.com/taikochain/taiko-client/pkg/jwt"
 )
 
 func TestMain(m *testing.M) {
@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 }
 
 func newTestDriver(t *testing.T) *Driver {
-	jwtSecret, err := util.ParseJWTSecretFromFile(os.Getenv("JWT_SECRET"))
+	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
 	require.Nil(t, err)
 	require.NotEmpty(t, jwtSecret)
 

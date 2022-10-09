@@ -1,7 +1,6 @@
 package flags
 
 import (
-	"github.com/taikochain/taiko-client/util"
 	"github.com/urfave/cli/v2"
 )
 
@@ -26,7 +25,7 @@ var (
 )
 
 // All driver flags.
-var DriverFlags = util.MergeFlags(CommonFlags, []cli.Flag{
+var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&L2NodeEngineEndpoint,
 	&ThrowawayBlocksBuilderPrivKey,
 	&JWTSecret,

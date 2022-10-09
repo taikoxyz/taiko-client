@@ -1,7 +1,6 @@
 package flags
 
 import (
-	"github.com/taikochain/taiko-client/util"
 	"github.com/urfave/cli/v2"
 )
 
@@ -39,7 +38,7 @@ var (
 )
 
 // All proposer flags.
-var ProposerFlags = util.MergeFlags(CommonFlags, []cli.Flag{
+var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&L1ProposerPrivKey,
 	&L2SuggestedFeeRecipient,
 	&ProposeInterval,

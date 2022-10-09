@@ -16,7 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/bindings"
-	"github.com/taikochain/taiko-client/rpc"
+	"github.com/taikochain/taiko-client/pkg/rpc"
 )
 
 // InvalidTxListReason represents a reason why a transactions list is invalid,

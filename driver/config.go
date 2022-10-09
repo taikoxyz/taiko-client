@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/cmd/flags"
-	"github.com/taikochain/taiko-client/util"
+	"github.com/taikochain/taiko-client/pkg/jwt"
 	"github.com/urfave/cli/v2"
 )
 
@@ -25,7 +25,7 @@ type Config struct {
 // NewConfigFromCliContext creates a new config instance from
 // the command line inputs.
 func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
-	jwtSecret, err := util.ParseJWTSecretFromFile(c.String(flags.JWTSecret.Name))
+	jwtSecret, err := jwt.ParseSecretFromFile(c.String(flags.JWTSecret.Name))
 	if err != nil {
 		log.Crit("Parse JWT secret from file error", "error", err)
 	}

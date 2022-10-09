@@ -22,7 +22,7 @@ dev_net:
 gen_bindings:
 	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \
 	TAIKO_GETH_DIR=${TAIKO_GETH_DIR} \
-		./script/gen_bindings.sh
+		./scripts/gen_bindings.sh
 
 .PHONY: build \
 				clean \

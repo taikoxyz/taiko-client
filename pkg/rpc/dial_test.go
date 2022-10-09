@@ -7,11 +7,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/beacon"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/util"
+	"github.com/taikochain/taiko-client/pkg/jwt"
 )
 
 func TestDialEngineClient(t *testing.T) {
-	jwtSecret, err := util.ParseJWTSecretFromFile(os.Getenv("JWT_SECRET"))
+	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
 
 	require.Nil(t, err)
 	require.NotEmpty(t, jwtSecret)

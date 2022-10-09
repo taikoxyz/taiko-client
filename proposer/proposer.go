@@ -15,8 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/bindings"
 	"github.com/taikochain/taiko-client/bindings/encoding"
-	"github.com/taikochain/taiko-client/rpc"
-	"github.com/taikochain/taiko-client/util"
+	"github.com/taikochain/taiko-client/cmd/utils"
+	"github.com/taikochain/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
 
@@ -33,7 +33,7 @@ func Action() cli.ActionFunc {
 			return err
 		}
 
-		return util.RunSubcommand(proposer)
+		return utils.RunSubcommand(proposer)
 	}
 }
 
@@ -208,7 +208,7 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 		if err != nil {
 			return err
 		}
-		commitHeight, err = util.WaitForTx(ctx, p.rpc.L1, commitTx)
+		commitHeight, err = rpc.WaitForTx(ctx, p.rpc.L1, commitTx)
 		if err != nil {
 			return err
 		}
@@ -219,7 +219,7 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 		"confirmations", p.commitDelayConfirmations,
 	)
 
-	if err := util.WaitNConfirmations(
+	if err := rpc.WaitNConfirmations(
 		ctx, p.rpc.L1, p.commitDelayConfirmations, commitHeight.Uint64(),
 	); err != nil {
 		return fmt.Errorf("wait L1 blocks confirmations error, commitHash %s: %w", commitHash, err)
@@ -236,7 +236,7 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 		return err
 	}
 
-	if _, err := util.WaitForTx(ctx, p.rpc.L1, proposeTx); err != nil {
+	if _, err := rpc.WaitForTx(ctx, p.rpc.L1, proposeTx); err != nil {
 		return err
 	}
 
@@ -273,8 +273,8 @@ func getTxOpts(ctx context.Context, cli *ethclient.Client, privKey *ecdsa.Privat
 
 	gasTipCap, err := cli.SuggestGasTipCap(ctx)
 	if err != nil {
-		if util.IsMaxPriorityFeePerGasNotFoundError(err) {
-			gasTipCap = util.FallbackGasTipCap
+		if rpc.IsMaxPriorityFeePerGasNotFoundError(err) {
+			gasTipCap = rpc.FallbackGasTipCap
 		} else {
 			return nil, err
 		}
