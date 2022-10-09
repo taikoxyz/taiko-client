@@ -40,14 +40,10 @@ func Action() cli.ActionFunc {
 // Proposer keep proposing new transactions from L2 node's tx pool at a fixed interval.
 type Proposer struct {
 	// RPC clients
-	l1Node  *ethclient.Client
-	l2Node  *ethclient.Client
-	taikoL1 *bindings.TaikoL1Client
-	taikoL2 *bindings.V1TaikoL2Client
+	rpc *rpc.Client
 
 	// Private keys and account addresses
 	l1ProposerPrivKey       *ecdsa.PrivateKey
-	l1ProposerAddress       common.Address
 	l2SuggestedFeeRecipient common.Address
 
 	// Proposing configuration
@@ -64,54 +60,23 @@ type Proposer struct {
 
 // New initializes a new proposer instance based on the given configurations.
 func New(ctx context.Context, cfg *Config) (*Proposer, error) {
-	p := &Proposer{}
-	var err error
-
 	// RPC clients
-	if p.l1Node, err = rpc.DialClientWithBackoff(
-		ctx,
-		cfg.L1Endpoint,
-	); err != nil {
-		return nil, fmt.Errorf("failed to connect to L1 node: %w", err)
+	rpcClient, err := rpc.NewClient(ctx, &rpc.ClientConfig{
+		L1Endpoint:     cfg.L1Endpoint,
+		L2Endpoint:     cfg.L2Endpoint,
+		TaikoL1Address: cfg.TaikoL1Address,
+		TaikoL2Address: cfg.TaikoL2Address,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("initialize rpc clients error: %w", err)
 	}
-
-	if p.l2Node, err = rpc.DialClientWithBackoff(
-		ctx,
-		cfg.L2Endpoint,
-	); err != nil {
-		return nil, fmt.Errorf("failed to connect to L2 node: %w", err)
-	}
-
-	if p.taikoL1, err = bindings.NewTaikoL1Client(cfg.TaikoL1Address, p.l1Node); err != nil {
-		return nil, fmt.Errorf("failed to create TaikoL1 client: %w", err)
-	}
-
-	if p.taikoL2, err = bindings.NewV1TaikoL2Client(cfg.TaikoL2Address, p.l2Node); err != nil {
-		return nil, fmt.Errorf("failed to create TaikoL2 client: %w", err)
-	}
-
-	// Private keys and account addresses
-	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
-	p.l1ProposerAddress = crypto.PubkeyToAddress(p.l1ProposerPrivKey.PublicKey)
-	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
-
-	// Proposing configuration
-	p.proposingInterval = cfg.ProposeInterval
 
 	// Protocol constants
 	_, _, _, commitDelayConfirmations, _,
 		maxGasPerBlock, maxTxPerBlock, _, maxTxBytesPerBlock, minTxGasLimit,
-		_, _, _, err := p.taikoL1.GetConstants(nil)
+		_, _, _, err := rpcClient.TaikoL1.GetConstants(nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get TaikoL1 constants: %w", err)
-	}
-
-	p.commitDelayConfirmations = commitDelayConfirmations.Uint64()
-	p.poolContentSplitter = &poolContentSplitter{
-		maxTxPerBlock:      maxTxPerBlock.Uint64(),
-		maxGasPerBlock:     maxGasPerBlock.Uint64(),
-		maxTxBytesPerBlock: maxTxBytesPerBlock.Uint64(),
-		minTxGasLimit:      minTxGasLimit.Uint64(),
 	}
 
 	log.Info(
@@ -123,11 +88,22 @@ func New(ctx context.Context, cfg *Config) (*Proposer, error) {
 		"minTxGasLimit", minTxGasLimit,
 	)
 
-	// Flags for testing
-	p.produceInvalidBlocks = cfg.ProduceInvalidBlocks
-	p.produceInvalidBlocksInterval = cfg.ProduceInvalidBlocksInterval
-
-	return p, nil
+	return &Proposer{
+		rpc:                      rpcClient,
+		l1ProposerPrivKey:        cfg.L1ProposerPrivKey,
+		l2SuggestedFeeRecipient:  cfg.L2SuggestedFeeRecipient,
+		proposingInterval:        cfg.ProposeInterval,
+		commitDelayConfirmations: commitDelayConfirmations.Uint64(),
+		poolContentSplitter: &poolContentSplitter{
+			maxTxPerBlock:      maxTxPerBlock.Uint64(),
+			maxGasPerBlock:     maxGasPerBlock.Uint64(),
+			maxTxBytesPerBlock: maxTxBytesPerBlock.Uint64(),
+			minTxGasLimit:      minTxGasLimit.Uint64(),
+		},
+		// Configurations for testing
+		produceInvalidBlocks:         cfg.ProduceInvalidBlocks,
+		produceInvalidBlocksInterval: cfg.ProduceInvalidBlocksInterval,
+	}, nil
 }
 
 // Start starts the proposer's main loop.
@@ -165,14 +141,14 @@ func (p *Proposer) Close() {}
 // from L2 node's tx pool, splitting them by proposing constraints,
 // and then proposing them to TaikoL1 contract.
 func (p *Proposer) proposeOp(ctx context.Context) error {
-	syncProgress, err := p.l2Node.SyncProgress(ctx)
+	syncProgress, err := p.rpc.L2.SyncProgress(ctx)
 	if err != nil || syncProgress != nil {
 		return fmt.Errorf("l2 node is syncing: %w", err)
 	}
 
 	log.Info("Start fetching pending transactions from L2 node's tx pool")
 
-	pendingContent, _, err := p.l2Node.TxPoolContent(ctx)
+	pendingContent, _, err := p.rpc.L2.TxPoolContent(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
 	}
@@ -211,7 +187,7 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 		GasLimit:    gasLimit,
 		TxListHash:  crypto.Keccak256Hash(txListBytes),
 	}
-	opts, err := getTxOpts(ctx, p.l1Node, p.l1ProposerPrivKey)
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey)
 	if err != nil {
 		return err
 	}
@@ -221,18 +197,18 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 	)
 
 	// Check if the transactions list has been committed before.
-	commitHeight, err := p.taikoL1.GetCommitHeight(nil, commitHash)
+	commitHeight, err := p.rpc.TaikoL1.GetCommitHeight(nil, commitHash)
 	if err != nil {
 		return fmt.Errorf("check whether a commitHash %s has been committed error: %w", commitHash, err)
 	}
 
 	if commitHeight.Cmp(common.Big0) == 0 {
 		log.Info("Transactions list has never been committed before", "hash", commitHash)
-		commitTx, err := p.taikoL1.CommitBlock(opts, commitHash)
+		commitTx, err := p.rpc.TaikoL1.CommitBlock(opts, commitHash)
 		if err != nil {
 			return err
 		}
-		commitHeight, err = util.WaitForTx(ctx, p.l1Node, commitTx)
+		commitHeight, err = util.WaitForTx(ctx, p.rpc.L1, commitTx)
 		if err != nil {
 			return err
 		}
@@ -244,7 +220,7 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 	)
 
 	if err := util.WaitNConfirmations(
-		ctx, p.l1Node, p.commitDelayConfirmations, commitHeight.Uint64(),
+		ctx, p.rpc.L1, p.commitDelayConfirmations, commitHeight.Uint64(),
 	); err != nil {
 		return fmt.Errorf("wait L1 blocks confirmations error, commitHash %s: %w", commitHash, err)
 	}
@@ -255,12 +231,12 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 		return err
 	}
 
-	proposeTx, err := p.taikoL1.ProposeBlock(opts, inputs)
+	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs)
 	if err != nil {
 		return err
 	}
 
-	if _, err := util.WaitForTx(ctx, p.l1Node, proposeTx); err != nil {
+	if _, err := util.WaitForTx(ctx, p.rpc.L1, proposeTx); err != nil {
 		return err
 	}
 

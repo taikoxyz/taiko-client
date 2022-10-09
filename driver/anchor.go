@@ -57,7 +57,7 @@ func (b *L2ChainInserter) prepareAnchorTx(
 		return nil, err
 	}
 
-	return b.rpc.taikoL2.Anchor(opts, l1Height, l1Hash)
+	return b.rpc.TaikoL2.Anchor(opts, l1Height, l1Hash)
 }
 
 // getNonce fetches the nonce of the given account at a specified height.
@@ -67,6 +67,6 @@ func (b *L2ChainInserter) getNonce(
 	height *big.Int,
 ) (uint64, error) {
 	var result hexutil.Uint64
-	err := b.rpc.l2RawRPC.CallContext(ctx, &result, "eth_getTransactionCount", account, hexutil.EncodeBig(height))
+	err := b.rpc.L2RawRPC.CallContext(ctx, &result, "eth_getTransactionCount", account, hexutil.EncodeBig(height))
 	return uint64(result), err
 }

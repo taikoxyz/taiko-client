@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikochain/taiko-client/rpc"
 	"github.com/taikochain/taiko-client/util"
 	"github.com/urfave/cli/v2"
 )
@@ -24,7 +25,7 @@ const (
 // Driver keeps the L2 node's local block chain in sync with the TaikoL1
 // contract.
 type Driver struct {
-	rpc             *RPCClient
+	rpc             *rpc.Client
 	l2ChainInserter *L2ChainInserter
 	state           *State
 
@@ -58,7 +59,14 @@ func Action() cli.ActionFunc {
 func New(ctx context.Context, cfg *Config) (*Driver, error) {
 	l1HeadCh := make(chan *types.Header)
 
-	rpc, err := NewRPCClient(ctx, cfg)
+	rpc, err := rpc.NewClient(ctx, &rpc.ClientConfig{
+		L1Endpoint:       cfg.L1Endpoint,
+		L2Endpoint:       cfg.L2Endpoint,
+		TaikoL1Address:   cfg.TaikoL1Address,
+		TaikoL2Address:   cfg.TaikoL2Address,
+		L2EngineEndpoint: cfg.L2EngineEndpoint,
+		JwtSecret:        cfg.JwtSecret,
+	})
 	if err != nil {
 		return nil, err
 	}

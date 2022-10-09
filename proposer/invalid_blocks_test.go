@@ -14,7 +14,7 @@ func TestProposeInvalidTxListBytes(t *testing.T) {
 	p := newTestProposer(t)
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
-	sub, err := p.taikoL1.WatchBlockProposed(nil, sink, nil)
+	sub, err := p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil)
 	require.Nil(t, err)
 	defer sub.Unsubscribe()
 
@@ -22,7 +22,7 @@ func TestProposeInvalidTxListBytes(t *testing.T) {
 
 	event := <-sink
 
-	tx, isPending, err := p.l1Node.TransactionByHash(context.Background(), event.Raw.TxHash)
+	tx, isPending, err := p.rpc.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	require.Nil(t, err)
 	require.False(t, isPending)
 
@@ -34,7 +34,7 @@ func TestProposeTxListIncludingInvalidTx(t *testing.T) {
 	p := newTestProposer(t)
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
-	sub, err := p.taikoL1.WatchBlockProposed(nil, sink, nil)
+	sub, err := p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil)
 	require.Nil(t, err)
 	defer sub.Unsubscribe()
 
@@ -42,7 +42,7 @@ func TestProposeTxListIncludingInvalidTx(t *testing.T) {
 
 	event := <-sink
 
-	tx, isPending, err := p.l1Node.TransactionByHash(context.Background(), event.Raw.TxHash)
+	tx, isPending, err := p.rpc.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	require.Nil(t, err)
 	require.False(t, isPending)
 
@@ -58,7 +58,7 @@ func TestProposeTxListIncludingInvalidTx(t *testing.T) {
 	invalidTxSender, err := types.Sender(types.LatestSignerForChainID(invalidTx.ChainId()), invalidTx)
 	require.Nil(t, err)
 
-	pendingNonce, err := p.l2Node.PendingNonceAt(context.Background(), invalidTxSender)
+	pendingNonce, err := p.rpc.L2.PendingNonceAt(context.Background(), invalidTxSender)
 	require.Nil(t, err)
 
 	require.NotEqual(t, pendingNonce, invalidTx.Nonce())

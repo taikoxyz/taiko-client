@@ -37,7 +37,7 @@ func (n *proofList) Delete(key []byte) error {
 // getBlockMetadataByID fetches the L2 block metadata with given block ID.
 // TODO: add start height and end height in filter options.
 func (p *Prover) getBlockMetadataByID(blockID *big.Int) (*bindings.LibDataBlockMetadata, error) {
-	iter, err := p.taikoL1.FilterBlockProposed(nil, []*big.Int{blockID})
+	iter, err := p.rpc.TaikoL1.FilterBlockProposed(nil, []*big.Int{blockID})
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func generateTrieProof[T types.DerivableList](list T, i uint64) (common.Hash, []
 
 // getProveBlockTxOpts creates a bind.TransactOpts instance with the sender's signatures.
 func (p *Prover) getProveBlockTxOpts(ctx context.Context) (*bind.TransactOpts, error) {
-	networkID, err := p.l1RPC.ChainID(ctx)
+	networkID, err := p.rpc.L1.ChainID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (p *Prover) waitForL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.
 		case <-timeout:
 			return nil, fmt.Errorf("fetch L1Origin timeout")
 		case <-ticker.C:
-			l1Origin, err = p.l2RPC.L1OriginByID(ctx, blockID)
+			l1Origin, err = p.rpc.L2.L1OriginByID(ctx, blockID)
 			if err != nil {
 				log.Warn("Failed to fetch L1Origin from L2 node", "blockID", blockID, "error", err)
 				continue

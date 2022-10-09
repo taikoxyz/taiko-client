@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/bindings"
@@ -52,10 +51,7 @@ type Prover struct {
 	cfg *Config
 
 	// Clients
-	l1RPC      *ethclient.Client         // L1 node to communicate with
-	l2RPC      *ethclient.Client         // L2 node to communicate with
-	taikoL1    *bindings.TaikoL1Client   // TaikoL1 contract client
-	taikoL2    *bindings.V1TaikoL2Client // TaikoL2 contract client
+	rpc        *rpc.Client
 	taikoL1Abi *abi.ABI
 	taikoL2Abi *abi.ABI
 
@@ -95,32 +91,17 @@ type Prover struct {
 func New(ctx context.Context, cfg *Config) (*Prover, error) {
 	log.Info("Prover configurations", "config", cfg)
 	// Clients
-	l1RPC, err := rpc.DialClientWithBackoff(ctx, cfg.L1Endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	l2RPC, err := rpc.DialClientWithBackoff(ctx, cfg.L2Endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	l2RPCChainID, err := l2RPC.ChainID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1RPC)
+	rpcClient, err := rpc.NewClient(ctx, &rpc.ClientConfig{
+		L1Endpoint:     cfg.L1Endpoint,
+		L2Endpoint:     cfg.L2Endpoint,
+		TaikoL1Address: cfg.TaikoL1Address,
+		TaikoL2Address: cfg.TaikoL2Address,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	taikoL1Abi, err := bindings.TaikoL1ClientMetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
-
-	taikoL2, err := bindings.NewV1TaikoL2Client(cfg.TaikoL2Address, l2RPC)
 	if err != nil {
 		return nil, err
 	}
@@ -133,15 +114,9 @@ func New(ctx context.Context, cfg *Config) (*Prover, error) {
 	// Constants
 	chainID, maxPendingBlocks, _, _, _,
 		maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit,
-		anchorGasLimit, _, _, err := taikoL1.GetConstants(nil)
+		anchorGasLimit, _, _, err := rpcClient.TaikoL1.GetConstants(nil)
 	if err != nil {
 		return nil, err
-	}
-
-	if l2RPCChainID.Cmp(chainID) != 0 {
-		return nil, fmt.Errorf(
-			"chain id mismatch, l2RPC: %s, LibConstants: %s", l2RPCChainID, chainID,
-		)
 	}
 
 	log.Info(
@@ -168,10 +143,7 @@ func New(ctx context.Context, cfg *Config) (*Prover, error) {
 
 	return &Prover{
 		cfg:                  cfg,
-		l1RPC:                l1RPC,
-		l2RPC:                l2RPC,
-		taikoL1:              taikoL1,
-		taikoL2:              taikoL2,
+		rpc:                  rpcClient,
 		taikoL1Abi:           taikoL1Abi,
 		taikoL2Abi:           taikoL2Abi,
 		maxBlocksGasLimit:    maxBlocksGasLimit.Uint64(),
@@ -255,7 +227,7 @@ func (p *Prover) Close() {
 func (p *Prover) onBlockProposed(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
 	log.Info("New proposed block", "blockID", event.Id)
 
-	proposeBlockTx, err := p.l1RPC.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
+	proposeBlockTx, err := p.rpc.L1.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
 	if err != nil {
 		return err
 	}
@@ -282,7 +254,7 @@ func (p *Prover) onBlockFinalized(ctx context.Context, event *bindings.TaikoL1Cl
 		log.Info("Ignore BlockFinalized event of invalid transaction list", "blockID", event.Id)
 		return nil
 	}
-	l2BlockHeader, err := p.l2RPC.HeaderByHash(ctx, event.BlockHash)
+	l2BlockHeader, err := p.rpc.L2.HeaderByHash(ctx, event.BlockHash)
 	if err != nil {
 		return fmt.Errorf("failed to find L2 block with hash %s: %w", common.BytesToHash(event.BlockHash[:]), err)
 	}
@@ -302,7 +274,7 @@ func (p *Prover) onBlockFinalized(ctx context.Context, event *bindings.TaikoL1Cl
 
 // onForceTimer fetches the oldest unproved block and tries to prove it.
 func (p *Prover) onForceTimer(ctx context.Context) error {
-	_, _, latestFinalizedID, nextBlockID, err := p.taikoL1.GetStateVariables(nil)
+	_, _, latestFinalizedID, nextBlockID, err := p.rpc.TaikoL1.GetStateVariables(nil)
 	if err != nil {
 		return fmt.Errorf("failed to get TaikoL1 state variables: %w", err)
 	}
@@ -314,7 +286,7 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 
 	var oldestUnprovedBlockID *big.Int
 	for i := latestFinalizedID + 1; i < nextBlockID; i++ {
-		proposedBlock, err := p.taikoL1.GetProposedBlock(nil, new(big.Int).SetUint64(i))
+		proposedBlock, err := p.rpc.TaikoL1.GetProposedBlock(nil, new(big.Int).SetUint64(i))
 		if err != nil {
 			return fmt.Errorf("failed to get proposed block: %w", err)
 		}
@@ -337,13 +309,13 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 
 	log.Info("Oldest unproved block ID", "blockID", oldestUnprovedBlockID)
 
-	l1Origin, err := p.l1RPC.L1OriginByID(ctx, oldestUnprovedBlockID)
+	l1Origin, err := p.rpc.L1.L1OriginByID(ctx, oldestUnprovedBlockID)
 	if err != nil {
 		return fmt.Errorf("failed to get L1Origin: %w", err)
 	}
 
 	blockProposedL1Height := l1Origin.L1BlockHeight.Uint64()
-	iter, err := p.taikoL1.FilterBlockProposed(
+	iter, err := p.rpc.TaikoL1.FilterBlockProposed(
 		&bind.FilterOpts{
 			Start: blockProposedL1Height,
 			End:   &blockProposedL1Height,

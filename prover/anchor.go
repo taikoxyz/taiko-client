@@ -22,7 +22,7 @@ func (p *Prover) validateAnchorTx(ctx context.Context, tx *types.Transaction) er
 		return fmt.Errorf("invalid method method, err: %w, methodName: %s", err, method.Name)
 	}
 
-	receipt, err := p.l2RPC.TransactionReceipt(ctx, tx.Hash())
+	receipt, err := p.rpc.L2.TransactionReceipt(ctx, tx.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to get TaikoL2.anchor receipt, err: %w", err)
 	}

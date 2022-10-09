@@ -24,7 +24,7 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 		log.Crit("Get a block metadata with invalid transaction list", "l1Origin", l1Origin)
 	}
 
-	header, err := p.l2RPC.HeaderByHash(ctx, l1Origin.L2BlockHash)
+	header, err := p.rpc.L2.HeaderByHash(ctx, l1Origin.L2BlockHash)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader
 		return err
 	}
 
-	block, err := p.l2RPC.BlockByHash(p.ctx, header.Hash())
+	block, err := p.rpc.L2.BlockByHash(p.ctx, header.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to get L2 block with given hash %s: %w", header.Hash(), err)
 	}
@@ -83,7 +83,7 @@ func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader
 		return fmt.Errorf("invalid anchor transaction: %w", err)
 	}
 
-	anchorTxReceipt, err := p.l2RPC.TransactionReceipt(p.ctx, anchorTx.Hash())
+	anchorTxReceipt, err := p.rpc.L2.TransactionReceipt(p.ctx, anchorTx.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
@@ -93,7 +93,7 @@ func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader
 		return fmt.Errorf("failed to generate anchor transaction proof: %w", err)
 	}
 
-	receipts, err := util.GetReceiptsByBlock(p.ctx, p.l2RPC, block)
+	receipts, err := util.GetReceiptsByBlock(p.ctx, p.rpc.L2, block)
 	if err != nil {
 		return fmt.Errorf("failed to fetch block receipts: %w", err)
 	}
@@ -122,12 +122,12 @@ func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader
 		return fmt.Errorf("failed to encode TaikoL1.proveBlock inputs: %w", err)
 	}
 
-	tx, err := p.taikoL1.ProveBlock(txOpts, blockID, input)
+	tx, err := p.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
 	if err != nil {
 		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
 	}
 
-	if _, err := util.WaitForTx(p.ctx, p.l1RPC, tx); err != nil {
+	if _, err := util.WaitForTx(p.ctx, p.rpc.L1, tx); err != nil {
 		return fmt.Errorf("failed to wait till transaction executed: %w", err)
 	}
 

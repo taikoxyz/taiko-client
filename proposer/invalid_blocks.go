@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 )
@@ -72,7 +73,7 @@ func (p *Proposer) proposeTxListIncludingInvalidTx(ctx context.Context) error {
 // generateInvalidTransaction creates a transaction with an invalid nonce to
 // current L2 world state.
 func (p *Proposer) generateInvalidTransaction(ctx context.Context) (*types.Transaction, error) {
-	chainId, err := p.l2Node.ChainID(ctx)
+	chainId, err := p.rpc.L2.ChainID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +83,7 @@ func (p *Proposer) generateInvalidTransaction(ctx context.Context) (*types.Trans
 		return nil, err
 	}
 
-	nonce, err := p.l2Node.PendingNonceAt(ctx, p.l1ProposerAddress)
+	nonce, err := p.rpc.L2.PendingNonceAt(ctx, crypto.PubkeyToAddress(p.l1ProposerPrivKey.PublicKey))
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +92,7 @@ func (p *Proposer) generateInvalidTransaction(ctx context.Context) (*types.Trans
 	opts.NoSend = true
 	opts.Nonce = new(big.Int).SetUint64(nonce + 1024)
 
-	return p.taikoL2.Anchor(opts, common.Big0, common.BytesToHash(randomBytes(32)))
+	return p.rpc.TaikoL2.Anchor(opts, common.Big0, common.BytesToHash(randomBytes(32)))
 }
 
 // randomBytes generates a random bytes.

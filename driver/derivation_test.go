@@ -36,7 +36,7 @@ func TestInsertNewHead(t *testing.T) {
 	require.Nil(t, err)
 	require.NotEmpty(t, txListBytes)
 
-	l1Head, err := d.rpc.l1.HeaderByNumber(context.Background(), nil)
+	l1Head, err := d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	require.Nil(t, err)
 
 	event := &bindings.TaikoL1ClientBlockProposed{
@@ -58,7 +58,7 @@ func TestInsertNewHead(t *testing.T) {
 		},
 	}
 
-	parent, err := d.rpc.l2.HeaderByNumber(context.Background(), nil)
+	parent, err := d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	require.Nil(t, err)
 
 	payload, rpcErr, payloadErr := d.l2ChainInserter.insertNewHead(

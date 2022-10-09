@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/bindings"
+	"github.com/taikochain/taiko-client/rpc"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -36,11 +37,11 @@ type State struct {
 	maxBlocksGasLimit *big.Int
 	minTxGasLimit     *big.Int
 
-	rpc *RPCClient // L1/L2 RPC clients
+	rpc *rpc.Client // L1/L2 RPC clients
 }
 
 // NewState creates a new driver state instance.
-func NewState(ctx context.Context, rpc *RPCClient) (*State, error) {
+func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 	// Set the L2 head's latest known L1 origin as current L1 sync cursor.
 	latestL2KnownL1Header, err := rpc.LatestL2KnownL1Header(ctx)
 	if err != nil {
@@ -49,7 +50,7 @@ func NewState(ctx context.Context, rpc *RPCClient) (*State, error) {
 
 	_, _, _, _, _,
 		maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit,
-		anchorTxGasLimit, _, _, err := rpc.taikoL1.GetConstants(nil)
+		anchorTxGasLimit, _, _, err := rpc.TaikoL1.GetConstants(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +95,7 @@ func (s *State) Close() error {
 // ConfirmL1Current ensures that the local L1 sync cursor has not been reorged.
 func (s *State) ConfirmL1Current(ctx context.Context) (*types.Header, error) {
 	// Check whether the L1 sync cursor has been reorged
-	l1Current, err := s.rpc.l1.HeaderByHash(ctx, s.L1Current.Hash())
+	l1Current, err := s.rpc.L1.HeaderByHash(ctx, s.L1Current.Hash())
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +116,7 @@ func (s *State) ConfirmL1Current(ctx context.Context) (*types.Header, error) {
 		newL1SyncCursorHeight = common.Big0
 	}
 
-	s.L1Current, err = s.rpc.l1.HeaderByNumber(ctx, newL1SyncCursorHeight)
+	s.L1Current, err = s.rpc.L1.HeaderByNumber(ctx, newL1SyncCursorHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +138,7 @@ func (s *State) initSubscriptions(ctx context.Context) error {
 // subL1Head fetches the latest L1 Head from L1 node, then saves it to current
 // driver state, and then start subscribing.
 func (s *State) subL1Head(ctx context.Context) error {
-	l1Head, err := s.rpc.l1.HeaderByNumber(ctx, nil)
+	l1Head, err := s.rpc.L1.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -169,7 +170,7 @@ func (s *State) subL1Head(ctx context.Context) error {
 // driver state.
 func (s *State) watchL1Head(ctx context.Context) (event.Subscription, error) {
 	newL1HeadCh := make(chan *types.Header, 10)
-	sub, err := s.rpc.l1.SubscribeNewHead(context.Background(), newL1HeadCh)
+	sub, err := s.rpc.L1.SubscribeNewHead(context.Background(), newL1HeadCh)
 	if err != nil {
 		log.Error("Create L1 heads subscription error", "error", err)
 		return nil, err
@@ -212,12 +213,12 @@ func (s *State) getL1Head() *types.Header {
 // TaikoL1 contract, saves it to the current driver state, and then start
 // subscribing.
 func (s *State) subBlockFinalized(ctx context.Context) error {
-	_, lastFinalizedHeight, _, _, err := s.rpc.taikoL1.GetStateVariables(nil)
+	_, lastFinalizedHeight, _, _, err := s.rpc.TaikoL1.GetStateVariables(nil)
 	if err != nil {
 		return err
 	}
 
-	lastFinalizedBlockHash, err := s.rpc.taikoL1.GetSyncedHeader(
+	lastFinalizedBlockHash, err := s.rpc.TaikoL1.GetSyncedHeader(
 		nil,
 		new(big.Int).SetUint64(lastFinalizedHeight),
 	)
@@ -252,7 +253,7 @@ func (s *State) subBlockFinalized(ctx context.Context) error {
 // driver state.
 func (s *State) watchBlockFinalized(ctx context.Context) (ethereum.Subscription, error) {
 	newBlockFinalizedCh := make(chan *bindings.TaikoL1ClientBlockFinalized, 10)
-	sub, err := s.rpc.taikoL1.WatchBlockFinalized(nil, newBlockFinalizedCh, nil)
+	sub, err := s.rpc.TaikoL1.WatchBlockFinalized(nil, newBlockFinalizedCh, nil)
 	if err != nil {
 		log.Error("Create TaikoL1.BlockFinalized subscription error", "error", err)
 		return nil, err
@@ -293,7 +294,7 @@ func (s *State) getLastFinalizedBlockHash() common.Hash {
 // taikoL1 contract, saves it to the current driver state, and then starts
 // subscribing.
 func (s *State) subLastPendingBlockID(ctx context.Context) error {
-	_, _, _, nextPendingID, err := s.rpc.taikoL1.GetStateVariables(nil)
+	_, _, _, nextPendingID, err := s.rpc.TaikoL1.GetStateVariables(nil)
 	if err != nil {
 		return err
 	}
@@ -325,7 +326,7 @@ func (s *State) subLastPendingBlockID(ctx context.Context) error {
 // driver state.
 func (s *State) watchBlockProposed(ctx context.Context) (ethereum.Subscription, error) {
 	newBlockProposedCh := make(chan *bindings.TaikoL1ClientBlockProposed, 10)
-	sub, err := s.rpc.taikoL1.WatchBlockProposed(nil, newBlockProposedCh, nil)
+	sub, err := s.rpc.TaikoL1.WatchBlockProposed(nil, newBlockProposedCh, nil)
 	if err != nil {
 		log.Error("Create TaikoL1.BlockProposed subscription error", "error", err)
 		return nil, err

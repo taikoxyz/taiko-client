@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/bindings"
+	"github.com/taikochain/taiko-client/rpc"
 )
 
 // InvalidTxListReason represents a reason why a transactions list is invalid,
@@ -46,7 +47,7 @@ const (
 type L2ChainInserter struct {
 	taikoL1ABI                    *abi.ABI          // TaikoL1 contract ABI
 	state                         *State            // Driver's state
-	rpc                           *RPCClient        // L1/L2 RPC clients
+	rpc                           *rpc.Client       // L1/L2 RPC clients
 	chainID                       *big.Int          // L2 chain ID
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey // Private key of L2 throwaway blocks builder
 }
@@ -54,7 +55,7 @@ type L2ChainInserter struct {
 // NewL2ChainInserter creates a new block inserter instance.
 func NewL2ChainInserter(
 	ctx context.Context,
-	rpc *RPCClient,
+	rpc *rpc.Client,
 	state *State,
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
 ) (*L2ChainInserter, error) {
@@ -63,7 +64,7 @@ func NewL2ChainInserter(
 		return nil, err
 	}
 
-	chainID, err := rpc.l2.ChainID(ctx)
+	chainID, err := rpc.L2.ChainID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +95,7 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 	)
 
 	end := l1End.Number.Uint64()
-	iter, err := b.rpc.taikoL1.FilterBlockProposed(&bind.FilterOpts{
+	iter, err := b.rpc.TaikoL1.FilterBlockProposed(&bind.FilterOpts{
 		Start: l1Start.Number.Uint64(),
 		End:   &end,
 	}, nil)
@@ -128,7 +129,7 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 
 		log.Debug("Parent block", "height", parent.Number, "hash", parent.Hash())
 
-		tx, err := b.rpc.l1.TransactionInBlock(
+		tx, err := b.rpc.L1.TransactionInBlock(
 			ctx,
 			event.Raw.BlockHash,
 			event.Raw.TxIndex,
@@ -200,7 +201,7 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 
 		log.Info("New payload data", "payload", payloadData)
 
-		if b.state.L1Current, err = b.rpc.l1.HeaderByHash(ctx, event.Raw.BlockHash); err != nil {
+		if b.state.L1Current, err = b.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash); err != nil {
 			return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
 		}
 
@@ -215,7 +216,7 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 		)
 	}
 
-	if b.state.L1Current, err = b.rpc.l1.HeaderByHash(ctx, l1End.Hash()); err != nil {
+	if b.state.L1Current, err = b.rpc.L1.HeaderByHash(ctx, l1End.Hash()); err != nil {
 		return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
 	}
 
@@ -310,7 +311,7 @@ func (b *L2ChainInserter) insertNewHead(
 	// Update the fork choice
 	fc.HeadBlockHash = payload.BlockHash
 	fc.SafeBlockHash = payload.BlockHash
-	fcRes, err := b.rpc.l2Engine.ForkchoiceUpdate(ctx, fc, nil)
+	fcRes, err := b.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, nil)
 	if err != nil {
 		return nil, err, nil
 	}
@@ -346,7 +347,7 @@ func (b *L2ChainInserter) insertThrowAwayBlock(
 		return nil, nil, err
 	}
 
-	invalidateBlockTx, err := b.rpc.taikoL2.InvalidateBlock(
+	invalidateBlockTx, err := b.rpc.TaikoL2.InvalidateBlock(
 		opts,
 		txListBytes,
 		hint,
@@ -402,7 +403,7 @@ func (b *L2ChainInserter) createExecutionPayloads(
 
 	// TODO: handle payload error more precisely
 	// Step 1, prepare a payload
-	fcRes, err := b.rpc.l2Engine.ForkchoiceUpdate(ctx, fc, attributes)
+	fcRes, err := b.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, attributes)
 	if err != nil {
 		return nil, err, nil
 	}
@@ -414,13 +415,13 @@ func (b *L2ChainInserter) createExecutionPayloads(
 	}
 
 	// Step 2, get the payload
-	payload, err := b.rpc.l2Engine.GetPayload(ctx, fcRes.PayloadID)
+	payload, err := b.rpc.L2Engine.GetPayload(ctx, fcRes.PayloadID)
 	if err != nil {
 		return nil, err, nil
 	}
 
 	// Step 3, execute the payload
-	execStatus, err := b.rpc.l2Engine.NewPayload(ctx, payload)
+	execStatus, err := b.rpc.L2Engine.NewPayload(ctx, payload)
 	if err != nil {
 		return nil, err, nil
 	}
