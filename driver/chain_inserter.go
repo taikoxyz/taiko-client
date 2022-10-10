@@ -3,6 +3,7 @@ package driver
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -42,6 +43,14 @@ const (
 	HintBlockGasLimitTooLarge
 	HintTxInvalidSig
 	HintTxGasLimitTooSmall
+)
+
+var (
+	// errInvalidProposeBlockTx is returned when the given `proposeBlock` tx
+	// is invalid.
+	errInvalidProposeBlockTx = errors.New("invalid propose block tx")
+	// errEmptyPayloadID is returned when the received payload ID is empty.
+	errEmptyPayloadID = errors.New("empty payload ID")
 )
 
 type L2ChainInserter struct {
@@ -316,7 +325,7 @@ func (b *L2ChainInserter) insertNewHead(
 		return nil, err, nil
 	}
 	if fcRes.PayloadStatus.Status != beacon.VALID {
-		return nil, nil, forkchoiceUpdatedError{Status: fcRes.PayloadStatus.Status}
+		return nil, nil, fmt.Errorf("failed to update forkchoice, status: %s", fcRes.PayloadStatus.Status)
 	}
 
 	return payload, nil, nil
@@ -408,7 +417,7 @@ func (b *L2ChainInserter) createExecutionPayloads(
 		return nil, err, nil
 	}
 	if fcRes.PayloadStatus.Status != beacon.VALID {
-		return nil, nil, forkchoiceUpdatedError{Status: fcRes.PayloadStatus.Status}
+		return nil, nil, fmt.Errorf("failed to update forkchoice, status: %s", fcRes.PayloadStatus.Status)
 	}
 	if fcRes.PayloadID == nil {
 		return nil, nil, errEmptyPayloadID
@@ -426,7 +435,7 @@ func (b *L2ChainInserter) createExecutionPayloads(
 		return nil, err, nil
 	}
 	if execStatus.Status != beacon.VALID {
-		return nil, nil, execPayloadError{Status: execStatus.Status}
+		return nil, nil, fmt.Errorf("failed to execute the newly built block, status: %s", execStatus.Status)
 	}
 
 	return payload, nil, nil
