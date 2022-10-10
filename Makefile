@@ -3,15 +3,15 @@ GIT_DATE := $(shell git show -s --format='%ct')
 VERSION := 0.0.0
 VERSION_META := dev
 
-LDFLAGSSTRING +=-X github.com/taikochain/taiko-client/version.Version=$(VERSION)
-LDFLAGSSTRING +=-X github.com/taikochain/taiko-client/version.Meta=$(VERSION_META)
-LDFLAGSSTRING +=-X github.com/taikochain/taiko-client/version.GitCommit=$(GIT_COMMIT)
-LDFLAGSSTRING +=-X github.com/taikochain/taiko-client/version.GitDate=$(GIT_DATE)
+LD_FLAGS_ARGS +=-X github.com/taikochain/taiko-client/version.Version=$(VERSION)
+LD_FLAGS_ARGS +=-X github.com/taikochain/taiko-client/version.Meta=$(VERSION_META)
+LD_FLAGS_ARGS +=-X github.com/taikochain/taiko-client/version.GitCommit=$(GIT_COMMIT)
+LD_FLAGS_ARGS +=-X github.com/taikochain/taiko-client/version.GitDate=$(GIT_DATE)
 
-LDFLAGS := -ldflags "$(LDFLAGSSTRING)"
+LD_FLAGS := -ldflags "$(LD_FLAGS_ARGS)"
 
 build:
-	GO111MODULE=on go build -v $(LDFLAGS) -o bin/taiko-client cmd/main.go
+	GO111MODULE=on go build -v $(LD_FLAGS) -o bin/taiko-client cmd/main.go
 
 clean:
 	@rm -rf bin/*

@@ -1,4 +1,4 @@
-package utils
+package logger
 
 import (
 	"os"
@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// InitLogger initializes the root logger with the command line flags.
 func InitLogger(c *cli.Context) {
 	var handler log.Handler
 	if c.Bool(flags.LogJson.Name) {

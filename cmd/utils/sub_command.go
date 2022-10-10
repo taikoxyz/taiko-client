@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikochain/taiko-client/cmd/logger"
 	"github.com/urfave/cli/v2"
 )
 
@@ -18,7 +19,7 @@ type Subcommand interface {
 
 func SubcommandAction(app Subcommand) cli.ActionFunc {
 	return func(c *cli.Context) error {
-		InitLogger(c)
+		logger.InitLogger(c)
 
 		if err := app.InitFromCli(c); err != nil {
 			return err
