@@ -12,7 +12,7 @@ import (
 // poolContentSplitter is responsible for splitting the pool content
 // which fetched from `txpool_content` RPC into several transactions lists
 // and make sure each splitted list satisfies the limits defined in Taiko
-// bindings.
+// protocol.
 type poolContentSplitter struct {
 	maxTxPerBlock      uint64
 	maxGasPerBlock     uint64
@@ -21,7 +21,7 @@ type poolContentSplitter struct {
 }
 
 // split splits the given transaction pool content to make each splitted
-// transactions list satisfies the rules defined in Taiko bindings.
+// transactions list satisfies the rules defined in Taiko protocol.
 func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Transaction {
 	var (
 		splittedTxLists        = make([][]*types.Transaction, 0)
@@ -61,7 +61,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 }
 
 // validateTx checks whether the given transaction is valid according
-// to the rules in Taiko bindings.
+// to the rules in Taiko protocol.
 func (p *poolContentSplitter) validateTx(tx *types.Transaction) error {
 	if tx.Gas() < p.minTxGasLimit || tx.Gas() > p.maxGasPerBlock {
 		return fmt.Errorf(

@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikochain/taiko-client/driver/crypto"
 )
@@ -20,7 +19,7 @@ func (b *L2ChainInserter) newAnchorTransactor(ctx context.Context, height *big.I
 	signer := types.LatestSignerForChainID(b.chainID)
 
 	// Get the nonce of gold finger account at the specified height
-	nonce, err := b.getNonce(ctx, goldenTouchAddress, height)
+	nonce, err := b.rpc.L2AccountNonce(ctx, goldenTouchAddress, height)
 	if err != nil {
 		return nil, err
 	}
@@ -58,15 +57,4 @@ func (b *L2ChainInserter) prepareAnchorTx(
 	}
 
 	return b.rpc.TaikoL2.Anchor(opts, l1Height, l1Hash)
-}
-
-// getNonce fetches the nonce of the given account at a specified height.
-func (b *L2ChainInserter) getNonce(
-	ctx context.Context,
-	account common.Address,
-	height *big.Int,
-) (uint64, error) {
-	var result hexutil.Uint64
-	err := b.rpc.L2RawRPC.CallContext(ctx, &result, "eth_getTransactionCount", account, hexutil.EncodeBig(height))
-	return uint64(result), err
 }

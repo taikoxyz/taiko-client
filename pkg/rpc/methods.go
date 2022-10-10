@@ -9,6 +9,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
@@ -173,4 +174,15 @@ func (c *Client) L2PoolContent(ctx context.Context) (pending PoolContent, queued
 	}
 
 	return res["pending"], res["queued"], nil
+}
+
+// L2AccountNonce fetches the nonce of the given L2 account at a specified height.
+func (c *Client) L2AccountNonce(
+	ctx context.Context,
+	account common.Address,
+	height *big.Int,
+) (uint64, error) {
+	var result hexutil.Uint64
+	err := c.L2RawRPC.CallContext(ctx, &result, "eth_getTransactionCount", account, hexutil.EncodeBig(height))
+	return uint64(result), err
 }

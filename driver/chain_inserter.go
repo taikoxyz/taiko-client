@@ -493,7 +493,7 @@ func (b *L2ChainInserter) getInvalidateBlockTxOpts(ctx context.Context, height *
 		return nil, err
 	}
 
-	nonce, err := b.getNonce(
+	nonce, err := b.rpc.L2AccountNonce(
 		ctx,
 		crypto.PubkeyToAddress(b.throwawayBlocksBuilderPrivKey.PublicKey),
 		height,
