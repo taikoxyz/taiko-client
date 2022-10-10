@@ -40,7 +40,7 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 }
 
 // submitValidBlockProof submits the generated ZK proof to TaikoL1 contract.
-func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader) (err error) {
+func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *producer.ProofWithHeader) (err error) {
 	log.Info(
 		"New valid block proof",
 		"blockID", proofWithHeader.BlockID,
@@ -58,12 +58,12 @@ func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader
 		return fmt.Errorf("failed to fetch L2 block with given block ID %s: %w", blockID, err)
 	}
 
-	txOpts, err := p.getProveBlocksTxOpts(p.ctx)
+	txOpts, err := p.getProveBlocksTxOpts(ctx)
 	if err != nil {
 		return err
 	}
 
-	block, err := p.rpc.L2.BlockByHash(p.ctx, header.Hash())
+	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to get L2 block with given hash %s: %w", header.Hash(), err)
 	}
@@ -79,11 +79,11 @@ func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader
 
 	anchorTx := block.Transactions()[0]
 
-	if err := p.validateAnchorTx(p.ctx, anchorTx); err != nil {
+	if err := p.validateAnchorTx(ctx, anchorTx); err != nil {
 		return fmt.Errorf("invalid anchor transaction: %w", err)
 	}
 
-	anchorTxReceipt, err := p.rpc.L2.TransactionReceipt(p.ctx, anchorTx.Hash())
+	anchorTxReceipt, err := p.rpc.L2.TransactionReceipt(ctx, anchorTx.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
@@ -93,7 +93,7 @@ func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader
 		return fmt.Errorf("failed to generate anchor transaction proof: %w", err)
 	}
 
-	receipts, err := rpc.GetReceiptsByBlock(p.ctx, p.rpc.L2, block)
+	receipts, err := rpc.GetReceiptsByBlock(ctx, p.rpc.L2, block)
 	if err != nil {
 		return fmt.Errorf("failed to fetch block receipts: %w", err)
 	}
@@ -127,7 +127,7 @@ func (p *Prover) submitValidBlockProof(proofWithHeader *producer.ProofWithHeader
 		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
 	}
 
-	if _, err := rpc.WaitForTx(p.ctx, p.rpc.L1, tx); err != nil {
+	if _, err := rpc.WaitForTx(ctx, p.rpc.L1, tx); err != nil {
 		return fmt.Errorf("failed to wait till transaction executed: %w", err)
 	}
 

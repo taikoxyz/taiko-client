@@ -28,7 +28,7 @@ type State struct {
 	l1Head              *atomic.Value // Latest known L1 head
 	l2HeadBlockID       *atomic.Value // Latest known L2 block ID
 	l2FinalizedHeadHash *atomic.Value // Latest known L2 finalized head
-	L1Current           *types.Header // Current L1 block sync cursor
+	l1Current           *types.Header // Current L1 block sync cursor
 
 	// Constants
 	anchorTxGasLimit  *big.Int
@@ -74,7 +74,7 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 		l1Head:              new(atomic.Value),
 		l2HeadBlockID:       new(atomic.Value),
 		l2FinalizedHeadHash: new(atomic.Value),
-		L1Current:           latestL2KnownL1Header,
+		l1Current:           latestL2KnownL1Header,
 	}
 
 	if err := s.initSubscriptions(ctx); err != nil {
@@ -94,33 +94,33 @@ func (s *State) Close() {
 // ConfirmL1Current ensures that the local L1 sync cursor has not been reorged.
 func (s *State) ConfirmL1Current(ctx context.Context) (*types.Header, error) {
 	// Check whether the L1 sync cursor has been reorged
-	l1Current, err := s.rpc.L1.HeaderByHash(ctx, s.L1Current.Hash())
+	l1Current, err := s.rpc.L1.HeaderByHash(ctx, s.l1Current.Hash())
 	if err != nil {
 		return nil, err
 	}
 
 	// Not reorged
 	if l1Current != nil {
-		return s.L1Current, nil
+		return s.l1Current, nil
 	}
 
 	// Reorg detected, update sync cursor's height to last saved height minus
 	// `reorgRollbackDepth`
 	var newL1SyncCursorHeight *big.Int
-	if s.L1Current.Number.Uint64() > ReorgRollbackDepth {
+	if s.l1Current.Number.Uint64() > ReorgRollbackDepth {
 		newL1SyncCursorHeight = new(big.Int).SetUint64(
-			s.L1Current.Number.Uint64() - ReorgRollbackDepth,
+			s.l1Current.Number.Uint64() - ReorgRollbackDepth,
 		)
 	} else {
 		newL1SyncCursorHeight = common.Big0
 	}
 
-	s.L1Current, err = s.rpc.L1.HeaderByNumber(ctx, newL1SyncCursorHeight)
+	s.l1Current, err = s.rpc.L1.HeaderByNumber(ctx, newL1SyncCursorHeight)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.L1Current, nil
+	return s.l1Current, nil
 }
 
 // initSubscriptions initializes all subscriptions in the given state instance.

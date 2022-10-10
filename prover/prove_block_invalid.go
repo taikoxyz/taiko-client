@@ -44,6 +44,7 @@ func (p *Prover) proveBlockInvalid(
 
 // submitInvalidBlockProof submits the generated ZK proof to TaikoL1 contract.
 func (p *Prover) submitInvalidBlockProof(
+	ctx context.Context,
 	proofWithHeader *producer.ProofWithHeader,
 ) (err error) {
 	log.Info(
@@ -58,7 +59,7 @@ func (p *Prover) submitInvalidBlockProof(
 		zkProof = proofWithHeader.ZkProof
 	)
 
-	block, err := p.rpc.L2.BlockByHash(p.ctx, header.Hash())
+	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to fetch throwaway block: %w", err)
 	}
@@ -72,7 +73,7 @@ func (p *Prover) submitInvalidBlockProof(
 	}
 
 	// Fetch the transaction receipts in that throwaway block.
-	receipts, err := p.rpc.L2.GetThrowawayTransactionReceipts(p.ctx, header.Hash())
+	receipts, err := p.rpc.L2.GetThrowawayTransactionReceipts(ctx, header.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to fetch invalidateBlock transaction receipt: %w", err)
 	}
@@ -115,7 +116,7 @@ func (p *Prover) submitInvalidBlockProof(
 		return err
 	}
 
-	txOpts, err := p.getProveBlocksTxOpts(p.ctx)
+	txOpts, err := p.getProveBlocksTxOpts(ctx)
 	if err != nil {
 		return err
 	}
@@ -125,7 +126,7 @@ func (p *Prover) submitInvalidBlockProof(
 		return fmt.Errorf("failed to send TaikoL1.proveBlockInvalid transaction: %w", err)
 	}
 
-	if _, err := rpc.WaitForTx(p.ctx, p.rpc.L1, tx); err != nil {
+	if _, err := rpc.WaitForTx(ctx, p.rpc.L1, tx); err != nil {
 		return fmt.Errorf("failed to wait till transaction executed: %w", err)
 	}
 

@@ -210,7 +210,7 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 
 		log.Info("New payload data", "payload", payloadData)
 
-		if b.state.L1Current, err = b.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash); err != nil {
+		if b.state.l1Current, err = b.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash); err != nil {
 			return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
 		}
 
@@ -225,7 +225,7 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 		)
 	}
 
-	if b.state.L1Current, err = b.rpc.L1.HeaderByHash(ctx, l1End.Hash()); err != nil {
+	if b.state.l1Current, err = b.rpc.L1.HeaderByHash(ctx, l1End.Hash()); err != nil {
 		return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
 	}
 

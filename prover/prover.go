@@ -188,11 +188,11 @@ func (p *Prover) eventLoop() {
 				log.Error("Handle BlockFinalized event error", "error", err)
 			}
 		case proofWithHeader := <-p.proveValidProofCh:
-			if err := p.submitValidBlockProof(proofWithHeader); err != nil {
+			if err := p.submitValidBlockProof(p.ctx, proofWithHeader); err != nil {
 				log.Error("Prove valid block error", "error", err)
 			}
 		case proofWithHeader := <-p.proveInvalidProofCh:
-			if err := p.submitInvalidBlockProof(proofWithHeader); err != nil {
+			if err := p.submitInvalidBlockProof(p.ctx, proofWithHeader); err != nil {
 				log.Error("Prove invalid block error", "error", err)
 			}
 		}
@@ -337,7 +337,7 @@ func (p *Prover) batchHandleBlockProposedEvents(
 	})
 
 	for i := 0; i < len(p.blockProposedEventsBuffer); i++ {
-		if err := p.onBlockProposed(p.ctx, p.blockProposedEventsBuffer[i]); err != nil {
+		if err := p.onBlockProposed(ctx, p.blockProposedEventsBuffer[i]); err != nil {
 			return err
 		}
 	}
