@@ -44,6 +44,8 @@ type TxListValidator struct {
 	chainID           *big.Int
 }
 
+// ValidateTxList checks whether the transactions list in the TaikoL1.proposeBlock transaction's
+// input data is valid.
 func (v *TxListValidator) ValidateTxList(
 	blockID *big.Int,
 	proposeBlockTxInput []byte,
@@ -62,20 +64,20 @@ func (v *TxListValidator) ValidateTxList(
 // ref: https://github.com/taikochain/taiko-mono/blob/main/packages/bindings/contracts/libs/LibInvalidTxList.sol
 func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
 	if len(txListBytes) > int(v.maxTxlistBytes) {
-		log.Warn("Transactions list binary too large, length: %s", len(txListBytes), "blockID", blockID)
+		log.Info("Transactions list binary too large, length: %s", len(txListBytes), "blockID", blockID)
 		return HintBinaryTooLarge, 0
 	}
 
 	var txs types.Transactions
 	if err := rlp.DecodeBytes(txListBytes, &txs); err != nil {
-		log.Warn("Failed to decode transactions list bytes", "blockID", blockID, "error", err)
+		log.Info("Failed to decode transactions list bytes", "blockID", blockID, "error", err)
 		return HintBinaryNotDecodable, 0
 	}
 
-	log.Info("Transactions list decoded", "blockID", blockID, "length", len(txs))
+	log.Debug("Transactions list decoded", "blockID", blockID, "length", len(txs))
 
 	if txs.Len() > int(v.maxBlockNumTxs) {
-		log.Warn("Too many transactions", "blockID", blockID, "count", txs.Len())
+		log.Info("Too many transactions", "blockID", blockID, "count", txs.Len())
 		return HintBlockTooManyTxs, 0
 	}
 
@@ -85,7 +87,7 @@ func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (h
 	}
 
 	if sumGasLimit > v.maxBlocksGasLimit {
-		log.Warn("Accumulate gas limit too large", "blockID", blockID, "sumGasLimit", sumGasLimit)
+		log.Info("Accumulate gas limit too large", "blockID", blockID, "sumGasLimit", sumGasLimit)
 		return HintBlockGasLimitTooLarge, 0
 	}
 
@@ -94,12 +96,12 @@ func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (h
 	for i, tx := range txs {
 		sender, err := types.Sender(signer, tx)
 		if err != nil || sender == (common.Address{}) {
-			log.Warn("Invalid transaction signature", "error", err)
+			log.Info("Invalid transaction signature", "error", err)
 			return HintTxInvalidSig, i
 		}
 
 		if tx.Gas() < v.minTxGasLimit {
-			log.Warn("Transaction gas limit too small", "gasLimit", tx.Gas())
+			log.Info("Transaction gas limit too small", "gasLimit", tx.Gas())
 			return HintTxGasLimitTooSmall, i
 		}
 	}

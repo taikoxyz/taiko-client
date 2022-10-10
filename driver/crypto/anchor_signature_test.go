@@ -24,7 +24,7 @@ func TestSignAnchor(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test1",
+			name: "k = 1, test case 1",
 			args: args{
 				hash: hexutil.MustDecode(
 					"0x44943399d1507f3ce7525e9be2f987c3db9136dc759cb7f92f742154196868b9",
@@ -38,7 +38,7 @@ func TestSignAnchor(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test2",
+			name: "k = 1, test case 2",
 			args: args{
 				hash: hexutil.MustDecode(
 					"0x663d210fa6dba171546498489de1ba024b89db49e21662f91bf83cdffe788820",
@@ -83,7 +83,7 @@ func TestSignAnchorRS2(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test1",
+			name: "K = 2, test case 1",
 			args: args{
 				hash: hexutil.MustDecode(
 					"0x44943399d1507f3ce7525e9be2f987c3db9136dc759cb7f92f742154196868b9",
@@ -97,7 +97,7 @@ func TestSignAnchorRS2(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test2",
+			name: "K = 2, test case 2",
 			args: args{
 				hash: hexutil.MustDecode(
 					"0x663d210fa6dba171546498489de1ba024b89db49e21662f91bf83cdffe788820",

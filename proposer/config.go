@@ -7,7 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/cmd/flags"
 	"github.com/urfave/cli/v2"
 )
@@ -34,7 +33,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		common.Hex2Bytes(c.String(flags.L1ProposerPrivKey.Name)),
 	)
 	if err != nil {
-		log.Crit("Parse L1 proposer private key error", "error", err)
+		return nil, fmt.Errorf("invalid L1 proposer private key: %w", err)
 	}
 
 	// Proposing configuration

@@ -22,7 +22,8 @@ func (p *Prover) startSubscription() {
 	)
 
 	p.blockFinalizedSub = event.ResubscribeErr(
-		backoff.DefaultMaxInterval, func(ctx context.Context, err error) (event.Subscription, error) {
+		backoff.DefaultMaxInterval,
+		func(ctx context.Context, err error) (event.Subscription, error) {
 			if err != nil {
 				log.Warn("Failed to subscribe TaikoL1.BlockFinalized, try resubscribing", "error", err)
 			}

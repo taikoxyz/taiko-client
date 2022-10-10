@@ -20,6 +20,7 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.Id, err)
 	}
 
+	// This should not be reached, only check for safety.
 	if l1Origin.Throwaway {
 		log.Crit("Get a block metadata with invalid transaction list", "l1Origin", l1Origin)
 	}
@@ -68,14 +69,13 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		return fmt.Errorf("failed to get L2 block with given hash %s: %w", header.Hash(), err)
 	}
 
-	log.Info(
+	log.Debug(
 		"Get the L2 block to prove",
 		"blockID", blockID,
 		"hash", block.Hash(),
+		"root", header.Root.String(),
 		"transactions", len(block.Transactions()),
 	)
-
-	log.Info("StateRoot", "root", header.Root.String(), "zkProof", zkProof, "block", header)
 
 	anchorTx := block.Transactions()[0]
 

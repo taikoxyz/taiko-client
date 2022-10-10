@@ -14,20 +14,20 @@ const (
 )
 
 var (
-	// 32 zero bytes
+	// 32 zero bytes.
 	zero32 [32]byte
 
-	// Private key of gold finger account
+	// Private key of golden touch account.
 	goldFingerPrivateKey = func() *secp256k1.ModNScalar {
 		b := hexutil.MustDecode("0x92954368afd3caa1f3ce3ead0069c1af414054aefe1ef9aeacc1bf426222ce38")
 		var priv btcec.PrivateKey
 		if overflow := priv.Key.SetByteSlice(b); overflow || priv.Key.IsZero() {
-			log.Crit("invalid private key")
+			log.Crit("Invalid private key")
 		}
 		return &priv.Key
 	}()
 
-	// ECDSA signing methods when using fixed K = 1 / K = 2
+	// ECDSA signing methods when using fixed K = 1 / K = 2.
 	rs1 = fixedRAndS(1)
 	rs2 = fixedRAndS(2)
 )
@@ -73,7 +73,7 @@ func fixedRAndS(ui uint32) func(hash []byte) ([]byte, bool) {
 	}
 }
 
-// SignAnchor only be used for gold finger account and anchor transaction
+// SignAnchor only be used by signing V1TaikoL2.anchor transactions.
 func SignAnchor(hash []byte) ([]byte, error) {
 	// fixed hash length
 	if len(hash) != 32 {

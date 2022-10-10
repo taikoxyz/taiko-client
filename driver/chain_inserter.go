@@ -208,14 +208,14 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 			continue
 		}
 
-		log.Info("New payload data", "payload", payloadData)
+		log.Debug("Payload data", "payload", payloadData)
 
 		if b.state.l1Current, err = b.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash); err != nil {
 			return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
 		}
 
 		log.Info(
-			"Insert new L2 block",
+			"🔗 New L2 block inserted",
 			"throwaway", l1Origin.Throwaway,
 			"blockID", event.Id,
 			"height", payloadData.Number,
@@ -269,8 +269,8 @@ func (b *L2ChainInserter) insertNewHead(
 	txListBytes []byte,
 	l1Origin *rawdb.L1Origin,
 ) (payloadData *beacon.ExecutableDataV1, rpcError error, payloadError error) {
-	log.Info(
-		"insertNewHead",
+	log.Debug(
+		"Try to insert a new L2 head block",
 		"parentNumber", parent.Number,
 		"parentHash", parent.Hash(),
 		"headBlockID", headBlockID,
@@ -280,12 +280,12 @@ func (b *L2ChainInserter) insertNewHead(
 	// Insert a TaikoL2.anchor transaction at transactions list head
 	var txList []*types.Transaction
 	if err := rlp.DecodeBytes(txListBytes, &txList); err != nil {
-		log.Warn("Ignore invalid txList bytes", "blockID", event.Id)
+		log.Info("Ignore invalid txList bytes", "blockID", event.Id)
 		return nil, nil, err
 	}
 
 	// Assemble a TaikoL2.anchor transaction
-	anchorTx, err := b.prepareAnchorTx(
+	anchorTx, err := b.assembleAnchorTx(
 		ctx,
 		event.Meta.L1Height,
 		event.Meta.L1Hash,
@@ -344,7 +344,7 @@ func (b *L2ChainInserter) insertThrowAwayBlock(
 	l1Origin *rawdb.L1Origin,
 ) (payloadData *beacon.ExecutableDataV1, rpcError error, payloadError error) {
 	log.Info(
-		"insertThrowAwayBlock",
+		"Try to insert a new L2 throwaway block",
 		"parentHash", parent.Hash(),
 		"headBlockID", headBlockID,
 		"l1Origin", l1Origin,
@@ -452,14 +452,14 @@ func (b *L2ChainInserter) isTxListValid(txListBytes []byte) (hint InvalidTxListR
 
 	var txs types.Transactions
 	if err := rlp.DecodeBytes(txListBytes, &txs); err != nil {
-		log.Warn("Failed to decode transactions list bytes", "error", err)
+		log.Debug("Failed to decode transactions list bytes", "error", err)
 		return HintBinaryNotDecodable, 0
 	}
 
-	log.Info("Transactions list decoded", "length", len(txs))
+	log.Debug("Transactions list decoded", "length", len(txs))
 
 	if txs.Len() > int(b.state.maxBlockNumTxs.Uint64()) {
-		log.Warn("Too many transactions", "count", txs.Len())
+		log.Debug("Too many transactions", "count", txs.Len())
 		return HintBlockTooManyTxs, 0
 	}
 
@@ -469,7 +469,7 @@ func (b *L2ChainInserter) isTxListValid(txListBytes []byte) (hint InvalidTxListR
 	}
 
 	if sumGasLimit > b.state.maxBlocksGasLimit.Uint64() {
-		log.Warn("Accumulate gas limit too large", "sumGasLimit", sumGasLimit)
+		log.Debug("Accumulate gas limit too large", "sumGasLimit", sumGasLimit)
 		return HintBlockGasLimitTooLarge, 0
 	}
 
@@ -478,12 +478,12 @@ func (b *L2ChainInserter) isTxListValid(txListBytes []byte) (hint InvalidTxListR
 	for i, tx := range txs {
 		sender, err := types.Sender(signer, tx)
 		if err != nil || sender == (common.Address{}) {
-			log.Warn("Invalid transaction signature", "error", err)
+			log.Debug("Invalid transaction signature", "error", err)
 			return HintTxInvalidSig, i
 		}
 
 		if tx.Gas() < b.state.minTxGasLimit.Uint64() {
-			log.Warn("Transaction gas limit too small", "gasLimit", tx.Gas())
+			log.Debug("Transaction gas limit too small", "gasLimit", tx.Gas())
 			return HintTxGasLimitTooSmall, i
 		}
 	}

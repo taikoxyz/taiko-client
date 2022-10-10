@@ -28,7 +28,7 @@ func (p *Prover) proveBlockInvalid(
 		return err
 	}
 
-	log.Info("Throwaway block", "header", throwAwayBlock.Header())
+	log.Debug("Throwaway block", "header", throwAwayBlock.Header())
 
 	proofOpts := &producer.ProofRequestOptions{
 		Height:         throwAwayBlock.Header().Number,
@@ -64,8 +64,6 @@ func (p *Prover) submitInvalidBlockProof(
 		return fmt.Errorf("failed to fetch throwaway block: %w", err)
 	}
 
-	log.Info("Throwaway block", "header", block.Header())
-
 	// Fetch the invalid block metadata
 	targetMeta, err := p.rpc.GetBlockMetadataByID(blockID)
 	if err != nil {
@@ -78,7 +76,7 @@ func (p *Prover) submitInvalidBlockProof(
 		return fmt.Errorf("failed to fetch invalidateBlock transaction receipt: %w", err)
 	}
 
-	log.Info("Throwaway block receipts", "length", receipts.Len())
+	log.Debug("Throwaway block receipts", "length", receipts.Len())
 
 	receiptRoot, receiptProof, err := generateTrieProof(receipts, 0)
 	if err != nil {

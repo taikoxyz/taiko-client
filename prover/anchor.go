@@ -26,7 +26,7 @@ func (p *Prover) validateAnchorTx(ctx context.Context, tx *types.Transaction) er
 		return fmt.Errorf("failed to get TaikoL2.anchor receipt, err: %w", err)
 	}
 
-	log.Info("TaikoL2.anchor transaction found", "height", receipt.BlockNumber, "status", receipt.Status)
+	log.Debug("TaikoL2.anchor transaction", "height", receipt.BlockNumber, "status", receipt.Status)
 
 	if receipt.Status != types.ReceiptStatusSuccessful {
 		return fmt.Errorf("invalid TaikoL2.anchor receipt status: %d", receipt.Status)

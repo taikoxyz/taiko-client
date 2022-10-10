@@ -48,7 +48,7 @@ func (d *Driver) InitFromCli(c *cli.Context) error {
 
 // initFromConfig initializes the driver instance based on the given configurations.
 func initFromConfig(d *Driver, cfg *Config) (err error) {
-	log.Info("Driver configurations", "config", cfg)
+	log.Debug("Driver configurations", "config", cfg)
 
 	d.l1HeadCh = make(chan *types.Header, 1024)
 	d.wg = sync.WaitGroup{}

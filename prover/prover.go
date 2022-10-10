@@ -80,7 +80,7 @@ func (p *Prover) InitFromCli(c *cli.Context) error {
 
 // initFromConfig initializes the prover instance based on the given configurations.
 func initFromConfig(p *Prover, cfg *Config) (err error) {
-	log.Info("Prover configurations", "config", cfg)
+	log.Debug("Prover configurations", "config", cfg)
 
 	p.cfg = cfg
 	p.ctx, p.close = context.WithCancel(context.Background())
@@ -131,10 +131,10 @@ func initFromConfig(p *Prover, cfg *Config) (err error) {
 	p.maxPendingBlocks = maxPendingBlocks.Uint64()
 	p.anchorGasLimit = anchorGasLimit.Uint64()
 	p.chainID = chainID
-	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.maxPendingBlocks)
-	p.blockFinalizedCh = make(chan *bindings.TaikoL1ClientBlockFinalized, p.maxPendingBlocks)
-	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.maxPendingBlocks)
-	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.maxPendingBlocks)
+	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, 10)
+	p.blockFinalizedCh = make(chan *bindings.TaikoL1ClientBlockFinalized, 10)
+	p.proveValidProofCh = make(chan *producer.ProofWithHeader, 10)
+	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, 10)
 
 	if cfg.Dummy {
 		p.proofProducer = new(producer.DummyProofProducer)
@@ -261,10 +261,7 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 		return fmt.Errorf("failed to get TaikoL1 state variables: %w", err)
 	}
 
-	log.Info("TaikoL1 state variables",
-		"latestFinalizedID", latestFinalizedID,
-		"nextBlockID", nextBlockID,
-	)
+	log.Debug("TaikoL1 state variables", "latestFinalizedID", latestFinalizedID, "nextBlockID", nextBlockID)
 
 	var oldestUnprovedBlockID *big.Int
 	for i := latestFinalizedID + 1; i < nextBlockID; i++ {
@@ -285,7 +282,7 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 	}
 
 	if oldestUnprovedBlockID == nil {
-		log.Info("All proposed blocks are proved")
+		log.Debug("All proposed blocks are proved")
 		return nil
 	}
 
@@ -326,7 +323,7 @@ func (p *Prover) batchHandleBlockProposedEvents(
 	p.blockProposedEventsBuffer = append(p.blockProposedEventsBuffer, newEvent)
 
 	if len(p.blockProposedEventsBuffer) < int(p.maxPendingBlocks) {
-		log.Info("New BlockProposed event buffered", "blockID", newEvent.Id, "size", len(p.blockProposedEventsBuffer))
+		log.Debug("New BlockProposed event buffered", "blockID", newEvent.Id, "size", len(p.blockProposedEventsBuffer))
 		return nil
 	}
 

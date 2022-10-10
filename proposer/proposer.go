@@ -57,7 +57,7 @@ func (p *Proposer) InitFromCli(c *cli.Context) error {
 
 // initFromConfig initializes the proposer instance based on the given configurations.
 func initFromConfig(p *Proposer, cfg *Config) (err error) {
-	log.Info("Proposer configurations", "config", cfg)
+	log.Debug("Proposer configurations", "config", cfg)
 
 	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
 	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
@@ -160,14 +160,14 @@ func (p *Proposer) proposeOp(ctx context.Context) error {
 		return fmt.Errorf("l2 node is syncing: %w", err)
 	}
 
-	log.Info("Start fetching pending transactions from L2 node's tx pool")
+	log.Info("Start fetching L2 node's transaction pool content")
 
 	pendingContent, _, err := p.rpc.L2PoolContent(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
 	}
 
-	log.Info("Fetching pending transactions finished", "length", len(pendingContent))
+	log.Info("Fetching L2 pending transactions finished", "length", len(pendingContent))
 
 	for _, txs := range p.poolContentSplitter.split(pendingContent) {
 		txListBytes, err := rlp.EncodeToBytes(txs)
@@ -212,10 +212,12 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 
 	if commitHeight.Cmp(common.Big0) == 0 {
 		log.Info("Transactions list has never been committed before", "hash", commitHash)
+
 		commitTx, err := p.rpc.TaikoL1.CommitBlock(opts, commitHash)
 		if err != nil {
 			return err
 		}
+
 		commitHeight, err = rpc.WaitForTx(ctx, p.rpc.L1, commitTx)
 		if err != nil {
 			return err

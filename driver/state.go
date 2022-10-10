@@ -251,7 +251,7 @@ func (s *State) watchBlockFinalized(ctx context.Context) (ethereum.Subscription,
 		select {
 		case e := <-newBlockFinalizedCh:
 			if e.BlockHash == (common.Hash{}) {
-				log.Info("Ignore BlockFinalized event of invalid transaction list", "blockID", e.Id)
+				log.Debug("Ignore BlockFinalized event of invalid transaction list", "blockID", e.Id)
 				continue
 			}
 			s.setLastFinalizedBlockHash(e.BlockHash)

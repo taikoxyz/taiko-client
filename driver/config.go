@@ -2,10 +2,10 @@ package driver
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/cmd/flags"
 	"github.com/taikochain/taiko-client/pkg/jwt"
 	"github.com/urfave/cli/v2"
@@ -27,14 +27,14 @@ type Config struct {
 func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	jwtSecret, err := jwt.ParseSecretFromFile(c.String(flags.JWTSecret.Name))
 	if err != nil {
-		log.Crit("Parse JWT secret from file error", "error", err)
+		return nil, fmt.Errorf("invalid JWT secret file: %w", err)
 	}
 
 	throwawayBlocksBuilderPrivKey, err := crypto.ToECDSA(
 		common.Hex2Bytes(c.String(flags.ThrowawayBlocksBuilderPrivKey.Name)),
 	)
 	if err != nil {
-		log.Crit("Parse throwaway blocks builder private key error", "error", err)
+		return nil, fmt.Errorf("invalid throwaway blocks builder private key: %w", err)
 	}
 
 	return &Config{

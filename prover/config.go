@@ -2,6 +2,7 @@ package prover
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -29,7 +30,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(l1ProverPrivKeyStr))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
 	}
 
 	return &Config{
