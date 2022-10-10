@@ -1,5 +1,17 @@
+GIT_COMMIT := $(shell git rev-parse HEAD)
+GIT_DATE := $(shell git show -s --format='%ct')
+VERSION := 0.0.0
+VERSION_META := dev
+
+LDFLAGSSTRING +=-X github.com/taikochain/taiko-client/version.Version=$(VERSION)
+LDFLAGSSTRING +=-X github.com/taikochain/taiko-client/version.Meta=$(VERSION_META)
+LDFLAGSSTRING +=-X github.com/taikochain/taiko-client/version.GitCommit=$(GIT_COMMIT)
+LDFLAGSSTRING +=-X github.com/taikochain/taiko-client/version.GitDate=$(GIT_DATE)
+
+LDFLAGS := -ldflags "$(LDFLAGSSTRING)"
+
 build:
-	@go build -o bin/taiko-client cmd/main.go
+	GO111MODULE=on go build -v $(LDFLAGS) -o bin/taiko-client cmd/main.go
 
 clean:
 	@rm -rf bin/*

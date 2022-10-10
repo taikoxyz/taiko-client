@@ -9,41 +9,44 @@ import (
 	"github.com/taikochain/taiko-client/driver"
 	"github.com/taikochain/taiko-client/proposer"
 	"github.com/taikochain/taiko-client/prover"
+	"github.com/taikochain/taiko-client/version"
 	"github.com/urfave/cli/v2"
 )
 
 func main() {
 	app := cli.NewApp()
 
-	app.Version = "0.0.1"
 	app.Name = "Taiko Clients"
-	app.Description = "Entrypoint of Taiko Clients"
+	app.Usage = "The taiko client softwares command line interface"
+	app.Copyright = "Copyright 2021-2022 Taiko Labs"
+	app.Version = version.VersionWithCommit()
+	app.Description = "Client softwares implementation in Golang for Taiko protocol"
 	app.Authors = []*cli.Author{{Name: "Taiko Labs", Email: "info@taiko.xyz"}}
+	app.EnableBashCompletion = true
 
+	// All supported sub commands.
 	app.Commands = []*cli.Command{
 		{
 			Name:        "driver",
 			Flags:       flags.DriverFlags,
-			Description: "Taiko Driver software",
+			Usage:       "Starts the driver software",
+			Description: "Taiko driver software",
 			Action:      utils.SubcommandAction(new(driver.Driver)),
 		},
 		{
 			Name:        "proposer",
 			Flags:       flags.ProposerFlags,
-			Description: "Taiko Proposer software",
+			Usage:       "Starts the proposer software",
+			Description: "Taiko proposer software",
 			Action:      utils.SubcommandAction(new(proposer.Proposer)),
 		},
 		{
 			Name:        "prover",
 			Flags:       flags.ProverFlags,
-			Description: "Taiko Prover software",
+			Usage:       "Starts the prover software",
+			Description: "Taiko prover software",
 			Action:      utils.SubcommandAction(new(prover.Prover)),
 		},
-	}
-
-	app.Action = func(ctx *cli.Context) error {
-		log.Crit("Expected driver/proposer/prover subcommands")
-		return nil
 	}
 
 	if err := app.Run(os.Args); err != nil {

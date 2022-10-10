@@ -5,8 +5,11 @@ import (
 )
 
 var (
-	loggingCategory = "LOGGING AND DEBUGGING"
-	driverCategory  = "DRIVER"
+	commonCategory   = "COMMON"
+	loggingCategory  = "LOGGING"
+	driverCategory   = "DRIVER"
+	proposerCategory = "PROPOSER"
+	proverCategory   = "PROVER"
 )
 
 // Rrequired flags used by all client softwares.
@@ -15,21 +18,25 @@ var (
 		Name:     "l1",
 		Usage:    "RPC endpoint of a L1 ethereum node",
 		Required: true,
+		Category: commonCategory,
 	}
 	L2NodeEndpoint = cli.StringFlag{
 		Name:     "l2",
 		Usage:    "RPC endpoint of a L2 ethereum node",
 		Required: true,
+		Category: commonCategory,
 	}
 	TaikoL1Address = cli.StringFlag{
 		Name:     "taikoL1",
 		Usage:    "TaikoL1 contract address",
 		Required: true,
+		Category: commonCategory,
 	}
 	TaikoL2Address = cli.StringFlag{
 		Name:     "taikoL2",
 		Usage:    "TaikoL2 contract address",
 		Required: true,
+		Category: commonCategory,
 	}
 	// Optional flags used by all client softwares.
 	Verbosity = &cli.IntFlag{
