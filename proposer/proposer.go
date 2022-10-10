@@ -167,9 +167,7 @@ func (p *Proposer) proposeOp(ctx context.Context) error {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
 	}
 
-	log.Info("Fetching pending transactions finished",
-		"length", len(pendingContent),
-	)
+	log.Info("Fetching pending transactions finished", "length", len(pendingContent))
 
 	for _, txs := range p.poolContentSplitter.split(pendingContent) {
 		txListBytes, err := rlp.EncodeToBytes(txs)
@@ -177,11 +175,7 @@ func (p *Proposer) proposeOp(ctx context.Context) error {
 			return fmt.Errorf("failed to encode transactions: %w", err)
 		}
 
-		if err := p.commitAndPropose(
-			ctx,
-			txListBytes,
-			sumTxsGasLimit(txs),
-		); err != nil {
+		if err := p.commitAndPropose(ctx, txListBytes, sumTxsGasLimit(txs)); err != nil {
 			return fmt.Errorf("failed to commit and propose transactions: %w", err)
 		}
 	}
