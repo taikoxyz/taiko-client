@@ -1,22 +1,22 @@
 package proposer
 
 import (
-	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
+	"github.com/taikochain/taiko-client/pkg/rpc"
 )
 
 func TestPoolContentSplit(t *testing.T) {
 	// Gas limit is smaller than the limit.
 	splitter := &poolContentSplitter{minTxGasLimit: 21000}
 
-	splitted := splitter.split(map[common.Address]map[*big.Int]*types.Transaction{
+	splitted := splitter.split(rpc.PoolContent{
 		common.BytesToAddress(randomBytes(32)): {
-			common.Big0: types.NewTx(&types.LegacyTx{}),
+			"0": types.NewTx(&types.LegacyTx{}),
 		},
 	})
 
@@ -25,9 +25,9 @@ func TestPoolContentSplit(t *testing.T) {
 	// Gas limit is larger than the limit.
 	splitter = &poolContentSplitter{minTxGasLimit: 21000}
 
-	splitted = splitter.split(map[common.Address]map[*big.Int]*types.Transaction{
+	splitted = splitter.split(rpc.PoolContent{
 		common.BytesToAddress(randomBytes(32)): {
-			common.Big0: types.NewTx(&types.LegacyTx{Gas: 21001}),
+			"0": types.NewTx(&types.LegacyTx{Gas: 21001}),
 		},
 	})
 
@@ -45,8 +45,8 @@ func TestPoolContentSplit(t *testing.T) {
 		minTxGasLimit:      uint64(len(bytes) - 2),
 	}
 
-	splitted = splitter.split(map[common.Address]map[*big.Int]*types.Transaction{
-		common.BytesToAddress(randomBytes(32)): {common.Big0: txBytesTooLarge},
+	splitted = splitter.split(rpc.PoolContent{
+		common.BytesToAddress(randomBytes(32)): {"0": txBytesTooLarge},
 	})
 
 	require.Empty(t, splitted)
@@ -65,8 +65,8 @@ func TestPoolContentSplit(t *testing.T) {
 		maxGasPerBlock:     tx.Gas() + 1,
 	}
 
-	splitted = splitter.split(map[common.Address]map[*big.Int]*types.Transaction{
-		common.BytesToAddress(randomBytes(32)): {common.Big0: tx, common.Big1: tx},
+	splitted = splitter.split(rpc.PoolContent{
+		common.BytesToAddress(randomBytes(32)): {"0": tx, "1": tx},
 	})
 
 	require.Equal(t, 2, len(splitted))

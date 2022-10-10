@@ -131,6 +131,7 @@ func (c *Client) GetBlockMetadataByID(blockID *big.Int) (*bindings.LibDataBlockM
 	return nil, fmt.Errorf("block metadata not found, id: %d", blockID)
 }
 
+// WaitL1Origin keeps waiting until the L1Origin with given block ID appears on the L2 node.
 func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1Origin, error) {
 	var (
 		l1Origin *rawdb.L1Origin
@@ -138,7 +139,6 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 	)
 
 	ticker := time.NewTicker(time.Second)
-	timeout := time.After(time.Minute)
 	defer ticker.Stop()
 
 	log.Info("Start fetching L1Origin from L2 node", "blockID", blockID)
@@ -147,8 +147,6 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
-		case <-timeout:
-			return nil, fmt.Errorf("fetch L1Origin timeout")
 		case <-ticker.C:
 			l1Origin, err = c.L2.L1OriginByID(ctx, blockID)
 			if err != nil {
@@ -163,4 +161,16 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 			return l1Origin, nil
 		}
 	}
+}
+
+type PoolContent map[common.Address]map[string]*types.Transaction
+
+// L2PoolContent fetches the transaction pool content from L2 node.
+func (c *Client) L2PoolContent(ctx context.Context) (pending PoolContent, queued PoolContent, err error) {
+	var res map[string]PoolContent
+	if err := c.L2RawRPC.CallContext(ctx, &res, "txpool_content"); err != nil {
+		return nil, nil, err
+	}
+
+	return res["pending"], res["queued"], nil
 }

@@ -162,7 +162,7 @@ func (p *Proposer) proposeOp(ctx context.Context) error {
 
 	log.Info("Start fetching pending transactions from L2 node's tx pool")
 
-	pendingContent, _, err := p.rpc.L2.TxPoolContent(ctx)
+	pendingContent, _, err := p.rpc.L2PoolContent(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
 	}

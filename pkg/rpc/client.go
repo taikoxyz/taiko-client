@@ -15,6 +15,7 @@ type Client struct {
 	L1 *ethclient.Client
 	L2 *ethclient.Client
 	// Geth raw RPC clients
+	L1RawRPC *rpc.Client
 	L2RawRPC *rpc.Client
 	// Geth Engine API clients
 	L2Engine *EngineClient
@@ -23,9 +24,9 @@ type Client struct {
 	TaikoL2 *bindings.V1TaikoL2Client
 }
 
-// ClientConfig contains all configs used by initializing an
-// RPC client. If L2EngineEndpoint or JwtSecret not provided, the L2Engine client
-// wont be initialized.
+// ClientConfig contains all configs which will be used to initializing an
+// RPC client. If not providing L2EngineEndpoint or JwtSecret, then the L2Engine client
+// won't be initialized.
 type ClientConfig struct {
 	L1Endpoint       string
 	L2Endpoint       string
@@ -35,7 +36,7 @@ type ClientConfig struct {
 	JwtSecret        string
 }
 
-// NewClient initializes all RPC clients to run a Taiko client.
+// NewClient initializes all RPC clients used by Taiko client softwares.
 func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	l1RPC, err := DialClientWithBackoff(ctx, cfg.L1Endpoint)
 	if err != nil {
@@ -57,11 +58,18 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
+	l1RawRPC, err := rpc.Dial(cfg.L1Endpoint)
+	if err != nil {
+		return nil, err
+	}
+
 	l2RawRPC, err := rpc.Dial(cfg.L2Endpoint)
 	if err != nil {
 		return nil, err
 	}
 
+	// If not providing L2EngineEndpoint or JwtSecret, then the L2Engine client
+	// won't be initialized.
 	var l2AuthRPC *EngineClient
 	if len(cfg.L2EngineEndpoint) != 0 && len(cfg.JwtSecret) != 0 {
 		l2AuthRPC, err = DialEngineClientWithBackoff(
@@ -77,6 +85,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	client := &Client{
 		L1:       l1RPC,
 		L2:       l2RPC,
+		L1RawRPC: l1RawRPC,
 		L2RawRPC: l2RawRPC,
 		L2Engine: l2AuthRPC,
 		TaikoL1:  taikoL1,

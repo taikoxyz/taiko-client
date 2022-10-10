@@ -2,12 +2,11 @@ package proposer
 
 import (
 	"fmt"
-	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/taikochain/taiko-client/pkg/rpc"
 )
 
 // poolContentSplitter is responsible for splitting the pool content
@@ -23,9 +22,7 @@ type poolContentSplitter struct {
 
 // split splits the given transaction pool content to make each splitted
 // transactions list satisfies the rules defined in Taiko bindings.
-func (p *poolContentSplitter) split(
-	poolContent map[common.Address]map[*big.Int]*types.Transaction,
-) [][]*types.Transaction {
+func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Transaction {
 	var (
 		splittedTxLists        = make([][]*types.Transaction, 0)
 		txBuffer               = make([]*types.Transaction, 0, p.maxTxPerBlock)

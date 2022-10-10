@@ -37,6 +37,6 @@ if [ "$RUN_TESTS" == "true"  ]; then
     JWT_SECRET=$DIR/testnet/jwt.hex \
         go test -v ./...
 else
-    echo "💻 Local dev net started!"
+    echo "💻 Local dev net started"
     docker-compose -f $TESTNET_CONFIG logs -f l2_node
 fi

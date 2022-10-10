@@ -195,14 +195,17 @@ func EncodeProveBlockInput(
 	if err != nil {
 		return nil, err
 	}
+
 	anchorTxBytes, err := rlp.EncodeToBytes(anchorTx)
 	if err != nil {
 		return nil, err
 	}
+
 	anchorReceiptBytes, err := rlp.EncodeToBytes(anchorReceipt)
 	if err != nil {
 		return nil, err
 	}
+
 	return [][]byte{evidenceBytes, anchorTxBytes, anchorReceiptBytes}, nil
 }
 
@@ -216,13 +219,16 @@ func EncodeProveBlockInvalidInput(
 	if err != nil {
 		return nil, err
 	}
+
 	metaBytes, err := EncodeBlockMetadata(target)
 	if err != nil {
 		return nil, err
 	}
+
 	receiptBytes, err := rlp.EncodeToBytes(receipt)
 	if err != nil {
 		return nil, err
 	}
+
 	return [][]byte{evidenceBytes, metaBytes, receiptBytes}, nil
 }

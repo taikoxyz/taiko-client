@@ -9,8 +9,6 @@ fi
 
 JSON_REQUEST_BODY='{"jsonrpc":"2.0","id":0,"method":"eth_chainId","params":[]}'
 
-RETRIES=30
-
 while ! curl \
     --fail \
     --silent \
