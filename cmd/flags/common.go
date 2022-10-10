@@ -4,7 +4,12 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// Flags used by all client softwares.
+var (
+	loggingCategory = "LOGGING AND DEBUGGING"
+	driverCategory  = "DRIVER"
+)
+
+// Rrequired flags used by all client softwares.
 var (
 	L1NodeEndpoint = cli.StringFlag{
 		Name:     "l1",
@@ -26,14 +31,31 @@ var (
 		Usage:    "TaikoL2 contract address",
 		Required: true,
 	}
-
-	CommonFlags = []cli.Flag{
-		&L1NodeEndpoint,
-		&L2NodeEndpoint,
-		&TaikoL1Address,
-		&TaikoL2Address,
+	// Optional flags used by all client softwares.
+	Verbosity = &cli.IntFlag{
+		Name:     "verbosity",
+		Usage:    "Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail",
+		Value:    3,
+		Category: loggingCategory,
+	}
+	LogJson = &cli.BoolFlag{
+		Name:     "log.json",
+		Usage:    "Format logs with JSON",
+		Category: loggingCategory,
 	}
 )
+
+// All common flags.
+var CommonFlags = []cli.Flag{
+	// Required
+	&L1NodeEndpoint,
+	&L2NodeEndpoint,
+	&TaikoL1Address,
+	&TaikoL2Address,
+	// Optional
+	Verbosity,
+	LogJson,
+}
 
 // MergeFlags merges the given flag slices.
 func MergeFlags(groups ...[]cli.Flag) []cli.Flag {

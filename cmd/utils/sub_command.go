@@ -18,6 +18,8 @@ type Subcommand interface {
 
 func SubcommandAction(app Subcommand) cli.ActionFunc {
 	return func(c *cli.Context) error {
+		InitLogger(c)
+
 		if err := app.InitFromCli(c); err != nil {
 			return err
 		}

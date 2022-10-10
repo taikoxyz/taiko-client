@@ -1,5 +1,31 @@
 # taiko-client
 
-[![CI checks](https://github.com/taikochain/taiko-client/actions/workflows/test.yml/badge.svg)](https://github.com/taikochain/taiko-client/actions/workflows/test.yml)
+[![CI](https://github.com/taikochain/taiko-client/actions/workflows/test.yml/badge.svg)](https://github.com/taikochain/taiko-client/actions/workflows/test.yml)
 
 Taiko protocol's client softwares implementation in Golang.
+
+## Building
+
+Compile a binary:
+
+```shell
+go build -o bin/taiko-client cmd/main.go
+```
+
+## Testing
+
+Run the integration tests:
+
+```bash
+TAIKO_MONO_DIR=PATH_TO_TAIKO_MONO_REPO \
+COMPILE_PROTOCOL=true \
+  make test
+```
+
+## Running
+
+All available sub-commands can be reviewed with:
+
+```bash
+bin/taiko-client --help
+```

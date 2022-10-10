@@ -86,13 +86,9 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 
 // Close closes all inner subscriptions.
 func (s *State) Close() {
-	log.Info("state close")
 	s.l1HeadSub.Unsubscribe()
-	log.Info("ok1")
 	s.l2BlockFinalizedSub.Unsubscribe()
-	log.Info("ok2")
 	s.l2BlockProposedSub.Unsubscribe()
-	log.Info("ok")
 }
 
 // ConfirmL1Current ensures that the local L1 sync cursor has not been reorged.

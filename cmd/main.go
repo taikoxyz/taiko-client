@@ -13,13 +13,6 @@ import (
 )
 
 func main() {
-	log.Root().SetHandler(
-		log.LvlFilterHandler(
-			log.LvlInfo,
-			log.StreamHandler(os.Stdout, log.TerminalFormat(true)),
-		),
-	)
-
 	app := cli.NewApp()
 
 	app.Version = "0.0.1"
