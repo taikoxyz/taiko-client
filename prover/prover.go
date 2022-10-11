@@ -275,7 +275,7 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 		return fmt.Errorf("failed to filter BlockProven events: %w", err)
 	}
 
-	if blockProvenIter.Next() == true {
+	if blockProvenIter.Next() {
 		return nil
 	}
 
