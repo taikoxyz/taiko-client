@@ -7,16 +7,6 @@ DIR=$(
     pwd
 )
 
-if ! command -v docker &>/dev/null 2>&1; then
-    echo "ERROR: $(docker) command not found"
-    exit 1
-fi
-
-if ! docker info >/dev/null 2>&1; then
-    echo "ERROR: docker daemon isn't running"
-    exit 1
-fi
-
 echo "Starting testnet..."
 
 docker compose -f $TESTNET_CONFIG down --remove-orphans &>/dev/null

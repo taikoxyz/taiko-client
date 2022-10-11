@@ -9,7 +9,7 @@ Taiko protocol's client softwares implementation in Golang.
 Compile a binary:
 
 ```shell
-go build -o bin/taiko-client cmd/main.go
+make build
 ```
 
 ## Testing
