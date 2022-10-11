@@ -27,15 +27,13 @@ func (p *Proposer) proposeInvalidBlocksOp(ctx context.Context, interval uint64) 
 		return nil
 	}
 
-	log.Info("Start an invalid blocks proposing operation", "epoch", globalEpoch)
-
-	log.Info("👻 Propose invalid transactions list bytes")
+	log.Info("👻 Propose invalid transactions list bytes", "epoch", globalEpoch)
 
 	if err := p.proposeInvalidTxListBytes(ctx); err != nil {
 		return fmt.Errorf("failed to propose invalid transaction list bytes: %w", err)
 	}
 
-	log.Info("👻 Propose transactions list including invalid transaction")
+	log.Info("👻 Propose transactions list including invalid transaction", "epoch", globalEpoch)
 
 	if err := p.proposeTxListIncludingInvalidTx(ctx); err != nil {
 		return fmt.Errorf("failed to propose transactions list including invalid transaction: %w", err)

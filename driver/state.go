@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/bindings"
 	"github.com/taikochain/taiko-client/pkg/rpc"
-	"golang.org/x/sync/errgroup"
 )
 
 type State struct {
@@ -125,18 +124,7 @@ func (s *State) ConfirmL1Current(ctx context.Context) (*types.Header, error) {
 
 // initSubscriptions initializes all subscriptions in the given state instance.
 func (s *State) initSubscriptions(ctx context.Context) error {
-	g := new(errgroup.Group)
-
-	g.Go(func() error { return s.subL1Head(ctx) })
-	g.Go(func() error { return s.subBlockFinalized(ctx) })
-	g.Go(func() error { return s.subLastPendingBlockID(ctx) })
-
-	return g.Wait()
-}
-
-// subL1Head fetches the latest L1 Head from L1 node, then saves it to current
-// driver state, and then start subscribing.
-func (s *State) subL1Head(ctx context.Context) error {
+	// 1. L1 head
 	l1Head, err := s.rpc.L1.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return err
@@ -152,6 +140,52 @@ func (s *State) subL1Head(ctx context.Context) error {
 			}
 
 			return s.watchL1Head(ctx)
+		},
+	)
+
+	// 2. TaikoL1.BlockFinalized events
+	_, lastFinalizedHeight, _, _, err := s.rpc.TaikoL1.GetStateVariables(nil)
+	if err != nil {
+		return err
+	}
+
+	lastFinalizedBlockHash, err := s.rpc.TaikoL1.GetSyncedHeader(
+		nil,
+		new(big.Int).SetUint64(lastFinalizedHeight),
+	)
+	if err != nil {
+		return err
+	}
+
+	s.setLastFinalizedBlockHash(lastFinalizedBlockHash)
+
+	s.l2BlockFinalizedSub = event.ResubscribeErr(
+		backoff.DefaultMaxInterval,
+		func(ctx context.Context, err error) (event.Subscription, error) {
+			if err != nil {
+				log.Warn("Failed to subscribe TaikoL1.BlockFinalized events, try resubscribing", "error", err)
+			}
+
+			return s.watchBlockFinalized(ctx)
+		},
+	)
+
+	// 3. TaikoL1.BlockProposed events
+	_, _, _, nextPendingID, err := s.rpc.TaikoL1.GetStateVariables(nil)
+	if err != nil {
+		return err
+	}
+
+	s.setHeadBlockID(new(big.Int).SetUint64(nextPendingID - 1))
+
+	s.l2BlockProposedSub = event.ResubscribeErr(
+		backoff.DefaultMaxInterval,
+		func(ctx context.Context, err error) (event.Subscription, error) {
+			if err != nil {
+				log.Warn("Failed to subscribe TaikoL1.BlockProposed events, try resubscribing", "error", err)
+			}
+
+			return s.watchBlockProposed(ctx)
 		},
 	)
 
@@ -201,39 +235,6 @@ func (s *State) getL1Head() *types.Header {
 	return s.l1Head.Load().(*types.Header)
 }
 
-// subBlockFinalized fetches the last finalized L2 block hash from
-// TaikoL1 contract, saves it to the current driver state, and then start
-// subscribing.
-func (s *State) subBlockFinalized(ctx context.Context) error {
-	_, lastFinalizedHeight, _, _, err := s.rpc.TaikoL1.GetStateVariables(nil)
-	if err != nil {
-		return err
-	}
-
-	lastFinalizedBlockHash, err := s.rpc.TaikoL1.GetSyncedHeader(
-		nil,
-		new(big.Int).SetUint64(lastFinalizedHeight),
-	)
-	if err != nil {
-		return err
-	}
-
-	s.setLastFinalizedBlockHash(lastFinalizedBlockHash)
-
-	s.l2BlockFinalizedSub = event.ResubscribeErr(
-		backoff.DefaultMaxInterval,
-		func(ctx context.Context, err error) (event.Subscription, error) {
-			if err != nil {
-				log.Warn("Failed to subscribe TaikoL1.BlockFinalized events, try resubscribing", "error", err)
-			}
-
-			return s.watchBlockFinalized(ctx)
-		},
-	)
-
-	return nil
-}
-
 // watchBlockFinalized watches newly finalized blocks and keep updating current
 // driver state.
 func (s *State) watchBlockFinalized(ctx context.Context) (ethereum.Subscription, error) {
@@ -273,31 +274,6 @@ func (s *State) setLastFinalizedBlockHash(hash common.Hash) {
 // getLastFinalizedBlockHash reads the last finalized L2 block concurrent safely.
 func (s *State) getLastFinalizedBlockHash() common.Hash {
 	return s.l2FinalizedHeadHash.Load().(common.Hash)
-}
-
-// subLastPendingBlockID fetches the last pending block ID from
-// taikoL1 contract, saves it to the current driver state, and then starts
-// subscribing.
-func (s *State) subLastPendingBlockID(ctx context.Context) error {
-	_, _, _, nextPendingID, err := s.rpc.TaikoL1.GetStateVariables(nil)
-	if err != nil {
-		return err
-	}
-
-	s.setHeadBlockID(new(big.Int).SetUint64(nextPendingID - 1))
-
-	s.l2BlockProposedSub = event.ResubscribeErr(
-		backoff.DefaultMaxInterval,
-		func(ctx context.Context, err error) (event.Subscription, error) {
-			if err != nil {
-				log.Warn("Failed to subscribe TaikoL1.BlockProposed events, try resubscribing", "error", err)
-			}
-
-			return s.watchBlockProposed(ctx)
-		},
-	)
-
-	return nil
 }
 
 // watchBlockProposed watches newly proposed blocks and keeps updating current
