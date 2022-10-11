@@ -2,7 +2,6 @@ package prover
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -22,12 +21,13 @@ import (
 )
 
 var (
-	// errInvalidProposeBlockTx is returned when the given `proposeBlock`
-	// transaction is invalid.
-	errInvalidProposeBlockTx = errors.New("invalid propose block transaction")
+
 	// Gas limit of TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
-	// TODO: tune this value
+	// TODO: tune this value based when the on-chain solidity verifier is available.
 	proveBlocksGasLimit uint64 = 1000000
+	// Time interval to fetch the unproved blocks and prove them, even if no BlockProposed
+	// event received.
+	forceTimerCycle = 1 * time.Minute
 )
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
@@ -158,7 +158,7 @@ func (p *Prover) Start() error {
 
 // eventLoop starts the main loop of Taiko prover.
 func (p *Prover) eventLoop() {
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(forceTimerCycle)
 	defer func() {
 		ticker.Stop()
 		p.wg.Done()

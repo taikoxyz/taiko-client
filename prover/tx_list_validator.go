@@ -1,6 +1,7 @@
 package prover
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -9,6 +10,12 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/bindings"
+)
+
+var (
+	// errInvalidProposeBlockTx is returned when the given `proposeBlock`
+	// transaction is invalid.
+	errInvalidProposeBlockTx = errors.New("invalid TaikoL1.proposeBlock transaction")
 )
 
 // InvalidTxListReason represents a reason why a transactions list is invalid,
