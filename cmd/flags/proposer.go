@@ -20,7 +20,7 @@ var (
 	}
 	ProposeInterval = cli.StringFlag{
 		Name:     "proposeInterval",
-		Usage:    "Interval for proposing L2 node's new pending transactions",
+		Usage:    "Time interval to propose L2 pending transactions",
 		Required: true,
 		Category: proposerCategory,
 	}
