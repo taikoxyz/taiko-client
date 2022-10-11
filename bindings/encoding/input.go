@@ -8,11 +8,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/bindings"
 )
 
-// ABI arguments marshaling components
+// ABI arguments marshaling components.
 var (
 	blockMetadataComponents = []abi.ArgumentMarshaling{
 		{
@@ -139,15 +140,29 @@ var (
 var (
 	// BlockMetadata
 	blockMeatadataType, _ = abi.NewType("tuple", "LibData.BlockMetadata", blockMetadataComponents)
-	blockMetadataArgs     = abi.Arguments{
-		{Name: "BlockMetadata", Type: blockMeatadataType},
-	}
+	blockMetadataArgs     = abi.Arguments{{Name: "BlockMetadata", Type: blockMeatadataType}}
 	// Evidence
 	EvidenceType, _ = abi.NewType("tuple", "V1Proving.Evidence", evidenceComponents)
-	EvidenceArgs    = abi.Arguments{
-		{Name: "Evidence", Type: EvidenceType},
-	}
+	EvidenceArgs    = abi.Arguments{{Name: "Evidence", Type: EvidenceType}}
 )
+
+// Contract ABIs.
+var (
+	TaikoL1ABI *abi.ABI
+	TaikoL2ABI *abi.ABI
+)
+
+func init() {
+	var err error
+
+	if TaikoL1ABI, err = bindings.TaikoL1ClientMetaData.GetAbi(); err != nil {
+		log.Crit("Get TaikoL1 ABI error", "error", err)
+	}
+
+	if TaikoL2ABI, err = bindings.V1TaikoL2ClientMetaData.GetAbi(); err != nil {
+		log.Crit("Get TaikoL2 ABI error", "error", err)
+	}
+}
 
 // EncodeBlockMetadata performs the solidity `abi.encode` for the given blockMetadata.
 func EncodeBlockMetadata(meta *bindings.LibDataBlockMetadata) ([]byte, error) {
@@ -231,4 +246,31 @@ func EncodeProveBlockInvalidInput(
 	}
 
 	return [][]byte{evidenceBytes, metaBytes, receiptBytes}, nil
+}
+
+// UnpackTxListBytes unpacks the input data of a TaikoL1.proposeBlock transaction, and returns the txList bytes.
+func UnpackTxListBytes(txData []byte) ([]byte, error) {
+	method, err := TaikoL1ABI.MethodById(txData)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only check for safety.
+	if method.Name != "proposeBlock" {
+		return nil, fmt.Errorf("invalid method name: %s", method.Name)
+	}
+
+	args := map[string]interface{}{}
+
+	if err := method.Inputs.UnpackIntoMap(args, txData[4:]); err != nil {
+		return nil, err
+	}
+
+	inputs, ok := args["inputs"].([][]byte)
+
+	if !ok || len(inputs) < 2 {
+		return nil, fmt.Errorf("invalid transaction inputs map length, get: %d", len(inputs))
+	}
+
+	return inputs[1], nil
 }
