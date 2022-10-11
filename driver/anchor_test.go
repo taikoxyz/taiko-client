@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
+	"github.com/taikochain/taiko-client/bindings"
 )
 
 func TestNewAnchorTransactor(t *testing.T) {
@@ -15,5 +16,5 @@ func TestNewAnchorTransactor(t *testing.T) {
 	require.Equal(t, true, opts.NoSend)
 	require.Equal(t, common.Big0, opts.GasPrice)
 	require.Equal(t, common.Big0, opts.Nonce)
-	require.Equal(t, goldenTouchAddress, opts.From)
+	require.Equal(t, bindings.GoldenTouchAddress, opts.From)
 }

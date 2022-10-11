@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
@@ -113,7 +114,7 @@ func TestSignAnchorRS2(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := rs2(tt.args.hash)
+			got, _ := signWithK(new(secp256k1.ModNScalar).SetInt(2))(tt.args.hash)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("SignAnchor() = %v, want %v", got, tt.want)
 			} else {
