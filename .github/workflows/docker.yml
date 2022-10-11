@@ -6,11 +6,10 @@ on:
   pull_request:
     branches: [main]
     types: [closed]
-  push:
 
 jobs:
   push-docker-image:
-    # if: ${{ github.event.pull_request.merged || startsWith(github.ref, 'refs/tags/v') }}
+    if: ${{ github.event.pull_request.merged || startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
 
     steps:
