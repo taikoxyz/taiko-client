@@ -240,7 +240,7 @@ func (p *Prover) onBlockFinalized(ctx context.Context, event *bindings.TaikoL1Cl
 	return nil
 }
 
-// onForceTimer fetches the oldest unproved block and tries to prove it.
+// onForceTimer fetches the oldest unfinalized block and if it is still not proven, then prove it.
 func (p *Prover) onForceTimer(ctx context.Context) error {
 	_, _, latestFinalizedID, nextBlockID, err := p.rpc.TaikoL1.GetStateVariables(nil)
 	if err != nil {
@@ -249,54 +249,58 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 
 	log.Debug("TaikoL1 state variables", "latestFinalizedID", latestFinalizedID, "nextBlockID", nextBlockID)
 
-	var oldestUnprovedBlockID *big.Int
-	for i := latestFinalizedID + 1; i < nextBlockID; i++ {
-		proposedBlock, err := p.rpc.TaikoL1.GetProposedBlock(nil, new(big.Int).SetUint64(i))
-		if err != nil {
-			return fmt.Errorf("failed to get proposed block: %w", err)
-		}
-
-		// enum EverProven {
-		// 	_NO, //=0
-		// 	NO, //=1
-		// 	YES //=2
-		// }
-		if proposedBlock.EverProven == 2 {
-			oldestUnprovedBlockID = new(big.Int).SetUint64(i)
-			break
-		}
-	}
-
-	if oldestUnprovedBlockID == nil {
-		log.Debug("All proposed blocks are proved")
+	if latestFinalizedID == nextBlockID-1 {
+		log.Info("All proposed blocks are finalized")
 		return nil
 	}
 
-	log.Info("Oldest unproved block ID", "blockID", oldestUnprovedBlockID)
+	// Check whether the oldest unfinalized block is still unproved.
+	oldestUnfinalizedBlockID := new(big.Int).SetUint64(latestFinalizedID + 1)
 
-	l1Origin, err := p.rpc.L1.L1OriginByID(ctx, oldestUnprovedBlockID)
+	proposedBlock, err := p.rpc.TaikoL1.GetProposedBlock(nil, oldestUnfinalizedBlockID)
+	if err != nil {
+		return fmt.Errorf("failed to get proposed block: %w", err)
+	}
+
+	commitHeight, err := p.rpc.TaikoL1.GetCommitHeight(nil, proposedBlock.MetaHash)
+	if err != nil {
+		return fmt.Errorf("failed to get proposed block commit height: %w", err)
+	}
+
+	blockProvenIter, err := p.rpc.TaikoL1.FilterBlockProven(
+		&bind.FilterOpts{Start: commitHeight.Uint64()},
+		[]*big.Int{oldestUnfinalizedBlockID},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to filter BlockProven events: %w", err)
+	}
+
+	if blockProvenIter.Next() == true {
+		return nil
+	}
+
+	log.Info("Oldest unproved block ID", "blockID", oldestUnfinalizedBlockID)
+
+	l1Origin, err := p.rpc.L1.L1OriginByID(ctx, oldestUnfinalizedBlockID)
 	if err != nil {
 		return fmt.Errorf("failed to get L1Origin: %w", err)
 	}
 
-	blockProposedL1Height := l1Origin.L1BlockHeight.Uint64()
-	iter, err := p.rpc.TaikoL1.FilterBlockProposed(
-		&bind.FilterOpts{
-			Start: blockProposedL1Height,
-			End:   &blockProposedL1Height,
-		},
-		[]*big.Int{oldestUnprovedBlockID},
+	filterHeight := l1Origin.L1BlockHeight.Uint64()
+	blockProposedIter, err := p.rpc.TaikoL1.FilterBlockProposed(
+		&bind.FilterOpts{Start: filterHeight, End: &filterHeight},
+		[]*big.Int{oldestUnfinalizedBlockID},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to filter BlockProposed events: %w", err)
 	}
 
-	for iter.Next() {
-		return p.onBlockProposed(ctx, iter.Event)
+	for blockProposedIter.Next() {
+		return p.onBlockProposed(ctx, blockProposedIter.Event)
 	}
 
 	return fmt.Errorf("BlockProposed events not found, blockID: %d, l1Height: %d",
-		oldestUnprovedBlockID, blockProposedL1Height,
+		oldestUnfinalizedBlockID, filterHeight,
 	)
 }
 
