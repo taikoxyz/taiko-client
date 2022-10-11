@@ -1,0 +1,77 @@
+name: "CI"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  integration_tests:
+    runs-on: ubuntu-latest
+    env:
+      TK_REPO_ACCESS: ${{ secrets.TK_REPO_ACCESS }}
+      CLIENT_DIR: taiko-client
+      TAIKO_MONO_DIR: taiko-mono
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: taikochain/taiko-client
+          token: ${{ secrets.TK_REPO_ACCESS }}
+          path: ${{ env.CLIENT_DIR }}
+
+      - uses: actions/checkout@v3
+        with:
+          repository: taikochain/taiko-mono
+          token: ${{ secrets.TK_REPO_ACCESS }}
+          path: ${{ env.TAIKO_MONO_DIR }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.15
+
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_KEY }}
+          name: ssh_key
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+          if_key_exists: fail
+
+      - name: Set up for downloading private repo
+        shell: bash
+        run: |
+          git config --global url.https://$TK_REPO_ACCESS@github.com/taikochain.insteadOf https://github.com/taikochain
+          go env -w GOPRIVATE="github.com/taikochain/*"
+
+      - name: Login to GCR
+        uses: docker/login-action@v2
+        with:
+          registry: gcr.io
+          username: _json_key
+          password: ${{ secrets.GCR_JSON_KEY }}
+
+      - name: Install protocol dependences
+        working-directory: ${{ env.TAIKO_MONO_DIR }}
+        run: cd ./packages/protocol && yarn
+
+      - name: Build
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: make build
+
+      - name: Lint
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: make lint
+
+      - name: Test
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: |
+          eval `ssh-agent -s`
+          ssh-add ~/.ssh/ssh_key
+          TAIKO_MONO_DIR=${GITHUB_WORKSPACE}/${TAIKO_MONO_DIR} COMPILE_PROTOCOL=true make test

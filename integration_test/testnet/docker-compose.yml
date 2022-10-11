@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  l1_node:
+    image: gcr.io/evmchain/hardhat-node:latest
+    restart: unless-stopped
+    ports:
+      - 18545:8545
+      - 18546:8545
+    command:
+      - hardhat
+      - node
+      - --hostname
+      - "0.0.0.0"
+
+  l2_node:
+    image: gcr.io/evmchain/taiko-geth:latest
+    restart: unless-stopped
+    pull_policy: always
+    volumes:
+      - .:/host
+    ports:
+      - 28545:8545
+      - 28546:8546
+      - 28551:8551
+    command:
+      - --datadir
+      - /root/.ethereum
+      - --nodiscover
+      - --networkid
+      - "167"
+      - --http
+      - --http.addr
+      - "0.0.0.0"
+      - --http.vhosts
+      - "*"
+      - --ws
+      - --ws.addr
+      - "0.0.0.0"
+      - --ws.origins
+      - "*"
+      - --authrpc.addr
+      - "0.0.0.0"
+      - --authrpc.port
+      - "8551"
+      - --authrpc.vhosts
+      - "*"
+      - --authrpc.jwtsecret
+      - /host/jwt.hex
+      - --allow-insecure-unlock
+      - --syncmode
+      - "full"
+      - --http.api
+      - "admin,debug,eth,net,web3,txpool,miner,taiko"
+      - --ws.api
+      - "admin,debug,eth,net,web3,txpool,miner,taiko"
+      - --taiko
