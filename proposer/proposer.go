@@ -135,7 +135,7 @@ func (p *Proposer) eventLoop() {
 			}
 
 			// Only for testing purposes
-			if p.produceInvalidBlocks {
+			if p.produceInvalidBlocks && p.produceInvalidBlocksInterval > 0 {
 				if err := p.proposeInvalidBlocksOp(p.ctx, p.produceInvalidBlocksInterval); err != nil {
 					log.Error("Proposing invalid blocks operation error", "error", err)
 				}
