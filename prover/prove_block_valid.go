@@ -127,7 +127,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
 	}
 
-	if _, err := rpc.WaitForTx(ctx, p.rpc.L1, tx); err != nil {
+	if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx); err != nil {
 		return fmt.Errorf("failed to wait till transaction executed: %w", err)
 	}
 

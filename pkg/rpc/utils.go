@@ -3,7 +3,6 @@ package rpc
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -38,9 +37,9 @@ func WaitConfirmations(ctx context.Context, client *ethclient.Client, confirmati
 	}
 }
 
-// WaitForTx keeps waiting until the given transaction has an execution
-// receipt to know whether it reverted or not.
-func WaitForTx(ctx context.Context, client *ethclient.Client, tx *types.Transaction) (*big.Int, error) {
+// WaitReceipt keeps waiting until the given transaction has an execution
+// receipt to know whether it was reverted or not.
+func WaitReceipt(ctx context.Context, client *ethclient.Client, tx *types.Transaction) (*types.Receipt, error) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
@@ -58,13 +57,13 @@ func WaitForTx(ctx context.Context, client *ethclient.Client, tx *types.Transact
 				return nil, fmt.Errorf("transaction reverted, hash: %s", tx.Hash())
 			}
 
-			return receipt.BlockNumber, nil
+			return receipt, nil
 		}
 	}
 }
 
 // GetReceiptsByBlock fetches all transaction receipts in a block.
-// TODO: fetch all receipts in one GraphQL call?
+// TODO: fetch all receipts in one GraphQL call.
 func GetReceiptsByBlock(ctx context.Context, cli *ethclient.Client, block *types.Block) (types.Receipts, error) {
 	g, ctx := errgroup.WithContext(ctx)
 

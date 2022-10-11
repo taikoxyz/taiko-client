@@ -201,9 +201,7 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 		return err
 	}
 
-	commitHash := common.BytesToHash(
-		encoding.EncodeCommitHash(meta.Beneficiary, meta.TxListHash),
-	)
+	commitHash := common.BytesToHash(encoding.EncodeCommitHash(meta.Beneficiary, meta.TxListHash))
 
 	// Check if the transactions list has been committed before.
 	commitHeight, err := p.rpc.TaikoL1.GetCommitHeight(nil, commitHash)
@@ -219,14 +217,17 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 			return err
 		}
 
-		commitHeight, err = rpc.WaitForTx(ctx, p.rpc.L1, commitTx)
+		receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, commitTx)
 		if err != nil {
 			return err
 		}
+
+		commitHeight = receipt.BlockNumber
 	}
 
 	log.Info(
 		"Commit block finished, wait some L1 blocks confirmations before proposing",
+		"commitHeight", commitHeight,
 		"confirmations", p.commitDelayConfirmations,
 	)
 
@@ -247,7 +248,7 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 		return err
 	}
 
-	if _, err := rpc.WaitForTx(ctx, p.rpc.L1, proposeTx); err != nil {
+	if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, proposeTx); err != nil {
 		return err
 	}
 
