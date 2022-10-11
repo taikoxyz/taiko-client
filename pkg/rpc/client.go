@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -22,6 +23,9 @@ type Client struct {
 	// Protocol contracts clients
 	TaikoL1 *bindings.TaikoL1Client
 	TaikoL2 *bindings.V1TaikoL2Client
+	// Chain IDs
+	L1ChainID *big.Int
+	L2ChainID *big.Int
 }
 
 // ClientConfig contains all configs which will be used to initializing an
@@ -68,28 +72,36 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
+	l1ChainID, err := l1RPC.ChainID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	l2ChainID, err := l2RPC.ChainID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// If not providing L2EngineEndpoint or JwtSecret, then the L2Engine client
 	// won't be initialized.
 	var l2AuthRPC *EngineClient
 	if len(cfg.L2EngineEndpoint) != 0 && len(cfg.JwtSecret) != 0 {
-		l2AuthRPC, err = DialEngineClientWithBackoff(
-			ctx,
-			cfg.L2EngineEndpoint,
-			cfg.JwtSecret,
-		)
+		l2AuthRPC, err = DialEngineClientWithBackoff(ctx, cfg.L2EngineEndpoint, cfg.JwtSecret)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	client := &Client{
-		L1:       l1RPC,
-		L2:       l2RPC,
-		L1RawRPC: l1RawRPC,
-		L2RawRPC: l2RawRPC,
-		L2Engine: l2AuthRPC,
-		TaikoL1:  taikoL1,
-		TaikoL2:  taikoL2,
+		L1:        l1RPC,
+		L2:        l2RPC,
+		L1RawRPC:  l1RawRPC,
+		L2RawRPC:  l2RawRPC,
+		L2Engine:  l2AuthRPC,
+		TaikoL1:   taikoL1,
+		TaikoL2:   taikoL2,
+		L1ChainID: l1ChainID,
+		L2ChainID: l2ChainID,
 	}
 
 	if err := client.ensureGenesisMatched(ctx); err != nil {

@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/neilotoole/errgroup"
+	"golang.org/x/sync/errgroup"
 )
 
 // WaitConfirmations won't return before N blocks confirmations have been seen

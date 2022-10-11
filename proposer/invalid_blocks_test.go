@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
 	"github.com/taikochain/taiko-client/bindings"
+	"github.com/taikochain/taiko-client/bindings/encoding"
 )
 
 func TestProposeInvalidTxListBytes(t *testing.T) {
@@ -65,10 +66,7 @@ func TestProposeTxListIncludingInvalidTx(t *testing.T) {
 }
 
 func unpackTxListBytes(t *testing.T, tx *types.Transaction) []byte {
-	taikoL1Abi, err := bindings.TaikoL1ClientMetaData.GetAbi()
-	require.Nil(t, err)
-
-	method, err := taikoL1Abi.MethodById(tx.Data())
+	method, err := encoding.TaikoL1ABI.MethodById(tx.Data())
 	require.Nil(t, err)
 	require.Equal(t, "proposeBlock", method.Name)
 

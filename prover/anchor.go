@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikochain/taiko-client/bindings/encoding"
 )
 
 // validateAnchorTx checks whether the given transaction is a successfully
@@ -16,7 +17,7 @@ func (p *Prover) validateAnchorTx(ctx context.Context, tx *types.Transaction) er
 		return fmt.Errorf("invalid TaikoL2.anchor to: %s", tx.To())
 	}
 
-	method, err := p.taikoL2Abi.MethodById(tx.Data())
+	method, err := encoding.TaikoL2ABI.MethodById(tx.Data())
 	if err != nil || method.Name != "anchor" {
 		return fmt.Errorf("invalid method method, err: %w, methodName: %s", err, method.Name)
 	}

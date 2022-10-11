@@ -7,7 +7,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0
 	github.com/ethereum/go-ethereum v1.10.25
-	github.com/neilotoole/errgroup v0.1.6
 	github.com/prysmaticlabs/prysm v1.4.2-0.20220805185555-4e225fc667d8
 	github.com/stretchr/testify v1.8.0
 	github.com/urfave/cli/v2 v2.11.1

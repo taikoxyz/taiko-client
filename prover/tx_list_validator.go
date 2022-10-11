@@ -1,7 +1,6 @@
 package prover
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -9,13 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/taikochain/taiko-client/bindings"
-)
-
-var (
-	// errInvalidProposeBlockTx is returned when the given `proposeBlock`
-	// transaction is invalid.
-	errInvalidProposeBlockTx = errors.New("invalid TaikoL1.proposeBlock transaction")
+	"github.com/taikochain/taiko-client/bindings/encoding"
 )
 
 // InvalidTxListReason represents a reason why a transactions list is invalid,
@@ -57,7 +50,7 @@ func (v *TxListValidator) ValidateTxList(
 	blockID *big.Int,
 	proposeBlockTxInput []byte,
 ) (hint InvalidTxListReason, txIdx int, err error) {
-	txListBytes, err := v.unpackTxListBytes(proposeBlockTxInput)
+	txListBytes, err := encoding.UnpackTxListBytes(proposeBlockTxInput)
 	if err != nil {
 		return HintBinaryNotDecodable, 0, fmt.Errorf("failed to unpack raw transactions list bytes: %w", err)
 	}
@@ -115,36 +108,4 @@ func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (h
 
 	log.Info("Transaction list is valid", "blockID", blockID)
 	return HintOK, 0
-}
-
-// unpackTxListBytes unpacks the L2 transaction list from a L1 block's calldata.
-func (v *TxListValidator) unpackTxListBytes(data []byte) ([]byte, error) {
-	taikoL1Abi, err := bindings.TaikoL1ClientMetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
-
-	method, err := taikoL1Abi.MethodById(data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Only check for safety.
-	if method.Name != "proposeBlock" {
-		return nil, errInvalidProposeBlockTx
-	}
-
-	args := map[string]interface{}{}
-
-	if err := method.Inputs.UnpackIntoMap(args, data[4:]); err != nil {
-		return nil, errInvalidProposeBlockTx
-	}
-
-	inputs, ok := args["inputs"].([][]byte)
-
-	if !ok || len(inputs) < 2 {
-		return nil, errInvalidProposeBlockTx
-	}
-
-	return inputs[1], nil
 }

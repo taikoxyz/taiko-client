@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/beacon"
@@ -17,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/bindings"
+	"github.com/taikochain/taiko-client/bindings/encoding"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 )
 
@@ -45,19 +45,9 @@ const (
 	HintTxGasLimitTooSmall
 )
 
-var (
-	// errInvalidProposeBlockTx is returned when the given `proposeBlock` tx
-	// is invalid.
-	errInvalidProposeBlockTx = errors.New("invalid propose block tx")
-	// errEmptyPayloadID is returned when the received payload ID is empty.
-	errEmptyPayloadID = errors.New("empty payload ID")
-)
-
 type L2ChainInserter struct {
-	taikoL1ABI                    *abi.ABI          // TaikoL1 contract ABI
 	state                         *State            // Driver's state
 	rpc                           *rpc.Client       // L1/L2 RPC clients
-	chainID                       *big.Int          // L2 chain ID
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey // Private key of L2 throwaway blocks builder
 }
 
@@ -68,21 +58,9 @@ func NewL2ChainInserter(
 	state *State,
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
 ) (*L2ChainInserter, error) {
-	taikoL1ABI, err := bindings.TaikoL1ClientMetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
-
-	chainID, err := rpc.L2.ChainID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	return &L2ChainInserter{
 		rpc:                           rpc,
-		taikoL1ABI:                    taikoL1ABI,
 		state:                         state,
-		chainID:                       chainID,
 		throwawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
 	}, nil
 }
@@ -147,7 +125,7 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 			return fmt.Errorf("failed to fetch original TaikoL1.proposeBlock transaction: %w", err)
 		}
 
-		txListBytes, err := b.unpackTxListBytes(tx)
+		txListBytes, err := encoding.UnpackTxListBytes(tx.Data())
 		if err != nil {
 			log.Warn("Unpack transactions bytes error", "error", err)
 			continue
@@ -230,33 +208,6 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 	}
 
 	return nil
-}
-
-// unpackProposeTxData unpacks the tx data, and returns the txList bytes.
-func (b *L2ChainInserter) unpackTxListBytes(tx *types.Transaction) ([]byte, error) {
-	method, err := b.taikoL1ABI.MethodById(tx.Data())
-	if err != nil {
-		return nil, err
-	}
-
-	// Only check for safety.
-	if method.Name != "proposeBlock" {
-		return nil, errInvalidProposeBlockTx
-	}
-
-	args := map[string]interface{}{}
-
-	if err := method.Inputs.UnpackIntoMap(args, tx.Data()[4:]); err != nil {
-		return nil, errInvalidProposeBlockTx
-	}
-
-	inputs, ok := args["inputs"].([][]byte)
-
-	if !ok || len(inputs) < 2 {
-		return nil, errInvalidProposeBlockTx
-	}
-
-	return inputs[1], nil
 }
 
 // insertNewHead tries to insert a new head block to the L2 node's local
@@ -420,7 +371,7 @@ func (b *L2ChainInserter) createExecutionPayloads(
 		return nil, nil, fmt.Errorf("failed to update forkchoice, status: %s", fcRes.PayloadStatus.Status)
 	}
 	if fcRes.PayloadID == nil {
-		return nil, nil, errEmptyPayloadID
+		return nil, nil, errors.New("empty payload ID")
 	}
 
 	// Step 2, get the payload
@@ -473,7 +424,7 @@ func (b *L2ChainInserter) isTxListValid(txListBytes []byte) (hint InvalidTxListR
 		return HintBlockGasLimitTooLarge, 0
 	}
 
-	signer := types.LatestSignerForChainID(b.chainID)
+	signer := types.LatestSignerForChainID(b.rpc.L2ChainID)
 
 	for i, tx := range txs {
 		sender, err := types.Sender(signer, tx)
@@ -496,7 +447,7 @@ func (b *L2ChainInserter) isTxListValid(txListBytes []byte) (hint InvalidTxListR
 func (b *L2ChainInserter) getInvalidateBlockTxOpts(ctx context.Context, height *big.Int) (*bind.TransactOpts, error) {
 	opts, err := bind.NewKeyedTransactorWithChainID(
 		b.throwawayBlocksBuilderPrivKey,
-		b.chainID,
+		b.rpc.L2ChainID,
 	)
 	if err != nil {
 		return nil, err

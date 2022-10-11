@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -195,7 +196,7 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 		GasLimit:    gasLimit,
 		TxListHash:  crypto.Keccak256Hash(txListBytes),
 	}
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey)
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
 	if err != nil {
 		return err
 	}
@@ -270,12 +271,12 @@ func sumTxsGasLimit(txs []*types.Transaction) uint64 {
 }
 
 // getTxOpts creates a bind.TransactOpts instance using the given private key.
-func getTxOpts(ctx context.Context, cli *ethclient.Client, privKey *ecdsa.PrivateKey) (*bind.TransactOpts, error) {
-	chainID, err := cli.NetworkID(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get networkID: %w", err)
-	}
-
+func getTxOpts(
+	ctx context.Context,
+	cli *ethclient.Client,
+	privKey *ecdsa.PrivateKey,
+	chainID *big.Int,
+) (*bind.TransactOpts, error) {
 	opts, err := bind.NewKeyedTransactorWithChainID(privKey, chainID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate prepareBlock transaction options: %w", err)

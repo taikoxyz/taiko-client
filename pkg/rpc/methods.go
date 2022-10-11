@@ -44,7 +44,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	for iter.Next() {
 		l2GenesisHash := iter.Event.BlockHash
 
-		log.Info("Genesis hash", "node", nodeGenesis.Hash(), "TaikoL1", common.BytesToHash(l2GenesisHash[:]))
+		log.Debug("Genesis hash", "node", nodeGenesis.Hash(), "TaikoL1", common.BytesToHash(l2GenesisHash[:]))
 
 		// Node's genesis header and TaikoL1 contract's genesis header must match.
 		if common.BytesToHash(l2GenesisHash[:]) != nodeGenesis.Hash() {
@@ -96,7 +96,7 @@ func (c *Client) GetGenesisL1Header(ctx context.Context) (*types.Header, error) 
 func (c *Client) L2ParentByBlockId(ctx context.Context, blockID *big.Int) (*types.Header, error) {
 	parentBlockId := new(big.Int).Sub(blockID, common.Big1)
 
-	log.Info("Get parent block by block ID", "parentBlockId", parentBlockId)
+	log.Debug("Get parent block by block ID", "parentBlockId", parentBlockId)
 
 	for parentBlockId.Cmp(common.Big0) > 0 {
 		l1Origin, err := c.L2.L1OriginByID(ctx, parentBlockId)
@@ -104,7 +104,7 @@ func (c *Client) L2ParentByBlockId(ctx context.Context, blockID *big.Int) (*type
 			return nil, err
 		}
 
-		log.Info("Parent block L1 origin", "l1Origin", l1Origin, "parentBlockId", parentBlockId)
+		log.Debug("Parent block L1 origin", "l1Origin", l1Origin, "parentBlockId", parentBlockId)
 
 		if l1Origin.Throwaway {
 			parentBlockId = new(big.Int).Sub(parentBlockId, common.Big1)
@@ -142,7 +142,7 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	log.Info("Start fetching L1Origin from L2 node", "blockID", blockID)
+	log.Debug("Start fetching L1Origin from L2 node", "blockID", blockID)
 
 	for {
 		select {

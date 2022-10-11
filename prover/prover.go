@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -36,15 +35,12 @@ type Prover struct {
 	cfg *Config
 
 	// Clients
-	rpc        *rpc.Client
-	taikoL1Abi *abi.ABI
-	taikoL2Abi *abi.ABI
+	rpc *rpc.Client
 
 	// Contract configurations
 	txListValidator  *TxListValidator
 	anchorGasLimit   uint64
 	maxPendingBlocks uint64
-	chainID          *big.Int
 
 	// States
 	lastFinalizedHeader *types.Header
@@ -95,16 +91,8 @@ func initFromConfig(p *Prover, cfg *Config) (err error) {
 		return err
 	}
 
-	if p.taikoL1Abi, err = bindings.TaikoL1ClientMetaData.GetAbi(); err != nil {
-		return err
-	}
-
-	if p.taikoL2Abi, err = bindings.V1TaikoL2ClientMetaData.GetAbi(); err != nil {
-		return err
-	}
-
 	// Constants
-	chainID, maxPendingBlocks, _, _, _,
+	_, maxPendingBlocks, _, _, _,
 		maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit,
 		anchorGasLimit, _, _, err := p.rpc.TaikoL1.GetConstants(nil)
 	if err != nil {
@@ -118,7 +106,6 @@ func initFromConfig(p *Prover, cfg *Config) (err error) {
 		"maxTxlistBytes", maxTxlistBytes,
 		"maxPendingBlocks", maxPendingBlocks,
 		"anchorGasLimit", anchorGasLimit,
-		"chainID", chainID,
 	)
 
 	p.txListValidator = &TxListValidator{
@@ -126,11 +113,10 @@ func initFromConfig(p *Prover, cfg *Config) (err error) {
 		maxBlockNumTxs:    maxBlockNumTxs.Uint64(),
 		maxTxlistBytes:    maxTxlistBytes.Uint64(),
 		minTxGasLimit:     minTxGasLimit.Uint64(),
-		chainID:           chainID,
+		chainID:           p.rpc.L2ChainID,
 	}
 	p.maxPendingBlocks = maxPendingBlocks.Uint64()
 	p.anchorGasLimit = anchorGasLimit.Uint64()
-	p.chainID = chainID
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, 10)
 	p.blockFinalizedCh = make(chan *bindings.TaikoL1ClientBlockFinalized, 10)
 	p.proveValidProofCh = make(chan *producer.ProofWithHeader, 10)
@@ -352,12 +338,7 @@ func (p *Prover) Name() string {
 // getProveBlocksTxOpts creates a bind.TransactOpts instance using the given private key.
 // Used for creating TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
 func (p *Prover) getProveBlocksTxOpts(ctx context.Context) (*bind.TransactOpts, error) {
-	networkID, err := p.rpc.L1.ChainID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	opts, err := bind.NewKeyedTransactorWithChainID(p.cfg.L1ProverPrivKey, networkID)
+	opts, err := bind.NewKeyedTransactorWithChainID(p.cfg.L1ProverPrivKey, p.rpc.L1ChainID)
 	if err != nil {
 		return nil, err
 	}

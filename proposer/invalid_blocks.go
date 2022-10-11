@@ -71,12 +71,7 @@ func (p *Proposer) proposeTxListIncludingInvalidTx(ctx context.Context) error {
 // generateInvalidTransaction creates a transaction with an invalid nonce to
 // current L2 world state.
 func (p *Proposer) generateInvalidTransaction(ctx context.Context) (*types.Transaction, error) {
-	chainId, err := p.rpc.L2.ChainID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	opts, err := bind.NewKeyedTransactorWithChainID(p.l1ProposerPrivKey, chainId)
+	opts, err := bind.NewKeyedTransactorWithChainID(p.l1ProposerPrivKey, p.rpc.L2ChainID)
 	if err != nil {
 		return nil, err
 	}

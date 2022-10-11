@@ -33,7 +33,7 @@ func (b *L2ChainInserter) assembleAnchorTx(
 // newAnchorTransactor is a utility method to create some transact options using
 // golden touch account's private key.
 func (b *L2ChainInserter) newAnchorTransactor(ctx context.Context, height *big.Int) (*bind.TransactOpts, error) {
-	signer := types.LatestSignerForChainID(b.chainID)
+	signer := types.LatestSignerForChainID(b.rpc.L2ChainID)
 
 	// Get the nonce of golden touch account at the specified height.
 	nonce, err := b.rpc.L2AccountNonce(ctx, goldenTouchAddress, height)

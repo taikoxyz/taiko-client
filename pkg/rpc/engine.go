@@ -15,11 +15,7 @@ type EngineClient struct {
 	*rpc.Client
 }
 
-// ForkchoiceUpdate updates the forkchoice on the execution client. If
-// attributes is not nil, the engine client will also begin building a block
-// based on attributes after the new head block and return the payload ID.
-// May return an error in ForkChoiceResult, but the error is marshalled into
-// the error return
+// ForkchoiceUpdate updates the forkchoice on the execution client.
 func (c *EngineClient) ForkchoiceUpdate(
 	ctx context.Context,
 	fc *beacon.ForkchoiceStateV1,
@@ -36,7 +32,7 @@ func (c *EngineClient) ForkchoiceUpdate(
 	return result, nil
 }
 
-// ExecutePayload executes a built block on the execution engine and returns an error if it was not successful.
+// ExecutePayload executes a built block on the execution engine.
 func (c *EngineClient) NewPayload(
 	ctx context.Context,
 	payload *beacon.ExecutableDataV1,
@@ -52,7 +48,7 @@ func (c *EngineClient) NewPayload(
 	return result, nil
 }
 
-// GetPayload gets the execution payload associated with the payloadId.
+// GetPayload gets the execution payload associated with the payload ID.
 func (c *EngineClient) GetPayload(
 	ctx context.Context,
 	payloadID *beacon.PayloadID,
