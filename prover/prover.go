@@ -281,7 +281,7 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 
 	log.Info("Oldest unproved block ID", "blockID", oldestUnfinalizedBlockID)
 
-	l1Origin, err := p.rpc.L1.L1OriginByID(ctx, oldestUnfinalizedBlockID)
+	l1Origin, err := p.rpc.L2.L1OriginByID(ctx, oldestUnfinalizedBlockID)
 	if err != nil {
 		return fmt.Errorf("failed to get L1Origin: %w", err)
 	}
