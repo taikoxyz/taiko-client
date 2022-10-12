@@ -37,7 +37,7 @@ jobs:
           images: |
             gcr.io/evmchain/taiko-client
           tags: |
-            type=ref,event="push tag"
+            type=ref,event=tag
             type=sha
 
       - name: Build and push
