@@ -1,8 +1,8 @@
 package version
 
-// Version info, set via linker flags.
+// Version info.
 var (
-	Version = "0.0.0"
+	Version = "0.1.0"
 	Meta    = "dev"
 )
 
