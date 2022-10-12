@@ -1,16 +1,13 @@
 name: "Push docker image to GCR"
 
 on:
-  release:
-    types: [published]
-  pull_request:
-    branches: [main]
-    types: [closed]
   push:
+    branches: [main]
+    tags:
+      - "v*"
 
 jobs:
   push-docker-image:
-    # if: ${{ github.event.pull_request.merged || startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -38,8 +35,8 @@ jobs:
             gcr.io/evmchain/taiko-client
           tags: |
             type=ref,event=tag
-            type=ref,event=pr
-            type=sha
+            type=ref,event=push
+            type=sha,event=push
 
       - name: Build and push
         uses: docker/build-push-action@v2
@@ -49,3 +46,4 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

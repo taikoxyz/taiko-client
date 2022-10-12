@@ -1,10 +1,6 @@
 GIT_COMMIT := $(shell git rev-parse HEAD)
 GIT_DATE := $(shell git show -s --format='%ct')
-VERSION := 0.0.0
-VERSION_META := dev
 
-LD_FLAGS_ARGS +=-X github.com/taikochain/taiko-client/version.Version=$(VERSION)
-LD_FLAGS_ARGS +=-X github.com/taikochain/taiko-client/version.Meta=$(VERSION_META)
 LD_FLAGS_ARGS +=-X github.com/taikochain/taiko-client/version.GitCommit=$(GIT_COMMIT)
 LD_FLAGS_ARGS +=-X github.com/taikochain/taiko-client/version.GitDate=$(GIT_DATE)
 

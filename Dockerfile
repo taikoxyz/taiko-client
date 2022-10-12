@@ -10,7 +10,7 @@ RUN apk add --no-cache gcc musl-dev linux-headers git openssh make \
 
 WORKDIR /taiko-client
 COPY . .
-RUN VERSION=${VERSION} META=${META} make build
+RUN make build
 
 FROM alpine:latest
 
@@ -19,5 +19,3 @@ RUN apk add --no-cache ca-certificates
 COPY --from=builder /taiko-client/bin/taiko-client /usr/local/bin/
 
 ENTRYPOINT ["taiko-client"]
-
-LABEL version={$VERSION} meta=${META}
