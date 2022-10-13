@@ -42,8 +42,6 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          build-args: |
-            GITHUB_PERSONAL_TOKEN=${{ secrets.TK_REPO_ACCESS }}
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
