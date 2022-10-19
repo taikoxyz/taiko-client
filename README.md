@@ -2,53 +2,59 @@
 
 [![CI](https://github.com/taikochain/taiko-client/actions/workflows/test.yml/badge.svg)](https://github.com/taikochain/taiko-client/actions/workflows/test.yml)
 
-Taiko protocol's client softwares implementation in Golang.
+Taiko protocol's client software implementation in Go.
 
-## Building the source
-
-Building the `taiko-client` binary requires a Go compiler, once installed, run:
-
-```shell
-make build
-```
-
-## Project Structure
+## Project structure
 
 | Path                | Description                                                                                                                              |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `bindings/`         | [Go contract bindings](https://geth.ethereum.org/docs/dapp/native-bindings) for Taiko smart contracts, and few related utility functions |
 | `cmd/`              | Main executable for this project                                                                                                         |
+| `docs/`             | Documentation                                                                                                                            |
+| `driver/`           | Driver sub-command                                                                                                                       |
 | `integration_test/` | Scripts to do the integration testing of all client softwares                                                                            |
-| `scripts/`          | Helpful scripts                                                                                                                          |
 | `pkg/`              | Library code which used by all sub-commands                                                                                              |
 | `proposer/`         | Proposer sub-command                                                                                                                     |
-| `driver/`           | Driver sub-command                                                                                                                       |
 | `prover/`           | Prover sub-command                                                                                                                       |
-| `docs/`             | Documentations                                                                                                                           |
-| `version/`          | Version infomation                                                                                                                       |
+| `scripts/`          | Helpful scripts                                                                                                                          |
+| `version/`          | Version information                                                                                                                      |
+
+## Build the source
+
+Building the `taiko-client` binary requires a Go compiler. Once installed, run:
+
+```sh
+make build
+```
+
+## Usage
+
+Review all available sub-commands:
+
+```sh
+bin/taiko-client --help
+```
+
+Review each sub-command's command line flags:
+
+```sh
+bin/taiko-client <sub-command> --help
+```
 
 ## Testing
 
 > NOTE: the `taiko-mono` repository has not been open-sourced yet.
 
-Run the integration tests:
+Ensure you have Docker running, and Yarn installed.
 
-```bash
-TAIKO_MONO_DIR=<PATH_TO_TAIKO_MONO_REPO> \
-COMPILE_PROTOCOL=true \
-  make test
-```
+Then, run the integration tests:
 
-## Running
+1. Start Docker locally
+2. Perform a `yarn install` in `taiko-mono/packages/protocol`
+3. Replace `<PATH_TO_TAIKO_MONO_REPO>` and execute:
 
-All available sub-commands can be reviewed with:
-
-```bash
-bin/taiko-client --help
-```
-
-And each sub-command's command line flags can be reviewed with:
-
-```bash
-bin/taiko-client <sub-command> --help
-```
+   ```bash
+   TAIKO_MONO_DIR=<PATH_TO_TAIKO_MONO_REPO> \
+   COMPILE_PROTOCOL=true \
+     make test
+   ```
