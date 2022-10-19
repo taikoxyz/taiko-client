@@ -143,7 +143,7 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 
 		l1Origin := &rawdb.L1Origin{
 			BlockID:       event.Id,
-			L2BlockHash:   common.Hash{}, // Will be set by taiko client.
+			L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
 			L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
 			L1BlockHash:   event.Raw.BlockHash,
 			Throwaway:     hint != HintOK,

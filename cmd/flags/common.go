@@ -16,13 +16,13 @@ var (
 var (
 	L1NodeEndpoint = cli.StringFlag{
 		Name:     "l1",
-		Usage:    "RPC endpoint of a L1 ethereum node",
+		Usage:    "Websocket RPC endpoint of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
 	}
 	L2NodeEndpoint = cli.StringFlag{
 		Name:     "l2",
-		Usage:    "RPC endpoint of a L2 ethereum node",
+		Usage:    "Websocket RPC endpoint of a L2 taiko-geth node",
 		Required: true,
 		Category: commonCategory,
 	}
