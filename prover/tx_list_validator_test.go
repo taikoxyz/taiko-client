@@ -78,14 +78,6 @@ func Test_ValidateTxList(t *testing.T) {
 			0,
 			true,
 		},
-		{
-			"valid tx list",
-			chainID,
-			randBytes(5),
-			HintBinaryNotDecodable,
-			0,
-			true,
-		},
 	}
 
 	for _, tt := range tests {
