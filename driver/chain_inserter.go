@@ -78,13 +78,8 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 		return err
 	}
 
-	var (
-		startHeight = l1Start.Number.Uint64()
-		endHeight   = l1End.Number.Uint64()
-	)
-
 	for l1Start.Number.Uint64() < l1End.Number.Uint64() {
-		if startHeight+MaxL1BlocksRead > endHeight {
+		if l1Start.Number.Uint64()+MaxL1BlocksRead > l1End.Number.Uint64() {
 			return b.processL1Blocks(ctx, l1Start, l1End)
 		}
 
