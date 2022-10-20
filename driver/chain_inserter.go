@@ -86,11 +86,11 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 		endHeight := new(big.Int).Add(l1Start.Number, big.NewInt(MaxL1BlocksRead))
 		currentEndBlock, err := b.rpc.L1.HeaderByNumber(ctx, endHeight)
 		if err != nil {
-			return fmt.Errorf("Fetch L1 header by number (%d) error: %w", endHeight, err)
+			return fmt.Errorf("fetch L1 header by number (%d) error: %w", endHeight, err)
 		}
 
 		if err := b.processL1Blocks(ctx, l1Start, currentEndBlock); err != nil {
-			return fmt.Errorf("Process L1 blocks error: %w", err)
+			return fmt.Errorf("process L1 blocks error: %w", err)
 		}
 
 		l1Start = currentEndBlock
