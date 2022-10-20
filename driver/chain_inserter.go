@@ -20,6 +20,11 @@ import (
 	"github.com/taikochain/taiko-client/pkg/rpc"
 )
 
+const (
+	MaxL1BlocksRead           = 1000
+	InvalidateBlockTxGasLimit = 5000000
+)
+
 // InvalidTxListReason represents a reason why a transactions list is invalid,
 // must match the definitions in LibInvalidTxList.sol:
 //
@@ -73,6 +78,28 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 		return err
 	}
 
+	for l1Start.Number.Uint64() < l1End.Number.Uint64() {
+		if l1Start.Number.Uint64()+MaxL1BlocksRead > l1End.Number.Uint64() {
+			return b.processL1Blocks(ctx, l1Start, l1End)
+		}
+
+		endHeight := new(big.Int).Add(l1Start.Number, big.NewInt(MaxL1BlocksRead))
+		currentEndBlock, err := b.rpc.L1.HeaderByNumber(ctx, endHeight)
+		if err != nil {
+			return fmt.Errorf("fetch L1 header by number (%d) error: %w", endHeight, err)
+		}
+
+		if err := b.processL1Blocks(ctx, l1Start, currentEndBlock); err != nil {
+			return fmt.Errorf("process L1 blocks error: %w", err)
+		}
+
+		l1Start = currentEndBlock
+	}
+
+	return nil
+}
+
+func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.Header, l1End *types.Header) error {
 	log.Info(
 		"New synchronising operation",
 		"l1StartHeight", l1Start.Number,
@@ -464,6 +491,7 @@ func (b *L2ChainInserter) getInvalidateBlockTxOpts(ctx context.Context, height *
 
 	opts.Nonce = new(big.Int).SetUint64(nonce)
 	opts.NoSend = true
+	opts.GasLimit = InvalidateBlockTxGasLimit
 
 	return opts, nil
 }
