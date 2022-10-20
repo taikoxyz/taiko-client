@@ -18,6 +18,7 @@ const (
 	RetryDelay         = 10 * time.Second
 	MaxReorgDepth      = 500
 	ReorgRollbackDepth = 20
+	MaxL1BlocksRead    = 1000
 )
 
 // Driver keeps the L2 node's local block chain in sync with the TaikoL1

@@ -73,6 +73,33 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 		return err
 	}
 
+	var (
+		startHeight = l1Start.Number.Uint64()
+		endHeight   = l1End.Number.Uint64()
+	)
+
+	for l1Start.Number.Uint64() < l1End.Number.Uint64() {
+		if startHeight+1000 > endHeight {
+			return b.processL1Blocks(ctx, l1Start, l1End)
+		}
+
+		endHeight := new(big.Int).Add(l1Start.Number, big.NewInt(1000))
+		currentEndBlock, err := b.rpc.L1.HeaderByNumber(ctx, endHeight)
+		if err != nil {
+			return fmt.Errorf("Fetch L1 header by number (%d) error: %w", endHeight, err)
+		}
+
+		if err := b.processL1Blocks(ctx, l1Start, currentEndBlock); err != nil {
+			return fmt.Errorf("Process L1 blocks error: %w", err)
+		}
+
+		l1Start = currentEndBlock
+	}
+
+	return nil
+}
+
+func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.Header, l1End *types.Header) error {
 	log.Info(
 		"New synchronising operation",
 		"l1StartHeight", l1Start.Number,
