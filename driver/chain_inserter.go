@@ -21,8 +21,7 @@ import (
 )
 
 const (
-	MaxL1BlocksRead           = 1000
-	InvalidateBlockTxGasLimit = 5000000
+	MaxL1BlocksRead = 1000
 )
 
 // InvalidTxListReason represents a reason why a transactions list is invalid,
@@ -491,7 +490,6 @@ func (b *L2ChainInserter) getInvalidateBlockTxOpts(ctx context.Context, height *
 
 	opts.Nonce = new(big.Int).SetUint64(nonce)
 	opts.NoSend = true
-	opts.GasLimit = InvalidateBlockTxGasLimit
 
 	return opts, nil
 }
