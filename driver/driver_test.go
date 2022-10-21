@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
 	"github.com/taikochain/taiko-client/pkg/jwt"
@@ -26,14 +27,20 @@ func newTestDriver(t *testing.T) *Driver {
 	require.Nil(t, err)
 	require.NotEmpty(t, jwtSecret)
 
+	throwawayBlocksBuilderPrivKey, err := crypto.ToECDSA(
+		common.Hex2Bytes(os.Getenv("THROWAWAY_BLOCKS_BUILDER_PRIV_KEY")),
+	)
+	require.Nil(t, err)
+
 	d := new(Driver)
 
 	require.Nil(t, initFromConfig(d, &Config{
-		L1Endpoint:       os.Getenv("L1_NODE_ENDPOINT"),
-		L2Endpoint:       os.Getenv("L2_NODE_ENDPOINT"),
-		L2EngineEndpoint: os.Getenv("L2_NODE_ENGINE_ENDPOINT"),
-		TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		JwtSecret:        string(jwtSecret),
+		L1Endpoint:                    os.Getenv("L1_NODE_ENDPOINT"),
+		L2Endpoint:                    os.Getenv("L2_NODE_ENDPOINT"),
+		L2EngineEndpoint:              os.Getenv("L2_NODE_ENGINE_ENDPOINT"),
+		TaikoL1Address:                common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		ThrowawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
+		JwtSecret:                     string(jwtSecret),
 	}))
 
 	return d
