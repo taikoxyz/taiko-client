@@ -42,13 +42,18 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, fmt.Errorf("invalid proposing interval: %w", err)
 	}
 
+	l2SuggestedFeeRecipient := c.String(flags.L2SuggestedFeeRecipient.Name)
+	if !common.IsHexAddress(l2SuggestedFeeRecipient) {
+		return nil, fmt.Errorf("invalid L2 suggested fee recipient address: %s", l2SuggestedFeeRecipient)
+	}
+
 	return &Config{
 		L1Endpoint:                   c.String(flags.L1NodeEndpoint.Name),
 		L2Endpoint:                   c.String(flags.L2NodeEndpoint.Name),
 		TaikoL1Address:               common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:               common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		L1ProposerPrivKey:            l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:      common.HexToAddress(c.String(flags.L2SuggestedFeeRecipient.Name)),
+		L2SuggestedFeeRecipient:      common.HexToAddress(l2SuggestedFeeRecipient),
 		ProposeInterval:              proposingInterval,
 		ProduceInvalidBlocks:         c.Bool(flags.ProduceInvalidBlocks.Name),
 		ProduceInvalidBlocksInterval: c.Uint64(flags.ProduceInvalidBlocksInterval.Name),
