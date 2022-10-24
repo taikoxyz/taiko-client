@@ -329,7 +329,7 @@ func (s *State) VerfiyL2Block(ctx context.Context, blockID *big.Int, protocolBlo
 
 	if header.Hash() != protocolBlockHash {
 		log.Crit(
-			"Block hash mismatch",
+			"Finalized block hash mismatch",
 			"blockID", blockID,
 			"protocolBlockHash", protocolBlockHash,
 			"L2 node block number", header.Number,
