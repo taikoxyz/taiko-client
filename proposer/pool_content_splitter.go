@@ -1,9 +1,14 @@
 package proposer
 
 import (
+	"context"
 	"fmt"
+	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/les/utils"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/pkg/rpc"
@@ -14,6 +19,8 @@ import (
 // and make sure each splitted list satisfies the limits defined in Taiko
 // protocol.
 type poolContentSplitter struct {
+	chainID            *big.Int
+	client             *ethclient.Client
 	maxTxPerBlock      uint64
 	maxGasPerBlock     uint64
 	maxTxBytesPerBlock uint64
@@ -22,33 +29,36 @@ type poolContentSplitter struct {
 
 // split splits the given transaction pool content to make each splitted
 // transactions list satisfies the rules defined in Taiko protocol.
-func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Transaction {
+func (p *poolContentSplitter) split(poolContent rpc.PoolContent) ([][]*types.Transaction, error) {
 	var (
 		splittedTxLists        = make([][]*types.Transaction, 0)
 		txBuffer               = make([]*types.Transaction, 0, p.maxTxPerBlock)
 		gasBuffer       uint64 = 0
 	)
 
-	for _, txs := range poolContent {
-		for _, tx := range txs {
-			// If the transaction is invalid, we simply ignore it.
-			if err := p.validateTx(tx); err != nil {
-				log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
-				continue
-			}
+	shuffledTxs, err := p.weightedShuffle(poolContent)
+	if err != nil {
+		return nil, fmt.Errorf("weighted shuffle transactions error: %w", err)
+	}
 
-			// If the transactions buffer is full, we make all transactions in
-			// current buffer a new splitted transaction list, and then reset the
-			// buffer.
-			if p.isTxBufferFull(tx, txBuffer, gasBuffer) {
-				splittedTxLists = append(splittedTxLists, txBuffer)
-				txBuffer = make([]*types.Transaction, 0, p.maxTxPerBlock)
-				gasBuffer = 0
-			}
-
-			txBuffer = append(txBuffer, tx)
-			gasBuffer += tx.Gas()
+	for _, tx := range shuffledTxs {
+		// If the transaction is invalid, we simply ignore it.
+		if err := p.validateTx(tx); err != nil {
+			log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
+			continue
 		}
+
+		// If the transactions buffer is full, we make all transactions in
+		// current buffer a new splitted transaction list, and then reset the
+		// buffer.
+		if p.isTxBufferFull(tx, txBuffer, gasBuffer) {
+			splittedTxLists = append(splittedTxLists, txBuffer)
+			txBuffer = make([]*types.Transaction, 0, p.maxTxPerBlock)
+			gasBuffer = 0
+		}
+
+		txBuffer = append(txBuffer, tx)
+		gasBuffer += tx.Gas()
 	}
 
 	// Maybe there are some remaining transactions in current buffer,
@@ -57,7 +67,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 		splittedTxLists = append(splittedTxLists, txBuffer)
 	}
 
-	return splittedTxLists
+	return splittedTxLists, nil
 }
 
 // validateTx checks whether the given transaction is valid according
@@ -107,4 +117,42 @@ func (p *poolContentSplitter) isTxBufferFull(t *types.Transaction, txs []*types.
 	}
 
 	return false
+}
+
+// weightedShuffle does a weight shuffling for the given transactions, each transaction's
+// estimated gasUsed will be used as the weight.
+func (p *poolContentSplitter) weightedShuffle(poolContent rpc.PoolContent) (types.Transactions, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	txsWithEstimatedGasUsed, err := poolContent.ToTxsWithEstimatedGasUsed(
+		ctx,
+		types.LatestSignerForChainID(p.chainID),
+		p.client,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	shuffled := make([]*types.Transaction, len(txsWithEstimatedGasUsed))
+
+	selector := utils.NewWeightedRandomSelect(func(i interface{}) uint64 {
+		return i.(rpc.TxWithEstimatedGasUsed).EstimatedGasUsed
+	})
+
+	for _, tx := range txsWithEstimatedGasUsed {
+		selector.Update(tx)
+	}
+
+	if selector.IsEmpty() {
+		return []*types.Transaction{}, nil
+	}
+
+	for i := range txsWithEstimatedGasUsed {
+		txWithEstimatedGasUsed := selector.Choose().(rpc.TxWithEstimatedGasUsed)
+		shuffled[i] = txWithEstimatedGasUsed.Tx
+		selector.Remove(txWithEstimatedGasUsed)
+	}
+
+	return shuffled, nil
 }

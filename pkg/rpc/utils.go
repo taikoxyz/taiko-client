@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
@@ -78,4 +80,50 @@ func GetReceiptsByBlock(ctx context.Context, cli *ethclient.Client, block *types
 	}
 
 	return receipts, g.Wait()
+}
+
+// TxWithEstimatedGasUsed represents a transaction with an estimated gasUsed information.
+type TxWithEstimatedGasUsed struct {
+	Tx               *types.Transaction
+	EstimatedGasUsed uint64
+}
+
+// PoolContent represents a response body of a `txpool_content` RPC call.
+type PoolContent map[common.Address]map[string]*types.Transaction
+
+// ToTxsWithEstimatedGasUsed converts a PoolContent to a []TxWithEstimatedGasUsed.
+func (pc PoolContent) ToTxsWithEstimatedGasUsed(
+	ctx context.Context,
+	signer types.Signer,
+	client *ethclient.Client,
+) ([]TxWithEstimatedGasUsed, error) {
+	txsWithEstimatedGasUsed := []TxWithEstimatedGasUsed{}
+	for _, txs := range pc {
+		for _, tx := range txs {
+			sender, err := signer.Sender(tx)
+			if err != nil {
+				return nil, err
+			}
+
+			gasUsed, err := client.EstimateGas(ctx, ethereum.CallMsg{
+				From:       sender,
+				To:         tx.To(),
+				Gas:        tx.Gas(),
+				GasPrice:   tx.GasPrice(),
+				GasFeeCap:  tx.GasFeeCap(),
+				GasTipCap:  tx.GasTipCap(),
+				Value:      tx.Value(),
+				Data:       tx.Data(),
+				AccessList: tx.AccessList(),
+			})
+			// TODO: if this is only an execution reverted, we should let it pass.
+			if err != nil {
+				return nil, err
+			}
+
+			txsWithEstimatedGasUsed = append(txsWithEstimatedGasUsed, TxWithEstimatedGasUsed{tx, gasUsed})
+		}
+	}
+
+	return txsWithEstimatedGasUsed, nil
 }

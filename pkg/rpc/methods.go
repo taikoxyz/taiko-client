@@ -162,8 +162,6 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 	}
 }
 
-type PoolContent map[common.Address]map[string]*types.Transaction
-
 // L2PoolContent fetches the transaction pool content from L2 node.
 func (c *Client) L2PoolContent(ctx context.Context) (pending PoolContent, queued PoolContent, err error) {
 	var res map[string]PoolContent
