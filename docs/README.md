@@ -14,8 +14,6 @@ The driver directs the L2 node's execution engine to insert new blocks or reorg 
 
 ### Chain synchronization process
 
-> NOTE: The Taiko protocol allows a block's timestamp to be equal to its parent block's timestamp, which differs from the original Ethereum protocol. So it's fine that there are two `TaikoL1.proposeBlock` transactions included in one L1 block.
-
 The driver subscribes to `TaikoL1.BlockProposed` events, and when a new block is proposed:
 
 1. Gets the corresponding `TaikoL1.proposeBlock` L1 transaction.
