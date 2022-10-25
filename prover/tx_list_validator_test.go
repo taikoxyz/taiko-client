@@ -60,7 +60,7 @@ func randBytes(l uint64) []byte {
 	return b
 }
 
-func Test_ValidateTxList(t *testing.T) {
+func TestValidateTxList(t *testing.T) {
 	v := newTestTxListValidator(t)
 	tests := []struct {
 		name                string
@@ -89,7 +89,7 @@ func Test_ValidateTxList(t *testing.T) {
 		})
 	}
 }
-func Test_isTxListValid(t *testing.T) {
+func TestIsTxListValid(t *testing.T) {
 	v := newTestTxListValidator(t)
 	tests := []struct {
 		name        string

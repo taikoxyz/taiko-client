@@ -25,10 +25,9 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	}
 
 	// Fetch the genesis `BlockFinalized` event.
-	iter, err := c.TaikoL1.FilterBlockFinalized(&bind.FilterOpts{
-		Start: L1GenesisHeight,
-		End:   &L1GenesisHeight,
-	},
+	l1GenesisHeight := L1GenesisHeight.Uint64()
+	iter, err := c.TaikoL1.FilterBlockFinalized(
+		&bind.FilterOpts{Start: l1GenesisHeight, End: &l1GenesisHeight},
 		[]*big.Int{common.Big0},
 	)
 	if err != nil {
@@ -88,7 +87,7 @@ func (c *Client) GetGenesisL1Header(ctx context.Context) (*types.Header, error) 
 		return nil, err
 	}
 
-	return c.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(genesisHeight))
+	return c.L1.HeaderByNumber(ctx, genesisHeight)
 }
 
 // L2ParentByBlockId fetches the block header from L2 node with the largest block id that

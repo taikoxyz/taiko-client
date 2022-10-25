@@ -256,6 +256,9 @@ func (s *State) watchBlockFinalized(ctx context.Context) (ethereum.Subscription,
 				continue
 			}
 			s.setLastFinalizedBlockHash(e.BlockHash)
+			if err := s.VerfiyL2Block(ctx, e.Id, e.BlockHash); err != nil {
+				log.Error("Verify finalized L2 block error", "error", err)
+			}
 		case err := <-sub.Err():
 			return sub, err
 		case <-ctx.Done():
@@ -315,4 +318,24 @@ func (s *State) getHeadBlockID() *big.Int {
 // SubL1HeadsFeed registers a subscription of new L1 heads.
 func (s *State) SubL1HeadsFeed(ch chan *types.Header) event.Subscription {
 	return s.l1HeadsFeed.Subscribe(ch)
+}
+
+// VerfiyL2Block checks whether the given block is in L2 node's local chain.
+func (s *State) VerfiyL2Block(ctx context.Context, blockID *big.Int, protocolBlockHash common.Hash) error {
+	header, err := s.rpc.L2.HeaderByHash(ctx, protocolBlockHash)
+	if err != nil {
+		return err
+	}
+
+	if header.Hash() != protocolBlockHash {
+		log.Crit(
+			"Finalized block hash mismatch",
+			"blockID", blockID,
+			"protocolBlockHash", protocolBlockHash,
+			"L2 node block number", header.Number,
+			"L2 node block hash", header.Hash(),
+		)
+	}
+
+	return nil
 }
