@@ -25,9 +25,9 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	}
 
 	// Fetch the genesis `BlockFinalized` event.
-	filterEnd := L1GenesisHeight.Uint64()
+	l1GenesisHeight := L1GenesisHeight.Uint64()
 	iter, err := c.TaikoL1.FilterBlockFinalized(
-		&bind.FilterOpts{Start: L1GenesisHeight.Uint64(), End: &filterEnd},
+		&bind.FilterOpts{Start: l1GenesisHeight, End: &l1GenesisHeight},
 		[]*big.Int{common.Big0},
 	)
 	if err != nil {
