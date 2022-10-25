@@ -35,20 +35,20 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) ([][]*types.Tra
 		splittedTxLists        = make([][]*types.Transaction, 0)
 		txBuffer               = make([]*types.Transaction, 0, p.maxTxPerBlock)
 		gasBuffer       uint64 = 0
-		txs                    = make([]*types.Transaction, 0)
+		pendingTxs      []*types.Transaction
 		err             error
 	)
 
 	if p.shufflePoolContent {
-		txs, err = p.weightedShuffle(poolContent)
+		pendingTxs, err = p.weightedShuffle(poolContent)
 		if err != nil {
 			return nil, fmt.Errorf("weighted shuffle transactions error: %w", err)
 		}
 	} else {
-		txs = p.flattenPoolContent(poolContent)
+		pendingTxs = p.flattenPoolContent(poolContent)
 	}
 
-	for _, tx := range txs {
+	for _, tx := range pendingTxs {
 		// If the transaction is invalid, we simply ignore it.
 		if err := p.validateTx(tx); err != nil {
 			log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
@@ -75,7 +75,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) ([][]*types.Tra
 	}
 
 	// If the pool content is shuffled, we will only propose the first transactions list.
-	if p.shufflePoolContent && len(txs) > 0 {
+	if p.shufflePoolContent && len(pendingTxs) > 0 {
 		splittedTxLists = [][]*types.Transaction{splittedTxLists[0]}
 	}
 
