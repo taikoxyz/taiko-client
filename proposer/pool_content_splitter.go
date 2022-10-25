@@ -21,6 +21,7 @@ import (
 type poolContentSplitter struct {
 	chainID            *big.Int
 	client             *ethclient.Client
+	shufflePoolContent bool
 	maxTxPerBlock      uint64
 	maxGasPerBlock     uint64
 	maxTxBytesPerBlock uint64
@@ -34,14 +35,20 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) ([][]*types.Tra
 		splittedTxLists        = make([][]*types.Transaction, 0)
 		txBuffer               = make([]*types.Transaction, 0, p.maxTxPerBlock)
 		gasBuffer       uint64 = 0
+		txs                    = make([]*types.Transaction, 0)
+		err             error
 	)
 
-	shuffledTxs, err := p.weightedShuffle(poolContent)
-	if err != nil {
-		return nil, fmt.Errorf("weighted shuffle transactions error: %w", err)
+	if p.shufflePoolContent {
+		txs, err = p.weightedShuffle(poolContent)
+		if err != nil {
+			return nil, fmt.Errorf("weighted shuffle transactions error: %w", err)
+		}
+	} else {
+		txs = p.flattenPoolContent(poolContent)
 	}
 
-	for _, tx := range shuffledTxs {
+	for _, tx := range txs {
 		// If the transaction is invalid, we simply ignore it.
 		if err := p.validateTx(tx); err != nil {
 			log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
@@ -65,6 +72,11 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) ([][]*types.Tra
 	// make them a new transactions list too.
 	if len(txBuffer) > 0 {
 		splittedTxLists = append(splittedTxLists, txBuffer)
+	}
+
+	// If the pool content is shuffled, we will only propose the first transactions list.
+	if p.shufflePoolContent && len(txs) > 0 {
+		splittedTxLists = [][]*types.Transaction{splittedTxLists[0]}
 	}
 
 	return splittedTxLists, nil
@@ -155,4 +167,10 @@ func (p *poolContentSplitter) weightedShuffle(poolContent rpc.PoolContent) (type
 	}
 
 	return shuffled, nil
+}
+
+func (p *poolContentSplitter) flattenPoolContent(poolContent rpc.PoolContent) types.Transactions {
+	txs := make([]*types.Transaction, 0)
+
+	return txs
 }

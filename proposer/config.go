@@ -20,6 +20,7 @@ type Config struct {
 	L1ProposerPrivKey       *ecdsa.PrivateKey
 	L2SuggestedFeeRecipient common.Address
 	ProposeInterval         time.Duration
+	ShufflePoolContent      bool
 
 	// Only for testing
 	ProduceInvalidBlocks         bool
@@ -55,6 +56,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L1ProposerPrivKey:            l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:      common.HexToAddress(l2SuggestedFeeRecipient),
 		ProposeInterval:              proposingInterval,
+		ShufflePoolContent:           c.Bool(flags.ShufflePoolContent.Name),
 		ProduceInvalidBlocks:         c.Bool(flags.ProduceInvalidBlocks.Name),
 		ProduceInvalidBlocksInterval: c.Uint64(flags.ProduceInvalidBlocksInterval.Name),
 	}, nil

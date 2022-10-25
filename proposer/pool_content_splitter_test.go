@@ -12,7 +12,7 @@ import (
 
 func TestPoolContentSplit(t *testing.T) {
 	// Gas limit is smaller than the limit.
-	splitter := &poolContentSplitter{minTxGasLimit: 21000}
+	splitter := &poolContentSplitter{minTxGasLimit: 21000, shufflePoolContent: false}
 
 	splitted, err := splitter.split(rpc.PoolContent{
 		common.BytesToAddress(randomBytes(32)): {
@@ -24,7 +24,7 @@ func TestPoolContentSplit(t *testing.T) {
 	require.Empty(t, splitted)
 
 	// Gas limit is larger than the limit.
-	splitter = &poolContentSplitter{minTxGasLimit: 21000}
+	splitter = &poolContentSplitter{minTxGasLimit: 21000, shufflePoolContent: false}
 
 	splitted, err = splitter.split(rpc.PoolContent{
 		common.BytesToAddress(randomBytes(32)): {
@@ -45,6 +45,7 @@ func TestPoolContentSplit(t *testing.T) {
 	splitter = &poolContentSplitter{
 		maxTxBytesPerBlock: uint64(len(bytes) - 1),
 		minTxGasLimit:      uint64(len(bytes) - 2),
+		shufflePoolContent: false,
 	}
 
 	splitted, err = splitter.split(rpc.PoolContent{
@@ -66,6 +67,7 @@ func TestPoolContentSplit(t *testing.T) {
 		maxTxBytesPerBlock: uint64(len(bytes) + 1),
 		maxTxPerBlock:      1,
 		maxGasPerBlock:     tx.Gas() + 1,
+		shufflePoolContent: false,
 	}
 
 	splitted, err = splitter.split(rpc.PoolContent{

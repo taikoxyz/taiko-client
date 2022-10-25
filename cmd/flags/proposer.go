@@ -26,6 +26,16 @@ var (
 	}
 )
 
+// Optional flags used by proposer.
+var (
+	ShufflePoolContent = cli.BoolFlag{
+		Name:     "shufflePoolContent",
+		Usage:    "Perform a weighted shuffle when building the transactions list to propose",
+		Value:    true,
+		Category: proposerCategory,
+	}
+)
+
 // Special flags for testing.
 var (
 	ProduceInvalidBlocks = cli.BoolFlag{

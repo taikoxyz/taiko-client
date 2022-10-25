@@ -98,6 +98,7 @@ func initFromConfig(p *Proposer, cfg *Config) (err error) {
 	p.poolContentSplitter = &poolContentSplitter{
 		chainID:            p.rpc.L2ChainID,
 		client:             p.rpc.L2,
+		shufflePoolContent: cfg.ShufflePoolContent,
 		maxTxPerBlock:      maxTxPerBlock.Uint64(),
 		maxGasPerBlock:     maxGasPerBlock.Uint64(),
 		maxTxBytesPerBlock: maxTxBytesPerBlock.Uint64(),
@@ -182,16 +183,15 @@ func (p *Proposer) proposeOp(ctx context.Context) error {
 		return nil
 	}
 
-	// Only propose the first transactions list.
-	txs := splitedTxLists[0]
+	for _, txs := range splitedTxLists {
+		txListBytes, err := rlp.EncodeToBytes(txs)
+		if err != nil {
+			return fmt.Errorf("failed to encode transactions: %w", err)
+		}
 
-	txListBytes, err := rlp.EncodeToBytes(txs)
-	if err != nil {
-		return fmt.Errorf("failed to encode transactions: %w", err)
-	}
-
-	if err := p.commitAndPropose(ctx, txListBytes, sumTxsGasLimit(txs)); err != nil {
-		return fmt.Errorf("failed to commit and propose transactions: %w", err)
+		if err := p.commitAndPropose(ctx, txListBytes, sumTxsGasLimit(txs)); err != nil {
+			return fmt.Errorf("failed to commit and propose transactions: %w", err)
+		}
 	}
 
 	return nil
