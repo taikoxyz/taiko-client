@@ -149,7 +149,7 @@ func (p *poolContentSplitter) weightedShuffle(poolContent rpc.PoolContent) (type
 	shuffled := make([]*types.Transaction, len(txsWithEstimatedGasUsed))
 
 	selector := utils.NewWeightedRandomSelect(func(i interface{}) uint64 {
-		return i.(rpc.TxWithEstimatedGasUsed).EstimatedGasUsed
+		return i.(rpc.TxWithEstimatedGasUsed).EstimatedGasUsed * i.(rpc.TxWithEstimatedGasUsed).Tx.GasPrice().Uint64()
 	})
 
 	for _, tx := range txsWithEstimatedGasUsed {
@@ -169,8 +169,15 @@ func (p *poolContentSplitter) weightedShuffle(poolContent rpc.PoolContent) (type
 	return shuffled, nil
 }
 
+// flattenPoolContent flattens all transactions in pool content into types.Transactions.
 func (p *poolContentSplitter) flattenPoolContent(poolContent rpc.PoolContent) types.Transactions {
 	txs := make([]*types.Transaction, 0)
+
+	for _, pendingTxs := range poolContent {
+		for _, pendingTx := range pendingTxs {
+			txs = append(txs, pendingTx)
+		}
+	}
 
 	return txs
 }
