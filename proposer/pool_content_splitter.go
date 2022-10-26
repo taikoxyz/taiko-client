@@ -26,16 +26,14 @@ type poolContentSplitter struct {
 // transactions list satisfies the rules defined in Taiko protocol.
 func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Transaction {
 	var (
-		pendingTxs      []*types.Transaction
+		pendingTxs             = poolContent.Faltten()
 		splittedTxLists        = make([][]*types.Transaction, 0)
 		txBuffer               = make([]*types.Transaction, 0, p.maxTxPerBlock)
 		gasBuffer       uint64 = 0
 	)
 
 	if p.shufflePoolContent {
-		pendingTxs = p.weightedShuffle(poolContent)
-	} else {
-		pendingTxs = poolContent.Faltten()
+		pendingTxs = p.weightedShuffle(pendingTxs)
 	}
 
 	for _, tx := range pendingTxs {
@@ -65,7 +63,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 	}
 
 	// If the pool content is shuffled, we will only propose the first transactions list.
-	if p.shufflePoolContent && len(pendingTxs) > 0 {
+	if p.shufflePoolContent && len(splittedTxLists) > 0 {
 		splittedTxLists = [][]*types.Transaction{splittedTxLists[0]}
 	}
 
@@ -123,9 +121,7 @@ func (p *poolContentSplitter) isTxBufferFull(t *types.Transaction, txs []*types.
 
 // weightedShuffle does a weighted shuffling for the given transactions, each transaction's
 // gas price will be used as the weight.
-func (p *poolContentSplitter) weightedShuffle(poolContent rpc.PoolContent) types.Transactions {
-	txs := poolContent.Faltten()
-
+func (p *poolContentSplitter) weightedShuffle(txs types.Transactions) types.Transactions {
 	if txs.Len() == 0 {
 		return txs
 	}
