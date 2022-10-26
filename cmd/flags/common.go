@@ -12,7 +12,7 @@ var (
 	proverCategory   = "PROVER"
 )
 
-// Rrequired flags used by all client softwares.
+// Required flags used by all client softwares.
 var (
 	L1NodeEndpoint = cli.StringFlag{
 		Name:     "l1",
