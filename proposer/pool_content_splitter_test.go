@@ -14,26 +14,24 @@ func TestPoolContentSplit(t *testing.T) {
 	// Gas limit is smaller than the limit.
 	splitter := &poolContentSplitter{minTxGasLimit: 21000, shufflePoolContent: false}
 
-	splitted, err := splitter.split(rpc.PoolContent{
+	splitted := splitter.split(rpc.PoolContent{
 		common.BytesToAddress(randomBytes(32)): {
 			"0": types.NewTx(&types.LegacyTx{}),
 		},
 	})
 
-	require.Nil(t, err)
 	require.Empty(t, splitted)
 
 	// Gas limit is larger than the limit.
 	splitter = &poolContentSplitter{minTxGasLimit: 21000, shufflePoolContent: false}
 
-	splitted, err = splitter.split(rpc.PoolContent{
+	splitted = splitter.split(rpc.PoolContent{
 		common.BytesToAddress(randomBytes(32)): {
 			"0": types.NewTx(&types.LegacyTx{Gas: 21001}),
 		},
 	})
 
 	require.Empty(t, splitted)
-	require.Nil(t, err)
 
 	// Transaction's RLP encoded bytes is larger than the limit.
 	txBytesTooLarge := types.NewTx(&types.LegacyTx{})
@@ -48,11 +46,10 @@ func TestPoolContentSplit(t *testing.T) {
 		shufflePoolContent: false,
 	}
 
-	splitted, err = splitter.split(rpc.PoolContent{
+	splitted = splitter.split(rpc.PoolContent{
 		common.BytesToAddress(randomBytes(32)): {"0": txBytesTooLarge},
 	})
 
-	require.Nil(t, err)
 	require.Empty(t, splitted)
 
 	// Transactions that meet the limits
@@ -70,10 +67,9 @@ func TestPoolContentSplit(t *testing.T) {
 		shufflePoolContent: false,
 	}
 
-	splitted, err = splitter.split(rpc.PoolContent{
+	splitted = splitter.split(rpc.PoolContent{
 		common.BytesToAddress(randomBytes(32)): {"0": tx, "1": tx},
 	})
 
-	require.Nil(t, err)
 	require.Equal(t, 2, len(splitted))
 }

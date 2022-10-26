@@ -1,10 +1,8 @@
 package proposer
 
 import (
-	"context"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -30,22 +28,18 @@ type poolContentSplitter struct {
 
 // split splits the given transaction pool content to make each splitted
 // transactions list satisfies the rules defined in Taiko protocol.
-func (p *poolContentSplitter) split(poolContent rpc.PoolContent) ([][]*types.Transaction, error) {
+func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Transaction {
 	var (
+		pendingTxs      []*types.Transaction
 		splittedTxLists        = make([][]*types.Transaction, 0)
 		txBuffer               = make([]*types.Transaction, 0, p.maxTxPerBlock)
 		gasBuffer       uint64 = 0
-		pendingTxs      []*types.Transaction
-		err             error
 	)
 
 	if p.shufflePoolContent {
-		pendingTxs, err = p.weightedShuffle(poolContent)
-		if err != nil {
-			return nil, fmt.Errorf("weighted shuffle transactions error: %w", err)
-		}
+		pendingTxs = p.weightedShuffle(poolContent)
 	} else {
-		pendingTxs = p.flattenPoolContent(poolContent)
+		pendingTxs = poolContent.Faltten()
 	}
 
 	for _, tx := range pendingTxs {
@@ -79,7 +73,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) ([][]*types.Tra
 		splittedTxLists = [][]*types.Transaction{splittedTxLists[0]}
 	}
 
-	return splittedTxLists, nil
+	return splittedTxLists
 }
 
 // validateTx checks whether the given transaction is valid according
@@ -133,51 +127,28 @@ func (p *poolContentSplitter) isTxBufferFull(t *types.Transaction, txs []*types.
 
 // weightedShuffle does a weight shuffling for the given transactions, each transaction's
 // estimated gasUsed will be used as the weight.
-func (p *poolContentSplitter) weightedShuffle(poolContent rpc.PoolContent) (types.Transactions, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
+func (p *poolContentSplitter) weightedShuffle(poolContent rpc.PoolContent) types.Transactions {
+	txs := poolContent.Faltten()
 
-	txsWithEstimatedGasUsed, err := poolContent.ToTxsWithEstimatedGasUsed(
-		ctx,
-		types.LatestSignerForChainID(p.chainID),
-		p.client,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	shuffled := make([]*types.Transaction, len(txsWithEstimatedGasUsed))
+	shuffled := make([]*types.Transaction, len(txs))
 
 	selector := utils.NewWeightedRandomSelect(func(i interface{}) uint64 {
-		return i.(rpc.TxWithEstimatedGasUsed).EstimatedGasUsed * i.(rpc.TxWithEstimatedGasUsed).Tx.GasPrice().Uint64()
+		return i.(*types.Transaction).GasPrice().Uint64()
 	})
 
-	for _, tx := range txsWithEstimatedGasUsed {
+	if txs.Len() == 0 {
+		return txs
+	}
+
+	for _, tx := range txs {
 		selector.Update(tx)
 	}
 
-	if selector.IsEmpty() {
-		return []*types.Transaction{}, nil
+	for i := range txs {
+		tx := selector.Choose().(*types.Transaction)
+		shuffled[i] = tx
+		selector.Remove(tx)
 	}
 
-	for i := range txsWithEstimatedGasUsed {
-		txWithEstimatedGasUsed := selector.Choose().(rpc.TxWithEstimatedGasUsed)
-		shuffled[i] = txWithEstimatedGasUsed.Tx
-		selector.Remove(txWithEstimatedGasUsed)
-	}
-
-	return shuffled, nil
-}
-
-// flattenPoolContent flattens all transactions in pool content into types.Transactions.
-func (p *poolContentSplitter) flattenPoolContent(poolContent rpc.PoolContent) types.Transactions {
-	txs := make([]*types.Transaction, 0)
-
-	for _, pendingTxs := range poolContent {
-		for _, pendingTx := range pendingTxs {
-			txs = append(txs, pendingTx)
-		}
-	}
-
-	return txs
+	return shuffled
 }

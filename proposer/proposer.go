@@ -173,17 +173,7 @@ func (p *Proposer) proposeOp(ctx context.Context) error {
 
 	log.Info("Fetching L2 pending transactions finished", "length", len(pendingContent))
 
-	splitedTxLists, err := p.poolContentSplitter.split(pendingContent)
-	if err != nil {
-		return fmt.Errorf("split transactions error: %w", err)
-	}
-
-	if len(splitedTxLists) == 0 {
-		log.Debug("Empty splited transactions lists")
-		return nil
-	}
-
-	for _, txs := range splitedTxLists {
+	for _, txs := range p.poolContentSplitter.split(pendingContent) {
 		txListBytes, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			return fmt.Errorf("failed to encode transactions: %w", err)
