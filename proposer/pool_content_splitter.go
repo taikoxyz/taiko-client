@@ -121,20 +121,20 @@ func (p *poolContentSplitter) isTxBufferFull(t *types.Transaction, txs []*types.
 	return false
 }
 
-// weightedShuffle does a weight shuffling for the given transactions, each transaction's
-// estimated gasUsed will be used as the weight.
+// weightedShuffle does a weighted shuffling for the given transactions, each transaction's
+// gas price will be used as the weight.
 func (p *poolContentSplitter) weightedShuffle(poolContent rpc.PoolContent) types.Transactions {
 	txs := poolContent.Faltten()
+
+	if txs.Len() == 0 {
+		return txs
+	}
 
 	shuffled := make([]*types.Transaction, len(txs))
 
 	selector := utils.NewWeightedRandomSelect(func(i interface{}) uint64 {
 		return i.(*types.Transaction).GasPrice().Uint64()
 	})
-
-	if txs.Len() == 0 {
-		return txs
-	}
 
 	for _, tx := range txs {
 		selector.Update(tx)
