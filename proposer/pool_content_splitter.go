@@ -119,7 +119,7 @@ func (p *poolContentSplitter) isTxBufferFull(t *types.Transaction, txs []*types.
 	return false
 }
 
-// weightedShuffle does a weighted shuffling for the given transactions, each transaction's
+// weightedShuffle does a weighted shuffle for the given transactions, each transaction's
 // gas price will be used as the weight.
 func (p *poolContentSplitter) weightedShuffle(txs types.Transactions) types.Transactions {
 	if txs.Len() == 0 {
