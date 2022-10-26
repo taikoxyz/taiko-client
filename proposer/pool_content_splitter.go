@@ -2,10 +2,8 @@ package proposer
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/les/utils"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -17,8 +15,6 @@ import (
 // and make sure each splitted list satisfies the limits defined in Taiko
 // protocol.
 type poolContentSplitter struct {
-	chainID            *big.Int
-	client             *ethclient.Client
 	shufflePoolContent bool
 	maxTxPerBlock      uint64
 	maxGasPerBlock     uint64
