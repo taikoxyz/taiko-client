@@ -16,20 +16,20 @@ The driver directs the L2 node's execution engine to insert new blocks or reorg 
 
 The driver subscribes to `TaikoL1.BlockProposed` events, and when a new block is proposed:
 
-1. Gets the corresponding `TaikoL1.proposeBlock` L1 transaction.
-2. Decodes the txList and block metadata from the transaction's calldata.
-3. Checks whether the txList is valid based on the rules defined in Taiko protocol.
+1. Get the corresponding `TaikoL1.proposeBlock` L1 transaction.
+2. Decode the txList and block metadata from the transaction's calldata.
+3. Check whether the txList is valid based on the rules defined in Taiko protocol.
 
 If the txList is **valid**:
 
-4. Assembles a deterministic `V1TaikoL2.anchor` transaction based on the rules defined in the protocol, and put it as the first transaction in the proposed txList.
-5. Uses this txList and the decoded block metadata to assemble a deterministic L2 block.
-6. Directs L2 nodes' execution engine to insert this assembled block and set it as the current chain's head via the Engine API.
+4. Assemble a deterministic `V1TaikoL2.anchor` transaction based on the rules defined in the protocol, and put it as the first transaction in the proposed txList.
+5. Use this txList and the decoded block metadata to assemble a deterministic L2 block.
+6. Direct L2 nodes' execution engine to insert this assembled block and set it as the current chain's head via the Engine API.
 
 If the txList is **invalid**:
 
-4. Creates a `V1TaikoL2.invalidateBlock` transaction and then assemble a L2 block only including this transaction.
-5. Directs the L2 nodes' execution engine to insert this block, but does not set it as the chain's head via the Engine API.
+4. Create a `V1TaikoL2.invalidateBlock` transaction and then assemble a L2 block only including this transaction.
+5. Direct the L2 nodes' execution engine to insert this block, but does not set it as the chain's head via the Engine API.
 
 > NOTE: For more detailed information about: block metadata, please see `5.2.2 Block Metadata` in the white paper.
 
