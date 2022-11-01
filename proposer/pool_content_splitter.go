@@ -129,7 +129,7 @@ func (p *poolContentSplitter) weightedShuffle(txs types.Transactions) types.Tran
 	shuffled := make([]*types.Transaction, len(txs))
 
 	selector := utils.NewWeightedRandomSelect(func(i interface{}) uint64 {
-		return i.(*types.Transaction).GasPrice().Uint64()
+		return i.(*types.Transaction).GasPrice().Uint64() + 1 // Zero weight is not allowed
 	})
 
 	for _, tx := range txs {
