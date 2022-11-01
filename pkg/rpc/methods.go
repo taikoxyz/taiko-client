@@ -162,7 +162,21 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 	}
 }
 
+// PoolContent represents a response body of a `txpool_content` RPC call.
 type PoolContent map[common.Address]map[string]*types.Transaction
+
+// Faltten flattens all transactions in pool content into a slice.
+func (pc PoolContent) Faltten() types.Transactions {
+	var txs types.Transactions
+
+	for _, pendingTxs := range pc {
+		for _, pendingTx := range pendingTxs {
+			txs = append(txs, pendingTx)
+		}
+	}
+
+	return txs
+}
 
 // L2PoolContent fetches the transaction pool content from L2 node.
 func (c *Client) L2PoolContent(ctx context.Context) (pending PoolContent, queued PoolContent, err error) {

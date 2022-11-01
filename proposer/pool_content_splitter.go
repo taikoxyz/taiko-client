@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/les/utils"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/pkg/rpc"
@@ -14,6 +15,7 @@ import (
 // and make sure each splitted list satisfies the limits defined in Taiko
 // protocol.
 type poolContentSplitter struct {
+	shufflePoolContent bool
 	maxTxPerBlock      uint64
 	maxGasPerBlock     uint64
 	maxTxBytesPerBlock uint64
@@ -24,37 +26,45 @@ type poolContentSplitter struct {
 // transactions list satisfies the rules defined in Taiko protocol.
 func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Transaction {
 	var (
+		pendingTxs             = poolContent.Faltten()
 		splittedTxLists        = make([][]*types.Transaction, 0)
 		txBuffer               = make([]*types.Transaction, 0, p.maxTxPerBlock)
 		gasBuffer       uint64 = 0
 	)
 
-	for _, txs := range poolContent {
-		for _, tx := range txs {
-			// If the transaction is invalid, we simply ignore it.
-			if err := p.validateTx(tx); err != nil {
-				log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
-				continue
-			}
+	if p.shufflePoolContent {
+		pendingTxs = p.weightedShuffle(pendingTxs)
+	}
 
-			// If the transactions buffer is full, we make all transactions in
-			// current buffer a new splitted transaction list, and then reset the
-			// buffer.
-			if p.isTxBufferFull(tx, txBuffer, gasBuffer) {
-				splittedTxLists = append(splittedTxLists, txBuffer)
-				txBuffer = make([]*types.Transaction, 0, p.maxTxPerBlock)
-				gasBuffer = 0
-			}
-
-			txBuffer = append(txBuffer, tx)
-			gasBuffer += tx.Gas()
+	for _, tx := range pendingTxs {
+		// If the transaction is invalid, we simply ignore it.
+		if err := p.validateTx(tx); err != nil {
+			log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
+			continue
 		}
+
+		// If the transactions buffer is full, we make all transactions in
+		// current buffer a new splitted transaction list, and then reset the
+		// buffer.
+		if p.isTxBufferFull(tx, txBuffer, gasBuffer) {
+			splittedTxLists = append(splittedTxLists, txBuffer)
+			txBuffer = make([]*types.Transaction, 0, p.maxTxPerBlock)
+			gasBuffer = 0
+		}
+
+		txBuffer = append(txBuffer, tx)
+		gasBuffer += tx.Gas()
 	}
 
 	// Maybe there are some remaining transactions in current buffer,
 	// make them a new transactions list too.
 	if len(txBuffer) > 0 {
 		splittedTxLists = append(splittedTxLists, txBuffer)
+	}
+
+	// If the pool content is shuffled, we will only propose the first transactions list.
+	if p.shufflePoolContent && len(splittedTxLists) > 0 {
+		splittedTxLists = [][]*types.Transaction{splittedTxLists[0]}
 	}
 
 	return splittedTxLists
@@ -107,4 +117,30 @@ func (p *poolContentSplitter) isTxBufferFull(t *types.Transaction, txs []*types.
 	}
 
 	return false
+}
+
+// weightedShuffle does a weighted shuffle for the given transactions, each transaction's
+// gas price will be used as the weight.
+func (p *poolContentSplitter) weightedShuffle(txs types.Transactions) types.Transactions {
+	if txs.Len() == 0 {
+		return txs
+	}
+
+	shuffled := make([]*types.Transaction, len(txs))
+
+	selector := utils.NewWeightedRandomSelect(func(i interface{}) uint64 {
+		return i.(*types.Transaction).GasPrice().Uint64() + 1 // Zero weight is not allowed
+	})
+
+	for _, tx := range txs {
+		selector.Update(tx)
+	}
+
+	for i := range txs {
+		tx := selector.Choose().(*types.Transaction)
+		shuffled[i] = tx
+		selector.Remove(tx)
+	}
+
+	return shuffled
 }

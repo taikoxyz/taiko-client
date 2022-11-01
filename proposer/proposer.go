@@ -96,6 +96,7 @@ func initFromConfig(p *Proposer, cfg *Config) (err error) {
 
 	p.commitDelayConfirmations = commitDelayConfirmations.Uint64()
 	p.poolContentSplitter = &poolContentSplitter{
+		shufflePoolContent: cfg.ShufflePoolContent,
 		maxTxPerBlock:      maxTxPerBlock.Uint64(),
 		maxGasPerBlock:     maxGasPerBlock.Uint64(),
 		maxTxBytesPerBlock: maxTxBytesPerBlock.Uint64(),
