@@ -26,7 +26,7 @@ TAIKO_MONO_DIR=$TAIKO_MONO_DIR \
     $DIR/testnet/init.sh
 
 DEPLOYMENT_JSON=$(cat $TAIKO_MONO_DIR/packages/protocol/deployments/l1_test_L1.json)
-L2_GENESIS_ALLOC=$(cat $DIR/testnet/deployments/genesis_alloc.json)
+L2_GENESIS_ALLOC=$(cat $DIR/testnet/deployments/mainnet.json)
 
 TAIKO_L1_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq .contracts.TaikoL1 | sed 's/\"//g')
 TAIKO_L2_CONTRACT_ADDRESS=$(echo $L2_GENESIS_ALLOC | jq 'to_entries[] | select(.value.contractName=="V1TaikoL2") | .key' | sed 's/\"//g')

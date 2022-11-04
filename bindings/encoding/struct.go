@@ -24,6 +24,7 @@ type BlockHeader struct {
 	ExtraData        []byte
 	MixHash          [32]byte
 	Nonce            uint64
+	BaseFeePerGas    *big.Int
 }
 
 type TaikoL1Evidence struct {
@@ -35,6 +36,10 @@ type TaikoL1Evidence struct {
 
 // FromGethHeader converts geth *types.Header to *BlockHeader
 func FromGethHeader(header *types.Header) *BlockHeader {
+	baseFeePerGas := header.BaseFee
+	if baseFeePerGas == nil {
+		baseFeePerGas = common.Big0
+	}
 	return &BlockHeader{
 		ParentHash:       header.ParentHash,
 		OmmersHash:       header.UncleHash,
@@ -51,6 +56,7 @@ func FromGethHeader(header *types.Header) *BlockHeader {
 		ExtraData:        header.Extra,
 		MixHash:          header.MixDigest,
 		Nonce:            header.Nonce.Uint64(),
+		BaseFeePerGas:    baseFeePerGas,
 	}
 }
 

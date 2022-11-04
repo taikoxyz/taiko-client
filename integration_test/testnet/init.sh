@@ -33,7 +33,7 @@ curl \
 echo ""
 echo "Premint ETHs to the contracts deployer"
 
-rm -rf $DIR/deployments/genesis_alloc.json
+rm -rf $DIR/deployments/mainnet.json
 
 # Get the hash of L2 genesis.
 L2_GENESIS_HASH=$(
@@ -46,10 +46,10 @@ L2_GENESIS_HASH=$(
 )
 
 docker cp \
-    $(docker-compose -f $TESTNET_CONFIG ps -q l2_node):/deployments/genesis_alloc.json \
-    $DIR/deployments/genesis_alloc.json
+    $(docker-compose -f $TESTNET_CONFIG ps -q l2_node):/deployments/mainnet.json \
+    $DIR/deployments/mainnet.json
 
-L2_GENESIS_ALLOC=$(cat $DIR/deployments/genesis_alloc.json)
+L2_GENESIS_ALLOC=$(cat $DIR/deployments/mainnet.json)
 
 TAIKO_L2_CONTRACT_ADDRESS=$(echo $L2_GENESIS_ALLOC | jq 'to_entries[] | select(.value.contractName=="V1TaikoL2") | .key' | sed 's/\"//g')
 
