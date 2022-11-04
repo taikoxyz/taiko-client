@@ -38,7 +38,7 @@ type TaikoL1Evidence struct {
 func FromGethHeader(header *types.Header) *BlockHeader {
 	baseFeePerGas := header.BaseFee
 	if baseFeePerGas == nil {
-		baseFeePerGas = new(big.Int).SetInt64(0)
+		baseFeePerGas = common.Big0
 	}
 	return &BlockHeader{
 		ParentHash:       header.ParentHash,
