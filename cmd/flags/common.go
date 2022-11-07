@@ -39,6 +39,7 @@ var (
 		Category: commonCategory,
 	}
 	// Optional flags used by all client softwares.
+	// Logging
 	Verbosity = &cli.IntFlag{
 		Name:     "verbosity",
 		Usage:    "Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail",
@@ -49,6 +50,22 @@ var (
 		Name:     "log.json",
 		Usage:    "Format logs with JSON",
 		Category: loggingCategory,
+	}
+	// Metrics
+	MetricsEnabledFlag = cli.BoolFlag{
+		Name:  "metrics",
+		Usage: "Enable metrics collection and reporting",
+		Value: false,
+	}
+	MetricsAddrFlag = cli.StringFlag{
+		Name:  "metrics.addr",
+		Usage: "Metrics reporting server listening address",
+		Value: "0.0.0.0",
+	}
+	MetricsPortFlag = cli.IntFlag{
+		Name:  "metrics.port",
+		Usage: "Metrics reporting server listening port",
+		Value: 6060,
 	}
 )
 

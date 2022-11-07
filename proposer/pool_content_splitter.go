@@ -40,6 +40,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 		// If the transaction is invalid, we simply ignore it.
 		if err := p.validateTx(tx); err != nil {
 			log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
+			invalidTxsCounter.Inc(1)
 			continue
 		}
 
