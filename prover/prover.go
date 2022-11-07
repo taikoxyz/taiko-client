@@ -13,26 +13,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/taikochain/taiko-client/bindings"
+	"github.com/taikochain/taiko-client/metrics"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 	"github.com/taikochain/taiko-client/prover/producer"
 	"github.com/urfave/cli/v2"
-)
-
-// Metrics
-var (
-	latestFinalizedIDGauge      = metrics.NewRegisteredGauge("prover/lastFinalized/id", nil)
-	queuedProofCounter          = metrics.NewRegisteredCounter("prover/proof/all/queued", nil)
-	queuedValidProofCounter     = metrics.NewRegisteredCounter("prover/proof/valid/queued", nil)
-	queuedInvalidProofCounter   = metrics.NewRegisteredCounter("prover/proof/invalid/queued", nil)
-	receivedProofCounter        = metrics.NewRegisteredCounter("prover/proof/all/received", nil)
-	receivedValidProofCounter   = metrics.NewRegisteredCounter("prover/proof/valid/received", nil)
-	receivedInvalidProofCounter = metrics.NewRegisteredCounter("prover/proof/invalid/received", nil)
-	sentProofCounter            = metrics.NewRegisteredCounter("prover/proof/all/sent", nil)
-	sentValidProofCounter       = metrics.NewRegisteredCounter("prover/proof/valid/sent", nil)
-	sentInvalidProofCounter     = metrics.NewRegisteredCounter("prover/proof/invalid/sent", nil)
-	receivedProposedBlockGauge  = metrics.NewRegisteredGauge("prover/proposed/received", nil)
 )
 
 var (
@@ -208,7 +193,7 @@ func (p *Prover) Close() {
 // onBlockProposed tries to prove that the newly proposed block is valid/invalid.
 func (p *Prover) onBlockProposed(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
 	log.Info("New proposed block", "blockID", event.Id)
-	receivedProposedBlockGauge.Update(event.Id.Int64())
+	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
 
 	proposeBlockTx, err := p.rpc.L1.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
 	if err != nil {
@@ -237,7 +222,7 @@ func (p *Prover) onBlockFinalized(ctx context.Context, event *bindings.TaikoL1Cl
 		return nil
 	}
 
-	latestFinalizedIDGauge.Update(event.Id.Int64())
+	metrics.ProverLatestFinalizedIDGauge.Update(event.Id.Int64())
 
 	l2BlockHeader, err := p.rpc.L2.HeaderByHash(ctx, event.BlockHash)
 	if err != nil {

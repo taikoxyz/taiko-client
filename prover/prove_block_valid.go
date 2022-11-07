@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/bindings"
 	"github.com/taikochain/taiko-client/bindings/encoding"
+	"github.com/taikochain/taiko-client/metrics"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 	"github.com/taikochain/taiko-client/prover/producer"
 )
@@ -41,8 +42,8 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 		return err
 	}
 
-	queuedProofCounter.Inc(1)
-	queuedValidProofCounter.Inc(1)
+	metrics.ProverQueuedProofCounter.Inc(1)
+	metrics.ProverQueuedValidProofCounter.Inc(1)
 
 	return nil
 }
@@ -61,8 +62,8 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		zkProof = proofWithHeader.ZkProof
 	)
 
-	receivedProofCounter.Inc(1)
-	receivedValidProofCounter.Inc(1)
+	metrics.ProverReceivedProofCounter.Inc(1)
+	metrics.ProverReceivedValidProofCounter.Inc(1)
 
 	meta, err := p.rpc.GetBlockMetadataByID(blockID)
 	if err != nil {
@@ -148,8 +149,8 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		"transactions", block.Transactions().Len(),
 	)
 
-	sentProofCounter.Inc(1)
-	sentValidProofCounter.Inc(1)
+	metrics.ProverSentProofCounter.Inc(1)
+	metrics.ProverSentValidProofCounter.Inc(1)
 
 	return nil
 }

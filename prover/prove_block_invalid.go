@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/bindings"
 	"github.com/taikochain/taiko-client/bindings/encoding"
+	"github.com/taikochain/taiko-client/metrics"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 	"github.com/taikochain/taiko-client/prover/producer"
 )
@@ -43,8 +44,8 @@ func (p *Prover) proveBlockInvalid(
 		return err
 	}
 
-	queuedProofCounter.Inc(1)
-	queuedInvalidProofCounter.Inc(1)
+	metrics.ProverQueuedProofCounter.Inc(1)
+	metrics.ProverQueuedInvalidProofCounter.Inc(1)
 
 	return nil
 }
@@ -66,8 +67,8 @@ func (p *Prover) submitInvalidBlockProof(
 		zkProof = proofWithHeader.ZkProof
 	)
 
-	receivedProofCounter.Inc(1)
-	receivedInvalidProofCounter.Inc(1)
+	metrics.ProverReceivedProofCounter.Inc(1)
+	metrics.ProverReceivedInvalidProofCounter.Inc(1)
 
 	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
@@ -145,8 +146,8 @@ func (p *Prover) submitInvalidBlockProof(
 		"hash", header.Hash(),
 	)
 
-	sentProofCounter.Inc(1)
-	sentInvalidProofCounter.Inc(1)
+	metrics.ProverSentProofCounter.Inc(1)
+	metrics.ProverSentInvalidProofCounter.Inc(1)
 
 	return nil
 }

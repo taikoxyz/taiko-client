@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/bindings"
+	"github.com/taikochain/taiko-client/metrics"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 )
 
@@ -226,7 +227,7 @@ func (s *State) setL1Head(l1Head *types.Header) {
 	}
 
 	log.Info("New L1 head", "height", l1Head.Number, "hash", l1Head.Hash(), "timestamp", l1Head.Time)
-	l1HeadHeightGuage.Update(l1Head.Number.Int64())
+	metrics.DriverL1HeadHeightGuage.Update(l1Head.Number.Int64())
 
 	s.l1Head.Store(l1Head)
 }
@@ -271,7 +272,7 @@ func (s *State) watchBlockFinalized(ctx context.Context) (ethereum.Subscription,
 // setLastFinalizedBlockHash sets the last finalized L2 block hash concurrent safely.
 func (s *State) setLastFinalizedBlockHash(id *big.Int, hash common.Hash) {
 	log.Info("New finalized block", "hash", hash)
-	l2FinalizedIDGuage.Update(id.Int64())
+	metrics.DriverL2FinalizedIDGuage.Update(id.Int64())
 	s.l2FinalizedHeadHash.Store(hash)
 }
 
@@ -307,7 +308,7 @@ func (s *State) watchBlockProposed(ctx context.Context) (ethereum.Subscription, 
 // setHeadBlockID sets the last pending block ID concurrent safely.
 func (s *State) setHeadBlockID(id *big.Int) {
 	log.Info("New head block ID", "ID", id)
-	l2HeadIDGuage.Update(id.Int64())
+	metrics.DriverL2HeadIDGuage.Update(id.Int64())
 	s.l2HeadBlockID.Store(id)
 }
 

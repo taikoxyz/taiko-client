@@ -14,20 +14,12 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/bindings"
 	"github.com/taikochain/taiko-client/bindings/encoding"
+	"github.com/taikochain/taiko-client/metrics"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
-)
-
-// Metrics
-var (
-	proposeEpochCounter    = metrics.NewRegisteredCounter("proposer/epoch", nil)
-	proposedTxListsCounter = metrics.NewRegisteredCounter("proposer/proposed/txLists", nil)
-	proposedTxsCounter     = metrics.NewRegisteredCounter("proposer/proposed/txs", nil)
-	invalidTxsCounter      = metrics.NewRegisteredCounter("proposer/invalid/txs", nil)
 )
 
 // Proposer keep proposing new transactions from L2 node's tx pool at a fixed interval.
@@ -137,7 +129,7 @@ func (p *Proposer) eventLoop() {
 		case <-p.ctx.Done():
 			return
 		case <-ticker.C:
-			proposeEpochCounter.Inc(1)
+			metrics.ProposerProposeEpochCounter.Inc(1)
 
 			if err := p.proposeOp(p.ctx); err != nil {
 				log.Error("Proposing operation error", "error", err)
@@ -187,8 +179,8 @@ func (p *Proposer) proposeOp(ctx context.Context) error {
 			return fmt.Errorf("failed to commit and propose transactions: %w", err)
 		}
 
-		proposedTxListsCounter.Inc(1)
-		proposedTxsCounter.Inc(int64(len(txs)))
+		metrics.ProposerProposedTxListsCounter.Inc(1)
+		metrics.ProposerProposedTxsCounter.Inc(int64(len(txs)))
 	}
 
 	return nil

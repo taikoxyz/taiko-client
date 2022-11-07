@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/bindings"
 	"github.com/taikochain/taiko-client/bindings/encoding"
+	"github.com/taikochain/taiko-client/metrics"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 )
 
@@ -218,7 +219,7 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 			return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
 		}
 
-		l1CurrentHeightGuage.Update(b.state.l1Current.Number.Int64())
+		metrics.DriverL1CurrentHeightGuage.Update(b.state.l1Current.Number.Int64())
 
 		log.Info(
 			"🔗 New L2 block inserted",
@@ -235,7 +236,7 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 		return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
 	}
 
-	l1CurrentHeightGuage.Update(b.state.l1Current.Number.Int64())
+	metrics.DriverL1CurrentHeightGuage.Update(b.state.l1Current.Number.Int64())
 
 	return nil
 }

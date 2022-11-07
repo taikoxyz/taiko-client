@@ -12,17 +12,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
-)
-
-// Metrics
-var (
-	l1HeadHeightGuage    = metrics.NewRegisteredGauge("driver/l1Head/height", nil)
-	l1CurrentHeightGuage = metrics.NewRegisteredGauge("driver/l1Current/height", nil)
-	l2HeadIDGuage        = metrics.NewRegisteredGauge("driver/l2Head/id", nil)
-	l2FinalizedIDGuage   = metrics.NewRegisteredGauge("driver/l2Finalized/id", nil)
 )
 
 const (
