@@ -16,10 +16,10 @@ import (
 // Metrics
 var (
 	// Drvier
-	DriverL1HeadHeightGuage    = metrics.NewRegisteredGauge("driver/l1Head/height", nil)
-	DriverL1CurrentHeightGuage = metrics.NewRegisteredGauge("driver/l1Current/height", nil)
-	DriverL2HeadIDGuage        = metrics.NewRegisteredGauge("driver/l2Head/id", nil)
-	DriverL2FinalizedIDGuage   = metrics.NewRegisteredGauge("driver/l2Finalized/id", nil)
+	DriverL1HeadHeightGauge    = metrics.NewRegisteredGauge("driver/l1Head/height", nil)
+	DriverL1CurrentHeightGauge = metrics.NewRegisteredGauge("driver/l1Current/height", nil)
+	DriverL2HeadIDGauge        = metrics.NewRegisteredGauge("driver/l2Head/id", nil)
+	DriverL2FinalizedIDGauge   = metrics.NewRegisteredGauge("driver/l2Finalized/id", nil)
 
 	// Proposer
 	ProposerProposeEpochCounter    = metrics.NewRegisteredCounter("proposer/epoch", nil)

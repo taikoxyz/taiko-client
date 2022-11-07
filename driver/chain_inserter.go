@@ -219,7 +219,7 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 			return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
 		}
 
-		metrics.DriverL1CurrentHeightGuage.Update(b.state.l1Current.Number.Int64())
+		metrics.DriverL1CurrentHeightGauge.Update(b.state.l1Current.Number.Int64())
 
 		log.Info(
 			"🔗 New L2 block inserted",
@@ -236,7 +236,7 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 		return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
 	}
 
-	metrics.DriverL1CurrentHeightGuage.Update(b.state.l1Current.Number.Int64())
+	metrics.DriverL1CurrentHeightGauge.Update(b.state.l1Current.Number.Int64())
 
 	return nil
 }
