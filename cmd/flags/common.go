@@ -6,6 +6,7 @@ import (
 
 var (
 	commonCategory   = "COMMON"
+	metricsCategory  = "METRICS"
 	loggingCategory  = "LOGGING"
 	driverCategory   = "DRIVER"
 	proposerCategory = "PROPOSER"
@@ -52,20 +53,23 @@ var (
 		Category: loggingCategory,
 	}
 	// Metrics
-	MetricsEnabledFlag = cli.BoolFlag{
-		Name:  "metrics",
-		Usage: "Enable metrics collection and reporting",
-		Value: false,
+	MetricsEnabled = &cli.BoolFlag{
+		Name:     "metrics",
+		Usage:    "Enable metrics collection and reporting",
+		Category: metricsCategory,
+		Value:    false,
 	}
-	MetricsAddrFlag = cli.StringFlag{
-		Name:  "metrics.addr",
-		Usage: "Metrics reporting server listening address",
-		Value: "0.0.0.0",
+	MetricsAddr = &cli.StringFlag{
+		Name:     "metrics.addr",
+		Usage:    "Metrics reporting server listening address",
+		Category: metricsCategory,
+		Value:    "0.0.0.0",
 	}
-	MetricsPortFlag = cli.IntFlag{
-		Name:  "metrics.port",
-		Usage: "Metrics reporting server listening port",
-		Value: 6060,
+	MetricsPort = &cli.IntFlag{
+		Name:     "metrics.port",
+		Usage:    "Metrics reporting server listening port",
+		Category: metricsCategory,
+		Value:    6060,
 	}
 )
 
@@ -79,6 +83,9 @@ var CommonFlags = []cli.Flag{
 	// Optional
 	Verbosity,
 	LogJson,
+	MetricsEnabled,
+	MetricsAddr,
+	MetricsPort,
 }
 
 // MergeFlags merges the given flag slices.

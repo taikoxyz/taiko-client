@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/cmd/logger"
+	"github.com/taikochain/taiko-client/metrics"
 	"github.com/urfave/cli/v2"
 )
 
@@ -39,6 +40,8 @@ func SubcommandAction(app Subcommand) cli.ActionFunc {
 			log.Error("Starting application error", "name", app.Name(), "error", err)
 			return err
 		}
+
+		metrics.Serve(ctx, c)
 
 		defer func() {
 			ctxClose()
