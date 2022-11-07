@@ -56,30 +56,29 @@ type Prover struct {
 	proveInvalidProofCh chan *producer.ProofWithHeader
 	proofProducer       producer.ProofProducer
 
-	ctx   context.Context
-	close context.CancelFunc
-	wg    sync.WaitGroup
+	ctx context.Context
+	wg  sync.WaitGroup
 
 	// For testing
 	blockProposedEventsBuffer []*bindings.TaikoL1ClientBlockProposed
 }
 
 // New initializes the given prover instance based on the command line flags.
-func (p *Prover) InitFromCli(c *cli.Context) error {
+func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {
 		return err
 	}
 
-	return initFromConfig(p, cfg)
+	return initFromConfig(ctx, p, cfg)
 }
 
 // initFromConfig initializes the prover instance based on the given configurations.
-func initFromConfig(p *Prover, cfg *Config) (err error) {
+func initFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	log.Debug("Prover configurations", "config", cfg)
 
 	p.cfg = cfg
-	p.ctx, p.close = context.WithCancel(context.Background())
+	p.ctx = ctx
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -188,9 +187,6 @@ func (p *Prover) eventLoop() {
 // Close closes the prover instance.
 func (p *Prover) Close() {
 	p.closeSubscription()
-	if p.close != nil {
-		p.close()
-	}
 	p.wg.Wait()
 }
 

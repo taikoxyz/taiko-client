@@ -34,29 +34,28 @@ type Driver struct {
 	l1HeadSub  event.Subscription
 	syncNotify chan struct{}
 
-	ctx   context.Context
-	close context.CancelFunc
-	wg    sync.WaitGroup
+	ctx context.Context
+	wg  sync.WaitGroup
 }
 
 // New initializes the given driver instance based on the command line flags.
-func (d *Driver) InitFromCli(c *cli.Context) error {
+func (d *Driver) InitFromCli(ctx context.Context, c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {
 		return err
 	}
 
-	return initFromConfig(d, cfg)
+	return initFromConfig(ctx, d, cfg)
 }
 
 // initFromConfig initializes the driver instance based on the given configurations.
-func initFromConfig(d *Driver, cfg *Config) (err error) {
+func initFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 	log.Debug("Driver configurations", "config", cfg)
 
 	d.l1HeadCh = make(chan *types.Header, 1024)
 	d.wg = sync.WaitGroup{}
 	d.syncNotify = make(chan struct{}, 1)
-	d.ctx, d.close = context.WithCancel(context.Background())
+	d.ctx = ctx
 
 	if d.rpc, err = rpc.NewClient(d.ctx, &rpc.ClientConfig{
 		L1Endpoint:       cfg.L1Endpoint,
@@ -106,12 +105,7 @@ func (d *Driver) Start() error {
 
 // Close closes the driver instance.
 func (d *Driver) Close() {
-	if d.close != nil {
-		d.close()
-	}
-
 	d.state.Close()
-
 	d.wg.Wait()
 }
 

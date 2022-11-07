@@ -50,31 +50,29 @@ type Proposer struct {
 	produceInvalidBlocks         bool
 	produceInvalidBlocksInterval uint64
 
-	ctx   context.Context
-	close context.CancelFunc
-	wg    sync.WaitGroup
+	ctx context.Context
+	wg  sync.WaitGroup
 }
 
 // New initializes the given proposer instance based on the command line flags.
-func (p *Proposer) InitFromCli(c *cli.Context) error {
+func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {
 		return err
 	}
 
-	return initFromConfig(p, cfg)
+	return initFromConfig(ctx, p, cfg)
 }
 
 // initFromConfig initializes the proposer instance based on the given configurations.
-func initFromConfig(p *Proposer, cfg *Config) (err error) {
+func initFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	log.Debug("Proposer configurations", "config", cfg)
 
 	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
 	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
 	p.proposingInterval = cfg.ProposeInterval
 	p.wg = sync.WaitGroup{}
-
-	p.ctx, p.close = context.WithCancel(context.Background())
+	p.ctx = ctx
 
 	// RPC clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -158,9 +156,6 @@ func (p *Proposer) eventLoop() {
 
 // Close closes the proposer instance.
 func (p *Proposer) Close() {
-	if p.close != nil {
-		p.close()
-	}
 	p.wg.Wait()
 }
 
