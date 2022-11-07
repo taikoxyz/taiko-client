@@ -37,7 +37,14 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 		Param:          p.cfg.ZkEvmRpcdParamsPath,
 	}
 
-	return p.proofProducer.RequestProof(opts, event.Id, header, p.proveValidProofCh)
+	if err := p.proofProducer.RequestProof(opts, event.Id, header, p.proveValidProofCh); err != nil {
+		return err
+	}
+
+	queuedProofCounter.Inc(1)
+	queuedValidProofCounter.Inc(1)
+
+	return nil
 }
 
 // submitValidBlockProof submits the generated ZK proof to TaikoL1 contract.
@@ -53,6 +60,9 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		header  = proofWithHeader.Header
 		zkProof = proofWithHeader.ZkProof
 	)
+
+	receivedProofCounter.Inc(1)
+	receivedValidProofCounter.Inc(1)
 
 	meta, err := p.rpc.GetBlockMetadataByID(blockID)
 	if err != nil {
@@ -137,6 +147,9 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		"hash", block.Hash(), "height", block.Number(),
 		"transactions", block.Transactions().Len(),
 	)
+
+	sentProofCounter.Inc(1)
+	sentValidProofCounter.Inc(1)
 
 	return nil
 }

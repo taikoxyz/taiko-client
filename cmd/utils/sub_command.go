@@ -41,7 +41,10 @@ func SubcommandAction(app Subcommand) cli.ActionFunc {
 			return err
 		}
 
-		metrics.Serve(ctx, c)
+		if err := metrics.Serve(ctx, c); err != nil {
+			log.Error("Starting metrics server error", "error", err)
+			return err
+		}
 
 		defer func() {
 			ctxClose()

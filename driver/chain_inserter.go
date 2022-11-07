@@ -218,6 +218,8 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 			return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
 		}
 
+		l1CurrentHeightGuage.Update(b.state.l1Current.Number.Int64())
+
 		log.Info(
 			"🔗 New L2 block inserted",
 			"throwaway", l1Origin.Throwaway,
@@ -232,6 +234,8 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 	if b.state.l1Current, err = b.rpc.L1.HeaderByHash(ctx, l1End.Hash()); err != nil {
 		return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
 	}
+
+	l1CurrentHeightGuage.Update(b.state.l1Current.Number.Int64())
 
 	return nil
 }

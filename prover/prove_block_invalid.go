@@ -37,9 +37,16 @@ func (p *Prover) proveBlockInvalid(
 		Param:          p.cfg.ZkEvmRpcdParamsPath,
 	}
 
-	return p.proofProducer.RequestProof(
+	if err := p.proofProducer.RequestProof(
 		proofOpts, event.Id, throwAwayBlock.Header(), p.proveInvalidProofCh,
-	)
+	); err != nil {
+		return err
+	}
+
+	queuedProofCounter.Inc(1)
+	queuedInvalidProofCounter.Inc(1)
+
+	return nil
 }
 
 // submitInvalidBlockProof submits the generated ZK proof to TaikoL1 contract.
@@ -58,6 +65,9 @@ func (p *Prover) submitInvalidBlockProof(
 		header  = proofWithHeader.Header
 		zkProof = proofWithHeader.ZkProof
 	)
+
+	receivedProofCounter.Inc(1)
+	receivedInvalidProofCounter.Inc(1)
 
 	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
@@ -134,6 +144,9 @@ func (p *Prover) submitInvalidBlockProof(
 		"height", block.Number(),
 		"hash", header.Hash(),
 	)
+
+	sentProofCounter.Inc(1)
+	sentInvalidProofCounter.Inc(1)
 
 	return nil
 }
