@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikochain/taiko-client/bindings"
 	"github.com/taikochain/taiko-client/bindings/encoding"
+	"github.com/taikochain/taiko-client/metrics"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 	"github.com/taikochain/taiko-client/prover/producer"
 )
@@ -37,9 +38,16 @@ func (p *Prover) proveBlockInvalid(
 		Param:          p.cfg.ZkEvmRpcdParamsPath,
 	}
 
-	return p.proofProducer.RequestProof(
+	if err := p.proofProducer.RequestProof(
 		proofOpts, event.Id, throwAwayBlock.Header(), p.proveInvalidProofCh,
-	)
+	); err != nil {
+		return err
+	}
+
+	metrics.ProverQueuedProofCounter.Inc(1)
+	metrics.ProverQueuedInvalidProofCounter.Inc(1)
+
+	return nil
 }
 
 // submitInvalidBlockProof submits the generated ZK proof to TaikoL1 contract.
@@ -58,6 +66,9 @@ func (p *Prover) submitInvalidBlockProof(
 		header  = proofWithHeader.Header
 		zkProof = proofWithHeader.ZkProof
 	)
+
+	metrics.ProverReceivedProofCounter.Inc(1)
+	metrics.ProverReceivedInvalidProofCounter.Inc(1)
 
 	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
@@ -134,6 +145,9 @@ func (p *Prover) submitInvalidBlockProof(
 		"height", block.Number(),
 		"hash", header.Hash(),
 	)
+
+	metrics.ProverSentProofCounter.Inc(1)
+	metrics.ProverSentInvalidProofCounter.Inc(1)
 
 	return nil
 }

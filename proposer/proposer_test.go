@@ -1,6 +1,7 @@
 package proposer
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -27,7 +28,7 @@ func newTestProposer(t *testing.T) *Proposer {
 
 	p := new(Proposer)
 
-	require.Nil(t, initFromConfig(p, (&Config{
+	require.Nil(t, initFromConfig(context.Background(), p, (&Config{
 		L1Endpoint:              os.Getenv("L1_NODE_ENDPOINT"),
 		L2Endpoint:              os.Getenv("L2_NODE_ENDPOINT"),
 		TaikoL1Address:          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),

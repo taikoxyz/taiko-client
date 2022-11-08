@@ -1,17 +1,19 @@
 package utils
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikochain/taiko-client/cmd/logger"
+	"github.com/taikochain/taiko-client/metrics"
 	"github.com/urfave/cli/v2"
 )
 
 type Subcommand interface {
-	InitFromCli(cli *cli.Context) error
+	InitFromCli(context.Context, *cli.Context) error
 	Name() string
 	Start() error
 	Close()
@@ -21,7 +23,14 @@ func SubcommandAction(app Subcommand) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		logger.InitLogger(c)
 
-		if err := app.InitFromCli(c); err != nil {
+		ctx, ctxClose := context.WithCancel(context.Background())
+		defer func() {
+			if ctx.Err() != nil {
+				ctxClose()
+			}
+		}()
+
+		if err := app.InitFromCli(ctx, c); err != nil {
 			return err
 		}
 
@@ -32,7 +41,13 @@ func SubcommandAction(app Subcommand) cli.ActionFunc {
 			return err
 		}
 
+		if err := metrics.Serve(ctx, c); err != nil {
+			log.Error("Starting metrics server error", "error", err)
+			return err
+		}
+
 		defer func() {
+			ctxClose()
 			app.Close()
 			log.Info("Application stopped", "name", app.Name())
 		}()

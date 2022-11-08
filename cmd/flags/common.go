@@ -6,6 +6,7 @@ import (
 
 var (
 	commonCategory   = "COMMON"
+	metricsCategory  = "METRICS"
 	loggingCategory  = "LOGGING"
 	driverCategory   = "DRIVER"
 	proposerCategory = "PROPOSER"
@@ -39,6 +40,7 @@ var (
 		Category: commonCategory,
 	}
 	// Optional flags used by all client softwares.
+	// Logging
 	Verbosity = &cli.IntFlag{
 		Name:     "verbosity",
 		Usage:    "Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail",
@@ -49,6 +51,25 @@ var (
 		Name:     "log.json",
 		Usage:    "Format logs with JSON",
 		Category: loggingCategory,
+	}
+	// Metrics
+	MetricsEnabled = &cli.BoolFlag{
+		Name:     "metrics",
+		Usage:    "Enable metrics collection and reporting",
+		Category: metricsCategory,
+		Value:    false,
+	}
+	MetricsAddr = &cli.StringFlag{
+		Name:     "metrics.addr",
+		Usage:    "Metrics reporting server listening address",
+		Category: metricsCategory,
+		Value:    "0.0.0.0",
+	}
+	MetricsPort = &cli.IntFlag{
+		Name:     "metrics.port",
+		Usage:    "Metrics reporting server listening port",
+		Category: metricsCategory,
+		Value:    6060,
 	}
 )
 
@@ -62,6 +83,9 @@ var CommonFlags = []cli.Flag{
 	// Optional
 	Verbosity,
 	LogJson,
+	MetricsEnabled,
+	MetricsAddr,
+	MetricsPort,
 }
 
 // MergeFlags merges the given flag slices.

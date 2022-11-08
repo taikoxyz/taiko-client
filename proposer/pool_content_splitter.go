@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/les/utils"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/taikochain/taiko-client/metrics"
 	"github.com/taikochain/taiko-client/pkg/rpc"
 )
 
@@ -40,6 +41,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 		// If the transaction is invalid, we simply ignore it.
 		if err := p.validateTx(tx); err != nil {
 			log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
+			metrics.ProposerInvalidTxsCounter.Inc(1)
 			continue
 		}
 

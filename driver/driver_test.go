@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"context"
 	"crypto/rand"
 	"os"
 	"testing"
@@ -34,7 +35,7 @@ func newTestDriver(t *testing.T) *Driver {
 
 	d := new(Driver)
 
-	require.Nil(t, initFromConfig(d, &Config{
+	require.Nil(t, initFromConfig(context.Background(), d, &Config{
 		L1Endpoint:                    os.Getenv("L1_NODE_ENDPOINT"),
 		L2Endpoint:                    os.Getenv("L2_NODE_ENDPOINT"),
 		L2EngineEndpoint:              os.Getenv("L2_NODE_ENGINE_ENDPOINT"),
