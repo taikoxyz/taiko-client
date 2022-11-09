@@ -155,6 +155,7 @@ type commitTxListRes struct {
 	meta        *bindings.LibDataBlockMetadata
 	commitTx    *types.Transaction
 	txListBytes []byte
+	txNum       uint
 }
 
 // proposeOp performs a proposing operation, fetching transactions
@@ -191,6 +192,7 @@ func (p *Proposer) proposeOp(ctx context.Context) error {
 			meta:        meta,
 			commitTx:    commitTx,
 			txListBytes: txListBytes,
+			txNum:       uint(len(txs)),
 		})
 	}
 
@@ -200,7 +202,7 @@ func (p *Proposer) proposeOp(ctx context.Context) error {
 		}
 
 		metrics.ProposerProposedTxListsCounter.Inc(1)
-		metrics.ProposerProposedTxsCounter.Inc(int64(len(txs)))
+		metrics.ProposerProposedTxsCounter.Inc(int64(commitTxListRes.txNum))
 	}
 
 	return nil

@@ -55,7 +55,7 @@ func (p *Proposer) proposeInvalidTxListBytes(ctx context.Context) error {
 		return err
 	}
 
-	return p.ProposeTxList(ctx, &commitTxListRes{meta, commitTx, invalidTxListBytes})
+	return p.ProposeTxList(ctx, &commitTxListRes{meta, commitTx, invalidTxListBytes, 1})
 }
 
 // proposeTxListIncludingInvalidTx commits and proposes a validly encoded
@@ -76,7 +76,7 @@ func (p *Proposer) proposeTxListIncludingInvalidTx(ctx context.Context) error {
 		return err
 	}
 
-	return p.ProposeTxList(ctx, &commitTxListRes{meta, commitTx, txListBytes})
+	return p.ProposeTxList(ctx, &commitTxListRes{meta, commitTx, txListBytes, 1})
 }
 
 // generateInvalidTransaction creates a transaction with an invalid nonce to
