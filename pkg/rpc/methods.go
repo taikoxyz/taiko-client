@@ -166,9 +166,11 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 // PoolContent represents a response body of a `txpool_content` RPC call.
 type PoolContent map[common.Address]map[string]*types.Transaction
 
-// Faltten flattens all transactions in pool content into a slice.
-func (pc PoolContent) Faltten() types.Transactions {
-	var txs types.Transactions
+type TxLists []types.Transactions
+
+// ToTxLists flattens all transactions in pool content into transactions lists.
+func (pc PoolContent) ToTxLists() TxLists {
+	txLists := make([]types.Transactions, 0)
 
 	for _, pendingTxs := range pc {
 		var txsByNonce types.TxByNonce
@@ -178,10 +180,20 @@ func (pc PoolContent) Faltten() types.Transactions {
 		}
 
 		sort.Sort(txsByNonce)
-		txs = append(txs, []*types.Transaction(txsByNonce)...)
+
+		txLists = append(txLists, types.Transactions(txsByNonce))
 	}
 
-	return types.Transactions(txs)
+	return txLists
+}
+
+// Len returns the number of transactions inside the transactions lists.
+func (t TxLists) Len() int {
+	var length = 0
+	for _, pendingTxs := range t {
+		length += len(pendingTxs)
+	}
+	return length
 }
 
 // L2PoolContent fetches the transaction pool content from L2 node.
