@@ -80,7 +80,11 @@ func TestWeightedShuffle(t *testing.T) {
 	txLists := make([]types.Transactions, 1024)
 
 	for i := 0; i < len(txLists); i++ {
-		txLists[i] = types.Transactions{types.NewTx(&types.LegacyTx{GasPrice: big.NewInt(int64(i))})}
+		var txList types.Transactions
+		for j := 0; j < 1024; j++ {
+			txList = append(txList, types.NewTx(&types.LegacyTx{Nonce: uint64(j), GasPrice: big.NewInt(int64(i))}))
+		}
+		txLists[i] = txList
 	}
 
 	shuffled := splitter.weightedShuffle(txLists)
@@ -102,4 +106,8 @@ func TestWeightedShuffle(t *testing.T) {
 
 		return gasA < gasB
 	}))
+
+	for _, txList := range shuffled {
+		require.True(t, sort.IsSorted(types.TxByNonce(txList)))
+	}
 }
