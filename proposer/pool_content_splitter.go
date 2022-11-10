@@ -130,20 +130,20 @@ func (p *poolContentSplitter) weightedShuffle(txLists []types.Transactions) []ty
 
 	selector := utils.NewWeightedRandomSelect(func(i interface{}) uint64 {
 		var weight uint64 = 1
-		for _, tx := range i.(types.Transactions) {
+		for _, tx := range txLists[i.(int)] {
 			weight += tx.GasPrice().Uint64()
 		}
 		return weight
 	})
 
-	for _, txs := range txLists {
-		selector.Update(txs)
+	for i := range txLists {
+		selector.Update(i)
 	}
 
 	for range txLists {
-		txs := selector.Choose().(types.Transactions)
-		shuffled = append(shuffled, txs)
-		selector.Remove(txs)
+		idx := selector.Choose().(int)
+		shuffled = append(shuffled, txLists[idx])
+		selector.Remove(idx)
 	}
 
 	return shuffled
