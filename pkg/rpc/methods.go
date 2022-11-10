@@ -203,16 +203,6 @@ func (c *Client) L2PoolContent(ctx context.Context) (pending PoolContent, queued
 		return nil, nil, err
 	}
 
-	// log.Info("pendings", "len", res["pending"].Faltten().Len())
-	// for _, tx := range res["pending"].Faltten() {
-	// 	log.Info("pending tx", "hash", tx.Hash(), "nonce", tx.Nonce())
-	// }
-
-	// log.Info("queued", "len", res["queued"].Faltten().Len())
-	// for _, tx := range res["queued"].Faltten() {
-	// 	log.Info("queued tx", "hash", tx.Hash(), "nonce", tx.Nonce())
-	// }
-
 	return res["pending"], res["queued"], nil
 }
 
