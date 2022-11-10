@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sort"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
@@ -170,12 +171,17 @@ func (pc PoolContent) Faltten() types.Transactions {
 	var txs types.Transactions
 
 	for _, pendingTxs := range pc {
+		var txsByNonce types.TxByNonce
+
 		for _, pendingTx := range pendingTxs {
-			txs = append(txs, pendingTx)
+			txsByNonce = append(txsByNonce, pendingTx)
 		}
+
+		sort.Sort(txsByNonce)
+		txs = append(txs, []*types.Transaction(txsByNonce)...)
 	}
 
-	return txs
+	return types.Transactions(txs)
 }
 
 // L2PoolContent fetches the transaction pool content from L2 node.
@@ -184,6 +190,16 @@ func (c *Client) L2PoolContent(ctx context.Context) (pending PoolContent, queued
 	if err := c.L2RawRPC.CallContext(ctx, &res, "txpool_content"); err != nil {
 		return nil, nil, err
 	}
+
+	// log.Info("pendings", "len", res["pending"].Faltten().Len())
+	// for _, tx := range res["pending"].Faltten() {
+	// 	log.Info("pending tx", "hash", tx.Hash(), "nonce", tx.Nonce())
+	// }
+
+	// log.Info("queued", "len", res["queued"].Faltten().Len())
+	// for _, tx := range res["queued"].Faltten() {
+	// 	log.Info("queued tx", "hash", tx.Hash(), "nonce", tx.Nonce())
+	// }
 
 	return res["pending"], res["queued"], nil
 }
