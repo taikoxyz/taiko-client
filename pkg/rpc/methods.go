@@ -169,6 +169,7 @@ type PoolContent map[common.Address]map[string]*types.Transaction
 type TxLists []types.Transactions
 
 // ToTxLists flattens all transactions in pool content into transactions lists.
+// Each list contains transactions from a single account sorted by their nonces. 
 func (pc PoolContent) ToTxLists() TxLists {
 	txLists := make([]types.Transactions, 0)
 
