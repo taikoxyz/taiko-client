@@ -10,7 +10,6 @@ require (
 	github.com/prysmaticlabs/prysm v1.4.2-0.20220805185555-4e225fc667d8
 	github.com/stretchr/testify v1.8.0
 	github.com/urfave/cli/v2 v2.11.1
-	golang.org/x/exp v0.0.0-20220426173459-3bcf042a4bf5
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 )
 

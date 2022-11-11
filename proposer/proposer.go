@@ -151,6 +151,13 @@ func (p *Proposer) Close() {
 	p.wg.Wait()
 }
 
+type commitTxListRes struct {
+	meta        *bindings.LibDataBlockMetadata
+	commitTx    *types.Transaction
+	txListBytes []byte
+	txNum       uint
+}
+
 // proposeOp performs a proposing operation, fetching transactions
 // from L2 node's tx pool, splitting them by proposing constraints,
 // and then proposing them to TaikoL1 contract.
@@ -167,28 +174,45 @@ func (p *Proposer) proposeOp(ctx context.Context) error {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
 	}
 
-	log.Info("Fetching L2 pending transactions finished", "length", len(pendingContent))
+	log.Info("Fetching L2 pending transactions finished", "length", pendingContent.ToTxLists().Len())
 
+	var commitTxListResQueue []*commitTxListRes
 	for _, txs := range p.poolContentSplitter.split(pendingContent) {
 		txListBytes, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			return fmt.Errorf("failed to encode transactions: %w", err)
 		}
 
-		if err := p.commitAndPropose(ctx, txListBytes, sumTxsGasLimit(txs)); err != nil {
-			return fmt.Errorf("failed to commit and propose transactions: %w", err)
+		meta, commitTx, err := p.CommitTxList(ctx, txListBytes, sumTxsGasLimit(txs))
+		if err != nil {
+			return fmt.Errorf("failed to commit transactions: %w", err)
+		}
+
+		commitTxListResQueue = append(commitTxListResQueue, &commitTxListRes{
+			meta:        meta,
+			commitTx:    commitTx,
+			txListBytes: txListBytes,
+			txNum:       uint(len(txs)),
+		})
+	}
+
+	for _, commitTxListRes := range commitTxListResQueue {
+		if err := p.ProposeTxList(ctx, commitTxListRes); err != nil {
+			return fmt.Errorf("failed to propose transactions: %w", err)
 		}
 
 		metrics.ProposerProposedTxListsCounter.Inc(1)
-		metrics.ProposerProposedTxsCounter.Inc(int64(len(txs)))
+		metrics.ProposerProposedTxsCounter.Inc(int64(commitTxListRes.txNum))
 	}
 
 	return nil
 }
 
-// commitAndPropose proposes new transactions to TaikoL1 contract by committing
-// them firstly.
-func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gasLimit uint64) error {
+func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimit uint64) (
+	*bindings.LibDataBlockMetadata,
+	*types.Transaction,
+	error,
+) {
 	// Assemble the block context and commit the txList
 	meta := &bindings.LibDataBlockMetadata{
 		Id:          common.Big0,
@@ -200,7 +224,7 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 	}
 	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	commitHash := common.BytesToHash(encoding.EncodeCommitHash(meta.Beneficiary, meta.TxListHash))
@@ -208,7 +232,7 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 	// Check if the transactions list has been committed before.
 	commitHeight, err := p.rpc.TaikoL1.GetCommitHeight(nil, commitHash)
 	if err != nil {
-		return fmt.Errorf("check whether a commitHash %s has been committed error: %w", commitHash, err)
+		return nil, nil, fmt.Errorf("check whether a commitHash %s has been committed error: %w", commitHash, err)
 	}
 
 	if commitHeight.Cmp(common.Big0) == 0 {
@@ -216,31 +240,64 @@ func (p *Proposer) commitAndPropose(ctx context.Context, txListBytes []byte, gas
 
 		commitTx, err := p.rpc.TaikoL1.CommitBlock(opts, commitHash)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 
-		receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, commitTx)
-		if err != nil {
-			return err
-		}
+		return meta, commitTx, nil
+	}
 
-		commitHeight = receipt.BlockNumber
+	filterBlockCommittedHeight := commitHeight.Uint64()
+	iter, err := p.rpc.TaikoL1.FilterBlockCommitted(&bind.FilterOpts{
+		Start: filterBlockCommittedHeight,
+		End:   &filterBlockCommittedHeight,
+	})
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for iter.Next() {
+		if iter.Event.Hash == commitHash {
+			commitTx, _, err := p.rpc.L1.TransactionByHash(ctx, iter.Event.Raw.TxHash)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			return meta, commitTx, nil
+		}
+	}
+
+	return nil, nil, fmt.Errorf("failed to find the original commit transaction, commitHash: %s", commitHash)
+}
+
+func (p *Proposer) ProposeTxList(
+	ctx context.Context,
+	commitRes *commitTxListRes,
+) error {
+	receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, commitRes.commitTx)
+	if err != nil {
+		return err
 	}
 
 	log.Info(
 		"Commit block finished, wait some L1 blocks confirmations before proposing",
-		"commitHeight", commitHeight,
+		"commitHeight", receipt.BlockNumber,
 		"confirmations", p.commitDelayConfirmations,
 	)
 
 	if err := rpc.WaitConfirmations(
-		ctx, p.rpc.L1, p.commitDelayConfirmations, commitHeight.Uint64(),
+		ctx, p.rpc.L1, p.commitDelayConfirmations, receipt.BlockNumber.Uint64(),
 	); err != nil {
-		return fmt.Errorf("wait L1 blocks confirmations error, commitHash %s: %w", commitHash, err)
+		return fmt.Errorf("wait L1 blocks confirmations error, commitHash %s: %w", receipt.BlockNumber, err)
 	}
 
 	// Propose the transactions list
-	inputs, err := encoding.EncodeProposeBlockInput(meta, txListBytes)
+	inputs, err := encoding.EncodeProposeBlockInput(commitRes.meta, commitRes.txListBytes)
+	if err != nil {
+		return err
+	}
+
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
 	if err != nil {
 		return err
 	}

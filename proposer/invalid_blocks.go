@@ -45,11 +45,17 @@ func (p *Proposer) proposeInvalidBlocksOp(ctx context.Context, interval uint64) 
 // proposeInvalidTxListBytes commits and proposes an invalid transaction list
 // bytes to TaikoL1 contract.
 func (p *Proposer) proposeInvalidTxListBytes(ctx context.Context) error {
-	return p.commitAndPropose(
+	invalidTxListBytes := randomBytes(256)
+	meta, commitTx, err := p.CommitTxList(
 		ctx,
-		randomBytes(256),
+		invalidTxListBytes,
 		uint64(rand.Int63n(int64(p.poolContentSplitter.maxGasPerBlock))),
 	)
+	if err != nil {
+		return err
+	}
+
+	return p.ProposeTxList(ctx, &commitTxListRes{meta, commitTx, invalidTxListBytes, 1})
 }
 
 // proposeTxListIncludingInvalidTx commits and proposes a validly encoded
@@ -65,7 +71,12 @@ func (p *Proposer) proposeTxListIncludingInvalidTx(ctx context.Context) error {
 		return err
 	}
 
-	return p.commitAndPropose(ctx, txListBytes, invalidTx.Gas())
+	meta, commitTx, err := p.CommitTxList(ctx, txListBytes, invalidTx.Gas())
+	if err != nil {
+		return err
+	}
+
+	return p.ProposeTxList(ctx, &commitTxListRes{meta, commitTx, txListBytes, 1})
 }
 
 // generateInvalidTransaction creates a transaction with an invalid nonce to
