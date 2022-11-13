@@ -7,6 +7,7 @@ on:
 
 jobs:
   integration_tests:
+    name: Integration tests
     runs-on: ubuntu-latest
     env:
       TK_REPO_ACCESS: ${{ secrets.TK_REPO_ACCESS }}
