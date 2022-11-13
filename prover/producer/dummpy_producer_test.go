@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
 	"github.com/taikochain/taiko-client/bindings"
 )
@@ -33,7 +34,7 @@ func TestRequestProof(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	dummyProofProducer.RequestProof(&ProofRequestOptions{}, blockID, header, resCh)
+	require.Nil(t, dummyProofProducer.RequestProof(&ProofRequestOptions{}, blockID, header, resCh))
 
 	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)
@@ -43,6 +44,8 @@ func TestRequestProof(t *testing.T) {
 
 func randHash() common.Hash {
 	b := make([]byte, 32)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		log.Crit("Failed to generate random bytes", err)
+	}
 	return common.BytesToHash(b)
 }
