@@ -27,7 +27,7 @@ func (p *Prover) validateAnchorTx(ctx context.Context, tx *types.Transaction) er
 
 	method, err := encoding.TaikoL2ABI.MethodById(tx.Data())
 	if err != nil || method.Name != "anchor" {
-		return fmt.Errorf("invalid TaikoL2.anchor transaction selector, err: %w, methodName: %s", err, method.Name)
+		return fmt.Errorf("invalid TaikoL2.anchor transaction selector, err: %w", err)
 	}
 
 	receipt, err := p.rpc.L2.TransactionReceipt(ctx, tx.Hash())
