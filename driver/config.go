@@ -25,7 +25,6 @@ type Config struct {
 // NewConfigFromCliContext creates a new config instance from
 // the command line inputs.
 func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
-	fmt.Println("111", c.String(flags.L1NodeEndpoint.Name))
 	jwtSecret, err := jwt.ParseSecretFromFile(c.String(flags.JWTSecret.Name))
 	if err != nil {
 		return nil, fmt.Errorf("invalid JWT secret file: %w", err)
