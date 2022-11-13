@@ -53,7 +53,7 @@ func TestFromGethHeader(t *testing.T) {
 	require.Equal(t, testHeader.BaseFee.Uint64(), header.BaseFeePerGas.Uint64())
 }
 
-func TestFromGethHeader_LegacyTx(t *testing.T) {
+func TestFromGethHeaderLegacyTx(t *testing.T) {
 	testHeader.BaseFee = nil
 	header := FromGethHeader(testHeader)
 

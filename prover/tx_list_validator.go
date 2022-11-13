@@ -64,7 +64,7 @@ func (v *TxListValidator) ValidateTxList(
 // ref: https://github.com/taikochain/taiko-mono/blob/main/packages/bindings/contracts/libs/LibInvalidTxList.sol
 func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
 	if len(txListBytes) > int(v.maxTxlistBytes) {
-		log.Info("Transactions list binary too large, length: %s", len(txListBytes), "blockID", blockID)
+		log.Info("Transactions list binary too large", "length", len(txListBytes), "blockID", blockID)
 		return HintBinaryTooLarge, 0
 	}
 

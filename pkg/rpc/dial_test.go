@@ -5,12 +5,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/beacon"
 	"github.com/stretchr/testify/require"
 	"github.com/taikochain/taiko-client/pkg/jwt"
 )
 
-func TestDialEngineClient(t *testing.T) {
+func TestDialEngineClientWithBackoff(t *testing.T) {
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
 
 	require.Nil(t, err)
@@ -28,4 +29,14 @@ func TestDialEngineClient(t *testing.T) {
 	err = client.CallContext(context.Background(), &result, "engine_getPayloadV1", beacon.PayloadID{})
 
 	require.Equal(t, beacon.UnknownPayload.Error(), err.Error())
+}
+
+func TestDialClientWithBackoff(t *testing.T) {
+	client, err := DialClientWithBackoff(context.Background(), os.Getenv("L2_NODE_ENDPOINT"))
+	require.Nil(t, err)
+
+	genesis, err := client.HeaderByNumber(context.Background(), common.Big0)
+	require.Nil(t, err)
+
+	require.Equal(t, common.Big0.Uint64(), genesis.Number.Uint64())
 }
