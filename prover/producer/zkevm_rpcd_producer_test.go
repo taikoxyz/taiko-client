@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewZkevmRpcdProducer(t *testing.T) {
-	_, err := NewZkevmRpcdProducer("http://" + randHash().String())
+	_, err := NewZkevmRpcdProducer("http://" + randHash().Big().String())
 	require.EqualError(t, err, errRpcdUnhealthy.Error())
 
 	dummyZKEvmProducer, err := NewZkevmRpcdProducer("http://localhost:18545")
