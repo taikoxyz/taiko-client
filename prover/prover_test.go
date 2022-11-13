@@ -2,6 +2,7 @@ package prover
 
 import (
 	"context"
+	"math/rand"
 	"os"
 	"testing"
 
@@ -39,10 +40,11 @@ func newTestProver(t *testing.T) *Prover {
 	return p
 }
 
-func TestOnForceTimer(t *testing.T) {
-	p := newTestProver(t)
-
-	err := p.onForceTimer(context.Background())
-
-	require.Nil(t, err)
+// randomHash generates a random blob of data and returns it as a hash.
+func randomHash() common.Hash {
+	var hash common.Hash
+	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
+		panic(err)
+	}
+	return hash
 }

@@ -2,6 +2,7 @@ package proposer
 
 import (
 	"context"
+	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -39,4 +40,13 @@ func newTestProposer(t *testing.T) *Proposer {
 	})))
 
 	return p
+}
+
+// randomHash generates a random blob of data and returns it as a hash.
+func randomHash() common.Hash {
+	var hash common.Hash
+	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
+		panic(err)
+	}
+	return hash
 }
