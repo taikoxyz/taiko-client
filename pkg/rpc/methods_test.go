@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
 )
 
@@ -43,15 +44,23 @@ func TestPoolContentToTxLists(t *testing.T) {
 		},
 	}
 
-	txs := poolContent.ToTxLists()
+	txLists := poolContent.ToTxLists()
 
-	require.Equal(t, 2, len(txs))
+	require.Equal(t, 2, len(txLists))
 
-	require.Equal(t, uint64(5), txs[0][0].Nonce())
-	require.Equal(t, uint64(6), txs[0][1].Nonce())
-	require.Equal(t, uint64(7), txs[0][2].Nonce())
-	require.Equal(t, uint64(1), txs[1][0].Nonce())
-	require.Equal(t, uint64(2), txs[1][1].Nonce())
+	for _, txs := range txLists {
+		switch len(txs) {
+		case 2:
+			require.Equal(t, uint64(1), txs[0].Nonce())
+			require.Equal(t, uint64(2), txs[1].Nonce())
+		case 3:
+			require.Equal(t, uint64(5), txs[0].Nonce())
+			require.Equal(t, uint64(6), txs[1].Nonce())
+			require.Equal(t, uint64(7), txs[2].Nonce())
+		default:
+			log.Crit("Invalid txs length")
+		}
+	}
 
-	require.Equal(t, 5, txs.Len())
+	require.Equal(t, 5, txLists.Len())
 }
