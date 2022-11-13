@@ -70,6 +70,11 @@ func TestUnpackTxListBytes(t *testing.T) {
 	_, err := UnpackTxListBytes(randomHash().Bytes())
 	require.NotNil(t, err)
 
-	_, err = UnpackTxListBytes(hexutil.MustDecode("0xa0ca2d080000000000000000000000000000000000000000000000000000000000000aa8e2b9725cce28787e99447c383d95a9ba83125fe31a9ffa9cbb2c504da86926ab"))
+	_, err = UnpackTxListBytes(
+		hexutil.MustDecode(
+			"0xa0ca2d080000000000000000000000000000000000000000000000000000000000000" +
+				"aa8e2b9725cce28787e99447c383d95a9ba83125fe31a9ffa9cbb2c504da86926ab",
+		),
+	)
 	require.Error(t, err, "invalid method name")
 }
