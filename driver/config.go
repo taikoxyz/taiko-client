@@ -30,9 +30,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, fmt.Errorf("invalid JWT secret file: %w", err)
 	}
 
-	throwawayBlocksBuilderPrivKey, err := crypto.ToECDSA(
-		common.Hex2Bytes(c.String(flags.ThrowawayBlocksBuilderPrivKey.Name)),
-	)
+	throwawayBlocksBuilderPrivKey, err := crypto.HexToECDSA(c.String(flags.ThrowawayBlocksBuilderPrivKey.Name))
 	if err != nil {
 		return nil, fmt.Errorf("invalid throwaway blocks builder private key: %w", err)
 	}

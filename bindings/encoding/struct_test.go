@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
+	"github.com/taikochain/taiko-client/bindings"
 )
 
 var (
@@ -29,6 +30,17 @@ var (
 		MixDigest:   randomHash(),
 		Nonce:       types.EncodeNonce(rand.Uint64()),
 		BaseFee:     new(big.Int).SetUint64(rand.Uint64()),
+	}
+	testMeta = bindings.LibDataBlockMetadata{
+		Id:          new(big.Int).SetUint64(rand.Uint64()),
+		L1Height:    new(big.Int).SetUint64(rand.Uint64()),
+		L1Hash:      randomHash(),
+		Beneficiary: common.BytesToAddress(randomHash().Bytes()),
+		GasLimit:    rand.Uint64(),
+		Timestamp:   uint64(time.Now().Unix()),
+		TxListHash:  randomHash(),
+		MixHash:     randomHash(),
+		ExtraData:   randomHash().Bytes(),
 	}
 )
 
@@ -53,7 +65,7 @@ func TestFromGethHeader(t *testing.T) {
 	require.Equal(t, testHeader.BaseFee.Uint64(), header.BaseFeePerGas.Uint64())
 }
 
-func TestFromGethHeader_LegacyTx(t *testing.T) {
+func TestFromGethHeaderLegacyTx(t *testing.T) {
 	testHeader.BaseFee = nil
 	header := FromGethHeader(testHeader)
 

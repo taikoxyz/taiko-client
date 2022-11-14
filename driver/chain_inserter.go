@@ -428,7 +428,7 @@ func (b *L2ChainInserter) createExecutionPayloads(
 // ref: https://github.com/taikochain/taiko-mono/blob/main/packages/protocol/contracts/libs/LibInvalidTxList.sol
 func (b *L2ChainInserter) isTxListValid(txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
 	if len(txListBytes) > int(b.state.maxTxlistBytes.Uint64()) {
-		log.Warn("Transactions list binary too large, length: %s", len(txListBytes))
+		log.Warn("Transactions list binary too large", "length", len(txListBytes))
 		return HintBinaryTooLarge, 0
 	}
 

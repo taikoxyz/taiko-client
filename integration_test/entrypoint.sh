@@ -46,7 +46,7 @@ if [ "$RUN_TESTS" == "true"  ]; then
     L1_PROVER_PRIVATE_KEY=2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
     THROWAWAY_BLOCKS_BUILDER_PRIV_KEY=2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
     JWT_SECRET=$DIR/testnet/jwt.hex \
-        go test -v ./...
+        go test -v ./... -coverprofile=coverage.txt -covermode=atomic -timeout 30s
 else
     echo "💻 Local dev net started"
     docker-compose -f $TESTNET_CONFIG logs -f l2_node

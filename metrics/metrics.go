@@ -44,6 +44,7 @@ var (
 // Serve starts the metrics server on the given address, will be close when the given
 // context is canceled.
 func Serve(ctx context.Context, c *cli.Context) error {
+	log.Info("1111", "bool", c.Bool(flags.MetricsEnabled.Name))
 	if !c.Bool(flags.MetricsEnabled.Name) {
 		return nil
 	}

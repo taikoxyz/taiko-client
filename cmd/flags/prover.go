@@ -18,7 +18,7 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
-	L1ProverPrivKeyFlag = cli.StringFlag{
+	L1ProverPrivKey = cli.StringFlag{
 		Name: "l1.proverPrivKey",
 		Usage: "Private key of L1 prover, " +
 			"who will send TaikoL1.proveBlock / TaikoL1.proveBlockInvalid transactions",
@@ -48,7 +48,7 @@ var (
 var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&ZkEvmRpcdEndpoint,
 	&ZkEvmRpcdParamsPath,
-	&L1ProverPrivKeyFlag,
+	&L1ProverPrivKey,
 	&Dummy,
 	&BatchSubmit,
 })

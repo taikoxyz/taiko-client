@@ -26,7 +26,7 @@ type Config struct {
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
 func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
-	l1ProverPrivKeyStr := c.String(flags.L1ProverPrivKeyFlag.Name)
+	l1ProverPrivKeyStr := c.String(flags.L1ProverPrivKey.Name)
 
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(l1ProverPrivKeyStr))
 	if err != nil {

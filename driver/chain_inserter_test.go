@@ -83,3 +83,41 @@ func TestInsertNewHead(t *testing.T) {
 	require.Equal(t, event.Meta.Timestamp, payload.Timestamp)
 	require.Equal(t, event.Meta.Beneficiary, payload.FeeRecipient)
 }
+
+func TestProcessL1Blocks(t *testing.T) {
+	d := newTestDriver(t)
+
+	l1Genesis, err := d.rpc.L1.HeaderByNumber(context.Background(), common.Big0)
+	require.Nil(t, err)
+
+	l1Head, err := d.rpc.L1.HeaderByNumber(context.Background(), nil)
+	require.Nil(t, err)
+
+	require.Nil(t, d.l2ChainInserter.ProcessL1Blocks(context.Background(), l1Head))
+	require.Nil(t, d.l2ChainInserter.processL1Blocks(context.Background(), l1Genesis, l1Head))
+}
+
+func TestInsertThrowAwayBlock(t *testing.T) {
+	d := newTestDriver(t)
+
+	l1Head, err := d.rpc.L1.HeaderByNumber(context.Background(), nil)
+	require.Nil(t, err)
+
+	_, _, err = d.l2ChainInserter.insertThrowAwayBlock(
+		context.Background(),
+		&bindings.TaikoL1ClientBlockProposed{},
+		l1Head,
+		2,
+		common.Big0,
+		common.Big0,
+		randomHash().Bytes(),
+		&rawdb.L1Origin{
+			BlockID:       common.Big32,
+			L2BlockHash:   randomHash(),
+			L1BlockHeight: l1Head.Number,
+			L1BlockHash:   randomHash(),
+		},
+	)
+
+	require.Contains(t, err.Error(), "header not found")
+}
