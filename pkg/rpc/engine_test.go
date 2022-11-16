@@ -5,11 +5,10 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/core/beacon"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
 )
 
-func TestForkchoiceUpdate(t *testing.T) {
+func TestL2EngineBorbidden(t *testing.T) {
 	c := newTestClient(t)
 
 	_, err := c.L2Engine.ForkchoiceUpdate(
@@ -17,8 +16,17 @@ func TestForkchoiceUpdate(t *testing.T) {
 		&beacon.ForkchoiceStateV1{},
 		&beacon.PayloadAttributesV1{},
 	)
+	require.ErrorContains(t, err, "Forbidden")
 
-	log.Error("ForkchoiceUpdate", "err", err)
+	_, err = c.L2Engine.NewPayload(
+		context.Background(),
+		&beacon.ExecutableDataV1{},
+	)
+	require.ErrorContains(t, err, "Forbidden")
 
+	_, err = c.L2Engine.GetPayload(
+		context.Background(),
+		&beacon.PayloadID{},
+	)
 	require.ErrorContains(t, err, "Forbidden")
 }
