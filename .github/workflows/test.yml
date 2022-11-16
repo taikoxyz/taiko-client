@@ -54,4 +54,4 @@ jobs:
       - name: Codecov.io
         uses: codecov/codecov-action@v3
         with:
-          files: ${{ env.CLIENT_DIR }}/coverage.txt
+          files: ${{ env.CLIENT_DIR }}/coverage.out
