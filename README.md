@@ -44,8 +44,6 @@ bin/taiko-client <sub-command> --help
 
 ## Testing
 
-> NOTE: the `taiko-mono` repository has not been open-sourced yet.
-
 Ensure you have Docker running, and Yarn installed.
 
 Then, run the integration tests:
