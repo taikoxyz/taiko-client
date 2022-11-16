@@ -2,7 +2,6 @@ package proposer
 
 import (
 	"context"
-	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -55,13 +54,4 @@ func TestSumTxsGasLimit(t *testing.T) {
 
 func TestName(t *testing.T) {
 	require.Equal(t, "proposer", newTestProposer(t).Name())
-}
-
-// randomHash generates a random blob of data and returns it as a hash.
-func randomHash() common.Hash {
-	var hash common.Hash
-	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
-		panic(err)
-	}
-	return hash
 }
