@@ -55,3 +55,7 @@ func TestSumTxsGasLimit(t *testing.T) {
 func TestName(t *testing.T) {
 	require.Equal(t, "proposer", newTestProposer(t).Name())
 }
+
+func TestProposeOp(t *testing.T) {
+	require.ErrorContains(t, newTestProposer(t).proposeOp(context.Background()), "l2 node is syncing")
+}

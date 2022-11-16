@@ -2,7 +2,6 @@ package prover
 
 import (
 	"context"
-	"math/rand"
 	"os"
 	"testing"
 
@@ -66,13 +65,4 @@ func TestOnBlockFinalizedEmptyBlockHash(t *testing.T) {
 		newTestProver(t).
 			onBlockFinalized(context.Background(), &bindings.TaikoL1ClientBlockFinalized{BlockHash: common.Hash{}}),
 	)
-}
-
-// randomHash generates a random blob of data and returns it as a hash.
-func randomHash() common.Hash {
-	var hash common.Hash
-	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
-		panic(err)
-	}
-	return hash
 }
