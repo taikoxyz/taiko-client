@@ -53,6 +53,10 @@ func TestSumTxsGasLimit(t *testing.T) {
 	require.Equal(t, uint64(1+2+3), sumTxsGasLimit(txs))
 }
 
+func TestName(t *testing.T) {
+	require.Equal(t, "proposer", newTestProposer(t).Name())
+}
+
 // randomHash generates a random blob of data and returns it as a hash.
 func randomHash() common.Hash {
 	var hash common.Hash

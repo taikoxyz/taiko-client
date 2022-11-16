@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
+	"github.com/taikochain/taiko-client/bindings"
 )
 
 func TestMain(m *testing.M) {
@@ -38,6 +39,25 @@ func newTestProver(t *testing.T) *Prover {
 	}))
 
 	return p
+}
+func TestName(t *testing.T) {
+	require.Equal(t, "prover", newTestProver(t).Name())
+}
+
+func TestGetProveBlocksTxOpts(t *testing.T) {
+	opts, err := newTestProver(t).getProveBlocksTxOpts(context.Background())
+	require.Nil(t, err)
+	require.Equal(t, proveBlocksGasLimit, opts.GasLimit)
+}
+
+func TestBatchHandleBlockProposedEventsBuffered(t *testing.T) {
+	require.Nil(
+		t, newTestProver(t).batchHandleBlockProposedEvents(context.Background(), &bindings.TaikoL1ClientBlockProposed{}),
+	)
+}
+
+func TestOnForceTimerEventNotFound(t *testing.T) {
+	require.ErrorContains(t, newTestProver(t).onForceTimer(context.Background()), "BlockProposed events not found")
 }
 
 // randomHash generates a random blob of data and returns it as a hash.
