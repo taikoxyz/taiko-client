@@ -38,6 +38,7 @@ func (p *Proposer) proposeInvalidBlocksOp(ctx context.Context, interval uint64) 
 	if err := p.proposeTxListIncludingInvalidTx(ctx); err != nil {
 		return fmt.Errorf("failed to propose transactions list including invalid transaction: %w", err)
 	}
+
 	return nil
 }
 

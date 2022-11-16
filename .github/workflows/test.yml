@@ -52,6 +52,6 @@ jobs:
           TAIKO_MONO_DIR=${GITHUB_WORKSPACE}/${TAIKO_MONO_DIR} COMPILE_PROTOCOL=true make test
 
       - name: Codecov.io
-      - uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v3
         with:
           files: ./coverage.txt
