@@ -18,16 +18,6 @@ var (
 	chainID           = genesis.Config.ChainID
 )
 
-func newTestTxListValidator(t *testing.T) *TxListValidator {
-	return &TxListValidator{
-		maxBlocksGasLimit: maxBlocksGasLimit,
-		maxBlockNumTxs:    maxBlockNumTxs,
-		maxTxlistBytes:    maxTxlistBytes,
-		minTxGasLimit:     minTxGasLimit,
-		chainID:           chainID,
-	}
-}
-
 func rlpEncodedTransactionBytes(l int, signed bool) []byte {
 	txs := make(types.Transactions, 0)
 	for i := 0; i < l; i++ {
@@ -61,7 +51,13 @@ func randBytes(l uint64) []byte {
 }
 
 func TestValidateTxList(t *testing.T) {
-	v := newTestTxListValidator(t)
+	v := NewTxListValidator(
+		maxBlocksGasLimit,
+		maxBlockNumTxs,
+		maxTxlistBytes,
+		minTxGasLimit,
+		chainID,
+	)
 	tests := []struct {
 		name                string
 		blockID             *big.Int
@@ -90,7 +86,13 @@ func TestValidateTxList(t *testing.T) {
 	}
 }
 func TestIsTxListValid(t *testing.T) {
-	v := newTestTxListValidator(t)
+	v := NewTxListValidator(
+		maxBlocksGasLimit,
+		maxBlockNumTxs,
+		maxTxlistBytes,
+		minTxGasLimit,
+		chainID,
+	)
 	tests := []struct {
 		name        string
 		blockID     *big.Int

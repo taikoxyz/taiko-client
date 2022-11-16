@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
@@ -64,5 +65,16 @@ func TestOnBlockFinalizedEmptyBlockHash(t *testing.T) {
 		t,
 		newTestProver(t).
 			onBlockFinalized(context.Background(), &bindings.TaikoL1ClientBlockFinalized{BlockHash: common.Hash{}}),
+	)
+}
+
+func TestOnBlockProposedTxNotFound(t *testing.T) {
+	require.ErrorContains(
+		t,
+		newTestProver(t).onBlockProposed(context.Background(), &bindings.TaikoL1ClientBlockProposed{
+			Id:  common.Big2,
+			Raw: types.Log{BlockHash: common.Hash{}, TxIndex: 0},
+		}),
+		"not found",
 	)
 }

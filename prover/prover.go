@@ -107,13 +107,13 @@ func initFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		"anchorGasLimit", anchorGasLimit,
 	)
 
-	p.txListValidator = &TxListValidator{
-		maxBlocksGasLimit: maxBlocksGasLimit.Uint64(),
-		maxBlockNumTxs:    maxBlockNumTxs.Uint64(),
-		maxTxlistBytes:    maxTxlistBytes.Uint64(),
-		minTxGasLimit:     minTxGasLimit.Uint64(),
-		chainID:           p.rpc.L2ChainID,
-	}
+	p.txListValidator = NewTxListValidator(
+		maxBlocksGasLimit.Uint64(),
+		maxBlockNumTxs.Uint64(),
+		maxTxlistBytes.Uint64(),
+		minTxGasLimit.Uint64(),
+		p.rpc.L2ChainID,
+	)
 	p.maxPendingBlocks = maxPendingBlocks.Uint64()
 	p.anchorGasLimit = anchorGasLimit.Uint64()
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, 10)

@@ -44,6 +44,23 @@ type TxListValidator struct {
 	chainID           *big.Int
 }
 
+// NewTxListValidator creates a new TxListValidator instance based on giving configurations.
+func NewTxListValidator(
+	maxBlocksGasLimit uint64,
+	maxBlockNumTxs uint64,
+	maxTxlistBytes uint64,
+	minTxGasLimit uint64,
+	chainID *big.Int,
+) *TxListValidator {
+	return &TxListValidator{
+		maxBlocksGasLimit: maxBlockNumTxs,
+		maxBlockNumTxs:    maxBlockNumTxs,
+		maxTxlistBytes:    maxTxlistBytes,
+		minTxGasLimit:     minTxGasLimit,
+		chainID:           chainID,
+	}
+}
+
 // ValidateTxList checks whether the transactions list in the TaikoL1.proposeBlock transaction's
 // input data is valid.
 func (v *TxListValidator) ValidateTxList(
