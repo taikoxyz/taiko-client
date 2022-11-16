@@ -143,7 +143,7 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 		}
 
 		// Check whether the transactions list is valid.
-		hint, invalidTxIndex := b.isTxListValid(txListBytes)
+		hint, invalidTxIndex := b.txListValidator.IsTxListValid(event.Id, txListBytes)
 
 		log.Info(
 			"Validate transactions list",
@@ -405,56 +405,6 @@ func (b *L2ChainInserter) createExecutionPayloads(
 	}
 
 	return payload, nil, nil
-}
-
-// isTxListValid checks whether the transaction list is valid, must match
-// the validation rule defined in LibInvalidTxList.sol.
-// ref: https://github.com/taikochain/taiko-mono/blob/main/packages/protocol/contracts/libs/LibInvalidTxList.sol
-func (b *L2ChainInserter) isTxListValid(txListBytes []byte) (hint prover.InvalidTxListReason, txIdx int) {
-	if len(txListBytes) > int(b.state.maxTxlistBytes.Uint64()) {
-		log.Warn("Transactions list binary too large", "length", len(txListBytes))
-		return prover.HintBinaryTooLarge, 0
-	}
-
-	var txs types.Transactions
-	if err := rlp.DecodeBytes(txListBytes, &txs); err != nil {
-		log.Debug("Failed to decode transactions list bytes", "error", err)
-		return prover.HintBinaryNotDecodable, 0
-	}
-
-	log.Debug("Transactions list decoded", "length", len(txs))
-
-	if txs.Len() > int(b.state.maxBlockNumTxs.Uint64()) {
-		log.Debug("Too many transactions", "count", txs.Len())
-		return prover.HintBlockTooManyTxs, 0
-	}
-
-	sumGasLimit := uint64(0)
-	for _, tx := range txs {
-		sumGasLimit += tx.Gas()
-	}
-
-	if sumGasLimit > b.state.maxBlocksGasLimit.Uint64() {
-		log.Debug("Accumulate gas limit too large", "sumGasLimit", sumGasLimit)
-		return prover.HintBlockGasLimitTooLarge, 0
-	}
-
-	signer := types.LatestSignerForChainID(b.rpc.L2ChainID)
-
-	for i, tx := range txs {
-		sender, err := types.Sender(signer, tx)
-		if err != nil || sender == (common.Address{}) {
-			log.Debug("Invalid transaction signature", "error", err)
-			return prover.HintTxInvalidSig, i
-		}
-
-		if tx.Gas() < b.state.minTxGasLimit.Uint64() {
-			log.Debug("Transaction gas limit too small", "gasLimit", tx.Gas())
-			return prover.HintTxGasLimitTooSmall, i
-		}
-	}
-
-	return prover.HintOK, 0
 }
 
 // getInvalidateBlockTxOpts signs the transaction with a the
