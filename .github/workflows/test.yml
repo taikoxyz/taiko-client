@@ -10,7 +10,6 @@ jobs:
     name: Integration tests
     runs-on: ubuntu-latest
     env:
-      TK_REPO_ACCESS: ${{ secrets.TK_REPO_ACCESS }}
       CLIENT_DIR: taiko-client
       TAIKO_MONO_DIR: taiko-mono
 
@@ -23,7 +22,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           repository: taikochain/taiko-mono
-          token: ${{ secrets.TK_REPO_ACCESS }}
           path: ${{ env.TAIKO_MONO_DIR }}
 
       - name: Set up Go
