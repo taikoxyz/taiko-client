@@ -22,7 +22,7 @@ func TestValidateAnchorTx(t *testing.T) {
 
 	// invalid To
 	tx := types.NewTransaction(0, common.BytesToAddress(randBytes(1024)), common.Big0, 0, common.Big0, []byte{})
-	require.Error(t, p.validateAnchorTx(context.Background(), tx), "invalid TaikoL2.anchor transaction to")
+	require.ErrorContains(t, p.validateAnchorTx(context.Background(), tx), "invalid TaikoL2.anchor transaction to")
 
 	// invalid sender
 	dynamicFeeTxTx := &types.DynamicFeeTx{
@@ -36,13 +36,15 @@ func TestValidateAnchorTx(t *testing.T) {
 		Data:       []byte{},
 		AccessList: types.AccessList{},
 	}
-	require.Error(t, p.validateAnchorTx(context.Background(), tx), "failed to get TaikoL2.anchor transaction sender")
 
 	signer := types.LatestSignerForChainID(p.rpc.L2ChainID)
 	tx = types.MustSignNewTx(wrongPrivKey, signer, dynamicFeeTxTx)
-	require.Error(t, p.validateAnchorTx(context.Background(), tx), "invalid TaikoL2.anchor transaction sender")
+
+	require.ErrorContains(
+		t, p.validateAnchorTx(context.Background(), tx), "invalid TaikoL2.anchor transaction sender",
+	)
 
 	// invalid method selector
 	tx = types.MustSignNewTx(goldenTouchPriKey, signer, dynamicFeeTxTx)
-	require.Error(t, p.validateAnchorTx(context.Background(), tx), "invalid TaikoL2.anchor transaction selector")
+	require.ErrorContains(t, p.validateAnchorTx(context.Background(), tx), "invalid TaikoL2.anchor transaction selector")
 }

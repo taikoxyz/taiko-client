@@ -18,5 +18,5 @@ func TestProveBlockValidL1OriginTimeout(t *testing.T) {
 
 	err := p.proveBlockValid(ctx, &bindings.TaikoL1ClientBlockProposed{Id: common.Big256})
 
-	require.Error(t, err, "context deadline exceeded")
+	require.ErrorContains(t, err, "context deadline exceeded")
 }

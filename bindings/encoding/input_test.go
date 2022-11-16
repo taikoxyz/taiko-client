@@ -76,5 +76,5 @@ func TestUnpackTxListBytes(t *testing.T) {
 				"aa8e2b9725cce28787e99447c383d95a9ba83125fe31a9ffa9cbb2c504da86926ab",
 		),
 	)
-	require.Error(t, err, "invalid method name")
+	require.ErrorContains(t, err, "no method with id")
 }
