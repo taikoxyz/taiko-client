@@ -1,21 +1,22 @@
 package driver
 
 import (
+	"context"
 	"os"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/bindings"
 	"github.com/taikochain/taiko-client/cmd/flags"
 	"github.com/urfave/cli/v2"
 )
 
 func TestNewConfigFromCliContext(t *testing.T) {
-	l1Endpoint := randomHash().Hex()
-	l2Endpoint := randomHash().Hex()
-	taikoL1 := "0x2414c6826978EfB054DD4479e5C0Af0C1549Fe59"
-	taikoL2 := "0xDf08F82De32B8d460adbE8D72043E3a7e25A3B39"
+	l1Endpoint := os.Getenv("L1_NODE_ENDPOINT")
+	l2Endpoint := os.Getenv("L2_NODE_ENDPOINT")
+	l2EngineEndpoint := os.Getenv("L2_NODE_ENGINE_ENDPOINT")
+	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
+	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
+	throwawayBlocksBuilderPrivKey := os.Getenv("THROWAWAY_BLOCKS_BUILDER_PRIV_KEY")
 
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
@@ -32,11 +33,11 @@ func TestNewConfigFromCliContext(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, l1Endpoint, c.L1Endpoint)
 		require.Equal(t, l2Endpoint, c.L2Endpoint)
-		require.Equal(t, l2Endpoint, c.L2EngineEndpoint)
+		require.Equal(t, l2EngineEndpoint, c.L2EngineEndpoint)
 		require.Equal(t, taikoL1, c.TaikoL1Address.String())
 		require.Equal(t, taikoL2, c.TaikoL2Address.String())
-		require.Equal(t, bindings.GoldenTouchAddress, crypto.PubkeyToAddress(c.ThrowawayBlocksBuilderPrivKey.PublicKey))
 		require.NotEmpty(t, c.JwtSecret)
+		require.Nil(t, new(Driver).InitFromCli(context.Background(), ctx))
 
 		return err
 	}
@@ -45,10 +46,10 @@ func TestNewConfigFromCliContext(t *testing.T) {
 		"TestNewConfigFromCliContext",
 		"-" + flags.L1NodeEndpoint.Name, l1Endpoint,
 		"-" + flags.L2NodeEndpoint.Name, l2Endpoint,
-		"-" + flags.L2NodeEngineEndpoint.Name, l2Endpoint,
+		"-" + flags.L2NodeEngineEndpoint.Name, l2EngineEndpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
-		"-" + flags.ThrowawayBlocksBuilderPrivKey.Name, bindings.GoldenTouchPrivKey[2:],
+		"-" + flags.ThrowawayBlocksBuilderPrivKey.Name, throwawayBlocksBuilderPrivKey,
 		"-" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
 	}))
 }

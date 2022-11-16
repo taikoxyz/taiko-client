@@ -11,6 +11,13 @@ import (
 	"github.com/taikochain/taiko-client/bindings/encoding"
 )
 
+func TestProposeInvalidBlocksOp(t *testing.T) {
+	p := newTestProposer(t)
+
+	require.Nil(t, p.proposeInvalidBlocksOp(context.Background(), 1024))
+	require.Nil(t, p.proposeInvalidBlocksOp(context.Background(), 2))
+}
+
 func TestProposeInvalidTxListBytes(t *testing.T) {
 	p := newTestProposer(t)
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)

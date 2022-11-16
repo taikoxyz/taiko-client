@@ -121,3 +121,12 @@ func TestInsertThrowAwayBlock(t *testing.T) {
 
 	require.Contains(t, err.Error(), "header not found")
 }
+
+func TestGetInvalidateBlockTxOpts(t *testing.T) {
+	d := newTestDriver(t)
+
+	opts, err := d.l2ChainInserter.getInvalidateBlockTxOpts(context.Background(), common.Big0)
+
+	require.Nil(t, err)
+	require.True(t, opts.NoSend)
+}

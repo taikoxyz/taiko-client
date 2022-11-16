@@ -164,7 +164,7 @@ type commitTxListRes struct {
 func (p *Proposer) proposeOp(ctx context.Context) error {
 	syncProgress, err := p.rpc.L2.SyncProgress(ctx)
 	if err != nil || syncProgress != nil {
-		return fmt.Errorf("l2 node is syncing: %w", err)
+		return fmt.Errorf("l2 node is syncing: %w, syncProgress: %v", err, syncProgress)
 	}
 
 	log.Info("Start fetching L2 node's transaction pool content")

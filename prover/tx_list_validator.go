@@ -44,6 +44,23 @@ type TxListValidator struct {
 	chainID           *big.Int
 }
 
+// NewTxListValidator creates a new TxListValidator instance based on giving configurations.
+func NewTxListValidator(
+	maxBlocksGasLimit uint64,
+	maxBlockNumTxs uint64,
+	maxTxlistBytes uint64,
+	minTxGasLimit uint64,
+	chainID *big.Int,
+) *TxListValidator {
+	return &TxListValidator{
+		maxBlocksGasLimit: maxBlockNumTxs,
+		maxBlockNumTxs:    maxBlockNumTxs,
+		maxTxlistBytes:    maxTxlistBytes,
+		minTxGasLimit:     minTxGasLimit,
+		chainID:           chainID,
+	}
+}
+
 // ValidateTxList checks whether the transactions list in the TaikoL1.proposeBlock transaction's
 // input data is valid.
 func (v *TxListValidator) ValidateTxList(
@@ -55,14 +72,14 @@ func (v *TxListValidator) ValidateTxList(
 		return HintBinaryNotDecodable, 0, fmt.Errorf("failed to unpack raw transactions list bytes: %w", err)
 	}
 
-	hint, txIdx = v.isTxListValid(blockID, txListBytes)
+	hint, txIdx = v.IsTxListValid(blockID, txListBytes)
 	return hint, txIdx, nil
 }
 
-// isTxListValid checks whether the transaction list is valid, must match
+// IsTxListValid checks whether the transaction list is valid, must match
 // the validation rule defined in LibInvalidTxList.sol.
 // ref: https://github.com/taikochain/taiko-mono/blob/main/packages/bindings/contracts/libs/LibInvalidTxList.sol
-func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
+func (v *TxListValidator) IsTxListValid(blockID *big.Int, txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
 	if len(txListBytes) > int(v.maxTxlistBytes) {
 		log.Info("Transactions list binary too large", "length", len(txListBytes), "blockID", blockID)
 		return HintBinaryTooLarge, 0

@@ -13,7 +13,7 @@ import (
 // executed `TaikoL2.anchor` transaction.
 func (p *Prover) validateAnchorTx(ctx context.Context, tx *types.Transaction) error {
 	if tx.To() == nil || *tx.To() != p.cfg.TaikoL2Address {
-		return fmt.Errorf("invalid TaikoL2.anchor transaction to: %s", tx.To())
+		return fmt.Errorf("invalid TaikoL2.anchor transaction to: %s, want: %s", tx.To(), p.cfg.TaikoL2Address)
 	}
 
 	sender, err := types.LatestSignerForChainID(p.rpc.L2ChainID).Sender(tx)

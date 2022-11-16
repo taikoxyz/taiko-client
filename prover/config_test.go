@@ -1,6 +1,8 @@
 package prover
 
 import (
+	"context"
+	"os"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -11,10 +13,10 @@ import (
 )
 
 func TestNewConfigFromCliContext(t *testing.T) {
-	l1Endpoint := randomHash().Hex()
-	l2Endpoint := randomHash().Hex()
-	taikoL1 := "0x2414c6826978EfB054DD4479e5C0Af0C1549Fe59"
-	taikoL2 := "0xDf08F82De32B8d460adbE8D72043E3a7e25A3B39"
+	l1Endpoint := os.Getenv("L1_NODE_ENDPOINT")
+	l2Endpoint := os.Getenv("L2_NODE_ENDPOINT")
+	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
+	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
@@ -34,6 +36,7 @@ func TestNewConfigFromCliContext(t *testing.T) {
 		require.Equal(t, taikoL2, c.TaikoL2Address.String())
 		require.Equal(t, bindings.GoldenTouchAddress, crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey))
 		require.True(t, c.Dummy)
+		require.Nil(t, new(Prover).InitFromCli(context.Background(), ctx))
 
 		return err
 	}

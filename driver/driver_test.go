@@ -47,6 +47,14 @@ func newTestDriver(t *testing.T) *Driver {
 	return d
 }
 
+func TestName(t *testing.T) {
+	require.Equal(t, "driver", newTestDriver(t).Name())
+}
+
+func TestDoSyncNoNewL2Blocks(t *testing.T) {
+	require.Nil(t, newTestDriver(t).doSync())
+}
+
 // randomHash generates a random blob of data and returns it as a hash.
 func randomHash() common.Hash {
 	var hash common.Hash

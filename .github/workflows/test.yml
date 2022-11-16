@@ -50,3 +50,8 @@ jobs:
         working-directory: ${{ env.CLIENT_DIR }}
         run: |
           TAIKO_MONO_DIR=${GITHUB_WORKSPACE}/${TAIKO_MONO_DIR} COMPILE_PROTOCOL=true make test
+
+      - name: Codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          files: ${{ env.CLIENT_DIR }}/coverage.out

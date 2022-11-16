@@ -19,41 +19,18 @@ import (
 	"github.com/taikochain/taiko-client/bindings/encoding"
 	"github.com/taikochain/taiko-client/metrics"
 	"github.com/taikochain/taiko-client/pkg/rpc"
+	"github.com/taikochain/taiko-client/prover"
 )
 
 const (
 	MaxL1BlocksRead = 1000
 )
 
-// InvalidTxListReason represents a reason why a transactions list is invalid,
-// must match the definitions in LibInvalidTxList.sol:
-//
-//	enum Reason {
-//		OK,
-//		BINARY_TOO_LARGE,
-//		BINARY_NOT_DECODABLE,
-//		BLOCK_TOO_MANY_TXS,
-//		BLOCK_GAS_LIMIT_TOO_LARGE,
-//		TX_INVALID_SIG,
-//		TX_GAS_LIMIT_TOO_SMALL
-//	}
-type InvalidTxListReason uint8
-
-// All invalid transactions list reasons.
-const (
-	HintOK InvalidTxListReason = iota
-	HintBinaryTooLarge
-	HintBinaryNotDecodable
-	HintBlockTooManyTxs
-	HintBlockGasLimitTooLarge
-	HintTxInvalidSig
-	HintTxGasLimitTooSmall
-)
-
 type L2ChainInserter struct {
 	state                         *State            // Driver's state
 	rpc                           *rpc.Client       // L1/L2 RPC clients
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey // Private key of L2 throwaway blocks builder
+	txListValidator               *prover.TxListValidator
 }
 
 // NewL2ChainInserter creates a new block inserter instance.
@@ -67,6 +44,13 @@ func NewL2ChainInserter(
 		rpc:                           rpc,
 		state:                         state,
 		throwawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
+		txListValidator: prover.NewTxListValidator(
+			state.maxBlocksGasLimit.Uint64(),
+			state.maxBlockNumTxs.Uint64(),
+			state.maxTxlistBytes.Uint64(),
+			state.minTxGasLimit.Uint64(),
+			rpc.L2ChainID,
+		),
 	}, nil
 }
 
@@ -159,7 +143,7 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 		}
 
 		// Check whether the transactions list is valid.
-		hint, invalidTxIndex := b.isTxListValid(txListBytes)
+		hint, invalidTxIndex := b.txListValidator.IsTxListValid(event.Id, txListBytes)
 
 		log.Info(
 			"Validate transactions list",
@@ -173,7 +157,7 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 			L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
 			L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
 			L1BlockHash:   event.Raw.BlockHash,
-			Throwaway:     hint != HintOK,
+			Throwaway:     hint != prover.HintOK,
 		}
 
 		var (
@@ -181,7 +165,7 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 			rpcError     error
 			payloadError error
 		)
-		if hint == HintOK {
+		if hint == prover.HintOK {
 			payloadData, rpcError, payloadError = b.insertNewHead(
 				ctx,
 				event,
@@ -421,56 +405,6 @@ func (b *L2ChainInserter) createExecutionPayloads(
 	}
 
 	return payload, nil, nil
-}
-
-// isTxListValid checks whether the transaction list is valid, must match
-// the validation rule defined in LibInvalidTxList.sol.
-// ref: https://github.com/taikochain/taiko-mono/blob/main/packages/protocol/contracts/libs/LibInvalidTxList.sol
-func (b *L2ChainInserter) isTxListValid(txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
-	if len(txListBytes) > int(b.state.maxTxlistBytes.Uint64()) {
-		log.Warn("Transactions list binary too large", "length", len(txListBytes))
-		return HintBinaryTooLarge, 0
-	}
-
-	var txs types.Transactions
-	if err := rlp.DecodeBytes(txListBytes, &txs); err != nil {
-		log.Debug("Failed to decode transactions list bytes", "error", err)
-		return HintBinaryNotDecodable, 0
-	}
-
-	log.Debug("Transactions list decoded", "length", len(txs))
-
-	if txs.Len() > int(b.state.maxBlockNumTxs.Uint64()) {
-		log.Debug("Too many transactions", "count", txs.Len())
-		return HintBlockTooManyTxs, 0
-	}
-
-	sumGasLimit := uint64(0)
-	for _, tx := range txs {
-		sumGasLimit += tx.Gas()
-	}
-
-	if sumGasLimit > b.state.maxBlocksGasLimit.Uint64() {
-		log.Debug("Accumulate gas limit too large", "sumGasLimit", sumGasLimit)
-		return HintBlockGasLimitTooLarge, 0
-	}
-
-	signer := types.LatestSignerForChainID(b.rpc.L2ChainID)
-
-	for i, tx := range txs {
-		sender, err := types.Sender(signer, tx)
-		if err != nil || sender == (common.Address{}) {
-			log.Debug("Invalid transaction signature", "error", err)
-			return HintTxInvalidSig, i
-		}
-
-		if tx.Gas() < b.state.minTxGasLimit.Uint64() {
-			log.Debug("Transaction gas limit too small", "gasLimit", tx.Gas())
-			return HintTxGasLimitTooSmall, i
-		}
-	}
-
-	return HintOK, 0
 }
 
 // getInvalidateBlockTxOpts signs the transaction with a the

@@ -2,12 +2,12 @@ package proposer
 
 import (
 	"context"
-	"math/rand"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
@@ -42,11 +42,20 @@ func newTestProposer(t *testing.T) *Proposer {
 	return p
 }
 
-// randomHash generates a random blob of data and returns it as a hash.
-func randomHash() common.Hash {
-	var hash common.Hash
-	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
-		panic(err)
+func TestSumTxsGasLimit(t *testing.T) {
+	txs := []*types.Transaction{
+		types.NewTransaction(0, common.Address{}, common.Big0, 1, common.Big0, []byte{}), // gasLimit: 1
+		types.NewTransaction(0, common.Address{}, common.Big0, 2, common.Big0, []byte{}), // gasLimit: 2
+		types.NewTransaction(0, common.Address{}, common.Big0, 3, common.Big0, []byte{}), // gasLimit: 3
 	}
-	return hash
+
+	require.Equal(t, uint64(1+2+3), sumTxsGasLimit(txs))
+}
+
+func TestName(t *testing.T) {
+	require.Equal(t, "proposer", newTestProposer(t).Name())
+}
+
+func TestProposeOp(t *testing.T) {
+	require.ErrorContains(t, newTestProposer(t).proposeOp(context.Background()), "l2 node is syncing")
 }
