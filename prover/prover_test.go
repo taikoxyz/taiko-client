@@ -60,6 +60,14 @@ func TestOnForceTimerEventNotFound(t *testing.T) {
 	require.ErrorContains(t, newTestProver(t).onForceTimer(context.Background()), "BlockProposed events not found")
 }
 
+func TestOnBlockFinalizedEmptyBlockHash(t *testing.T) {
+	require.Nil(
+		t,
+		newTestProver(t).
+			onBlockFinalized(context.Background(), &bindings.TaikoL1ClientBlockFinalized{BlockHash: common.Hash{}}),
+	)
+}
+
 // randomHash generates a random blob of data and returns it as a hash.
 func randomHash() common.Hash {
 	var hash common.Hash
