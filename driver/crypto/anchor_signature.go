@@ -7,7 +7,7 @@ import (
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikochain/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 var (
@@ -26,7 +26,7 @@ var (
 )
 
 // SignAnchor calculates an ECDSA signature for a V1TaikoL2.anchor transaction.
-// ref: https://github.com/taikochain/taiko-mono/blob/main/packages/protocol/contracts/libs/LibAnchorSignature.sol
+// ref: https://github.com/taikoxyz/taiko-mono/blob/main/packages/protocol/contracts/libs/LibAnchorSignature.sol
 func SignAnchor(hash []byte) ([]byte, error) {
 	if len(hash) != 32 {
 		return nil, fmt.Errorf("hash is required to be exactly 32 bytes (%d)", len(hash))

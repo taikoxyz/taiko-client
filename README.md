@@ -1,7 +1,7 @@
 # taiko-client
 
-[![CI](https://github.com/taikochain/taiko-client/actions/workflows/test.yml/badge.svg)](https://github.com/taikochain/taiko-client/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/taikochain/taiko-client/branch/main/graph/badge.svg?token=OH6BJMVP6O)](https://codecov.io/gh/taikochain/taiko-client)
+[![CI](https://github.com/taikoxyz/taiko-client/actions/workflows/test.yml/badge.svg)](https://github.com/taikoxyz/taiko-client/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/taikoxyz/taiko-client/branch/main/graph/badge.svg?token=OH6BJMVP6O)](https://codecov.io/gh/taikoxyz/taiko-client)
 
 Taiko protocol's client software implementation in Go.
 

@@ -16,12 +16,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          repository: taikochain/taiko-client
+          repository: taikoxyz/taiko-client
           path: ${{ env.CLIENT_DIR }}
 
       - uses: actions/checkout@v3
         with:
-          repository: taikochain/taiko-mono
+          repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
 
       - name: Set up Go

@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
 )
 
 func TestMain(m *testing.M) {

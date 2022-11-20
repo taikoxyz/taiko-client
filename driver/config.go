@@ -6,8 +6,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/taikochain/taiko-client/cmd/flags"
-	"github.com/taikochain/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/urfave/cli/v2"
 )
 

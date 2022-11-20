@@ -4,12 +4,12 @@ import (
 	"os"
 
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikochain/taiko-client/cmd/flags"
-	"github.com/taikochain/taiko-client/cmd/utils"
-	"github.com/taikochain/taiko-client/driver"
-	"github.com/taikochain/taiko-client/proposer"
-	"github.com/taikochain/taiko-client/prover"
-	"github.com/taikochain/taiko-client/version"
+	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/cmd/utils"
+	"github.com/taikoxyz/taiko-client/driver"
+	"github.com/taikoxyz/taiko-client/proposer"
+	"github.com/taikoxyz/taiko-client/prover"
+	"github.com/taikoxyz/taiko-client/version"
 	"github.com/urfave/cli/v2"
 )
 

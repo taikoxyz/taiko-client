@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/taikochain/taiko-client/bindings"
-	"github.com/taikochain/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 // validateAnchorTx checks whether the given transaction is a successfully

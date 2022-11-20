@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/taikochain/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 // InvalidTxListReason represents a reason why a transactions list is invalid,
@@ -78,7 +78,7 @@ func (v *TxListValidator) ValidateTxList(
 
 // IsTxListValid checks whether the transaction list is valid, must match
 // the validation rule defined in LibInvalidTxList.sol.
-// ref: https://github.com/taikochain/taiko-mono/blob/main/packages/bindings/contracts/libs/LibInvalidTxList.sol
+// ref: https://github.com/taikoxyz/taiko-mono/blob/main/packages/bindings/contracts/libs/LibInvalidTxList.sol
 func (v *TxListValidator) IsTxListValid(blockID *big.Int, txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
 	if len(txListBytes) > int(v.maxTxlistBytes) {
 		log.Info("Transactions list binary too large", "length", len(txListBytes), "blockID", blockID)

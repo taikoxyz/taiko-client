@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 func TestPoolContentSplit(t *testing.T) {

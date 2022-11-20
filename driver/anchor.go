@@ -7,8 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/taikochain/taiko-client/bindings"
-	"github.com/taikochain/taiko-client/driver/crypto"
+	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/driver/crypto"
 )
 
 // assembleAnchorTx creates a signed TaikoL2.anchor transaction.

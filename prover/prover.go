@@ -13,10 +13,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikochain/taiko-client/bindings"
-	"github.com/taikochain/taiko-client/metrics"
-	"github.com/taikochain/taiko-client/pkg/rpc"
-	"github.com/taikochain/taiko-client/prover/producer"
+	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/metrics"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/prover/producer"
 	"github.com/urfave/cli/v2"
 )
 
