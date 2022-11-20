@@ -7,8 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/les/utils"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/taikochain/taiko-client/metrics"
-	"github.com/taikochain/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/metrics"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // poolContentSplitter is responsible for splitting the pool content

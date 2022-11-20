@@ -6,7 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 func TestNewAnchorTransactor(t *testing.T) {

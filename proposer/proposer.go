@@ -15,10 +15,10 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/taikochain/taiko-client/bindings"
-	"github.com/taikochain/taiko-client/bindings/encoding"
-	"github.com/taikochain/taiko-client/metrics"
-	"github.com/taikochain/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/metrics"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
 

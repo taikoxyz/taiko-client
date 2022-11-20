@@ -1,4 +1,4 @@
-module github.com/taikochain/taiko-client
+module github.com/taikoxyz/taiko-client
 
 go 1.18
 
@@ -57,4 +57,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.10.25 => github.com/taikochain/taiko-geth v0.0.0-20221114040706-4779d8787711
+replace github.com/ethereum/go-ethereum v1.10.25 => github.com/taikoxyz/taiko-geth v0.0.0-20221120133417-659cc11c881d

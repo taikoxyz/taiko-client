@@ -8,8 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/bindings"
-	"github.com/taikochain/taiko-client/prover/producer"
+	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/prover/producer"
 )
 
 func TestProveBlockInvalidL1OriginTimeout(t *testing.T) {

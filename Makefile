@@ -1,8 +1,8 @@
 GIT_COMMIT := $(shell git rev-parse HEAD)
 GIT_DATE := $(shell git show -s --format='%ct')
 
-LD_FLAGS_ARGS +=-X github.com/taikochain/taiko-client/version.GitCommit=$(GIT_COMMIT)
-LD_FLAGS_ARGS +=-X github.com/taikochain/taiko-client/version.GitDate=$(GIT_DATE)
+LD_FLAGS_ARGS +=-X github.com/taikoxyz/taiko-client/version.GitCommit=$(GIT_COMMIT)
+LD_FLAGS_ARGS +=-X github.com/taikoxyz/taiko-client/version.GitDate=$(GIT_DATE)
 
 LD_FLAGS := -ldflags "$(LD_FLAGS_ARGS)"
 

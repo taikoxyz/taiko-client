@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
-	"github.com/taikochain/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 func TestValidateAnchorTx(t *testing.T) {

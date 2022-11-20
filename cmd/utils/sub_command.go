@@ -7,8 +7,8 @@ import (
 	"syscall"
 
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikochain/taiko-client/cmd/logger"
-	"github.com/taikochain/taiko-client/metrics"
+	"github.com/taikoxyz/taiko-client/cmd/logger"
+	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/urfave/cli/v2"
 )
 
