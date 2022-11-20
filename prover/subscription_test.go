@@ -1,13 +1,6 @@
 package prover
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
-)
-
-func TestStartSubscription(t *testing.T) {
-	p := newTestProver(t)
-	require.NotPanics(t, p.startSubscription)
-	require.NotPanics(t, p.closeSubscription)
+func (s *ProverTestSuite) TestStartSubscription() {
+	s.NotPanics(s.p.startSubscription)
+	s.NotPanics(s.p.closeSubscription)
 }

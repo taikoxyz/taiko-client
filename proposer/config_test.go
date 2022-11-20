@@ -3,16 +3,14 @@ package proposer
 import (
 	"context"
 	"os"
-	"testing"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/urfave/cli/v2"
 )
 
-func TestNewConfigFromCliContext(t *testing.T) {
+func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	l1Endpoint := os.Getenv("L1_NODE_ENDPOINT")
 	l2Endpoint := os.Getenv("L2_NODE_ENDPOINT")
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
@@ -31,20 +29,20 @@ func TestNewConfigFromCliContext(t *testing.T) {
 	}
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
-		require.Nil(t, err)
-		require.Equal(t, l1Endpoint, c.L1Endpoint)
-		require.Equal(t, l2Endpoint, c.L2Endpoint)
-		require.Equal(t, taikoL1, c.TaikoL1Address.String())
-		require.Equal(t, taikoL2, c.TaikoL2Address.String())
-		require.Equal(t, bindings.GoldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
-		require.Equal(t, bindings.GoldenTouchAddress, c.L2SuggestedFeeRecipient)
-		require.Equal(t, float64(10), c.ProposeInterval.Seconds())
-		require.Nil(t, new(Proposer).InitFromCli(context.Background(), ctx))
+		s.Nil(err)
+		s.Equal(l1Endpoint, c.L1Endpoint)
+		s.Equal(l2Endpoint, c.L2Endpoint)
+		s.Equal(taikoL1, c.TaikoL1Address.String())
+		s.Equal(taikoL2, c.TaikoL2Address.String())
+		s.Equal(bindings.GoldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
+		s.Equal(bindings.GoldenTouchAddress, c.L2SuggestedFeeRecipient)
+		s.Equal(float64(10), c.ProposeInterval.Seconds())
+		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err
 	}
 
-	require.Nil(t, app.Run([]string{
+	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"-" + flags.L1NodeEndpoint.Name, l1Endpoint,
 		"-" + flags.L2NodeEndpoint.Name, l2Endpoint,

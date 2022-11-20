@@ -77,7 +77,18 @@ func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, erro
 		return c.GetGenesisL1Header(ctx)
 	}
 
-	return c.L1.HeaderByHash(ctx, headL1Origin.L1BlockHash)
+	header, err := c.L1.HeaderByHash(ctx, headL1Origin.L1BlockHash)
+	if err != nil {
+		switch err.Error() {
+		case ethereum.NotFound.Error():
+			log.Warn("Latest L2 known L1 header not found, use genesis instead", "hash", headL1Origin.L1BlockHash)
+			return c.GetGenesisL1Header(ctx)
+		default:
+			return nil, err
+		}
+	}
+
+	return header, nil
 }
 
 // GetGenesisL1Header fetches the L1 header that including L2 genesis block.

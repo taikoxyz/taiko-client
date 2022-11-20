@@ -2,7 +2,6 @@ package prover
 
 import (
 	"math/big"
-	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
@@ -11,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -61,13 +59,13 @@ func generateTestChain() []*types.Block {
 	return blocks
 }
 
-func TestGenerateTrieProof(t *testing.T) {
+func (s *ProverTestSuite) TestGenerateTrieProof() {
 	blocks := generateTestChain()
 	testBlock := blocks[len(blocks)-1]
 
 	root, proof, err := generateTrieProof(testBlock.Transactions(), 0)
 
-	require.Nil(t, err)
-	require.Equal(t, testBlock.TxHash(), root)
-	require.NotEmpty(t, proof)
+	s.Nil(err)
+	s.Equal(testBlock.TxHash(), root)
+	s.NotEmpty(proof)
 }

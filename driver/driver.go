@@ -45,11 +45,11 @@ func (d *Driver) InitFromCli(ctx context.Context, c *cli.Context) error {
 		return err
 	}
 
-	return initFromConfig(ctx, d, cfg)
+	return InitFromConfig(ctx, d, cfg)
 }
 
-// initFromConfig initializes the driver instance based on the given configurations.
-func initFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
+// InitFromConfig initializes the driver instance based on the given configurations.
+func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 	log.Debug("Driver configurations", "config", cfg)
 
 	d.l1HeadCh = make(chan *types.Header, 1024)
@@ -166,6 +166,11 @@ func (d *Driver) doSync() error {
 	}
 
 	return nil
+}
+
+// ChainInserter returns the driver's chain inserter.
+func (d *Driver) ChainInserter() *L2ChainInserter {
+	return d.l2ChainInserter
 }
 
 // Name returns the application name.

@@ -11,11 +11,13 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 	"github.com/taikoxyz/taiko-client/prover/producer"
 	"github.com/urfave/cli/v2"
 )
@@ -38,7 +40,7 @@ type Prover struct {
 	rpc *rpc.Client
 
 	// Contract configurations
-	txListValidator  *TxListValidator
+	txListValidator  *txListValidator.TxListValidator
 	anchorGasLimit   uint64
 	maxPendingBlocks uint64
 
@@ -70,11 +72,11 @@ func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
 		return err
 	}
 
-	return initFromConfig(ctx, p, cfg)
+	return InitFromConfig(ctx, p, cfg)
 }
 
-// initFromConfig initializes the prover instance based on the given configurations.
-func initFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
+// InitFromConfig initializes the prover instance based on the given configurations.
+func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	log.Debug("Prover configurations", "config", cfg)
 
 	p.cfg = cfg
@@ -107,7 +109,7 @@ func initFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		"anchorGasLimit", anchorGasLimit,
 	)
 
-	p.txListValidator = NewTxListValidator(
+	p.txListValidator = txListValidator.NewTxListValidator(
 		maxBlocksGasLimit.Uint64(),
 		maxBlockNumTxs.Uint64(),
 		maxTxlistBytes.Uint64(),
@@ -207,7 +209,7 @@ func (p *Prover) onBlockProposed(ctx context.Context, event *bindings.TaikoL1Cli
 	}
 
 	// Prove the proposed block valid.
-	if hint == HintOK {
+	if hint == txListValidator.HintOK {
 		return p.proveBlockValid(ctx, event)
 	}
 
@@ -341,12 +343,21 @@ func (p *Prover) Name() string {
 
 // getProveBlocksTxOpts creates a bind.TransactOpts instance using the given private key.
 // Used for creating TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
-func (p *Prover) getProveBlocksTxOpts(ctx context.Context) (*bind.TransactOpts, error) {
+func (p *Prover) getProveBlocksTxOpts(ctx context.Context, cli *ethclient.Client) (*bind.TransactOpts, error) {
 	opts, err := bind.NewKeyedTransactorWithChainID(p.cfg.L1ProverPrivKey, p.rpc.L1ChainID)
 	if err != nil {
 		return nil, err
 	}
+	gasTipCap, err := cli.SuggestGasTipCap(ctx)
+	if err != nil {
+		if rpc.IsMaxPriorityFeePerGasNotFoundError(err) {
+			gasTipCap = rpc.FallbackGasTipCap
+		} else {
+			return nil, err
+		}
+	}
 
+	opts.GasTipCap = gasTipCap
 	opts.GasLimit = proveBlocksGasLimit
 
 	return opts, nil

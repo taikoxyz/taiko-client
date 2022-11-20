@@ -1,11 +1,14 @@
-package prover
+package tx_list_validator
 
 import (
 	"math/big"
 	"math/rand"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
 )
@@ -16,39 +19,16 @@ var (
 	maxTxlistBytes    = uint64(10000)
 	minTxGasLimit     = uint64(1)
 	chainID           = genesis.Config.ChainID
-)
-
-func rlpEncodedTransactionBytes(l int, signed bool) []byte {
-	txs := make(types.Transactions, 0)
-	for i := 0; i < l; i++ {
-		var tx *types.Transaction
-		if signed {
-			txData := &types.LegacyTx{
-				Nonce:    1,
-				To:       &testAddr,
-				GasPrice: big.NewInt(100),
-				Value:    big.NewInt(1),
-				Gas:      10,
-			}
-
-			tx = types.MustSignNewTx(testKey, types.LatestSigner(genesis.Config), txData)
-		} else {
-			tx = types.NewTransaction(1, testAddr, big.NewInt(1), 10, big.NewInt(100), nil)
-		}
-		txs = append(
-			txs,
-			tx,
-		)
+	testKey, _        = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	testAddr          = crypto.PubkeyToAddress(testKey.PublicKey)
+	genesis           = &core.Genesis{
+		Config:    params.AllEthashProtocolChanges,
+		Alloc:     core.GenesisAlloc{testAddr: {Balance: big.NewInt(2e15)}},
+		ExtraData: []byte("test genesis"),
+		Timestamp: 9000,
+		BaseFee:   big.NewInt(params.InitialBaseFee),
 	}
-	b, _ := rlp.EncodeToBytes(txs)
-	return b
-}
-
-func randBytes(l uint64) []byte {
-	b := make([]byte, l)
-	rand.Read(b)
-	return b
-}
+)
 
 func TestValidateTxList(t *testing.T) {
 	v := NewTxListValidator(
@@ -85,6 +65,7 @@ func TestValidateTxList(t *testing.T) {
 		})
 	}
 }
+
 func TestIsTxListValid(t *testing.T) {
 	v := NewTxListValidator(
 		maxBlocksGasLimit,
@@ -158,4 +139,36 @@ func TestIsTxListValid(t *testing.T) {
 			require.Equal(t, tt.wantTxIdx, txIdx)
 		})
 	}
+}
+
+func rlpEncodedTransactionBytes(l int, signed bool) []byte {
+	txs := make(types.Transactions, 0)
+	for i := 0; i < l; i++ {
+		var tx *types.Transaction
+		if signed {
+			txData := &types.LegacyTx{
+				Nonce:    1,
+				To:       &testAddr,
+				GasPrice: big.NewInt(100),
+				Value:    big.NewInt(1),
+				Gas:      10,
+			}
+
+			tx = types.MustSignNewTx(testKey, types.LatestSigner(genesis.Config), txData)
+		} else {
+			tx = types.NewTransaction(1, testAddr, big.NewInt(1), 10, big.NewInt(100), nil)
+		}
+		txs = append(
+			txs,
+			tx,
+		)
+	}
+	b, _ := rlp.EncodeToBytes(txs)
+	return b
+}
+
+func randBytes(l uint64) []byte {
+	b := make([]byte, l)
+	rand.Read(b)
+	return b
 }

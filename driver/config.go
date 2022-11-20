@@ -20,6 +20,7 @@ type Config struct {
 	TaikoL2Address                common.Address
 	ThrowawayBlocksBuilderPrivKey *ecdsa.PrivateKey
 	JwtSecret                     string
+	FromGenesis                   bool
 }
 
 // NewConfigFromCliContext creates a new config instance from

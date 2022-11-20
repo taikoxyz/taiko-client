@@ -42,6 +42,9 @@ type Proposer struct {
 	produceInvalidBlocks         bool
 	produceInvalidBlocksInterval uint64
 
+	// Only for testing purposes
+	AfterCommitHook func() error
+
 	ctx context.Context
 	wg  sync.WaitGroup
 }
@@ -53,11 +56,11 @@ func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
 		return err
 	}
 
-	return initFromConfig(ctx, p, cfg)
+	return InitFromConfig(ctx, p, cfg)
 }
 
-// initFromConfig initializes the proposer instance based on the given configurations.
-func initFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
+// InitFromConfig initializes the proposer instance based on the given configurations.
+func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	log.Debug("Proposer configurations", "config", cfg)
 
 	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
@@ -131,14 +134,14 @@ func (p *Proposer) eventLoop() {
 		case <-ticker.C:
 			metrics.ProposerProposeEpochCounter.Inc(1)
 
-			if err := p.proposeOp(p.ctx); err != nil {
+			if err := p.ProposeOp(p.ctx); err != nil {
 				log.Error("Proposing operation error", "error", err)
 				continue
 			}
 
 			// Only for testing purposes
 			if p.produceInvalidBlocks && p.produceInvalidBlocksInterval > 0 {
-				if err := p.proposeInvalidBlocksOp(p.ctx, p.produceInvalidBlocksInterval); err != nil {
+				if err := p.ProposeInvalidBlocksOp(p.ctx, p.produceInvalidBlocksInterval); err != nil {
 					log.Error("Proposing invalid blocks operation error", "error", err)
 				}
 			}
@@ -158,10 +161,10 @@ type commitTxListRes struct {
 	txNum       uint
 }
 
-// proposeOp performs a proposing operation, fetching transactions
+// ProposeOp performs a proposing operation, fetching transactions
 // from L2 node's tx pool, splitting them by proposing constraints,
 // and then proposing them to TaikoL1 contract.
-func (p *Proposer) proposeOp(ctx context.Context) error {
+func (p *Proposer) ProposeOp(ctx context.Context) error {
 	syncProgress, err := p.rpc.L2.SyncProgress(ctx)
 	if err != nil || syncProgress != nil {
 		return fmt.Errorf("l2 node is syncing: %w, syncProgress: %v", err, syncProgress)
@@ -194,6 +197,12 @@ func (p *Proposer) proposeOp(ctx context.Context) error {
 			txListBytes: txListBytes,
 			txNum:       uint(len(txs)),
 		})
+	}
+
+	if p.AfterCommitHook != nil {
+		if err := p.AfterCommitHook(); err != nil {
+			log.Error("Run AfterCommitHook error", "error", err)
+		}
 	}
 
 	for _, commitTxListRes := range commitTxListResQueue {
