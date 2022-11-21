@@ -2,29 +2,25 @@ package driver
 
 import (
 	"context"
-	"testing"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/require"
 )
 
-func TestVerfiyL2Block(t *testing.T) {
-	d := newTestDriver(t)
+func (s *DriverTestSuite) TestVerfiyL2Block() {
+	head, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 
-	genesis, err := d.rpc.L2.HeaderByNumber(context.Background(), common.Big0)
-
-	require.Nil(t, err)
-	require.Nil(t, d.state.VerfiyL2Block(context.Background(), common.Big0, genesis.Hash()))
+	s.Nil(err)
+	s.Nil(s.d.state.VerfiyL2Block(context.Background(), head.Number, head.Hash()))
 }
 
-func TestGetL1Head(t *testing.T) {
-	require.NotNil(t, newTestDriver(t).state.getL1Head())
+func (s *DriverTestSuite) TestGetL1Head() {
+	l1Head := s.d.state.getL1Head()
+	s.NotNil(l1Head)
 }
 
-func TestGetLastFinalizedBlockHash(t *testing.T) {
-	require.NotEqual(t, common.Hash{}, newTestDriver(t).state.getLastFinalizedBlockHash())
+func (s *DriverTestSuite) TestGetLastFinalizedBlockHash() {
+	hash := s.d.state.getLastFinalizedBlockHash()
+	s.NotNil(hash)
 }
 
-func TestGetHeadBlockID(t *testing.T) {
-	require.Equal(t, uint64(0), newTestDriver(t).state.getHeadBlockID().Uint64())
+func (s *DriverTestSuite) TestGetHeadBlockID() {
+	s.Equal(uint64(0), s.d.state.getHeadBlockID().Uint64())
 }

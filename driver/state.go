@@ -226,7 +226,7 @@ func (s *State) setL1Head(l1Head *types.Header) {
 		return
 	}
 
-	log.Info("New L1 head", "height", l1Head.Number, "hash", l1Head.Hash(), "timestamp", l1Head.Time)
+	log.Debug("New L1 head", "height", l1Head.Number, "hash", l1Head.Hash(), "timestamp", l1Head.Time)
 	metrics.DriverL1HeadHeightGauge.Update(l1Head.Number.Int64())
 
 	s.l1Head.Store(l1Head)
@@ -271,7 +271,7 @@ func (s *State) watchBlockFinalized(ctx context.Context) (ethereum.Subscription,
 
 // setLastFinalizedBlockHash sets the last finalized L2 block hash concurrent safely.
 func (s *State) setLastFinalizedBlockHash(id *big.Int, hash common.Hash) {
-	log.Info("New finalized block", "hash", hash)
+	log.Debug("New finalized block", "hash", hash)
 	metrics.DriverL2FinalizedIDGauge.Update(id.Int64())
 	s.l2FinalizedHeadHash.Store(hash)
 }
@@ -307,7 +307,7 @@ func (s *State) watchBlockProposed(ctx context.Context) (ethereum.Subscription, 
 
 // setHeadBlockID sets the last pending block ID concurrent safely.
 func (s *State) setHeadBlockID(id *big.Int) {
-	log.Info("New head block ID", "ID", id)
+	log.Debug("New head block ID", "ID", id)
 	metrics.DriverL2HeadIDGauge.Update(id.Int64())
 	s.l2HeadBlockID.Store(id)
 }

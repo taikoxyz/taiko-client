@@ -70,7 +70,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		return fmt.Errorf("failed to fetch L2 block with given block ID %s: %w", blockID, err)
 	}
 
-	txOpts, err := p.getProveBlocksTxOpts(ctx)
+	txOpts, err := p.getProveBlocksTxOpts(ctx, p.rpc.L1)
 	if err != nil {
 		return err
 	}

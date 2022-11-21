@@ -24,15 +24,25 @@ services:
       - 28546:8546
       - 28551:8551
     command:
-      - --datadir
-      - /root/.ethereum
       - --nodiscover
+      - --gcmode
+      - archive
+      - --syncmode
+      - full
+      - --datadir
+      - /data/taiko-geth
       - --networkid
       - "167"
+      - --metrics
+      - --metrics.expensive
+      - --metrics.addr
+      - "0.0.0.0"
       - --http
       - --http.addr
       - "0.0.0.0"
       - --http.vhosts
+      - "*"
+      - --http.corsdomain
       - "*"
       - --ws
       - --ws.addr
@@ -48,10 +58,8 @@ services:
       - --authrpc.jwtsecret
       - /host/jwt.hex
       - --allow-insecure-unlock
-      - --syncmode
-      - "full"
       - --http.api
-      - "admin,debug,eth,net,web3,txpool,miner,taiko"
+      - admin,debug,eth,net,web3,txpool,miner,taiko
       - --ws.api
-      - "admin,debug,eth,net,web3,txpool,miner,taiko"
+      - admin,debug,eth,net,web3,txpool,miner,taiko
       - --taiko

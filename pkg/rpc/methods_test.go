@@ -3,7 +3,9 @@ package rpc
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
@@ -63,4 +65,50 @@ func TestPoolContentToTxLists(t *testing.T) {
 	}
 
 	require.Equal(t, 5, txLists.Len())
+}
+
+func TestGetGenesisL1Header(t *testing.T) {
+	client := newTestClient(t)
+
+	header, err := client.GetGenesisL1Header(context.Background())
+
+	require.Nil(t, err)
+	require.NotZero(t, header.Number.Uint64())
+}
+
+func TestLatestL2KnownL1Header(t *testing.T) {
+	client := newTestClient(t)
+
+	header, err := client.LatestL2KnownL1Header(context.Background())
+
+	require.Nil(t, err)
+	require.NotZero(t, header.Number.Uint64())
+}
+
+func TestL2ParentByBlockId(t *testing.T) {
+	client := newTestClient(t)
+
+	header, err := client.L2ParentByBlockId(context.Background(), common.Big1)
+	require.Nil(t, err)
+	require.Zero(t, header.Number.Uint64())
+
+	_, err = client.L2ParentByBlockId(context.Background(), common.Big2)
+	require.Nil(t, err)
+}
+
+func TestGetBlockMetadataByID(t *testing.T) {
+	client := newTestClient(t)
+
+	_, err := client.GetBlockMetadataByID(common.Big0)
+	require.ErrorContains(t, err, ethereum.NotFound.Error())
+}
+
+func TestWaitL1OriginTimeout(t *testing.T) {
+	client := newTestClient(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := client.WaitL1Origin(ctx, common.Big1)
+	require.Nil(t, err)
 }

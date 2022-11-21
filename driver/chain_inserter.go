@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -19,7 +20,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/prover"
+	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
 const (
@@ -30,7 +31,7 @@ type L2ChainInserter struct {
 	state                         *State            // Driver's state
 	rpc                           *rpc.Client       // L1/L2 RPC clients
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey // Private key of L2 throwaway blocks builder
-	txListValidator               *prover.TxListValidator
+	txListValidator               *txListValidator.TxListValidator
 }
 
 // NewL2ChainInserter creates a new block inserter instance.
@@ -44,7 +45,7 @@ func NewL2ChainInserter(
 		rpc:                           rpc,
 		state:                         state,
 		throwawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
-		txListValidator: prover.NewTxListValidator(
+		txListValidator: txListValidator.NewTxListValidator(
 			state.maxBlocksGasLimit.Uint64(),
 			state.maxBlockNumTxs.Uint64(),
 			state.maxTxlistBytes.Uint64(),
@@ -157,7 +158,12 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 			L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
 			L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
 			L1BlockHash:   event.Raw.BlockHash,
-			Throwaway:     hint != prover.HintOK,
+			Throwaway:     hint != txListValidator.HintOK,
+		}
+
+		if event.Meta.Timestamp > uint64(time.Now().Unix()) {
+			log.Warn("Future L2 block, waitting", "L2 block timestamp", event.Meta.Timestamp, "now", time.Now().Unix())
+			time.Sleep(time.Until(time.Unix(int64(event.Meta.Timestamp), 0)))
 		}
 
 		var (
@@ -165,7 +171,7 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 			rpcError     error
 			payloadError error
 		)
-		if hint == prover.HintOK {
+		if hint == txListValidator.HintOK {
 			payloadData, rpcError, payloadError = b.insertNewHead(
 				ctx,
 				event,
@@ -193,7 +199,9 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 		}
 
 		if payloadError != nil {
-			log.Warn("Ignore invalid block context", "blockID", event.Id, "payloadError", payloadError)
+			log.Warn(
+				"Ignore invalid block context", "blockID", event.Id, "payloadError", payloadError, "payloadData", payloadData,
+			)
 			continue
 		}
 
@@ -297,7 +305,7 @@ func (b *L2ChainInserter) insertNewHead(
 	return payload, nil, nil
 }
 
-// insertNewHead tries to insert a throw away block to the L2 node's local
+// insertThrowAwayBlock tries to insert a throw away block to the L2 node's local
 // block chain through Engine APIs.
 func (b *L2ChainInserter) insertThrowAwayBlock(
 	ctx context.Context,

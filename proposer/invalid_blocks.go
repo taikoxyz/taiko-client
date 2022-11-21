@@ -12,15 +12,16 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 var (
 	globalEpoch uint64 = 0
 )
 
-// proposeInvalidBlocksOp tries to propose invalid blocks to TaikoL1 contract
+// ProposeInvalidBlocksOp tries to propose invalid blocks to TaikoL1 contract
 // every `interval` normal propose operations.
-func (p *Proposer) proposeInvalidBlocksOp(ctx context.Context, interval uint64) error {
+func (p *Proposer) ProposeInvalidBlocksOp(ctx context.Context, interval uint64) error {
 	globalEpoch += 1
 
 	if globalEpoch%interval != 0 {
@@ -29,7 +30,7 @@ func (p *Proposer) proposeInvalidBlocksOp(ctx context.Context, interval uint64) 
 
 	log.Info("👻 Propose invalid transactions list bytes", "epoch", globalEpoch)
 
-	if err := p.proposeInvalidTxListBytes(ctx); err != nil {
+	if err := p.ProposeInvalidTxListBytes(ctx); err != nil {
 		return fmt.Errorf("failed to propose invalid transaction list bytes: %w", err)
 	}
 
@@ -42,10 +43,10 @@ func (p *Proposer) proposeInvalidBlocksOp(ctx context.Context, interval uint64) 
 	return nil
 }
 
-// proposeInvalidTxListBytes commits and proposes an invalid transaction list
+// ProposeInvalidTxListBytes commits and proposes an invalid transaction list
 // bytes to TaikoL1 contract.
-func (p *Proposer) proposeInvalidTxListBytes(ctx context.Context) error {
-	invalidTxListBytes := randomBytes(256)
+func (p *Proposer) ProposeInvalidTxListBytes(ctx context.Context) error {
+	invalidTxListBytes := testutils.RandomBytes(256)
 	meta, commitTx, err := p.CommitTxList(
 		ctx,
 		invalidTxListBytes,
@@ -53,6 +54,12 @@ func (p *Proposer) proposeInvalidTxListBytes(ctx context.Context) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	if p.AfterCommitHook != nil {
+		if err := p.AfterCommitHook(); err != nil {
+			log.Error("Run AfterCommitHook error", "error", err)
+		}
 	}
 
 	return p.ProposeTxList(ctx, &commitTxListRes{meta, commitTx, invalidTxListBytes, 1})
@@ -76,6 +83,12 @@ func (p *Proposer) proposeTxListIncludingInvalidTx(ctx context.Context) error {
 		return err
 	}
 
+	if p.AfterCommitHook != nil {
+		if err := p.AfterCommitHook(); err != nil {
+			log.Error("Run AfterCommitHook error", "error", err)
+		}
+	}
+
 	return p.ProposeTxList(ctx, &commitTxListRes{meta, commitTx, txListBytes, 1})
 }
 
@@ -96,14 +109,5 @@ func (p *Proposer) generateInvalidTransaction(ctx context.Context) (*types.Trans
 	opts.NoSend = true
 	opts.Nonce = new(big.Int).SetUint64(nonce + 1024)
 
-	return p.rpc.TaikoL2.Anchor(opts, common.Big0, common.BytesToHash(randomBytes(32)))
-}
-
-// randomBytes generates a random bytes.
-func randomBytes(size int) (b []byte) {
-	b = make([]byte, size)
-	if _, err := rand.Read(b); err != nil {
-		log.Crit("Generate random bytes error", "error", err)
-	}
-	return
+	return p.rpc.TaikoL2.Anchor(opts, common.Big0, common.BytesToHash(testutils.RandomBytes(32)))
 }

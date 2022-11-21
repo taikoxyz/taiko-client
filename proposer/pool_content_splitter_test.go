@@ -3,44 +3,43 @@ package proposer
 import (
 	"math/big"
 	"sort"
-	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/testutils"
 )
 
-func TestPoolContentSplit(t *testing.T) {
+func (s *ProposerTestSuite) TestPoolContentSplit() {
 	// Gas limit is smaller than the limit.
 	splitter := &poolContentSplitter{minTxGasLimit: 21000}
 
 	splitted := splitter.split(rpc.PoolContent{
-		common.BytesToAddress(randomBytes(32)): {
+		common.BytesToAddress(testutils.RandomBytes(32)): {
 			"0": types.NewTx(&types.LegacyTx{}),
 		},
 	})
 
-	require.Empty(t, splitted)
+	s.Empty(splitted)
 
 	// Gas limit is larger than the limit.
 	splitter = &poolContentSplitter{minTxGasLimit: 21000}
 
 	splitted = splitter.split(rpc.PoolContent{
-		common.BytesToAddress(randomBytes(32)): {
+		common.BytesToAddress(testutils.RandomBytes(32)): {
 			"0": types.NewTx(&types.LegacyTx{Gas: 21001}),
 		},
 	})
 
-	require.Empty(t, splitted)
+	s.Empty(splitted)
 
 	// Transaction's RLP encoded bytes is larger than the limit.
 	txBytesTooLarge := types.NewTx(&types.LegacyTx{})
 
 	bytes, err := rlp.EncodeToBytes(txBytesTooLarge)
-	require.Nil(t, err)
-	require.NotEmpty(t, bytes)
+	s.Nil(err)
+	s.NotEmpty(bytes)
 
 	splitter = &poolContentSplitter{
 		maxTxBytesPerBlock: uint64(len(bytes) - 1),
@@ -48,17 +47,17 @@ func TestPoolContentSplit(t *testing.T) {
 	}
 
 	splitted = splitter.split(rpc.PoolContent{
-		common.BytesToAddress(randomBytes(32)): {"0": txBytesTooLarge},
+		common.BytesToAddress(testutils.RandomBytes(32)): {"0": txBytesTooLarge},
 	})
 
-	require.Empty(t, splitted)
+	s.Empty(splitted)
 
 	// Transactions that meet the limits
 	tx := types.NewTx(&types.LegacyTx{Gas: 21001})
 
 	bytes, err = rlp.EncodeToBytes(tx)
-	require.Nil(t, err)
-	require.NotEmpty(t, bytes)
+	s.Nil(err)
+	s.NotEmpty(bytes)
 
 	splitter = &poolContentSplitter{
 		minTxGasLimit:      21000,
@@ -68,13 +67,13 @@ func TestPoolContentSplit(t *testing.T) {
 	}
 
 	splitted = splitter.split(rpc.PoolContent{
-		common.BytesToAddress(randomBytes(32)): {"0": tx, "1": tx},
+		common.BytesToAddress(testutils.RandomBytes(32)): {"0": tx, "1": tx},
 	})
 
-	require.Equal(t, 2, len(splitted))
+	s.Equal(2, len(splitted))
 }
 
-func TestWeightedShuffle(t *testing.T) {
+func (s *ProposerTestSuite) TestWeightedShuffle() {
 	splitter := &poolContentSplitter{shufflePoolContent: true}
 
 	txLists := make([]types.Transactions, 1024)
@@ -90,7 +89,7 @@ func TestWeightedShuffle(t *testing.T) {
 	shuffled := splitter.weightedShuffle(txLists)
 
 	// Whether is sorted
-	require.False(t, sort.SliceIsSorted(shuffled, func(i, j int) bool {
+	s.False(sort.SliceIsSorted(shuffled, func(i, j int) bool {
 		var (
 			gasA uint64 = 0
 			gasB uint64 = 0
@@ -108,6 +107,6 @@ func TestWeightedShuffle(t *testing.T) {
 	}))
 
 	for _, txList := range shuffled {
-		require.True(t, sort.IsSorted(types.TxByNonce(txList)))
+		s.True(sort.IsSorted(types.TxByNonce(txList)))
 	}
 }

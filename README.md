@@ -19,6 +19,7 @@ Taiko protocol's client software implementation in Go.
 | `proposer/`         | Proposer sub-command                                                                                                                     |
 | `prover/`           | Prover sub-command                                                                                                                       |
 | `scripts/`          | Helpful scripts                                                                                                                          |
+| `testutils/`        | Test utils                                                                                                                               |
 | `version/`          | Version information                                                                                                                      |
 
 ## Build the source

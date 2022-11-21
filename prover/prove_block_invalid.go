@@ -12,6 +12,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 	"github.com/taikoxyz/taiko-client/prover/producer"
 )
 
@@ -20,7 +21,7 @@ import (
 func (p *Prover) proveBlockInvalid(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
-	hint InvalidTxListReason,
+	hint txListValidator.InvalidTxListReason,
 	invalidTxIndex int,
 ) error {
 	// Get the throwaway block from L2 node.
@@ -125,7 +126,7 @@ func (p *Prover) submitInvalidBlockProof(
 		return err
 	}
 
-	txOpts, err := p.getProveBlocksTxOpts(ctx)
+	txOpts, err := p.getProveBlocksTxOpts(ctx, p.rpc.L1)
 	if err != nil {
 		return err
 	}

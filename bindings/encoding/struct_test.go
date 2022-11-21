@@ -10,37 +10,38 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 var (
 	testHeader = &types.Header{
-		ParentHash:  randomHash(),
+		ParentHash:  testutils.RandomHash(),
 		UncleHash:   types.EmptyUncleHash,
-		Coinbase:    common.BytesToAddress(randomHash().Bytes()),
-		Root:        randomHash(),
-		TxHash:      randomHash(),
-		ReceiptHash: randomHash(),
-		Bloom:       types.BytesToBloom(randomHash().Bytes()),
+		Coinbase:    common.BytesToAddress(testutils.RandomHash().Bytes()),
+		Root:        testutils.RandomHash(),
+		TxHash:      testutils.RandomHash(),
+		ReceiptHash: testutils.RandomHash(),
+		Bloom:       types.BytesToBloom(testutils.RandomHash().Bytes()),
 		Difficulty:  new(big.Int).SetUint64(rand.Uint64()),
 		Number:      new(big.Int).SetUint64(rand.Uint64()),
 		GasLimit:    rand.Uint64(),
 		GasUsed:     rand.Uint64(),
 		Time:        uint64(time.Now().Unix()),
-		Extra:       randomHash().Bytes(),
-		MixDigest:   randomHash(),
+		Extra:       testutils.RandomHash().Bytes(),
+		MixDigest:   testutils.RandomHash(),
 		Nonce:       types.EncodeNonce(rand.Uint64()),
 		BaseFee:     new(big.Int).SetUint64(rand.Uint64()),
 	}
 	testMeta = bindings.LibDataBlockMetadata{
 		Id:          new(big.Int).SetUint64(rand.Uint64()),
 		L1Height:    new(big.Int).SetUint64(rand.Uint64()),
-		L1Hash:      randomHash(),
-		Beneficiary: common.BytesToAddress(randomHash().Bytes()),
+		L1Hash:      testutils.RandomHash(),
+		Beneficiary: common.BytesToAddress(testutils.RandomHash().Bytes()),
 		GasLimit:    rand.Uint64(),
 		Timestamp:   uint64(time.Now().Unix()),
-		TxListHash:  randomHash(),
-		MixHash:     randomHash(),
-		ExtraData:   randomHash().Bytes(),
+		TxListHash:  testutils.RandomHash(),
+		MixHash:     testutils.RandomHash(),
+		ExtraData:   testutils.RandomHash().Bytes(),
 	}
 )
 
@@ -85,13 +86,4 @@ func TestFromGethHeaderLegacyTx(t *testing.T) {
 	require.Equal(t, testHeader.MixDigest, common.BytesToHash(header.MixHash[:]))
 	require.Equal(t, testHeader.Nonce.Uint64(), header.Nonce)
 	require.Equal(t, new(big.Int).SetInt64(0).Uint64(), header.BaseFeePerGas.Uint64())
-}
-
-// randomHash generates a random blob of data and returns it as a hash.
-func randomHash() common.Hash {
-	var hash common.Hash
-	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
-		panic(err)
-	}
-	return hash
 }

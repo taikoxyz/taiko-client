@@ -12,14 +12,14 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-type Subcommand interface {
+type SubcommandApplication interface {
 	InitFromCli(context.Context, *cli.Context) error
 	Name() string
 	Start() error
 	Close()
 }
 
-func SubcommandAction(app Subcommand) cli.ActionFunc {
+func SubcommandAction(app SubcommandApplication) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		logger.InitLogger(c)
 

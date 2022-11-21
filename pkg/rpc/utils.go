@@ -3,11 +3,14 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -78,4 +81,8 @@ func GetReceiptsByBlock(ctx context.Context, cli *ethclient.Client, block *types
 	}
 
 	return receipts, g.Wait()
+}
+
+func SetHead(ctx context.Context, rpc *rpc.Client, headNum *big.Int) error {
+	return gethclient.New(rpc).SetHead(ctx, headNum)
 }

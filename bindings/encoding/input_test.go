@@ -7,14 +7,15 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
+	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 func TestEncodeEvidence(t *testing.T) {
 	evidence := &TaikoL1Evidence{
 		Meta:   testMeta,
 		Header: *FromGethHeader(testHeader),
-		Prover: common.BytesToAddress(randomHash().Bytes()),
-		Proofs: [][]byte{randomHash().Bytes(), randomHash().Bytes(), randomHash().Bytes()},
+		Prover: common.BytesToAddress(testutils.RandomHash().Bytes()),
+		Proofs: [][]byte{testutils.RandomHash().Bytes(), testutils.RandomHash().Bytes(), testutils.RandomHash().Bytes()},
 	}
 
 	b, err := EncodeEvidence(evidence)
@@ -24,11 +25,11 @@ func TestEncodeEvidence(t *testing.T) {
 }
 
 func TestEncodeCommitHash(t *testing.T) {
-	require.NotEmpty(t, EncodeCommitHash(common.BytesToAddress(randomHash().Bytes()), randomHash()))
+	require.NotEmpty(t, EncodeCommitHash(common.BytesToAddress(testutils.RandomHash().Bytes()), testutils.RandomHash()))
 }
 
 func TestEncodeProposeBlockInput(t *testing.T) {
-	encoded, err := EncodeProposeBlockInput(&testMeta, randomHash().Bytes())
+	encoded, err := EncodeProposeBlockInput(&testMeta, testutils.RandomHash().Bytes())
 
 	require.Nil(t, err)
 	require.NotNil(t, encoded)
@@ -39,12 +40,17 @@ func TestEncodeProveBlockInput(t *testing.T) {
 		&TaikoL1Evidence{
 			Meta:   testMeta,
 			Header: *FromGethHeader(testHeader),
-			Prover: common.BytesToAddress(randomHash().Bytes()),
+			Prover: common.BytesToAddress(testutils.RandomHash().Bytes()),
 		},
 		types.NewTransaction(
-			0, common.BytesToAddress(randomHash().Bytes()), common.Big0, 0, common.Big0, randomHash().Bytes(),
+			0,
+			common.BytesToAddress(testutils.RandomHash().Bytes()),
+			common.Big0,
+			0,
+			common.Big0,
+			testutils.RandomHash().Bytes(),
 		),
-		types.NewReceipt(randomHash().Bytes(), false, 1024),
+		types.NewReceipt(testutils.RandomHash().Bytes(), false, 1024),
 	)
 
 	require.Nil(t, err)
@@ -56,10 +62,10 @@ func TestEncodeProveBlockInvalidInput(t *testing.T) {
 		&TaikoL1Evidence{
 			Meta:   testMeta,
 			Header: *FromGethHeader(testHeader),
-			Prover: common.BytesToAddress(randomHash().Bytes()),
+			Prover: common.BytesToAddress(testutils.RandomHash().Bytes()),
 		},
 		&testMeta,
-		types.NewReceipt(randomHash().Bytes(), false, 1024),
+		types.NewReceipt(testutils.RandomHash().Bytes(), false, 1024),
 	)
 
 	require.Nil(t, err)
@@ -67,7 +73,7 @@ func TestEncodeProveBlockInvalidInput(t *testing.T) {
 }
 
 func TestUnpackTxListBytes(t *testing.T) {
-	_, err := UnpackTxListBytes(randomHash().Bytes())
+	_, err := UnpackTxListBytes(testutils.RandomHash().Bytes())
 	require.NotNil(t, err)
 
 	_, err = UnpackTxListBytes(

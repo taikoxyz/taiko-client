@@ -1,4 +1,4 @@
-package prover
+package tx_list_validator
 
 import (
 	"fmt"
@@ -53,7 +53,7 @@ func NewTxListValidator(
 	chainID *big.Int,
 ) *TxListValidator {
 	return &TxListValidator{
-		maxBlocksGasLimit: maxBlockNumTxs,
+		maxBlocksGasLimit: maxBlocksGasLimit,
 		maxBlockNumTxs:    maxBlockNumTxs,
 		maxTxlistBytes:    maxTxlistBytes,
 		minTxGasLimit:     minTxGasLimit,
@@ -73,6 +73,7 @@ func (v *TxListValidator) ValidateTxList(
 	}
 
 	hint, txIdx = v.IsTxListValid(blockID, txListBytes)
+
 	return hint, txIdx, nil
 }
 

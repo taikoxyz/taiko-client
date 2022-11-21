@@ -35,7 +35,7 @@ trap "docker compose -f $TESTNET_CONFIG down" EXIT INT KILL ERR
 
 RUN_TESTS=${RUN_TESTS:-false}
 
-if [ "$RUN_TESTS" == "true"  ]; then
+if [ "$RUN_TESTS" == "true" ]; then
     L1_NODE_ENDPOINT=ws://localhost:18546 \
     L2_NODE_ENDPOINT=ws://localhost:28546 \
     L2_NODE_ENGINE_ENDPOINT=http://localhost:28551 \
@@ -46,7 +46,7 @@ if [ "$RUN_TESTS" == "true"  ]; then
     L1_PROVER_PRIVATE_KEY=2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
     THROWAWAY_BLOCKS_BUILDER_PRIV_KEY=2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
     JWT_SECRET=$DIR/testnet/jwt.hex \
-        go test -v ./... -coverprofile=coverage.out -covermode=atomic -timeout 30s
+        go test -v -p=1 ./... -coverprofile=coverage.out -covermode=atomic -timeout=300s
 else
     echo "💻 Local dev net started"
     docker-compose -f $TESTNET_CONFIG logs -f l2_node
