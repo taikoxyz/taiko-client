@@ -22,12 +22,20 @@ type ClientTestSuite struct {
 }
 
 func (s *ClientTestSuite) SetupTest() {
+	// Default logger
 	log.Root().SetHandler(
-		log.LvlFilterHandler(
-			log.LvlDebug,
-			log.StreamHandler(os.Stdout, log.TerminalFormat(true)),
-		),
+		log.LvlFilterHandler(log.LvlInfo, log.StreamHandler(os.Stdout, log.TerminalFormat(true))),
 	)
+
+	if os.Getenv("LOG_LEVEL") != "" {
+		level, err := log.LvlFromString(os.Getenv("LOG_LEVEL"))
+		if err != nil {
+			log.Crit("Invalid log level", "level", os.Getenv("LOG_LEVEL"))
+		}
+		log.Root().SetHandler(
+			log.LvlFilterHandler(level, log.StreamHandler(os.Stdout, log.TerminalFormat(true))),
+		)
+	}
 
 	testAddrPrivKey, err := crypto.ToECDSA(
 		common.Hex2Bytes("2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200"),

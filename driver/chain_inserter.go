@@ -403,8 +403,6 @@ func (b *L2ChainInserter) createExecutionPayloads(
 		return nil, err, nil
 	}
 
-	log.Info("getPayload", "payload", payload)
-
 	// Step 3, execute the payload
 	execStatus, err := b.rpc.L2Engine.NewPayload(ctx, payload)
 	if err != nil {
