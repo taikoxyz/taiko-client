@@ -117,12 +117,12 @@ func (s *ProverTestSuite) TestOnBlockProposedTxNotFound() {
 	)
 }
 
-func (s *ProverTestSuite) TestOnBlockFinalizedEmptyBlockHash() {
-	s.Nil(s.p.onBlockFinalized(context.Background(), &bindings.TaikoL1ClientBlockFinalized{BlockHash: common.Hash{}}))
+func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
+	s.Nil(s.p.onBlockVerified(context.Background(), &bindings.TaikoL1ClientBlockVerified{BlockHash: common.Hash{}}))
 }
 
 func (s *ProverTestSuite) TestOnForceTimerEventNotFound() {
-	// All proposed blocks are finalized
+	// All proposed blocks are verified
 	s.Nil(s.p.onForceTimer(context.Background()))
 }
 

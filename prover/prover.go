@@ -45,13 +45,13 @@ type Prover struct {
 	maxPendingBlocks uint64
 
 	// States
-	lastFinalizedHeader *types.Header
+	lastVerifiedHeader *types.Header
 
 	// Subscriptions
-	blockProposedCh   chan *bindings.TaikoL1ClientBlockProposed
-	blockProposedSub  event.Subscription
-	blockFinalizedCh  chan *bindings.TaikoL1ClientBlockFinalized
-	blockFinalizedSub event.Subscription
+	blockProposedCh  chan *bindings.TaikoL1ClientBlockProposed
+	blockProposedSub event.Subscription
+	blockVerifiedCh  chan *bindings.TaikoL1ClientBlockVerified
+	blockVerifiedSub event.Subscription
 
 	// Proof related
 	proveValidProofCh   chan *producer.ProofWithHeader
@@ -119,7 +119,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.maxPendingBlocks = maxPendingBlocks.Uint64()
 	p.anchorGasLimit = anchorGasLimit.Uint64()
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, 10)
-	p.blockFinalizedCh = make(chan *bindings.TaikoL1ClientBlockFinalized, 10)
+	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, 10)
 	p.proveValidProofCh = make(chan *producer.ProofWithHeader, 10)
 	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, 10)
 
@@ -170,9 +170,9 @@ func (p *Prover) eventLoop() {
 			if err := p.onBlockProposed(p.ctx, e); err != nil {
 				log.Error("Handle BlockProposed event error", "error", err)
 			}
-		case e := <-p.blockFinalizedCh:
-			if err := p.onBlockFinalized(p.ctx, e); err != nil {
-				log.Error("Handle BlockFinalized event error", "error", err)
+		case e := <-p.blockVerifiedCh:
+			if err := p.onBlockVerified(p.ctx, e); err != nil {
+				log.Error("Handle BlockVerified event error", "error", err)
 			}
 		case proofWithHeader := <-p.proveValidProofCh:
 			if err := p.submitValidBlockProof(p.ctx, proofWithHeader); err != nil {
@@ -217,14 +217,14 @@ func (p *Prover) onBlockProposed(ctx context.Context, event *bindings.TaikoL1Cli
 	return p.proveBlockInvalid(ctx, event, hint, invalidTxIndex)
 }
 
-// onBlockFinalized update the lastFinalized block in current state.
-func (p *Prover) onBlockFinalized(ctx context.Context, event *bindings.TaikoL1ClientBlockFinalized) error {
+// onBlockVerified update the lastVerified block in current state.
+func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
 	if event.BlockHash == (common.Hash{}) {
-		log.Info("Ignore BlockFinalized event of invalid transaction list", "blockID", event.Id)
+		log.Info("Ignore BlockVerified event of invalid transaction list", "blockID", event.Id)
 		return nil
 	}
 
-	metrics.ProverLatestFinalizedIDGauge.Update(event.Id.Int64())
+	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
 
 	l2BlockHeader, err := p.rpc.L2.HeaderByHash(ctx, event.BlockHash)
 	if err != nil {
@@ -232,34 +232,34 @@ func (p *Prover) onBlockFinalized(ctx context.Context, event *bindings.TaikoL1Cl
 	}
 
 	log.Info(
-		"New finalized block",
+		"New verified block",
 		"blockID", event.Id,
 		"height", l2BlockHeader.Number,
 		"hash", common.BytesToHash(event.BlockHash[:]),
 	)
-	p.lastFinalizedHeader = l2BlockHeader
+	p.lastVerifiedHeader = l2BlockHeader
 
 	return nil
 }
 
-// onForceTimer fetches the oldest unfinalized block and if it is still not proven, then prove it.
+// onForceTimer fetches the oldest unverified block and if it is still not proven, then prove it.
 func (p *Prover) onForceTimer(ctx context.Context) error {
-	_, _, latestFinalizedID, nextBlockID, err := p.rpc.TaikoL1.GetStateVariables(nil)
+	_, _, latestVerifiedID, nextBlockID, err := p.rpc.TaikoL1.GetStateVariables(nil)
 	if err != nil {
 		return fmt.Errorf("failed to get TaikoL1 state variables: %w", err)
 	}
 
-	log.Debug("TaikoL1 state variables", "latestFinalizedID", latestFinalizedID, "nextBlockID", nextBlockID)
+	log.Debug("TaikoL1 state variables", "latestVerifiedID", latestVerifiedID, "nextBlockID", nextBlockID)
 
-	if latestFinalizedID == nextBlockID-1 {
-		log.Info("All proposed blocks are finalized")
+	if latestVerifiedID == nextBlockID-1 {
+		log.Info("All proposed blocks are verified")
 		return nil
 	}
 
-	// Check whether the oldest unfinalized block is still unproved.
-	oldestUnfinalizedBlockID := new(big.Int).SetUint64(latestFinalizedID + 1)
+	// Check whether the oldest unverified block is still unproved.
+	oldestUnverifiedBlockID := new(big.Int).SetUint64(latestVerifiedID + 1)
 
-	proposedBlock, err := p.rpc.TaikoL1.GetProposedBlock(nil, oldestUnfinalizedBlockID)
+	proposedBlock, err := p.rpc.TaikoL1.GetProposedBlock(nil, oldestUnverifiedBlockID)
 	if err != nil {
 		return fmt.Errorf("failed to get proposed block: %w", err)
 	}
@@ -271,7 +271,7 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 
 	blockProvenIter, err := p.rpc.TaikoL1.FilterBlockProven(
 		&bind.FilterOpts{Start: commitHeight.Uint64()},
-		[]*big.Int{oldestUnfinalizedBlockID},
+		[]*big.Int{oldestUnverifiedBlockID},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to filter BlockProven events: %w", err)
@@ -281,9 +281,9 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 		return nil
 	}
 
-	log.Info("Oldest unproved block ID", "blockID", oldestUnfinalizedBlockID)
+	log.Info("Oldest unproved block ID", "blockID", oldestUnverifiedBlockID)
 
-	l1Origin, err := p.rpc.L2.L1OriginByID(ctx, oldestUnfinalizedBlockID)
+	l1Origin, err := p.rpc.L2.L1OriginByID(ctx, oldestUnverifiedBlockID)
 	if err != nil {
 		return fmt.Errorf("failed to get L1Origin: %w", err)
 	}
@@ -291,7 +291,7 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 	filterHeight := l1Origin.L1BlockHeight.Uint64()
 	blockProposedIter, err := p.rpc.TaikoL1.FilterBlockProposed(
 		&bind.FilterOpts{Start: filterHeight, End: &filterHeight},
-		[]*big.Int{oldestUnfinalizedBlockID},
+		[]*big.Int{oldestUnverifiedBlockID},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to filter BlockProposed events: %w", err)
@@ -302,7 +302,7 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 	}
 
 	return fmt.Errorf("BlockProposed events not found, blockID: %d, l1Height: %d",
-		oldestUnfinalizedBlockID, filterHeight,
+		oldestUnverifiedBlockID, filterHeight,
 	)
 }
 

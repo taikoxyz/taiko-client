@@ -17,8 +17,8 @@ cd ${TAIKO_GETH_DIR} &&
   cd -
 
 cd ${TAIKO_MONO_DIR}/packages/protocol &&
-  yarn clean &&
-  yarn compile &&
+  pnpm clean &&
+  pnpm compile &&
   cd -
 
 ABIGEN_BIN=$TAIKO_GETH_DIR/build/bin/abigen

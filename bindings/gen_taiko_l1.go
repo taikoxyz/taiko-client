@@ -48,7 +48,7 @@ type LibDataProposedBlock struct {
 
 // TaikoL1ClientMetaData contains all meta data concerning the TaikoL1Client contract.
 var TaikoL1ClientMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"hash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"validSince\",\"type\":\"uint256\"}],\"name\":\"BlockCommitted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"}],\"name\":\"BlockFinalized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"l1Height\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"l1Hash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"gasLimit\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"txListHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"mixHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"extraData\",\"type\":\"bytes\"}],\"indexed\":false,\"internalType\":\"structLibData.BlockMetadata\",\"name\":\"meta\",\"type\":\"tuple\"}],\"name\":\"BlockProposed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"parentHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"provenAt\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"name\":\"BlockProven\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"height\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"srcHeight\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"srcHash\",\"type\":\"bytes32\"}],\"name\":\"HeaderSynced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"commitHash\",\"type\":\"bytes32\"}],\"name\":\"commitBlock\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"maxBlocks\",\"type\":\"uint256\"}],\"name\":\"finalizeBlocks\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"commitHash\",\"type\":\"bytes32\"}],\"name\":\"getCommitHeight\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getConstants\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"},{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getLatestSyncedHeader\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"getProposedBlock\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"metaHash\",\"type\":\"bytes32\"}],\"internalType\":\"structLibData.ProposedBlock\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getStateVariables\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"number\",\"type\":\"uint256\"}],\"name\":\"getSyncedHeader\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"_genesisBlockHash\",\"type\":\"bytes32\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"hash\",\"type\":\"bytes32\"}],\"name\":\"isCommitValid\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes[]\",\"name\":\"inputs\",\"type\":\"bytes[]\"}],\"name\":\"proposeBlock\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockIndex\",\"type\":\"uint256\"},{\"internalType\":\"bytes[]\",\"name\":\"inputs\",\"type\":\"bytes[]\"}],\"name\":\"proveBlock\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockIndex\",\"type\":\"uint256\"},{\"internalType\":\"bytes[]\",\"name\":\"inputs\",\"type\":\"bytes[]\"}],\"name\":\"proveBlockInvalid\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"hash\",\"type\":\"bytes32\"},{\"internalType\":\"uint8\",\"name\":\"k\",\"type\":\"uint8\"}],\"name\":\"signWithGoldFinger\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"v\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"r\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"s\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"state\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"genesisHeight\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"latestFinalizedHeight\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"latestFinalizedId\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"nextBlockId\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"hash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"validSince\",\"type\":\"uint256\"}],\"name\":\"BlockCommitted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"l1Height\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"l1Hash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"gasLimit\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"txListHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"mixHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"extraData\",\"type\":\"bytes\"}],\"indexed\":false,\"internalType\":\"structLibData.BlockMetadata\",\"name\":\"meta\",\"type\":\"tuple\"}],\"name\":\"BlockProposed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"parentHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"provenAt\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"name\":\"BlockProven\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"}],\"name\":\"BlockVerified\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"height\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"srcHeight\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"srcHash\",\"type\":\"bytes32\"}],\"name\":\"HeaderSynced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"whitelisted\",\"type\":\"bool\"}],\"name\":\"ProverWhitelisted\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"commitHash\",\"type\":\"bytes32\"}],\"name\":\"commitBlock\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"commitHash\",\"type\":\"bytes32\"}],\"name\":\"getCommitHeight\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getConstants\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"},{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getLatestSyncedHeader\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"getProposedBlock\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"metaHash\",\"type\":\"bytes32\"}],\"internalType\":\"structLibData.ProposedBlock\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getStateVariables\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"number\",\"type\":\"uint256\"}],\"name\":\"getSyncedHeader\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"_genesisBlockHash\",\"type\":\"bytes32\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"hash\",\"type\":\"bytes32\"}],\"name\":\"isCommitValid\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"name\":\"isProverWhitelisted\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes[]\",\"name\":\"inputs\",\"type\":\"bytes[]\"}],\"name\":\"proposeBlock\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockIndex\",\"type\":\"uint256\"},{\"internalType\":\"bytes[]\",\"name\":\"inputs\",\"type\":\"bytes[]\"}],\"name\":\"proveBlock\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockIndex\",\"type\":\"uint256\"},{\"internalType\":\"bytes[]\",\"name\":\"inputs\",\"type\":\"bytes[]\"}],\"name\":\"proveBlockInvalid\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"hash\",\"type\":\"bytes32\"},{\"internalType\":\"uint8\",\"name\":\"k\",\"type\":\"uint8\"}],\"name\":\"signWithGoldenTouch\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"v\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"r\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"s\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"state\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"genesisHeight\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"latestVerifiedHeight\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"latestVerifiedId\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"nextBlockId\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"maxBlocks\",\"type\":\"uint256\"}],\"name\":\"verifyBlocks\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"whitelisted\",\"type\":\"bool\"}],\"name\":\"whitelistProver\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // TaikoL1ClientABI is the input ABI used to generate the binding from.
@@ -460,6 +460,37 @@ func (_TaikoL1Client *TaikoL1ClientCallerSession) IsCommitValid(hash [32]byte) (
 	return _TaikoL1Client.Contract.IsCommitValid(&_TaikoL1Client.CallOpts, hash)
 }
 
+// IsProverWhitelisted is a free data retrieval call binding the contract method 0x664d0896.
+//
+// Solidity: function isProverWhitelisted(address prover) view returns(bool)
+func (_TaikoL1Client *TaikoL1ClientCaller) IsProverWhitelisted(opts *bind.CallOpts, prover common.Address) (bool, error) {
+	var out []interface{}
+	err := _TaikoL1Client.contract.Call(opts, &out, "isProverWhitelisted", prover)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// IsProverWhitelisted is a free data retrieval call binding the contract method 0x664d0896.
+//
+// Solidity: function isProverWhitelisted(address prover) view returns(bool)
+func (_TaikoL1Client *TaikoL1ClientSession) IsProverWhitelisted(prover common.Address) (bool, error) {
+	return _TaikoL1Client.Contract.IsProverWhitelisted(&_TaikoL1Client.CallOpts, prover)
+}
+
+// IsProverWhitelisted is a free data retrieval call binding the contract method 0x664d0896.
+//
+// Solidity: function isProverWhitelisted(address prover) view returns(bool)
+func (_TaikoL1Client *TaikoL1ClientCallerSession) IsProverWhitelisted(prover common.Address) (bool, error) {
+	return _TaikoL1Client.Contract.IsProverWhitelisted(&_TaikoL1Client.CallOpts, prover)
+}
+
 // Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
 //
 // Solidity: function owner() view returns(address)
@@ -553,16 +584,16 @@ func (_TaikoL1Client *TaikoL1ClientCallerSession) Resolve0(chainId *big.Int, nam
 	return _TaikoL1Client.Contract.Resolve0(&_TaikoL1Client.CallOpts, chainId, name)
 }
 
-// SignWithGoldFinger is a free data retrieval call binding the contract method 0x80aa0158.
+// SignWithGoldenTouch is a free data retrieval call binding the contract method 0xdadec12a.
 //
-// Solidity: function signWithGoldFinger(bytes32 hash, uint8 k) view returns(uint8 v, uint256 r, uint256 s)
-func (_TaikoL1Client *TaikoL1ClientCaller) SignWithGoldFinger(opts *bind.CallOpts, hash [32]byte, k uint8) (struct {
+// Solidity: function signWithGoldenTouch(bytes32 hash, uint8 k) view returns(uint8 v, uint256 r, uint256 s)
+func (_TaikoL1Client *TaikoL1ClientCaller) SignWithGoldenTouch(opts *bind.CallOpts, hash [32]byte, k uint8) (struct {
 	V uint8
 	R *big.Int
 	S *big.Int
 }, error) {
 	var out []interface{}
-	err := _TaikoL1Client.contract.Call(opts, &out, "signWithGoldFinger", hash, k)
+	err := _TaikoL1Client.contract.Call(opts, &out, "signWithGoldenTouch", hash, k)
 
 	outstruct := new(struct {
 		V uint8
@@ -581,53 +612,53 @@ func (_TaikoL1Client *TaikoL1ClientCaller) SignWithGoldFinger(opts *bind.CallOpt
 
 }
 
-// SignWithGoldFinger is a free data retrieval call binding the contract method 0x80aa0158.
+// SignWithGoldenTouch is a free data retrieval call binding the contract method 0xdadec12a.
 //
-// Solidity: function signWithGoldFinger(bytes32 hash, uint8 k) view returns(uint8 v, uint256 r, uint256 s)
-func (_TaikoL1Client *TaikoL1ClientSession) SignWithGoldFinger(hash [32]byte, k uint8) (struct {
+// Solidity: function signWithGoldenTouch(bytes32 hash, uint8 k) view returns(uint8 v, uint256 r, uint256 s)
+func (_TaikoL1Client *TaikoL1ClientSession) SignWithGoldenTouch(hash [32]byte, k uint8) (struct {
 	V uint8
 	R *big.Int
 	S *big.Int
 }, error) {
-	return _TaikoL1Client.Contract.SignWithGoldFinger(&_TaikoL1Client.CallOpts, hash, k)
+	return _TaikoL1Client.Contract.SignWithGoldenTouch(&_TaikoL1Client.CallOpts, hash, k)
 }
 
-// SignWithGoldFinger is a free data retrieval call binding the contract method 0x80aa0158.
+// SignWithGoldenTouch is a free data retrieval call binding the contract method 0xdadec12a.
 //
-// Solidity: function signWithGoldFinger(bytes32 hash, uint8 k) view returns(uint8 v, uint256 r, uint256 s)
-func (_TaikoL1Client *TaikoL1ClientCallerSession) SignWithGoldFinger(hash [32]byte, k uint8) (struct {
+// Solidity: function signWithGoldenTouch(bytes32 hash, uint8 k) view returns(uint8 v, uint256 r, uint256 s)
+func (_TaikoL1Client *TaikoL1ClientCallerSession) SignWithGoldenTouch(hash [32]byte, k uint8) (struct {
 	V uint8
 	R *big.Int
 	S *big.Int
 }, error) {
-	return _TaikoL1Client.Contract.SignWithGoldFinger(&_TaikoL1Client.CallOpts, hash, k)
+	return _TaikoL1Client.Contract.SignWithGoldenTouch(&_TaikoL1Client.CallOpts, hash, k)
 }
 
 // State is a free data retrieval call binding the contract method 0xc19d93fb.
 //
-// Solidity: function state() view returns(uint64 genesisHeight, uint64 latestFinalizedHeight, uint64 latestFinalizedId, uint64 nextBlockId)
+// Solidity: function state() view returns(uint64 genesisHeight, uint64 latestVerifiedHeight, uint64 latestVerifiedId, uint64 nextBlockId)
 func (_TaikoL1Client *TaikoL1ClientCaller) State(opts *bind.CallOpts) (struct {
-	GenesisHeight         uint64
-	LatestFinalizedHeight uint64
-	LatestFinalizedId     uint64
-	NextBlockId           uint64
+	GenesisHeight        uint64
+	LatestVerifiedHeight uint64
+	LatestVerifiedId     uint64
+	NextBlockId          uint64
 }, error) {
 	var out []interface{}
 	err := _TaikoL1Client.contract.Call(opts, &out, "state")
 
 	outstruct := new(struct {
-		GenesisHeight         uint64
-		LatestFinalizedHeight uint64
-		LatestFinalizedId     uint64
-		NextBlockId           uint64
+		GenesisHeight        uint64
+		LatestVerifiedHeight uint64
+		LatestVerifiedId     uint64
+		NextBlockId          uint64
 	})
 	if err != nil {
 		return *outstruct, err
 	}
 
 	outstruct.GenesisHeight = *abi.ConvertType(out[0], new(uint64)).(*uint64)
-	outstruct.LatestFinalizedHeight = *abi.ConvertType(out[1], new(uint64)).(*uint64)
-	outstruct.LatestFinalizedId = *abi.ConvertType(out[2], new(uint64)).(*uint64)
+	outstruct.LatestVerifiedHeight = *abi.ConvertType(out[1], new(uint64)).(*uint64)
+	outstruct.LatestVerifiedId = *abi.ConvertType(out[2], new(uint64)).(*uint64)
 	outstruct.NextBlockId = *abi.ConvertType(out[3], new(uint64)).(*uint64)
 
 	return *outstruct, err
@@ -636,24 +667,24 @@ func (_TaikoL1Client *TaikoL1ClientCaller) State(opts *bind.CallOpts) (struct {
 
 // State is a free data retrieval call binding the contract method 0xc19d93fb.
 //
-// Solidity: function state() view returns(uint64 genesisHeight, uint64 latestFinalizedHeight, uint64 latestFinalizedId, uint64 nextBlockId)
+// Solidity: function state() view returns(uint64 genesisHeight, uint64 latestVerifiedHeight, uint64 latestVerifiedId, uint64 nextBlockId)
 func (_TaikoL1Client *TaikoL1ClientSession) State() (struct {
-	GenesisHeight         uint64
-	LatestFinalizedHeight uint64
-	LatestFinalizedId     uint64
-	NextBlockId           uint64
+	GenesisHeight        uint64
+	LatestVerifiedHeight uint64
+	LatestVerifiedId     uint64
+	NextBlockId          uint64
 }, error) {
 	return _TaikoL1Client.Contract.State(&_TaikoL1Client.CallOpts)
 }
 
 // State is a free data retrieval call binding the contract method 0xc19d93fb.
 //
-// Solidity: function state() view returns(uint64 genesisHeight, uint64 latestFinalizedHeight, uint64 latestFinalizedId, uint64 nextBlockId)
+// Solidity: function state() view returns(uint64 genesisHeight, uint64 latestVerifiedHeight, uint64 latestVerifiedId, uint64 nextBlockId)
 func (_TaikoL1Client *TaikoL1ClientCallerSession) State() (struct {
-	GenesisHeight         uint64
-	LatestFinalizedHeight uint64
-	LatestFinalizedId     uint64
-	NextBlockId           uint64
+	GenesisHeight        uint64
+	LatestVerifiedHeight uint64
+	LatestVerifiedId     uint64
+	NextBlockId          uint64
 }, error) {
 	return _TaikoL1Client.Contract.State(&_TaikoL1Client.CallOpts)
 }
@@ -677,27 +708,6 @@ func (_TaikoL1Client *TaikoL1ClientSession) CommitBlock(commitHash [32]byte) (*t
 // Solidity: function commitBlock(bytes32 commitHash) returns()
 func (_TaikoL1Client *TaikoL1ClientTransactorSession) CommitBlock(commitHash [32]byte) (*types.Transaction, error) {
 	return _TaikoL1Client.Contract.CommitBlock(&_TaikoL1Client.TransactOpts, commitHash)
-}
-
-// FinalizeBlocks is a paid mutator transaction binding the contract method 0x64eed0c8.
-//
-// Solidity: function finalizeBlocks(uint256 maxBlocks) returns()
-func (_TaikoL1Client *TaikoL1ClientTransactor) FinalizeBlocks(opts *bind.TransactOpts, maxBlocks *big.Int) (*types.Transaction, error) {
-	return _TaikoL1Client.contract.Transact(opts, "finalizeBlocks", maxBlocks)
-}
-
-// FinalizeBlocks is a paid mutator transaction binding the contract method 0x64eed0c8.
-//
-// Solidity: function finalizeBlocks(uint256 maxBlocks) returns()
-func (_TaikoL1Client *TaikoL1ClientSession) FinalizeBlocks(maxBlocks *big.Int) (*types.Transaction, error) {
-	return _TaikoL1Client.Contract.FinalizeBlocks(&_TaikoL1Client.TransactOpts, maxBlocks)
-}
-
-// FinalizeBlocks is a paid mutator transaction binding the contract method 0x64eed0c8.
-//
-// Solidity: function finalizeBlocks(uint256 maxBlocks) returns()
-func (_TaikoL1Client *TaikoL1ClientTransactorSession) FinalizeBlocks(maxBlocks *big.Int) (*types.Transaction, error) {
-	return _TaikoL1Client.Contract.FinalizeBlocks(&_TaikoL1Client.TransactOpts, maxBlocks)
 }
 
 // Init is a paid mutator transaction binding the contract method 0x2cc0b254.
@@ -824,6 +834,48 @@ func (_TaikoL1Client *TaikoL1ClientSession) TransferOwnership(newOwner common.Ad
 // Solidity: function transferOwnership(address newOwner) returns()
 func (_TaikoL1Client *TaikoL1ClientTransactorSession) TransferOwnership(newOwner common.Address) (*types.Transaction, error) {
 	return _TaikoL1Client.Contract.TransferOwnership(&_TaikoL1Client.TransactOpts, newOwner)
+}
+
+// VerifyBlocks is a paid mutator transaction binding the contract method 0x2fb5ae0a.
+//
+// Solidity: function verifyBlocks(uint256 maxBlocks) returns()
+func (_TaikoL1Client *TaikoL1ClientTransactor) VerifyBlocks(opts *bind.TransactOpts, maxBlocks *big.Int) (*types.Transaction, error) {
+	return _TaikoL1Client.contract.Transact(opts, "verifyBlocks", maxBlocks)
+}
+
+// VerifyBlocks is a paid mutator transaction binding the contract method 0x2fb5ae0a.
+//
+// Solidity: function verifyBlocks(uint256 maxBlocks) returns()
+func (_TaikoL1Client *TaikoL1ClientSession) VerifyBlocks(maxBlocks *big.Int) (*types.Transaction, error) {
+	return _TaikoL1Client.Contract.VerifyBlocks(&_TaikoL1Client.TransactOpts, maxBlocks)
+}
+
+// VerifyBlocks is a paid mutator transaction binding the contract method 0x2fb5ae0a.
+//
+// Solidity: function verifyBlocks(uint256 maxBlocks) returns()
+func (_TaikoL1Client *TaikoL1ClientTransactorSession) VerifyBlocks(maxBlocks *big.Int) (*types.Transaction, error) {
+	return _TaikoL1Client.Contract.VerifyBlocks(&_TaikoL1Client.TransactOpts, maxBlocks)
+}
+
+// WhitelistProver is a paid mutator transaction binding the contract method 0xa28088ea.
+//
+// Solidity: function whitelistProver(address prover, bool whitelisted) returns()
+func (_TaikoL1Client *TaikoL1ClientTransactor) WhitelistProver(opts *bind.TransactOpts, prover common.Address, whitelisted bool) (*types.Transaction, error) {
+	return _TaikoL1Client.contract.Transact(opts, "whitelistProver", prover, whitelisted)
+}
+
+// WhitelistProver is a paid mutator transaction binding the contract method 0xa28088ea.
+//
+// Solidity: function whitelistProver(address prover, bool whitelisted) returns()
+func (_TaikoL1Client *TaikoL1ClientSession) WhitelistProver(prover common.Address, whitelisted bool) (*types.Transaction, error) {
+	return _TaikoL1Client.Contract.WhitelistProver(&_TaikoL1Client.TransactOpts, prover, whitelisted)
+}
+
+// WhitelistProver is a paid mutator transaction binding the contract method 0xa28088ea.
+//
+// Solidity: function whitelistProver(address prover, bool whitelisted) returns()
+func (_TaikoL1Client *TaikoL1ClientTransactorSession) WhitelistProver(prover common.Address, whitelisted bool) (*types.Transaction, error) {
+	return _TaikoL1Client.Contract.WhitelistProver(&_TaikoL1Client.TransactOpts, prover, whitelisted)
 }
 
 // TaikoL1ClientBlockCommittedIterator is returned from FilterBlockCommitted and is used to iterate over the raw logs and unpacked data for BlockCommitted events raised by the TaikoL1Client contract.
@@ -955,151 +1007,6 @@ func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockCommitted(opts *bind.Watc
 func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBlockCommitted(log types.Log) (*TaikoL1ClientBlockCommitted, error) {
 	event := new(TaikoL1ClientBlockCommitted)
 	if err := _TaikoL1Client.contract.UnpackLog(event, "BlockCommitted", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ClientBlockFinalizedIterator is returned from FilterBlockFinalized and is used to iterate over the raw logs and unpacked data for BlockFinalized events raised by the TaikoL1Client contract.
-type TaikoL1ClientBlockFinalizedIterator struct {
-	Event *TaikoL1ClientBlockFinalized // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ClientBlockFinalizedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ClientBlockFinalized)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ClientBlockFinalized)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ClientBlockFinalizedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ClientBlockFinalizedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ClientBlockFinalized represents a BlockFinalized event raised by the TaikoL1Client contract.
-type TaikoL1ClientBlockFinalized struct {
-	Id        *big.Int
-	BlockHash [32]byte
-	Raw       types.Log // Blockchain specific contextual infos
-}
-
-// FilterBlockFinalized is a free log retrieval operation binding the contract event 0xf2c535759092d16e9334a11dd9b52eca543f1d9cca5ba9d16c472aef009de432.
-//
-// Solidity: event BlockFinalized(uint256 indexed id, bytes32 blockHash)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBlockFinalized(opts *bind.FilterOpts, id []*big.Int) (*TaikoL1ClientBlockFinalizedIterator, error) {
-
-	var idRule []interface{}
-	for _, idItem := range id {
-		idRule = append(idRule, idItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BlockFinalized", idRule)
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ClientBlockFinalizedIterator{contract: _TaikoL1Client.contract, event: "BlockFinalized", logs: logs, sub: sub}, nil
-}
-
-// WatchBlockFinalized is a free log subscription operation binding the contract event 0xf2c535759092d16e9334a11dd9b52eca543f1d9cca5ba9d16c472aef009de432.
-//
-// Solidity: event BlockFinalized(uint256 indexed id, bytes32 blockHash)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockFinalized(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBlockFinalized, id []*big.Int) (event.Subscription, error) {
-
-	var idRule []interface{}
-	for _, idItem := range id {
-		idRule = append(idRule, idItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BlockFinalized", idRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ClientBlockFinalized)
-				if err := _TaikoL1Client.contract.UnpackLog(event, "BlockFinalized", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseBlockFinalized is a log parse operation binding the contract event 0xf2c535759092d16e9334a11dd9b52eca543f1d9cca5ba9d16c472aef009de432.
-//
-// Solidity: event BlockFinalized(uint256 indexed id, bytes32 blockHash)
-func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBlockFinalized(log types.Log) (*TaikoL1ClientBlockFinalized, error) {
-	event := new(TaikoL1ClientBlockFinalized)
-	if err := _TaikoL1Client.contract.UnpackLog(event, "BlockFinalized", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1394,6 +1301,151 @@ func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockProven(opts *bind.WatchOp
 func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBlockProven(log types.Log) (*TaikoL1ClientBlockProven, error) {
 	event := new(TaikoL1ClientBlockProven)
 	if err := _TaikoL1Client.contract.UnpackLog(event, "BlockProven", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientBlockVerifiedIterator is returned from FilterBlockVerified and is used to iterate over the raw logs and unpacked data for BlockVerified events raised by the TaikoL1Client contract.
+type TaikoL1ClientBlockVerifiedIterator struct {
+	Event *TaikoL1ClientBlockVerified // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientBlockVerifiedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientBlockVerified)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientBlockVerified)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientBlockVerifiedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientBlockVerifiedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientBlockVerified represents a BlockVerified event raised by the TaikoL1Client contract.
+type TaikoL1ClientBlockVerified struct {
+	Id        *big.Int
+	BlockHash [32]byte
+	Raw       types.Log // Blockchain specific contextual infos
+}
+
+// FilterBlockVerified is a free log retrieval operation binding the contract event 0x68b82650828a9621868d09dc161400acbe189fa002e3fb7cf9dea5c2c6f928ee.
+//
+// Solidity: event BlockVerified(uint256 indexed id, bytes32 blockHash)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBlockVerified(opts *bind.FilterOpts, id []*big.Int) (*TaikoL1ClientBlockVerifiedIterator, error) {
+
+	var idRule []interface{}
+	for _, idItem := range id {
+		idRule = append(idRule, idItem)
+	}
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BlockVerified", idRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientBlockVerifiedIterator{contract: _TaikoL1Client.contract, event: "BlockVerified", logs: logs, sub: sub}, nil
+}
+
+// WatchBlockVerified is a free log subscription operation binding the contract event 0x68b82650828a9621868d09dc161400acbe189fa002e3fb7cf9dea5c2c6f928ee.
+//
+// Solidity: event BlockVerified(uint256 indexed id, bytes32 blockHash)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockVerified(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBlockVerified, id []*big.Int) (event.Subscription, error) {
+
+	var idRule []interface{}
+	for _, idItem := range id {
+		idRule = append(idRule, idItem)
+	}
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BlockVerified", idRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientBlockVerified)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "BlockVerified", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseBlockVerified is a log parse operation binding the contract event 0x68b82650828a9621868d09dc161400acbe189fa002e3fb7cf9dea5c2c6f928ee.
+//
+// Solidity: event BlockVerified(uint256 indexed id, bytes32 blockHash)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBlockVerified(log types.Log) (*TaikoL1ClientBlockVerified, error) {
+	event := new(TaikoL1ClientBlockVerified)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "BlockVerified", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1835,6 +1887,151 @@ func (_TaikoL1Client *TaikoL1ClientFilterer) WatchOwnershipTransferred(opts *bin
 func (_TaikoL1Client *TaikoL1ClientFilterer) ParseOwnershipTransferred(log types.Log) (*TaikoL1ClientOwnershipTransferred, error) {
 	event := new(TaikoL1ClientOwnershipTransferred)
 	if err := _TaikoL1Client.contract.UnpackLog(event, "OwnershipTransferred", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientProverWhitelistedIterator is returned from FilterProverWhitelisted and is used to iterate over the raw logs and unpacked data for ProverWhitelisted events raised by the TaikoL1Client contract.
+type TaikoL1ClientProverWhitelistedIterator struct {
+	Event *TaikoL1ClientProverWhitelisted // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientProverWhitelistedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientProverWhitelisted)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientProverWhitelisted)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientProverWhitelistedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientProverWhitelistedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientProverWhitelisted represents a ProverWhitelisted event raised by the TaikoL1Client contract.
+type TaikoL1ClientProverWhitelisted struct {
+	Prover      common.Address
+	Whitelisted bool
+	Raw         types.Log // Blockchain specific contextual infos
+}
+
+// FilterProverWhitelisted is a free log retrieval operation binding the contract event 0x3ab5de546d706301c6736d6e367d46508c2bd77d9fa8a52813f74fa8a0d8a424.
+//
+// Solidity: event ProverWhitelisted(address indexed prover, bool whitelisted)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterProverWhitelisted(opts *bind.FilterOpts, prover []common.Address) (*TaikoL1ClientProverWhitelistedIterator, error) {
+
+	var proverRule []interface{}
+	for _, proverItem := range prover {
+		proverRule = append(proverRule, proverItem)
+	}
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "ProverWhitelisted", proverRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientProverWhitelistedIterator{contract: _TaikoL1Client.contract, event: "ProverWhitelisted", logs: logs, sub: sub}, nil
+}
+
+// WatchProverWhitelisted is a free log subscription operation binding the contract event 0x3ab5de546d706301c6736d6e367d46508c2bd77d9fa8a52813f74fa8a0d8a424.
+//
+// Solidity: event ProverWhitelisted(address indexed prover, bool whitelisted)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchProverWhitelisted(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientProverWhitelisted, prover []common.Address) (event.Subscription, error) {
+
+	var proverRule []interface{}
+	for _, proverItem := range prover {
+		proverRule = append(proverRule, proverItem)
+	}
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "ProverWhitelisted", proverRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientProverWhitelisted)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "ProverWhitelisted", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseProverWhitelisted is a log parse operation binding the contract event 0x3ab5de546d706301c6736d6e367d46508c2bd77d9fa8a52813f74fa8a0d8a424.
+//
+// Solidity: event ProverWhitelisted(address indexed prover, bool whitelisted)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseProverWhitelisted(log types.Log) (*TaikoL1ClientProverWhitelisted, error) {
+	event := new(TaikoL1ClientProverWhitelisted)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "ProverWhitelisted", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

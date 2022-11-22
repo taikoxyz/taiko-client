@@ -18,17 +18,17 @@ import (
 
 type State struct {
 	// Subscriptions, will automatically resubscribe on errors
-	l1HeadSub           event.Subscription // L1 new heads
-	l2BlockFinalizedSub event.Subscription // TaikoL1.BlockFinalized events
-	l2BlockProposedSub  event.Subscription // TaikoL1.BlockProposed events
+	l1HeadSub          event.Subscription // L1 new heads
+	l2BlockVerifiedSub event.Subscription // TaikoL1.BlockVerified events
+	l2BlockProposedSub event.Subscription // TaikoL1.BlockProposed events
 
 	// Feeds
 	l1HeadsFeed event.Feed // L1 new heads notification feed
 
-	l1Head              *atomic.Value // Latest known L1 head
-	l2HeadBlockID       *atomic.Value // Latest known L2 block ID
-	l2FinalizedHeadHash *atomic.Value // Latest known L2 finalized head
-	l1Current           *types.Header // Current L1 block sync cursor
+	l1Head             *atomic.Value // Latest known L1 head
+	l2HeadBlockID      *atomic.Value // Latest known L2 block ID
+	l2VerifiedHeadHash *atomic.Value // Latest known L2 verified head
+	l1Current          *types.Header // Current L1 block sync cursor
 
 	// Constants
 	anchorTxGasLimit  *big.Int
@@ -65,16 +65,16 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 	)
 
 	s := &State{
-		rpc:                 rpc,
-		anchorTxGasLimit:    anchorTxGasLimit,
-		maxTxlistBytes:      maxTxlistBytes,
-		maxBlockNumTxs:      maxBlockNumTxs,
-		maxBlocksGasLimit:   maxBlocksGasLimit,
-		minTxGasLimit:       minTxGasLimit,
-		l1Head:              new(atomic.Value),
-		l2HeadBlockID:       new(atomic.Value),
-		l2FinalizedHeadHash: new(atomic.Value),
-		l1Current:           latestL2KnownL1Header,
+		rpc:                rpc,
+		anchorTxGasLimit:   anchorTxGasLimit,
+		maxTxlistBytes:     maxTxlistBytes,
+		maxBlockNumTxs:     maxBlockNumTxs,
+		maxBlocksGasLimit:  maxBlocksGasLimit,
+		minTxGasLimit:      minTxGasLimit,
+		l1Head:             new(atomic.Value),
+		l2HeadBlockID:      new(atomic.Value),
+		l2VerifiedHeadHash: new(atomic.Value),
+		l1Current:          latestL2KnownL1Header,
 	}
 
 	if err := s.initSubscriptions(ctx); err != nil {
@@ -87,7 +87,7 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 // Close closes all inner subscriptions.
 func (s *State) Close() {
 	s.l1HeadSub.Unsubscribe()
-	s.l2BlockFinalizedSub.Unsubscribe()
+	s.l2BlockVerifiedSub.Unsubscribe()
 	s.l2BlockProposedSub.Unsubscribe()
 }
 
@@ -144,30 +144,30 @@ func (s *State) initSubscriptions(ctx context.Context) error {
 		},
 	)
 
-	// 2. TaikoL1.BlockFinalized events
-	_, lastFinalizedHeight, lastFinalizedId, _, err := s.rpc.TaikoL1.GetStateVariables(nil)
+	// 2. TaikoL1.BlockVerified events
+	_, lastVerifiedHeight, lastVerifiedId, _, err := s.rpc.TaikoL1.GetStateVariables(nil)
 	if err != nil {
 		return err
 	}
 
-	lastFinalizedBlockHash, err := s.rpc.TaikoL1.GetSyncedHeader(
+	lastVerifiedBlockHash, err := s.rpc.TaikoL1.GetSyncedHeader(
 		nil,
-		new(big.Int).SetUint64(lastFinalizedHeight),
+		new(big.Int).SetUint64(lastVerifiedHeight),
 	)
 	if err != nil {
 		return err
 	}
 
-	s.setLastFinalizedBlockHash(new(big.Int).SetUint64(lastFinalizedId), lastFinalizedBlockHash)
+	s.setLastVerifiedBlockHash(new(big.Int).SetUint64(lastVerifiedId), lastVerifiedBlockHash)
 
-	s.l2BlockFinalizedSub = event.ResubscribeErr(
+	s.l2BlockVerifiedSub = event.ResubscribeErr(
 		backoff.DefaultMaxInterval,
 		func(ctx context.Context, err error) (event.Subscription, error) {
 			if err != nil {
-				log.Warn("Failed to subscribe TaikoL1.BlockFinalized events, try resubscribing", "error", err)
+				log.Warn("Failed to subscribe TaikoL1.BlockVerifiedId events, try resubscribing", "error", err)
 			}
 
-			return s.watchBlockFinalized(ctx)
+			return s.watchBlockVerified(ctx)
 		},
 	)
 
@@ -237,14 +237,14 @@ func (s *State) getL1Head() *types.Header {
 	return s.l1Head.Load().(*types.Header)
 }
 
-// watchBlockFinalized watches newly finalized blocks and keep updating current
+// watchBlockVerified watches newly verified blocks and keep updating current
 // driver state.
-func (s *State) watchBlockFinalized(ctx context.Context) (ethereum.Subscription, error) {
-	newBlockFinalizedCh := make(chan *bindings.TaikoL1ClientBlockFinalized, 10)
+func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, error) {
+	newBlockVerifiedCh := make(chan *bindings.TaikoL1ClientBlockVerified, 10)
 
-	sub, err := s.rpc.TaikoL1.WatchBlockFinalized(nil, newBlockFinalizedCh, nil)
+	sub, err := s.rpc.TaikoL1.WatchBlockVerified(nil, newBlockVerifiedCh, nil)
 	if err != nil {
-		log.Error("Create TaikoL1.BlockFinalized subscription error", "error", err)
+		log.Error("Create TaikoL1.BlockVerified subscription error", "error", err)
 		return nil, err
 	}
 
@@ -252,14 +252,14 @@ func (s *State) watchBlockFinalized(ctx context.Context) (ethereum.Subscription,
 
 	for {
 		select {
-		case e := <-newBlockFinalizedCh:
+		case e := <-newBlockVerifiedCh:
 			if e.BlockHash == (common.Hash{}) {
-				log.Debug("Ignore BlockFinalized event of invalid transaction list", "blockID", e.Id)
+				log.Debug("Ignore BlockVerified event of invalid transaction list", "blockID", e.Id)
 				continue
 			}
-			s.setLastFinalizedBlockHash(e.Id, e.BlockHash)
+			s.setLastVerifiedBlockHash(e.Id, e.BlockHash)
 			if err := s.VerfiyL2Block(ctx, e.Id, e.BlockHash); err != nil {
-				log.Error("Verify finalized L2 block error", "error", err)
+				log.Error("Check new verified L2 block error", "error", err)
 			}
 		case err := <-sub.Err():
 			return sub, err
@@ -269,16 +269,16 @@ func (s *State) watchBlockFinalized(ctx context.Context) (ethereum.Subscription,
 	}
 }
 
-// setLastFinalizedBlockHash sets the last finalized L2 block hash concurrent safely.
-func (s *State) setLastFinalizedBlockHash(id *big.Int, hash common.Hash) {
-	log.Debug("New finalized block", "hash", hash)
-	metrics.DriverL2FinalizedIDGauge.Update(id.Int64())
-	s.l2FinalizedHeadHash.Store(hash)
+// setLastVerifiedBlockHash sets the last verified L2 block hash concurrent safely.
+func (s *State) setLastVerifiedBlockHash(id *big.Int, hash common.Hash) {
+	log.Debug("New verified block", "hash", hash)
+	metrics.DriverL2VerifiedIDGauge.Update(id.Int64())
+	s.l2VerifiedHeadHash.Store(hash)
 }
 
-// getLastFinalizedBlockHash reads the last finalized L2 block concurrent safely.
-func (s *State) getLastFinalizedBlockHash() common.Hash {
-	return s.l2FinalizedHeadHash.Load().(common.Hash)
+// getLastVerifiedBlockHash reads the last verified L2 block concurrent safely.
+func (s *State) getLastVerifiedBlockHash() common.Hash {
+	return s.l2VerifiedHeadHash.Load().(common.Hash)
 }
 
 // watchBlockProposed watches newly proposed blocks and keeps updating current
@@ -331,7 +331,7 @@ func (s *State) VerfiyL2Block(ctx context.Context, blockID *big.Int, protocolBlo
 
 	if header.Hash() != protocolBlockHash {
 		log.Crit(
-			"Finalized block hash mismatch",
+			"Verified block hash mismatch",
 			"blockID", blockID,
 			"protocolBlockHash", protocolBlockHash,
 			"L2 node block number", header.Number,
