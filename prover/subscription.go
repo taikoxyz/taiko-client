@@ -21,29 +21,29 @@ func (p *Prover) startSubscription() {
 		},
 	)
 
-	p.blockFinalizedSub = event.ResubscribeErr(
+	p.blockVerifiedSub = event.ResubscribeErr(
 		backoff.DefaultMaxInterval,
 		func(ctx context.Context, err error) (event.Subscription, error) {
 			if err != nil {
-				log.Warn("Failed to subscribe TaikoL1.BlockFinalized, try resubscribing", "error", err)
+				log.Warn("Failed to subscribe TaikoL1.BlockVerified, try resubscribing", "error", err)
 			}
 
-			return p.watchBlockFinalized(ctx)
+			return p.watchBlockVerified(ctx)
 		},
 	)
 }
 
 // closeSubscription closes all subscriptions.
 func (p *Prover) closeSubscription() {
-	p.blockFinalizedSub.Unsubscribe()
+	p.blockVerifiedSub.Unsubscribe()
 	p.blockProposedSub.Unsubscribe()
 }
 
-// watchBlockFinalized watches newly finalized blocks from TaikoL1 contract.
-func (p *Prover) watchBlockFinalized(ctx context.Context) (event.Subscription, error) {
-	sub, err := p.rpc.TaikoL1.WatchBlockFinalized(nil, p.blockFinalizedCh, nil)
+// watchBlockVerified watches newly verified blocks from TaikoL1 contract.
+func (p *Prover) watchBlockVerified(ctx context.Context) (event.Subscription, error) {
+	sub, err := p.rpc.TaikoL1.WatchBlockVerified(nil, p.blockVerifiedCh, nil)
 	if err != nil {
-		log.Error("Create TaikoL1.BlockFinalized subscription error", "error", err)
+		log.Error("Create TaikoL1.BlockVerified subscription error", "error", err)
 		return nil, err
 	}
 

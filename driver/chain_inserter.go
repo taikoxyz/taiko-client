@@ -219,7 +219,7 @@ func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.He
 			"blockID", event.Id,
 			"height", payloadData.Number,
 			"hash", payloadData.BlockHash,
-			"lastFinalizedBlockHash", b.state.getLastFinalizedBlockHash(),
+			"lastVerifiedBlockHash", b.state.getLastVerifiedBlockHash(),
 			"transactions", len(payloadData.Transactions),
 		)
 	}

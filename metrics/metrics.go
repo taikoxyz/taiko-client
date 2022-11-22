@@ -19,7 +19,7 @@ var (
 	DriverL1HeadHeightGauge    = metrics.NewRegisteredGauge("driver/l1Head/height", nil)
 	DriverL1CurrentHeightGauge = metrics.NewRegisteredGauge("driver/l1Current/height", nil)
 	DriverL2HeadIDGauge        = metrics.NewRegisteredGauge("driver/l2Head/id", nil)
-	DriverL2FinalizedIDGauge   = metrics.NewRegisteredGauge("driver/l2Finalized/id", nil)
+	DriverL2VerifiedIDGauge    = metrics.NewRegisteredGauge("driver/l2Verified/id", nil)
 
 	// Proposer
 	ProposerProposeEpochCounter    = metrics.NewRegisteredCounter("proposer/epoch", nil)
@@ -28,7 +28,7 @@ var (
 	ProposerInvalidTxsCounter      = metrics.NewRegisteredCounter("proposer/invalid/txs", nil)
 
 	// Prover
-	ProverLatestFinalizedIDGauge      = metrics.NewRegisteredGauge("prover/lastFinalized/id", nil)
+	ProverLatestVerifiedIDGauge       = metrics.NewRegisteredGauge("prover/lastVerified/id", nil)
 	ProverQueuedProofCounter          = metrics.NewRegisteredCounter("prover/proof/all/queued", nil)
 	ProverQueuedValidProofCounter     = metrics.NewRegisteredCounter("prover/proof/valid/queued", nil)
 	ProverQueuedInvalidProofCounter   = metrics.NewRegisteredCounter("prover/proof/invalid/queued", nil)

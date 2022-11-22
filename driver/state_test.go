@@ -16,8 +16,8 @@ func (s *DriverTestSuite) TestGetL1Head() {
 	s.NotNil(l1Head)
 }
 
-func (s *DriverTestSuite) TestGetLastFinalizedBlockHash() {
-	hash := s.d.state.getLastFinalizedBlockHash()
+func (s *DriverTestSuite) TestGetLastVerifiedBlockHash() {
+	hash := s.d.state.getLastVerifiedBlockHash()
 	s.NotNil(hash)
 }
 
