@@ -43,6 +43,7 @@ type Prover struct {
 	txListValidator  *txListValidator.TxListValidator
 	anchorGasLimit   uint64
 	maxPendingBlocks uint64
+	zkProofsPerBlock uint64
 
 	// States
 	lastVerifiedHeader *types.Header
@@ -93,7 +94,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// Constants
-	_, maxPendingBlocks, _, _, _,
+	zkProofsPerBlock, _, maxPendingBlocks, _, _, _,
 		maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit,
 		anchorGasLimit, _, _, err := p.rpc.TaikoL1.GetConstants(nil)
 	if err != nil {
@@ -102,6 +103,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	log.Info(
 		"LibConstants configurations",
+		"zkProofsPerBlock", zkProofsPerBlock,
 		"maxBlocksGasLimit", maxBlocksGasLimit,
 		"maxBlockNumTxs", maxBlockNumTxs,
 		"maxTxlistBytes", maxTxlistBytes,
@@ -116,6 +118,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		minTxGasLimit.Uint64(),
 		p.rpc.L2ChainID,
 	)
+	p.zkProofsPerBlock = zkProofsPerBlock.Uint64()
 	p.maxPendingBlocks = maxPendingBlocks.Uint64()
 	p.anchorGasLimit = anchorGasLimit.Uint64()
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, 10)

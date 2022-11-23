@@ -83,6 +83,8 @@ func GetReceiptsByBlock(ctx context.Context, cli *ethclient.Client, block *types
 	return receipts, g.Wait()
 }
 
+// SetHead makes a `debug_setHead` RPC call to set the chain's head, only used
+// for testing purpose.
 func SetHead(ctx context.Context, rpc *rpc.Client, headNum *big.Int) error {
 	return gethclient.New(rpc).SetHead(ctx, headNum)
 }

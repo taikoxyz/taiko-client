@@ -80,7 +80,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	}
 
 	// Protocol constants
-	_, _, _, commitDelayConfirmations, _,
+	_, _, _, _, commitDelayConfirmations, _,
 		maxGasPerBlock, maxTxPerBlock, _, maxTxBytesPerBlock, minTxGasLimit,
 		_, _, _, err := p.rpc.TaikoL1.GetConstants(nil)
 	if err != nil {
