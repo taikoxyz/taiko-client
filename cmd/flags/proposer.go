@@ -1,6 +1,8 @@
 package flags
 
 import (
+	"math/rand"
+
 	"github.com/urfave/cli/v2"
 )
 
@@ -28,6 +30,12 @@ var (
 
 // Optional flags used by proposer.
 var (
+	CommitSlot = cli.Uint64Flag{
+		Name:     "commitSlot",
+		Usage:    "The commit slot will be used by proposer, by default, a random number will be used",
+		Value:    rand.Uint64(),
+		Category: proposerCategory,
+	}
 	ShufflePoolContent = cli.BoolFlag{
 		Name:     "shufflePoolContent",
 		Usage:    "Perform a weighted shuffle when building the transactions list to propose",

@@ -3,6 +3,7 @@ package proposer
 import (
 	"context"
 	"os"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -16,6 +17,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 	proposeInterval := "10s"
+	commitSlot := 1024
 
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
@@ -26,6 +28,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		&cli.StringFlag{Name: flags.L1ProposerPrivKey.Name},
 		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
 		&cli.StringFlag{Name: flags.ProposeInterval.Name},
+		&cli.Uint64Flag{Name: flags.CommitSlot.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
@@ -37,6 +40,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(bindings.GoldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
 		s.Equal(bindings.GoldenTouchAddress, c.L2SuggestedFeeRecipient)
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
+		s.Equal(uint64(commitSlot), c.CommitSlot)
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -51,5 +55,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L1ProposerPrivKey.Name, bindings.GoldenTouchPrivKey[2:],
 		"-" + flags.L2SuggestedFeeRecipient.Name, bindings.GoldenTouchAddress.Hex(),
 		"-" + flags.ProposeInterval.Name, proposeInterval,
+		"-" + flags.CommitSlot.Name, strconv.Itoa(commitSlot),
 	}))
 }

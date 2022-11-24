@@ -110,12 +110,6 @@ func (s *ProposerTestSuite) TestCommitTxList() {
 	receipt, err := rpc.WaitReceipt(context.Background(), s.p.rpc.L1, tx)
 	s.Nil(err)
 	s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
-
-	// Already committed
-	meta, tx2, err := s.p.CommitTxList(context.Background(), txListBytes, gasLimit)
-	s.Nil(err)
-	s.Equal(meta.GasLimit, gasLimit)
-	s.Equal(tx2.Hash(), tx.Hash())
 }
 
 func TestProposerTestSuite(t *testing.T) {
