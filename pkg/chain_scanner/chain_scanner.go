@@ -24,10 +24,9 @@ var (
 )
 
 type UpdateCurrentFunc func(*types.Header)
-type HandlerFunc func(
+type OnBlocksScannedFunc func(
 	ctx context.Context,
-	start *types.Header,
-	end *types.Header,
+	start, end *types.Header,
 	updateCurrentFunc UpdateCurrentFunc,
 ) error
 
@@ -39,20 +38,24 @@ type ChainScanner struct {
 	startHeight           uint64
 	endHeight             *uint64
 	current               *types.Header
-	handlerFunc           HandlerFunc
+	onBlocksScanned       OnBlocksScannedFunc
 }
 
-type Config struct {
+type ChainScannerConfig struct {
 	Client                *ethclient.Client
 	MaxBlocksReadPerEpoch *uint64
 	StartHeight           *big.Int
 	EndHeight             *big.Int
-	HandlerFunc           HandlerFunc
+	OnBlocksScanned       OnBlocksScannedFunc
 }
 
-func New(ctx context.Context, cfg *Config) (*ChainScanner, error) {
+func NewChainScanner(ctx context.Context, cfg *ChainScannerConfig) (*ChainScanner, error) {
 	if cfg.Client == nil {
 		return nil, errors.New("invalid RPC client")
+	}
+
+	if cfg.OnBlocksScanned == nil {
+		return nil, errors.New("invalid callback")
 	}
 
 	chainID, err := cfg.Client.ChainID(ctx)
@@ -74,12 +77,12 @@ func New(ctx context.Context, cfg *Config) (*ChainScanner, error) {
 	}
 
 	cs := &ChainScanner{
-		ctx:         ctx,
-		client:      cfg.Client,
-		chainID:     chainID,
-		startHeight: cfg.StartHeight.Uint64(),
-		current:     startHeader,
-		handlerFunc: cfg.HandlerFunc,
+		ctx:             ctx,
+		client:          cfg.Client,
+		chainID:         chainID,
+		startHeight:     cfg.StartHeight.Uint64(),
+		current:         startHeader,
+		onBlocksScanned: cfg.OnBlocksScanned,
 	}
 
 	if cfg.MaxBlocksReadPerEpoch != nil {
@@ -96,7 +99,7 @@ func New(ctx context.Context, cfg *Config) (*ChainScanner, error) {
 	return cs, nil
 }
 
-func (cs *ChainScanner) Start() error {
+func (cs *ChainScanner) Scan() error {
 	scanOp := func() error {
 		for {
 			if err := cs.scan(); err != nil {
@@ -125,7 +128,7 @@ func (cs *ChainScanner) Start() error {
 }
 
 func (cs *ChainScanner) scan() error {
-	if err := cs.checkCurrentReorged(); err != nil {
+	if err := cs.ensureCurrentNotReorged(); err != nil {
 		return fmt.Errorf("failed to check whether chainScanner.current has been reorged: %w", err)
 	}
 
@@ -153,7 +156,7 @@ func (cs *ChainScanner) scan() error {
 		}
 	}
 
-	if err := cs.handlerFunc(cs.ctx, cs.current, endHeader, cs.updateCurrent); err != nil {
+	if err := cs.onBlocksScanned(cs.ctx, cs.current, endHeader, cs.updateCurrent); err != nil {
 		return err
 	}
 
@@ -164,6 +167,7 @@ func (cs *ChainScanner) scan() error {
 	return io.EOF
 }
 
+// updateCurrent updates the scanner's current cursor.
 func (cs *ChainScanner) updateCurrent(current *types.Header) {
 	if current == nil {
 		log.Warn("Receive a nil header as chainScanner.current")
@@ -173,7 +177,9 @@ func (cs *ChainScanner) updateCurrent(current *types.Header) {
 	cs.current = current
 }
 
-func (cs *ChainScanner) checkCurrentReorged() error {
+// ensureCurrentNotReorged checks if the chainScanner.current was reorged, if was, will
+// rewind back `ReorgRewindDepth` blocks.
+func (cs *ChainScanner) ensureCurrentNotReorged() error {
 	current, err := cs.client.HeaderByHash(cs.ctx, cs.current.Hash())
 	if err != nil && err != ethereum.NotFound {
 		return err
@@ -184,7 +190,7 @@ func (cs *ChainScanner) checkCurrentReorged() error {
 		return nil
 	}
 
-	// Reorg detected, rewind `ReorgRewindDepth` blocks
+	// Reorg detected, rewind back `ReorgRewindDepth` blocks
 	var newCurrentHeight uint64
 	if current.Number.Uint64() <= ReorgRewindDepth {
 		newCurrentHeight = 0
