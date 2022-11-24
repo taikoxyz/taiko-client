@@ -120,9 +120,7 @@ func (cs *ChainScanner) Scan() error {
 		case <-cs.ctx.Done():
 			return cs.ctx.Err()
 		default:
-			if err := backoff.Retry(scanOp, backoff.NewExponentialBackOff()); err != nil {
-				return err
-			}
+			return backoff.Retry(scanOp, backoff.NewExponentialBackOff())
 		}
 	}
 }
@@ -160,6 +158,8 @@ func (cs *ChainScanner) scan() error {
 		return err
 	}
 
+	cs.current = endHeader
+
 	if !isLastEpoch {
 		return errContinue
 	}
@@ -181,7 +181,7 @@ func (cs *ChainScanner) updateCurrent(current *types.Header) {
 // rewind back `ReorgRewindDepth` blocks.
 func (cs *ChainScanner) ensureCurrentNotReorged() error {
 	current, err := cs.client.HeaderByHash(cs.ctx, cs.current.Hash())
-	if err != nil && err != ethereum.NotFound {
+	if err != nil && !errors.Is(err, ethereum.NotFound) {
 		return err
 	}
 
