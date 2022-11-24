@@ -200,7 +200,7 @@ func (s *State) watchL1Head(ctx context.Context) (event.Subscription, error) {
 
 	sub, err := s.rpc.L1.SubscribeNewHead(ctx, newL1HeadCh)
 	if err != nil {
-		log.Error("Create L1 heads subscription error", "error", err)
+		log.Error("Create L1 head subscription error", "error", err)
 		return nil, err
 	}
 
