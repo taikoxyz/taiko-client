@@ -8,13 +8,15 @@ import (
 	"math/big"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
 )
 
 const (
-	DefaultMaxBlocksReadPerEpoch uint64 = 1000
+	DefaultMaxBlocksReadPerEpoch = 1000
+	ReorgRewindDepth             = 20
 )
 
 var (
@@ -123,6 +125,10 @@ func (cs *ChainScanner) Start() error {
 }
 
 func (cs *ChainScanner) scan() error {
+	if err := cs.checkCurrentReorged(); err != nil {
+		return fmt.Errorf("failed to check whether chainScanner.current has been reorged: %w", err)
+	}
+
 	head, err := cs.client.HeaderByNumber(cs.ctx, nil)
 	if err != nil {
 		return err
@@ -165,4 +171,27 @@ func (cs *ChainScanner) updateCurrent(current *types.Header) {
 	}
 
 	cs.current = current
+}
+
+func (cs *ChainScanner) checkCurrentReorged() error {
+	current, err := cs.client.HeaderByHash(cs.ctx, cs.current.Hash())
+	if err != nil && err != ethereum.NotFound {
+		return err
+	}
+
+	// Not reorged
+	if current != nil {
+		return nil
+	}
+
+	// Reorg detected, rewind `ReorgRewindDepth` blocks
+	var newCurrentHeight uint64
+	if current.Number.Uint64() <= ReorgRewindDepth {
+		newCurrentHeight = 0
+	} else {
+		newCurrentHeight = current.Number.Uint64() - ReorgRewindDepth
+	}
+
+	cs.current, err = cs.client.HeaderByNumber(cs.ctx, new(big.Int).SetUint64(newCurrentHeight))
+	return err
 }
