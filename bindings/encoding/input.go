@@ -33,14 +33,6 @@ var (
 			Type: "address",
 		},
 		{
-			Name: "gasLimit",
-			Type: "uint64",
-		},
-		{
-			Name: "timestamp",
-			Type: "uint64",
-		},
-		{
 			Name: "txListHash",
 			Type: "bytes32",
 		},
@@ -51,6 +43,22 @@ var (
 		{
 			Name: "extraData",
 			Type: "bytes",
+		},
+		{
+			Name: "gasLimit",
+			Type: "uint64",
+		},
+		{
+			Name: "timestamp",
+			Type: "uint64",
+		},
+		{
+			Name: "commitHeight",
+			Type: "uint64",
+		},
+		{
+			Name: "commitSlot",
+			Type: "uint64",
 		},
 	}
 	blockHeaderComponents = []abi.ArgumentMarshaling{

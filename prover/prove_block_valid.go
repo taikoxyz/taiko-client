@@ -121,11 +121,17 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		)
 	}
 
+	proofs := [][]byte{}
+	for i := 0; i < int(p.zkProofsPerBlock); i++ {
+		proofs = append(proofs, zkProof)
+	}
+	proofs = append(proofs, [][]byte{anchorTxProof, anchorReceiptProof}...)
+
 	evidence := &encoding.TaikoL1Evidence{
 		Meta:   *meta,
 		Header: *encoding.FromGethHeader(header),
 		Prover: crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey),
-		Proofs: [][]byte{zkProof, anchorTxProof, anchorReceiptProof},
+		Proofs: proofs,
 	}
 
 	input, err := encoding.EncodeProveBlockInput(evidence, anchorTx, anchorTxReceipt)

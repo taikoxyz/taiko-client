@@ -33,6 +33,7 @@ type Proposer struct {
 
 	// Proposing configuration
 	proposingInterval time.Duration
+	commitSlot        uint64
 
 	// Constants in LibConstants
 	commitDelayConfirmations uint64
@@ -80,7 +81,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	}
 
 	// Protocol constants
-	_, _, _, commitDelayConfirmations, _,
+	_, _, _, _, commitDelayConfirmations, _,
 		maxGasPerBlock, maxTxPerBlock, _, maxTxBytesPerBlock, minTxGasLimit,
 		_, _, _, err := p.rpc.TaikoL1.GetConstants(nil)
 	if err != nil {
@@ -104,6 +105,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		maxTxBytesPerBlock: maxTxBytesPerBlock.Uint64(),
 		minTxGasLimit:      minTxGasLimit.Uint64(),
 	}
+	p.commitSlot = cfg.CommitSlot
 
 	// Configurations for testing
 	p.produceInvalidBlocks = cfg.ProduceInvalidBlocks
@@ -230,7 +232,14 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 		Beneficiary: p.l2SuggestedFeeRecipient,
 		GasLimit:    gasLimit,
 		TxListHash:  crypto.Keccak256Hash(txListBytes),
+		CommitSlot:  p.commitSlot,
 	}
+
+	if p.commitDelayConfirmations == 0 {
+		log.Debug("No commit delay confirmation, skip committing transactions list")
+		return meta, nil, nil
+	}
+
 	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
 	if err != nil {
 		return nil, nil, err
@@ -238,66 +247,37 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 
 	commitHash := common.BytesToHash(encoding.EncodeCommitHash(meta.Beneficiary, meta.TxListHash))
 
-	// Check if the transactions list has been committed before.
-	commitHeight, err := p.rpc.TaikoL1.GetCommitHeight(nil, commitHash)
-	if err != nil {
-		return nil, nil, fmt.Errorf("check whether a commitHash %s has been committed error: %w", commitHash, err)
-	}
-
-	if commitHeight.Cmp(common.Big0) == 0 {
-		log.Info("Transactions list has never been committed before", "hash", commitHash)
-
-		commitTx, err := p.rpc.TaikoL1.CommitBlock(opts, commitHash)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		return meta, commitTx, nil
-	}
-
-	filterBlockCommittedHeight := commitHeight.Uint64()
-	iter, err := p.rpc.TaikoL1.FilterBlockCommitted(&bind.FilterOpts{
-		Start: filterBlockCommittedHeight,
-		End:   &filterBlockCommittedHeight,
-	})
-
+	commitTx, err := p.rpc.TaikoL1.CommitBlock(opts, p.commitSlot, commitHash)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	for iter.Next() {
-		if iter.Event.Hash == commitHash {
-			commitTx, _, err := p.rpc.L1.TransactionByHash(ctx, iter.Event.Raw.TxHash)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			return meta, commitTx, nil
-		}
-	}
-
-	return nil, nil, fmt.Errorf("failed to find the original commit transaction, commitHash: %s", commitHash)
+	return meta, commitTx, nil
 }
 
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
 	commitRes *commitTxListRes,
 ) error {
-	receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, commitRes.commitTx)
-	if err != nil {
-		return err
-	}
+	if p.commitDelayConfirmations > 0 {
+		receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, commitRes.commitTx)
+		if err != nil {
+			return err
+		}
 
-	log.Info(
-		"Commit block finished, wait some L1 blocks confirmations before proposing",
-		"commitHeight", receipt.BlockNumber,
-		"confirmations", p.commitDelayConfirmations,
-	)
+		log.Info(
+			"Commit block finished, wait some L1 blocks confirmations before proposing",
+			"commitHeight", receipt.BlockNumber,
+			"confirmations", p.commitDelayConfirmations,
+		)
 
-	if err := rpc.WaitConfirmations(
-		ctx, p.rpc.L1, p.commitDelayConfirmations, receipt.BlockNumber.Uint64(),
-	); err != nil {
-		return fmt.Errorf("wait L1 blocks confirmations error, commitHash %s: %w", receipt.BlockNumber, err)
+		commitRes.meta.CommitHeight = receipt.BlockNumber.Uint64()
+
+		if err := rpc.WaitConfirmations(
+			ctx, p.rpc.L1, p.commitDelayConfirmations, receipt.BlockNumber.Uint64(),
+		); err != nil {
+			return fmt.Errorf("wait L1 blocks confirmations error, commitHash %s: %w", receipt.BlockNumber, err)
+		}
 	}
 
 	// Propose the transactions list

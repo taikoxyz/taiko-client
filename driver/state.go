@@ -48,7 +48,7 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 		return nil, err
 	}
 
-	_, _, _, _, _,
+	_, _, _, _, _, _,
 		maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit,
 		anchorTxGasLimit, _, _, err := rpc.TaikoL1.GetConstants(nil)
 	if err != nil {

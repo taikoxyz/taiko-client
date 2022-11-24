@@ -21,6 +21,7 @@ type Config struct {
 	L2SuggestedFeeRecipient common.Address
 	ProposeInterval         time.Duration
 	ShufflePoolContent      bool
+	CommitSlot              uint64
 
 	// Only for testing
 	ProduceInvalidBlocks         bool
@@ -57,6 +58,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L2SuggestedFeeRecipient:      common.HexToAddress(l2SuggestedFeeRecipient),
 		ProposeInterval:              proposingInterval,
 		ShufflePoolContent:           c.Bool(flags.ShufflePoolContent.Name),
+		CommitSlot:                   c.Uint64(flags.CommitSlot.Name),
 		ProduceInvalidBlocks:         c.Bool(flags.ProduceInvalidBlocks.Name),
 		ProduceInvalidBlocksInterval: c.Uint64(flags.ProduceInvalidBlocksInterval.Name),
 	}, nil

@@ -43,9 +43,11 @@ type Prover struct {
 	txListValidator  *txListValidator.TxListValidator
 	anchorGasLimit   uint64
 	maxPendingBlocks uint64
+	zkProofsPerBlock uint64
 
 	// States
-	lastVerifiedHeader *types.Header
+	lastVerifiedHeader   *types.Header
+	lastVerifiedL1Height uint64
 
 	// Subscriptions
 	blockProposedCh  chan *bindings.TaikoL1ClientBlockProposed
@@ -93,7 +95,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// Constants
-	_, maxPendingBlocks, _, _, _,
+	zkProofsPerBlock, _, maxPendingBlocks, _, _, _,
 		maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit,
 		anchorGasLimit, _, _, err := p.rpc.TaikoL1.GetConstants(nil)
 	if err != nil {
@@ -102,6 +104,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	log.Info(
 		"LibConstants configurations",
+		"zkProofsPerBlock", zkProofsPerBlock,
 		"maxBlocksGasLimit", maxBlocksGasLimit,
 		"maxBlockNumTxs", maxBlockNumTxs,
 		"maxTxlistBytes", maxTxlistBytes,
@@ -116,6 +119,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		minTxGasLimit.Uint64(),
 		p.rpc.L2ChainID,
 	)
+	p.zkProofsPerBlock = zkProofsPerBlock.Uint64()
 	p.maxPendingBlocks = maxPendingBlocks.Uint64()
 	p.anchorGasLimit = anchorGasLimit.Uint64()
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, 10)
@@ -238,11 +242,12 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 		"hash", common.BytesToHash(event.BlockHash[:]),
 	)
 	p.lastVerifiedHeader = l2BlockHeader
+	p.lastVerifiedL1Height = event.Raw.BlockNumber
 
 	return nil
 }
 
-// onForceTimer fetches the oldest unverified block and if it is still not proven, then prove it.
+// onForceTimer fetches the lowset unverified block and if it is still not proven, then prove it.
 func (p *Prover) onForceTimer(ctx context.Context) error {
 	_, _, latestVerifiedID, nextBlockID, err := p.rpc.TaikoL1.GetStateVariables(nil)
 	if err != nil {
@@ -256,22 +261,12 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 		return nil
 	}
 
-	// Check whether the oldest unverified block is still unproved.
-	oldestUnverifiedBlockID := new(big.Int).SetUint64(latestVerifiedID + 1)
-
-	proposedBlock, err := p.rpc.TaikoL1.GetProposedBlock(nil, oldestUnverifiedBlockID)
-	if err != nil {
-		return fmt.Errorf("failed to get proposed block: %w", err)
-	}
-
-	commitHeight, err := p.rpc.TaikoL1.GetCommitHeight(nil, proposedBlock.MetaHash)
-	if err != nil {
-		return fmt.Errorf("failed to get proposed block commit height: %w", err)
-	}
+	// Check whether the lowset unverified block is still unproved.
+	lowestUnverifiedBlockID := new(big.Int).SetUint64(latestVerifiedID + 1)
 
 	blockProvenIter, err := p.rpc.TaikoL1.FilterBlockProven(
-		&bind.FilterOpts{Start: commitHeight.Uint64()},
-		[]*big.Int{oldestUnverifiedBlockID},
+		&bind.FilterOpts{Start: p.lastVerifiedL1Height},
+		[]*big.Int{lowestUnverifiedBlockID},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to filter BlockProven events: %w", err)
@@ -281,9 +276,9 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 		return nil
 	}
 
-	log.Info("Oldest unproved block ID", "blockID", oldestUnverifiedBlockID)
+	log.Info("Lowest unproved block ID", "blockID", lowestUnverifiedBlockID)
 
-	l1Origin, err := p.rpc.L2.L1OriginByID(ctx, oldestUnverifiedBlockID)
+	l1Origin, err := p.rpc.L2.L1OriginByID(ctx, lowestUnverifiedBlockID)
 	if err != nil {
 		return fmt.Errorf("failed to get L1Origin: %w", err)
 	}
@@ -291,7 +286,7 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 	filterHeight := l1Origin.L1BlockHeight.Uint64()
 	blockProposedIter, err := p.rpc.TaikoL1.FilterBlockProposed(
 		&bind.FilterOpts{Start: filterHeight, End: &filterHeight},
-		[]*big.Int{oldestUnverifiedBlockID},
+		[]*big.Int{lowestUnverifiedBlockID},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to filter BlockProposed events: %w", err)
@@ -302,7 +297,7 @@ func (p *Prover) onForceTimer(ctx context.Context) error {
 	}
 
 	return fmt.Errorf("BlockProposed events not found, blockID: %d, l1Height: %d",
-		oldestUnverifiedBlockID, filterHeight,
+		lowestUnverifiedBlockID, filterHeight,
 	)
 }
 
