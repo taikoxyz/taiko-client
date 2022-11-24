@@ -20,8 +20,6 @@ type Config struct {
 	ZKEvmRpcdEndpoint   string
 	ZkEvmRpcdParamsPath string
 	Dummy               bool
-	// For testing
-	BatchSubmit bool
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -42,6 +40,5 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ZKEvmRpcdEndpoint:   c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath: c.String(flags.ZkEvmRpcdParamsPath.Name),
 		Dummy:               c.Bool(flags.Dummy.Name),
-		BatchSubmit:         c.Bool(flags.BatchSubmit.Name),
 	}, nil
 }
