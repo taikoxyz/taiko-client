@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/metrics"
 	eventiterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
@@ -75,6 +76,7 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 	}
 
 	b.state.l1Current = l1End
+	metrics.DriverL1CurrentHeightGauge.Update(b.state.l1Current.Number.Int64())
 
 	return nil
 }
@@ -192,6 +194,8 @@ func (b *L2ChainInserter) onBlockProposed(ctx context.Context, event *bindings.T
 		"lastVerifiedBlockHash", b.state.getLastVerifiedBlockHash(),
 		"transactions", len(payloadData.Transactions),
 	)
+
+	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
 
 	return nil
 }
