@@ -41,7 +41,7 @@ func TestGetReceiptsByBlock(t *testing.T) {
 	l1Genesis, err := client.L1.BlockByNumber(context.Background(), common.Big0)
 	require.Nil(t, err)
 
-	receipts, err := GetReceiptsByBlock(context.Background(), client.L1, l1Genesis)
+	receipts, err := GetReceiptsByBlock(context.Background(), client.L1RawRPC, l1Genesis)
 	require.Nil(t, err)
 	require.Empty(t, receipts)
 }
