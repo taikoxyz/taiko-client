@@ -42,13 +42,13 @@ func NewBlockProposedIterator(ctx context.Context, cfg *BlockProposedIteratorCon
 		return nil, errors.New("invalid callback")
 	}
 
-	s := &BlockProposedIterator{
+	ei := &BlockProposedIterator{
 		ctx:         ctx,
 		taikoL1:     cfg.TaikoL1,
 		filterQuery: cfg.FilterQuery,
 	}
 
-	cs, err := chainiterator.NewChainIterator(ctx, &chainiterator.ChainIteratorConfig{
+	ci, err := chainiterator.NewChainIterator(ctx, &chainiterator.ChainIteratorConfig{
 		Client:                cfg.Client,
 		MaxBlocksReadPerEpoch: cfg.MaxBlocksReadPerEpoch,
 		StartHeight:           cfg.StartHeight,
@@ -64,9 +64,9 @@ func NewBlockProposedIterator(ctx context.Context, cfg *BlockProposedIteratorCon
 		return nil, err
 	}
 
-	s.cs = cs
+	ei.cs = ci
 
-	return s, nil
+	return ei, nil
 }
 
 // Iter iterates the given chain between the given start and end heights,

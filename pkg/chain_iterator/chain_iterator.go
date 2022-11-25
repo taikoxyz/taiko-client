@@ -84,7 +84,7 @@ func NewChainIterator(ctx context.Context, cfg *ChainIteratorConfig) (*ChainIter
 		return nil, fmt.Errorf("failed to get start header, height: %s, error: %w", cfg.StartHeight, err)
 	}
 
-	cs := &ChainIterator{
+	ci := &ChainIterator{
 		ctx:         ctx,
 		client:      cfg.Client,
 		chainID:     chainID,
@@ -94,25 +94,25 @@ func NewChainIterator(ctx context.Context, cfg *ChainIteratorConfig) (*ChainIter
 	}
 
 	if cfg.MaxBlocksReadPerEpoch != nil {
-		cs.maxBlocksReadPerEpoch = *cfg.MaxBlocksReadPerEpoch
+		ci.maxBlocksReadPerEpoch = *cfg.MaxBlocksReadPerEpoch
 	} else {
-		cs.maxBlocksReadPerEpoch = DefaultMaxBlocksReadPerEpoch
+		ci.maxBlocksReadPerEpoch = DefaultMaxBlocksReadPerEpoch
 	}
 
 	if cfg.EndHeight != nil {
 		endHeightUint64 := cfg.EndHeight.Uint64()
-		cs.endHeight = &endHeightUint64
+		ci.endHeight = &endHeightUint64
 	}
 
-	return cs, nil
+	return ci, nil
 }
 
 // Iter iterates the given chain between the given start and end heights,
 // will call the callback when blocks in chain are iterated.
-func (cs *ChainIterator) Iter() error {
+func (ci *ChainIterator) Iter() error {
 	iterOp := func() error {
 		for {
-			if err := cs.iter(); err != nil {
+			if err := ci.iter(); err != nil {
 				if errors.Is(err, io.EOF) {
 					break
 				}
@@ -127,25 +127,25 @@ func (cs *ChainIterator) Iter() error {
 
 	for {
 		select {
-		case <-cs.ctx.Done():
-			return cs.ctx.Err()
+		case <-ci.ctx.Done():
+			return ci.ctx.Err()
 		default:
 			return backoff.Retry(iterOp, backoff.NewExponentialBackOff())
 		}
 	}
 }
 
-func (cs *ChainIterator) iter() error {
-	if err := cs.ensureCurrentNotReorged(); err != nil {
+func (ci *ChainIterator) iter() error {
+	if err := ci.ensureCurrentNotReorged(); err != nil {
 		return fmt.Errorf("failed to check whether chainScanner.current has been reorged: %w", err)
 	}
 
-	head, err := cs.client.HeaderByNumber(cs.ctx, nil)
+	head, err := ci.client.HeaderByNumber(ci.ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	if cs.current.Number.Cmp(head.Number) == 0 {
+	if ci.current.Number.Cmp(head.Number) == 0 {
 		return nil
 	}
 
@@ -153,22 +153,22 @@ func (cs *ChainIterator) iter() error {
 		endHeader   = head
 		isLastEpoch = true
 	)
-	if cs.endHeight != nil {
-		endHeight := cs.current.Number.Uint64() + cs.maxBlocksReadPerEpoch
+	if ci.endHeight != nil {
+		endHeight := ci.current.Number.Uint64() + ci.maxBlocksReadPerEpoch
 
 		if endHeight < head.Number.Uint64() {
-			if endHeader, err = cs.client.HeaderByNumber(cs.ctx, new(big.Int).SetUint64(endHeight)); err != nil {
+			if endHeader, err = ci.client.HeaderByNumber(ci.ctx, new(big.Int).SetUint64(endHeight)); err != nil {
 				return err
 			}
 			isLastEpoch = false
 		}
 	}
 
-	if err := cs.onBlocks(cs.ctx, cs.current, endHeader, cs.updateCurrent); err != nil {
+	if err := ci.onBlocks(ci.ctx, ci.current, endHeader, ci.updateCurrent); err != nil {
 		return err
 	}
 
-	cs.current = endHeader
+	ci.current = endHeader
 
 	if !isLastEpoch {
 		return errContinue
@@ -178,19 +178,19 @@ func (cs *ChainIterator) iter() error {
 }
 
 // updateCurrent updates the scanner's current cursor.
-func (cs *ChainIterator) updateCurrent(current *types.Header) {
+func (ci *ChainIterator) updateCurrent(current *types.Header) {
 	if current == nil {
 		log.Warn("Receive a nil header as chainScanner.current")
 		return
 	}
 
-	cs.current = current
+	ci.current = current
 }
 
 // ensureCurrentNotReorged checks if the chainScanner.current was reorged, if was, will
 // rewind back `ReorgRewindDepth` blocks.
-func (cs *ChainIterator) ensureCurrentNotReorged() error {
-	current, err := cs.client.HeaderByHash(cs.ctx, cs.current.Hash())
+func (ci *ChainIterator) ensureCurrentNotReorged() error {
+	current, err := ci.client.HeaderByHash(ci.ctx, ci.current.Hash())
 	if err != nil && !errors.Is(err, ethereum.NotFound) {
 		return err
 	}
@@ -208,6 +208,6 @@ func (cs *ChainIterator) ensureCurrentNotReorged() error {
 		newCurrentHeight = current.Number.Uint64() - ReorgRewindDepth
 	}
 
-	cs.current, err = cs.client.HeaderByNumber(cs.ctx, new(big.Int).SetUint64(newCurrentHeight))
+	ci.current, err = ci.client.HeaderByNumber(ci.ctx, new(big.Int).SetUint64(newCurrentHeight))
 	return err
 }
