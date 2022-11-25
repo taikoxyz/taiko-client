@@ -158,16 +158,17 @@ func (p *Prover) eventLoop() {
 		p.wg.Done()
 	}()
 
-	// reqProve requests performing a synchronising operation, won't block
-	// if we are already synchronising.
-	reqProve := func() {
+	// reqProving requests performing a proving operation, won't block
+	// if we are already proving.
+	reqProving := func() {
 		select {
 		case p.proveNotify <- struct{}{}:
 		default:
 		}
 	}
 
-	reqProve()
+	// Call reqProving() right away to catch up with the latest state.
+	reqProving()
 
 	for {
 		select {
@@ -178,7 +179,7 @@ func (p *Prover) eventLoop() {
 				log.Error("Prove new blocks error", "error", err)
 			}
 		case <-p.blockProposedCh:
-			reqProve()
+			reqProving()
 		case e := <-p.blockVerifiedCh:
 			if err := p.onBlockVerified(p.ctx, e); err != nil {
 				log.Error("Handle BlockVerified event error", "error", err)
@@ -201,6 +202,8 @@ func (p *Prover) Close() {
 	p.wg.Wait()
 }
 
+// proveOp perfors a proving operation, find current unproven blocks, then
+// request generating proofs for them.
 func (p *Prover) proveOp() error {
 	isHalted, err := p.rpc.TaikoL1.IsHalted(nil)
 	if err != nil {

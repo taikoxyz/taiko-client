@@ -19,10 +19,10 @@ type OnBlockProposedEvent func(context.Context, *bindings.TaikoL1ClientBlockProp
 // BlockProposedIterator iterates the emitted TaikoL1.BlockProposed events in the chain,
 // with the awareness of reorganization.
 type BlockProposedIterator struct {
-	ctx         context.Context
-	taikoL1     *bindings.TaikoL1Client
-	cs          *chainiterator.ChainIterator
-	filterQuery []*big.Int
+	ctx                context.Context
+	taikoL1            *bindings.TaikoL1Client
+	blockBatchIterator *chainiterator.BlockBatchIterator
+	filterQuery        []*big.Int
 }
 
 // BlockProposedIteratorConfig represents the configs of a BlockProposed event iterator.
@@ -42,13 +42,14 @@ func NewBlockProposedIterator(ctx context.Context, cfg *BlockProposedIteratorCon
 		return nil, errors.New("invalid callback")
 	}
 
-	ei := &BlockProposedIterator{
+	iterator := &BlockProposedIterator{
 		ctx:         ctx,
 		taikoL1:     cfg.TaikoL1,
 		filterQuery: cfg.FilterQuery,
 	}
 
-	ci, err := chainiterator.NewChainIterator(ctx, &chainiterator.ChainIteratorConfig{
+	// Initialize the inner block iterator.
+	blockIterator, err := chainiterator.NewBlockBatchIterator(ctx, &chainiterator.BlockBatchIteratorConfig{
 		Client:                cfg.Client,
 		MaxBlocksReadPerEpoch: cfg.MaxBlocksReadPerEpoch,
 		StartHeight:           cfg.StartHeight,
@@ -64,19 +65,19 @@ func NewBlockProposedIterator(ctx context.Context, cfg *BlockProposedIteratorCon
 		return nil, err
 	}
 
-	ei.cs = ci
+	iterator.blockBatchIterator = blockIterator
 
-	return ei, nil
+	return iterator, nil
 }
 
 // Iter iterates the given chain between the given start and end heights,
 // will call the callback when a BlockProposed event is iterated.
-func (s *BlockProposedIterator) Iter() error {
-	return s.cs.Iter()
+func (i *BlockProposedIterator) Iter() error {
+	return i.blockBatchIterator.Iter()
 }
 
 // assembleBlockProposedIteratorCallback assembles the callback which will be used
-// by a event iterator's inner chain iterator.
+// by a event iterator's inner block iterator.
 func assembleBlockProposedIteratorCallback(
 	client *ethclient.Client,
 	taikoL1Client *bindings.TaikoL1Client,
@@ -100,8 +101,7 @@ func assembleBlockProposedIteratorCallback(
 
 			event := iter.Event
 
-			// Since we are not using eth_subscribe, this should not happen,
-			// only check for safety.
+			// Skip if reorged.
 			if event.Raw.Removed {
 				continue
 			}
