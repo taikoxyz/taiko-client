@@ -34,7 +34,7 @@ type OnBlocksFunc func(
 // UpdateCurrentFunc updates the iterator.current cursor in the iterator.
 type UpdateCurrentFunc func(*types.Header)
 
-// BlockBatchIterator iterates the blocks in batchs between the given start and end heights,
+// BlockBatchIterator iterates the blocks in batches between the given start and end heights,
 // with the awareness of reorganization.
 type BlockBatchIterator struct {
 	ctx                   context.Context
@@ -141,23 +141,27 @@ func (i *BlockBatchIterator) iter() error {
 		return fmt.Errorf("failed to check whether iterator.current cursor has been reorged: %w", err)
 	}
 
-	head, err := i.client.HeaderByNumber(i.ctx, nil)
+	var (
+		endHeight   *big.Int
+		isLastEpoch = true
+	)
+	if i.endHeight != nil {
+		endHeight = new(big.Int).SetUint64(*i.endHeight)
+	}
+
+	endHeader, err := i.client.HeaderByNumber(i.ctx, endHeight)
 	if err != nil {
 		return err
 	}
 
-	if i.current.Number.Cmp(head.Number) == 0 {
+	if i.current.Number.Cmp(endHeader.Number) == 0 {
 		return nil
 	}
 
-	var (
-		endHeader   = head
-		isLastEpoch = true
-	)
 	if i.endHeight != nil {
 		endHeight := i.current.Number.Uint64() + i.maxBlocksReadPerEpoch
 
-		if endHeight < head.Number.Uint64() {
+		if endHeight < *i.endHeight {
 			if endHeader, err = i.client.HeaderByNumber(i.ctx, new(big.Int).SetUint64(endHeight)); err != nil {
 				return err
 			}
