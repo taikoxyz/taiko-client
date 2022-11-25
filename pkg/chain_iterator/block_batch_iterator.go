@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	DefaultMaxBlocksReadPerEpoch = 1000
-	ReorgRewindDepth             = 20
+	DefaultBlocksReadPerEpoch = 1000
+	ReorgRewindDepth          = 20
 )
 
 var (
@@ -37,14 +37,14 @@ type UpdateCurrentFunc func(*types.Header)
 // BlockBatchIterator iterates the blocks in batches between the given start and end heights,
 // with the awareness of reorganization.
 type BlockBatchIterator struct {
-	ctx                   context.Context
-	client                *ethclient.Client
-	chainID               *big.Int
-	maxBlocksReadPerEpoch uint64
-	startHeight           uint64
-	endHeight             *uint64
-	current               *types.Header
-	onBlocks              OnBlocksFunc
+	ctx                context.Context
+	client             *ethclient.Client
+	chainID            *big.Int
+	blocksReadPerEpoch uint64
+	startHeight        uint64
+	endHeight          *uint64
+	current            *types.Header
+	onBlocks           OnBlocksFunc
 }
 
 // BlockBatchIteratorConfig represents the configs of a block batch iterator.
@@ -94,9 +94,9 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 	}
 
 	if cfg.MaxBlocksReadPerEpoch != nil {
-		iterator.maxBlocksReadPerEpoch = *cfg.MaxBlocksReadPerEpoch
+		iterator.blocksReadPerEpoch = *cfg.MaxBlocksReadPerEpoch
 	} else {
-		iterator.maxBlocksReadPerEpoch = DefaultMaxBlocksReadPerEpoch
+		iterator.blocksReadPerEpoch = DefaultBlocksReadPerEpoch
 	}
 
 	if cfg.EndHeight != nil {
@@ -136,37 +136,39 @@ func (i *BlockBatchIterator) Iter() error {
 }
 
 // iter is the internal implementation of Iter, which performs the iteration.
-func (i *BlockBatchIterator) iter() error {
+func (i *BlockBatchIterator) iter() (err error) {
 	if err := i.ensureCurrentNotReorged(); err != nil {
 		return fmt.Errorf("failed to check whether iterator.current cursor has been reorged: %w", err)
 	}
 
 	var (
-		endHeight   *big.Int
-		isLastEpoch = true
+		endHeight   uint64
+		endHeader   *types.Header
+		destHeight  uint64
+		isLastEpoch bool
 	)
+
 	if i.endHeight != nil {
-		endHeight = new(big.Int).SetUint64(*i.endHeight)
+		destHeight = *i.endHeight
+	} else {
+		if destHeight, err = i.client.BlockNumber(i.ctx); err != nil {
+			return err
+		}
 	}
 
-	endHeader, err := i.client.HeaderByNumber(i.ctx, endHeight)
-	if err != nil {
-		return err
-	}
-
-	if i.current.Number.Cmp(endHeader.Number) == 0 {
+	if i.current.Number.Uint64() >= destHeight {
 		return nil
 	}
 
-	if i.endHeight != nil {
-		endHeight := i.current.Number.Uint64() + i.maxBlocksReadPerEpoch
+	endHeight = i.current.Number.Uint64() + i.blocksReadPerEpoch
 
-		if endHeight < *i.endHeight {
-			if endHeader, err = i.client.HeaderByNumber(i.ctx, new(big.Int).SetUint64(endHeight)); err != nil {
-				return err
-			}
-			isLastEpoch = false
-		}
+	if endHeight >= destHeight {
+		endHeight = destHeight
+		isLastEpoch = true
+	}
+
+	if endHeader, err = i.client.HeaderByNumber(i.ctx, new(big.Int).SetUint64(endHeight)); err != nil {
+		return err
 	}
 
 	if err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent); err != nil {
