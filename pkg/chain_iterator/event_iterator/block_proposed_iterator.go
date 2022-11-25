@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/taikoxyz/taiko-client/bindings"
-	chainiterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator"
+	chainIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator"
 )
 
 // OnBlockProposedEvent represents the callback function which will be called when a TaikoL1.BlockProposed event is
@@ -21,7 +21,7 @@ type OnBlockProposedEvent func(context.Context, *bindings.TaikoL1ClientBlockProp
 type BlockProposedIterator struct {
 	ctx                context.Context
 	taikoL1            *bindings.TaikoL1Client
-	blockBatchIterator *chainiterator.BlockBatchIterator
+	blockBatchIterator *chainIterator.BlockBatchIterator
 	filterQuery        []*big.Int
 }
 
@@ -49,7 +49,7 @@ func NewBlockProposedIterator(ctx context.Context, cfg *BlockProposedIteratorCon
 	}
 
 	// Initialize the inner block iterator.
-	blockIterator, err := chainiterator.NewBlockBatchIterator(ctx, &chainiterator.BlockBatchIteratorConfig{
+	blockIterator, err := chainIterator.NewBlockBatchIterator(ctx, &chainIterator.BlockBatchIteratorConfig{
 		Client:                cfg.Client,
 		MaxBlocksReadPerEpoch: cfg.MaxBlocksReadPerEpoch,
 		StartHeight:           cfg.StartHeight,
@@ -83,8 +83,8 @@ func assembleBlockProposedIteratorCallback(
 	taikoL1Client *bindings.TaikoL1Client,
 	filterQuery []*big.Int,
 	callback OnBlockProposedEvent,
-) chainiterator.OnBlocksFunc {
-	return func(ctx context.Context, start, end *types.Header, updateCurrentFunc chainiterator.UpdateCurrentFunc) error {
+) chainIterator.OnBlocksFunc {
+	return func(ctx context.Context, start, end *types.Header, updateCurrentFunc chainIterator.UpdateCurrentFunc) error {
 		endHeight := end.Number.Uint64()
 		iter, err := taikoL1Client.FilterBlockProposed(
 			&bind.FilterOpts{Start: start.Number.Uint64(), End: &endHeight},

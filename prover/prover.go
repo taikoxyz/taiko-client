@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/metrics"
-	eventiterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
+	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 	"github.com/taikoxyz/taiko-client/prover/producer"
@@ -215,7 +215,7 @@ func (p *Prover) proveOp() error {
 		return nil
 	}
 
-	iter, err := eventiterator.NewBlockProposedIterator(p.ctx, &eventiterator.BlockProposedIteratorConfig{
+	iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
 		Client:               p.rpc.L1,
 		TaikoL1:              p.rpc.TaikoL1,
 		StartHeight:          new(big.Int).SetUint64(p.l1Current),

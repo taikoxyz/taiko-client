@@ -19,7 +19,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
-	eventiterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
+	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
@@ -59,7 +59,7 @@ func NewL2ChainInserter(
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
 // L1 block heights, and then tries inserting them into L2 node's block chain.
 func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
-	iter, err := eventiterator.NewBlockProposedIterator(ctx, &eventiterator.BlockProposedIteratorConfig{
+	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
 		Client:               b.rpc.L1,
 		TaikoL1:              b.rpc.TaikoL1,
 		StartHeight:          b.state.l1Current.Number,
