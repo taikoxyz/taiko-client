@@ -104,7 +104,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		return fmt.Errorf("failed to generate anchor transaction proof: %w", err)
 	}
 
-	receipts, err := rpc.GetReceiptsByBlock(ctx, p.rpc.L2, block)
+	receipts, err := rpc.GetReceiptsByBlock(ctx, p.rpc.L2RawRPC, block)
 	if err != nil {
 		return fmt.Errorf("failed to fetch block receipts: %w", err)
 	}
