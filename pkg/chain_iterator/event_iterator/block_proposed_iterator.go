@@ -1,4 +1,4 @@
-package eventscanner
+package eventiterator
 
 import (
 	"context"
@@ -9,19 +9,24 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/taikoxyz/taiko-client/bindings"
-	chainscanner "github.com/taikoxyz/taiko-client/pkg/chain_scanner"
+	chainiterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator"
 )
 
+// OnBlockProposedEvent represents the callback function which will be called when a TaikoL1.BlockProposed event is
+// iterated.
 type OnBlockProposedEvent func(context.Context, *bindings.TaikoL1ClientBlockProposed) error
 
-type BlockProposedScanner struct {
+// BlockProposedIterator iterates the emitted TaikoL1.BlockProposed events in the chain,
+// with the awareness of reorganization.
+type BlockProposedIterator struct {
 	ctx         context.Context
 	taikoL1     *bindings.TaikoL1Client
-	cs          *chainscanner.ChainScanner
+	cs          *chainiterator.ChainIterator
 	filterQuery []*big.Int
 }
 
-type BlockProposedScannerConfig struct {
+// BlockProposedIteratorConfig represents the configs of a BlockProposed event iterator.
+type BlockProposedIteratorConfig struct {
 	Client                *ethclient.Client
 	TaikoL1               *bindings.TaikoL1Client
 	MaxBlocksReadPerEpoch *uint64
@@ -31,23 +36,24 @@ type BlockProposedScannerConfig struct {
 	OnBlockProposedEvent  OnBlockProposedEvent
 }
 
-func NewBlockProposedScanner(ctx context.Context, cfg *BlockProposedScannerConfig) (*BlockProposedScanner, error) {
+// NewBlockProposedIterator creates a new instance of BlockProposed event iterator.
+func NewBlockProposedIterator(ctx context.Context, cfg *BlockProposedIteratorConfig) (*BlockProposedIterator, error) {
 	if cfg.OnBlockProposedEvent == nil {
 		return nil, errors.New("invalid callback")
 	}
 
-	s := &BlockProposedScanner{
+	s := &BlockProposedIterator{
 		ctx:         ctx,
 		taikoL1:     cfg.TaikoL1,
 		filterQuery: cfg.FilterQuery,
 	}
 
-	cs, err := chainscanner.NewChainScanner(ctx, &chainscanner.ChainScannerConfig{
+	cs, err := chainiterator.NewChainIterator(ctx, &chainiterator.ChainIteratorConfig{
 		Client:                cfg.Client,
 		MaxBlocksReadPerEpoch: cfg.MaxBlocksReadPerEpoch,
 		StartHeight:           cfg.StartHeight,
 		EndHeight:             cfg.EndHeight,
-		OnBlocksScanned: assembleBlockProposedScannerCallback(
+		OnBlocks: assembleBlockProposedIteratorCallback(
 			cfg.Client,
 			cfg.TaikoL1,
 			cfg.FilterQuery,
@@ -63,17 +69,21 @@ func NewBlockProposedScanner(ctx context.Context, cfg *BlockProposedScannerConfi
 	return s, nil
 }
 
-func (s *BlockProposedScanner) Scan() error {
-	return s.cs.Scan()
+// Iter iterates the given chain between the given start and end heights,
+// will call the callback when a BlockProposed event is iterated.
+func (s *BlockProposedIterator) Iter() error {
+	return s.cs.Iter()
 }
 
-func assembleBlockProposedScannerCallback(
+// assembleBlockProposedIteratorCallback assembles the callback which will be used
+// by a event iterator's inner chain iterator.
+func assembleBlockProposedIteratorCallback(
 	client *ethclient.Client,
 	taikoL1Client *bindings.TaikoL1Client,
 	filterQuery []*big.Int,
 	callback OnBlockProposedEvent,
-) chainscanner.OnBlocksScannedFunc {
-	return func(ctx context.Context, start, end *types.Header, updateCurrentFunc chainscanner.UpdateCurrentFunc) error {
+) chainiterator.OnBlocksFunc {
+	return func(ctx context.Context, start, end *types.Header, updateCurrentFunc chainiterator.UpdateCurrentFunc) error {
 		endHeight := end.Number.Uint64()
 		iter, err := taikoL1Client.FilterBlockProposed(
 			&bind.FilterOpts{Start: start.Number.Uint64(), End: &endHeight},

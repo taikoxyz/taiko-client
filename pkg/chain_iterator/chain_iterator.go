@@ -1,4 +1,4 @@
-package chainscanner
+package chainiterator
 
 import (
 	"context"
@@ -23,14 +23,20 @@ var (
 	errContinue = errors.New("continue")
 )
 
-type UpdateCurrentFunc func(*types.Header)
-type OnBlocksScannedFunc func(
+// OnBlocksFunc represents the callback function which will be called when blocks in chain are
+// iterated.
+type OnBlocksFunc func(
 	ctx context.Context,
 	start, end *types.Header,
 	updateCurrentFunc UpdateCurrentFunc,
 ) error
 
-type ChainScanner struct {
+// UpdateCurrentFunc updates the current block cursor in iterator.
+type UpdateCurrentFunc func(*types.Header)
+
+// ChainIterator iterates the blocks between the given start and end heights in a chain,
+// with the awareness of reorganization.
+type ChainIterator struct {
 	ctx                   context.Context
 	client                *ethclient.Client
 	chainID               *big.Int
@@ -38,23 +44,25 @@ type ChainScanner struct {
 	startHeight           uint64
 	endHeight             *uint64
 	current               *types.Header
-	onBlocksScanned       OnBlocksScannedFunc
+	onBlocks              OnBlocksFunc
 }
 
-type ChainScannerConfig struct {
+// ChainIteratorConfig represents the configs of a chain iterator.
+type ChainIteratorConfig struct {
 	Client                *ethclient.Client
 	MaxBlocksReadPerEpoch *uint64
 	StartHeight           *big.Int
 	EndHeight             *big.Int
-	OnBlocksScanned       OnBlocksScannedFunc
+	OnBlocks              OnBlocksFunc
 }
 
-func NewChainScanner(ctx context.Context, cfg *ChainScannerConfig) (*ChainScanner, error) {
+// NewChainIterator creates a new chain iterator instance.
+func NewChainIterator(ctx context.Context, cfg *ChainIteratorConfig) (*ChainIterator, error) {
 	if cfg.Client == nil {
 		return nil, errors.New("invalid RPC client")
 	}
 
-	if cfg.OnBlocksScanned == nil {
+	if cfg.OnBlocks == nil {
 		return nil, errors.New("invalid callback")
 	}
 
@@ -76,13 +84,13 @@ func NewChainScanner(ctx context.Context, cfg *ChainScannerConfig) (*ChainScanne
 		return nil, fmt.Errorf("failed to get start header, height: %s, error: %w", cfg.StartHeight, err)
 	}
 
-	cs := &ChainScanner{
-		ctx:             ctx,
-		client:          cfg.Client,
-		chainID:         chainID,
-		startHeight:     cfg.StartHeight.Uint64(),
-		current:         startHeader,
-		onBlocksScanned: cfg.OnBlocksScanned,
+	cs := &ChainIterator{
+		ctx:         ctx,
+		client:      cfg.Client,
+		chainID:     chainID,
+		startHeight: cfg.StartHeight.Uint64(),
+		current:     startHeader,
+		onBlocks:    cfg.OnBlocks,
 	}
 
 	if cfg.MaxBlocksReadPerEpoch != nil {
@@ -99,10 +107,12 @@ func NewChainScanner(ctx context.Context, cfg *ChainScannerConfig) (*ChainScanne
 	return cs, nil
 }
 
-func (cs *ChainScanner) Scan() error {
-	scanOp := func() error {
+// Iter iterates the given chain between the given start and end heights,
+// will call the callback when blocks in chain are iterated.
+func (cs *ChainIterator) Iter() error {
+	iterOp := func() error {
 		for {
-			if err := cs.scan(); err != nil {
+			if err := cs.iter(); err != nil {
 				if errors.Is(err, io.EOF) {
 					break
 				}
@@ -120,12 +130,12 @@ func (cs *ChainScanner) Scan() error {
 		case <-cs.ctx.Done():
 			return cs.ctx.Err()
 		default:
-			return backoff.Retry(scanOp, backoff.NewExponentialBackOff())
+			return backoff.Retry(iterOp, backoff.NewExponentialBackOff())
 		}
 	}
 }
 
-func (cs *ChainScanner) scan() error {
+func (cs *ChainIterator) iter() error {
 	if err := cs.ensureCurrentNotReorged(); err != nil {
 		return fmt.Errorf("failed to check whether chainScanner.current has been reorged: %w", err)
 	}
@@ -154,7 +164,7 @@ func (cs *ChainScanner) scan() error {
 		}
 	}
 
-	if err := cs.onBlocksScanned(cs.ctx, cs.current, endHeader, cs.updateCurrent); err != nil {
+	if err := cs.onBlocks(cs.ctx, cs.current, endHeader, cs.updateCurrent); err != nil {
 		return err
 	}
 
@@ -168,7 +178,7 @@ func (cs *ChainScanner) scan() error {
 }
 
 // updateCurrent updates the scanner's current cursor.
-func (cs *ChainScanner) updateCurrent(current *types.Header) {
+func (cs *ChainIterator) updateCurrent(current *types.Header) {
 	if current == nil {
 		log.Warn("Receive a nil header as chainScanner.current")
 		return
@@ -179,7 +189,7 @@ func (cs *ChainScanner) updateCurrent(current *types.Header) {
 
 // ensureCurrentNotReorged checks if the chainScanner.current was reorged, if was, will
 // rewind back `ReorgRewindDepth` blocks.
-func (cs *ChainScanner) ensureCurrentNotReorged() error {
+func (cs *ChainIterator) ensureCurrentNotReorged() error {
 	current, err := cs.client.HeaderByHash(cs.ctx, cs.current.Hash())
 	if err != nil && !errors.Is(err, ethereum.NotFound) {
 		return err

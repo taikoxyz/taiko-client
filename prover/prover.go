@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/metrics"
-	eventscanner "github.com/taikoxyz/taiko-client/pkg/chain_scanner/event_scanner"
+	eventiterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 	"github.com/taikoxyz/taiko-client/prover/producer"
@@ -177,7 +177,7 @@ func (p *Prover) eventLoop() {
 			if err := p.proveOp(); err != nil {
 				log.Error("Prove new blocks error", "error", err)
 			}
-		case <-p.blockProposedCh: // TODO: change to trigger when there is l1 new head
+		case <-p.blockProposedCh:
 			reqProve()
 		case e := <-p.blockVerifiedCh:
 			if err := p.onBlockVerified(p.ctx, e); err != nil {
@@ -212,7 +212,7 @@ func (p *Prover) proveOp() error {
 		return nil
 	}
 
-	scanner, err := eventscanner.NewBlockProposedScanner(p.ctx, &eventscanner.BlockProposedScannerConfig{
+	iter, err := eventiterator.NewBlockProposedIterator(p.ctx, &eventiterator.BlockProposedIteratorConfig{
 		Client:               p.rpc.L1,
 		TaikoL1:              p.rpc.TaikoL1,
 		StartHeight:          new(big.Int).SetUint64(p.l1Current),
@@ -222,7 +222,7 @@ func (p *Prover) proveOp() error {
 		return err
 	}
 
-	return scanner.Scan()
+	return iter.Iter()
 }
 
 // onBlockProposed tries to prove that the newly proposed block is valid/invalid.
@@ -230,25 +230,34 @@ func (p *Prover) onBlockProposed(ctx context.Context, event *bindings.TaikoL1Cli
 	log.Info("Proposed block", "blockID", event.Id)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
 
-	// TODO: check proofs count, add a TaikoL1 method?
+	// Check whether the block has been verified.
+	isVerified, err := p.isBlockVerified(event.Id)
+	if err != nil {
+		return err
+	}
 
+	if isVerified {
+		log.Info("Block is verified", "blockID", event.Id)
+		return nil
+	}
+
+	// Check whether the transactions list is valid.
 	proposeBlockTx, err := p.rpc.L1.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
 	if err != nil {
 		return err
 	}
 
-	// Check whether the transactions list is valid.
 	hint, invalidTxIndex, err := p.txListValidator.ValidateTxList(event.Id, proposeBlockTx.Data())
 	if err != nil {
 		return err
 	}
 
-	// Prove the proposed block valid.
+	// Prove the proposed block is valid.
 	if hint == txListValidator.HintOK {
 		return p.proveBlockValid(ctx, event)
 	}
 
-	// Prove the proposed block invalid.
+	// Otherwise, prove the proposed block is invalid.
 	return p.proveBlockInvalid(ctx, event, hint, invalidTxIndex)
 }
 
@@ -323,4 +332,14 @@ func (p *Prover) initL1Current() error {
 
 	p.l1Current = latestVerifiedHeaderL1Origin.L1BlockHeight.Uint64()
 	return nil
+}
+
+// isBlockVerified checks whether the given block has been verified by other provers.
+func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
+	_, _, latestVerifiedID, _, err := p.rpc.TaikoL1.GetStateVariables(nil)
+	if err != nil {
+		return false, err
+	}
+
+	return id.Uint64() > latestVerifiedID, nil
 }
