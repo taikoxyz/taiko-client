@@ -344,5 +344,5 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 		return false, err
 	}
 
-	return id.Uint64() > latestVerifiedID, nil
+	return id.Uint64() <= latestVerifiedID, nil
 }

@@ -34,7 +34,7 @@ type OnBlocksFunc func(
 // UpdateCurrentFunc updates the iterator.current cursor in the iterator.
 type UpdateCurrentFunc func(*types.Header)
 
-// BlockBatchIterator iterates the blocks between the given start and end heights in a chain,
+// BlockBatchIterator iterates the blocks in batchs between the given start and end heights,
 // with the awareness of reorganization.
 type BlockBatchIterator struct {
 	ctx                   context.Context
@@ -135,6 +135,7 @@ func (i *BlockBatchIterator) Iter() error {
 	}
 }
 
+// iter is the internal implementation of Iter, which performs the iteration.
 func (i *BlockBatchIterator) iter() error {
 	if err := i.ensureCurrentNotReorged(); err != nil {
 		return fmt.Errorf("failed to check whether iterator.current cursor has been reorged: %w", err)
