@@ -91,38 +91,6 @@ func (s *State) Close() {
 	s.l2BlockProposedSub.Unsubscribe()
 }
 
-// ConfirmL1Current ensures that the local L1 sync cursor has not been reorged.
-func (s *State) ConfirmL1Current(ctx context.Context) (*types.Header, error) {
-	// Check whether the L1 sync cursor has been reorged
-	l1Current, err := s.rpc.L1.HeaderByHash(ctx, s.l1Current.Hash())
-	if err != nil {
-		return nil, err
-	}
-
-	// Not reorged
-	if l1Current != nil {
-		return s.l1Current, nil
-	}
-
-	// Reorg detected, update sync cursor's height to last saved height minus
-	// `reorgRollbackDepth`
-	var newL1SyncCursorHeight *big.Int
-	if s.l1Current.Number.Uint64() > ReorgRollbackDepth {
-		newL1SyncCursorHeight = new(big.Int).SetUint64(
-			s.l1Current.Number.Uint64() - ReorgRollbackDepth,
-		)
-	} else {
-		newL1SyncCursorHeight = common.Big0
-	}
-
-	s.l1Current, err = s.rpc.L1.HeaderByNumber(ctx, newL1SyncCursorHeight)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.l1Current, nil
-}
-
 // initSubscriptions initializes all subscriptions in the given state instance.
 func (s *State) initSubscriptions(ctx context.Context) error {
 	// 1. L1 head
@@ -200,7 +168,7 @@ func (s *State) watchL1Head(ctx context.Context) (event.Subscription, error) {
 
 	sub, err := s.rpc.L1.SubscribeNewHead(ctx, newL1HeadCh)
 	if err != nil {
-		log.Error("Create L1 heads subscription error", "error", err)
+		log.Error("Create L1 head subscription error", "error", err)
 		return nil, err
 	}
 

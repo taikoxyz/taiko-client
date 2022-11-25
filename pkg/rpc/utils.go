@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
-	"golang.org/x/sync/errgroup"
 )
 
 // WaitConfirmations won't return before N blocks confirmations have been seen
@@ -66,24 +65,36 @@ func WaitReceipt(ctx context.Context, client *ethclient.Client, tx *types.Transa
 }
 
 // GetReceiptsByBlock fetches all transaction receipts in a block.
-// TODO: fetch all receipts in one GraphQL call.
-func GetReceiptsByBlock(ctx context.Context, cli *ethclient.Client, block *types.Block) (types.Receipts, error) {
-	g, ctx := errgroup.WithContext(ctx)
+func GetReceiptsByBlock(ctx context.Context, cli *rpc.Client, block *types.Block) (types.Receipts, error) {
+	reqs := make([]rpc.BatchElem, block.Transactions().Len())
+	receipts := make([]*types.Receipt, block.Transactions().Len())
 
-	receipts := make(types.Receipts, block.Transactions().Len())
-	for i := range block.Transactions() {
-		func(i int) {
-			g.Go(func() (err error) {
-				receipts[i], err = cli.TransactionReceipt(ctx, block.Transactions()[i].Hash())
-				return err
-			})
-		}(i)
+	for i, tx := range block.Transactions() {
+		reqs[i] = rpc.BatchElem{
+			Method: "eth_getTransactionReceipt",
+			Args:   []interface{}{tx.Hash()},
+			Result: &receipts[i],
+		}
 	}
 
-	return receipts, g.Wait()
+	if err := cli.BatchCallContext(ctx, reqs); err != nil {
+		return nil, err
+	}
+
+	for i := range reqs {
+		if reqs[i].Error != nil {
+			return nil, reqs[i].Error
+		}
+
+		if receipts[i] == nil {
+			return nil, fmt.Errorf("got null receipt of transaction %s", block.Transactions()[i].Hash())
+		}
+	}
+
+	return receipts, nil
 }
 
-// SetHead makes a `debug_setHead` RPC call to set the chain's head, only used
+// SetHead makes a `debug_setHead` RPC call to set the chain's head, should only be used
 // for testing purpose.
 func SetHead(ctx context.Context, rpc *rpc.Client, headNum *big.Int) error {
 	return gethclient.New(rpc).SetHead(ctx, headNum)

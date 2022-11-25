@@ -1,2 +1,5 @@
+coverage:
+  status:
+    patch: off
 fixes:
   - "taiko-client/::"

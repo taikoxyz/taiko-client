@@ -121,17 +121,6 @@ func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 	s.Nil(s.p.onBlockVerified(context.Background(), &bindings.TaikoL1ClientBlockVerified{BlockHash: common.Hash{}}))
 }
 
-func (s *ProverTestSuite) TestOnForceTimerEventNotFound() {
-	// All proposed blocks are verified
-	s.Nil(s.p.onForceTimer(context.Background()))
-}
-
-func (s *ProverTestSuite) TestBatchHandleBlockProposedEventsBuffered() {
-	s.Nil(
-		s.p.batchHandleBlockProposedEvents(context.Background(), &bindings.TaikoL1ClientBlockProposed{}),
-	)
-}
-
 func TestProverTestSuite(t *testing.T) {
 	suite.Run(t, new(ProverTestSuite))
 }

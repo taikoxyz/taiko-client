@@ -19,6 +19,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
+	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
@@ -58,177 +59,143 @@ func NewL2ChainInserter(
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
 // L1 block heights, and then tries inserting them into L2 node's block chain.
 func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
-	l1Start, err := b.state.ConfirmL1Current(ctx)
+	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
+		Client:               b.rpc.L1,
+		TaikoL1:              b.rpc.TaikoL1,
+		StartHeight:          b.state.l1Current.Number,
+		EndHeight:            l1End.Number,
+		FilterQuery:          nil,
+		OnBlockProposedEvent: b.onBlockProposed,
+	})
 	if err != nil {
 		return err
 	}
 
-	for l1Start.Number.Uint64() < l1End.Number.Uint64() {
-		if l1Start.Number.Uint64()+MaxL1BlocksRead > l1End.Number.Uint64() {
-			return b.processL1Blocks(ctx, l1Start, l1End)
-		}
-
-		endHeight := new(big.Int).Add(l1Start.Number, big.NewInt(MaxL1BlocksRead))
-		currentEndBlock, err := b.rpc.L1.HeaderByNumber(ctx, endHeight)
-		if err != nil {
-			return fmt.Errorf("fetch L1 header by number (%d) error: %w", endHeight, err)
-		}
-
-		if err := b.processL1Blocks(ctx, l1Start, currentEndBlock); err != nil {
-			return fmt.Errorf("process L1 blocks error: %w", err)
-		}
-
-		l1Start = currentEndBlock
+	if err := iter.Iter(); err != nil {
+		return err
 	}
+
+	b.state.l1Current = l1End
+	metrics.DriverL1CurrentHeightGauge.Update(b.state.l1Current.Number.Int64())
 
 	return nil
 }
 
-func (b *L2ChainInserter) processL1Blocks(ctx context.Context, l1Start *types.Header, l1End *types.Header) error {
+func (b *L2ChainInserter) onBlockProposed(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
 	log.Info(
-		"New synchronising operation",
-		"l1StartHeight", l1Start.Number,
-		"l1StartHash", l1Start.Hash(),
-		"l1End", l1End.Number,
-		"l1EndHash", l1End.Hash(),
+		"New BlockProposed event",
+		"L1Height", event.Raw.BlockNumber,
+		"L1Hash", event.Raw.BlockHash,
+		"BlockID", event.Id,
+	)
+	// No need to insert genesis again, its already in L2 block chain.
+	if event.Id.Cmp(common.Big0) == 0 {
+		return nil
+	}
+
+	// Fetch the L2 parent block.
+	parent, err := b.rpc.L2ParentByBlockId(ctx, event.Id)
+	if err != nil {
+		return fmt.Errorf("failed to fetch L2 parent block: %w", err)
+	}
+
+	log.Debug("Parent block", "height", parent.Number, "hash", parent.Hash())
+
+	tx, err := b.rpc.L1.TransactionInBlock(
+		ctx,
+		event.Raw.BlockHash,
+		event.Raw.TxIndex,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to fetch original TaikoL1.proposeBlock transaction: %w", err)
+	}
+
+	txListBytes, err := encoding.UnpackTxListBytes(tx.Data())
+	if err != nil {
+		log.Info(
+			"Skip the throw away block",
+			"blockID", event.Id,
+			"hint", "BINARY_NOT_DECODABLE",
+			"error", err,
+		)
+		return nil
+	}
+
+	// Check whether the transactions list is valid.
+	hint, invalidTxIndex := b.txListValidator.IsTxListValid(event.Id, txListBytes)
+
+	log.Info(
+		"Validate transactions list",
+		"blockID", event.Id,
+		"hint", hint,
+		"invalidTxIndex", invalidTxIndex,
 	)
 
-	end := l1End.Number.Uint64()
-	iter, err := b.rpc.TaikoL1.FilterBlockProposed(&bind.FilterOpts{
-		Start: l1Start.Number.Uint64(),
-		End:   &end,
-	}, nil)
-	if err != nil {
-		return err
+	l1Origin := &rawdb.L1Origin{
+		BlockID:       event.Id,
+		L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
+		L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
+		L1BlockHash:   event.Raw.BlockHash,
+		Throwaway:     hint != txListValidator.HintOK,
 	}
 
-	for iter.Next() {
-		if ctx.Err() != nil {
-			return nil
-		}
+	if event.Meta.Timestamp > uint64(time.Now().Unix()) {
+		log.Warn("Future L2 block, waitting", "L2 block timestamp", event.Meta.Timestamp, "now", time.Now().Unix())
+		time.Sleep(time.Until(time.Unix(int64(event.Meta.Timestamp), 0)))
+	}
 
-		event := iter.Event
-
-		// Since we are not using eth_subscribe, this should not happen,
-		// only check for safety.
-		if event.Raw.Removed {
-			continue
-		}
-
-		// No need to insert genesis again, its already in L2 block chain.
-		if event.Id.Cmp(common.Big0) == 0 {
-			continue
-		}
-
-		// Fetch the L2 parent block.
-		parent, err := b.rpc.L2ParentByBlockId(ctx, event.Id)
-		if err != nil {
-			return fmt.Errorf("failed to fetch L2 parent block: %w", err)
-		}
-
-		log.Debug("Parent block", "height", parent.Number, "hash", parent.Hash())
-
-		tx, err := b.rpc.L1.TransactionInBlock(
+	var (
+		payloadData  *beacon.ExecutableDataV1
+		rpcError     error
+		payloadError error
+	)
+	if hint == txListValidator.HintOK {
+		payloadData, rpcError, payloadError = b.insertNewHead(
 			ctx,
-			event.Raw.BlockHash,
-			event.Raw.TxIndex,
+			event,
+			parent,
+			b.state.getHeadBlockID(),
+			txListBytes,
+			l1Origin,
 		)
-		if err != nil {
-			return fmt.Errorf("failed to fetch original TaikoL1.proposeBlock transaction: %w", err)
-		}
-
-		txListBytes, err := encoding.UnpackTxListBytes(tx.Data())
-		if err != nil {
-			log.Warn("Unpack transactions bytes error", "error", err)
-			continue
-		}
-
-		// Check whether the transactions list is valid.
-		hint, invalidTxIndex := b.txListValidator.IsTxListValid(event.Id, txListBytes)
-
-		log.Info(
-			"Validate transactions list",
-			"blockID", event.Id,
-			"hint", hint,
-			"invalidTxIndex", invalidTxIndex,
-		)
-
-		l1Origin := &rawdb.L1Origin{
-			BlockID:       event.Id,
-			L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
-			L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
-			L1BlockHash:   event.Raw.BlockHash,
-			Throwaway:     hint != txListValidator.HintOK,
-		}
-
-		if event.Meta.Timestamp > uint64(time.Now().Unix()) {
-			log.Warn("Future L2 block, waitting", "L2 block timestamp", event.Meta.Timestamp, "now", time.Now().Unix())
-			time.Sleep(time.Until(time.Unix(int64(event.Meta.Timestamp), 0)))
-		}
-
-		var (
-			payloadData  *beacon.ExecutableDataV1
-			rpcError     error
-			payloadError error
-		)
-		if hint == txListValidator.HintOK {
-			payloadData, rpcError, payloadError = b.insertNewHead(
-				ctx,
-				event,
-				parent,
-				b.state.getHeadBlockID(),
-				txListBytes,
-				l1Origin,
-			)
-		} else {
-			payloadData, rpcError, payloadError = b.insertThrowAwayBlock(
-				ctx,
-				event,
-				parent,
-				uint8(hint),
-				new(big.Int).SetInt64(int64(invalidTxIndex)),
-				b.state.getHeadBlockID(),
-				txListBytes,
-				l1Origin,
-			)
-		}
-
-		// RPC errors are recoverable.
-		if rpcError != nil {
-			return fmt.Errorf("failed to insert new head to L2 node: %w", rpcError)
-		}
-
-		if payloadError != nil {
-			log.Warn(
-				"Ignore invalid block context", "blockID", event.Id, "payloadError", payloadError, "payloadData", payloadData,
-			)
-			continue
-		}
-
-		log.Debug("Payload data", "payload", payloadData)
-
-		if b.state.l1Current, err = b.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash); err != nil {
-			return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
-		}
-
-		metrics.DriverL1CurrentHeightGauge.Update(b.state.l1Current.Number.Int64())
-
-		log.Info(
-			"🔗 New L2 block inserted",
-			"throwaway", l1Origin.Throwaway,
-			"blockID", event.Id,
-			"height", payloadData.Number,
-			"hash", payloadData.BlockHash,
-			"lastVerifiedBlockHash", b.state.getLastVerifiedBlockHash(),
-			"transactions", len(payloadData.Transactions),
+	} else {
+		payloadData, rpcError, payloadError = b.insertThrowAwayBlock(
+			ctx,
+			event,
+			parent,
+			uint8(hint),
+			new(big.Int).SetInt64(int64(invalidTxIndex)),
+			b.state.getHeadBlockID(),
+			txListBytes,
+			l1Origin,
 		)
 	}
 
-	if b.state.l1Current, err = b.rpc.L1.HeaderByHash(ctx, l1End.Hash()); err != nil {
-		return fmt.Errorf("failed to update L1 current sync cursor: %w", err)
+	// RPC errors are recoverable.
+	if rpcError != nil {
+		return fmt.Errorf("failed to insert new head to L2 node: %w", rpcError)
 	}
 
-	metrics.DriverL1CurrentHeightGauge.Update(b.state.l1Current.Number.Int64())
+	if payloadError != nil {
+		log.Warn(
+			"Ignore invalid block context", "blockID", event.Id, "payloadError", payloadError, "payloadData", payloadData,
+		)
+		return nil
+	}
+
+	log.Debug("Payload data", "payload", payloadData)
+
+	log.Info(
+		"🔗 New L2 block inserted",
+		"throwaway", l1Origin.Throwaway,
+		"blockID", event.Id,
+		"height", payloadData.Number,
+		"hash", payloadData.BlockHash,
+		"lastVerifiedBlockHash", b.state.getLastVerifiedBlockHash(),
+		"transactions", len(payloadData.Transactions),
+	)
+
+	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
 
 	return nil
 }

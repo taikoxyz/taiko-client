@@ -35,13 +35,6 @@ var (
 		Value:    false,
 		Category: proverCategory,
 	}
-	BatchSubmit = cli.BoolFlag{
-		Name:     "batchSubmit",
-		Usage:    "Batch submit proofs",
-		Value:    false,
-		Hidden:   true,
-		Category: proverCategory,
-	}
 )
 
 // All prover flags.
@@ -50,5 +43,4 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&ZkEvmRpcdParamsPath,
 	&L1ProverPrivKey,
 	&Dummy,
-	&BatchSubmit,
 })

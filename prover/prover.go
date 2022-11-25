@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/metrics"
+	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 	"github.com/taikoxyz/taiko-client/prover/producer"
@@ -48,12 +48,14 @@ type Prover struct {
 	// States
 	lastVerifiedHeader   *types.Header
 	lastVerifiedL1Height uint64
+	l1Current            uint64
 
 	// Subscriptions
 	blockProposedCh  chan *bindings.TaikoL1ClientBlockProposed
 	blockProposedSub event.Subscription
 	blockVerifiedCh  chan *bindings.TaikoL1ClientBlockVerified
 	blockVerifiedSub event.Subscription
+	proveNotify      chan struct{}
 
 	// Proof related
 	proveValidProofCh   chan *producer.ProofWithHeader
@@ -62,9 +64,6 @@ type Prover struct {
 
 	ctx context.Context
 	wg  sync.WaitGroup
-
-	// For testing
-	blockProposedEventsBuffer []*bindings.TaikoL1ClientBlockProposed
 }
 
 // New initializes the given prover instance based on the command line flags.
@@ -126,6 +125,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, 10)
 	p.proveValidProofCh = make(chan *producer.ProofWithHeader, 10)
 	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, 10)
+	p.proveNotify = make(chan struct{}, 1)
+	if err := p.initL1Current(); err != nil {
+		return fmt.Errorf("initialize L1 current cursor error: %w", err)
+	}
 
 	if cfg.Dummy {
 		p.proofProducer = new(producer.DummyProofProducer)
@@ -155,25 +158,28 @@ func (p *Prover) eventLoop() {
 		p.wg.Done()
 	}()
 
+	// reqProving requests performing a proving operation, won't block
+	// if we are already proving.
+	reqProving := func() {
+		select {
+		case p.proveNotify <- struct{}{}:
+		default:
+		}
+	}
+
+	// Call reqProving() right away to catch up with the latest state.
+	reqProving()
+
 	for {
 		select {
 		case <-p.ctx.Done():
 			return
-		case <-ticker.C:
-			if err := p.onForceTimer(p.ctx); err != nil {
-				log.Error("Handle forceTimer event error", "error", err)
+		case <-p.proveNotify:
+			if err := p.proveOp(); err != nil {
+				log.Error("Prove new blocks error", "error", err)
 			}
-		case e := <-p.blockProposedCh:
-			if p.cfg.BatchSubmit {
-				if err := p.batchHandleBlockProposedEvents(p.ctx, e); err != nil {
-					log.Error("Batch handling BlockProposed event error", "error", err)
-				}
-				continue
-			}
-
-			if err := p.onBlockProposed(p.ctx, e); err != nil {
-				log.Error("Handle BlockProposed event error", "error", err)
-			}
+		case <-p.blockProposedCh:
+			reqProving()
 		case e := <-p.blockVerifiedCh:
 			if err := p.onBlockVerified(p.ctx, e); err != nil {
 				log.Error("Handle BlockVerified event error", "error", err)
@@ -196,28 +202,65 @@ func (p *Prover) Close() {
 	p.wg.Wait()
 }
 
+// proveOp perfors a proving operation, find current unproven blocks, then
+// request generating proofs for them.
+func (p *Prover) proveOp() error {
+	isHalted, err := p.rpc.TaikoL1.IsHalted(nil)
+	if err != nil {
+		return err
+	}
+
+	if isHalted {
+		log.Warn("L2 chain halted")
+		return nil
+	}
+
+	iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
+		Client:               p.rpc.L1,
+		TaikoL1:              p.rpc.TaikoL1,
+		StartHeight:          new(big.Int).SetUint64(p.l1Current),
+		OnBlockProposedEvent: p.onBlockProposed,
+	})
+	if err != nil {
+		return err
+	}
+
+	return iter.Iter()
+}
+
 // onBlockProposed tries to prove that the newly proposed block is valid/invalid.
 func (p *Prover) onBlockProposed(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
-	log.Info("New proposed block", "blockID", event.Id)
+	log.Info("Proposed block", "blockID", event.Id)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
 
+	// Check whether the block has been verified.
+	isVerified, err := p.isBlockVerified(event.Id)
+	if err != nil {
+		return err
+	}
+
+	if isVerified {
+		log.Info("Block is verified", "blockID", event.Id)
+		return nil
+	}
+
+	// Check whether the transactions list is valid.
 	proposeBlockTx, err := p.rpc.L1.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
 	if err != nil {
 		return err
 	}
 
-	// Check whether the transactions list is valid.
 	hint, invalidTxIndex, err := p.txListValidator.ValidateTxList(event.Id, proposeBlockTx.Data())
 	if err != nil {
 		return err
 	}
 
-	// Prove the proposed block valid.
+	// Prove the proposed block is valid.
 	if hint == txListValidator.HintOK {
 		return p.proveBlockValid(ctx, event)
 	}
 
-	// Prove the proposed block invalid.
+	// Otherwise, prove the proposed block is invalid.
 	return p.proveBlockInvalid(ctx, event, hint, invalidTxIndex)
 }
 
@@ -247,90 +290,6 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 	return nil
 }
 
-// onForceTimer fetches the lowset unverified block and if it is still not proven, then prove it.
-func (p *Prover) onForceTimer(ctx context.Context) error {
-	_, _, latestVerifiedID, nextBlockID, err := p.rpc.TaikoL1.GetStateVariables(nil)
-	if err != nil {
-		return fmt.Errorf("failed to get TaikoL1 state variables: %w", err)
-	}
-
-	log.Debug("TaikoL1 state variables", "latestVerifiedID", latestVerifiedID, "nextBlockID", nextBlockID)
-
-	if latestVerifiedID == nextBlockID-1 {
-		log.Info("All proposed blocks are verified")
-		return nil
-	}
-
-	// Check whether the lowset unverified block is still unproved.
-	lowestUnverifiedBlockID := new(big.Int).SetUint64(latestVerifiedID + 1)
-
-	blockProvenIter, err := p.rpc.TaikoL1.FilterBlockProven(
-		&bind.FilterOpts{Start: p.lastVerifiedL1Height},
-		[]*big.Int{lowestUnverifiedBlockID},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to filter BlockProven events: %w", err)
-	}
-
-	if blockProvenIter.Next() {
-		return nil
-	}
-
-	log.Info("Lowest unproved block ID", "blockID", lowestUnverifiedBlockID)
-
-	l1Origin, err := p.rpc.L2.L1OriginByID(ctx, lowestUnverifiedBlockID)
-	if err != nil {
-		return fmt.Errorf("failed to get L1Origin: %w", err)
-	}
-
-	filterHeight := l1Origin.L1BlockHeight.Uint64()
-	blockProposedIter, err := p.rpc.TaikoL1.FilterBlockProposed(
-		&bind.FilterOpts{Start: filterHeight, End: &filterHeight},
-		[]*big.Int{lowestUnverifiedBlockID},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to filter BlockProposed events: %w", err)
-	}
-
-	for blockProposedIter.Next() {
-		return p.onBlockProposed(ctx, blockProposedIter.Event)
-	}
-
-	return fmt.Errorf("BlockProposed events not found, blockID: %d, l1Height: %d",
-		lowestUnverifiedBlockID, filterHeight,
-	)
-}
-
-// batchHandleBlockProposedEvents will randomly handle buffered BlockProposed
-// events if the buffer size reaches `maxPendingBlocks`.
-func (p *Prover) batchHandleBlockProposedEvents(
-	ctx context.Context,
-	newEvent *bindings.TaikoL1ClientBlockProposed,
-) error {
-	p.blockProposedEventsBuffer = append(p.blockProposedEventsBuffer, newEvent)
-
-	if len(p.blockProposedEventsBuffer) < int(p.maxPendingBlocks) {
-		log.Debug("New BlockProposed event buffered", "blockID", newEvent.Id, "size", len(p.blockProposedEventsBuffer))
-		return nil
-	}
-
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(p.blockProposedEventsBuffer), func(i, j int) {
-		p.blockProposedEventsBuffer[i], p.blockProposedEventsBuffer[j] =
-			p.blockProposedEventsBuffer[j], p.blockProposedEventsBuffer[i]
-	})
-
-	for i := 0; i < len(p.blockProposedEventsBuffer); i++ {
-		if err := p.onBlockProposed(ctx, p.blockProposedEventsBuffer[i]); err != nil {
-			return err
-		}
-	}
-
-	p.blockProposedEventsBuffer = []*bindings.TaikoL1ClientBlockProposed{}
-
-	return nil
-}
-
 // Name returns the application name.
 func (p *Prover) Name() string {
 	return "prover"
@@ -356,4 +315,34 @@ func (p *Prover) getProveBlocksTxOpts(ctx context.Context, cli *ethclient.Client
 	opts.GasLimit = proveBlocksGasLimit
 
 	return opts, nil
+}
+
+func (p *Prover) initL1Current() error {
+	_, _, latestVerifiedID, _, err := p.rpc.TaikoL1.GetStateVariables(nil)
+	if err != nil {
+		return err
+	}
+
+	if latestVerifiedID == 0 {
+		p.l1Current = 0
+		return nil
+	}
+
+	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, new(big.Int).SetUint64(latestVerifiedID))
+	if err != nil {
+		return err
+	}
+
+	p.l1Current = latestVerifiedHeaderL1Origin.L1BlockHeight.Uint64()
+	return nil
+}
+
+// isBlockVerified checks whether the given block has been verified by other provers.
+func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
+	_, _, latestVerifiedID, _, err := p.rpc.TaikoL1.GetStateVariables(nil)
+	if err != nil {
+		return false, err
+	}
+
+	return id.Uint64() <= latestVerifiedID, nil
 }
