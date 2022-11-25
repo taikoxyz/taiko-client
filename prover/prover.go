@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
@@ -345,4 +346,19 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 	}
 
 	return id.Uint64() <= latestVerifiedID, nil
+}
+
+// isWhitelisted checks whether the current prover is whitelisted.
+func (p *Prover) isWhitelisted() (bool, error) {
+	proverAddress := crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
+	isWhitelisted, err := p.rpc.TaikoL1.IsProverWhitelisted(nil, proverAddress)
+	if err != nil {
+		if err.Error() == "L1:featureDisabled" {
+			return true, nil
+		}
+
+		return false, err
+	}
+
+	return isWhitelisted, nil
 }
