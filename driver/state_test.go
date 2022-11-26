@@ -8,7 +8,7 @@ func (s *DriverTestSuite) TestVerfiyL2Block() {
 	head, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 
 	s.Nil(err)
-	s.Nil(s.d.state.VerfiyL2Block(context.Background(), head.Number, head.Hash()))
+	s.Nil(s.d.state.VerfiyL2Block(context.Background(), head.Hash()))
 }
 
 func (s *DriverTestSuite) TestGetL1Head() {
@@ -16,9 +16,9 @@ func (s *DriverTestSuite) TestGetL1Head() {
 	s.NotNil(l1Head)
 }
 
-func (s *DriverTestSuite) TestGetLastVerifiedBlockHash() {
-	hash := s.d.state.GetLastVerifiedBlockHash()
-	s.NotNil(hash)
+func (s *DriverTestSuite) TestGetLastVerifiedBlock() {
+	b := s.d.state.GetLastVerifiedBlock()
+	s.NotNil(b.Hash)
 }
 
 func (s *DriverTestSuite) TestGetHeadBlockID() {

@@ -24,10 +24,6 @@ import (
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
-const (
-	MaxL1BlocksRead = 1000
-)
-
 type State interface {
 	GetConstants() struct {
 		AnchorTxGasLimit  *big.Int
@@ -38,15 +34,20 @@ type State interface {
 	}
 	GetL1Current() *types.Header
 	GetHeadBlockID() *big.Int
-	GetLastVerifiedBlockHash() common.Hash
+	GetLastVerifiedBlock() struct {
+		Hash   common.Hash
+		Height *big.Int
+	}
 	SetL1Current(l1Current *types.Header)
+	GetL1Head() *types.Header
+	GetL2Head() *types.Header
 }
 
 type L2ChainSyncer struct {
-	state                         State             // Driver's state
-	rpc                           *rpc.Client       // L1/L2 RPC clients
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey // Private key of L2 throwaway blocks builder
-	txListValidator               *txListValidator.TxListValidator
+	state                         State                            // Driver's state
+	rpc                           *rpc.Client                      // L1/L2 RPC clients
+	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                // Private key of L2 throwaway blocks builder
+	txListValidator               *txListValidator.TxListValidator // Transactions list validator
 }
 
 // NewL2ChainSyncer creates a new chain syncer instance.
@@ -68,6 +69,14 @@ func NewL2ChainSyncer(
 			rpc.L2ChainID,
 		),
 	}, nil
+}
+
+func (s *L2ChainSyncer) Sync() {
+
+}
+
+func (s *L2ChainSyncer) AheadOfVerifedHeight() bool {
+	return s.state.GetL2Head().Number.Cmp(s.state.GetLastVerifiedBlock().Height) >= 0
 }
 
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
@@ -205,7 +214,8 @@ func (b *L2ChainSyncer) onBlockProposed(ctx context.Context, event *bindings.Tai
 		"blockID", event.Id,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
-		"lastVerifiedBlockHash", b.state.GetLastVerifiedBlockHash(),
+		"lastVerifiedBlockHeight", b.state.GetLastVerifiedBlock().Height,
+		"lastVerifiedBlockHash", b.state.GetLastVerifiedBlock().Hash,
 		"transactions", len(payloadData.Transactions),
 	)
 
