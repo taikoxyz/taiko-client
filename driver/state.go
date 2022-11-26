@@ -200,8 +200,8 @@ func (s *State) setL1Head(l1Head *types.Header) {
 	s.l1Head.Store(l1Head)
 }
 
-// getL1Head reads the L1 head concurrent safely.
-func (s *State) getL1Head() *types.Header {
+// GetL1Head reads the L1 head concurrent safely.
+func (s *State) GetL1Head() *types.Header {
 	return s.l1Head.Load().(*types.Header)
 }
 
@@ -244,8 +244,8 @@ func (s *State) setLastVerifiedBlockHash(id *big.Int, hash common.Hash) {
 	s.l2VerifiedHeadHash.Store(hash)
 }
 
-// getLastVerifiedBlockHash reads the last verified L2 block concurrent safely.
-func (s *State) getLastVerifiedBlockHash() common.Hash {
+// GetLastVerifiedBlockHash reads the last verified L2 block concurrent safely.
+func (s *State) GetLastVerifiedBlockHash() common.Hash {
 	return s.l2VerifiedHeadHash.Load().(common.Hash)
 }
 
@@ -280,8 +280,8 @@ func (s *State) setHeadBlockID(id *big.Int) {
 	s.l2HeadBlockID.Store(id)
 }
 
-// getHeadBlockID reads the last pending block ID concurrent safely.
-func (s *State) getHeadBlockID() *big.Int {
+// GetHeadBlockID reads the last pending block ID concurrent safely.
+func (s *State) GetHeadBlockID() *big.Int {
 	return s.l2HeadBlockID.Load().(*big.Int)
 }
 
@@ -308,4 +308,36 @@ func (s *State) VerfiyL2Block(ctx context.Context, blockID *big.Int, protocolBlo
 	}
 
 	return nil
+}
+
+// TODO: use atomic.Value
+func (s *State) SetL1Current(l1Current *types.Header) {
+	s.l1Current = l1Current
+}
+
+func (s *State) GetL1Current() *types.Header {
+	return s.l1Current
+}
+
+// GetConstants returns state's all constants.
+func (s *State) GetConstants() struct {
+	AnchorTxGasLimit  *big.Int
+	MaxTxlistBytes    *big.Int
+	MaxBlockNumTxs    *big.Int
+	MaxBlocksGasLimit *big.Int
+	MinTxGasLimit     *big.Int
+} {
+	return struct {
+		AnchorTxGasLimit  *big.Int
+		MaxTxlistBytes    *big.Int
+		MaxBlockNumTxs    *big.Int
+		MaxBlocksGasLimit *big.Int
+		MinTxGasLimit     *big.Int
+	}{
+		AnchorTxGasLimit:  s.anchorTxGasLimit,
+		MaxTxlistBytes:    s.maxTxlistBytes,
+		MaxBlockNumTxs:    s.maxBlockNumTxs,
+		MaxBlocksGasLimit: s.maxBlocksGasLimit,
+		MinTxGasLimit:     s.minTxGasLimit,
+	}
 }

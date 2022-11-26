@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
+	chainsyncer "github.com/taikoxyz/taiko-client/driver/chain_syncer"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
@@ -26,9 +27,9 @@ const (
 // Driver keeps the L2 node's local block chain in sync with the TaikoL1
 // contract.
 type Driver struct {
-	rpc             *rpc.Client
-	l2ChainInserter *L2ChainInserter
-	state           *State
+	rpc           *rpc.Client
+	l2ChainSyncer *chainsyncer.L2ChainSyncer
+	state         *State
 
 	l1HeadCh   chan *types.Header
 	l1HeadSub  event.Subscription
@@ -81,7 +82,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		return fmt.Errorf("throwaway blocks builder has no fund")
 	}
 
-	if d.l2ChainInserter, err = NewL2ChainInserter(
+	if d.l2ChainSyncer, err = chainsyncer.NewL2ChainSyncer(
 		d.ctx,
 		d.rpc,
 		d.state,
@@ -155,9 +156,9 @@ func (d *Driver) doSync() error {
 		return nil
 	}
 
-	l1Head := d.state.getL1Head()
+	l1Head := d.state.GetL1Head()
 
-	if err := d.l2ChainInserter.ProcessL1Blocks(
+	if err := d.l2ChainSyncer.ProcessL1Blocks(
 		d.ctx,
 		l1Head,
 	); err != nil {
@@ -168,9 +169,9 @@ func (d *Driver) doSync() error {
 	return nil
 }
 
-// ChainInserter returns the driver's chain inserter.
-func (d *Driver) ChainInserter() *L2ChainInserter {
-	return d.l2ChainInserter
+// ChainSyncer returns the driver's chain syncer.
+func (d *Driver) ChainSyncer() *chainsyncer.L2ChainSyncer {
+	return d.l2ChainSyncer
 }
 
 // Name returns the application name.

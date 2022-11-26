@@ -1,4 +1,4 @@
-package driver
+package chainsyncer
 
 import (
 	"context"
@@ -28,29 +28,43 @@ const (
 	MaxL1BlocksRead = 1000
 )
 
-type L2ChainInserter struct {
-	state                         *State            // Driver's state
+type State interface {
+	GetConstants() struct {
+		AnchorTxGasLimit  *big.Int
+		MaxTxlistBytes    *big.Int
+		MaxBlockNumTxs    *big.Int
+		MaxBlocksGasLimit *big.Int
+		MinTxGasLimit     *big.Int
+	}
+	GetL1Current() *types.Header
+	GetHeadBlockID() *big.Int
+	GetLastVerifiedBlockHash() common.Hash
+	SetL1Current(l1Current *types.Header)
+}
+
+type L2ChainSyncer struct {
+	state                         State             // Driver's state
 	rpc                           *rpc.Client       // L1/L2 RPC clients
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey // Private key of L2 throwaway blocks builder
 	txListValidator               *txListValidator.TxListValidator
 }
 
-// NewL2ChainInserter creates a new block inserter instance.
-func NewL2ChainInserter(
+// NewL2ChainSyncer creates a new chain syncer instance.
+func NewL2ChainSyncer(
 	ctx context.Context,
 	rpc *rpc.Client,
-	state *State,
+	state State,
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
-) (*L2ChainInserter, error) {
-	return &L2ChainInserter{
+) (*L2ChainSyncer, error) {
+	return &L2ChainSyncer{
 		rpc:                           rpc,
 		state:                         state,
 		throwawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
 		txListValidator: txListValidator.NewTxListValidator(
-			state.maxBlocksGasLimit.Uint64(),
-			state.maxBlockNumTxs.Uint64(),
-			state.maxTxlistBytes.Uint64(),
-			state.minTxGasLimit.Uint64(),
+			state.GetConstants().MaxBlocksGasLimit.Uint64(),
+			state.GetConstants().MaxBlockNumTxs.Uint64(),
+			state.GetConstants().MaxTxlistBytes.Uint64(),
+			state.GetConstants().MinTxGasLimit.Uint64(),
 			rpc.L2ChainID,
 		),
 	}, nil
@@ -58,11 +72,11 @@ func NewL2ChainInserter(
 
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
 // L1 block heights, and then tries inserting them into L2 node's block chain.
-func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
+func (b *L2ChainSyncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
 	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
 		Client:               b.rpc.L1,
 		TaikoL1:              b.rpc.TaikoL1,
-		StartHeight:          b.state.l1Current.Number,
+		StartHeight:          b.state.GetL1Current().Number,
 		EndHeight:            l1End.Number,
 		FilterQuery:          nil,
 		OnBlockProposedEvent: b.onBlockProposed,
@@ -75,13 +89,13 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 		return err
 	}
 
-	b.state.l1Current = l1End
-	metrics.DriverL1CurrentHeightGauge.Update(b.state.l1Current.Number.Int64())
+	b.state.SetL1Current(l1End)
+	metrics.DriverL1CurrentHeightGauge.Update(b.state.GetL1Current().Number.Int64())
 
 	return nil
 }
 
-func (b *L2ChainInserter) onBlockProposed(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
+func (b *L2ChainSyncer) onBlockProposed(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
 	log.Info(
 		"New BlockProposed event",
 		"L1Height", event.Raw.BlockNumber,
@@ -154,7 +168,7 @@ func (b *L2ChainInserter) onBlockProposed(ctx context.Context, event *bindings.T
 			ctx,
 			event,
 			parent,
-			b.state.getHeadBlockID(),
+			b.state.GetHeadBlockID(),
 			txListBytes,
 			l1Origin,
 		)
@@ -165,7 +179,7 @@ func (b *L2ChainInserter) onBlockProposed(ctx context.Context, event *bindings.T
 			parent,
 			uint8(hint),
 			new(big.Int).SetInt64(int64(invalidTxIndex)),
-			b.state.getHeadBlockID(),
+			b.state.GetHeadBlockID(),
 			txListBytes,
 			l1Origin,
 		)
@@ -191,7 +205,7 @@ func (b *L2ChainInserter) onBlockProposed(ctx context.Context, event *bindings.T
 		"blockID", event.Id,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
-		"lastVerifiedBlockHash", b.state.getLastVerifiedBlockHash(),
+		"lastVerifiedBlockHash", b.state.GetLastVerifiedBlockHash(),
 		"transactions", len(payloadData.Transactions),
 	)
 
@@ -202,7 +216,7 @@ func (b *L2ChainInserter) onBlockProposed(ctx context.Context, event *bindings.T
 
 // insertNewHead tries to insert a new head block to the L2 node's local
 // block chain through Engine APIs.
-func (b *L2ChainInserter) insertNewHead(
+func (b *L2ChainSyncer) insertNewHead(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	parent *types.Header,
@@ -274,7 +288,7 @@ func (b *L2ChainInserter) insertNewHead(
 
 // insertThrowAwayBlock tries to insert a throw away block to the L2 node's local
 // block chain through Engine APIs.
-func (b *L2ChainInserter) insertThrowAwayBlock(
+func (b *L2ChainSyncer) insertThrowAwayBlock(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	parent *types.Header,
@@ -326,7 +340,7 @@ func (b *L2ChainInserter) insertThrowAwayBlock(
 
 // createExecutionPayloads creates a new execution payloads through
 // Engine APIs.
-func (b *L2ChainInserter) createExecutionPayloads(
+func (b *L2ChainSyncer) createExecutionPayloads(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	parentHash common.Hash,
@@ -342,7 +356,7 @@ func (b *L2ChainInserter) createExecutionPayloads(
 		BlockMetadata: &beacon.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
-			GasLimit:       event.Meta.GasLimit + b.state.anchorTxGasLimit.Uint64(),
+			GasLimit:       event.Meta.GasLimit + b.state.GetConstants().AnchorTxGasLimit.Uint64(),
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
@@ -384,7 +398,7 @@ func (b *L2ChainInserter) createExecutionPayloads(
 
 // getInvalidateBlockTxOpts signs the transaction with a the
 // throwaway blocks builder private key.
-func (b *L2ChainInserter) getInvalidateBlockTxOpts(ctx context.Context, height *big.Int) (*bind.TransactOpts, error) {
+func (b *L2ChainSyncer) getInvalidateBlockTxOpts(ctx context.Context, height *big.Int) (*bind.TransactOpts, error) {
 	opts, err := bind.NewKeyedTransactorWithChainID(
 		b.throwawayBlocksBuilderPrivKey,
 		b.rpc.L2ChainID,
