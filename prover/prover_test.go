@@ -121,6 +121,12 @@ func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 	s.Nil(s.p.onBlockVerified(context.Background(), &bindings.TaikoL1ClientBlockVerified{BlockHash: common.Hash{}}))
 }
 
+func (s *ProverTestSuite) TestIsWhitelisted() {
+	isWhitelisted, err := s.p.isWhitelisted(crypto.PubkeyToAddress(s.p.cfg.L1ProverPrivKey.PublicKey))
+	s.Nil(err)
+	s.True(isWhitelisted)
+}
+
 func TestProverTestSuite(t *testing.T) {
 	suite.Run(t, new(ProverTestSuite))
 }
