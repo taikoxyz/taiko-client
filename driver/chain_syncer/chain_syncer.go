@@ -71,11 +71,18 @@ func NewL2ChainSyncer(
 	}, nil
 }
 
-func (s *L2ChainSyncer) Sync() {
+func (s *L2ChainSyncer) Sync(ctx context.Context, l1End *types.Header) error {
+	if s.AheadOfVerifedHeight() {
+		return s.ProcessL1Blocks(ctx, l1End)
+	}
 
+	// L2 p2p sync
+
+	return nil
 }
 
 func (s *L2ChainSyncer) AheadOfVerifedHeight() bool {
+	// TODO: check if the verified block is in chain.
 	return s.state.GetL2Head().Number.Cmp(s.state.GetLastVerifiedBlock().Height) >= 0
 }
 
