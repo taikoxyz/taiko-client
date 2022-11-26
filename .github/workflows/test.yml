@@ -44,7 +44,6 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
-          ref: optimize_commit_gascost # TODO: use default branch when `optimize_commit_gascost` merged
 
       - name: Set up Go
         uses: actions/setup-go@v3
