@@ -1,4 +1,4 @@
-package chainsyncer
+package driver
 
 import (
 	"context"
@@ -15,30 +15,9 @@ import (
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
-type State interface {
-	GetConstants() struct {
-		AnchorTxGasLimit  *big.Int
-		MaxTxlistBytes    *big.Int
-		MaxBlockNumTxs    *big.Int
-		MaxBlocksGasLimit *big.Int
-		MinTxGasLimit     *big.Int
-	}
-	GetL1Current() *types.Header
-	GetHeadBlockID() *big.Int
-	GetLastVerifiedBlock() struct {
-		ID     *big.Int
-		Hash   common.Hash
-		Height *big.Int
-	}
-	SetL1Current(l1Current *types.Header)
-	GetL1Head() *types.Header
-	GetL2Head() *types.Header
-	ResetL1Current(ctx context.Context, id *big.Int) error
-}
-
 type L2ChainSyncer struct {
 	ctx                           context.Context
-	state                         State                            // Driver's state
+	state                         *State                           // Driver's state
 	rpc                           *rpc.Client                      // L1/L2 RPC clients
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                // Private key of L2 throwaway blocks builder
 	txListValidator               *txListValidator.TxListValidator // Transactions list validator
@@ -53,7 +32,7 @@ type L2ChainSyncer struct {
 func NewL2ChainSyncer(
 	ctx context.Context,
 	rpc *rpc.Client,
-	state State,
+	state *State,
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
 	p2pSyncVerifiedBlocks bool,
 ) (*L2ChainSyncer, error) {

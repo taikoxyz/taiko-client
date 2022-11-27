@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
-	chainsyncer "github.com/taikoxyz/taiko-client/driver/chain_syncer"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
@@ -28,7 +27,7 @@ const (
 // contract.
 type Driver struct {
 	rpc           *rpc.Client
-	l2ChainSyncer *chainsyncer.L2ChainSyncer
+	l2ChainSyncer *L2ChainSyncer
 	state         *State
 
 	l1HeadCh   chan *types.Header
@@ -82,7 +81,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		return fmt.Errorf("throwaway blocks builder has no fund")
 	}
 
-	if d.l2ChainSyncer, err = chainsyncer.NewL2ChainSyncer(
+	if d.l2ChainSyncer, err = NewL2ChainSyncer(
 		d.ctx,
 		d.rpc,
 		d.state,
@@ -168,7 +167,7 @@ func (d *Driver) doSync() error {
 }
 
 // ChainSyncer returns the driver's chain syncer.
-func (d *Driver) ChainSyncer() *chainsyncer.L2ChainSyncer {
+func (d *Driver) ChainSyncer() *L2ChainSyncer {
 	return d.l2ChainSyncer
 }
 

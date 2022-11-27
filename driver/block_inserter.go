@@ -1,4 +1,4 @@
-package chainsyncer
+package driver
 
 import (
 	"context"
