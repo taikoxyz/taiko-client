@@ -87,6 +87,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		d.rpc,
 		d.state,
 		cfg.ThrowawayBlocksBuilderPrivKey,
+		cfg.P2PSyncVerifiedBlocks,
 	); err != nil {
 		return err
 	}

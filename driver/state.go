@@ -1,12 +1,15 @@
 package driver
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"math/big"
 	"sync/atomic"
 
 	"github.com/cenkalti/backoff/v4"
 	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
@@ -17,6 +20,7 @@ import (
 )
 
 type VerifiedHeader struct {
+	ID     *big.Int
 	Hash   common.Hash
 	Height *big.Int
 }
@@ -152,7 +156,11 @@ func (s *State) initSubscriptions(ctx context.Context) error {
 		return err
 	}
 
-	s.setLastVerifiedBlockHash(new(big.Int).SetUint64(lastVerifiedId), lastVerifiedBlockHash)
+	s.setLastVerifiedBlockHash(
+		new(big.Int).SetUint64(lastVerifiedId),
+		new(big.Int).SetUint64(lastVerifiedHeight),
+		lastVerifiedBlockHash,
+	)
 
 	s.l2BlockVerifiedSub = event.ResubscribeErr(
 		backoff.DefaultMaxInterval,
@@ -290,10 +298,16 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 	for {
 		select {
 		case e := <-newHeaderSyncedCh:
-			s.setLastVerifiedBlockHash(e.SrcHeight, e.SrcHash)
 			if err := s.VerfiyL2Block(ctx, e.SrcHash); err != nil {
 				log.Error("Check new verified L2 block error", "error", err)
+				continue
 			}
+			id, err := s.getSyncedHeaderID(e.Raw.BlockNumber, e.SrcHash)
+			if err != nil {
+				log.Error("Get synced header block ID error", "error", err)
+				continue
+			}
+			s.setLastVerifiedBlockHash(id, e.SrcHeight, e.SrcHash)
 		case err := <-sub.Err():
 			return sub, err
 		case <-ctx.Done():
@@ -303,21 +317,23 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 }
 
 // setLastVerifiedBlockHash sets the last verified L2 block hash concurrent safely.
-func (s *State) setLastVerifiedBlockHash(height *big.Int, hash common.Hash) {
+func (s *State) setLastVerifiedBlockHash(id *big.Int, height *big.Int, hash common.Hash) {
 	log.Debug("New verified block", "height", height, "hash", hash)
 	metrics.DriverL2VerifiedHeightGauge.Update(height.Int64())
-	s.l2VerifiedHead.Store(&VerifiedHeader{Height: height, Hash: hash})
+	s.l2VerifiedHead.Store(&VerifiedHeader{ID: id, Height: height, Hash: hash})
 }
 
 // GetLastVerifiedBlockHash reads the last verified L2 block concurrent safely.
 // TODO: use a defined type.
 func (s *State) GetLastVerifiedBlock() struct {
+	ID     *big.Int
 	Hash   common.Hash
 	Height *big.Int
 } {
 	h := s.l2VerifiedHead.Load().(*VerifiedHeader)
 
 	return struct {
+		ID     *big.Int
 		Hash   common.Hash
 		Height *big.Int
 	}{
@@ -416,4 +432,26 @@ func (s *State) GetConstants() struct {
 		MaxBlocksGasLimit: s.maxBlocksGasLimit,
 		MinTxGasLimit:     s.minTxGasLimit,
 	}
+}
+
+func (s *State) getSyncedHeaderID(l1Height uint64, hash common.Hash) (*big.Int, error) {
+	iter, err := s.rpc.TaikoL1.FilterBlockVerified(&bind.FilterOpts{
+		Start: l1Height,
+		End:   &l1Height,
+	}, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to filter BlockVerified event: %w", err)
+	}
+
+	for iter.Next() {
+		e := iter.Event
+
+		if bytes.Compare(e.BlockHash[:], hash.Bytes()) != 0 {
+			continue
+		}
+
+		return e.Id, nil
+	}
+
+	return nil, fmt.Errorf("verified block %s BlockVerified event not found", hash)
 }

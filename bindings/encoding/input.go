@@ -282,3 +282,33 @@ func UnpackTxListBytes(txData []byte) ([]byte, error) {
 
 	return inputs[1], nil
 }
+
+// UnpackTxListBytes unpacks the evidence data of a TaikoL1.proveBlock transaction.
+func UnpackEvidence(txData []byte) (*TaikoL1Evidence, error) {
+	method, err := TaikoL1ABI.MethodById(txData)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only check for safety.
+	if method.Name != "proveBlock" {
+		return nil, fmt.Errorf("invalid method name: %s", method.Name)
+	}
+
+	args := map[string]interface{}{}
+
+	if err := method.Inputs.UnpackIntoMap(args, txData[4:]); err != nil {
+		return nil, err
+	}
+
+	inputs, ok := args["inputs"].([][]byte)
+
+	if !ok || len(inputs) < 3 {
+		return nil, fmt.Errorf("invalid transaction inputs map length, get: %d", len(inputs))
+	}
+
+	// evidenceBytes := inputs[0]
+
+	// TODO: unpack evidence
+	return nil, nil
+}
