@@ -17,10 +17,10 @@ func (s *DriverTestSuite) TestGetL1Head() {
 }
 
 func (s *DriverTestSuite) TestGetLastVerifiedBlock() {
-	b := s.d.state.GetLastVerifiedBlock()
+	b := s.d.state.getLastVerifiedBlock()
 	s.NotNil(b.Hash)
 }
 
 func (s *DriverTestSuite) TestGetHeadBlockID() {
-	s.Equal(uint64(0), s.d.state.GetHeadBlockID().Uint64())
+	s.Equal(uint64(0), s.d.state.getHeadBlockID().Uint64())
 }

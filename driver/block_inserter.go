@@ -113,7 +113,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 			ctx,
 			event,
 			parent,
-			s.state.GetHeadBlockID(),
+			s.state.getHeadBlockID(),
 			txListBytes,
 			l1Origin,
 		)
@@ -124,7 +124,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 			parent,
 			uint8(hint),
 			new(big.Int).SetInt64(int64(invalidTxIndex)),
-			s.state.GetHeadBlockID(),
+			s.state.getHeadBlockID(),
 			txListBytes,
 			l1Origin,
 		)
@@ -150,8 +150,8 @@ func (s *L2ChainSyncer) onBlockProposed(
 		"blockID", event.Id,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
-		"lastVerifiedBlockHeight", s.state.GetLastVerifiedBlock().Height,
-		"lastVerifiedBlockHash", s.state.GetLastVerifiedBlock().Hash,
+		"lastVerifiedBlockHeight", s.state.getLastVerifiedBlock().Height,
+		"lastVerifiedBlockHash", s.state.getLastVerifiedBlock().Hash,
 		"transactions", len(payloadData.Transactions),
 	)
 

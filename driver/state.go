@@ -324,8 +324,8 @@ func (s *State) setLastVerifiedBlockHash(id *big.Int, height *big.Int, hash comm
 	s.l2VerifiedHead.Store(&VerifiedHeaderInfo{ID: id, Height: height, Hash: hash})
 }
 
-// GetLastVerifiedBlockHash reads the last verified L2 block concurrent safely.
-func (s *State) GetLastVerifiedBlock() *VerifiedHeaderInfo {
+// getLastVerifiedBlock reads the last verified L2 block concurrent safely.
+func (s *State) getLastVerifiedBlock() *VerifiedHeaderInfo {
 	return s.l2VerifiedHead.Load().(*VerifiedHeaderInfo)
 }
 
@@ -360,8 +360,8 @@ func (s *State) setHeadBlockID(id *big.Int) {
 	s.l2HeadBlockID.Store(id)
 }
 
-// GetHeadBlockID reads the last pending block ID concurrent safely.
-func (s *State) GetHeadBlockID() *big.Int {
+// getHeadBlockID reads the last pending block ID concurrent safely.
+func (s *State) getHeadBlockID() *big.Int {
 	return s.l2HeadBlockID.Load().(*big.Int)
 }
 

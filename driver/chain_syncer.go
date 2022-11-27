@@ -58,7 +58,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon-sync in L2 node to catch up the
 	// latest verified block head.
 	// TODO: check whether the engine is not syncing through P2P (eth_syncing)
-	if s.p2pSyncVerifiedBlocks && s.state.GetLastVerifiedBlock().Height.Uint64() > 0 && !s.AheadOfProtocolVerifiedHead() {
+	if s.p2pSyncVerifiedBlocks && s.state.getLastVerifiedBlock().Height.Uint64() > 0 && !s.AheadOfProtocolVerifiedHead() {
 		if err := s.TriggerBeaconSync(); err != nil {
 			return fmt.Errorf("trigger beacon-sync error: %w", err)
 		}
@@ -89,7 +89,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 
 // AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
 func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
-	return s.state.GetL2Head().Number.Cmp(s.state.GetLastVerifiedBlock().Height) >= 0
+	return s.state.GetL2Head().Number.Cmp(s.state.getLastVerifiedBlock().Height) >= 0
 }
 
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given

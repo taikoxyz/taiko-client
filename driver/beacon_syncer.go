@@ -55,7 +55,7 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *beacon.ExecutableDataV1, error) {
 	var (
 		proveBlockTxHash  common.Hash
-		lastVerifiedBlock = s.state.GetLastVerifiedBlock()
+		lastVerifiedBlock = s.state.getLastVerifiedBlock()
 	)
 
 	iter, err := eventIterator.NewBlockProvenIterator(s.ctx, &eventIterator.BlockProvenIteratorConfig{
