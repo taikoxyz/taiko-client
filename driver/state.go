@@ -389,15 +389,9 @@ func (s *State) VerfiyL2Block(ctx context.Context, protocolBlockHash common.Hash
 	return nil
 }
 
-func (s *State) SetL1Current(l1Current *types.Header) {
-	s.l1Current = l1Current
-}
-
-func (s *State) GetL1Current() *types.Header {
-	return s.l1Current
-}
-
-func (s *State) ResetL1Current(ctx context.Context, id *big.Int) error {
+// resetL1Current resets the l1Current cursor to the L1 height which emitted a
+// BlockProposed event with given blockID.
+func (s *State) resetL1Current(ctx context.Context, id *big.Int) error {
 	var l1CurrentHeight *big.Int
 
 	handler := func(
@@ -435,29 +429,6 @@ func (s *State) ResetL1Current(ctx context.Context, id *big.Int) error {
 
 	s.l1Current, err = s.rpc.L1.HeaderByNumber(ctx, l1CurrentHeight)
 	return err
-}
-
-// GetConstants returns state's all constants.
-func (s *State) GetConstants() struct {
-	AnchorTxGasLimit  *big.Int
-	MaxTxlistBytes    *big.Int
-	MaxBlockNumTxs    *big.Int
-	MaxBlocksGasLimit *big.Int
-	MinTxGasLimit     *big.Int
-} {
-	return struct {
-		AnchorTxGasLimit  *big.Int
-		MaxTxlistBytes    *big.Int
-		MaxBlockNumTxs    *big.Int
-		MaxBlocksGasLimit *big.Int
-		MinTxGasLimit     *big.Int
-	}{
-		AnchorTxGasLimit:  s.anchorTxGasLimit,
-		MaxTxlistBytes:    s.maxTxlistBytes,
-		MaxBlockNumTxs:    s.maxBlockNumTxs,
-		MaxBlocksGasLimit: s.maxBlocksGasLimit,
-		MinTxGasLimit:     s.minTxGasLimit,
-	}
 }
 
 func (s *State) getSyncedHeaderID(l1Height uint64, hash common.Hash) (*big.Int, error) {

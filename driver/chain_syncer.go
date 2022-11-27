@@ -42,10 +42,10 @@ func NewL2ChainSyncer(
 		state:                         state,
 		throwawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
 		txListValidator: txListValidator.NewTxListValidator(
-			state.GetConstants().MaxBlocksGasLimit.Uint64(),
-			state.GetConstants().MaxBlockNumTxs.Uint64(),
-			state.GetConstants().MaxTxlistBytes.Uint64(),
-			state.GetConstants().MinTxGasLimit.Uint64(),
+			state.maxBlocksGasLimit.Uint64(),
+			state.maxBlockNumTxs.Uint64(),
+			state.maxTxlistBytes.Uint64(),
+			state.minTxGasLimit.Uint64(),
 			rpc.L2ChainID,
 		),
 		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
@@ -79,7 +79,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 			)
 		}
 
-		if err := s.state.ResetL1Current(s.ctx, s.lastSyncedVerifiedBlockID); err != nil {
+		if err := s.state.resetL1Current(s.ctx, s.lastSyncedVerifiedBlockID); err != nil {
 			return err
 		}
 	}
@@ -98,7 +98,7 @@ func (s *L2ChainSyncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header
 	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
 		Client:               s.rpc.L1,
 		TaikoL1:              s.rpc.TaikoL1,
-		StartHeight:          s.state.GetL1Current().Number,
+		StartHeight:          s.state.l1Current.Number,
 		EndHeight:            l1End.Number,
 		FilterQuery:          nil,
 		OnBlockProposedEvent: s.onBlockProposed,
@@ -111,8 +111,8 @@ func (s *L2ChainSyncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header
 		return err
 	}
 
-	s.state.SetL1Current(l1End)
-	metrics.DriverL1CurrentHeightGauge.Update(s.state.GetL1Current().Number.Int64())
+	s.state.l1Current = l1End
+	metrics.DriverL1CurrentHeightGauge.Update(s.state.l1Current.Number.Int64())
 
 	return nil
 }
