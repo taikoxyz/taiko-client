@@ -5,10 +5,10 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -33,6 +33,7 @@ type State interface {
 	SetL1Current(l1Current *types.Header)
 	GetL1Head() *types.Header
 	GetL2Head() *types.Header
+	ResetL1Current(ctx context.Context, id *big.Int) error
 }
 
 type L2ChainSyncer struct {
@@ -41,11 +42,11 @@ type L2ChainSyncer struct {
 	rpc                           *rpc.Client                      // L1/L2 RPC clients
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                // Private key of L2 throwaway blocks builder
 	txListValidator               *txListValidator.TxListValidator // Transactions list validator
-
-	p2pSyncVerifiedBlocks        bool
-	checkBeaconSyncProgressTimer *time.Timer
-	headBeforeLastBeaconSync     *types.Header
-	syncProgressUnhealth         bool
+	// Try P2P beacon-sync if current node is behind of  the protocol's latest verified block head
+	p2pSyncVerifiedBlocks       bool
+	lastSyncedVerifiedBlockHash common.Hash
+	lastSyncedVerifiedBlockID   *big.Int
+	beaconSyncTriggered         bool
 }
 
 // NewL2ChainSyncer creates a new chain syncer instance.
@@ -77,12 +78,31 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	// If current L2 node's chain is behind of the protocol's latest verified block head, and the
 	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon-sync in L2 node to catch up the
 	// latest verified block head.
+	// TODO: check whether the engine is not syncing through P2P (eth_syncing)
 	if s.p2pSyncVerifiedBlocks && s.state.GetLastVerifiedBlock().Height.Uint64() > 0 && !s.AheadOfProtocolVerifiedHead() {
 		if err := s.TriggerBeaconSync(); err != nil {
 			return fmt.Errorf("trigger beacon-sync error: %w", err)
 		}
 
 		return nil
+	}
+
+	if s.beaconSyncTriggered {
+		l2Head, err := s.rpc.L2.HeaderByNumber(s.ctx, nil)
+		if err != nil {
+			return err
+		}
+
+		if l2Head.Hash() != s.lastSyncedVerifiedBlockHash {
+			log.Crit(
+				"Verified header mismatch, height: %d, hash: %s != %s",
+				l2Head.Number, l2Head.Hash(), s.lastSyncedVerifiedBlockHash,
+			)
+		}
+
+		if err := s.state.ResetL1Current(s.ctx, s.lastSyncedVerifiedBlockID); err != nil {
+			return err
+		}
 	}
 
 	return s.ProcessL1Blocks(s.ctx, l1End)

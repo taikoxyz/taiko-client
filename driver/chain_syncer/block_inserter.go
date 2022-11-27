@@ -18,14 +18,14 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
-	eventiterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
+	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
 func (s *L2ChainSyncer) onBlockProposed(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
-	endIter eventiterator.EndBlockProposeEventIterFunc,
+	endIter eventIterator.EndBlockProposeEventIterFunc,
 ) error {
 	log.Info(
 		"New BlockProposed event",
@@ -39,7 +39,21 @@ func (s *L2ChainSyncer) onBlockProposed(
 	}
 
 	// Fetch the L2 parent block.
-	parent, err := s.rpc.L2ParentByBlockId(ctx, event.Id)
+	var (
+		parent *types.Header
+		err    error
+	)
+	if s.beaconSyncTriggered {
+		// Already synced through beacon-sync, just skip this event.
+		if event.Id.Cmp(s.lastSyncedVerifiedBlockID) <= 0 {
+			return nil
+		}
+
+		parent, err = s.rpc.L2.HeaderByHash(ctx, s.lastSyncedVerifiedBlockHash)
+	} else {
+		parent, err = s.rpc.L2ParentByBlockId(ctx, event.Id)
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to fetch L2 parent block: %w", err)
 	}
@@ -142,6 +156,10 @@ func (s *L2ChainSyncer) onBlockProposed(
 	)
 
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
+
+	if !l1Origin.Throwaway && s.beaconSyncTriggered {
+		s.beaconSyncTriggered = false
+	}
 
 	return nil
 }

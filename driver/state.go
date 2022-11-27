@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/metrics"
+	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -402,7 +403,6 @@ func (s *State) VerfiyL2Block(ctx context.Context, protocolBlockHash common.Hash
 	return nil
 }
 
-// TODO: use atomic.Value
 func (s *State) SetL1Current(l1Current *types.Header) {
 	s.l1Current = l1Current
 }
@@ -411,13 +411,44 @@ func (s *State) GetL1Current() *types.Header {
 	return s.l1Current
 }
 
-func (s *State) ResetL1Current() error {
-	// l2Head, err := s.rpc.L2.HeaderByNumber(context.Background(), nil)
-	// if err != nil {
-	// 	return err
-	// }
+func (s *State) ResetL1Current(ctx context.Context, id *big.Int) error {
+	var l1CurrentHeight *big.Int
 
-	return nil
+	handler := func(
+		ctx context.Context,
+		e *bindings.TaikoL1ClientBlockProposed,
+		end eventIterator.EndBlockProposeEventIterFunc,
+	) error {
+		l1CurrentHeight = new(big.Int).SetUint64(e.Raw.BlockNumber)
+		end()
+		return nil
+	}
+
+	iter, err := eventIterator.NewBlockProposedIterator(
+		ctx,
+		&eventIterator.BlockProposedIteratorConfig{
+			Client:               s.rpc.L1,
+			TaikoL1:              s.rpc.TaikoL1,
+			StartHeight:          s.l1Current.Number, // TODO: update this value
+			FilterQuery:          []*big.Int{id},
+			OnBlockProposedEvent: handler,
+		},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if err := iter.Iter(); err != nil {
+		return err
+	}
+
+	if l1CurrentHeight == nil {
+		return fmt.Errorf("BlockProposed event not found, blockID: %s", id)
+	}
+
+	s.l1Current, err = s.rpc.L1.HeaderByNumber(ctx, l1CurrentHeight)
+	return err
 }
 
 // GetConstants returns state's all constants.
@@ -455,7 +486,7 @@ func (s *State) getSyncedHeaderID(l1Height uint64, hash common.Hash) (*big.Int, 
 	for iter.Next() {
 		e := iter.Event
 
-		if bytes.Compare(e.BlockHash[:], hash.Bytes()) != 0 {
+		if !bytes.Equal(e.BlockHash[:], hash.Bytes()) {
 			continue
 		}
 
