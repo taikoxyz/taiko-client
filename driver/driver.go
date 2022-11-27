@@ -159,10 +159,7 @@ func (d *Driver) doSync() error {
 
 	l1Head := d.state.GetL1Head()
 
-	if err := d.l2ChainSyncer.ProcessL1Blocks(
-		d.ctx,
-		l1Head,
-	); err != nil {
+	if err := d.l2ChainSyncer.Sync(l1Head); err != nil {
 		log.Error("Process new L1 blocks error", "error", err)
 		return err
 	}

@@ -241,7 +241,11 @@ func (p *Prover) proveOp() error {
 }
 
 // onBlockProposed tries to prove that the newly proposed block is valid/invalid.
-func (p *Prover) onBlockProposed(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
+func (p *Prover) onBlockProposed(
+	ctx context.Context,
+	event *bindings.TaikoL1ClientBlockProposed,
+	endIter eventIterator.EndBlockProposeEventIterFunc,
+) error {
 	log.Info("Proposed block", "blockID", event.Id)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
 

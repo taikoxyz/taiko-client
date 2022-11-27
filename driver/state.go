@@ -411,6 +411,15 @@ func (s *State) GetL1Current() *types.Header {
 	return s.l1Current
 }
 
+func (s *State) ResetL1Current() error {
+	// l2Head, err := s.rpc.L2.HeaderByNumber(context.Background(), nil)
+	// if err != nil {
+	// 	return err
+	// }
+
+	return nil
+}
+
 // GetConstants returns state's all constants.
 func (s *State) GetConstants() struct {
 	AnchorTxGasLimit  *big.Int

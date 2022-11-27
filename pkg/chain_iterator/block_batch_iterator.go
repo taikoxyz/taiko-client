@@ -29,10 +29,14 @@ type OnBlocksFunc func(
 	ctx context.Context,
 	start, end *types.Header,
 	updateCurrentFunc UpdateCurrentFunc,
+	endIterFunc EndIterFunc,
 ) error
 
 // UpdateCurrentFunc updates the iterator.current cursor in the iterator.
 type UpdateCurrentFunc func(*types.Header)
+
+// EndIterFunc ends the current iteration.
+type EndIterFunc func()
 
 // BlockBatchIterator iterates the blocks in batches between the given start and end heights,
 // with the awareness of reorganization.
@@ -45,6 +49,7 @@ type BlockBatchIterator struct {
 	endHeight          *uint64
 	current            *types.Header
 	onBlocks           OnBlocksFunc
+	isEnd              bool
 }
 
 // BlockBatchIteratorConfig represents the configs of a block batch iterator.
@@ -171,13 +176,13 @@ func (i *BlockBatchIterator) iter() (err error) {
 		return err
 	}
 
-	if err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent); err != nil {
+	if err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent, i.end); err != nil {
 		return err
 	}
 
 	i.current = endHeader
 
-	if !isLastEpoch {
+	if !isLastEpoch && !i.isEnd {
 		return errContinue
 	}
 
@@ -192,6 +197,11 @@ func (i *BlockBatchIterator) updateCurrent(current *types.Header) {
 	}
 
 	i.current = current
+}
+
+// end ends the current iteration.
+func (i *BlockBatchIterator) end() {
+	i.isEnd = true
 }
 
 // ensureCurrentNotReorged checks if the iterator.current cursor was reorged, if was, will

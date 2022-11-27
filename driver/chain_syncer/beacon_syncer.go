@@ -5,24 +5,35 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/beacon"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	eventiterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 )
 
+var (
+	checkBeaconSyncProgressInterval = 120 * time.Second
+)
+
+// TriggerBeaconSync triggers the L2 node to start performing a beacon-sync.
 func (s *L2ChainSyncer) TriggerBeaconSync() error {
-	lastVerifiedHead, err := s.getVerifiedBlockHeader(s.ctx)
+	lastVerifiedHead, err := s.getVerifiedBlockPayload(s.ctx)
+	if err != nil {
+		return err
+	}
+
+	headBeofreTriggerSync, err := s.rpc.L2.HeaderByNumber(s.ctx, nil)
 	if err != nil {
 		return err
 	}
 
 	status, err := s.rpc.L2Engine.NewPayload(
 		context.Background(),
-		beacon.BlockToExecutableData(types.NewBlockWithHeader(lastVerifiedHead)),
+		lastVerifiedHead,
 	)
 	if err != nil {
 		return err
@@ -32,9 +43,9 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	}
 
 	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &beacon.ForkchoiceStateV1{
-		HeadBlockHash:      lastVerifiedHead.Hash(),
-		SafeBlockHash:      lastVerifiedHead.Hash(),
-		FinalizedBlockHash: lastVerifiedHead.Hash(),
+		HeadBlockHash:      lastVerifiedHead.BlockHash,
+		SafeBlockHash:      lastVerifiedHead.BlockHash,
+		FinalizedBlockHash: lastVerifiedHead.BlockHash,
 	}, nil)
 	if err != nil {
 		return err
@@ -43,10 +54,15 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 		return fmt.Errorf("invalid new forkchoiceUpdate response status: %s", status.Status)
 	}
 
+	s.headBeforeLastBeaconSync = headBeofreTriggerSync
+	s.checkBeaconSyncProgressTimer = time.AfterFunc(checkBeaconSyncProgressInterval, s.checkBeaconSyncProgress)
+
 	return nil
 }
 
-func (s *L2ChainSyncer) getVerifiedBlockHeader(ctx context.Context) (*types.Header, error) {
+// getVerifiedBlockPayload fetches the latest verfied block's header, and converts it to an Engine API executable data,
+// which will be used to let the node to start beacon-syncing.
+func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*beacon.ExecutableDataV1, error) {
 	var (
 		proveBlockTxHash  common.Hash
 		lastVerifiedBlock = s.state.GetLastVerifiedBlock()
@@ -58,10 +74,14 @@ func (s *L2ChainSyncer) getVerifiedBlockHeader(ctx context.Context) (*types.Head
 		StartHeight: common.Big0,   // TODO: change this number
 		EndHeight:   common.Big256, // TODO: change this number
 		FilterQuery: []*big.Int{lastVerifiedBlock.ID},
-		OnBlockProvenEvent: func(ctx context.Context, e *bindings.TaikoL1ClientBlockProven) error {
+		OnBlockProvenEvent: func(
+			ctx context.Context,
+			e *bindings.TaikoL1ClientBlockProven,
+			endIter eventiterator.EndBlockProvenEventIterFunc,
+		) error {
 			if bytes.Compare(e.BlockHash[:], lastVerifiedBlock.Hash.Bytes()) == 0 {
 				proveBlockTxHash = e.Raw.TxHash
-				// TODO: stop the iterator
+				endIter()
 			}
 			return nil
 		},
@@ -92,27 +112,29 @@ func (s *L2ChainSyncer) getVerifiedBlockHeader(ctx context.Context) (*types.Head
 		return nil, err
 	}
 
-	header := &types.Header{
-		ParentHash:  evidence.Header.ParentHash,
-		UncleHash:   evidence.Header.OmmersHash,
-		Coinbase:    evidence.Header.Beneficiary,
-		Root:        evidence.Header.StateRoot,
-		TxHash:      evidence.Header.TransactionsRoot,
-		ReceiptHash: evidence.Header.ReceiptsRoot,
-		Bloom:       encoding.BytesToBloom(evidence.Header.LogsBloom),
-		Difficulty:  evidence.Header.Difficulty,
-		Number:      evidence.Header.Height,
-		GasLimit:    evidence.Header.GasLimit,
-		GasUsed:     evidence.Header.GasUsed,
-		Time:        evidence.Header.Timestamp,
-		Extra:       evidence.Header.ExtraData,
-		MixDigest:   evidence.Header.MixHash,
-		Nonce:       types.EncodeNonce(evidence.Header.Nonce),
-	}
+	header := encoding.ToGethHeader(&evidence.Header)
 
 	if header.Hash() != lastVerifiedBlock.Hash {
 		return nil, fmt.Errorf("last verified block hash mismatch: %s != %s", header.Hash(), lastVerifiedBlock.Hash)
 	}
 
-	return header, nil
+	return encoding.ToExecutableDataV1(header), nil
+}
+
+func (s *L2ChainSyncer) checkBeaconSyncProgress() {
+	if s.headBeforeLastBeaconSync == nil {
+		log.Warn("Head before last beacon-sync not recorded")
+		return
+	}
+
+	syncProgress, err := s.rpc.L2.SyncProgress(s.ctx)
+	if err != nil {
+		log.Error("Get chain sync progress error", "error", err)
+		return
+	}
+
+	if syncProgress == nil {
+		log.Info("Beacon-sync finished")
+		return
+	}
 }

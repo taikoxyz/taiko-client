@@ -3,7 +3,9 @@ package chainsyncer
 import (
 	"context"
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -39,7 +41,11 @@ type L2ChainSyncer struct {
 	rpc                           *rpc.Client                      // L1/L2 RPC clients
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                // Private key of L2 throwaway blocks builder
 	txListValidator               *txListValidator.TxListValidator // Transactions list validator
-	p2pSyncVerifiedBlocks         bool
+
+	p2pSyncVerifiedBlocks        bool
+	checkBeaconSyncProgressTimer *time.Timer
+	headBeforeLastBeaconSync     *types.Header
+	syncProgressUnhealth         bool
 }
 
 // NewL2ChainSyncer creates a new chain syncer instance.
@@ -66,17 +72,24 @@ func NewL2ChainSyncer(
 	}, nil
 }
 
+// Sync performs a sync operation to L2 node's local chain.
 func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
-	if s.p2pSyncVerifiedBlocks && s.state.GetLastVerifiedBlock().Height.Uint64() > 0 && !s.AheadOfVerifiedHeight() {
-		// L2 p2p sync
+	// If current L2 node's chain is behind of the protocol's latest verified block head, and the
+	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon-sync in L2 node to catch up the
+	// latest verified block head.
+	if s.p2pSyncVerifiedBlocks && s.state.GetLastVerifiedBlock().Height.Uint64() > 0 && !s.AheadOfProtocolVerifiedHead() {
+		if err := s.TriggerBeaconSync(); err != nil {
+			return fmt.Errorf("trigger beacon-sync error: %w", err)
+		}
+
 		return nil
 	}
 
 	return s.ProcessL1Blocks(s.ctx, l1End)
 }
 
-// AheadOfVerifiedHeight checks whether the L2 chain is ahead of verified head in protocol.
-func (s *L2ChainSyncer) AheadOfVerifiedHeight() bool {
+// AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
+func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 	return s.state.GetL2Head().Number.Cmp(s.state.GetLastVerifiedBlock().Height) >= 0
 }
 

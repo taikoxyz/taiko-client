@@ -18,10 +18,15 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
+	eventiterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
-func (s *L2ChainSyncer) onBlockProposed(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
+func (s *L2ChainSyncer) onBlockProposed(
+	ctx context.Context,
+	event *bindings.TaikoL1ClientBlockProposed,
+	endIter eventiterator.EndBlockProposeEventIterFunc,
+) error {
 	log.Info(
 		"New BlockProposed event",
 		"L1Height", event.Raw.BlockNumber,
