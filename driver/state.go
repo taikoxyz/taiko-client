@@ -20,7 +20,7 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-type VerifiedHeader struct {
+type VerifiedHeaderInfo struct {
 	ID     *big.Int
 	Hash   common.Hash
 	Height *big.Int
@@ -321,26 +321,12 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 func (s *State) setLastVerifiedBlockHash(id *big.Int, height *big.Int, hash common.Hash) {
 	log.Debug("New verified block", "height", height, "hash", hash)
 	metrics.DriverL2VerifiedHeightGauge.Update(height.Int64())
-	s.l2VerifiedHead.Store(&VerifiedHeader{ID: id, Height: height, Hash: hash})
+	s.l2VerifiedHead.Store(&VerifiedHeaderInfo{ID: id, Height: height, Hash: hash})
 }
 
 // GetLastVerifiedBlockHash reads the last verified L2 block concurrent safely.
-// TODO: use a defined type.
-func (s *State) GetLastVerifiedBlock() struct {
-	ID     *big.Int
-	Hash   common.Hash
-	Height *big.Int
-} {
-	h := s.l2VerifiedHead.Load().(*VerifiedHeader)
-
-	return struct {
-		ID     *big.Int
-		Hash   common.Hash
-		Height *big.Int
-	}{
-		Hash:   h.Hash,
-		Height: h.Height,
-	}
+func (s *State) GetLastVerifiedBlock() *VerifiedHeaderInfo {
+	return s.l2VerifiedHead.Load().(*VerifiedHeaderInfo)
 }
 
 // watchBlockProposed watches newly proposed blocks and keeps updating current
