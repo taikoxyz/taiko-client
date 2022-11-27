@@ -283,8 +283,9 @@ func UnpackTxListBytes(txData []byte) ([]byte, error) {
 	return inputs[1], nil
 }
 
-// UnpackTxListBytes unpacks the evidence data of a TaikoL1.proveBlock transaction.
-func UnpackEvidence(txData []byte) (*TaikoL1Evidence, error) {
+// UnpackEvidenceHeader unpacks the evidence data of a TaikoL1.proveBlock transaction, and returns
+// the block header inside.
+func UnpackEvidenceHeader(txData []byte) (*BlockHeader, error) {
 	method, err := TaikoL1ABI.MethodById(txData)
 	if err != nil {
 		return nil, err
@@ -307,8 +308,16 @@ func UnpackEvidence(txData []byte) (*TaikoL1Evidence, error) {
 		return nil, fmt.Errorf("invalid transaction inputs map length, get: %d", len(inputs))
 	}
 
-	// evidenceBytes := inputs[0]
+	evidenceMap := map[string]interface{}{}
+	if err := EvidenceArgs.UnpackIntoMap(evidenceMap, inputs[0]); err != nil {
+		return nil, err
+	}
 
-	// TODO: unpack evidence
-	return nil, nil
+	header, ok := evidenceMap["header"].(BlockHeader)
+
+	if !ok {
+		return nil, fmt.Errorf("failed to unpack evidence block header")
+	}
+
+	return &header, nil
 }

@@ -97,12 +97,12 @@ func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, 
 		return nil, nil, err
 	}
 
-	evidence, err := encoding.UnpackEvidence(proveBlockTx.Data())
+	evidenceHeader, err := encoding.UnpackEvidenceHeader(proveBlockTx.Data())
 	if err != nil {
 		return nil, nil, err
 	}
 
-	header := encoding.ToGethHeader(&evidence.Header)
+	header := encoding.ToGethHeader(evidenceHeader)
 
 	if header.Hash() != lastVerifiedBlock.Hash {
 		return nil, nil, fmt.Errorf("last verified block hash mismatch: %s != %s", header.Hash(), lastVerifiedBlock.Hash)
