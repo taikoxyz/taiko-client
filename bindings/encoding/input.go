@@ -308,16 +308,24 @@ func UnpackEvidenceHeader(txData []byte) (*BlockHeader, error) {
 		return nil, fmt.Errorf("invalid transaction inputs map length, get: %d", len(inputs))
 	}
 
+	return decodeEvidenceHeader(inputs[0])
+}
+
+// decodeEvidenceHeader decodes the encoded evidence bytes, and then returns its inner header.
+func decodeEvidenceHeader(evidenceBytes []byte) (*BlockHeader, error) {
 	evidenceMap := map[string]interface{}{}
-	if err := EvidenceArgs.UnpackIntoMap(evidenceMap, inputs[0]); err != nil {
+
+	if err := EvidenceArgs.UnpackIntoMap(evidenceMap, evidenceBytes); err != nil {
 		return nil, err
 	}
 
-	header, ok := evidenceMap["header"].(BlockHeader)
+	fmt.Println("unpacked", fmt.Sprintf("%T", evidenceMap["Evidence"]))
+	fmt.Println("getType", EvidenceType.GetType())
 
+	_, ok := evidenceMap["Evidence"]
 	if !ok {
-		return nil, fmt.Errorf("failed to unpack evidence block header")
+		return nil, fmt.Errorf("failed to decode evidence meta")
 	}
 
-	return &header, nil
+	return nil, nil
 }
