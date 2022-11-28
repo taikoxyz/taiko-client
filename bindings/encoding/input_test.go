@@ -1,6 +1,7 @@
 package encoding
 
 import (
+	"fmt"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -8,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/go-test/deep"
 	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/testutils"
@@ -117,5 +119,8 @@ func TestDecodeEvidenceHeader(t *testing.T) {
 
 	header, err := decodeEvidenceHeader(b)
 	require.Nil(t, err)
-	require.Equal(t, *FromGethHeader(testHeader), header)
+	// require.Equal(t, *FromGethHeader(testHeader), header)
+	if diff := deep.Equal(*FromGethHeader(testHeader), *header); diff != nil {
+		fmt.Printf("diff:=%v\n", diff)
+	}
 }

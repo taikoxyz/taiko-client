@@ -122,6 +122,10 @@ var (
 			Name: "nonce",
 			Type: "uint64",
 		},
+		{
+			Name: "baseFeePerGas",
+			Type: "uint256",
+		},
 	}
 	evidenceComponents = []abi.ArgumentMarshaling{
 		{
@@ -313,19 +317,13 @@ func UnpackEvidenceHeader(txData []byte) (*BlockHeader, error) {
 
 // decodeEvidenceHeader decodes the encoded evidence bytes, and then returns its inner header.
 func decodeEvidenceHeader(evidenceBytes []byte) (*BlockHeader, error) {
-	evidenceMap := map[string]interface{}{}
-
-	if err := EvidenceArgs.UnpackIntoMap(evidenceMap, evidenceBytes); err != nil {
-		return nil, err
-	}
-
-	fmt.Println("unpacked", fmt.Sprintf("%T", evidenceMap["Evidence"]))
-	fmt.Println("getType", EvidenceType.GetType())
-
-	_, ok := evidenceMap["Evidence"]
-	if !ok {
+	unpacked, err := EvidenceArgs.Unpack(evidenceBytes)
+	if err != nil {
 		return nil, fmt.Errorf("failed to decode evidence meta")
 	}
-
-	return nil, nil
+	e := new(TaikoL1Evidence)
+	if err = EvidenceArgs.Copy(&e, unpacked); err != nil {
+		return nil, err
+	}
+	return &e.Header, nil
 }
