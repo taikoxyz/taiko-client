@@ -157,7 +157,7 @@ func (i *BlockBatchIterator) iter() (err error) {
 	}
 
 	if i.current.Number.Uint64() >= destHeight {
-		return nil
+		return io.EOF
 	}
 
 	endHeight = i.current.Number.Uint64() + i.blocksReadPerEpoch
