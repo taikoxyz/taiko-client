@@ -84,6 +84,7 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 		maxBlocksGasLimit: maxBlocksGasLimit,
 		minTxGasLimit:     minTxGasLimit,
 		l1Head:            new(atomic.Value),
+		l2Head:            new(atomic.Value),
 		l2HeadBlockID:     new(atomic.Value),
 		l2VerifiedHead:    new(atomic.Value),
 		l1Current:         latestL2KnownL1Header,
