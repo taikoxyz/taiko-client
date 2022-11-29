@@ -47,6 +47,7 @@ func (p *Prover) proveBlockInvalid(
 
 	metrics.ProverQueuedProofCounter.Inc(1)
 	metrics.ProverQueuedInvalidProofCounter.Inc(1)
+	p.l1Current = event.Raw.BlockNumber
 
 	return nil
 }

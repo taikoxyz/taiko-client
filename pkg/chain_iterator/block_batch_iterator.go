@@ -29,10 +29,14 @@ type OnBlocksFunc func(
 	ctx context.Context,
 	start, end *types.Header,
 	updateCurrentFunc UpdateCurrentFunc,
+	endIterFunc EndIterFunc,
 ) error
 
 // UpdateCurrentFunc updates the iterator.current cursor in the iterator.
 type UpdateCurrentFunc func(*types.Header)
+
+// EndIterFunc ends the current iteration.
+type EndIterFunc func()
 
 // BlockBatchIterator iterates the blocks in batches between the given start and end heights,
 // with the awareness of reorganization.
@@ -45,6 +49,8 @@ type BlockBatchIterator struct {
 	endHeight          *uint64
 	current            *types.Header
 	onBlocks           OnBlocksFunc
+	isEnd              bool
+	reverse            bool
 }
 
 // BlockBatchIteratorConfig represents the configs of a block batch iterator.
@@ -54,6 +60,7 @@ type BlockBatchIteratorConfig struct {
 	StartHeight           *big.Int
 	EndHeight             *big.Int
 	OnBlocks              OnBlocksFunc
+	Reverse               bool
 }
 
 // NewBlockBatchIterator creates a new block batch iterator instance.
@@ -84,13 +91,28 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 		return nil, fmt.Errorf("failed to get start header, height: %s, error: %w", cfg.StartHeight, err)
 	}
 
+	var endHeader *types.Header
+	if cfg.Reverse && cfg.EndHeight == nil {
+		return nil, fmt.Errorf("missing end height")
+	} else {
+		if endHeader, err = cfg.Client.HeaderByNumber(ctx, cfg.EndHeight); err != nil {
+			return nil, fmt.Errorf("failed to get end header, height: %s, error: %w", cfg.EndHeight, err)
+		}
+	}
+
 	iterator := &BlockBatchIterator{
 		ctx:         ctx,
 		client:      cfg.Client,
 		chainID:     chainID,
 		startHeight: cfg.StartHeight.Uint64(),
-		current:     startHeader,
 		onBlocks:    cfg.OnBlocks,
+		reverse:     cfg.Reverse,
+	}
+
+	if cfg.Reverse {
+		iterator.current = endHeader
+	} else {
+		iterator.current = startHeader
 	}
 
 	if cfg.MaxBlocksReadPerEpoch != nil {
@@ -110,9 +132,14 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 // Iter iterates the given chain between the given start and end heights,
 // will call the callback when a batch of blocks in chain are iterated.
 func (i *BlockBatchIterator) Iter() error {
+	iterFunc := i.iter
+	if i.reverse {
+		iterFunc = i.reverseIter
+	}
+
 	iterOp := func() error {
 		for {
-			if err := i.iter(); err != nil {
+			if err := iterFunc(); err != nil {
 				if errors.Is(err, io.EOF) {
 					break
 				}
@@ -171,13 +198,60 @@ func (i *BlockBatchIterator) iter() (err error) {
 		return err
 	}
 
-	if err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent); err != nil {
+	if err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent, i.end); err != nil {
 		return err
+	}
+
+	if i.isEnd {
+		return io.EOF
 	}
 
 	i.current = endHeader
 
-	if !isLastEpoch {
+	if !isLastEpoch && !i.isEnd {
+		return errContinue
+	}
+
+	return io.EOF
+}
+
+func (i *BlockBatchIterator) reverseIter() (err error) {
+	if err := i.ensureCurrentNotReorged(); err != nil {
+		return fmt.Errorf("failed to check whether iterator.current cursor has been reorged: %w", err)
+	}
+
+	var (
+		startHeight uint64
+		startHeader *types.Header
+		isLastEpoch bool
+	)
+
+	if i.current.Number.Uint64() <= i.startHeight {
+		return nil
+	}
+
+	if i.current.Number.Uint64() <= i.blocksReadPerEpoch {
+		startHeight = 0
+	} else {
+		startHeight = i.current.Number.Uint64() - i.blocksReadPerEpoch
+	}
+
+	if startHeight <= i.startHeight {
+		startHeight = i.startHeight
+		isLastEpoch = true
+	}
+
+	if startHeader, err = i.client.HeaderByNumber(i.ctx, new(big.Int).SetUint64(startHeight)); err != nil {
+		return err
+	}
+
+	if err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.end); err != nil {
+		return err
+	}
+
+	i.current = startHeader
+
+	if !isLastEpoch && !i.isEnd {
 		return errContinue
 	}
 
@@ -192,6 +266,11 @@ func (i *BlockBatchIterator) updateCurrent(current *types.Header) {
 	}
 
 	i.current = current
+}
+
+// end ends the current iteration.
+func (i *BlockBatchIterator) end() {
+	i.isEnd = true
 }
 
 // ensureCurrentNotReorged checks if the iterator.current cursor was reorged, if was, will

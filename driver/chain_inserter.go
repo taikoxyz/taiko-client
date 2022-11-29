@@ -81,7 +81,11 @@ func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Head
 	return nil
 }
 
-func (b *L2ChainInserter) onBlockProposed(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
+func (b *L2ChainInserter) onBlockProposed(
+	ctx context.Context,
+	event *bindings.TaikoL1ClientBlockProposed,
+	end eventIterator.EndBlockProposeEventIterFunc,
+) error {
 	log.Info(
 		"New BlockProposed event",
 		"L1Height", event.Raw.BlockNumber,

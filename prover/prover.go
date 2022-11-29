@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -28,9 +27,7 @@ var (
 	// Gas limit of TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
 	// TODO: tune this value based when the on-chain solidity verifier is available.
 	proveBlocksGasLimit uint64 = 1000000
-	// Time interval to fetch the unproved blocks and prove them, even if no BlockProposed
-	// event received.
-	forceTimerCycle = 1 * time.Minute
+	maxPendingProofs           = 10
 )
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
@@ -164,9 +161,7 @@ func (p *Prover) Start() error {
 
 // eventLoop starts the main loop of Taiko prover.
 func (p *Prover) eventLoop() {
-	ticker := time.NewTicker(forceTimerCycle)
 	defer func() {
-		ticker.Stop()
 		p.wg.Done()
 	}()
 
@@ -241,7 +236,15 @@ func (p *Prover) proveOp() error {
 }
 
 // onBlockProposed tries to prove that the newly proposed block is valid/invalid.
-func (p *Prover) onBlockProposed(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
+func (p *Prover) onBlockProposed(
+	ctx context.Context,
+	event *bindings.TaikoL1ClientBlockProposed,
+	end eventIterator.EndBlockProposeEventIterFunc,
+) error {
+	if len(p.proveValidProofCh) > maxPendingProofs || len(p.proveInvalidProofCh) > maxPendingProofs {
+		end()
+		return nil
+	}
 	log.Info("Proposed block", "blockID", event.Id)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
 

@@ -44,6 +44,7 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 
 	metrics.ProverQueuedProofCounter.Inc(1)
 	metrics.ProverQueuedValidProofCounter.Inc(1)
+	p.l1Current = event.Raw.BlockNumber
 
 	return nil
 }
