@@ -98,12 +98,12 @@ func (s *ProverTestSuite) TestGetProveBlocksTxOpts() {
 func (s *ProverTestSuite) TestOnBlockProposed() {
 	// Valid block
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainInserter())
-	s.Nil(s.p.onBlockProposed(context.Background(), e))
+	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.submitValidBlockProof(context.Background(), <-s.p.proveValidProofCh))
 
 	// Invalid block
 	e = testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.d.ChainInserter())
-	s.Nil(s.p.onBlockProposed(context.Background(), e))
+	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.submitInvalidBlockProof(context.Background(), <-s.p.proveInvalidProofCh))
 }
 
@@ -112,7 +112,7 @@ func (s *ProverTestSuite) TestOnBlockProposedTxNotFound() {
 		s.p.onBlockProposed(context.Background(), &bindings.TaikoL1ClientBlockProposed{
 			Id:  common.Big2,
 			Raw: types.Log{BlockHash: common.Hash{}, TxIndex: 0},
-		}),
+		}, func() {}),
 		ethereum.NotFound.Error(),
 	)
 }

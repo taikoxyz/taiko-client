@@ -8,13 +8,21 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	chainIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator"
 )
 
+// EndBlockProposeEventIterFunc ends the current iteration.
+type EndBlockProposeEventIterFunc func()
+
 // OnBlockProposedEvent represents the callback function which will be called when a TaikoL1.BlockProposed event is
 // iterated.
-type OnBlockProposedEvent func(context.Context, *bindings.TaikoL1ClientBlockProposed) error
+type OnBlockProposedEvent func(
+	context.Context,
+	*bindings.TaikoL1ClientBlockProposed,
+	EndBlockProposeEventIterFunc,
+) error
 
 // BlockProposedIterator iterates the emitted TaikoL1.BlockProposed events in the chain,
 // with the awareness of reorganization.
@@ -23,6 +31,7 @@ type BlockProposedIterator struct {
 	taikoL1            *bindings.TaikoL1Client
 	blockBatchIterator *chainIterator.BlockBatchIterator
 	filterQuery        []*big.Int
+	isEnd              bool
 }
 
 // BlockProposedIteratorConfig represents the configs of a BlockProposed event iterator.
@@ -33,6 +42,7 @@ type BlockProposedIteratorConfig struct {
 	StartHeight           *big.Int
 	EndHeight             *big.Int
 	FilterQuery           []*big.Int
+	Reverse               bool
 	OnBlockProposedEvent  OnBlockProposedEvent
 }
 
@@ -54,11 +64,13 @@ func NewBlockProposedIterator(ctx context.Context, cfg *BlockProposedIteratorCon
 		MaxBlocksReadPerEpoch: cfg.MaxBlocksReadPerEpoch,
 		StartHeight:           cfg.StartHeight,
 		EndHeight:             cfg.EndHeight,
+		Reverse:               cfg.Reverse,
 		OnBlocks: assembleBlockProposedIteratorCallback(
 			cfg.Client,
 			cfg.TaikoL1,
 			cfg.FilterQuery,
 			cfg.OnBlockProposedEvent,
+			iterator,
 		),
 	})
 	if err != nil {
@@ -76,6 +88,12 @@ func (i *BlockProposedIterator) Iter() error {
 	return i.blockBatchIterator.Iter()
 }
 
+// end ends the current iteration.
+func (i *BlockProposedIterator) end() {
+	log.Info("called")
+	i.isEnd = true
+}
+
 // assembleBlockProposedIteratorCallback assembles the callback which will be used
 // by a event iterator's inner block iterator.
 func assembleBlockProposedIteratorCallback(
@@ -83,8 +101,14 @@ func assembleBlockProposedIteratorCallback(
 	taikoL1Client *bindings.TaikoL1Client,
 	filterQuery []*big.Int,
 	callback OnBlockProposedEvent,
+	eventIter *BlockProposedIterator,
 ) chainIterator.OnBlocksFunc {
-	return func(ctx context.Context, start, end *types.Header, updateCurrentFunc chainIterator.UpdateCurrentFunc) error {
+	return func(
+		ctx context.Context,
+		start, end *types.Header,
+		updateCurrentFunc chainIterator.UpdateCurrentFunc,
+		endFunc chainIterator.EndIterFunc,
+	) error {
 		endHeight := end.Number.Uint64()
 		iter, err := taikoL1Client.FilterBlockProposed(
 			&bind.FilterOpts{Start: start.Number.Uint64(), End: &endHeight},
@@ -107,8 +131,13 @@ func assembleBlockProposedIteratorCallback(
 				continue
 			}
 
-			if err := callback(ctx, event); err != nil {
+			if err := callback(ctx, event, eventIter.end); err != nil {
 				return err
+			}
+
+			if eventIter.isEnd {
+				endFunc()
+				return nil
 			}
 
 			current, err := client.HeaderByHash(ctx, event.Raw.BlockHash)
