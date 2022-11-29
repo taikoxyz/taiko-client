@@ -118,7 +118,7 @@ func BloomToBytes(bloom types.Bloom) [8][32]byte {
 	return b
 }
 
-// BloomToBytes converts a [8][32]byte slice to types.Bloom.
+// BytesToBloom converts a [8][32]byte slice to types.Bloom.
 func BytesToBloom(b [8][32]byte) types.Bloom {
 	bytes := []byte{}
 
