@@ -1,12 +1,15 @@
 package encoding
 
 import (
+	"math/big"
+	"math/rand"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
+	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -73,7 +76,7 @@ func TestEncodeProveBlockInvalidInput(t *testing.T) {
 }
 
 func TestUnpackTxListBytes(t *testing.T) {
-	_, err := UnpackTxListBytes(testutils.RandomHash().Bytes())
+	_, err := UnpackTxListBytes(testutils.RandomBytes(1024))
 	require.NotNil(t, err)
 
 	_, err = UnpackTxListBytes(
@@ -83,4 +86,36 @@ func TestUnpackTxListBytes(t *testing.T) {
 		),
 	)
 	require.ErrorContains(t, err, "no method with id")
+}
+
+func TestDecodeEvidenceHeader(t *testing.T) {
+	_, err := UnpackEvidenceHeader(testutils.RandomBytes(1024))
+	require.NotNil(t, err)
+
+	_, err = decodeEvidenceHeader(testutils.RandomBytes(1024))
+	require.NotNil(t, err)
+
+	b, err := EncodeEvidence(&TaikoL1Evidence{
+		Meta: bindings.LibDataBlockMetadata{
+			Id:           new(big.Int).SetUint64(rand.Uint64()),
+			L1Height:     new(big.Int).SetUint64(rand.Uint64()),
+			L1Hash:       testutils.RandomHash(),
+			Beneficiary:  common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
+			TxListHash:   testutils.RandomHash(),
+			MixHash:      testutils.RandomHash(),
+			ExtraData:    testutils.RandomHash().Bytes(),
+			GasLimit:     rand.Uint64(),
+			Timestamp:    rand.Uint64(),
+			CommitHeight: rand.Uint64(),
+			CommitSlot:   rand.Uint64(),
+		},
+		Header: *FromGethHeader(testHeader),
+		Prover: common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
+		Proofs: [][]byte{testutils.RandomBytes(1024)},
+	})
+	require.Nil(t, err)
+
+	header, err := decodeEvidenceHeader(b)
+	require.Nil(t, err)
+	require.Equal(t, FromGethHeader(testHeader), header)
 }

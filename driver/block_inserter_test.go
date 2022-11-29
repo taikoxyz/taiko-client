@@ -14,10 +14,10 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	s.Nil(s.d.l2ChainInserter.ProcessL1Blocks(context.Background(), l1Head1))
+	s.Nil(s.d.ChainSyncer().ProcessL1Blocks(context.Background(), l1Head1))
 
 	// Propose an invalid L2 block
-	testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.p, s.d.ChainInserter())
+	testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer())
 
 	l2Head2, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -25,7 +25,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	s.Equal(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 
 	// Propose a valid L2 block
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainInserter())
+	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer())
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -34,7 +34,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 }
 
 func (s *DriverTestSuite) TestGetInvalidateBlockTxOpts() {
-	opts, err := s.d.l2ChainInserter.getInvalidateBlockTxOpts(context.Background(), common.Big0)
+	opts, err := s.d.ChainSyncer().getInvalidateBlockTxOpts(context.Background(), common.Big0)
 
 	s.Nil(err)
 	s.True(opts.NoSend)

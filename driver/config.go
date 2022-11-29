@@ -20,7 +20,7 @@ type Config struct {
 	TaikoL2Address                common.Address
 	ThrowawayBlocksBuilderPrivKey *ecdsa.PrivateKey
 	JwtSecret                     string
-	FromGenesis                   bool
+	P2PSyncVerifiedBlocks         bool
 }
 
 // NewConfigFromCliContext creates a new config instance from
@@ -44,5 +44,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		TaikoL2Address:                common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		ThrowawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
 		JwtSecret:                     string(jwtSecret),
+		P2PSyncVerifiedBlocks:         c.Bool(flags.P2PSyncVerifiedBlocks.Name),
 	}, nil
 }
