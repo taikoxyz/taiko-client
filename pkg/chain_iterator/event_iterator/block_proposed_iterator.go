@@ -119,6 +119,7 @@ func assembleBlockProposedIteratorCallback(
 
 		for iter.Next() {
 			if ctx.Err() != nil {
+				endFunc()
 				return nil
 			}
 
