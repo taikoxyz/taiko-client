@@ -133,10 +133,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.zkProofsPerBlock = zkProofsPerBlock.Uint64()
 	p.maxPendingBlocks = maxPendingBlocks.Uint64()
 	p.anchorGasLimit = anchorGasLimit.Uint64()
-	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, 10)
-	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, 10)
-	p.proveValidProofCh = make(chan *producer.ProofWithHeader, 10)
-	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, 10)
+	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.maxPendingBlocks)
+	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.maxPendingBlocks)
+	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.maxPendingBlocks)
+	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.maxPendingBlocks)
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
@@ -186,6 +186,14 @@ func (p *Prover) eventLoop() {
 		select {
 		case <-p.ctx.Done():
 			return
+		case proofWithHeader := <-p.proveValidProofCh:
+			if err := p.submitValidBlockProof(p.ctx, proofWithHeader); err != nil {
+				log.Error("Prove valid block error", "error", err)
+			}
+		case proofWithHeader := <-p.proveInvalidProofCh:
+			if err := p.submitInvalidBlockProof(p.ctx, proofWithHeader); err != nil {
+				log.Error("Prove invalid block error", "error", err)
+			}
 		case <-p.proveNotify:
 			if err := p.proveOp(); err != nil {
 				log.Error("Prove new blocks error", "error", err)
@@ -195,14 +203,6 @@ func (p *Prover) eventLoop() {
 		case e := <-p.blockVerifiedCh:
 			if err := p.onBlockVerified(p.ctx, e); err != nil {
 				log.Error("Handle BlockVerified event error", "error", err)
-			}
-		case proofWithHeader := <-p.proveValidProofCh:
-			if err := p.submitValidBlockProof(p.ctx, proofWithHeader); err != nil {
-				log.Error("Prove valid block error", "error", err)
-			}
-		case proofWithHeader := <-p.proveInvalidProofCh:
-			if err := p.submitInvalidBlockProof(p.ctx, proofWithHeader); err != nil {
-				log.Error("Prove invalid block error", "error", err)
 			}
 		}
 	}
