@@ -51,6 +51,7 @@ func (p *Proposer) ProposeInvalidTxListBytes(ctx context.Context) error {
 		ctx,
 		invalidTxListBytes,
 		uint64(rand.Int63n(int64(p.poolContentSplitter.maxGasPerBlock))),
+		0,
 	)
 	if err != nil {
 		return err
@@ -78,7 +79,7 @@ func (p *Proposer) proposeTxListIncludingInvalidTx(ctx context.Context) error {
 		return err
 	}
 
-	meta, commitTx, err := p.CommitTxList(ctx, txListBytes, invalidTx.Gas())
+	meta, commitTx, err := p.CommitTxList(ctx, txListBytes, invalidTx.Gas(), 0)
 	if err != nil {
 		return err
 	}

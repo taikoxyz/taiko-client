@@ -182,13 +182,13 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	log.Info("Fetching L2 pending transactions finished", "length", pendingContent.ToTxLists().Len())
 
 	var commitTxListResQueue []*commitTxListRes
-	for _, txs := range p.poolContentSplitter.split(pendingContent) {
+	for i, txs := range p.poolContentSplitter.split(pendingContent) {
 		txListBytes, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			return fmt.Errorf("failed to encode transactions: %w", err)
 		}
 
-		meta, commitTx, err := p.CommitTxList(ctx, txListBytes, sumTxsGasLimit(txs))
+		meta, commitTx, err := p.CommitTxList(ctx, txListBytes, sumTxsGasLimit(txs), i)
 		if err != nil {
 			return fmt.Errorf("failed to commit transactions: %w", err)
 		}
@@ -211,15 +211,12 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		if err := p.ProposeTxList(ctx, commitTxListRes); err != nil {
 			return fmt.Errorf("failed to propose transactions: %w", err)
 		}
-
-		metrics.ProposerProposedTxListsCounter.Inc(1)
-		metrics.ProposerProposedTxsCounter.Inc(int64(commitTxListRes.txNum))
 	}
 
 	return nil
 }
 
-func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimit uint64) (
+func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimit uint64, splittedIdx int) (
 	*bindings.LibDataBlockMetadata,
 	*types.Transaction,
 	error,
@@ -232,7 +229,7 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 		Beneficiary: p.l2SuggestedFeeRecipient,
 		GasLimit:    gasLimit,
 		TxListHash:  crypto.Keccak256Hash(txListBytes),
-		CommitSlot:  p.commitSlot,
+		CommitSlot:  p.commitSlot + uint64(splittedIdx),
 	}
 
 	if p.commitDelayConfirmations == 0 {
@@ -247,7 +244,7 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 
 	commitHash := common.BytesToHash(encoding.EncodeCommitHash(meta.Beneficiary, meta.TxListHash))
 
-	commitTx, err := p.rpc.TaikoL1.CommitBlock(opts, p.commitSlot, commitHash)
+	commitTx, err := p.rpc.TaikoL1.CommitBlock(opts, meta.CommitSlot, commitHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -263,6 +260,11 @@ func (p *Proposer) ProposeTxList(
 		receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, commitRes.commitTx)
 		if err != nil {
 			return err
+		}
+
+		if receipt.Status != types.ReceiptStatusSuccessful {
+			log.Error("Failed to commit transactions list", "txHash", receipt.TxHash)
+			return nil
 		}
 
 		log.Info(
@@ -301,6 +303,9 @@ func (p *Proposer) ProposeTxList(
 	}
 
 	log.Info("📝 Propose transactions succeeded")
+
+	metrics.ProposerProposedTxListsCounter.Inc(1)
+	metrics.ProposerProposedTxsCounter.Inc(int64(commitRes.txNum))
 
 	return nil
 }

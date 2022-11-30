@@ -103,7 +103,7 @@ func (s *ProposerTestSuite) TestCommitTxList() {
 	txListBytes := testutils.RandomBytes(1024)
 	gasLimit := uint64(102400)
 
-	meta, tx, err := s.p.CommitTxList(context.Background(), txListBytes, gasLimit)
+	meta, tx, err := s.p.CommitTxList(context.Background(), txListBytes, gasLimit, 0)
 	s.Nil(err)
 	s.Equal(meta.GasLimit, gasLimit)
 
