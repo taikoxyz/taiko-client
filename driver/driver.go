@@ -81,6 +81,15 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		return fmt.Errorf("throwaway blocks builder has no fund")
 	}
 
+	peers, err := d.rpc.L2.PeerCount(d.ctx)
+	if err != nil {
+		return err
+	}
+
+	if cfg.P2PSyncVerifiedBlocks && peers == 0 {
+		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 node")
+	}
+
 	if d.l2ChainSyncer, err = NewL2ChainSyncer(
 		d.ctx,
 		d.rpc,

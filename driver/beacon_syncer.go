@@ -21,6 +21,11 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 		return err
 	}
 
+	if s.beaconSyncTriggered && s.lastSyncedVerifiedBlockID != nil && s.lastSyncedVerifiedBlockID.Cmp(blockID) == 0 {
+		log.Debug("Verified head not updated", "blockID", blockID, "hash", lastVerifiedHead.BlockHash)
+		return nil
+	}
+
 	status, err := s.rpc.L2Engine.NewPayload(
 		s.ctx,
 		lastVerifiedHead,
@@ -48,7 +53,12 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	s.lastSyncedVerifiedBlockHash = lastVerifiedHead.BlockHash
 	s.lastSyncedVerifiedBlockID = blockID
 
-	log.Info("⛓️ Beacon-sync triggered", "newHeadHash", s.lastSyncedVerifiedBlockHash, "newHeadID", blockID)
+	log.Info(
+		"⛓️ Beacon-sync triggered",
+		"newHeadID", blockID,
+		"newHeadHeight", lastVerifiedHead.Number,
+		"newHeadHash", s.lastSyncedVerifiedBlockHash,
+	)
 
 	return nil
 }
@@ -117,7 +127,7 @@ func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, 
 		return nil, nil, fmt.Errorf("last verified block hash mismatch: %s != %s", header.Hash(), lastVerifiedBlock.Hash)
 	}
 
-	log.Info("Last verified block header retrieved", "header", header.Hash())
+	log.Info("Last verified block header retrieved", "hash", header.Hash())
 
 	return lastVerifiedBlock.ID, encoding.ToExecutableDataV1(header), nil
 }
