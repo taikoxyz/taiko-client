@@ -436,8 +436,13 @@ func (s *State) resetL1Current(ctx context.Context, id *big.Int) error {
 		return fmt.Errorf("BlockProposed event not found, blockID: %s", id)
 	}
 
-	s.l1Current, err = s.rpc.L1.HeaderByNumber(ctx, l1CurrentHeight)
-	return err
+	if s.l1Current, err = s.rpc.L1.HeaderByNumber(ctx, l1CurrentHeight); err != nil {
+		return err
+	}
+
+	log.Info("Reset L1 current cursor", "height", s.l1Current.Number)
+
+	return nil
 }
 
 func (s *State) getSyncedHeaderID(l1Height uint64, hash common.Hash) (*big.Int, error) {

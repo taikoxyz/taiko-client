@@ -32,7 +32,7 @@ var (
 	P2PSyncVerifiedBlocks = cli.BoolFlag{
 		Name:     "p2p.syncVerifiedBlocks",
 		Usage:    "Try P2P syncing verified blocks between L2 nodes, will be helpful to bring a new node online quickly",
-		Value:    true,
+		Value:    false,
 		Category: driverCategory,
 	}
 )
