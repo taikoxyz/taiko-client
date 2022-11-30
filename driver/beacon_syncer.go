@@ -22,7 +22,7 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	}
 
 	status, err := s.rpc.L2Engine.NewPayload(
-		context.Background(),
+		s.ctx,
 		lastVerifiedHead,
 	)
 	if err != nil {

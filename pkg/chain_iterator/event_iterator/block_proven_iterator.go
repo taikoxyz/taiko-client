@@ -105,19 +105,15 @@ func assembleBlockProvenIteratorCallback(
 	) error {
 		endHeight := end.Number.Uint64()
 		iter, err := taikoL1Client.FilterBlockProven(
-			&bind.FilterOpts{Start: start.Number.Uint64(), End: &endHeight},
+			&bind.FilterOpts{Start: start.Number.Uint64(), End: &endHeight, Context: ctx},
 			filterQuery,
 		)
 		if err != nil {
 			return err
 		}
+		defer iter.Close()
 
 		for iter.Next() {
-			if ctx.Err() != nil {
-				endFunc()
-				return nil
-			}
-
 			event := iter.Event
 
 			// Skip if reorged.

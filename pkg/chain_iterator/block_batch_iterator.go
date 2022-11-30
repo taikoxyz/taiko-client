@@ -139,6 +139,15 @@ func (i *BlockBatchIterator) Iter() error {
 
 	iterOp := func() error {
 		for {
+			if i.ctx.Err() != nil {
+				log.Warn("Block batch iterator closed",
+					"error", i.ctx.Err(),
+					"start", i.startHeight,
+					"end", i.endHeight,
+					"current", i.current.Number,
+				)
+				break
+			}
 			if err := iterFunc(); err != nil {
 				if errors.Is(err, io.EOF) {
 					break
@@ -152,14 +161,11 @@ func (i *BlockBatchIterator) Iter() error {
 		return nil
 	}
 
-	for {
-		select {
-		case <-i.ctx.Done():
-			return i.ctx.Err()
-		default:
-			return backoff.Retry(iterOp, backoff.NewExponentialBackOff())
-		}
+	if err := backoff.Retry(iterOp, backoff.NewExponentialBackOff()); err != nil {
+		return err
 	}
+
+	return i.ctx.Err()
 }
 
 // iter is the internal implementation of Iter, which performs the iteration.
@@ -227,7 +233,7 @@ func (i *BlockBatchIterator) reverseIter() (err error) {
 	)
 
 	if i.current.Number.Uint64() <= i.startHeight {
-		return nil
+		return io.EOF
 	}
 
 	if i.current.Number.Uint64() <= i.blocksReadPerEpoch {
