@@ -14,6 +14,7 @@ services:
       - "0.0.0.0"
 
   l2_node:
+    # TODO: change back to use `taiko` tag when taiko-geth PR 18 merged
     image: gcr.io/evmchain/taiko-geth:l2-p2p-block-syncing
     restart: unless-stopped
     pull_policy: always
