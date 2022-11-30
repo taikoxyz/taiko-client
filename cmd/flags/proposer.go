@@ -39,7 +39,7 @@ var (
 	ShufflePoolContent = cli.BoolFlag{
 		Name:     "shufflePoolContent",
 		Usage:    "Perform a weighted shuffle when building the transactions list to propose",
-		Value:    true,
+		Value:    false,
 		Category: proposerCategory,
 	}
 )
@@ -67,4 +67,6 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&ProposeInterval,
 	&ProduceInvalidBlocks,
 	&ProduceInvalidBlocksInterval,
+	&ShufflePoolContent,
+	&CommitSlot,
 })
