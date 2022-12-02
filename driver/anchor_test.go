@@ -8,7 +8,7 @@ import (
 )
 
 func (s *DriverTestSuite) TestNewAnchorTransactor() {
-	opts, err := s.d.l2ChainInserter.newAnchorTransactor(context.Background(), common.Big0)
+	opts, err := s.d.ChainSyncer().newAnchorTransactor(context.Background(), common.Big0)
 	s.Nil(err)
 	s.Equal(true, opts.NoSend)
 	s.Equal(common.Big0, opts.GasPrice)

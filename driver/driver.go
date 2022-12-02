@@ -26,9 +26,9 @@ const (
 // Driver keeps the L2 node's local block chain in sync with the TaikoL1
 // contract.
 type Driver struct {
-	rpc             *rpc.Client
-	l2ChainInserter *L2ChainInserter
-	state           *State
+	rpc           *rpc.Client
+	l2ChainSyncer *L2ChainSyncer
+	state         *State
 
 	l1HeadCh   chan *types.Header
 	l1HeadSub  event.Subscription
@@ -81,11 +81,21 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		return fmt.Errorf("throwaway blocks builder has no fund")
 	}
 
-	if d.l2ChainInserter, err = NewL2ChainInserter(
+	peers, err := d.rpc.L2.PeerCount(d.ctx)
+	if err != nil {
+		return err
+	}
+
+	if cfg.P2PSyncVerifiedBlocks && peers == 0 {
+		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 node")
+	}
+
+	if d.l2ChainSyncer, err = NewL2ChainSyncer(
 		d.ctx,
 		d.rpc,
 		d.state,
 		cfg.ThrowawayBlocksBuilderPrivKey,
+		cfg.P2PSyncVerifiedBlocks,
 	); err != nil {
 		return err
 	}
@@ -155,12 +165,9 @@ func (d *Driver) doSync() error {
 		return nil
 	}
 
-	l1Head := d.state.getL1Head()
+	l1Head := d.state.GetL1Head()
 
-	if err := d.l2ChainInserter.ProcessL1Blocks(
-		d.ctx,
-		l1Head,
-	); err != nil {
+	if err := d.l2ChainSyncer.Sync(l1Head); err != nil {
 		log.Error("Process new L1 blocks error", "error", err)
 		return err
 	}
@@ -168,9 +175,9 @@ func (d *Driver) doSync() error {
 	return nil
 }
 
-// ChainInserter returns the driver's chain inserter.
-func (d *Driver) ChainInserter() *L2ChainInserter {
-	return d.l2ChainInserter
+// ChainSyncer returns the driver's chain syncer.
+func (d *Driver) ChainSyncer() *L2ChainSyncer {
+	return d.l2ChainSyncer
 }
 
 // Name returns the application name.

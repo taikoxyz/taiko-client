@@ -2,7 +2,6 @@ package driver
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"math/big"
@@ -20,71 +19,13 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
-const (
-	MaxL1BlocksRead = 1000
-)
-
-type L2ChainInserter struct {
-	state                         *State            // Driver's state
-	rpc                           *rpc.Client       // L1/L2 RPC clients
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey // Private key of L2 throwaway blocks builder
-	txListValidator               *txListValidator.TxListValidator
-}
-
-// NewL2ChainInserter creates a new block inserter instance.
-func NewL2ChainInserter(
-	ctx context.Context,
-	rpc *rpc.Client,
-	state *State,
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
-) (*L2ChainInserter, error) {
-	return &L2ChainInserter{
-		rpc:                           rpc,
-		state:                         state,
-		throwawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
-		txListValidator: txListValidator.NewTxListValidator(
-			state.maxBlocksGasLimit.Uint64(),
-			state.maxBlockNumTxs.Uint64(),
-			state.maxTxlistBytes.Uint64(),
-			state.minTxGasLimit.Uint64(),
-			rpc.L2ChainID,
-		),
-	}, nil
-}
-
-// ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
-// L1 block heights, and then tries inserting them into L2 node's block chain.
-func (b *L2ChainInserter) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
-	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
-		Client:               b.rpc.L1,
-		TaikoL1:              b.rpc.TaikoL1,
-		StartHeight:          b.state.l1Current.Number,
-		EndHeight:            l1End.Number,
-		FilterQuery:          nil,
-		OnBlockProposedEvent: b.onBlockProposed,
-	})
-	if err != nil {
-		return err
-	}
-
-	if err := iter.Iter(); err != nil {
-		return err
-	}
-
-	b.state.l1Current = l1End
-	metrics.DriverL1CurrentHeightGauge.Update(b.state.l1Current.Number.Int64())
-
-	return nil
-}
-
-func (b *L2ChainInserter) onBlockProposed(
+func (s *L2ChainSyncer) onBlockProposed(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
-	end eventIterator.EndBlockProposeEventIterFunc,
+	endIter eventIterator.EndBlockProposeEventIterFunc,
 ) error {
 	log.Info(
 		"New BlockProposed event",
@@ -98,14 +39,28 @@ func (b *L2ChainInserter) onBlockProposed(
 	}
 
 	// Fetch the L2 parent block.
-	parent, err := b.rpc.L2ParentByBlockId(ctx, event.Id)
+	var (
+		parent *types.Header
+		err    error
+	)
+	if s.beaconSyncTriggered {
+		// Already synced through beacon-sync, just skip this event.
+		if event.Id.Cmp(s.lastSyncedVerifiedBlockID) <= 0 {
+			return nil
+		}
+
+		parent, err = s.rpc.L2.HeaderByHash(ctx, s.lastSyncedVerifiedBlockHash)
+	} else {
+		parent, err = s.rpc.L2ParentByBlockId(ctx, event.Id)
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to fetch L2 parent block: %w", err)
 	}
 
 	log.Debug("Parent block", "height", parent.Number, "hash", parent.Hash())
 
-	tx, err := b.rpc.L1.TransactionInBlock(
+	tx, err := s.rpc.L1.TransactionInBlock(
 		ctx,
 		event.Raw.BlockHash,
 		event.Raw.TxIndex,
@@ -126,7 +81,7 @@ func (b *L2ChainInserter) onBlockProposed(
 	}
 
 	// Check whether the transactions list is valid.
-	hint, invalidTxIndex := b.txListValidator.IsTxListValid(event.Id, txListBytes)
+	hint, invalidTxIndex := s.txListValidator.IsTxListValid(event.Id, txListBytes)
 
 	log.Info(
 		"Validate transactions list",
@@ -154,22 +109,22 @@ func (b *L2ChainInserter) onBlockProposed(
 		payloadError error
 	)
 	if hint == txListValidator.HintOK {
-		payloadData, rpcError, payloadError = b.insertNewHead(
+		payloadData, rpcError, payloadError = s.insertNewHead(
 			ctx,
 			event,
 			parent,
-			b.state.getHeadBlockID(),
+			s.state.getHeadBlockID(),
 			txListBytes,
 			l1Origin,
 		)
 	} else {
-		payloadData, rpcError, payloadError = b.insertThrowAwayBlock(
+		payloadData, rpcError, payloadError = s.insertThrowAwayBlock(
 			ctx,
 			event,
 			parent,
 			uint8(hint),
 			new(big.Int).SetInt64(int64(invalidTxIndex)),
-			b.state.getHeadBlockID(),
+			s.state.getHeadBlockID(),
 			txListBytes,
 			l1Origin,
 		)
@@ -195,18 +150,23 @@ func (b *L2ChainInserter) onBlockProposed(
 		"blockID", event.Id,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
-		"lastVerifiedBlockHash", b.state.getLastVerifiedBlockHash(),
+		"lastVerifiedBlockHeight", s.state.getLastVerifiedBlock().Height,
+		"lastVerifiedBlockHash", s.state.getLastVerifiedBlock().Hash,
 		"transactions", len(payloadData.Transactions),
 	)
 
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
+
+	if !l1Origin.Throwaway && s.beaconSyncTriggered {
+		s.beaconSyncTriggered = false
+	}
 
 	return nil
 }
 
 // insertNewHead tries to insert a new head block to the L2 node's local
 // block chain through Engine APIs.
-func (b *L2ChainInserter) insertNewHead(
+func (s *L2ChainSyncer) insertNewHead(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	parent *types.Header,
@@ -230,7 +190,7 @@ func (b *L2ChainInserter) insertNewHead(
 	}
 
 	// Assemble a TaikoL2.anchor transaction
-	anchorTx, err := b.assembleAnchorTx(
+	anchorTx, err := s.assembleAnchorTx(
 		ctx,
 		event.Meta.L1Height,
 		event.Meta.L1Hash,
@@ -247,7 +207,7 @@ func (b *L2ChainInserter) insertNewHead(
 		return nil, nil, err
 	}
 
-	payload, rpcErr, payloadErr := b.createExecutionPayloads(
+	payload, rpcErr, payloadErr := s.createExecutionPayloads(
 		ctx,
 		event,
 		parent.Hash(),
@@ -264,13 +224,12 @@ func (b *L2ChainInserter) insertNewHead(
 
 	// Update the fork choice
 	fc.HeadBlockHash = payload.BlockHash
-	fc.SafeBlockHash = payload.BlockHash
-	fcRes, err := b.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, nil)
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, nil)
 	if err != nil {
 		return nil, err, nil
 	}
 	if fcRes.PayloadStatus.Status != beacon.VALID {
-		return nil, nil, fmt.Errorf("failed to update forkchoice, status: %s", fcRes.PayloadStatus.Status)
+		return nil, nil, fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
 	}
 
 	return payload, nil, nil
@@ -278,7 +237,7 @@ func (b *L2ChainInserter) insertNewHead(
 
 // insertThrowAwayBlock tries to insert a throw away block to the L2 node's local
 // block chain through Engine APIs.
-func (b *L2ChainInserter) insertThrowAwayBlock(
+func (s *L2ChainSyncer) insertThrowAwayBlock(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	parent *types.Header,
@@ -296,12 +255,12 @@ func (b *L2ChainInserter) insertThrowAwayBlock(
 	)
 
 	// Assemble a TaikoL2.invalidateBlock transaction
-	opts, err := b.getInvalidateBlockTxOpts(ctx, parent.Number)
+	opts, err := s.getInvalidateBlockTxOpts(ctx, parent.Number)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	invalidateBlockTx, err := b.rpc.TaikoL2.InvalidateBlock(
+	invalidateBlockTx, err := s.rpc.TaikoL2.InvalidateBlock(
 		opts,
 		txListBytes,
 		hint,
@@ -318,7 +277,7 @@ func (b *L2ChainInserter) insertThrowAwayBlock(
 		return nil, nil, fmt.Errorf("failed to encode TaikoL2.InvalidateBlock transaction bytes, err: %w", err)
 	}
 
-	return b.createExecutionPayloads(
+	return s.createExecutionPayloads(
 		ctx,
 		event,
 		parent.Hash(),
@@ -330,7 +289,7 @@ func (b *L2ChainInserter) insertThrowAwayBlock(
 
 // createExecutionPayloads creates a new execution payloads through
 // Engine APIs.
-func (b *L2ChainInserter) createExecutionPayloads(
+func (s *L2ChainSyncer) createExecutionPayloads(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	parentHash common.Hash,
@@ -346,7 +305,7 @@ func (b *L2ChainInserter) createExecutionPayloads(
 		BlockMetadata: &beacon.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
-			GasLimit:       event.Meta.GasLimit + b.state.anchorTxGasLimit.Uint64(),
+			GasLimit:       event.Meta.GasLimit + s.state.anchorTxGasLimit.Uint64(),
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
@@ -355,32 +314,31 @@ func (b *L2ChainInserter) createExecutionPayloads(
 		L1Origin: l1Origin,
 	}
 
-	// TODO: handle payload error more precisely
 	// Step 1, prepare a payload
-	fcRes, err := b.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, attributes)
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, attributes)
 	if err != nil {
 		return nil, err, nil
 	}
 	if fcRes.PayloadStatus.Status != beacon.VALID {
-		return nil, nil, fmt.Errorf("failed to update forkchoice, status: %s", fcRes.PayloadStatus.Status)
+		return nil, nil, fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
 	}
 	if fcRes.PayloadID == nil {
 		return nil, nil, errors.New("empty payload ID")
 	}
 
 	// Step 2, get the payload
-	payload, err := b.rpc.L2Engine.GetPayload(ctx, fcRes.PayloadID)
+	payload, err := s.rpc.L2Engine.GetPayload(ctx, fcRes.PayloadID)
 	if err != nil {
 		return nil, err, nil
 	}
 
 	// Step 3, execute the payload
-	execStatus, err := b.rpc.L2Engine.NewPayload(ctx, payload)
+	execStatus, err := s.rpc.L2Engine.NewPayload(ctx, payload)
 	if err != nil {
 		return nil, err, nil
 	}
 	if execStatus.Status != beacon.VALID {
-		return nil, nil, fmt.Errorf("failed to execute the newly built block, status: %s", execStatus.Status)
+		return nil, nil, fmt.Errorf("unexpected NewPayload response status: %s", execStatus.Status)
 	}
 
 	return payload, nil, nil
@@ -388,18 +346,18 @@ func (b *L2ChainInserter) createExecutionPayloads(
 
 // getInvalidateBlockTxOpts signs the transaction with a the
 // throwaway blocks builder private key.
-func (b *L2ChainInserter) getInvalidateBlockTxOpts(ctx context.Context, height *big.Int) (*bind.TransactOpts, error) {
+func (s *L2ChainSyncer) getInvalidateBlockTxOpts(ctx context.Context, height *big.Int) (*bind.TransactOpts, error) {
 	opts, err := bind.NewKeyedTransactorWithChainID(
-		b.throwawayBlocksBuilderPrivKey,
-		b.rpc.L2ChainID,
+		s.throwawayBlocksBuilderPrivKey,
+		s.rpc.L2ChainID,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	nonce, err := b.rpc.L2AccountNonce(
+	nonce, err := s.rpc.L2AccountNonce(
 		ctx,
-		crypto.PubkeyToAddress(b.throwawayBlocksBuilderPrivKey.PublicKey),
+		crypto.PubkeyToAddress(s.throwawayBlocksBuilderPrivKey.PublicKey),
 		height,
 	)
 	if err != nil {

@@ -16,7 +16,7 @@ import (
 func ProposeAndInsertThrowawayBlock(
 	s *ClientTestSuite,
 	proposer Proposer,
-	chainInserter L2ChainInserter,
+	chainSyncer L2ChainSyncer,
 ) *bindings.TaikoL1ClientBlockProposed {
 	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -52,7 +52,7 @@ func ProposeAndInsertThrowawayBlock(
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	s.Nil(chainInserter.ProcessL1Blocks(ctx, newL1Head))
+	s.Nil(chainSyncer.ProcessL1Blocks(ctx, newL1Head))
 
 	newL2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -67,7 +67,7 @@ func ProposeAndInsertThrowawayBlock(
 func ProposeAndInsertValidBlock(
 	s *ClientTestSuite,
 	proposer Proposer,
-	chainInserter L2ChainInserter,
+	chainSyncer L2ChainSyncer,
 ) *bindings.TaikoL1ClientBlockProposed {
 	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -123,7 +123,7 @@ func ProposeAndInsertValidBlock(
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	s.Nil(chainInserter.ProcessL1Blocks(ctx, newL1Head))
+	s.Nil(chainSyncer.ProcessL1Blocks(ctx, newL1Head))
 
 	newL2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)

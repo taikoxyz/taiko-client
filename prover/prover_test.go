@@ -97,12 +97,12 @@ func (s *ProverTestSuite) TestGetProveBlocksTxOpts() {
 
 func (s *ProverTestSuite) TestOnBlockProposed() {
 	// Valid block
-	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainInserter())
+	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.submitValidBlockProof(context.Background(), <-s.p.proveValidProofCh))
 
 	// Invalid block
-	e = testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.d.ChainInserter())
+	e = testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.submitInvalidBlockProof(context.Background(), <-s.p.proveInvalidProofCh))
 }
