@@ -308,7 +308,7 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 	for {
 		select {
 		case e := <-newHeaderSyncedCh:
-			if err := s.VerfiyL2Block(ctx, e.SrcHash); err != nil {
+			if err := s.VerifyL2Block(ctx, e.SrcHash); err != nil {
 				log.Error("Check new verified L2 block error", "error", err)
 				continue
 			}
@@ -379,8 +379,8 @@ func (s *State) SubL1HeadsFeed(ch chan *types.Header) event.Subscription {
 	return s.l1HeadsFeed.Subscribe(ch)
 }
 
-// VerfiyL2Block checks whether the given block is in L2 node's local chain.
-func (s *State) VerfiyL2Block(ctx context.Context, protocolBlockHash common.Hash) error {
+// VerifyL2Block checks whether the given block is in L2 node's local chain.
+func (s *State) VerifyL2Block(ctx context.Context, protocolBlockHash common.Hash) error {
 	header, err := s.rpc.L2.HeaderByHash(ctx, protocolBlockHash)
 	if err != nil {
 		return err

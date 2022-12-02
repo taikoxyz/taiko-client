@@ -16,19 +16,19 @@ import (
 
 // TriggerBeaconSync triggers the L2 node to start performing a beacon-sync.
 func (s *L2ChainSyncer) TriggerBeaconSync() error {
-	blockID, lastVerifiedHead, err := s.getVerifiedBlockPayload(s.ctx)
+	blockID, lastVerifiedHeadPayload, err := s.getVerifiedBlockPayload(s.ctx)
 	if err != nil {
 		return err
 	}
 
 	if s.beaconSyncTriggered && s.lastSyncedVerifiedBlockID != nil && s.lastSyncedVerifiedBlockID.Cmp(blockID) == 0 {
-		log.Debug("Verified head not updated", "blockID", blockID, "hash", lastVerifiedHead.BlockHash)
+		log.Debug("Verified head not updated", "blockID", blockID, "hash", lastVerifiedHeadPayload.BlockHash)
 		return nil
 	}
 
 	status, err := s.rpc.L2Engine.NewPayload(
 		s.ctx,
-		lastVerifiedHead,
+		lastVerifiedHeadPayload,
 	)
 	if err != nil {
 		return err
@@ -38,9 +38,9 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	}
 
 	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &beacon.ForkchoiceStateV1{
-		HeadBlockHash:      lastVerifiedHead.BlockHash,
-		SafeBlockHash:      lastVerifiedHead.BlockHash,
-		FinalizedBlockHash: lastVerifiedHead.BlockHash,
+		HeadBlockHash:      lastVerifiedHeadPayload.BlockHash,
+		SafeBlockHash:      lastVerifiedHeadPayload.BlockHash,
+		FinalizedBlockHash: lastVerifiedHeadPayload.BlockHash,
 	}, nil)
 	if err != nil {
 		return err
@@ -50,13 +50,13 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	}
 
 	s.beaconSyncTriggered = true
-	s.lastSyncedVerifiedBlockHash = lastVerifiedHead.BlockHash
+	s.lastSyncedVerifiedBlockHash = lastVerifiedHeadPayload.BlockHash
 	s.lastSyncedVerifiedBlockID = blockID
 
 	log.Info(
 		"⛓️ Beacon-sync triggered",
 		"newHeadID", blockID,
-		"newHeadHeight", lastVerifiedHead.Number,
+		"newHeadHeight", lastVerifiedHeadPayload.Number,
 		"newHeadHash", s.lastSyncedVerifiedBlockHash,
 	)
 

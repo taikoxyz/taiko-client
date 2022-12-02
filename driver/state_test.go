@@ -8,7 +8,7 @@ func (s *DriverTestSuite) TestVerfiyL2Block() {
 	head, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 
 	s.Nil(err)
-	s.Nil(s.d.state.VerfiyL2Block(context.Background(), head.Hash()))
+	s.Nil(s.d.state.VerifyL2Block(context.Background(), head.Hash()))
 }
 
 func (s *DriverTestSuite) TestGetL1Head() {

@@ -67,7 +67,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	}
 
 	if s.beaconSyncTriggered {
-		log.Info("Swtich to insert pending blocks one by one")
+		log.Info("Switch to insert pending blocks one by one")
 
 		l2Head, err := s.rpc.L2.HeaderByNumber(s.ctx, nil)
 		if err != nil {
