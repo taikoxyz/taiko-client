@@ -14,7 +14,7 @@ services:
       - "0.0.0.0"
 
   l2_node:
-    image: gcr.io/evmchain/taiko-geth:latest
+    image: gcr.io/evmchain/taiko-geth:taiko
     restart: unless-stopped
     pull_policy: always
     volumes:
