@@ -59,4 +59,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.10.25 => github.com/taikoxyz/taiko-geth v0.0.0-20221129161912-e6bf584a41c8
+replace github.com/ethereum/go-ethereum v1.10.25 => github.com/taikoxyz/taiko-geth v0.0.0-20221202110111-204eb68d377d
