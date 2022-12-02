@@ -52,7 +52,7 @@ func (s *L2ChainSyncer) newAnchorTransactor(ctx context.Context, height *big.Int
 		Nonce:    new(big.Int).SetUint64(nonce),
 		Context:  ctx,
 		GasPrice: common.Big0,
-		GasLimit: s.state.anchorTxGasLimit.Uint64(),
+		GasLimit: s.anchorTxGasLimit.Uint64(),
 		NoSend:   true,
 	}, nil
 }

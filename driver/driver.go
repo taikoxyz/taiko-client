@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 	"github.com/urfave/cli/v2"
 )
 
@@ -90,15 +91,36 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 node")
 	}
 
-	if d.l2ChainSyncer, err = NewL2ChainSyncer(
+	_, _, _, _, _, _,
+		maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit,
+		anchorTxGasLimit, _, _, err := d.rpc.TaikoL1.GetConstants(nil)
+	if err != nil {
+		return err
+	}
+
+	log.Info(
+		"Taiko protocol constants",
+		"anchorTxGasLimit", anchorTxGasLimit,
+		"maxBlocksGasLimit", maxBlocksGasLimit,
+		"maxTxlistBytes", maxTxlistBytes,
+		"maxBlockNumTxs", maxBlockNumTxs,
+		"minTxGasLimit", minTxGasLimit,
+	)
+	d.l2ChainSyncer = NewL2ChainSyncer(
 		d.ctx,
 		d.rpc,
 		d.state,
 		cfg.ThrowawayBlocksBuilderPrivKey,
+		txListValidator.NewTxListValidator(
+			maxBlocksGasLimit.Uint64(),
+			maxBlockNumTxs.Uint64(),
+			maxTxlistBytes.Uint64(),
+			minTxGasLimit.Uint64(),
+			d.rpc.L2ChainID,
+		),
 		cfg.P2PSyncVerifiedBlocks,
-	); err != nil {
-		return err
-	}
+		anchorTxGasLimit,
+	)
 
 	d.l1HeadSub = d.state.SubL1HeadsFeed(d.l1HeadCh)
 

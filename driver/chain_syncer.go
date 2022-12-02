@@ -26,6 +26,7 @@ type L2ChainSyncer struct {
 	lastSyncedVerifiedBlockHash common.Hash
 	lastSyncedVerifiedBlockID   *big.Int
 	beaconSyncTriggered         bool
+	anchorTxGasLimit            *big.Int
 }
 
 // NewL2ChainSyncer creates a new chain syncer instance.
@@ -34,22 +35,18 @@ func NewL2ChainSyncer(
 	rpc *rpc.Client,
 	state *State,
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
+	tv *txListValidator.TxListValidator,
 	p2pSyncVerifiedBlocks bool,
-) (*L2ChainSyncer, error) {
+	anchorTxGasLimit *big.Int,
+) *L2ChainSyncer {
 	return &L2ChainSyncer{
 		ctx:                           ctx,
 		rpc:                           rpc,
 		state:                         state,
 		throwawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
-		txListValidator: txListValidator.NewTxListValidator(
-			state.maxBlocksGasLimit.Uint64(),
-			state.maxBlockNumTxs.Uint64(),
-			state.maxTxlistBytes.Uint64(),
-			state.minTxGasLimit.Uint64(),
-			rpc.L2ChainID,
-		),
-		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
-	}, nil
+		txListValidator:               tv,
+		p2pSyncVerifiedBlocks:         p2pSyncVerifiedBlocks,
+	}
 }
 
 // Sync performs a sync operation to L2 node's local chain.
