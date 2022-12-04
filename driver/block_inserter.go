@@ -190,7 +190,7 @@ func (s *L2ChainSyncer) insertNewHead(
 	}
 
 	// Assemble a TaikoL2.anchor transaction
-	anchorTx, err := s.assembleAnchorTx(
+	anchorTx, err := s.anchorConstructor.AssembleAnchorTx(
 		ctx,
 		event.Meta.L1Height,
 		event.Meta.L1Hash,

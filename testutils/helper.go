@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -149,4 +150,9 @@ func RandomBytes(size int) (b []byte) {
 		log.Crit("Generate random bytes error", "error", err)
 	}
 	return
+}
+
+// SignatureFromRSV creates the signature bytes from r,s,v.
+func SignatureFromRSV(r, s string, v byte) []byte {
+	return append(append(hexutil.MustDecode(r), hexutil.MustDecode(s)...), v)
 }

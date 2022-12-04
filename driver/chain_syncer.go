@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -21,6 +22,7 @@ type L2ChainSyncer struct {
 	rpc                           *rpc.Client                      // L1/L2 RPC clients
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                // Private key of L2 throwaway blocks builder
 	txListValidator               *txListValidator.TxListValidator // Transactions list validator
+	anchorConstructor             *AnchorConstructor               // V1TaikoL1.anchor transactions constructor
 	// Try P2P beacon-sync if current node is behind of  the protocol's latest verified block head
 	p2pSyncVerifiedBlocks       bool
 	lastSyncedVerifiedBlockHash common.Hash
@@ -36,6 +38,16 @@ func NewL2ChainSyncer(
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
 	p2pSyncVerifiedBlocks bool,
 ) (*L2ChainSyncer, error) {
+	anchorConstructor, err := NewAnchorConstructor(
+		rpc,
+		state.anchorTxGasLimit.Uint64(),
+		bindings.GoldenTouchAddress,
+		bindings.GoldenTouchPrivKey,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
+	}
+
 	return &L2ChainSyncer{
 		ctx:                           ctx,
 		rpc:                           rpc,
@@ -48,6 +60,7 @@ func NewL2ChainSyncer(
 			state.minTxGasLimit.Uint64(),
 			rpc.L2ChainID,
 		),
+		anchorConstructor:     anchorConstructor,
 		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
 	}, nil
 }

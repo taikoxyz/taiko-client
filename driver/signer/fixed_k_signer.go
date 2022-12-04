@@ -1,4 +1,4 @@
-package crypto
+package signer
 
 import (
 	"fmt"
@@ -6,45 +6,32 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 var (
 	// 32 zero bytes.
 	zero32 [32]byte
-
-	// Account address and private key of golden touch account.
-	GoldenTouchPrivKey = func() *secp256k1.ModNScalar {
-		b := hexutil.MustDecode(bindings.GoldenTouchPrivKey)
-		var priv btcec.PrivateKey
-		if overflow := priv.Key.SetByteSlice(b); overflow || priv.Key.IsZero() {
-			log.Crit("Invalid private key")
-		}
-		return &priv.Key
-	}()
 )
 
-// SignAnchor calculates an ECDSA signature for a V1TaikoL2.anchor transaction.
-// ref: https://github.com/taikoxyz/taiko-mono/blob/main/packages/protocol/contracts/libs/LibAnchorSignature.sol
-func SignAnchor(hash []byte) ([]byte, error) {
-	if len(hash) != 32 {
-		return nil, fmt.Errorf("hash is required to be exactly 32 bytes (%d)", len(hash))
-	}
-
-	sig, ok := signWithK(new(secp256k1.ModNScalar).SetInt(1))(hash)
-	if !ok {
-		sig, ok = signWithK(new(secp256k1.ModNScalar).SetInt(2))(hash)
-		if !ok {
-			log.Crit("Failed to sign V1TaikoL2.anchor transaction using K = 1 and K = 2")
-		}
-	}
-
-	return sig[:], nil
+// FixedKSigner is a ethereum ECDSA signer who always sign payload with the given K value.
+// In theory K value is randomly selected in ECDSA algorithm's step 3:
+// https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm,
+// but here we use a fixed K value instead.
+type FixedKSigner struct {
+	privKey *secp256k1.ModNScalar
 }
 
-// signWithK signs the given hash using fixed K.
-func signWithK(k *secp256k1.ModNScalar) func(hash []byte) ([]byte, bool) {
+func NewFixedKSigner(privKey string) (*FixedKSigner, error) {
+	var priv btcec.PrivateKey
+	if overflow := priv.Key.SetByteSlice(hexutil.MustDecode(privKey)); overflow || priv.Key.IsZero() {
+		return nil, fmt.Errorf("invalid private key %s", privKey)
+	}
+
+	return &FixedKSigner{privKey: &priv.Key}, nil
+}
+
+// SignWithK signs the given hash using fixed K.
+func (s *FixedKSigner) SignWithK(k *secp256k1.ModNScalar) func(hash []byte) ([]byte, bool) {
 	// k * G
 	var kG secp256k1.JacobianPoint
 	secp256k1.ScalarBaseMultNonConst(k, &kG)
@@ -56,7 +43,7 @@ func signWithK(k *secp256k1.ModNScalar) func(hash []byte) ([]byte, bool) {
 	pubKeyRecoveryCode := byte(overflow<<1) | byte(kG.Y.IsOddBit())
 
 	kinv := new(secp256k1.ModNScalar).InverseValNonConst(k)
-	_s := new(secp256k1.ModNScalar).Mul2(GoldenTouchPrivKey, &r)
+	_s := new(secp256k1.ModNScalar).Mul2(s.privKey, &r)
 
 	return func(hash []byte) ([]byte, bool) {
 		var e secp256k1.ModNScalar
