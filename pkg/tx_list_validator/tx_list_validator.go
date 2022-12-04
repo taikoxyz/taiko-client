@@ -37,27 +37,27 @@ const (
 )
 
 type TxListValidator struct {
-	maxBlocksGasLimit uint64
-	maxBlockNumTxs    uint64
-	maxTxlistBytes    uint64
-	minTxGasLimit     uint64
-	chainID           *big.Int
+	blockMaxGasLimit uint64
+	blockMaxTxs      uint64
+	txListMaxBytes   uint64
+	txMinGasLimit    uint64
+	chainID          *big.Int
 }
 
 // NewTxListValidator creates a new TxListValidator instance based on giving configurations.
 func NewTxListValidator(
-	maxBlocksGasLimit uint64,
-	maxBlockNumTxs uint64,
-	maxTxlistBytes uint64,
-	minTxGasLimit uint64,
+	blockMaxGasLimit uint64,
+	blockMaxTxs uint64,
+	txListMaxBytes uint64,
+	txMinGasLimit uint64,
 	chainID *big.Int,
 ) *TxListValidator {
 	return &TxListValidator{
-		maxBlocksGasLimit: maxBlocksGasLimit,
-		maxBlockNumTxs:    maxBlockNumTxs,
-		maxTxlistBytes:    maxTxlistBytes,
-		minTxGasLimit:     minTxGasLimit,
-		chainID:           chainID,
+		blockMaxGasLimit: blockMaxGasLimit,
+		blockMaxTxs:      blockMaxTxs,
+		txListMaxBytes:   txListMaxBytes,
+		txMinGasLimit:    txMinGasLimit,
+		chainID:          chainID,
 	}
 }
 
@@ -81,7 +81,7 @@ func (v *TxListValidator) ValidateTxList(
 // the validation rule defined in LibInvalidTxList.sol.
 // ref: https://github.com/taikoxyz/taiko-mono/blob/main/packages/bindings/contracts/libs/LibInvalidTxList.sol
 func (v *TxListValidator) IsTxListValid(blockID *big.Int, txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
-	if len(txListBytes) > int(v.maxTxlistBytes) {
+	if len(txListBytes) > int(v.txListMaxBytes) {
 		log.Info("Transactions list binary too large", "length", len(txListBytes), "blockID", blockID)
 		return HintBinaryTooLarge, 0
 	}
@@ -94,7 +94,7 @@ func (v *TxListValidator) IsTxListValid(blockID *big.Int, txListBytes []byte) (h
 
 	log.Debug("Transactions list decoded", "blockID", blockID, "length", len(txs))
 
-	if txs.Len() > int(v.maxBlockNumTxs) {
+	if txs.Len() > int(v.blockMaxTxs) {
 		log.Info("Too many transactions", "blockID", blockID, "count", txs.Len())
 		return HintBlockTooManyTxs, 0
 	}
@@ -104,7 +104,7 @@ func (v *TxListValidator) IsTxListValid(blockID *big.Int, txListBytes []byte) (h
 		sumGasLimit += tx.Gas()
 	}
 
-	if sumGasLimit > v.maxBlocksGasLimit {
+	if sumGasLimit > v.blockMaxGasLimit {
 		log.Info("Accumulate gas limit too large", "blockID", blockID, "sumGasLimit", sumGasLimit)
 		return HintBlockGasLimitTooLarge, 0
 	}
@@ -118,7 +118,7 @@ func (v *TxListValidator) IsTxListValid(blockID *big.Int, txListBytes []byte) (h
 			return HintTxInvalidSig, i
 		}
 
-		if tx.Gas() < v.minTxGasLimit {
+		if tx.Gas() < v.txMinGasLimit {
 			log.Info("Transaction gas limit too small", "gasLimit", tx.Gas())
 			return HintTxGasLimitTooSmall, i
 		}

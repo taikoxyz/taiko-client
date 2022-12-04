@@ -106,7 +106,7 @@ func (p *Prover) submitInvalidBlockProof(
 	}
 
 	proofs := [][]byte{}
-	for i := 0; i < int(p.zkProofsPerBlock); i++ {
+	for i := 0; i < int(p.protocolConstants.ZKProofsPerBlock.Uint64()); i++ {
 		proofs = append(proofs, zkProof)
 	}
 	proofs = append(proofs, receiptProof)
@@ -117,7 +117,7 @@ func (p *Prover) submitInvalidBlockProof(
 			L1Height:    targetMeta.L1Height,
 			L1Hash:      targetMeta.L1Hash,
 			Beneficiary: header.Coinbase,
-			GasLimit:    header.GasLimit - p.anchorGasLimit,
+			GasLimit:    header.GasLimit - p.protocolConstants.AnchorTxGasLimit.Uint64(),
 			Timestamp:   header.Time,
 			TxListHash:  crypto.Keccak256Hash(txListBytes),
 			MixHash:     header.MixDigest,

@@ -38,7 +38,7 @@ type Proposer struct {
 	poolContentSplitter *poolContentSplitter
 
 	// Constants in LibConstants
-	protocolConstants *rpc.ProtocolConstants
+	protocolConstants *bindings.ProtocolConstants
 
 	// Flags for testing
 	produceInvalidBlocks         bool
@@ -83,17 +83,17 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 
 	// Protocol constants
 	if p.protocolConstants, err = p.rpc.GetProtocolConstants(nil); err != nil {
-		return fmt.Errorf("failed to get TaikoL1 constants: %w", err)
+		return fmt.Errorf("failed to get protocol constants: %w", err)
 	}
 
 	log.Info("Protocol constants", "constants", p.protocolConstants)
 
 	p.poolContentSplitter = &poolContentSplitter{
 		shufflePoolContent: cfg.ShufflePoolContent,
-		maxTxPerBlock:      p.protocolConstants.BlockMaxTxs.Uint64(),
-		maxGasPerBlock:     p.protocolConstants.BlockMaxGasLimit.Uint64(),
-		maxTxBytesPerBlock: p.protocolConstants.TxListMaxBytes.Uint64(),
-		minTxGasLimit:      p.protocolConstants.TxMinGasLimit.Uint64(),
+		blockMaxTxs:        p.protocolConstants.BlockMaxTxs.Uint64(),
+		blockMaxGasLimit:   p.protocolConstants.BlockMaxGasLimit.Uint64(),
+		txListMaxBytes:     p.protocolConstants.TxListMaxBytes.Uint64(),
+		txMinGasLimit:      p.protocolConstants.TxMinGasLimit.Uint64(),
 	}
 	p.commitSlot = cfg.CommitSlot
 

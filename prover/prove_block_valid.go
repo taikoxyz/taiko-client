@@ -123,7 +123,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 	}
 
 	proofs := [][]byte{}
-	for i := 0; i < int(p.zkProofsPerBlock); i++ {
+	for i := 0; i < int(p.protocolConstants.ZKProofsPerBlock.Uint64()); i++ {
 		proofs = append(proofs, zkProof)
 	}
 	proofs = append(proofs, [][]byte{anchorTxProof, anchorReceiptProof}...)

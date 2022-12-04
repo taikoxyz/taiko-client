@@ -229,26 +229,8 @@ func (c *Client) L2AccountNonce(
 	return uint64(result), err
 }
 
-// ProtocolConstants contains all constants defined in TaikoL1 contract.
-type ProtocolConstants struct {
-	ZKProofsPerBlock         *big.Int    // uint256 K_ZKPROOFS_PER_BLOCK
-	ChainID                  *big.Int    // uint256 TAIKO_CHAIN_ID
-	MaxProposedBlocks        *big.Int    // uint256 TAIKO_MAX_PROPOSED_BLOCKS
-	MaxVerificationsPerTx    *big.Int    // uint256 TAIKO_MAX_VERIFICATIONS_PER_TX
-	CommitDelayConfirmations *big.Int    // uint256 K_COMMIT_DELAY_CONFIRMATIONS
-	MaxProofsPerForkChoice   *big.Int    // uint256 TAIKO_MAX_PROOFS_PER_FORK_CHOICE
-	BlockMaxGasLimit         *big.Int    // uint256 TAIKO_BLOCK_MAX_GAS_LIMIT
-	BlockMaxTxs              *big.Int    // uint256 TAIKO_BLOCK_MAX_TXS
-	BlockDeadendHash         common.Hash // bytes32 TAIKO_BLOCK_DEADEND_HASH
-	TxListMaxBytes           *big.Int    // uint256 TAIKO_TXLIST_MAX_BYTES
-	TxMinGasLimit            *big.Int    // uint256 TAIKO_TX_MIN_GAS_LIMIT
-	AnchorTxGasLimit         *big.Int    // uint256 V1_ANCHOR_TX_GAS_LIMIT
-	AnchorTxSelector         [4]byte     // bytes4 V1_ANCHOR_TX_SELECTOR
-	InvalidateBlockLogTopic  [32]byte    // bytes32 V1_INVALIDATE_BLOCK_LOG_TOPIC
-}
-
 // GetProtocolConstants gets the protocol constants from TaikoL1 contract.
-func (c *Client) GetProtocolConstants(opts *bind.CallOpts) (res *ProtocolConstants, err error) {
+func (c *Client) GetProtocolConstants(opts *bind.CallOpts) (res *bindings.ProtocolConstants, err error) {
 	res.ZKProofsPerBlock,
 		res.ChainID,
 		res.MaxProposedBlocks,
