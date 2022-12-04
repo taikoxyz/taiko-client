@@ -11,7 +11,7 @@ import (
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
-func TestSignAnchorRS2(t *testing.T) {
+func TestSignWithK(t *testing.T) {
 	var priv btcec.PrivateKey
 	overflow := priv.Key.SetByteSlice(hexutil.MustDecode(bindings.GoldenTouchPrivKey))
 	require.False(t, overflow || priv.Key.IsZero())

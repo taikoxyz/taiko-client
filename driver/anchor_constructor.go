@@ -46,10 +46,10 @@ func NewAnchorConstructor(
 // AssembleAnchorTx assembles a signed TaikoL2.anchor transaction.
 func (c *AnchorConstructor) AssembleAnchorTx(
 	ctx context.Context,
-	// Parameters of the TaikoL2.anchor transaction
+	// Parameters of the TaikoL2.anchor transaction.
 	l1Height *big.Int,
 	l1Hash common.Hash,
-	// Height of the L2 block which including the TaikoL2.anchor transaction
+	// Height of the L2 block which including the TaikoL2.anchor transaction.
 	l2Height *big.Int,
 ) (*types.Transaction, error) {
 	opts, err := c.transactOpts(ctx, l2Height)

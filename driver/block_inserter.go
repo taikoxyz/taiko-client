@@ -22,6 +22,8 @@ import (
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
+// onBlockProposed is a `BlockProposed` event callback which responsible for
+// inserting the proposed block one by one to the L2 execution engine.
 func (s *L2ChainSyncer) onBlockProposed(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,

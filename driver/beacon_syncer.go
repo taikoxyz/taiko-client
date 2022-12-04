@@ -49,6 +49,7 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 		return fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", status.Status)
 	}
 
+	// Update sync status.
 	s.beaconSyncTriggered = true
 	s.lastSyncedVerifiedBlockHash = lastVerifiedHeadPayload.BlockHash
 	s.lastSyncedVerifiedBlockID = blockID
