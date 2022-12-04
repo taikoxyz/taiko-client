@@ -22,10 +22,6 @@ type Config struct {
 	ProposeInterval         time.Duration
 	ShufflePoolContent      bool
 	CommitSlot              uint64
-
-	// Only for testing
-	ProduceInvalidBlocks         bool
-	ProduceInvalidBlocksInterval uint64
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -50,16 +46,14 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	return &Config{
-		L1Endpoint:                   c.String(flags.L1NodeEndpoint.Name),
-		L2Endpoint:                   c.String(flags.L2NodeEndpoint.Name),
-		TaikoL1Address:               common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
-		TaikoL2Address:               common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-		L1ProposerPrivKey:            l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:      common.HexToAddress(l2SuggestedFeeRecipient),
-		ProposeInterval:              proposingInterval,
-		ShufflePoolContent:           c.Bool(flags.ShufflePoolContent.Name),
-		CommitSlot:                   c.Uint64(flags.CommitSlot.Name),
-		ProduceInvalidBlocks:         c.Bool(flags.ProduceInvalidBlocks.Name),
-		ProduceInvalidBlocksInterval: c.Uint64(flags.ProduceInvalidBlocksInterval.Name),
+		L1Endpoint:              c.String(flags.L1NodeEndpoint.Name),
+		L2Endpoint:              c.String(flags.L2NodeEndpoint.Name),
+		TaikoL1Address:          common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
+		TaikoL2Address:          common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
+		L1ProposerPrivKey:       l1ProposerPrivKey,
+		L2SuggestedFeeRecipient: common.HexToAddress(l2SuggestedFeeRecipient),
+		ProposeInterval:         proposingInterval,
+		ShufflePoolContent:      c.Bool(flags.ShufflePoolContent.Name),
+		CommitSlot:              c.Uint64(flags.CommitSlot.Name),
 	}, nil
 }

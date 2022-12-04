@@ -2,7 +2,7 @@ package testutils
 
 import (
 	"context"
-	"crypto/rand"
+	"math/rand"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -11,6 +11,22 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
+
+func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
+	constants, err := s.RpcClient.GetProtocolConstants(nil)
+	s.Nil(err)
+
+	invalidTxListBytes := RandomBytes(256)
+	meta, commitTx, err := proposer.CommitTxList(
+		context.Background(),
+		invalidTxListBytes,
+		uint64(rand.Int63n(constants.BlockMaxGasLimit.Int64())),
+		0,
+	)
+	s.Nil(err)
+
+	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, invalidTxListBytes, 1))
+}
 
 // ProposeAndInsertThrowawayBlock proposes an invalid tx list and then insert it
 // into L2 node's local chain.
@@ -34,7 +50,7 @@ func ProposeAndInsertThrowawayBlock(
 		close(sink)
 	}()
 
-	s.Nil(proposer.ProposeInvalidTxListBytes(context.Background()))
+	ProposeInvalidTxListBytes(s, proposer)
 
 	event := <-sink
 
