@@ -41,7 +41,8 @@ type Proposer struct {
 	protocolConstants *bindings.ProtocolConstants
 
 	// Only for testing purposes
-	AfterCommitHook func() error
+	CustomProposeOpHook func() error
+	AfterCommitHook     func() error
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -142,6 +143,9 @@ type commitTxListRes struct {
 // from L2 node's tx pool, splitting them by proposing constraints,
 // and then proposing them to TaikoL1 contract.
 func (p *Proposer) ProposeOp(ctx context.Context) error {
+	if p.CustomProposeOpHook != nil {
+		return p.CustomProposeOpHook()
+	}
 	syncProgress, err := p.rpc.L2.SyncProgress(ctx)
 	if err != nil || syncProgress != nil {
 		return fmt.Errorf("l2 node is syncing: %w, syncProgress: %v", err, syncProgress)

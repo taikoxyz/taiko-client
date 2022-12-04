@@ -112,6 +112,18 @@ func (s *ProposerTestSuite) TestCommitTxList() {
 	s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
 }
 
+func (s *ProposerTestSuite) TestCustomProposeOpHook() {
+	flag := false
+
+	s.p.CustomProposeOpHook = func() error {
+		flag = true
+		return nil
+	}
+
+	s.Nil(s.p.ProposeOp(context.Background()))
+	s.True(flag)
+}
+
 func TestProposerTestSuite(t *testing.T) {
 	suite.Run(t, new(ProposerTestSuite))
 }
