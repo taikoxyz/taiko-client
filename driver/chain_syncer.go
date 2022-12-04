@@ -23,6 +23,8 @@ type L2ChainSyncer struct {
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                // Private key of L2 throwaway blocks builder
 	txListValidator               *txListValidator.TxListValidator // Transactions list validator
 	anchorConstructor             *AnchorConstructor               // V1TaikoL1.anchor transactions constructor
+	// constants
+	anchorTxGasLimit uint64
 	// Try P2P beacon-sync if current node is behind of  the protocol's latest verified block head
 	p2pSyncVerifiedBlocks       bool
 	lastSyncedVerifiedBlockHash common.Hash
