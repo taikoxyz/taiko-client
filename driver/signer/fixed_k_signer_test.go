@@ -26,8 +26,8 @@ func TestSignWithK(t *testing.T) {
 		1,
 	)
 
-	signed, err := signer.SignWithK(new(secp256k1.ModNScalar).SetInt(2))(payload)
-	require.Nil(t, err)
+	signed, ok := signer.SignWithK(new(secp256k1.ModNScalar).SetInt(2))(payload)
+	require.True(t, ok)
 	require.Equal(t, expected, signed)
 
 	// K = 2, test case 2
@@ -38,7 +38,7 @@ func TestSignWithK(t *testing.T) {
 		0,
 	)
 
-	signed, err = signer.SignWithK(new(secp256k1.ModNScalar).SetInt(2))(payload)
-	require.Nil(t, err)
+	signed, ok = signer.SignWithK(new(secp256k1.ModNScalar).SetInt(2))(payload)
+	require.True(t, ok)
 	require.Equal(t, expected, signed)
 }

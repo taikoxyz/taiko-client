@@ -3,7 +3,6 @@ package driver
 import (
 	"context"
 	"math/rand"
-	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -30,7 +29,7 @@ func (s *DriverTestSuite) TestNewAnchorTransactor() {
 	s.Equal(bindings.GoldenTouchAddress, opts.From)
 }
 
-func (s *DriverTestSuite) TestSign(t *testing.T) {
+func (s *DriverTestSuite) TestSign() {
 	// Payload 1
 	hash := hexutil.MustDecode("0x44943399d1507f3ce7525e9be2f987c3db9136dc759cb7f92f742154196868b9")
 	signatureBytes := testutils.SignatureFromRSV(

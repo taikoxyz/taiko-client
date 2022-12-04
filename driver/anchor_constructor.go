@@ -17,7 +17,7 @@ import (
 // AnchorConstructor is responsible for assembling the anchor transaction (V1TaikoL2.anchor) in
 // each L2 block, which is always the first transaction.
 type AnchorConstructor struct {
-	rpc                *rpc.Client // L1/L2 RPC clients
+	rpc                *rpc.Client
 	gasLimit           uint64
 	goldenTouchAddress common.Address
 	signer             *signer.FixedKSigner
