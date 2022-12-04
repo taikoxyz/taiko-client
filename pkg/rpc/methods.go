@@ -230,22 +230,27 @@ func (c *Client) L2AccountNonce(
 }
 
 // GetProtocolConstants gets the protocol constants from TaikoL1 contract.
-func (c *Client) GetProtocolConstants(opts *bind.CallOpts) (res *bindings.ProtocolConstants, err error) {
-	res.ZKProofsPerBlock,
-		res.ChainID,
-		res.MaxProposedBlocks,
-		res.MaxVerificationsPerTx,
-		res.CommitDelayConfirmations,
-		res.MaxProofsPerForkChoice,
-		res.BlockMaxGasLimit,
-		res.BlockMaxTxs,
-		res.BlockDeadendHash,
-		res.TxListMaxBytes,
-		res.TxMinGasLimit,
-		res.AnchorTxGasLimit,
-		res.AnchorTxSelector,
-		res.InvalidateBlockLogTopic,
+func (c *Client) GetProtocolConstants(opts *bind.CallOpts) (*bindings.ProtocolConstants, error) {
+	var (
+		constants = new(bindings.ProtocolConstants)
+		err       error
+	)
+
+	constants.ZKProofsPerBlock,
+		constants.ChainID,
+		constants.MaxProposedBlocks,
+		constants.MaxVerificationsPerTx,
+		constants.CommitDelayConfirmations,
+		constants.MaxProofsPerForkChoice,
+		constants.BlockMaxGasLimit,
+		constants.BlockMaxTxs,
+		constants.BlockDeadendHash,
+		constants.TxListMaxBytes,
+		constants.TxMinGasLimit,
+		constants.AnchorTxGasLimit,
+		constants.AnchorTxSelector,
+		constants.InvalidateBlockLogTopic,
 		err = c.TaikoL1.GetConstants(opts)
 
-	return res, err
+	return constants, err
 }

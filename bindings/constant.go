@@ -29,6 +29,6 @@ type ProtocolConstants struct {
 	TxListMaxBytes           *big.Int    // uint256 TAIKO_TXLIST_MAX_BYTES
 	TxMinGasLimit            *big.Int    // uint256 TAIKO_TX_MIN_GAS_LIMIT
 	AnchorTxGasLimit         *big.Int    // uint256 V1_ANCHOR_TX_GAS_LIMIT
-	AnchorTxSelector         [4]byte     // bytes4 V1_ANCHOR_TX_SELECTOR
+	AnchorTxSelector         [4]byte     // bytes4  V1_ANCHOR_TX_SELECTOR
 	InvalidateBlockLogTopic  [32]byte    // bytes32 V1_INVALIDATE_BLOCK_LOG_TOPIC
 }
