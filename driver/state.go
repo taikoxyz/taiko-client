@@ -43,14 +43,10 @@ type State struct {
 	l1Current      *types.Header // Current L1 block sync cursor
 
 	// Constants
-	anchorTxGasLimit  *big.Int
-	maxTxlistBytes    *big.Int
-	maxBlockNumTxs    *big.Int
-	maxBlocksGasLimit *big.Int
-	minTxGasLimit     *big.Int
-	genesisL1Height   *big.Int
+	genesisL1Height *big.Int
 
-	rpc *rpc.Client // L1/L2 RPC clients
+	// RPC clients
+	rpc *rpc.Client
 }
 
 // NewState creates a new driver state instance.
@@ -61,41 +57,21 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 		return nil, err
 	}
 
-	_, _, _, _, _, _,
-		maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit,
-		anchorTxGasLimit, _, _, err := rpc.TaikoL1.GetConstants(nil)
-	if err != nil {
-		return nil, err
-	}
-
 	genesisL1Height, _, _, _, err := rpc.TaikoL1.GetStateVariables(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info(
-		"Taiko protocol constants",
-		"anchorTxGasLimit", anchorTxGasLimit,
-		"maxTxlistBytes", maxTxlistBytes,
-		"maxBlockNumTxs", maxBlockNumTxs,
-		"maxBlocksGasLimit", maxBlocksGasLimit,
-		"minTxGasLimit", minTxGasLimit,
-		"genesisL1Height", genesisL1Height,
-	)
+	log.Info("Genesis L1 height", "height", genesisL1Height)
 
 	s := &State{
-		rpc:               rpc,
-		anchorTxGasLimit:  anchorTxGasLimit,
-		maxTxlistBytes:    maxTxlistBytes,
-		maxBlockNumTxs:    maxBlockNumTxs,
-		maxBlocksGasLimit: maxBlocksGasLimit,
-		minTxGasLimit:     minTxGasLimit,
-		genesisL1Height:   new(big.Int).SetUint64(genesisL1Height),
-		l1Head:            new(atomic.Value),
-		l2Head:            new(atomic.Value),
-		l2HeadBlockID:     new(atomic.Value),
-		l2VerifiedHead:    new(atomic.Value),
-		l1Current:         latestL2KnownL1Header,
+		rpc:             rpc,
+		genesisL1Height: new(big.Int).SetUint64(genesisL1Height),
+		l1Head:          new(atomic.Value),
+		l2Head:          new(atomic.Value),
+		l2HeadBlockID:   new(atomic.Value),
+		l2VerifiedHead:  new(atomic.Value),
+		l1Current:       latestL2KnownL1Header,
 	}
 
 	if err := s.initSubscriptions(ctx); err != nil {

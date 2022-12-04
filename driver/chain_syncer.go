@@ -23,6 +23,8 @@ type L2ChainSyncer struct {
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                // Private key of L2 throwaway blocks builder
 	txListValidator               *txListValidator.TxListValidator // Transactions list validator
 	anchorConstructor             *AnchorConstructor               // V1TaikoL1.anchor transactions constructor
+	protocolConstants             *bindings.ProtocolConstants
+
 	// Try P2P beacon-sync if current node is behind of  the protocol's latest verified block head
 	p2pSyncVerifiedBlocks       bool
 	lastSyncedVerifiedBlockHash common.Hash
@@ -38,9 +40,14 @@ func NewL2ChainSyncer(
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
 	p2pSyncVerifiedBlocks bool,
 ) (*L2ChainSyncer, error) {
+	constants, err := rpc.GetProtocolConstants(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get protocol constants: %w", err)
+	}
+
 	anchorConstructor, err := NewAnchorConstructor(
 		rpc,
-		state.anchorTxGasLimit.Uint64(),
+		constants.AnchorTxGasLimit.Uint64(),
 		bindings.GoldenTouchAddress,
 		bindings.GoldenTouchPrivKey,
 	)
@@ -53,11 +60,12 @@ func NewL2ChainSyncer(
 		rpc:                           rpc,
 		state:                         state,
 		throwawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
+		protocolConstants:             constants,
 		txListValidator: txListValidator.NewTxListValidator(
-			state.maxBlocksGasLimit.Uint64(),
-			state.maxBlockNumTxs.Uint64(),
-			state.maxTxlistBytes.Uint64(),
-			state.minTxGasLimit.Uint64(),
+			constants.BlockMaxGasLimit.Uint64(),
+			constants.BlockMaxTxs.Uint64(),
+			constants.TxListMaxBytes.Uint64(),
+			constants.TxMinGasLimit.Uint64(),
 			rpc.L2ChainID,
 		),
 		anchorConstructor:     anchorConstructor,

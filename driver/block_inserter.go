@@ -307,7 +307,7 @@ func (s *L2ChainSyncer) createExecutionPayloads(
 		BlockMetadata: &beacon.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
-			GasLimit:       event.Meta.GasLimit + s.state.anchorTxGasLimit.Uint64(),
+			GasLimit:       event.Meta.GasLimit + s.protocolConstants.AnchorTxGasLimit.Uint64(),
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
