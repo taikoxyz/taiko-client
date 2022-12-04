@@ -8,6 +8,7 @@ import (
 
 // Taken from https://github.com/ethereum-optimism/optimism/blob/develop/bss-core/drivers/max_priority_fee_fallback.go
 var (
+	//lint:ignore ST1005 allow `errMaxPriorityFeePerGasNotFound` to be capitalized.
 	errMaxPriorityFeePerGasNotFound = errors.New(
 		"Method eth_maxPriorityFeePerGas not found",
 	)
