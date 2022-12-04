@@ -35,13 +35,10 @@ type Proposer struct {
 	proposingInterval time.Duration
 	commitSlot        uint64
 
-	// Constants in LibConstants
-	commitDelayConfirmations uint64
-	poolContentSplitter      *poolContentSplitter
+	poolContentSplitter *poolContentSplitter
 
-	// Flags for testing
-	produceInvalidBlocks         bool
-	produceInvalidBlocksInterval uint64
+	// Constants in LibConstants
+	protocolConstants *bindings.ProtocolConstants
 
 	// Only for testing purposes
 	AfterCommitHook func() error
@@ -81,35 +78,20 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	}
 
 	// Protocol constants
-	_, _, _, _, commitDelayConfirmations, _,
-		maxGasPerBlock, maxTxPerBlock, _, maxTxBytesPerBlock, minTxGasLimit,
-		_, _, _, err := p.rpc.TaikoL1.GetConstants(nil)
-	if err != nil {
-		return fmt.Errorf("failed to get TaikoL1 constants: %w", err)
+	if p.protocolConstants, err = p.rpc.GetProtocolConstants(nil); err != nil {
+		return fmt.Errorf("failed to get protocol constants: %w", err)
 	}
 
-	log.Info(
-		"Protocol constants",
-		"commitDelayConfirmations", commitDelayConfirmations,
-		"maxTxPerBlock", maxTxPerBlock,
-		"maxGasPerBlock", maxGasPerBlock,
-		"maxTxBytesPerBlock", maxTxBytesPerBlock,
-		"minTxGasLimit", minTxGasLimit,
-	)
+	log.Info("Protocol constants", "constants", p.protocolConstants)
 
-	p.commitDelayConfirmations = commitDelayConfirmations.Uint64()
 	p.poolContentSplitter = &poolContentSplitter{
 		shufflePoolContent: cfg.ShufflePoolContent,
-		maxTxPerBlock:      maxTxPerBlock.Uint64(),
-		maxGasPerBlock:     maxGasPerBlock.Uint64(),
-		maxTxBytesPerBlock: maxTxBytesPerBlock.Uint64(),
-		minTxGasLimit:      minTxGasLimit.Uint64(),
+		blockMaxTxs:        p.protocolConstants.BlockMaxTxs.Uint64(),
+		blockMaxGasLimit:   p.protocolConstants.BlockMaxGasLimit.Uint64(),
+		txListMaxBytes:     p.protocolConstants.TxListMaxBytes.Uint64(),
+		txMinGasLimit:      p.protocolConstants.TxMinGasLimit.Uint64(),
 	}
 	p.commitSlot = cfg.CommitSlot
-
-	// Configurations for testing
-	p.produceInvalidBlocks = cfg.ProduceInvalidBlocks
-	p.produceInvalidBlocksInterval = cfg.ProduceInvalidBlocksInterval
 
 	return nil
 }
@@ -139,13 +121,6 @@ func (p *Proposer) eventLoop() {
 			if err := p.ProposeOp(p.ctx); err != nil {
 				log.Error("Proposing operation error", "error", err)
 				continue
-			}
-
-			// Only for testing purposes
-			if p.produceInvalidBlocks && p.produceInvalidBlocksInterval > 0 {
-				if err := p.ProposeInvalidBlocksOp(p.ctx, p.produceInvalidBlocksInterval); err != nil {
-					log.Error("Proposing invalid blocks operation error", "error", err)
-				}
 			}
 		}
 	}
@@ -207,8 +182,8 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		}
 	}
 
-	for _, commitTxListRes := range commitTxListResQueue {
-		if err := p.ProposeTxList(ctx, commitTxListRes); err != nil {
+	for _, res := range commitTxListResQueue {
+		if err := p.ProposeTxList(ctx, res.meta, res.commitTx, res.txListBytes, res.txNum); err != nil {
 			return fmt.Errorf("failed to propose transactions: %w", err)
 		}
 	}
@@ -232,7 +207,7 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 		CommitSlot:  p.commitSlot + uint64(splittedIdx),
 	}
 
-	if p.commitDelayConfirmations == 0 {
+	if p.protocolConstants.CommitDelayConfirmations.Cmp(common.Big0) == 0 {
 		log.Debug("No commit delay confirmation, skip committing transactions list")
 		return meta, nil, nil
 	}
@@ -254,10 +229,13 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
-	commitRes *commitTxListRes,
+	meta *bindings.LibDataBlockMetadata,
+	commitTx *types.Transaction,
+	txListBytes []byte,
+	txNum uint,
 ) error {
-	if p.commitDelayConfirmations > 0 {
-		receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, commitRes.commitTx)
+	if p.protocolConstants.CommitDelayConfirmations.Cmp(common.Big0) > 0 {
+		receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, commitTx)
 		if err != nil {
 			return err
 		}
@@ -270,20 +248,20 @@ func (p *Proposer) ProposeTxList(
 		log.Info(
 			"Commit block finished, wait some L1 blocks confirmations before proposing",
 			"commitHeight", receipt.BlockNumber,
-			"confirmations", p.commitDelayConfirmations,
+			"confirmations", p.protocolConstants.CommitDelayConfirmations,
 		)
 
-		commitRes.meta.CommitHeight = receipt.BlockNumber.Uint64()
+		meta.CommitHeight = receipt.BlockNumber.Uint64()
 
 		if err := rpc.WaitConfirmations(
-			ctx, p.rpc.L1, p.commitDelayConfirmations, receipt.BlockNumber.Uint64(),
+			ctx, p.rpc.L1, p.protocolConstants.CommitDelayConfirmations.Uint64(), receipt.BlockNumber.Uint64(),
 		); err != nil {
 			return fmt.Errorf("wait L1 blocks confirmations error, commitHash %s: %w", receipt.BlockNumber, err)
 		}
 	}
 
 	// Propose the transactions list
-	inputs, err := encoding.EncodeProposeBlockInput(commitRes.meta, commitRes.txListBytes)
+	inputs, err := encoding.EncodeProposeBlockInput(meta, txListBytes)
 	if err != nil {
 		return err
 	}
@@ -305,7 +283,7 @@ func (p *Proposer) ProposeTxList(
 	log.Info("📝 Propose transactions succeeded")
 
 	metrics.ProposerProposedTxListsCounter.Inc(1)
-	metrics.ProposerProposedTxsCounter.Inc(int64(commitRes.txNum))
+	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))
 
 	return nil
 }

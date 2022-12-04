@@ -13,7 +13,7 @@ import (
 
 func (s *ProposerTestSuite) TestPoolContentSplit() {
 	// Gas limit is smaller than the limit.
-	splitter := &poolContentSplitter{minTxGasLimit: 21000}
+	splitter := &poolContentSplitter{txMinGasLimit: 21000}
 
 	splitted := splitter.split(rpc.PoolContent{
 		common.BytesToAddress(testutils.RandomBytes(32)): {
@@ -24,7 +24,7 @@ func (s *ProposerTestSuite) TestPoolContentSplit() {
 	s.Empty(splitted)
 
 	// Gas limit is larger than the limit.
-	splitter = &poolContentSplitter{minTxGasLimit: 21000}
+	splitter = &poolContentSplitter{txMinGasLimit: 21000}
 
 	splitted = splitter.split(rpc.PoolContent{
 		common.BytesToAddress(testutils.RandomBytes(32)): {
@@ -42,8 +42,8 @@ func (s *ProposerTestSuite) TestPoolContentSplit() {
 	s.NotEmpty(bytes)
 
 	splitter = &poolContentSplitter{
-		maxTxBytesPerBlock: uint64(len(bytes) - 1),
-		minTxGasLimit:      uint64(len(bytes) - 2),
+		txListMaxBytes: uint64(len(bytes) - 1),
+		txMinGasLimit:  uint64(len(bytes) - 2),
 	}
 
 	splitted = splitter.split(rpc.PoolContent{
@@ -60,10 +60,10 @@ func (s *ProposerTestSuite) TestPoolContentSplit() {
 	s.NotEmpty(bytes)
 
 	splitter = &poolContentSplitter{
-		minTxGasLimit:      21000,
-		maxTxBytesPerBlock: uint64(len(bytes) + 1),
-		maxTxPerBlock:      1,
-		maxGasPerBlock:     tx.Gas() + 1,
+		txMinGasLimit:    21000,
+		txListMaxBytes:   uint64(len(bytes) + 1),
+		blockMaxTxs:      1,
+		blockMaxGasLimit: tx.Gas() + 1,
 	}
 
 	splitted = splitter.split(rpc.PoolContent{

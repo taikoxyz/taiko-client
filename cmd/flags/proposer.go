@@ -44,29 +44,11 @@ var (
 	}
 )
 
-// Special flags for testing.
-var (
-	ProduceInvalidBlocks = cli.BoolFlag{
-		Name:     "produceInvalidBlocks",
-		Usage:    "Special flag for testnet testing, if activated, the proposer will start producing bad blocks",
-		Hidden:   true,
-		Category: proposerCategory,
-	}
-	ProduceInvalidBlocksInterval = cli.Uint64Flag{
-		Name:     "produceInvalidBlocksInterval",
-		Usage:    "Special flag for testnet testing, if activated, bad blocks will be produced every N valid blocks",
-		Hidden:   true,
-		Category: proposerCategory,
-	}
-)
-
 // All proposer flags.
 var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&L1ProposerPrivKey,
 	&L2SuggestedFeeRecipient,
 	&ProposeInterval,
-	&ProduceInvalidBlocks,
-	&ProduceInvalidBlocksInterval,
 	&ShufflePoolContent,
 	&CommitSlot,
 })

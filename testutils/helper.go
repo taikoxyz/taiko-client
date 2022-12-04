@@ -2,14 +2,31 @@ package testutils
 
 import (
 	"context"
-	"crypto/rand"
+	"math/rand"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
+
+func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
+	constants, err := s.RpcClient.GetProtocolConstants(nil)
+	s.Nil(err)
+
+	invalidTxListBytes := RandomBytes(256)
+	meta, commitTx, err := proposer.CommitTxList(
+		context.Background(),
+		invalidTxListBytes,
+		uint64(rand.Int63n(constants.BlockMaxGasLimit.Int64())),
+		0,
+	)
+	s.Nil(err)
+
+	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, invalidTxListBytes, 1))
+}
 
 // ProposeAndInsertThrowawayBlock proposes an invalid tx list and then insert it
 // into L2 node's local chain.
@@ -33,7 +50,7 @@ func ProposeAndInsertThrowawayBlock(
 		close(sink)
 	}()
 
-	s.Nil(proposer.ProposeInvalidTxListBytes(context.Background()))
+	ProposeInvalidTxListBytes(s, proposer)
 
 	event := <-sink
 
@@ -149,4 +166,9 @@ func RandomBytes(size int) (b []byte) {
 		log.Crit("Generate random bytes error", "error", err)
 	}
 	return
+}
+
+// SignatureFromRSV creates the signature bytes from r,s,v.
+func SignatureFromRSV(r, s string, v byte) []byte {
+	return append(append(hexutil.MustDecode(r), hexutil.MustDecode(s)...), v)
 }

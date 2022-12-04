@@ -39,10 +39,8 @@ type Prover struct {
 	rpc *rpc.Client
 
 	// Contract configurations
-	txListValidator  *txListValidator.TxListValidator
-	anchorGasLimit   uint64
-	maxPendingBlocks uint64
-	zkProofsPerBlock uint64
+	txListValidator   *txListValidator.TxListValidator
+	protocolConstants *bindings.ProtocolConstants
 
 	// States
 	lastVerifiedHeader   *types.Header
@@ -103,37 +101,23 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// Constants
-	zkProofsPerBlock, _, maxPendingBlocks, _, _, _,
-		maxBlocksGasLimit, maxBlockNumTxs, _, maxTxlistBytes, minTxGasLimit,
-		anchorGasLimit, _, _, err := p.rpc.TaikoL1.GetConstants(nil)
-	if err != nil {
-		return err
+	if p.protocolConstants, err = p.rpc.GetProtocolConstants(nil); err != nil {
+		return fmt.Errorf("failed to get protocol constants: %w", err)
 	}
 
-	log.Info(
-		"LibConstants configurations",
-		"zkProofsPerBlock", zkProofsPerBlock,
-		"maxBlocksGasLimit", maxBlocksGasLimit,
-		"maxBlockNumTxs", maxBlockNumTxs,
-		"maxTxlistBytes", maxTxlistBytes,
-		"maxPendingBlocks", maxPendingBlocks,
-		"anchorGasLimit", anchorGasLimit,
-	)
+	log.Info("Protocol constants", "constants", p.protocolConstants)
 
 	p.txListValidator = txListValidator.NewTxListValidator(
-		maxBlocksGasLimit.Uint64(),
-		maxBlockNumTxs.Uint64(),
-		maxTxlistBytes.Uint64(),
-		minTxGasLimit.Uint64(),
+		p.protocolConstants.BlockMaxGasLimit.Uint64(),
+		p.protocolConstants.BlockMaxTxs.Uint64(),
+		p.protocolConstants.TxListMaxBytes.Uint64(),
+		p.protocolConstants.TxMinGasLimit.Uint64(),
 		p.rpc.L2ChainID,
 	)
-	p.zkProofsPerBlock = zkProofsPerBlock.Uint64()
-	p.maxPendingBlocks = maxPendingBlocks.Uint64()
-	p.anchorGasLimit = anchorGasLimit.Uint64()
-	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.maxPendingBlocks)
-	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.maxPendingBlocks)
-	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.maxPendingBlocks)
-	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.maxPendingBlocks)
+	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.protocolConstants.MaxProposedBlocks.Uint64())
+	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.protocolConstants.MaxProposedBlocks.Uint64())
+	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxProposedBlocks.Uint64())
+	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxProposedBlocks.Uint64())
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)

@@ -22,6 +22,8 @@ import (
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
+// onBlockProposed is a `BlockProposed` event callback which responsible for
+// inserting the proposed block one by one to the L2 execution engine.
 func (s *L2ChainSyncer) onBlockProposed(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
@@ -190,7 +192,7 @@ func (s *L2ChainSyncer) insertNewHead(
 	}
 
 	// Assemble a TaikoL2.anchor transaction
-	anchorTx, err := s.assembleAnchorTx(
+	anchorTx, err := s.anchorConstructor.AssembleAnchorTx(
 		ctx,
 		event.Meta.L1Height,
 		event.Meta.L1Hash,
@@ -305,7 +307,7 @@ func (s *L2ChainSyncer) createExecutionPayloads(
 		BlockMetadata: &beacon.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
-			GasLimit:       event.Meta.GasLimit + s.state.anchorTxGasLimit.Uint64(),
+			GasLimit:       event.Meta.GasLimit + s.protocolConstants.AnchorTxGasLimit.Uint64(),
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
