@@ -28,10 +28,7 @@ func (s *ProposerTestSuite) SetupTest() {
 	s.Nil(err)
 
 	// Whitelist current prover
-	whitelisted, err := s.RpcClient.TaikoL1.IsProposerWhitelisted(
-		nil,
-		crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey),
-	)
+	whitelisted, err := s.RpcClient.IsProposerWhitelisted(crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey))
 	s.Nil(err)
 
 	if !whitelisted {
