@@ -26,8 +26,7 @@ import (
 var (
 	// Gas limit of TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
 	// TODO: tune this value based when the on-chain solidity verifier is available.
-	proveBlocksGasLimit uint64 = 1000000
-	maxPendingProofs           = 10
+	maxPendingProofs = 10
 )
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
@@ -311,7 +310,6 @@ func (p *Prover) getProveBlocksTxOpts(ctx context.Context, cli *ethclient.Client
 	}
 
 	opts.GasTipCap = gasTipCap
-	opts.GasLimit = proveBlocksGasLimit
 
 	return opts, nil
 }

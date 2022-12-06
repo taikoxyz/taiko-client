@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/urfave/cli/v2"
 )
@@ -32,7 +31,10 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(l2Endpoint, c.L2Endpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
-		s.Equal(bindings.GoldenTouchAddress, crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey))
+		s.Equal(
+			crypto.PubkeyToAddress(s.p.cfg.L1ProverPrivKey.PublicKey),
+			crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey),
+		)
 		s.True(c.Dummy)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
@@ -45,7 +47,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L2NodeEndpoint.Name, l2Endpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
-		"-" + flags.L1ProverPrivKey.Name, bindings.GoldenTouchPrivKey[2:],
+		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Dummy.Name,
 	}))
 }
