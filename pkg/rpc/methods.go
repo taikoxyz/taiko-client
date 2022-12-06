@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
+	"strings"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
@@ -229,6 +230,34 @@ func (c *Client) L2AccountNonce(
 	return uint64(result), err
 }
 
+// IsProverWhitelisted checks whether the given prover is whitelisted.
+func (c *Client) IsProverWhitelisted(prover common.Address) (bool, error) {
+	whitelisted, err := c.TaikoL1.IsProverWhitelisted(nil, prover)
+	if err != nil {
+		if strings.Contains(err.Error(), "Assertion error") {
+			return true, nil
+		}
+
+		return false, err
+	}
+
+	return whitelisted, nil
+}
+
+// IsProposerWhitelisted checks whether the given proposer is whitelisted.
+func (c *Client) IsProposerWhitelisted(proposer common.Address) (bool, error) {
+	whitelisted, err := c.TaikoL1.IsProposerWhitelisted(nil, proposer)
+	if err != nil {
+		if strings.Contains(err.Error(), "Assertion error") {
+			return true, nil
+		}
+
+		return false, err
+	}
+
+	return whitelisted, nil
+}
+
 // GetProtocolConstants gets the protocol constants from TaikoL1 contract.
 func (c *Client) GetProtocolConstants(opts *bind.CallOpts) (*bindings.ProtocolConstants, error) {
 	var (
@@ -238,18 +267,15 @@ func (c *Client) GetProtocolConstants(opts *bind.CallOpts) (*bindings.ProtocolCo
 
 	constants.ZKProofsPerBlock,
 		constants.ChainID,
-		constants.MaxProposedBlocks,
+		constants.MaxNumBlocks,
 		constants.MaxVerificationsPerTx,
 		constants.CommitDelayConfirmations,
 		constants.MaxProofsPerForkChoice,
 		constants.BlockMaxGasLimit,
 		constants.BlockMaxTxs,
-		constants.BlockDeadendHash,
 		constants.TxListMaxBytes,
 		constants.TxMinGasLimit,
 		constants.AnchorTxGasLimit,
-		constants.AnchorTxSelector,
-		constants.InvalidateBlockLogTopic,
 		err = c.TaikoL1.GetConstants(opts)
 
 	return constants, err

@@ -24,11 +24,7 @@ func SubcommandAction(app SubcommandApplication) cli.ActionFunc {
 		logger.InitLogger(c)
 
 		ctx, ctxClose := context.WithCancel(context.Background())
-		defer func() {
-			if ctx.Err() != nil {
-				ctxClose()
-			}
-		}()
+		defer func() { ctxClose() }()
 
 		if err := app.InitFromCli(ctx, c); err != nil {
 			return err

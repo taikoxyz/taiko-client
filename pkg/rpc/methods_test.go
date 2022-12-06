@@ -112,3 +112,15 @@ func TestWaitL1OriginTimeout(t *testing.T) {
 	_, err := client.WaitL1Origin(ctx, common.Big1)
 	require.Nil(t, err)
 }
+
+func TestIsProverWhitelisted(t *testing.T) {
+	client := newTestClient(t)
+	_, err := client.IsProverWhitelisted(testAddress1)
+	require.Nil(t, err)
+}
+
+func TestIsProposerWhitelisted(t *testing.T) {
+	client := newTestClient(t)
+	_, err := client.IsProposerWhitelisted(testAddress1)
+	require.Nil(t, err)
+}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strings"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -26,8 +25,7 @@ import (
 var (
 	// Gas limit of TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
 	// TODO: tune this value based when the on-chain solidity verifier is available.
-	proveBlocksGasLimit uint64 = 1000000
-	maxPendingProofs           = 10
+	maxPendingProofs = 10
 )
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
@@ -91,7 +89,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	proverAddress := crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
-	isWhitelisted, err := p.isWhitelisted(proverAddress)
+	isWhitelisted, err := p.rpc.IsProverWhitelisted(proverAddress)
 	if err != nil {
 		return fmt.Errorf("failed to check whether current prover %s is whitelisted: %w", proverAddress, err)
 	}
@@ -114,10 +112,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.protocolConstants.TxMinGasLimit.Uint64(),
 		p.rpc.L2ChainID,
 	)
-	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.protocolConstants.MaxProposedBlocks.Uint64())
-	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.protocolConstants.MaxProposedBlocks.Uint64())
-	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxProposedBlocks.Uint64())
-	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxProposedBlocks.Uint64())
+	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.protocolConstants.MaxNumBlocks.Uint64())
+	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.protocolConstants.MaxNumBlocks.Uint64())
+	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxNumBlocks.Uint64())
+	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxNumBlocks.Uint64())
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
@@ -311,7 +309,6 @@ func (p *Prover) getProveBlocksTxOpts(ctx context.Context, cli *ethclient.Client
 	}
 
 	opts.GasTipCap = gasTipCap
-	opts.GasLimit = proveBlocksGasLimit
 
 	return opts, nil
 }
@@ -344,18 +341,4 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 	}
 
 	return id.Uint64() <= latestVerifiedID, nil
-}
-
-// isWhitelisted checks whether the current prover is whitelisted.
-func (p *Prover) isWhitelisted(proverAddress common.Address) (bool, error) {
-	isWhitelisted, err := p.rpc.TaikoL1.IsProverWhitelisted(nil, proverAddress)
-	if err != nil {
-		if strings.Contains(err.Error(), "Assertion error") { // whitelist feature disabled, everyone can submit proofs
-			return true, nil
-		}
-
-		return false, err
-	}
-
-	return isWhitelisted, nil
 }

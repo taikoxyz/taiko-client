@@ -3,10 +3,12 @@ package prover
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -14,6 +16,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
@@ -31,6 +34,32 @@ func (s *ProverTestSuite) SetupTest() {
 	// Init prover
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
+
+	// Whitelist current prover
+	whitelisted, err := s.RpcClient.TaikoL1.IsProverWhitelisted(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
+	if err != nil {
+		if strings.Contains(err.Error(), "Assertion error") {
+			whitelisted = true
+		} else {
+			s.Nil(err)
+		}
+	}
+
+	if !whitelisted {
+		l1ContractOwnerPrivateKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
+		s.Nil(err)
+
+		opts, err := bind.NewKeyedTransactorWithChainID(l1ContractOwnerPrivateKey, s.RpcClient.L1ChainID)
+		s.Nil(err)
+		opts.GasTipCap = rpc.FallbackGasTipCap
+
+		tx, err := s.RpcClient.TaikoL1.WhitelistProver(opts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), true)
+		s.Nil(err)
+
+		receipt, err := rpc.WaitReceipt(context.Background(), s.RpcClient.L1, tx)
+		s.Nil(err)
+		s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
+	}
 
 	p := new(Prover)
 	s.Nil(InitFromConfig(context.Background(), p, (&Config{
@@ -90,9 +119,8 @@ func (s *ProverTestSuite) TestName() {
 }
 
 func (s *ProverTestSuite) TestGetProveBlocksTxOpts() {
-	opts, err := s.p.getProveBlocksTxOpts(context.Background(), s.RpcClient.L1)
+	_, err := s.p.getProveBlocksTxOpts(context.Background(), s.RpcClient.L1)
 	s.Nil(err)
-	s.Equal(proveBlocksGasLimit, opts.GasLimit)
 }
 
 func (s *ProverTestSuite) TestOnBlockProposed() {
@@ -119,12 +147,6 @@ func (s *ProverTestSuite) TestOnBlockProposedTxNotFound() {
 
 func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 	s.Nil(s.p.onBlockVerified(context.Background(), &bindings.TaikoL1ClientBlockVerified{BlockHash: common.Hash{}}))
-}
-
-func (s *ProverTestSuite) TestIsWhitelisted() {
-	isWhitelisted, err := s.p.isWhitelisted(crypto.PubkeyToAddress(s.p.cfg.L1ProverPrivKey.PublicKey))
-	s.Nil(err)
-	s.True(isWhitelisted)
 }
 
 func TestProverTestSuite(t *testing.T) {
