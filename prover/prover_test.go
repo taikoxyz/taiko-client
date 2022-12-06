@@ -3,7 +3,6 @@ package prover
 import (
 	"context"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -37,13 +36,7 @@ func (s *ProverTestSuite) SetupTest() {
 
 	// Whitelist current prover
 	whitelisted, err := s.RpcClient.TaikoL1.IsProverWhitelisted(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
-	if err != nil {
-		if strings.Contains(err.Error(), "Assertion error") {
-			whitelisted = true
-		} else {
-			s.Nil(err)
-		}
-	}
+	s.Nil(err)
 
 	if !whitelisted {
 		l1ContractOwnerPrivateKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
