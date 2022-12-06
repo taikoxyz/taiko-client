@@ -12,4 +12,6 @@ RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /taiko-client/bin/taiko-client /usr/local/bin/
 
+EXPOSE 6060
+
 ENTRYPOINT ["taiko-client"]
