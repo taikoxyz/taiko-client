@@ -238,18 +238,15 @@ func (c *Client) GetProtocolConstants(opts *bind.CallOpts) (*bindings.ProtocolCo
 
 	constants.ZKProofsPerBlock,
 		constants.ChainID,
-		constants.MaxProposedBlocks,
+		constants.MaxNumBlocks,
 		constants.MaxVerificationsPerTx,
 		constants.CommitDelayConfirmations,
 		constants.MaxProofsPerForkChoice,
 		constants.BlockMaxGasLimit,
 		constants.BlockMaxTxs,
-		constants.BlockDeadendHash,
 		constants.TxListMaxBytes,
 		constants.TxMinGasLimit,
 		constants.AnchorTxGasLimit,
-		constants.AnchorTxSelector,
-		constants.InvalidateBlockLogTopic,
 		err = c.TaikoL1.GetConstants(opts)
 
 	return constants, err

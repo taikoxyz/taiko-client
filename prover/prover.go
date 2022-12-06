@@ -114,10 +114,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.protocolConstants.TxMinGasLimit.Uint64(),
 		p.rpc.L2ChainID,
 	)
-	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.protocolConstants.MaxProposedBlocks.Uint64())
-	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.protocolConstants.MaxProposedBlocks.Uint64())
-	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxProposedBlocks.Uint64())
-	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxProposedBlocks.Uint64())
+	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.protocolConstants.MaxNumBlocks.Uint64())
+	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.protocolConstants.MaxNumBlocks.Uint64())
+	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxNumBlocks.Uint64())
+	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxNumBlocks.Uint64())
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
