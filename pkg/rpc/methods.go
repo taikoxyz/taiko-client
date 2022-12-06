@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
+	"strings"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
@@ -227,6 +228,34 @@ func (c *Client) L2AccountNonce(
 	var result hexutil.Uint64
 	err := c.L2RawRPC.CallContext(ctx, &result, "eth_getTransactionCount", account, hexutil.EncodeBig(height))
 	return uint64(result), err
+}
+
+// IsProverWhitelisted checks whether the given prover is whitelisted.
+func (c *Client) IsProverWhitelisted(prover common.Address) (bool, error) {
+	whitelisted, err := c.TaikoL1.IsProverWhitelisted(nil, prover)
+	if err != nil {
+		if strings.Contains(err.Error(), "Assertion error") {
+			return true, nil
+		}
+
+		return false, err
+	}
+
+	return whitelisted, nil
+}
+
+// IsProposerWhitelisted checks whether the given proposer is whitelisted.
+func (c *Client) IsProposerWhitelisted(proposer common.Address) (bool, error) {
+	whitelisted, err := c.TaikoL1.IsProposerWhitelisted(nil, proposer)
+	if err != nil {
+		if strings.Contains(err.Error(), "Assertion error") {
+			return true, nil
+		}
+
+		return false, err
+	}
+
+	return whitelisted, nil
 }
 
 // GetProtocolConstants gets the protocol constants from TaikoL1 contract.

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strings"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -90,7 +89,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	proverAddress := crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
-	isWhitelisted, err := p.isWhitelisted(proverAddress)
+	isWhitelisted, err := p.rpc.IsProverWhitelisted(proverAddress)
 	if err != nil {
 		return fmt.Errorf("failed to check whether current prover %s is whitelisted: %w", proverAddress, err)
 	}
@@ -342,18 +341,4 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 	}
 
 	return id.Uint64() <= latestVerifiedID, nil
-}
-
-// isWhitelisted checks whether the current prover is whitelisted.
-func (p *Prover) isWhitelisted(proverAddress common.Address) (bool, error) {
-	isWhitelisted, err := p.rpc.TaikoL1.IsProverWhitelisted(nil, proverAddress)
-	if err != nil {
-		if strings.Contains(err.Error(), "Assertion error") { // whitelist feature disabled, everyone can submit proofs
-			return true, nil
-		}
-
-		return false, err
-	}
-
-	return isWhitelisted, nil
 }
