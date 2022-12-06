@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -25,6 +26,29 @@ func (s *ProposerTestSuite) SetupTest() {
 
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
+
+	// Whitelist current prover
+	whitelisted, err := s.RpcClient.TaikoL1.IsProposerWhitelisted(
+		nil,
+		crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey),
+	)
+	s.Nil(err)
+
+	if !whitelisted {
+		l1ContractOwnerPrivateKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
+		s.Nil(err)
+
+		opts, err := bind.NewKeyedTransactorWithChainID(l1ContractOwnerPrivateKey, s.RpcClient.L1ChainID)
+		s.Nil(err)
+		opts.GasTipCap = rpc.FallbackGasTipCap
+
+		tx, err := s.RpcClient.TaikoL1.WhitelistProposer(opts, crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey), true)
+		s.Nil(err)
+
+		receipt, err := rpc.WaitReceipt(context.Background(), s.RpcClient.L1, tx)
+		s.Nil(err)
+		s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
+	}
 
 	p := new(Proposer)
 
