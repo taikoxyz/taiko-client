@@ -129,7 +129,6 @@ func (s *ProposerTestSuite) TestCommitTxList() {
 	s.Equal(meta.GasLimit, gasLimit)
 
 	if s.p.protocolConstants.CommitDelayConfirmations.Cmp(common.Big0) > 0 {
-
 		receipt, err := rpc.WaitReceipt(context.Background(), s.p.rpc.L1, tx)
 		s.Nil(err)
 		s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
