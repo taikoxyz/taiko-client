@@ -234,7 +234,7 @@ func (c *Client) L2AccountNonce(
 func (c *Client) IsProverWhitelisted(prover common.Address) (bool, error) {
 	whitelisted, err := c.TaikoL1.IsProverWhitelisted(nil, prover)
 	if err != nil {
-		if strings.Contains(err.Error(), "Assertion error") {
+		if strings.Contains(err.Error(), "reverted") {
 			return true, nil
 		}
 
@@ -248,7 +248,7 @@ func (c *Client) IsProverWhitelisted(prover common.Address) (bool, error) {
 func (c *Client) IsProposerWhitelisted(proposer common.Address) (bool, error) {
 	whitelisted, err := c.TaikoL1.IsProposerWhitelisted(nil, proposer)
 	if err != nil {
-		if strings.Contains(err.Error(), "Assertion error") {
+		if strings.Contains(err.Error(), "reverted") {
 			return true, nil
 		}
 
