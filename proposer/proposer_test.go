@@ -27,7 +27,7 @@ func (s *ProposerTestSuite) SetupTest() {
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	// Whitelist current prover
+	// Whitelist current proposer
 	whitelisted, err := s.RpcClient.IsProposerWhitelisted(crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey))
 	s.Nil(err)
 
@@ -128,9 +128,11 @@ func (s *ProposerTestSuite) TestCommitTxList() {
 	s.Nil(err)
 	s.Equal(meta.GasLimit, gasLimit)
 
-	receipt, err := rpc.WaitReceipt(context.Background(), s.p.rpc.L1, tx)
-	s.Nil(err)
-	s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
+	if s.p.protocolConstants.CommitDelayConfirmations.Cmp(common.Big0) > 0 {
+		receipt, err := rpc.WaitReceipt(context.Background(), s.p.rpc.L1, tx)
+		s.Nil(err)
+		s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
+	}
 }
 
 func (s *ProposerTestSuite) TestCustomProposeOpHook() {
