@@ -6,7 +6,7 @@ run:
   skip-dirs-use-default: true
   skip-files:
     - bindings/gen_taiko_l1.go
-    - bindings/gen_v1_taiko_l2.go
+    - bindings/gen_taiko_l2.go
 
 linters:
   disable-all: true
