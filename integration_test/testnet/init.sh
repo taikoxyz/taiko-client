@@ -51,7 +51,7 @@ docker cp \
 
 L2_GENESIS_ALLOC=$(cat $DIR/deployments/mainnet.json)
 
-TAIKO_L2_CONTRACT_ADDRESS=$(echo $L2_GENESIS_ALLOC | jq 'to_entries[] | select(.value.contractName=="V1TaikoL2") | .key' | sed 's/\"//g')
+TAIKO_L2_CONTRACT_ADDRESS=$(echo $L2_GENESIS_ALLOC | jq 'to_entries[] | select(.value.contractName=="TaikoL2") | .key' | sed 's/\"//g')
 
 cd $TAIKO_MONO_DIR/packages/protocol &&
     LOG_LEVEL=debug \

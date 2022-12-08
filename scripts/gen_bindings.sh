@@ -31,9 +31,9 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/artifacts/contracts/L1/TaikoL1.sol/Taiko
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoL1Client --pkg bindings --out $DIR/../bindings/gen_taiko_l1.go
 
-cat ${TAIKO_MONO_DIR}/packages/protocol/artifacts/contracts/L2/V1TaikoL2.sol/V1TaikoL2.json |
+cat ${TAIKO_MONO_DIR}/packages/protocol/artifacts/contracts/L2/TaikoL2.sol/TaikoL2.json |
 	jq .abi |
-	${ABIGEN_BIN} --abi - --type V1TaikoL2Client --pkg bindings --out $DIR/../bindings/gen_v1_taiko_l2.go
+	${ABIGEN_BIN} --abi - --type TaikoL2Client --pkg bindings --out $DIR/../bindings/gen_taiko_l2.go
 
 git -C ${TAIKO_MONO_DIR} log --format="%H" -n 1 >./bindings/.githead
 

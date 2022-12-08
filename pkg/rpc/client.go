@@ -22,7 +22,7 @@ type Client struct {
 	L2Engine *EngineClient
 	// Protocol contracts clients
 	TaikoL1 *bindings.TaikoL1Client
-	TaikoL2 *bindings.V1TaikoL2Client
+	TaikoL2 *bindings.TaikoL2Client
 	// Chain IDs
 	L1ChainID *big.Int
 	L2ChainID *big.Int
@@ -57,7 +57,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	taikoL2, err := bindings.NewV1TaikoL2Client(cfg.TaikoL2Address, l2RPC)
+	taikoL2, err := bindings.NewTaikoL2Client(cfg.TaikoL2Address, l2RPC)
 	if err != nil {
 		return nil, err
 	}

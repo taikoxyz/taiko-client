@@ -24,20 +24,20 @@ The driver subscribes to `TaikoL1.BlockProposed` events, and when a new block is
 
 If the txList is **valid**:
 
-4. Assemble a deterministic `V1TaikoL2.anchor` transaction based on the rules defined in the protocol, and put it as the first transaction in the proposed txList.
+4. Assemble a deterministic `TaikoL2.anchor` transaction based on the rules defined in the protocol, and put it as the first transaction in the proposed txList.
 5. Use this txList and the decoded block metadata to assemble a deterministic L2 block.
 6. Direct L2 nodes' execution engine to insert this assembled block and set it as the current chain's head via the Engine API.
 
 If the txList is **invalid**:
 
-4. Create a `V1TaikoL2.invalidateBlock` transaction and then assemble a L2 block only including this transaction.
+4. Create a `TaikoL2.invalidateBlock` transaction and then assemble a L2 block only including this transaction.
 5. Direct the L2 nodes' execution engine to insert this block, but does not set it as the chain's head via the Engine API.
 
 > NOTE: For more detailed information about: block metadata, please see `5.2.2 Block Metadata` in the white paper.
 
 > NOTE: For more detailed information about txList validation rules, please see `5.3.1 Validation` in the white paper.
 
-> NOTE: For more detailed information about the `V1TaikoL2.anchor` transaction and proposed block's determination, please see `5.4.1 Construction of Anchor Transactions` in the white paper.
+> NOTE: For more detailed information about the `TaikoL2.anchor` transaction and proposed block's determination, please see `5.4.1 Construction of Anchor Transactions` in the white paper.
 
 ## Proposer
 
@@ -71,12 +71,12 @@ When a new block is proposed:
 
 If the proposed block has a valid txList:
 
-4. Generate the merkel proof of the block's `V1TaikoL2.anchor` transaction to prove its existence in the `block.txRoot`'s [MPT](https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/), and also this transaction receipt's merkel proof in the `block.receiptRoot`'s MPT from the L2 node.
-5. Submit the `V1TaikoL2.anchor` transaction's RLP encoded bytes, its receipt's RLP encoded bytes, generated merkel proofs, and ZK proof to prove this block **valid**, by sending a `TaikoL1.proveBlock` transaction.
+4. Generate the merkel proof of the block's `TaikoL2.anchor` transaction to prove its existence in the `block.txRoot`'s [MPT](https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/), and also this transaction receipt's merkel proof in the `block.receiptRoot`'s MPT from the L2 node.
+5. Submit the `TaikoL2.anchor` transaction's RLP encoded bytes, its receipt's RLP encoded bytes, generated merkel proofs, and ZK proof to prove this block **valid**, by sending a `TaikoL1.proveBlock` transaction.
 
 If the proposed block has an invalid txList:
 
-4. Generate the merkel proof of the block's `V1TaikoL2.invalidateBlock` transaction receipt to prove its existence in the `block.receiptRoot`'s MPT from the L2 node.
-5. Submit the `V1TaikoL2.invalidateBlock` transaction receipt's RLP encoded bytes, generated merkel proof, and ZK proof to prove this block **invalid**, by sending a `TaikoL1.proveBlockInvalid` transaction.
+4. Generate the merkel proof of the block's `TaikoL2.invalidateBlock` transaction receipt to prove its existence in the `block.receiptRoot`'s MPT from the L2 node.
+5. Submit the `TaikoL2.invalidateBlock` transaction receipt's RLP encoded bytes, generated merkel proof, and ZK proof to prove this block **invalid**, by sending a `TaikoL1.proveBlockInvalid` transaction.
 
 > NOTE: For more information about why we need these merkel proofs when proving, please see `5.5 Proving Blocks` in the white paper.

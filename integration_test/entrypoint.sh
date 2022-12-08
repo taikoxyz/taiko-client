@@ -29,7 +29,7 @@ DEPLOYMENT_JSON=$(cat $TAIKO_MONO_DIR/packages/protocol/deployments/l1_test_L1.j
 L2_GENESIS_ALLOC=$(cat $DIR/testnet/deployments/mainnet.json)
 
 TAIKO_L1_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq .contracts.TaikoL1 | sed 's/\"//g')
-TAIKO_L2_CONTRACT_ADDRESS=$(echo $L2_GENESIS_ALLOC | jq 'to_entries[] | select(.value.contractName=="V1TaikoL2") | .key' | sed 's/\"//g')
+TAIKO_L2_CONTRACT_ADDRESS=$(echo $L2_GENESIS_ALLOC | jq 'to_entries[] | select(.value.contractName=="TaikoL2") | .key' | sed 's/\"//g')
 
 trap "docker compose -f $TESTNET_CONFIG down" EXIT INT KILL ERR
 

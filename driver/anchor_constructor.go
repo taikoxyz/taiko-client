@@ -14,7 +14,7 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-// AnchorConstructor is responsible for assembling the anchor transaction (V1TaikoL2.anchor) in
+// AnchorConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
 // each L2 block, which is always the first transaction.
 type AnchorConstructor struct {
 	rpc                *rpc.Client
@@ -104,7 +104,7 @@ func (c *AnchorConstructor) signTxPayload(hash []byte) ([]byte, error) {
 		// Try k = 2.
 		sig, ok = c.signer.SignWithK(new(secp256k1.ModNScalar).SetInt(2))(hash)
 		if !ok {
-			log.Crit("Failed to sign V1TaikoL2.anchor transaction using K = 1 and K = 2")
+			log.Crit("Failed to sign TaikoL2.anchor transaction using K = 1 and K = 2")
 		}
 	}
 
