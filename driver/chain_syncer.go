@@ -22,7 +22,7 @@ type L2ChainSyncer struct {
 	rpc                           *rpc.Client                      // L1/L2 RPC clients
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                // Private key of L2 throwaway blocks builder
 	txListValidator               *txListValidator.TxListValidator // Transactions list validator
-	anchorConstructor             *AnchorConstructor               // V1TaikoL1.anchor transactions constructor
+	anchorConstructor             *AnchorConstructor               // TaikoL2.anchor transactions constructor
 	protocolConstants             *bindings.ProtocolConstants
 
 	// Try P2P beacon-sync if current node is behind of  the protocol's latest verified block head

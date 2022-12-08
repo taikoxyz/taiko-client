@@ -199,7 +199,7 @@ func (s *L2ChainSyncer) insertNewHead(
 		parent.Number,
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create V1TaikoL2.anchor transaction: %w", err)
+		return nil, nil, fmt.Errorf("failed to create TaikoL2.anchor transaction: %w", err)
 	}
 
 	txList = append([]*types.Transaction{anchorTx}, txList...)

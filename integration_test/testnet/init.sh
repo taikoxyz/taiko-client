@@ -51,7 +51,7 @@ docker cp \
 
 L2_GENESIS_ALLOC=$(cat $DIR/deployments/mainnet.json)
 
-TAIKO_L2_CONTRACT_ADDRESS=$(echo $L2_GENESIS_ALLOC | jq 'to_entries[] | select(.value.contractName=="V1TaikoL2") | .key' | sed 's/\"//g')
+TAIKO_L2_CONTRACT_ADDRESS=$(echo $L2_GENESIS_ALLOC | jq 'to_entries[] | select(.value.contractName=="TaikoL2") | .key' | sed 's/\"//g')
 
 cd $TAIKO_MONO_DIR/packages/protocol &&
     LOG_LEVEL=debug \
@@ -61,5 +61,5 @@ cd $TAIKO_MONO_DIR/packages/protocol &&
     --dao-vault 0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39 \
     --team-vault 0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39 \
     --l2-genesis-block-hash $L2_GENESIS_HASH \
-    --v1-taiko-l2 $TAIKO_L2_CONTRACT_ADDRESS \
+    --taiko-l2 $TAIKO_L2_CONTRACT_ADDRESS \
     --confirmations 1

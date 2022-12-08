@@ -171,7 +171,7 @@ func init() {
 		log.Crit("Get TaikoL1 ABI error", "error", err)
 	}
 
-	if TaikoL2ABI, err = bindings.V1TaikoL2ClientMetaData.GetAbi(); err != nil {
+	if TaikoL2ABI, err = bindings.TaikoL2ClientMetaData.GetAbi(); err != nil {
 		log.Crit("Get TaikoL2 ABI error", "error", err)
 	}
 }
