@@ -122,6 +122,12 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.submitValidBlockProof(context.Background(), <-s.p.proveValidProofCh))
 
+	// Empty blocks
+	for _, e = range testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer()) {
+		s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
+		s.Nil(s.p.submitValidBlockProof(context.Background(), <-s.p.proveValidProofCh))
+	}
+
 	// Invalid block
 	e = testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))

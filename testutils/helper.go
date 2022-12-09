@@ -29,7 +29,13 @@ func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
 	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, invalidTxListBytes, 1))
 }
 
-func ProposeAndInsertEmptyBlocks(s *ClientTestSuite, proposer Proposer, chainSyncer L2ChainSyncer) {
+func ProposeAndInsertEmptyBlocks(
+	s *ClientTestSuite,
+	proposer Proposer,
+	chainSyncer L2ChainSyncer,
+) []*bindings.TaikoL1ClientBlockProposed {
+	var events []*bindings.TaikoL1ClientBlockProposed
+
 	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
@@ -60,9 +66,9 @@ func ProposeAndInsertEmptyBlocks(s *ClientTestSuite, proposer Proposer, chainSyn
 
 	ProposeInvalidTxListBytes(s, proposer)
 
-	event := <-sink
+	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink}...)
 
-	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
+	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), events[len(events)-1].Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
 
@@ -78,6 +84,8 @@ func ProposeAndInsertEmptyBlocks(s *ClientTestSuite, proposer Proposer, chainSyn
 	defer cancel()
 
 	s.Nil(chainSyncer.ProcessL1Blocks(ctx, newL1Head))
+
+	return events
 }
 
 // ProposeAndInsertThrowawayBlock proposes an invalid tx list and then insert it
