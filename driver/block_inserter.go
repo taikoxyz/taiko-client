@@ -73,8 +73,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 	// Check whether the transactions list is valid.
 	txListBytes, hint, invalidTxIndex, err := s.txListValidator.ValidateTxList(event.Id, tx.Data())
 	if err != nil {
-		log.Info("Validate transactions list error", "error", err)
-		return nil
+		return fmt.Errorf("failed to validate transactions list: %w", err)
 	}
 
 	log.Info(
