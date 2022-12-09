@@ -247,7 +247,7 @@ func (p *Prover) onBlockProposed(
 		return err
 	}
 
-	hint, invalidTxIndex, err := p.txListValidator.ValidateTxList(event.Id, proposeBlockTx.Data())
+	_, hint, invalidTxIndex, err := p.txListValidator.ValidateTxList(event.Id, proposeBlockTx.Data())
 	if err != nil {
 		return err
 	}

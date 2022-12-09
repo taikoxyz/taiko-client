@@ -58,7 +58,8 @@ func TestValidateTxList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reason, txIdx, err := v.ValidateTxList(tt.blockID, tt.proposeBlockTxInput)
+			txListBytes, reason, txIdx, err := v.ValidateTxList(tt.blockID, tt.proposeBlockTxInput)
+			require.NotEmpty(t, txListBytes)
 			require.Equal(t, tt.wantReason, reason)
 			require.Equal(t, tt.wantTxIdx, txIdx)
 			require.Equal(t, tt.wantErr, err != nil)
@@ -134,7 +135,7 @@ func TestIsTxListValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reason, txIdx := v.IsTxListValid(tt.blockID, tt.txListBytes)
+			reason, txIdx := v.isTxListValid(tt.blockID, tt.txListBytes)
 			require.Equal(t, tt.wantReason, reason)
 			require.Equal(t, tt.wantTxIdx, txIdx)
 		})
