@@ -83,7 +83,13 @@ func (s *L2ChainSyncer) onBlockProposed(
 	}
 
 	// Check whether the transactions list is valid.
-	hint, invalidTxIndex := s.txListValidator.IsTxListValid(event.Id, txListBytes)
+	var (
+		hint           = txListValidator.HintOK
+		invalidTxIndex = 0
+	)
+	if len(txListBytes) > 0 {
+		hint, invalidTxIndex = s.txListValidator.IsTxListValid(event.Id, txListBytes)
+	}
 
 	log.Info(
 		"Validate transactions list",
@@ -186,9 +192,11 @@ func (s *L2ChainSyncer) insertNewHead(
 
 	// Insert a TaikoL2.anchor transaction at transactions list head
 	var txList []*types.Transaction
-	if err := rlp.DecodeBytes(txListBytes, &txList); err != nil {
-		log.Info("Ignore invalid txList bytes", "blockID", event.Id)
-		return nil, nil, err
+	if len(txListBytes) != 0 {
+		if err := rlp.DecodeBytes(txListBytes, &txList); err != nil {
+			log.Info("Ignore invalid txList bytes", "blockID", event.Id)
+			return nil, nil, err
+		}
 	}
 
 	// Assemble a TaikoL2.anchor transaction
