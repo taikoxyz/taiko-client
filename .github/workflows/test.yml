@@ -44,6 +44,7 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
+          ref: update-decodeTxList # TODO: change to main when this branch get merged
 
       - name: Set up Go
         uses: actions/setup-go@v3
