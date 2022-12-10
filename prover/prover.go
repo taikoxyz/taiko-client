@@ -23,8 +23,6 @@ import (
 )
 
 var (
-	// Gas limit of TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
-	// TODO: tune this value based when the on-chain solidity verifier is available.
 	maxPendingProofs = 10
 )
 
@@ -247,7 +245,7 @@ func (p *Prover) onBlockProposed(
 		return err
 	}
 
-	hint, invalidTxIndex, err := p.txListValidator.ValidateTxList(event.Id, proposeBlockTx.Data())
+	_, hint, invalidTxIndex, err := p.txListValidator.ValidateTxList(event.Id, proposeBlockTx.Data())
 	if err != nil {
 		return err
 	}

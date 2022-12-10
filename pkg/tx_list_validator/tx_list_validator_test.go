@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -38,32 +39,11 @@ func TestValidateTxList(t *testing.T) {
 		minTxGasLimit,
 		chainID,
 	)
-	tests := []struct {
-		name                string
-		blockID             *big.Int
-		proposeBlockTxInput []byte
-		wantReason          InvalidTxListReason
-		wantTxIdx           int
-		wantErr             bool
-	}{
-		{
-			"binary not decodable",
-			chainID,
-			randBytes(5),
-			HintBinaryNotDecodable,
-			0,
-			true,
-		},
-	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			reason, txIdx, err := v.ValidateTxList(tt.blockID, tt.proposeBlockTxInput)
-			require.Equal(t, tt.wantReason, reason)
-			require.Equal(t, tt.wantTxIdx, txIdx)
-			require.Equal(t, tt.wantErr, err != nil)
-		})
-	}
+	// Binary is not unpackable
+	txListBytes, _, _, err := v.ValidateTxList(common.Big0, randBytes(5))
+	require.Empty(t, txListBytes)
+	require.NotNil(t, err)
 }
 
 func TestIsTxListValid(t *testing.T) {
@@ -134,7 +114,7 @@ func TestIsTxListValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reason, txIdx := v.IsTxListValid(tt.blockID, tt.txListBytes)
+			reason, txIdx := v.isTxListValid(tt.blockID, tt.txListBytes)
 			require.Equal(t, tt.wantReason, reason)
 			require.Equal(t, tt.wantTxIdx, txIdx)
 		})

@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
@@ -26,6 +27,65 @@ func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
 	s.Nil(err)
 
 	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, invalidTxListBytes, 1))
+}
+
+func ProposeAndInsertEmptyBlocks(
+	s *ClientTestSuite,
+	proposer Proposer,
+	chainSyncer L2ChainSyncer,
+) []*bindings.TaikoL1ClientBlockProposed {
+	var events []*bindings.TaikoL1ClientBlockProposed
+
+	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+
+	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
+
+	sub, err := s.RpcClient.TaikoL1.WatchBlockProposed(nil, sink, nil)
+	s.Nil(err)
+	defer func() {
+		sub.Unsubscribe()
+		close(sink)
+	}()
+
+	// Zero byte txList
+	meta, commitTx, err := proposer.CommitTxList(context.Background(), []byte{}, 1024, 0)
+	s.Nil(err)
+
+	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, []byte{}, 0))
+
+	// RLP encoded empty list
+	var emptyTxs []types.Transaction
+	encoded, err := rlp.EncodeToBytes(emptyTxs)
+	s.Nil(err)
+
+	meta, commitTx, err = proposer.CommitTxList(context.Background(), encoded, 1024, 0)
+	s.Nil(err)
+
+	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, encoded, 0))
+
+	ProposeInvalidTxListBytes(s, proposer)
+
+	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink}...)
+
+	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), events[len(events)-1].Raw.TxHash)
+	s.Nil(err)
+	s.False(isPending)
+
+	newL1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+	s.Greater(newL1Head.Number.Uint64(), l1Head.Number.Uint64())
+
+	syncProgress, err := s.RpcClient.L2.SyncProgress(context.Background())
+	s.Nil(err)
+	s.Nil(syncProgress)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	s.Nil(chainSyncer.ProcessL1Blocks(ctx, newL1Head))
+
+	return events
 }
 
 // ProposeAndInsertThrowawayBlock proposes an invalid tx list and then insert it

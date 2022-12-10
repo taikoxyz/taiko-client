@@ -16,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
@@ -71,19 +70,11 @@ func (s *L2ChainSyncer) onBlockProposed(
 		return fmt.Errorf("failed to fetch original TaikoL1.proposeBlock transaction: %w", err)
 	}
 
-	txListBytes, err := encoding.UnpackTxListBytes(tx.Data())
-	if err != nil {
-		log.Info(
-			"Skip the throw away block",
-			"blockID", event.Id,
-			"hint", "BINARY_NOT_DECODABLE",
-			"error", err,
-		)
-		return nil
-	}
-
 	// Check whether the transactions list is valid.
-	hint, invalidTxIndex := s.txListValidator.IsTxListValid(event.Id, txListBytes)
+	txListBytes, hint, invalidTxIndex, err := s.txListValidator.ValidateTxList(event.Id, tx.Data())
+	if err != nil {
+		return fmt.Errorf("failed to validate transactions list: %w", err)
+	}
 
 	log.Info(
 		"Validate transactions list",
@@ -186,9 +177,11 @@ func (s *L2ChainSyncer) insertNewHead(
 
 	// Insert a TaikoL2.anchor transaction at transactions list head
 	var txList []*types.Transaction
-	if err := rlp.DecodeBytes(txListBytes, &txList); err != nil {
-		log.Info("Ignore invalid txList bytes", "blockID", event.Id)
-		return nil, nil, err
+	if len(txListBytes) != 0 {
+		if err := rlp.DecodeBytes(txListBytes, &txList); err != nil {
+			log.Info("Ignore invalid txList bytes", "blockID", event.Id)
+			return nil, nil, err
+		}
 	}
 
 	// Assemble a TaikoL2.anchor transaction

@@ -1,7 +1,6 @@
 package tx_list_validator
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -66,21 +65,24 @@ func NewTxListValidator(
 func (v *TxListValidator) ValidateTxList(
 	blockID *big.Int,
 	proposeBlockTxInput []byte,
-) (hint InvalidTxListReason, txIdx int, err error) {
-	txListBytes, err := encoding.UnpackTxListBytes(proposeBlockTxInput)
-	if err != nil {
-		return HintBinaryNotDecodable, 0, fmt.Errorf("failed to unpack raw transactions list bytes: %w", err)
+) (txListBytes []byte, hint InvalidTxListReason, txIdx int, err error) {
+	if txListBytes, err = encoding.UnpackTxListBytes(proposeBlockTxInput); err != nil {
+		return nil, HintBinaryNotDecodable, 0, err
 	}
 
-	hint, txIdx = v.IsTxListValid(blockID, txListBytes)
+	if len(txListBytes) == 0 {
+		return txListBytes, HintOK, 0, nil
+	}
 
-	return hint, txIdx, nil
+	hint, txIdx = v.isTxListValid(blockID, txListBytes)
+
+	return txListBytes, hint, txIdx, nil
 }
 
-// IsTxListValid checks whether the transaction list is valid, must match
+// isTxListValid checks whether the transaction list is valid, must match
 // the validation rule defined in LibInvalidTxList.sol.
 // ref: https://github.com/taikoxyz/taiko-mono/blob/main/packages/bindings/contracts/libs/LibInvalidTxList.sol
-func (v *TxListValidator) IsTxListValid(blockID *big.Int, txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
+func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
 	if len(txListBytes) > int(v.txListMaxBytes) {
 		log.Info("Transactions list binary too large", "length", len(txListBytes), "blockID", blockID)
 		return HintBinaryTooLarge, 0
