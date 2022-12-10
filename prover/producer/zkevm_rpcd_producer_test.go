@@ -36,7 +36,13 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, dummyZKEvmProducer.RequestProof(&ProofRequestOptions{}, blockID, header, resCh))
+	require.Nil(t, dummyZKEvmProducer.RequestProof(
+		&ProofRequestOptions{},
+		blockID,
+		&bindings.LibDataBlockMetadata{},
+		header,
+		resCh,
+	))
 
 	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)

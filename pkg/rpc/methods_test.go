@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
@@ -94,13 +93,6 @@ func TestL2ParentByBlockId(t *testing.T) {
 
 	_, err = client.L2ParentByBlockId(context.Background(), common.Big2)
 	require.Nil(t, err)
-}
-
-func TestGetBlockMetadataByID(t *testing.T) {
-	client := newTestClient(t)
-
-	_, err := client.GetBlockMetadataByID(common.Big0)
-	require.ErrorContains(t, err, ethereum.NotFound.Error())
 }
 
 func TestWaitL1OriginTimeout(t *testing.T) {

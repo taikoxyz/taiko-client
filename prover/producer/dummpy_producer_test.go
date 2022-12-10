@@ -34,7 +34,13 @@ func TestRequestProof(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, dummyProofProducer.RequestProof(&ProofRequestOptions{}, blockID, header, resCh))
+	require.Nil(t, dummyProofProducer.RequestProof(
+		&ProofRequestOptions{},
+		blockID,
+		&bindings.LibDataBlockMetadata{},
+		header,
+		resCh,
+	))
 
 	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)

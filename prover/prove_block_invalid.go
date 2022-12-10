@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -40,7 +41,7 @@ func (p *Prover) proveBlockInvalid(
 	}
 
 	if err := p.proofProducer.RequestProof(
-		proofOpts, event.Id, throwAwayBlock.Header(), p.proveInvalidProofCh,
+		proofOpts, event.Id, &event.Meta, throwAwayBlock.Header(), p.proveInvalidProofCh,
 	); err != nil {
 		return err
 	}
@@ -60,6 +61,7 @@ func (p *Prover) submitInvalidBlockProof(
 	log.Info(
 		"New invalid block proof",
 		"blockID", proofWithHeader.BlockID,
+		"meta", proofWithHeader.Meta,
 		"hash", proofWithHeader.Header.Hash(),
 		"proof", proofWithHeader.ZkProof,
 	)
@@ -67,55 +69,52 @@ func (p *Prover) submitInvalidBlockProof(
 		blockID = proofWithHeader.BlockID
 		header  = proofWithHeader.Header
 		zkProof = proofWithHeader.ZkProof
+		meta    = proofWithHeader.Meta
 	)
 
 	metrics.ProverReceivedProofCounter.Inc(1)
 	metrics.ProverReceivedInvalidProofCounter.Inc(1)
 
+	// Get the corresponding L2 throwaway block, which is not in the L2 execution engine's canonical chain.
 	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
-		return fmt.Errorf("failed to fetch throwaway block: %w", err)
+		return fmt.Errorf("failed to get the throwaway block (id: %d): %w", blockID, err)
 	}
 
-	// Fetch the invalid block metadata
-	targetMeta, err := p.rpc.GetBlockMetadataByID(blockID)
-	if err != nil {
-		return fmt.Errorf("failed to fetch L2 block with given block ID %s: %w", blockID, err)
-	}
-
-	// Fetch the transaction receipts in that throwaway block.
+	// Fetch all receipts inside that L2 throwaway block.
 	receipts, err := p.rpc.L2.GetThrowawayTransactionReceipts(ctx, header.Hash())
 	if err != nil {
-		return fmt.Errorf("failed to fetch invalidateBlock transaction receipt: %w", err)
+		return fmt.Errorf("failed to fetch the throwaway block's transaction receipts (id: %d): %w", blockID, err)
 	}
 
-	log.Debug("Throwaway block receipts", "length", receipts.Len())
+	log.Debug("Throwaway block receipts fetched", "length", receipts.Len())
 
+	// Generate the merkel proof (whose root is block's receiptRoot) of the TaikoL2.invalidateBlock transaction's receipt.
 	receiptRoot, receiptProof, err := generateTrieProof(receipts, 0)
 	if err != nil {
 		return fmt.Errorf("failed to generate anchor receipt proof: %w", err)
 	}
-
-	if receiptRoot != header.ReceiptHash {
+	if receiptRoot != header.ReceiptHash { // Double check the calculated root.
 		return fmt.Errorf("receipt root mismatch, receiptRoot: %s, block.ReceiptHash: %s", receiptRoot, header.ReceiptHash)
 	}
 
-	txListBytes, err := rlp.EncodeToBytes(block.Transactions())
-	if err != nil {
-		return fmt.Errorf("failed to encode throwaway block transactions: %w", err)
-	}
-
+	// Assemble the TaikoL1.proveBlockInvalid transaction inputs.
 	proofs := [][]byte{}
 	for i := 0; i < int(p.protocolConstants.ZKProofsPerBlock.Uint64()); i++ {
 		proofs = append(proofs, zkProof)
 	}
 	proofs = append(proofs, receiptProof)
 
+	txListBytes, err := rlp.EncodeToBytes(block.Transactions())
+	if err != nil {
+		return fmt.Errorf("failed to encode throwaway block transactions: %w", err)
+	}
+
 	evidence := &encoding.TaikoL1Evidence{
 		Meta: bindings.LibDataBlockMetadata{
-			Id:          targetMeta.Id,
-			L1Height:    targetMeta.L1Height,
-			L1Hash:      targetMeta.L1Hash,
+			Id:          meta.Id,
+			L1Height:    meta.L1Height,
+			L1Hash:      meta.L1Hash,
 			Beneficiary: header.Coinbase,
 			GasLimit:    header.GasLimit - p.protocolConstants.AnchorTxGasLimit.Uint64(),
 			Timestamp:   header.Time,
@@ -128,27 +127,45 @@ func (p *Prover) submitInvalidBlockProof(
 		Proofs: proofs,
 	}
 
-	input, err := encoding.EncodeProveBlockInvalidInput(evidence, targetMeta, receipts[0])
+	input, err := encoding.EncodeProveBlockInvalidInput(evidence, meta, receipts[0])
 	if err != nil {
 		return err
 	}
 
+	// Send the TaikoL1.proveBlockInvalid transaction.
 	txOpts, err := p.getProveBlocksTxOpts(ctx, p.rpc.L1)
 	if err != nil {
 		return err
 	}
 
-	tx, err := p.rpc.TaikoL1.ProveBlockInvalid(txOpts, blockID, input)
-	if err != nil {
+	var meetUnretryableError bool
+	if err := backoff.Retry(func() error {
+		tx, err := p.rpc.TaikoL1.ProveBlockInvalid(txOpts, blockID, input)
+		if err != nil {
+			if IsSubmitProofTxErrorRetryable(err) {
+				log.Warn("Retry sending TaikoL1.proveBlockInvalid transaction", "error", err)
+				return err
+			}
+
+			return nil
+		}
+
+		if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx); err != nil {
+			log.Warn("Failed to wait till transaction executed", "txHash", tx.Hash(), "error", err)
+			return err
+		}
+
+		return nil
+	}, backoff.NewExponentialBackOff()); err != nil {
 		return fmt.Errorf("failed to send TaikoL1.proveBlockInvalid transaction: %w", err)
 	}
 
-	if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx); err != nil {
-		return fmt.Errorf("failed to wait till transaction executed: %w", err)
+	if meetUnretryableError {
+		return nil
 	}
 
 	log.Info(
-		"❎ New invalid block proved",
+		"❎ Invalid block proved",
 		"blockID", proofWithHeader.BlockID,
 		"height", block.Number(),
 		"hash", header.Hash(),
@@ -167,11 +184,11 @@ func (p *Prover) getThrowAwayBlock(
 ) (*types.Block, error) {
 	l1Origin, err := p.rpc.WaitL1Origin(ctx, event.Id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.Id, err)
+		return nil, fmt.Errorf("failed to fetch L1origin, blockID: %d, err: %w", event.Id, err)
 	}
 
 	if !l1Origin.Throwaway {
-		return nil, fmt.Errorf("invalid L1origin found: %+v", l1Origin)
+		return nil, fmt.Errorf("invalid throwaway block's L1origin found, blockID: %d: %+v", event.Id, l1Origin)
 	}
 
 	return p.rpc.L2.BlockByHash(ctx, l1Origin.L2BlockHash)

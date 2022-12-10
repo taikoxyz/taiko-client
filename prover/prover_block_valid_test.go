@@ -20,13 +20,13 @@ func (s *ProverTestSuite) TestProveBlockValidL1OriginTimeout() {
 }
 
 func (s *ProverTestSuite) TestSubmitValidBlockProofMetadataNotFound() {
-	s.ErrorContains(
+	s.Error(
 		s.p.submitValidBlockProof(
 			context.Background(), &producer.ProofWithHeader{
 				BlockID: common.Big256,
 				Header:  &types.Header{},
 				ZkProof: []byte{0xff},
 			},
-		), "failed to fetch L2 block with given block ID",
+		),
 	)
 }
