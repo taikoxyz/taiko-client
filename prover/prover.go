@@ -237,7 +237,7 @@ func (p *Prover) onBlockProposed(
 	}
 
 	if isVerified {
-		log.Info("Block has been verified", "blockID", event.Id)
+		log.Info("📋 Block has been verified", "blockID", event.Id)
 		return nil
 	}
 
@@ -247,7 +247,7 @@ func (p *Prover) onBlockProposed(
 	}
 
 	if isProven {
-		log.Info("Block has been proven by current prover", "blockID", event.Id)
+		log.Info("🗳 Block has been proven by current prover", "blockID", event.Id)
 		return nil
 	}
 
