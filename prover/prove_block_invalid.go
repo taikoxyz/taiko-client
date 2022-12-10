@@ -74,38 +74,40 @@ func (p *Prover) submitInvalidBlockProof(
 	metrics.ProverReceivedProofCounter.Inc(1)
 	metrics.ProverReceivedInvalidProofCounter.Inc(1)
 
+	// Get the corresponding L2 throwaway block, which is not in the L2 execution engine's canonical chain.
 	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
-		return fmt.Errorf("failed to fetch throwaway block: %w", err)
+		return fmt.Errorf("failed to get the throwaway block (id: %d): %w", blockID, err)
 	}
 
-	// Fetch the transaction receipts in that throwaway block.
+	// Fetch all receipts inside that L2 throwaway block.
 	receipts, err := p.rpc.L2.GetThrowawayTransactionReceipts(ctx, header.Hash())
 	if err != nil {
-		return fmt.Errorf("failed to fetch invalidateBlock transaction receipt: %w", err)
+		return fmt.Errorf("failed to fetch the throwaway block's transaction receipts (id: %d): %w", blockID, err)
 	}
 
-	log.Debug("Throwaway block receipts", "length", receipts.Len())
+	log.Debug("Throwaway block receipts fetched", "length", receipts.Len())
 
+	// Generate the merkel proof (whose root is block's receiptRoot) of the TaikoL2.invalidateBlock transaction's receipt.
 	receiptRoot, receiptProof, err := generateTrieProof(receipts, 0)
 	if err != nil {
 		return fmt.Errorf("failed to generate anchor receipt proof: %w", err)
 	}
-
-	if receiptRoot != header.ReceiptHash {
+	if receiptRoot != header.ReceiptHash { // Double check the calculated root.
 		return fmt.Errorf("receipt root mismatch, receiptRoot: %s, block.ReceiptHash: %s", receiptRoot, header.ReceiptHash)
 	}
 
-	txListBytes, err := rlp.EncodeToBytes(block.Transactions())
-	if err != nil {
-		return fmt.Errorf("failed to encode throwaway block transactions: %w", err)
-	}
-
+	// Assemble the TaikoL1.proveBlockInvalid transaction inputs.
 	proofs := [][]byte{}
 	for i := 0; i < int(p.protocolConstants.ZKProofsPerBlock.Uint64()); i++ {
 		proofs = append(proofs, zkProof)
 	}
 	proofs = append(proofs, receiptProof)
+
+	txListBytes, err := rlp.EncodeToBytes(block.Transactions())
+	if err != nil {
+		return fmt.Errorf("failed to encode throwaway block transactions: %w", err)
+	}
 
 	evidence := &encoding.TaikoL1Evidence{
 		Meta: bindings.LibDataBlockMetadata{
@@ -163,11 +165,11 @@ func (p *Prover) getThrowAwayBlock(
 ) (*types.Block, error) {
 	l1Origin, err := p.rpc.WaitL1Origin(ctx, event.Id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.Id, err)
+		return nil, fmt.Errorf("failed to fetch L1origin, blockID: %d, err: %w", event.Id, err)
 	}
 
 	if !l1Origin.Throwaway {
-		return nil, fmt.Errorf("invalid L1origin found: %+v", l1Origin)
+		return nil, fmt.Errorf("invalid throwaway block's L1origin found, blockID: %d: %+v", event.Id, l1Origin)
 	}
 
 	return p.rpc.L2.BlockByHash(ctx, l1Origin.L2BlockHash)

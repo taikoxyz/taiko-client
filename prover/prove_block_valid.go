@@ -70,11 +70,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 	metrics.ProverReceivedProofCounter.Inc(1)
 	metrics.ProverReceivedValidProofCounter.Inc(1)
 
-	txOpts, err := p.getProveBlocksTxOpts(ctx, p.rpc.L1)
-	if err != nil {
-		return err
-	}
-
+	// Get the corresponding L2 block.
 	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to get L2 block with given hash %s: %w", header.Hash(), err)
@@ -88,32 +84,35 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		"transactions", len(block.Transactions()),
 	)
 
+	// Validate TaikoL2.anchor transaction inside the L2 block.
 	anchorTx := block.Transactions()[0]
-
 	if err := p.validateAnchorTx(ctx, anchorTx); err != nil {
 		return fmt.Errorf("invalid anchor transaction: %w", err)
 	}
 
-	anchorTxReceipt, err := p.rpc.L2.TransactionReceipt(ctx, anchorTx.Hash())
+	// Get and validate this anchor transaction's receipt.
+	anchorTxReceipt, err := p.getAndValidateAnchorTxReceipt(ctx, anchorTx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
+	// Generate the merkel proof (whose root is block's txRoot) of this anchor transaction.
 	txRoot, anchorTxProof, err := generateTrieProof(block.Transactions(), 0)
 	if err != nil {
 		return fmt.Errorf("failed to generate anchor transaction proof: %w", err)
 	}
 
+	// Generate the merkel proof (whose root is block's receiptRoot) of this anchor transaction's receipt.
 	receipts, err := rpc.GetReceiptsByBlock(ctx, p.rpc.L2RawRPC, block)
 	if err != nil {
 		return fmt.Errorf("failed to fetch block receipts: %w", err)
 	}
-
 	receiptRoot, anchorReceiptProof, err := generateTrieProof(receipts, 0)
 	if err != nil {
 		return fmt.Errorf("failed to generate anchor receipt proof: %w", err)
 	}
 
+	// Double check the calculated roots.
 	if txRoot != block.TxHash() || receiptRoot != block.ReceiptHash() {
 		return fmt.Errorf(
 			"txHash or receiptHash mismatch, txRoot: %s, header.TxHash: %s, receiptRoot: %s, header.ReceiptHash: %s",
@@ -121,6 +120,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		)
 	}
 
+	// Assemble the TaikoL1.proveBlock transaction inputs.
 	proofs := [][]byte{}
 	for i := 0; i < int(p.protocolConstants.ZKProofsPerBlock.Uint64()); i++ {
 		proofs = append(proofs, zkProof)
@@ -139,6 +139,10 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		return fmt.Errorf("failed to encode TaikoL1.proveBlock inputs: %w", err)
 	}
 
+	txOpts, err := p.getProveBlocksTxOpts(ctx, p.rpc.L1)
+	if err != nil {
+		return err
+	}
 	tx, err := p.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
 	if err != nil {
 		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)

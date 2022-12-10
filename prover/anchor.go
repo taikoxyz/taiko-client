@@ -9,8 +9,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
-// validateAnchorTx checks whether the given transaction is a successfully
-// executed `TaikoL2.anchor` transaction.
+// validateAnchorTx checks whether the given transaction is a valid `TaikoL2.anchor` transaction.
 func (p *Prover) validateAnchorTx(ctx context.Context, tx *types.Transaction) error {
 	if tx.To() == nil || *tx.To() != p.cfg.TaikoL2Address {
 		return fmt.Errorf("invalid TaikoL2.anchor transaction to: %s, want: %s", tx.To(), p.cfg.TaikoL2Address)
@@ -30,18 +29,23 @@ func (p *Prover) validateAnchorTx(ctx context.Context, tx *types.Transaction) er
 		return fmt.Errorf("invalid TaikoL2.anchor transaction selector, err: %w", err)
 	}
 
+	return nil
+}
+
+// getAndValidateAnchorTxReceipt gets and validate the `TaikoL2.anchor` transaction's receipt.
+func (p *Prover) getAndValidateAnchorTxReceipt(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
 	receipt, err := p.rpc.L2.TransactionReceipt(ctx, tx.Hash())
 	if err != nil {
-		return fmt.Errorf("failed to get TaikoL2.anchor transaction receipt, err: %w", err)
+		return nil, fmt.Errorf("failed to get TaikoL2.anchor transaction receipt, err: %w", err)
 	}
 
 	if receipt.Status != types.ReceiptStatusSuccessful {
-		return fmt.Errorf("invalid TaikoL2.anchor transaction receipt status: %d", receipt.Status)
+		return nil, fmt.Errorf("invalid TaikoL2.anchor transaction receipt status: %d", receipt.Status)
 	}
 
 	if len(receipt.Logs) == 0 {
-		return fmt.Errorf("no event found in TaikoL2.anchor transaction receipt")
+		return nil, fmt.Errorf("no event found in TaikoL2.anchor transaction receipt")
 	}
 
-	return nil
+	return receipt, nil
 }
