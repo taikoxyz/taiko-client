@@ -247,7 +247,7 @@ func (p *Prover) onBlockProposed(
 	}
 
 	if isProven {
-		log.Info("🗳 Block has been proven by current prover", "blockID", event.Id)
+		log.Info("📬 Block's proof has already been submitted by current prover", "blockID", event.Id)
 		return nil
 	}
 
