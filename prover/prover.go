@@ -219,7 +219,7 @@ func (p *Prover) onBlockProposed(
 	event *bindings.TaikoL1ClientBlockProposed,
 	end eventIterator.EndBlockProposeEventIterFunc,
 ) error {
-	// If there is newly generated proofs, we need to submit them at first.
+	// If there is newly generated proofs, we need to submit them as soon as possible.
 	if len(p.proveValidProofCh) > 0 || len(p.proveInvalidProofCh) > 0 {
 		end()
 		return nil
@@ -353,7 +353,7 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 // isProvenByCurrentProver checks whether the L2 block has been already proven by current prover.
 func (p *Prover) isProvenByCurrentProver(id *big.Int) (bool, error) {
 	var parentHash common.Hash
-	if id == common.Big1 {
+	if id.Cmp(common.Big1) == 0 {
 		header, err := p.rpc.L2.HeaderByNumber(p.ctx, common.Big0)
 		if err != nil {
 			return false, err
