@@ -352,12 +352,24 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 
 // isProvenByCurrentProver checks whether the L2 block has been already proven by current prover.
 func (p *Prover) isProvenByCurrentProver(id *big.Int) (bool, error) {
-	parentL1Origin, err := p.rpc.WaitL1Origin(p.ctx, new(big.Int).Sub(id, common.Big1))
-	if err != nil {
-		return false, err
+	var parentHash common.Hash
+	if id == common.Big1 {
+		header, err := p.rpc.L2.HeaderByNumber(p.ctx, common.Big0)
+		if err != nil {
+			return false, err
+		}
+
+		parentHash = header.Hash()
+	} else {
+		parentL1Origin, err := p.rpc.WaitL1Origin(p.ctx, new(big.Int).Sub(id, common.Big1))
+		if err != nil {
+			return false, err
+		}
+
+		parentHash = parentL1Origin.L2BlockHash
 	}
 
-	provers, err := p.rpc.TaikoL1.GetBlockProvers(nil, id, parentL1Origin.L2BlockHash)
+	provers, err := p.rpc.TaikoL1.GetBlockProvers(nil, id, parentHash)
 	if err != nil {
 		return false, err
 	}
