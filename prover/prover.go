@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strings"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -339,4 +340,21 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 	}
 
 	return id.Uint64() <= latestVerifiedID, nil
+}
+
+// IsSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
+// is retryable.
+func IsSubmitProofTxErrorRetryable(err error) bool {
+	// Not an error returned by eth_estimateGas.
+	if !strings.Contains(err.Error(), "L1:") {
+		return true
+	}
+
+	if strings.Contains(err.Error(), "L1:proof:tooMany") ||
+		strings.Contains(err.Error(), "L1:tooLate") ||
+		strings.Contains(err.Error(), "L1:prover:dup") {
+		return false
+	}
+
+	return true
 }

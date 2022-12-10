@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -136,13 +137,26 @@ func (p *Prover) submitInvalidBlockProof(
 		return err
 	}
 
-	tx, err := p.rpc.TaikoL1.ProveBlockInvalid(txOpts, blockID, input)
-	if err != nil {
-		return fmt.Errorf("failed to send TaikoL1.proveBlockInvalid transaction: %w", err)
-	}
+	// Send the TaikoL1.proveBlockInvalid transaction.
+	if err := backoff.Retry(func() error {
+		tx, err := p.rpc.TaikoL1.ProveBlockInvalid(txOpts, blockID, input)
+		if err != nil {
+			if IsSubmitProofTxErrorRetryable(err) {
+				log.Warn("Retry sending TaikoL1.proveBlockInvalid transaction", "error", err)
+				return err
+			}
 
-	if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx); err != nil {
-		return fmt.Errorf("failed to wait till transaction executed: %w", err)
+			return nil
+		}
+
+		if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx); err != nil {
+			log.Warn("Failed to wait till transaction executed", "txHash", tx.Hash(), "error", err)
+			return err
+		}
+
+		return nil
+	}, backoff.NewExponentialBackOff()); err != nil {
+		return fmt.Errorf("failed to send TaikoL1.proveBlockInvalid transaction: %w", err)
 	}
 
 	log.Info(
