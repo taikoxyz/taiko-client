@@ -21,13 +21,13 @@ func (s *ProverTestSuite) TestProveBlockInvalidL1OriginTimeout() {
 }
 
 func (s *ProverTestSuite) TestSubmitInvalidBlockProofThrowawayBlockNotFound() {
-	s.ErrorContains(
+	s.Error(
 		s.p.submitInvalidBlockProof(
 			context.Background(), &producer.ProofWithHeader{
 				BlockID: common.Big256,
 				Header:  &types.Header{},
 				ZkProof: []byte{0xff},
 			},
-		), "failed to fetch throwaway block",
+		),
 	)
 }
