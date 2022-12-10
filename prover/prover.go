@@ -311,6 +311,7 @@ func (p *Prover) getProveBlocksTxOpts(ctx context.Context, cli *ethclient.Client
 	return opts, nil
 }
 
+// initL1Current initializes prover's L1Current cursor.
 func (p *Prover) initL1Current() error {
 	_, _, latestVerifiedID, _, err := p.rpc.TaikoL1.GetStateVariables(nil)
 	if err != nil {
