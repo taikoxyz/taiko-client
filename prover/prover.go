@@ -9,7 +9,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
@@ -37,9 +36,9 @@ type Prover struct {
 	protocolConstants *bindings.ProtocolConstants
 
 	// States
-	lastVerifiedHeader   *types.Header
-	lastVerifiedL1Height uint64
-	l1Current            uint64
+	latestVerifiedL1Height uint64
+	lastHandledBlockID     uint64
+	l1Current              uint64
 
 	// Subscriptions
 	blockProposedCh  chan *bindings.TaikoL1ClientBlockProposed
@@ -224,6 +223,9 @@ func (p *Prover) onBlockProposed(
 		end()
 		return nil
 	}
+	if event.Id.Uint64() <= p.lastHandledBlockID {
+		return nil
+	}
 	log.Info("Proposed block", "blockID", event.Id)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
 
@@ -268,29 +270,18 @@ func (p *Prover) onBlockProposed(
 	return p.proveBlockInvalid(ctx, event, hint, invalidTxIndex)
 }
 
-// onBlockVerified update the lastVerified block in current state.
+// onBlockVerified update the latestVerified block in current state.
+// TODO: cancel the corresponding block's proof generation, if requested before.
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
+	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
+	p.latestVerifiedL1Height = event.Raw.BlockNumber
+
 	if event.BlockHash == (common.Hash{}) {
-		log.Info("Ignore BlockVerified event of invalid transaction list", "blockID", event.Id)
+		log.Info("New verified invalid block", "blockID", event.Id)
 		return nil
 	}
 
-	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
-
-	l2BlockHeader, err := p.rpc.L2.HeaderByHash(ctx, event.BlockHash)
-	if err != nil {
-		return fmt.Errorf("failed to find L2 block with hash %s: %w", common.BytesToHash(event.BlockHash[:]), err)
-	}
-
-	log.Info(
-		"New verified block",
-		"blockID", event.Id,
-		"height", l2BlockHeader.Number,
-		"hash", common.BytesToHash(event.BlockHash[:]),
-	)
-	p.lastVerifiedHeader = l2BlockHeader
-	p.lastVerifiedL1Height = event.Raw.BlockNumber
-
+	log.Info("New verified valid block", "blockID", event.Id, "hash", common.BytesToHash(event.BlockHash[:]))
 	return nil
 }
 
@@ -320,6 +311,7 @@ func (p *Prover) getProveBlocksTxOpts(ctx context.Context, cli *ethclient.Client
 	return opts, nil
 }
 
+// initL1Current initializes prover's L1Current cursor.
 func (p *Prover) initL1Current() error {
 	_, _, latestVerifiedID, _, err := p.rpc.TaikoL1.GetStateVariables(nil)
 	if err != nil {
