@@ -30,7 +30,8 @@ var (
 // Prover keep trying to prove new proposed blocks valid/invalid.
 type Prover struct {
 	// Configurations
-	cfg *Config
+	cfg           *Config
+	proverAddress common.Address
 
 	// Clients
 	rpc *rpc.Client
@@ -87,14 +88,14 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		return err
 	}
 
-	proverAddress := crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
-	isWhitelisted, err := p.rpc.IsProverWhitelisted(proverAddress)
+	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
+	isWhitelisted, err := p.rpc.IsProverWhitelisted(p.proverAddress)
 	if err != nil {
-		return fmt.Errorf("failed to check whether current prover %s is whitelisted: %w", proverAddress, err)
+		return fmt.Errorf("failed to check whether current prover %s is whitelisted: %w", p.proverAddress, err)
 	}
 
 	if !isWhitelisted {
-		return fmt.Errorf("prover %s is not whitelisted", proverAddress)
+		return fmt.Errorf("prover %s is not whitelisted", p.proverAddress)
 	}
 
 	// Constants
@@ -236,7 +237,17 @@ func (p *Prover) onBlockProposed(
 	}
 
 	if isVerified {
-		log.Info("Block is verified", "blockID", event.Id)
+		log.Info("Block has been verified", "blockID", event.Id)
+		return nil
+	}
+
+	isProven, err := p.isProvenByCurrentProver(event.Id)
+	if err != nil {
+		return fmt.Errorf("failed to check whether the L2 block has been proven by current prover: %w", err)
+	}
+
+	if isProven {
+		log.Info("Block has been proven by current prover", "blockID", event.Id)
 		return nil
 	}
 
@@ -340,6 +351,27 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 	}
 
 	return id.Uint64() <= latestVerifiedID, nil
+}
+
+// isProvenByCurrentProver checks whether the L2 block has been already proven by current prover.
+func (p *Prover) isProvenByCurrentProver(id *big.Int) (bool, error) {
+	parentL1Origin, err := p.rpc.WaitL1Origin(p.ctx, new(big.Int).Sub(id, common.Big1))
+	if err != nil {
+		return false, err
+	}
+
+	provers, err := p.rpc.TaikoL1.GetBlockProvers(nil, id, parentL1Origin.L2BlockHash)
+	if err != nil {
+		return false, err
+	}
+
+	for _, prover := range provers {
+		if prover == p.proverAddress {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // IsSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
