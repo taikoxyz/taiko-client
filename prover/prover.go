@@ -23,8 +23,6 @@ import (
 )
 
 var (
-	// Gas limit of TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
-	// TODO: tune this value based when the on-chain solidity verifier is available.
 	maxPendingProofs = 10
 )
 
