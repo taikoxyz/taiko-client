@@ -132,12 +132,13 @@ func (p *Prover) submitInvalidBlockProof(
 		return err
 	}
 
+	// Send the TaikoL1.proveBlockInvalid transaction.
 	txOpts, err := p.getProveBlocksTxOpts(ctx, p.rpc.L1)
 	if err != nil {
 		return err
 	}
 
-	// Send the TaikoL1.proveBlockInvalid transaction.
+	var meetUnretryableError bool
 	if err := backoff.Retry(func() error {
 		tx, err := p.rpc.TaikoL1.ProveBlockInvalid(txOpts, blockID, input)
 		if err != nil {
@@ -159,8 +160,12 @@ func (p *Prover) submitInvalidBlockProof(
 		return fmt.Errorf("failed to send TaikoL1.proveBlockInvalid transaction: %w", err)
 	}
 
+	if meetUnretryableError {
+		return nil
+	}
+
 	log.Info(
-		"❎ New invalid block proved",
+		"❎ Invalid block proved",
 		"blockID", proofWithHeader.BlockID,
 		"height", block.Number(),
 		"hash", header.Hash(),

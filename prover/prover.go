@@ -353,7 +353,7 @@ func IsSubmitProofTxErrorRetryable(err error) bool {
 	if strings.Contains(err.Error(), "L1:proof:tooMany") ||
 		strings.Contains(err.Error(), "L1:tooLate") ||
 		strings.Contains(err.Error(), "L1:prover:dup") {
-		log.Warn("Unretryable proof submission error", "error", err)
+		log.Warn("🤷‍♂️ Unretryable proof submission error", "error", err)
 		return false
 	}
 

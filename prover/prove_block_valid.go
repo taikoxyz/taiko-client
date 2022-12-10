@@ -145,6 +145,8 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 	if err != nil {
 		return err
 	}
+
+	var meetUnretryableError bool
 	if err := backoff.Retry(func() error {
 		tx, err := p.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
 		if err != nil {
@@ -153,6 +155,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 				return err
 			}
 
+			meetUnretryableError = true
 			return nil
 		}
 
@@ -166,8 +169,12 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
 	}
 
+	if meetUnretryableError {
+		return nil
+	}
+
 	log.Info(
-		"✅ New valid block proved",
+		"✅ Valid block proved",
 		"blockID", proofWithHeader.BlockID,
 		"hash", block.Hash(), "height", block.Number(),
 		"transactions", block.Transactions().Len(),
