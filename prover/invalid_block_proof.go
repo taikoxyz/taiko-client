@@ -25,7 +25,7 @@ func (p *Prover) proveBlockInvalid(
 	hint txListValidator.InvalidTxListReason,
 	invalidTxIndex int,
 ) error {
-	// Get the throwaway block from L2 node.
+	// Get the throwaway block from L2 execution engine.
 	throwAwayBlock, err := p.getThrowAwayBlock(ctx, event)
 	if err != nil {
 		return err
@@ -49,6 +49,7 @@ func (p *Prover) proveBlockInvalid(
 	metrics.ProverQueuedProofCounter.Inc(1)
 	metrics.ProverQueuedInvalidProofCounter.Inc(1)
 	p.l1Current = event.Raw.BlockNumber
+	p.lastHandledBlockID = event.Id.Uint64()
 
 	return nil
 }
@@ -138,7 +139,7 @@ func (p *Prover) submitInvalidBlockProof(
 		return err
 	}
 
-	var meetUnretryableError bool
+	var isUnretryableError bool
 	if err := backoff.Retry(func() error {
 		tx, err := p.rpc.TaikoL1.ProveBlockInvalid(txOpts, blockID, input)
 		if err != nil {
@@ -147,6 +148,7 @@ func (p *Prover) submitInvalidBlockProof(
 				return err
 			}
 
+			isUnretryableError = true
 			return nil
 		}
 
@@ -160,7 +162,7 @@ func (p *Prover) submitInvalidBlockProof(
 		return fmt.Errorf("failed to send TaikoL1.proveBlockInvalid transaction: %w", err)
 	}
 
-	if meetUnretryableError {
+	if isUnretryableError {
 		return nil
 	}
 

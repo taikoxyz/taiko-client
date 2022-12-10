@@ -37,9 +37,10 @@ type Prover struct {
 	protocolConstants *bindings.ProtocolConstants
 
 	// States
-	lastVerifiedHeader   *types.Header
-	lastVerifiedL1Height uint64
-	l1Current            uint64
+	latestVerifiedHeader   *types.Header
+	latestVerifiedL1Height uint64
+	lastHandledBlockID     uint64
+	l1Current              uint64
 
 	// Subscriptions
 	blockProposedCh  chan *bindings.TaikoL1ClientBlockProposed
@@ -224,6 +225,9 @@ func (p *Prover) onBlockProposed(
 		end()
 		return nil
 	}
+	if event.Id.Uint64() <= p.lastHandledBlockID {
+		return nil
+	}
 	log.Info("Proposed block", "blockID", event.Id)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
 
@@ -268,10 +272,17 @@ func (p *Prover) onBlockProposed(
 	return p.proveBlockInvalid(ctx, event, hint, invalidTxIndex)
 }
 
-// onBlockVerified update the lastVerified block in current state.
+// onBlockVerified update the latestVerified block in current state.
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
+	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
+
 	if event.BlockHash == (common.Hash{}) {
-		log.Info("Ignore BlockVerified event of invalid transaction list", "blockID", event.Id)
+		log.Info(
+			"New verified invalid block",
+			"blockID", event.Id,
+			"hash", common.BytesToHash(event.BlockHash[:]),
+		)
+
 		return nil
 	}
 
@@ -283,13 +294,13 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 	}
 
 	log.Info(
-		"New verified block",
+		"New verified valid block",
 		"blockID", event.Id,
 		"height", l2BlockHeader.Number,
 		"hash", common.BytesToHash(event.BlockHash[:]),
 	)
-	p.lastVerifiedHeader = l2BlockHeader
-	p.lastVerifiedL1Height = event.Raw.BlockNumber
+	p.latestVerifiedHeader = l2BlockHeader
+	p.latestVerifiedL1Height = event.Raw.BlockNumber
 
 	return nil
 }
