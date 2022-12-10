@@ -147,8 +147,8 @@ func (s *ProverTestSuite) TestOnBlockProposedTxNotFound() {
 func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 	s.Nil(s.p.onBlockVerified(context.Background(), &bindings.TaikoL1ClientBlockVerified{
 		Id:        common.Big1,
-		BlockHash: common.Hash{}}))
-
+		BlockHash: common.Hash{}},
+	))
 }
 
 func TestProverTestSuite(t *testing.T) {
