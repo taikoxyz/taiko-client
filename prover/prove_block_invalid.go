@@ -40,7 +40,7 @@ func (p *Prover) proveBlockInvalid(
 	}
 
 	if err := p.proofProducer.RequestProof(
-		proofOpts, event.Id, throwAwayBlock.Header(), p.proveInvalidProofCh,
+		proofOpts, event.Id, &event.Meta, throwAwayBlock.Header(), p.proveInvalidProofCh,
 	); err != nil {
 		return err
 	}
@@ -60,6 +60,7 @@ func (p *Prover) submitInvalidBlockProof(
 	log.Info(
 		"New invalid block proof",
 		"blockID", proofWithHeader.BlockID,
+		"meta", proofWithHeader.Meta,
 		"hash", proofWithHeader.Header.Hash(),
 		"proof", proofWithHeader.ZkProof,
 	)
@@ -67,6 +68,7 @@ func (p *Prover) submitInvalidBlockProof(
 		blockID = proofWithHeader.BlockID
 		header  = proofWithHeader.Header
 		zkProof = proofWithHeader.ZkProof
+		meta    = proofWithHeader.Meta
 	)
 
 	metrics.ProverReceivedProofCounter.Inc(1)
@@ -75,12 +77,6 @@ func (p *Prover) submitInvalidBlockProof(
 	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to fetch throwaway block: %w", err)
-	}
-
-	// Fetch the invalid block metadata
-	targetMeta, err := p.rpc.GetBlockMetadataByID(blockID)
-	if err != nil {
-		return fmt.Errorf("failed to fetch L2 block with given block ID %s: %w", blockID, err)
 	}
 
 	// Fetch the transaction receipts in that throwaway block.
@@ -113,9 +109,9 @@ func (p *Prover) submitInvalidBlockProof(
 
 	evidence := &encoding.TaikoL1Evidence{
 		Meta: bindings.LibDataBlockMetadata{
-			Id:          targetMeta.Id,
-			L1Height:    targetMeta.L1Height,
-			L1Hash:      targetMeta.L1Hash,
+			Id:          meta.Id,
+			L1Height:    meta.L1Height,
+			L1Hash:      meta.L1Hash,
 			Beneficiary: header.Coinbase,
 			GasLimit:    header.GasLimit - p.protocolConstants.AnchorTxGasLimit.Uint64(),
 			Timestamp:   header.Time,
@@ -128,7 +124,7 @@ func (p *Prover) submitInvalidBlockProof(
 		Proofs: proofs,
 	}
 
-	input, err := encoding.EncodeProveBlockInvalidInput(evidence, targetMeta, receipts[0])
+	input, err := encoding.EncodeProveBlockInvalidInput(evidence, meta, receipts[0])
 	if err != nil {
 		return err
 	}

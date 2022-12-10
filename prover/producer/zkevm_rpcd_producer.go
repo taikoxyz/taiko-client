@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 var (
@@ -33,12 +34,14 @@ func NewZkevmRpcdProducer(rpcdEndpoint string) (*ZkevmRpcdProducer, error) {
 func (d *ZkevmRpcdProducer) RequestProof(
 	opts *ProofRequestOptions,
 	blockID *big.Int,
+	meta *bindings.LibDataBlockMetadata,
 	header *types.Header,
 	resultCh chan *ProofWithHeader,
 ) error {
 	log.Info(
 		"Request proof from ZKEVM RPCD service",
 		"blockID", blockID,
+		"meta", meta,
 		"height", header.Number,
 		"hash", header.Hash(),
 	)
@@ -48,6 +51,7 @@ func (d *ZkevmRpcdProducer) RequestProof(
 		resultCh <- &ProofWithHeader{
 			BlockID: blockID,
 			Header:  header,
+			Meta:    meta,
 			ZkProof: []byte{0x00},
 		}
 	}()

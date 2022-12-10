@@ -23,14 +23,17 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 
 	// This should not be reached, only check for safety.
 	if l1Origin.Throwaway {
-		log.Crit("Get a block metadata with invalid transaction list", "l1Origin", l1Origin)
+		log.Error("Get a block metadata with invalid transaction list", "l1Origin", l1Origin)
+		return nil
 	}
 
+	// Get the header of the block to prove from L2 execution engine.
 	header, err := p.rpc.L2.HeaderByHash(ctx, l1Origin.L2BlockHash)
 	if err != nil {
 		return err
 	}
 
+	// Request proof.
 	opts := &producer.ProofRequestOptions{
 		Height:         header.Number,
 		L2NodeEndpoint: p.cfg.L2Endpoint,
@@ -38,7 +41,7 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 		Param:          p.cfg.ZkEvmRpcdParamsPath,
 	}
 
-	if err := p.proofProducer.RequestProof(opts, event.Id, header, p.proveValidProofCh); err != nil {
+	if err := p.proofProducer.RequestProof(opts, event.Id, &event.Meta, header, p.proveValidProofCh); err != nil {
 		return err
 	}
 
@@ -54,6 +57,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 	log.Info(
 		"New valid block proof",
 		"blockID", proofWithHeader.BlockID,
+		"meta", proofWithHeader.Meta,
 		"hash", proofWithHeader.Header.Hash(),
 		"proof", proofWithHeader.ZkProof,
 	)
@@ -65,11 +69,6 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 
 	metrics.ProverReceivedProofCounter.Inc(1)
 	metrics.ProverReceivedValidProofCounter.Inc(1)
-
-	meta, err := p.rpc.GetBlockMetadataByID(blockID)
-	if err != nil {
-		return fmt.Errorf("failed to fetch L2 block with given block ID %s: %w", blockID, err)
-	}
 
 	txOpts, err := p.getProveBlocksTxOpts(ctx, p.rpc.L1)
 	if err != nil {
@@ -129,7 +128,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 	proofs = append(proofs, [][]byte{anchorTxProof, anchorReceiptProof}...)
 
 	evidence := &encoding.TaikoL1Evidence{
-		Meta:   *meta,
+		Meta:   *proofWithHeader.Meta,
 		Header: *encoding.FromGethHeader(header),
 		Prover: crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey),
 		Proofs: proofs,

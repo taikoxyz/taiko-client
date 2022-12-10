@@ -128,21 +128,6 @@ func (c *Client) L2ParentByBlockId(ctx context.Context, blockID *big.Int) (*type
 	return c.L2.HeaderByNumber(ctx, common.Big0)
 }
 
-// GetBlockMetadataByID fetches the L2 block metadata with given block ID.
-// TODO: add start height and end height in filter options.
-func (c *Client) GetBlockMetadataByID(blockID *big.Int) (*bindings.LibDataBlockMetadata, error) {
-	iter, err := c.TaikoL1.FilterBlockProposed(nil, []*big.Int{blockID})
-	if err != nil {
-		return nil, err
-	}
-
-	for iter.Next() {
-		return &iter.Event.Meta, nil
-	}
-
-	return nil, fmt.Errorf("block metadata not found, id: %d", blockID)
-}
-
 // WaitL1Origin keeps waiting until the L1Origin with given block ID appears on the L2 node.
 func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1Origin, error) {
 	var (
