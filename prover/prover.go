@@ -23,10 +23,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var (
-	maxPendingProofs = 10
-)
-
 // Prover keep trying to prove new proposed blocks valid/invalid.
 type Prover struct {
 	// Configurations
@@ -223,7 +219,8 @@ func (p *Prover) onBlockProposed(
 	event *bindings.TaikoL1ClientBlockProposed,
 	end eventIterator.EndBlockProposeEventIterFunc,
 ) error {
-	if len(p.proveValidProofCh) > maxPendingProofs || len(p.proveInvalidProofCh) > maxPendingProofs {
+	// If there is newly generated proofs, we need to submit them at first.
+	if len(p.proveValidProofCh) > 0 || len(p.proveInvalidProofCh) > 0 {
 		end()
 		return nil
 	}
