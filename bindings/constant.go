@@ -3,6 +3,7 @@ package bindings
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -28,4 +29,27 @@ type ProtocolConstants struct {
 	TxListMaxBytes           *big.Int // uint256 K_TXLIST_MAX_BYTES
 	TxMinGasLimit            *big.Int // uint256 K_TX_MIN_GAS_LIMIT
 	AnchorTxGasLimit         *big.Int // uint256 K_ANCHOR_TX_GAS_LIMIT
+}
+
+// GetProtocolConstants gets the protocol constants from TaikoL1 contract.
+func GetProtocolConstants(taikoL1 *TaikoL1Client, opts *bind.CallOpts) (*ProtocolConstants, error) {
+	var (
+		constants = new(ProtocolConstants)
+		err       error
+	)
+
+	constants.ZKProofsPerBlock,
+		constants.ChainID,
+		constants.MaxNumBlocks,
+		constants.MaxVerificationsPerTx,
+		constants.CommitDelayConfirmations,
+		constants.MaxProofsPerForkChoice,
+		constants.BlockMaxGasLimit,
+		constants.BlockMaxTxs,
+		constants.TxListMaxBytes,
+		constants.TxMinGasLimit,
+		constants.AnchorTxGasLimit,
+		err = taikoL1.GetConstants(opts)
+
+	return constants, err
 }
