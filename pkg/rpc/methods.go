@@ -21,14 +21,14 @@ import (
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
 // and checks whether the fetched genesis is same to the node local genesis.
 func (c *Client) ensureGenesisMatched(ctx context.Context) error {
-	L1GenesisHeight, _, _, _, err := c.TaikoL1.GetStateVariables(nil)
+	stateVars, err := c.GetProtocolStateVariables(nil)
 	if err != nil {
 		return err
 	}
 
 	// Fetch the genesis `BlockVerified` event.
 	iter, err := c.TaikoL1.FilterBlockVerified(
-		&bind.FilterOpts{Start: L1GenesisHeight, End: &L1GenesisHeight},
+		&bind.FilterOpts{Start: stateVars.GenesisHeight, End: &stateVars.GenesisHeight},
 		[]*big.Int{common.Big0},
 	)
 	if err != nil {
@@ -94,12 +94,12 @@ func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, erro
 
 // GetGenesisL1Header fetches the L1 header that including L2 genesis block.
 func (c *Client) GetGenesisL1Header(ctx context.Context) (*types.Header, error) {
-	genesisHeight, _, _, _, err := c.TaikoL1.GetStateVariables(nil)
+	stateVars, err := c.GetProtocolStateVariables(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(genesisHeight))
+	return c.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(stateVars.GenesisHeight))
 }
 
 // L2ParentByBlockId fetches the block header from L2 node with the largest block id that
@@ -264,4 +264,20 @@ func (c *Client) GetProtocolConstants(opts *bind.CallOpts) (*bindings.ProtocolCo
 		err = c.TaikoL1.GetConstants(opts)
 
 	return constants, err
+}
+
+// GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
+func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*bindings.ProtocolStateVariables, error) {
+	var (
+		stateVars = new(bindings.ProtocolStateVariables)
+		err       error
+	)
+
+	stateVars.GenesisHeight,
+		stateVars.LatestVerifiedHeight,
+		stateVars.LatestVerifiedID,
+		stateVars.NextBlockID,
+		err = c.TaikoL1.GetStateVariables(opts)
+
+	return stateVars, err
 }

@@ -313,17 +313,17 @@ func (p *Prover) getProveBlocksTxOpts(ctx context.Context, cli *ethclient.Client
 
 // initL1Current initializes prover's L1Current cursor.
 func (p *Prover) initL1Current() error {
-	_, _, latestVerifiedID, _, err := p.rpc.TaikoL1.GetStateVariables(nil)
+	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
 	if err != nil {
 		return err
 	}
 
-	if latestVerifiedID == 0 {
+	if stateVars.LatestVerifiedID == 0 {
 		p.l1Current = 0
 		return nil
 	}
 
-	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, new(big.Int).SetUint64(latestVerifiedID))
+	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, new(big.Int).SetUint64(stateVars.LatestVerifiedID))
 	if err != nil {
 		return err
 	}
@@ -334,12 +334,12 @@ func (p *Prover) initL1Current() error {
 
 // isBlockVerified checks whether the given block has been verified by other provers.
 func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
-	_, _, latestVerifiedID, _, err := p.rpc.TaikoL1.GetStateVariables(nil)
+	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
 	if err != nil {
 		return false, err
 	}
 
-	return id.Uint64() <= latestVerifiedID, nil
+	return id.Uint64() <= stateVars.LatestVerifiedID, nil
 }
 
 // isProvenByCurrentProver checks whether the L2 block has been already proven by current prover.
