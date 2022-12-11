@@ -83,7 +83,7 @@ func (s *BeaconSyncProgressTracker) track(ctx context.Context) {
 	defer func() { s.lastSyncProgress = progress }()
 
 	// Check whether the L2 execution engine has synced any new block through P2P since last event loop.
-	if Progressed(s.lastSyncProgress, progress) {
+	if syncProgressed(s.lastSyncProgress, progress) {
 		s.outOfSync = false
 		s.lastProgressedTime = time.Now()
 		return
@@ -122,7 +122,7 @@ func (s *BeaconSyncProgressTracker) HeadChanged(newID *big.Int) bool {
 	defer s.mutex.RUnlock()
 
 	if !s.triggered {
-		return false
+		return true
 	}
 
 	return s.lastSyncedVerifiedBlockID != nil && s.lastSyncedVerifiedBlockID != newID
@@ -136,8 +136,32 @@ func (s *BeaconSyncProgressTracker) OutOfSync() bool {
 	return s.outOfSync
 }
 
-// Progressed checks whether there is any new progress since last sync progress check.
-func Progressed(last *ethereum.SyncProgress, new *ethereum.SyncProgress) bool {
+// Triggered returns tracker.triggered.
+func (s *BeaconSyncProgressTracker) Triggered() bool {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	return s.triggered
+}
+
+// LastSyncedVerifiedBlockID returns tracker.lastSyncedVerifiedBlockID.
+func (s *BeaconSyncProgressTracker) LastSyncedVerifiedBlockID() *big.Int {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	return s.lastSyncedVerifiedBlockID
+}
+
+// LastSyncedVerifiedBlockHash returns tracker.lastSyncedVerifiedBlockHash.
+func (s *BeaconSyncProgressTracker) LastSyncedVerifiedBlockHash() common.Hash {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	return s.lastSyncedVerifiedBlockHash
+}
+
+// syncProgressed checks whether there is any new progress since last sync progress check.
+func syncProgressed(last *ethereum.SyncProgress, new *ethereum.SyncProgress) bool {
 	if last == nil {
 		return true
 	}

@@ -110,7 +110,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 
 	// We have triggered at least a beacon sync in L2 execution engine, we should reset the L1Current
 	// cursor at first, before start inserting pending L2 blocks one by one.
-	if s.syncProgressTracker.triggered {
+	if s.syncProgressTracker.Triggered() {
 		log.Info(
 			"Switch to insert pending blocks one by one",
 			"p2pEnabled", s.p2pSyncVerifiedBlocks,
@@ -145,8 +145,8 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		}
 
 		// If the L2 execution engine has synced to latest verified block.
-		if l2HeadHash == s.syncProgressTracker.lastSyncedVerifiedBlockHash {
-			heightOrID.ID = s.syncProgressTracker.lastSyncedVerifiedBlockID
+		if l2HeadHash == s.syncProgressTracker.LastSyncedVerifiedBlockHash() {
+			heightOrID.ID = s.syncProgressTracker.LastSyncedVerifiedBlockID()
 		}
 
 		// Reset the L1Current cursor.
@@ -155,9 +155,8 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 			return err
 		}
 
-		// Reset to latest L2 execution engine's chain status.
-		s.syncProgressTracker.lastSyncedVerifiedBlockID = blockID
-		s.syncProgressTracker.lastSyncedVerifiedBlockHash = l2HeadHash
+		// Reset to the latest L2 execution engine's chain status.
+		s.syncProgressTracker.UpdateMeta(blockID, l2HeadHash)
 	}
 
 	// Insert the proposed block one by one.

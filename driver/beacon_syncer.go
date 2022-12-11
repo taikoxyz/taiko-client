@@ -16,19 +16,19 @@ import (
 
 // TriggerBeaconSync triggers the L2 execution engine to start performing a beacon sync.
 func (s *L2ChainSyncer) TriggerBeaconSync() error {
-	blockID, lastVerifiedHeadPayload, err := s.getVerifiedBlockPayload(s.ctx)
+	blockID, latestVerifiedHeadPayload, err := s.getVerifiedBlockPayload(s.ctx)
 	if err != nil {
 		return err
 	}
 
 	if !s.syncProgressTracker.HeadChanged(blockID) {
-		log.Debug("Verified head has not changed", "blockID", blockID, "hash", lastVerifiedHeadPayload.BlockHash)
+		log.Debug("Verified head has not changed", "blockID", blockID, "hash", latestVerifiedHeadPayload.BlockHash)
 		return nil
 	}
 
 	status, err := s.rpc.L2Engine.NewPayload(
 		s.ctx,
-		lastVerifiedHeadPayload,
+		latestVerifiedHeadPayload,
 	)
 	if err != nil {
 		return err
@@ -38,9 +38,9 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	}
 
 	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &beacon.ForkchoiceStateV1{
-		HeadBlockHash:      lastVerifiedHeadPayload.BlockHash,
-		SafeBlockHash:      lastVerifiedHeadPayload.BlockHash,
-		FinalizedBlockHash: lastVerifiedHeadPayload.BlockHash,
+		HeadBlockHash:      latestVerifiedHeadPayload.BlockHash,
+		SafeBlockHash:      latestVerifiedHeadPayload.BlockHash,
+		FinalizedBlockHash: latestVerifiedHeadPayload.BlockHash,
 	}, nil)
 	if err != nil {
 		return err
@@ -50,13 +50,13 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	}
 
 	// Update sync status.
-	s.syncProgressTracker.UpdateMeta(blockID, lastVerifiedHeadPayload.BlockHash)
+	s.syncProgressTracker.UpdateMeta(blockID, latestVerifiedHeadPayload.BlockHash)
 
 	log.Info(
 		"⛓️ Beacon-sync triggered",
 		"newHeadID", blockID,
-		"newHeadHeight", lastVerifiedHeadPayload.Number,
-		"newHeadHash", s.syncProgressTracker.lastSyncedVerifiedBlockHash,
+		"newHeadHeight", latestVerifiedHeadPayload.Number,
+		"newHeadHash", s.syncProgressTracker.LastSyncedVerifiedBlockHash(),
 	)
 
 	return nil
@@ -66,23 +66,24 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 // which will be used to let the node to start beacon syncing.
 func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *beacon.ExecutableDataV1, error) {
 	var (
-		proveBlockTxHash  common.Hash
-		lastVerifiedBlock = s.state.getLastVerifiedBlock()
+		proveBlockTxHash    common.Hash
+		latestVerifiedBlock = s.state.getLastVerifiedBlock()
 	)
 
+	// Get the latest verified block's corresponding BlockProven event.
 	iter, err := eventIterator.NewBlockProvenIterator(s.ctx, &eventIterator.BlockProvenIteratorConfig{
 		Client:      s.rpc.L1,
 		TaikoL1:     s.rpc.TaikoL1,
 		StartHeight: s.state.genesisL1Height,
 		EndHeight:   s.state.GetL1Head().Number,
-		FilterQuery: []*big.Int{lastVerifiedBlock.ID},
+		FilterQuery: []*big.Int{latestVerifiedBlock.ID},
 		Reverse:     true,
 		OnBlockProvenEvent: func(
 			ctx context.Context,
 			e *bindings.TaikoL1ClientBlockProven,
 			endIter eventIterator.EndBlockProvenEventIterFunc,
 		) error {
-			if bytes.Equal(e.BlockHash[:], lastVerifiedBlock.Hash.Bytes()) {
+			if bytes.Equal(e.BlockHash[:], latestVerifiedBlock.Hash.Bytes()) {
 				log.Info(
 					"Last verified block's BlockProven event found",
 					"height", e.Raw.BlockNumber,
@@ -105,11 +106,12 @@ func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, 
 
 	if proveBlockTxHash == (common.Hash{}) {
 		return nil, nil, fmt.Errorf(
-			"failed to find L1 height of last verified block's ProveBlock transaction, id: %s",
-			lastVerifiedBlock.ID,
+			"failed to find L1 height of latest verified block's ProveBlock transaction, id: %s",
+			latestVerifiedBlock.ID,
 		)
 	}
 
+	// Get the latest verfiied block's header, then convert it to ExecutableDataV1.
 	proveBlockTx, _, err := s.rpc.L1.TransactionByHash(s.ctx, proveBlockTxHash)
 	if err != nil {
 		return nil, nil, err
@@ -122,11 +124,13 @@ func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, 
 
 	header := encoding.ToGethHeader(evidenceHeader)
 
-	if header.Hash() != lastVerifiedBlock.Hash {
-		return nil, nil, fmt.Errorf("last verified block hash mismatch: %s != %s", header.Hash(), lastVerifiedBlock.Hash)
+	if header.Hash() != latestVerifiedBlock.Hash {
+		return nil, nil, fmt.Errorf(
+			"latest verified block hash mismatch: %s != %s", header.Hash(), latestVerifiedBlock.Hash,
+		)
 	}
 
-	log.Info("Last verified block header retrieved", "hash", header.Hash())
+	log.Info("Latest verified block header retrieved", "hash", header.Hash())
 
-	return lastVerifiedBlock.ID, encoding.ToExecutableDataV1(header), nil
+	return latestVerifiedBlock.ID, encoding.ToExecutableDataV1(header), nil
 }
