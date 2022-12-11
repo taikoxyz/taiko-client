@@ -53,6 +53,7 @@ L2_GENESIS_ALLOC=$(cat $DIR/deployments/mainnet.json)
 
 TAIKO_L2_CONTRACT_ADDRESS=$(echo $L2_GENESIS_ALLOC | jq 'to_entries[] | select(.value.contractName=="TaikoL2") | .key' | sed 's/\"//g')
 
+# Deploy Taiko protocol.
 cd $TAIKO_MONO_DIR/packages/protocol &&
     LOG_LEVEL=debug \
     PRIVATE_KEY=0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
