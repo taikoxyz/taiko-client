@@ -26,6 +26,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
 		&cli.StringFlag{Name: flags.ThrowawayBlocksBuilderPrivKey.Name},
 		&cli.StringFlag{Name: flags.JWTSecret.Name},
+		&cli.UintFlag{Name: flags.P2PSyncTimeout.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
