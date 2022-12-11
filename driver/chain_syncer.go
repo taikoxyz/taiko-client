@@ -130,6 +130,8 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		}
 
 		heightOrID := &HeightOrID{Height: l2Head.Number}
+		// If there is a block hash mismatch, maybe because of the L2 execution engine connected to a wrong peer,
+		// log the error and then try to re-sync from genesis one by one.
 		if l2Head.Hash() != l2HeadHash {
 			log.Error(
 				"L2 block hash mismatch, re-sync from genesis",
