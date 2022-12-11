@@ -3,6 +3,7 @@ package driver
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -21,6 +22,7 @@ type Config struct {
 	ThrowawayBlocksBuilderPrivKey *ecdsa.PrivateKey
 	JwtSecret                     string
 	P2PSyncVerifiedBlocks         bool
+	P2PSyncTimeout                time.Duration
 }
 
 // NewConfigFromCliContext creates a new config instance from
@@ -37,13 +39,14 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	return &Config{
-		L1Endpoint:                    c.String(flags.L1NodeEndpoint.Name),
-		L2Endpoint:                    c.String(flags.L2NodeEndpoint.Name),
-		L2EngineEndpoint:              c.String(flags.L2NodeEngineEndpoint.Name),
+		L1Endpoint:                    c.String(flags.L1WSEndpoint.Name),
+		L2Endpoint:                    c.String(flags.L2WSEndpoint.Name),
+		L2EngineEndpoint:              c.String(flags.L2AuthEndpoint.Name),
 		TaikoL1Address:                common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		ThrowawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
 		JwtSecret:                     string(jwtSecret),
 		P2PSyncVerifiedBlocks:         c.Bool(flags.P2PSyncVerifiedBlocks.Name),
+		P2PSyncTimeout:                time.Duration(int64(time.Second) * int64(c.Uint(flags.P2PSyncTimeout.Name))),
 	}, nil
 }

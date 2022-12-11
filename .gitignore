@@ -20,4 +20,4 @@ coverage.out
 .vscode
 
 # Testing
-integration_test/testnet/deployments/mainnet.json
+integration_test/nodes/deployments/mainnet.json

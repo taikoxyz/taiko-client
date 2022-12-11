@@ -12,15 +12,15 @@ import (
 	chainIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator"
 )
 
-// EndBlockProposeEventIterFunc ends the current iteration.
-type EndBlockProposeEventIterFunc func()
+// EndBlockProposedEventIterFunc ends the current iteration.
+type EndBlockProposedEventIterFunc func()
 
 // OnBlockProposedEvent represents the callback function which will be called when a TaikoL1.BlockProposed event is
 // iterated.
 type OnBlockProposedEvent func(
 	context.Context,
 	*bindings.TaikoL1ClientBlockProposed,
-	EndBlockProposeEventIterFunc,
+	EndBlockProposedEventIterFunc,
 ) error
 
 // BlockProposedIterator iterates the emitted TaikoL1.BlockProposed events in the chain,

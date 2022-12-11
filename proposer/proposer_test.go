@@ -51,7 +51,7 @@ func (s *ProposerTestSuite) SetupTest() {
 
 	s.Nil(InitFromConfig(context.Background(), p, (&Config{
 		L1Endpoint:              os.Getenv("L1_NODE_ENDPOINT"),
-		L2Endpoint:              os.Getenv("L2_NODE_ENDPOINT"),
+		L2Endpoint:              os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
 		TaikoL1Address:          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:          common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L1ProposerPrivKey:       l1ProposerPrivKey,
@@ -81,7 +81,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	// Nothing to propose
 	s.Nil(s.p.ProposeOp(context.Background()))
 
-	// Propose txs in L2 node's mempool
+	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
 	sub, err := s.p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil)

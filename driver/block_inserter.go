@@ -26,31 +26,32 @@ import (
 func (s *L2ChainSyncer) onBlockProposed(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
-	endIter eventIterator.EndBlockProposeEventIterFunc,
+	endIter eventIterator.EndBlockProposedEventIterFunc,
 ) error {
+	// No need to insert genesis again, its already in L2 block chain.
+	if event.Id.Cmp(common.Big0) == 0 {
+		return nil
+	}
+
 	log.Info(
 		"New BlockProposed event",
 		"L1Height", event.Raw.BlockNumber,
 		"L1Hash", event.Raw.BlockHash,
 		"BlockID", event.Id,
 	)
-	// No need to insert genesis again, its already in L2 block chain.
-	if event.Id.Cmp(common.Big0) == 0 {
-		return nil
-	}
 
 	// Fetch the L2 parent block.
 	var (
 		parent *types.Header
 		err    error
 	)
-	if s.beaconSyncTriggered {
-		// Already synced through beacon-sync, just skip this event.
-		if event.Id.Cmp(s.lastSyncedVerifiedBlockID) <= 0 {
+	if s.syncProgressTracker.triggered {
+		// Already synced through beacon sync, just skip this event.
+		if event.Id.Cmp(s.syncProgressTracker.lastSyncedVerifiedBlockID) <= 0 {
 			return nil
 		}
 
-		parent, err = s.rpc.L2.HeaderByHash(ctx, s.lastSyncedVerifiedBlockHash)
+		parent, err = s.rpc.L2.HeaderByHash(ctx, s.syncProgressTracker.lastSyncedVerifiedBlockHash)
 	} else {
 		parent, err = s.rpc.L2ParentByBlockId(ctx, event.Id)
 	}
@@ -125,7 +126,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 
 	// RPC errors are recoverable.
 	if rpcError != nil {
-		return fmt.Errorf("failed to insert new head to L2 node: %w", rpcError)
+		return fmt.Errorf("failed to insert new head to L2 execution engine: %w", rpcError)
 	}
 
 	if payloadError != nil {
@@ -150,14 +151,14 @@ func (s *L2ChainSyncer) onBlockProposed(
 
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
 
-	if !l1Origin.Throwaway && s.beaconSyncTriggered {
-		s.beaconSyncTriggered = false
+	if !l1Origin.Throwaway && s.syncProgressTracker.triggered {
+		s.syncProgressTracker.ClearMeta()
 	}
 
 	return nil
 }
 
-// insertNewHead tries to insert a new head block to the L2 node's local
+// insertNewHead tries to insert a new head block to the L2 execution engine's local
 // block chain through Engine APIs.
 func (s *L2ChainSyncer) insertNewHead(
 	ctx context.Context,
@@ -230,7 +231,7 @@ func (s *L2ChainSyncer) insertNewHead(
 	return payload, nil, nil
 }
 
-// insertThrowAwayBlock tries to insert a throw away block to the L2 node's local
+// insertThrowAwayBlock tries to insert a throw away block to the L2 execution engine's local
 // block chain through Engine APIs.
 func (s *L2ChainSyncer) insertThrowAwayBlock(
 	ctx context.Context,

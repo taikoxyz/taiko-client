@@ -23,7 +23,7 @@ const (
 	ReorgRollbackDepth = 20
 )
 
-// Driver keeps the L2 node's local block chain in sync with the TaikoL1
+// Driver keeps the L2 execution engine's local block chain in sync with the TaikoL1
 // contract.
 type Driver struct {
 	rpc           *rpc.Client
@@ -87,7 +87,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 	}
 
 	if cfg.P2PSyncVerifiedBlocks && peers == 0 {
-		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 node")
+		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
 	}
 
 	if d.l2ChainSyncer, err = NewL2ChainSyncer(
@@ -96,6 +96,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		d.state,
 		cfg.ThrowawayBlocksBuilderPrivKey,
 		cfg.P2PSyncVerifiedBlocks,
+		cfg.P2PSyncTimeout,
 	); err != nil {
 		return err
 	}
@@ -119,7 +120,7 @@ func (d *Driver) Close() {
 	d.wg.Wait()
 }
 
-// eventLoop starts the main loop of L2 node's chain driver.
+// eventLoop starts the main loop of a L2 execution engine's driver.
 func (d *Driver) eventLoop() {
 	defer d.wg.Done()
 	exponentialBackoff := backoff.NewExponentialBackOff()
@@ -136,7 +137,7 @@ func (d *Driver) eventLoop() {
 	// doSyncWithBackoff performs a synchronising operation with a backoff strategy.
 	doSyncWithBackoff := func() {
 		if err := backoff.Retry(d.doSync, exponentialBackoff); err != nil {
-			log.Error("Sync L2 node's block chain error", "error", err)
+			log.Error("Sync L2 execution engine's block chain error", "error", err)
 		}
 	}
 

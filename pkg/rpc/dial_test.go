@@ -19,7 +19,7 @@ func TestDialEngineClientWithBackoff(t *testing.T) {
 
 	client, err := DialEngineClientWithBackoff(
 		context.Background(),
-		os.Getenv("L2_NODE_ENGINE_ENDPOINT"),
+		os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		string(jwtSecret),
 	)
 
@@ -32,7 +32,7 @@ func TestDialEngineClientWithBackoff(t *testing.T) {
 }
 
 func TestDialClientWithBackoff(t *testing.T) {
-	client, err := DialClientWithBackoff(context.Background(), os.Getenv("L2_NODE_ENDPOINT"))
+	client, err := DialClientWithBackoff(context.Background(), os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"))
 	require.Nil(t, err)
 
 	genesis, err := client.HeaderByNumber(context.Background(), common.Big0)

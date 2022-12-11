@@ -22,7 +22,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// Proposer keep proposing new transactions from L2 node's tx pool at a fixed interval.
+// Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
 type Proposer struct {
 	// RPC clients
 	rpc *rpc.Client
@@ -150,7 +150,7 @@ type commitTxListRes struct {
 }
 
 // ProposeOp performs a proposing operation, fetching transactions
-// from L2 node's tx pool, splitting them by proposing constraints,
+// from L2 execution engine's tx pool, splitting them by proposing constraints,
 // and then proposing them to TaikoL1 contract.
 func (p *Proposer) ProposeOp(ctx context.Context) error {
 	if p.CustomProposeOpHook != nil {
@@ -158,10 +158,10 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	}
 	syncProgress, err := p.rpc.L2.SyncProgress(ctx)
 	if err != nil || syncProgress != nil {
-		return fmt.Errorf("l2 node is syncing: %w, syncProgress: %v", err, syncProgress)
+		return fmt.Errorf("l2 execution engine is syncing: %w, syncProgress: %v", err, syncProgress)
 	}
 
-	log.Info("Start fetching L2 node's transaction pool content")
+	log.Info("Start fetching L2 execution engine's transaction pool content")
 
 	pendingContent, _, err := p.rpc.L2PoolContent(ctx)
 	if err != nil {

@@ -32,7 +32,7 @@ func (p *Prover) validateAnchorTx(ctx context.Context, tx *types.Transaction) er
 	return nil
 }
 
-// getAndValidateAnchorTxReceipt gets and validate the `TaikoL2.anchor` transaction's receipt.
+// getAndValidateAnchorTxReceipt gets and validates the `TaikoL2.anchor` transaction's receipt.
 func (p *Prover) getAndValidateAnchorTxReceipt(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
 	receipt, err := p.rpc.L2.TransactionReceipt(ctx, tx.Hash())
 	if err != nil {

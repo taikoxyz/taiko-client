@@ -37,8 +37,8 @@ func (s *DriverTestSuite) SetupTest() {
 	d := new(Driver)
 	s.Nil(InitFromConfig(context.Background(), d, &Config{
 		L1Endpoint:                    os.Getenv("L1_NODE_ENDPOINT"),
-		L2Endpoint:                    os.Getenv("L2_NODE_ENDPOINT"),
-		L2EngineEndpoint:              os.Getenv("L2_NODE_ENGINE_ENDPOINT"),
+		L2Endpoint:                    os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
+		L2EngineEndpoint:              os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		TaikoL1Address:                common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:                common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		ThrowawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
@@ -54,7 +54,7 @@ func (s *DriverTestSuite) SetupTest() {
 
 	s.Nil(proposer.InitFromConfig(context.Background(), p, (&proposer.Config{
 		L1Endpoint:              os.Getenv("L1_NODE_ENDPOINT"),
-		L2Endpoint:              os.Getenv("L2_NODE_ENDPOINT"),
+		L2Endpoint:              os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
 		TaikoL1Address:          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:          common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L1ProposerPrivKey:       l1ProposerPrivKey,
