@@ -23,7 +23,7 @@ var (
 	}
 	L2Endpoint = cli.StringFlag{
 		Name:     "l2",
-		Usage:    "Websocket RPC endpoint of a taiko-geth execution engine",
+		Usage:    "Websocket RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
 	}
