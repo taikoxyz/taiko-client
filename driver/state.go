@@ -37,7 +37,7 @@ type State struct {
 	l1HeadsFeed event.Feed // L1 new heads notification feed
 
 	l1Head         *atomic.Value // Latest known L1 head
-	l2Head         *atomic.Value // Current L2 node head
+	l2Head         *atomic.Value // Current L2 execution engine's local chain head
 	l2HeadBlockID  *atomic.Value // Latest known L2 block ID
 	l2VerifiedHead *atomic.Value // Latest known L2 verified head
 	l1Current      *types.Header // Current L1 block sync cursor
@@ -355,7 +355,7 @@ func (s *State) SubL1HeadsFeed(ch chan *types.Header) event.Subscription {
 	return s.l1HeadsFeed.Subscribe(ch)
 }
 
-// VerifyL2Block checks whether the given block is in L2 node's local chain.
+// VerifyL2Block checks whether the given block is in L2 execution engine's local chain.
 func (s *State) VerifyL2Block(ctx context.Context, protocolBlockHash common.Hash) error {
 	header, err := s.rpc.L2.HeaderByHash(ctx, protocolBlockHash)
 	if err != nil {
@@ -366,8 +366,8 @@ func (s *State) VerifyL2Block(ctx context.Context, protocolBlockHash common.Hash
 		log.Crit(
 			"Verified block hash mismatch",
 			"protocolBlockHash", protocolBlockHash,
-			"L2 node block number", header.Number,
-			"L2 node block hash", header.Hash(),
+			"block number in L2 execution engine", header.Number,
+			"block hash in L2 execution engine", header.Hash(),
 		)
 	}
 

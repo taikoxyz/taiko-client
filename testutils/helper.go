@@ -89,7 +89,7 @@ func ProposeAndInsertEmptyBlocks(
 }
 
 // ProposeAndInsertThrowawayBlock proposes an invalid tx list and then insert it
-// into L2 node's local chain.
+// into L2 execution engine's local chain.
 func ProposeAndInsertThrowawayBlock(
 	s *ClientTestSuite,
 	proposer Proposer,
@@ -140,7 +140,7 @@ func ProposeAndInsertThrowawayBlock(
 }
 
 // ProposeAndInsertValidBlock proposes an valid tx list and then insert it
-// into L2 node's local chain.
+// into L2 execution engine's local chain.
 func ProposeAndInsertValidBlock(
 	s *ClientTestSuite,
 	proposer Proposer,
@@ -152,7 +152,7 @@ func ProposeAndInsertValidBlock(
 	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	// Propose txs in L2 node's mempool
+	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
 	sub, err := s.RpcClient.TaikoL1.WatchBlockProposed(nil, sink, nil)

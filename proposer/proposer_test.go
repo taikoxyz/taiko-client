@@ -81,7 +81,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	// Nothing to propose
 	s.Nil(s.p.ProposeOp(context.Background()))
 
-	// Propose txs in L2 node's mempool
+	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
 	sub, err := s.p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil)

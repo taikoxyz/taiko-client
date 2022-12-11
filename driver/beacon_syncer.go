@@ -14,7 +14,7 @@ import (
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 )
 
-// TriggerBeaconSync triggers the L2 node to start performing a beacon sync.
+// TriggerBeaconSync triggers the L2 execution engine to start performing a beacon sync.
 func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	blockID, lastVerifiedHeadPayload, err := s.getVerifiedBlockPayload(s.ctx)
 	if err != nil {

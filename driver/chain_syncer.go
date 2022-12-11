@@ -79,9 +79,9 @@ func NewL2ChainSyncer(
 	}, nil
 }
 
-// Sync performs a sync operation to L2 node's local chain.
+// Sync performs a sync operation to L2 execution engine's local chain.
 func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
-	// If current L2 node's chain is behind of the protocol's latest verified block head, and the
+	// If current L2 execution engine's chain is behind of the protocol's latest verified block head, and the
 	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
 	// latest verified block head.
 	if s.p2pSyncVerifiedBlocks &&
@@ -131,7 +131,7 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 }
 
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
-// L1 block heights, and then tries inserting them into L2 node's block chain.
+// L1 block heights, and then tries inserting them into L2 execution engine's block chain.
 func (s *L2ChainSyncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
 	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
 		Client:               s.rpc.L1,

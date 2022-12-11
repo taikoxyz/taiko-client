@@ -35,10 +35,10 @@ func (p *Prover) proveBlockInvalid(
 
 	// Request proof.
 	proofOpts := &producer.ProofRequestOptions{
-		Height:         throwAwayBlock.Header().Number,
-		L2NodeEndpoint: p.cfg.L2Endpoint,
-		Retry:          false,
-		Param:          p.cfg.ZkEvmRpcdParamsPath,
+		Height:     throwAwayBlock.Header().Number,
+		L2Endpoint: p.cfg.L2Endpoint,
+		Retry:      false,
+		Param:      p.cfg.ZkEvmRpcdParamsPath,
 	}
 
 	if err := p.proofProducer.RequestProof(

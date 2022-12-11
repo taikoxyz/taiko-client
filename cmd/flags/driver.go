@@ -8,7 +8,7 @@ import (
 var (
 	L2NodeEngineEndpoint = cli.StringFlag{
 		Name:     "l2.engine",
-		Usage:    "Engine API RPC endpoint of a L2 ethereum node",
+		Usage:    "Engine API RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: driverCategory,
 	}
@@ -30,8 +30,9 @@ var (
 // Optional flags used by driver.
 var (
 	P2PSyncVerifiedBlocks = cli.BoolFlag{
-		Name:     "p2p.syncVerifiedBlocks",
-		Usage:    "Try P2P syncing verified blocks between L2 nodes, will be helpful to bring a new node online quickly",
+		Name: "p2p.syncVerifiedBlocks",
+		Usage: "Try P2P syncing verified blocks between L2 execution engines, " +
+			"will be helpful to bring a new node online quickly",
 		Value:    false,
 		Category: driverCategory,
 	}

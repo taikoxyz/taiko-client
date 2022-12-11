@@ -125,7 +125,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 
 	// RPC errors are recoverable.
 	if rpcError != nil {
-		return fmt.Errorf("failed to insert new head to L2 node: %w", rpcError)
+		return fmt.Errorf("failed to insert new head to L2 execution engine: %w", rpcError)
 	}
 
 	if payloadError != nil {
@@ -157,7 +157,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 	return nil
 }
 
-// insertNewHead tries to insert a new head block to the L2 node's local
+// insertNewHead tries to insert a new head block to the L2 execution engine's local
 // block chain through Engine APIs.
 func (s *L2ChainSyncer) insertNewHead(
 	ctx context.Context,
@@ -230,7 +230,7 @@ func (s *L2ChainSyncer) insertNewHead(
 	return payload, nil, nil
 }
 
-// insertThrowAwayBlock tries to insert a throw away block to the L2 node's local
+// insertThrowAwayBlock tries to insert a throw away block to the L2 execution engine's local
 // block chain through Engine APIs.
 func (s *L2ChainSyncer) insertThrowAwayBlock(
 	ctx context.Context,
