@@ -80,9 +80,7 @@ func (s *BeaconSyncProgressTracker) track(ctx context.Context) {
 
 	log.Info("L2 execution engine sync progress", "progress", progress)
 
-	defer func() {
-		s.lastSyncProgress = progress
-	}()
+	defer func() { s.lastSyncProgress = progress }()
 
 	// Check whether the L2 execution engine has synced any new block through P2P since last event loop.
 	if Progressed(s.lastSyncProgress, progress) {
@@ -92,7 +90,7 @@ func (s *BeaconSyncProgressTracker) track(ctx context.Context) {
 	}
 
 	// Has not synced any new block since last loop, check whether reaching the timeout.
-	if time.Now().Sub(s.lastProgressedTime) > s.timeout {
+	if time.Since(s.lastProgressedTime) > s.timeout {
 		// Mark the L2 execution engine out of sync.
 		s.outOfSync = true
 	}
