@@ -143,7 +143,7 @@ func (p *Prover) submitInvalidBlockProof(
 	if err := backoff.Retry(func() error {
 		tx, err := p.rpc.TaikoL1.ProveBlockInvalid(txOpts, blockID, input)
 		if err != nil {
-			if IsSubmitProofTxErrorRetryable(err) {
+			if isSubmitProofTxErrorRetryable(err) {
 				log.Warn("Retry sending TaikoL1.proveBlockInvalid transaction", "error", err)
 				return err
 			}

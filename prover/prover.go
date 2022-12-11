@@ -375,9 +375,9 @@ func (p *Prover) isProvenByCurrentProver(id *big.Int) (bool, error) {
 	return false, nil
 }
 
-// IsSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
+// isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
-func IsSubmitProofTxErrorRetryable(err error) bool {
+func isSubmitProofTxErrorRetryable(err error) bool {
 	// Not an error returned by eth_estimateGas.
 	if !strings.Contains(err.Error(), "L1:") {
 		return true

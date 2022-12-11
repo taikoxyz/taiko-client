@@ -2,6 +2,7 @@ package prover
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -149,6 +150,14 @@ func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 		Id:        common.Big1,
 		BlockHash: common.Hash{}},
 	))
+}
+
+func (s *ProverTestSuite) TestIsSubmitProofTxErrorRetryable() {
+	s.True(isSubmitProofTxErrorRetryable(errors.New(testAddr.String())))
+	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:proof:tooMany")))
+	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:tooLate")))
+	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:prover:dup")))
+	s.True(isSubmitProofTxErrorRetryable(errors.New("L1:" + testAddr.String())))
 }
 
 func TestProverTestSuite(t *testing.T) {
