@@ -44,13 +44,13 @@ func (s *L2ChainSyncer) onBlockProposed(
 		parent *types.Header
 		err    error
 	)
-	if s.syncStatus.triggered {
-		// Already synced through beacon-sync, just skip this event.
-		if event.Id.Cmp(s.syncStatus.lastSyncedVerifiedBlockID) <= 0 {
+	if s.syncProgressTracker.triggered {
+		// Already synced through beacon sync, just skip this event.
+		if event.Id.Cmp(s.syncProgressTracker.lastSyncedVerifiedBlockID) <= 0 {
 			return nil
 		}
 
-		parent, err = s.rpc.L2.HeaderByHash(ctx, s.syncStatus.lastSyncedVerifiedBlockHash)
+		parent, err = s.rpc.L2.HeaderByHash(ctx, s.syncProgressTracker.lastSyncedVerifiedBlockHash)
 	} else {
 		parent, err = s.rpc.L2ParentByBlockId(ctx, event.Id)
 	}
@@ -150,8 +150,8 @@ func (s *L2ChainSyncer) onBlockProposed(
 
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
 
-	if !l1Origin.Throwaway && s.syncStatus.triggered {
-		s.syncStatus.Reset()
+	if !l1Origin.Throwaway && s.syncProgressTracker.triggered {
+		s.syncProgressTracker.ResetMeta()
 	}
 
 	return nil
