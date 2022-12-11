@@ -6,12 +6,59 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/taikoxyz/taiko-client/bindings"
 )
+
+// GetProtocolConstants gets the protocol constants from TaikoL1 contract.
+func GetProtocolConstants(
+	taikoL1Client *bindings.TaikoL1Client,
+	opts *bind.CallOpts,
+) (*bindings.ProtocolConstants, error) {
+	var (
+		constants = new(bindings.ProtocolConstants)
+		err       error
+	)
+
+	constants.ZKProofsPerBlock,
+		constants.ChainID,
+		constants.MaxNumBlocks,
+		constants.MaxVerificationsPerTx,
+		constants.CommitDelayConfirmations,
+		constants.MaxProofsPerForkChoice,
+		constants.BlockMaxGasLimit,
+		constants.BlockMaxTxs,
+		constants.TxListMaxBytes,
+		constants.TxMinGasLimit,
+		constants.AnchorTxGasLimit,
+		err = taikoL1Client.GetConstants(opts)
+
+	return constants, err
+}
+
+// GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
+func GetProtocolStateVariables(
+	taikoL1Client *bindings.TaikoL1Client,
+	opts *bind.CallOpts,
+) (*bindings.ProtocolStateVariables, error) {
+	var (
+		stateVars = new(bindings.ProtocolStateVariables)
+		err       error
+	)
+
+	stateVars.GenesisHeight,
+		stateVars.LatestVerifiedHeight,
+		stateVars.LatestVerifiedID,
+		stateVars.NextBlockID,
+		err = taikoL1Client.GetStateVariables(opts)
+
+	return stateVars, err
+}
 
 // WaitConfirmations won't return before N blocks confirmations have been seen
 // on destination chain.

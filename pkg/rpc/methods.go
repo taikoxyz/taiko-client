@@ -245,39 +245,10 @@ func (c *Client) IsProposerWhitelisted(proposer common.Address) (bool, error) {
 
 // GetProtocolConstants gets the protocol constants from TaikoL1 contract.
 func (c *Client) GetProtocolConstants(opts *bind.CallOpts) (*bindings.ProtocolConstants, error) {
-	var (
-		constants = new(bindings.ProtocolConstants)
-		err       error
-	)
-
-	constants.ZKProofsPerBlock,
-		constants.ChainID,
-		constants.MaxNumBlocks,
-		constants.MaxVerificationsPerTx,
-		constants.CommitDelayConfirmations,
-		constants.MaxProofsPerForkChoice,
-		constants.BlockMaxGasLimit,
-		constants.BlockMaxTxs,
-		constants.TxListMaxBytes,
-		constants.TxMinGasLimit,
-		constants.AnchorTxGasLimit,
-		err = c.TaikoL1.GetConstants(opts)
-
-	return constants, err
+	return GetProtocolConstants(c.TaikoL1, opts)
 }
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
 func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*bindings.ProtocolStateVariables, error) {
-	var (
-		stateVars = new(bindings.ProtocolStateVariables)
-		err       error
-	)
-
-	stateVars.GenesisHeight,
-		stateVars.LatestVerifiedHeight,
-		stateVars.LatestVerifiedID,
-		stateVars.NextBlockID,
-		err = c.TaikoL1.GetStateVariables(opts)
-
-	return stateVars, err
+	return GetProtocolStateVariables(c.TaikoL1, opts)
 }
