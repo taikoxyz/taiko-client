@@ -49,4 +49,5 @@ var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&ThrowawayBlocksBuilderPrivKey,
 	&JWTSecret,
 	&P2PSyncVerifiedBlocks,
+	&P2PSyncTimeout,
 })
