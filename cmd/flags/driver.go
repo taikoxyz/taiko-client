@@ -6,9 +6,9 @@ import (
 
 // Flags used by driver.
 var (
-	L2NodeEngineEndpoint = cli.StringFlag{
-		Name:     "l2.engine",
-		Usage:    "Engine API RPC endpoint of a L2 taiko-geth execution engine",
+	L2AuthEndpoint = cli.StringFlag{
+		Name:     "l2.auth",
+		Usage:    "Authenticated RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: driverCategory,
 	}
@@ -46,7 +46,7 @@ var (
 
 // All driver flags.
 var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
-	&L2NodeEngineEndpoint,
+	&L2AuthEndpoint,
 	&ThrowawayBlocksBuilderPrivKey,
 	&JWTSecret,
 	&P2PSyncVerifiedBlocks,

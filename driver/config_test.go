@@ -11,17 +11,17 @@ import (
 
 func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 	l1Endpoint := os.Getenv("L1_NODE_ENDPOINT")
-	l2Endpoint := os.Getenv("L2_NODE_ENDPOINT")
-	l2EngineEndpoint := os.Getenv("L2_NODE_ENGINE_ENDPOINT")
+	l2Endpoint := os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT")
+	l2EngineEndpoint := os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 	throwawayBlocksBuilderPrivKey := os.Getenv("THROWAWAY_BLOCKS_BUILDER_PRIV_KEY")
 
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
-		&cli.StringFlag{Name: flags.L1NodeEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2NodeEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2NodeEngineEndpoint.Name},
+		&cli.StringFlag{Name: flags.L1Endpoint.Name},
+		&cli.StringFlag{Name: flags.L2Endpoint.Name},
+		&cli.StringFlag{Name: flags.L2AuthEndpoint.Name},
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
 		&cli.StringFlag{Name: flags.ThrowawayBlocksBuilderPrivKey.Name},
@@ -45,9 +45,9 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 
 	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"-" + flags.L1NodeEndpoint.Name, l1Endpoint,
-		"-" + flags.L2NodeEndpoint.Name, l2Endpoint,
-		"-" + flags.L2NodeEngineEndpoint.Name, l2EngineEndpoint,
+		"-" + flags.L1Endpoint.Name, l1Endpoint,
+		"-" + flags.L2Endpoint.Name, l2Endpoint,
+		"-" + flags.L2AuthEndpoint.Name, l2EngineEndpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.ThrowawayBlocksBuilderPrivKey.Name, throwawayBlocksBuilderPrivKey,

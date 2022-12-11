@@ -15,15 +15,15 @@ var (
 
 // Required flags used by all client softwares.
 var (
-	L1NodeEndpoint = cli.StringFlag{
+	L1Endpoint = cli.StringFlag{
 		Name:     "l1",
 		Usage:    "Websocket RPC endpoint of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
 	}
-	L2NodeEndpoint = cli.StringFlag{
+	L2Endpoint = cli.StringFlag{
 		Name:     "l2",
-		Usage:    "Websocket RPC endpoint of a L2 taiko-geth node",
+		Usage:    "Websocket RPC endpoint of a taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
 	}
@@ -76,8 +76,8 @@ var (
 // All common flags.
 var CommonFlags = []cli.Flag{
 	// Required
-	&L1NodeEndpoint,
-	&L2NodeEndpoint,
+	&L1Endpoint,
+	&L2Endpoint,
 	&TaikoL1Address,
 	&TaikoL2Address,
 	// Optional

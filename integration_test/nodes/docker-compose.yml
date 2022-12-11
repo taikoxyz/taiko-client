@@ -13,7 +13,7 @@ services:
       - --hostname
       - "0.0.0.0"
 
-  l2_node:
+  l2_execution_engine:
     image: gcr.io/evmchain/taiko-geth:taiko
     restart: unless-stopped
     pull_policy: always
