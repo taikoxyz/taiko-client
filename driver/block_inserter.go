@@ -144,8 +144,8 @@ func (s *L2ChainSyncer) onBlockProposed(
 		"blockID", event.Id,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
-		"lastVerifiedBlockHeight", s.state.getLastVerifiedBlock().Height,
-		"lastVerifiedBlockHash", s.state.getLastVerifiedBlock().Hash,
+		"latestVerifiedBlockHeight", s.state.getLatestVerifiedBlock().Height,
+		"latestVerifiedBlockHash", s.state.getLatestVerifiedBlock().Hash,
 		"transactions", len(payloadData.Transactions),
 	)
 

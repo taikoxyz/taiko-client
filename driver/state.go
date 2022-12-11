@@ -134,7 +134,7 @@ func (s *State) initSubscriptions(ctx context.Context) error {
 		return err
 	}
 
-	lastVerifiedBlockHash, err := s.rpc.TaikoL1.GetSyncedHeader(
+	latestVerifiedBlockHash, err := s.rpc.TaikoL1.GetSyncedHeader(
 		nil,
 		new(big.Int).SetUint64(stateVars.LatestVerifiedHeight),
 	)
@@ -142,10 +142,10 @@ func (s *State) initSubscriptions(ctx context.Context) error {
 		return err
 	}
 
-	s.setLastVerifiedBlockHash(
+	s.setLatestVerifiedBlockHash(
 		new(big.Int).SetUint64(stateVars.LatestVerifiedID),
 		new(big.Int).SetUint64(stateVars.LatestVerifiedHeight),
-		lastVerifiedBlockHash,
+		latestVerifiedBlockHash,
 	)
 
 	s.l2BlockVerifiedSub = event.ResubscribeErr(
@@ -288,7 +288,7 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 				log.Error("Get synced header block ID error", "error", err)
 				continue
 			}
-			s.setLastVerifiedBlockHash(id, e.SrcHeight, e.SrcHash)
+			s.setLatestVerifiedBlockHash(id, e.SrcHeight, e.SrcHash)
 		case err := <-sub.Err():
 			return sub, err
 		case <-ctx.Done():
@@ -297,15 +297,15 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 	}
 }
 
-// setLastVerifiedBlockHash sets the last verified L2 block hash concurrent safely.
-func (s *State) setLastVerifiedBlockHash(id *big.Int, height *big.Int, hash common.Hash) {
+// setLatestVerifiedBlockHash sets the latest verified L2 block hash concurrent safely.
+func (s *State) setLatestVerifiedBlockHash(id *big.Int, height *big.Int, hash common.Hash) {
 	log.Debug("New verified block", "height", height, "hash", hash)
 	metrics.DriverL2VerifiedHeightGauge.Update(height.Int64())
 	s.l2VerifiedHead.Store(&VerifiedHeaderInfo{ID: id, Height: height, Hash: hash})
 }
 
-// getLastVerifiedBlock reads the last verified L2 block concurrent safely.
-func (s *State) getLastVerifiedBlock() *VerifiedHeaderInfo {
+// getLatestVerifiedBlock reads the latest verified L2 block concurrent safely.
+func (s *State) getLatestVerifiedBlock() *VerifiedHeaderInfo {
 	return s.l2VerifiedHead.Load().(*VerifiedHeaderInfo)
 }
 

@@ -67,7 +67,7 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *beacon.ExecutableDataV1, error) {
 	var (
 		proveBlockTxHash    common.Hash
-		latestVerifiedBlock = s.state.getLastVerifiedBlock()
+		latestVerifiedBlock = s.state.getLatestVerifiedBlock()
 	)
 
 	// Get the latest verified block's corresponding BlockProven event.
@@ -85,7 +85,7 @@ func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, 
 		) error {
 			if bytes.Equal(e.BlockHash[:], latestVerifiedBlock.Hash.Bytes()) {
 				log.Info(
-					"Last verified block's BlockProven event found",
+					"Latest verified block's BlockProven event found",
 					"height", e.Raw.BlockNumber,
 					"txHash", e.Raw.TxHash,
 				)

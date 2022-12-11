@@ -29,7 +29,7 @@ var (
 	ProposerInvalidTxsCounter      = metrics.NewRegisteredCounter("proposer/invalid/txs", nil)
 
 	// Prover
-	ProverLatestVerifiedIDGauge       = metrics.NewRegisteredGauge("prover/lastVerified/id", nil)
+	ProverLatestVerifiedIDGauge       = metrics.NewRegisteredGauge("prover/latestVerified/id", nil)
 	ProverQueuedProofCounter          = metrics.NewRegisteredCounter("prover/proof/all/queued", nil)
 	ProverQueuedValidProofCounter     = metrics.NewRegisteredCounter("prover/proof/valid/queued", nil)
 	ProverQueuedInvalidProofCounter   = metrics.NewRegisteredCounter("prover/proof/invalid/queued", nil)
