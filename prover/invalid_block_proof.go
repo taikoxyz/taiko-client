@@ -33,6 +33,7 @@ func (p *Prover) proveBlockInvalid(
 
 	log.Debug("Throwaway block", "header", throwAwayBlock.Header())
 
+	// Request proof.
 	proofOpts := &producer.ProofRequestOptions{
 		Height:         throwAwayBlock.Header().Number,
 		L2NodeEndpoint: p.cfg.L2Endpoint,
