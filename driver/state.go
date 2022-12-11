@@ -57,16 +57,16 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 		return nil, err
 	}
 
-	genesisL1Height, _, _, _, err := rpc.TaikoL1.GetStateVariables(nil)
+	stateVars, err := rpc.GetProtocolStateVariables(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info("Genesis L1 height", "height", genesisL1Height)
+	log.Info("Genesis L1 height", "height", stateVars.GenesisHeight)
 
 	s := &State{
 		rpc:             rpc,
-		genesisL1Height: new(big.Int).SetUint64(genesisL1Height),
+		genesisL1Height: new(big.Int).SetUint64(stateVars.GenesisHeight),
 		l1Head:          new(atomic.Value),
 		l2Head:          new(atomic.Value),
 		l2HeadBlockID:   new(atomic.Value),
@@ -129,22 +129,22 @@ func (s *State) initSubscriptions(ctx context.Context) error {
 	)
 
 	// TaikoL1.BlockVerified events
-	_, lastVerifiedHeight, lastVerifiedId, _, err := s.rpc.TaikoL1.GetStateVariables(nil)
+	stateVars, err := s.rpc.GetProtocolStateVariables(nil)
 	if err != nil {
 		return err
 	}
 
 	lastVerifiedBlockHash, err := s.rpc.TaikoL1.GetSyncedHeader(
 		nil,
-		new(big.Int).SetUint64(lastVerifiedHeight),
+		new(big.Int).SetUint64(stateVars.LatestVerifiedHeight),
 	)
 	if err != nil {
 		return err
 	}
 
 	s.setLastVerifiedBlockHash(
-		new(big.Int).SetUint64(lastVerifiedId),
-		new(big.Int).SetUint64(lastVerifiedHeight),
+		new(big.Int).SetUint64(stateVars.LatestVerifiedID),
+		new(big.Int).SetUint64(stateVars.LatestVerifiedHeight),
 		lastVerifiedBlockHash,
 	)
 
@@ -160,12 +160,7 @@ func (s *State) initSubscriptions(ctx context.Context) error {
 	)
 
 	// TaikoL1.BlockProposed events
-	_, _, _, nextPendingID, err := s.rpc.TaikoL1.GetStateVariables(nil)
-	if err != nil {
-		return err
-	}
-
-	s.setHeadBlockID(new(big.Int).SetUint64(nextPendingID - 1))
+	s.setHeadBlockID(new(big.Int).SetUint64(stateVars.NextBlockID - 1))
 
 	s.l2BlockProposedSub = event.ResubscribeErr(
 		backoff.DefaultMaxInterval,
