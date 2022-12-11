@@ -16,13 +16,13 @@ var (
 // Required flags used by all client softwares.
 var (
 	L1Endpoint = cli.StringFlag{
-		Name:     "l1",
+		Name:     "l1.ws",
 		Usage:    "Websocket RPC endpoint of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
 	}
 	L2Endpoint = cli.StringFlag{
-		Name:     "l2",
+		Name:     "l2.ws",
 		Usage:    "Websocket RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,

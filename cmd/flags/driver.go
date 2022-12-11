@@ -8,7 +8,7 @@ import (
 var (
 	L2AuthEndpoint = cli.StringFlag{
 		Name:     "l2.auth",
-		Usage:    "Authenticated RPC endpoint of a L2 taiko-geth execution engine",
+		Usage:    "Authenticated HTTP RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: driverCategory,
 	}
