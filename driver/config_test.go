@@ -35,7 +35,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(l2EngineEndpoint, c.L2EngineEndpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
-		s.Equal(time.Duration(int64(flags.P2PSyncTimeout.Value)*int64(time.Second)), c.P2PSyncTimeout)
+		s.Equal(time.Duration(120*time.Second), c.P2PSyncTimeout)
 		s.NotEmpty(c.JwtSecret)
 		s.Nil(new(Driver).InitFromCli(context.Background(), ctx))
 
@@ -51,5 +51,6 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.ThrowawayBlocksBuilderPrivKey.Name, throwawayBlocksBuilderPrivKey,
 		"-" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
+		"-" + flags.P2PSyncTimeout.Name, "120",
 	}))
 }
