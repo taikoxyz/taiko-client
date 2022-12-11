@@ -35,6 +35,12 @@ var (
 		Value:    false,
 		Category: driverCategory,
 	}
+	P2PSyncTimeout = cli.UintFlag{
+		Name:     "p2p.syncTimeout",
+		Usage:    "Timeout in seconds to determine whether a P2P sync procress is timeout",
+		Value:    120,
+		Category: driverCategory,
+	}
 )
 
 // All driver flags.

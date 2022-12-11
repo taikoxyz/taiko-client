@@ -4,9 +4,8 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"math/big"
+	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -16,6 +15,8 @@ import (
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
+// L2ChainSyncer is responsible for keeping the L2 execution engine's local chain in sync with the one
+// in TaikoL1 contract.
 type L2ChainSyncer struct {
 	ctx                           context.Context
 	state                         *State                           // Driver's state
@@ -25,11 +26,11 @@ type L2ChainSyncer struct {
 	anchorConstructor             *AnchorConstructor               // TaikoL2.anchor transactions constructor
 	protocolConstants             *bindings.ProtocolConstants
 
-	// Try P2P beacon-sync if current node is behind of  the protocol's latest verified block head
-	p2pSyncVerifiedBlocks       bool
-	lastSyncedVerifiedBlockHash common.Hash
-	lastSyncedVerifiedBlockID   *big.Int
-	beaconSyncTriggered         bool
+	// If this flag is activated, will try P2P beacon-sync if current node is behind of the protocol's
+	// latest verified block head
+	p2pSyncVerifiedBlocks bool
+	p2pSyncTimeout        time.Duration
+	syncStatus            *BeaconSyncStatus
 }
 
 // NewL2ChainSyncer creates a new chain syncer instance.
@@ -39,6 +40,7 @@ func NewL2ChainSyncer(
 	state *State,
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
 	p2pSyncVerifiedBlocks bool,
+	p2pSyncTimeout time.Duration,
 ) (*L2ChainSyncer, error) {
 	constants, err := rpc.GetProtocolConstants(nil)
 	if err != nil {
@@ -53,6 +55,11 @@ func NewL2ChainSyncer(
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
+	}
+
+	syncStatus := new(BeaconSyncStatus)
+	if err := syncStatus.Init(); err != nil {
+		return nil, fmt.Errorf("initialize beacon sync status error: %w", err)
 	}
 
 	return &L2ChainSyncer{
@@ -70,6 +77,8 @@ func NewL2ChainSyncer(
 		),
 		anchorConstructor:     anchorConstructor,
 		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
+		p2pSyncTimeout:        p2pSyncTimeout,
+		syncStatus:            syncStatus,
 	}, nil
 }
 
@@ -87,7 +96,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		return nil
 	}
 
-	if s.beaconSyncTriggered {
+	if s.syncStatus.triggered {
 		log.Info("Switch to insert pending blocks one by one")
 
 		l2Head, err := s.rpc.L2.HeaderByNumber(s.ctx, nil)
@@ -95,14 +104,14 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 			return err
 		}
 
-		if l2Head.Hash() != s.lastSyncedVerifiedBlockHash {
+		if l2Head.Hash() != s.syncStatus.lastSyncedVerifiedBlockHash {
 			log.Crit(
 				"Verified header mismatch, height: %d, hash: %s != %s",
-				l2Head.Number, l2Head.Hash(), s.lastSyncedVerifiedBlockHash,
+				l2Head.Number, l2Head.Hash(), s.syncStatus.lastSyncedVerifiedBlockHash,
 			)
 		}
 
-		if err := s.state.resetL1Current(s.ctx, s.lastSyncedVerifiedBlockID); err != nil {
+		if err := s.state.resetL1Current(s.ctx, s.syncStatus.lastSyncedVerifiedBlockID); err != nil {
 			return err
 		}
 	}

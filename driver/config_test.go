@@ -3,6 +3,7 @@ package driver
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/urfave/cli/v2"
@@ -34,6 +35,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(l2EngineEndpoint, c.L2EngineEndpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
+		s.Equal(time.Duration(int64(flags.P2PSyncTimeout.Value)*int64(time.Second)), c.P2PSyncTimeout)
 		s.NotEmpty(c.JwtSecret)
 		s.Nil(new(Driver).InitFromCli(context.Background(), ctx))
 

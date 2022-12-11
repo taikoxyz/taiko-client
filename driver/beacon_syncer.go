@@ -21,8 +21,8 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 		return err
 	}
 
-	if s.beaconSyncTriggered && s.lastSyncedVerifiedBlockID != nil && s.lastSyncedVerifiedBlockID.Cmp(blockID) == 0 {
-		log.Debug("Verified head not updated", "blockID", blockID, "hash", lastVerifiedHeadPayload.BlockHash)
+	if !s.syncStatus.HeadChanged(blockID) {
+		log.Debug("Verified head has not changed", "blockID", blockID, "hash", lastVerifiedHeadPayload.BlockHash)
 		return nil
 	}
 
@@ -50,15 +50,13 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	}
 
 	// Update sync status.
-	s.beaconSyncTriggered = true
-	s.lastSyncedVerifiedBlockHash = lastVerifiedHeadPayload.BlockHash
-	s.lastSyncedVerifiedBlockID = blockID
+	s.syncStatus.Refresh(blockID, lastVerifiedHeadPayload.BlockHash)
 
 	log.Info(
 		"⛓️ Beacon-sync triggered",
 		"newHeadID", blockID,
 		"newHeadHeight", lastVerifiedHeadPayload.Number,
-		"newHeadHash", s.lastSyncedVerifiedBlockHash,
+		"newHeadHash", s.syncStatus.lastSyncedVerifiedBlockHash,
 	)
 
 	return nil
