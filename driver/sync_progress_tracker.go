@@ -20,16 +20,23 @@ var (
 // a beacon sync is triggered in it, and check whether the L2 execution is out of sync (due to no connected peer
 // or some other reasons).
 type BeaconSyncProgressTracker struct {
+	// RPC client
+	client *ethclient.Client
+
+	// Meta data
 	triggered                   bool
-	client                      *ethclient.Client
 	lastSyncedVerifiedBlockID   *big.Int
 	lastSyncedVerifiedBlockHash common.Hash
-	lastSyncProgress            *ethereum.SyncProgress
-	lastProgressedTime          time.Time
-	timeout                     time.Duration
-	outOfSync                   bool
-	ticker                      *time.Ticker
-	mutex                       sync.RWMutex
+
+	// Out-of-sync check related
+	lastSyncProgress   *ethereum.SyncProgress
+	lastProgressedTime time.Time
+	timeout            time.Duration
+	outOfSync          bool
+	ticker             *time.Ticker
+
+	// Read-write mutex
+	mutex sync.RWMutex
 }
 
 // NewBeaconSyncProgressTracker creates a new BeaconSyncProgressTracker instance.
