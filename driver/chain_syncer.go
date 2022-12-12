@@ -140,6 +140,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 			)
 
 			heightOrID.ID = common.Big0
+			heightOrID.Height = common.Big0
 			if l2HeadHash, err = s.rpc.TaikoL1.GetSyncedHeader(nil, common.Big0); err != nil {
 				return err
 			}
@@ -157,7 +158,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		}
 
 		// Reset to the latest L2 execution engine's chain status.
-		s.syncProgressTracker.UpdateMeta(blockID, l2HeadHash)
+		s.syncProgressTracker.UpdateMeta(blockID, heightOrID.Height, l2HeadHash)
 	}
 
 	// Insert the proposed block one by one.

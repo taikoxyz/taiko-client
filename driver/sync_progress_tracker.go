@@ -24,9 +24,10 @@ type BeaconSyncProgressTracker struct {
 	client *ethclient.Client
 
 	// Meta data
-	triggered                   bool
-	lastSyncedVerifiedBlockID   *big.Int
-	lastSyncedVerifiedBlockHash common.Hash
+	triggered                     bool
+	lastSyncedVerifiedBlockID     *big.Int
+	lastSyncedVerifiedBlockHeight *big.Int
+	lastSyncedVerifiedBlockHash   common.Hash
 
 	// Out-of-sync check related
 	lastSyncProgress   *ethereum.SyncProgress
@@ -41,7 +42,7 @@ type BeaconSyncProgressTracker struct {
 
 // NewBeaconSyncProgressTracker creates a new BeaconSyncProgressTracker instance.
 func NewBeaconSyncProgressTracker(c *ethclient.Client, timeout time.Duration) *BeaconSyncProgressTracker {
-	return &BeaconSyncProgressTracker{client: c, ticker: time.NewTicker(syncProgressFetchInterval)}
+	return &BeaconSyncProgressTracker{client: c, timeout: timeout, ticker: time.NewTicker(syncProgressFetchInterval)}
 }
 
 // Track starts the inner event loop, to monitor the sync progress.
@@ -73,12 +74,28 @@ func (s *BeaconSyncProgressTracker) track(ctx context.Context) {
 		return
 	}
 
-	if progress == nil {
-		log.Info("L2 execution engine has finished the P2P sync work")
-		return
-	}
+	log.Info(
+		"L2 execution engine sync progress",
+		"progress", progress,
+		"lastProgressedTime", s.lastProgressedTime,
+		"timeout", s.timeout,
+	)
 
-	log.Info("L2 execution engine sync progress", "progress", progress)
+	if progress == nil {
+		headHeight, err := s.client.BlockNumber(ctx)
+		if err != nil {
+			log.Error("Get L2 execution engine head height error", "error", err)
+			return
+		}
+
+		if new(big.Int).SetUint64(headHeight).Cmp(s.lastSyncedVerifiedBlockHeight) >= 0 {
+			s.lastProgressedTime = time.Now()
+			log.Info("L2 execution engine has finished the P2P sync work")
+			return
+		}
+
+		log.Warn("L2 execution engine has not started P2P syncing yet")
+	}
 
 	defer func() { s.lastSyncProgress = progress }()
 
@@ -93,16 +110,29 @@ func (s *BeaconSyncProgressTracker) track(ctx context.Context) {
 	if time.Since(s.lastProgressedTime) > s.timeout {
 		// Mark the L2 execution engine out of sync.
 		s.outOfSync = true
+
+		log.Warn(
+			"L2 execution engine out of sync",
+			"lastProgressedTime", s.lastProgressedTime,
+			"timeout", s.timeout,
+		)
 	}
 }
 
 // UpdateMeta updates the inner beacon sync meta data.
-func (s *BeaconSyncProgressTracker) UpdateMeta(id *big.Int, blockHash common.Hash) {
+func (s *BeaconSyncProgressTracker) UpdateMeta(id, height *big.Int, blockHash common.Hash) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	log.Debug("Update sync progress tracker meta", "id", id, "height", height, "hash", blockHash)
+
+	if !s.triggered {
+		s.lastProgressedTime = time.Now()
+	}
+
 	s.triggered = true
 	s.lastSyncedVerifiedBlockID = id
+	s.lastSyncedVerifiedBlockHeight = height
 	s.lastSyncedVerifiedBlockHash = blockHash
 }
 
@@ -110,6 +140,8 @@ func (s *BeaconSyncProgressTracker) UpdateMeta(id *big.Int, blockHash common.Has
 func (s *BeaconSyncProgressTracker) ClearMeta() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+
+	log.Debug("Clear sync progress tracker meta")
 
 	s.triggered = false
 	s.lastSyncedVerifiedBlockID = nil
@@ -152,6 +184,14 @@ func (s *BeaconSyncProgressTracker) LastSyncedVerifiedBlockID() *big.Int {
 	return s.lastSyncedVerifiedBlockID
 }
 
+// LastSyncedVerifiedBlockHeight returns tracker.lastSyncedVerifiedBlockHeight.
+func (s *BeaconSyncProgressTracker) LastSyncedVerifiedBlockHeight() *big.Int {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	return s.lastSyncedVerifiedBlockHeight
+}
+
 // LastSyncedVerifiedBlockHash returns tracker.lastSyncedVerifiedBlockHash.
 func (s *BeaconSyncProgressTracker) LastSyncedVerifiedBlockHash() common.Hash {
 	s.mutex.RLock()
@@ -163,6 +203,10 @@ func (s *BeaconSyncProgressTracker) LastSyncedVerifiedBlockHash() common.Hash {
 // syncProgressed checks whether there is any new progress since last sync progress check.
 func syncProgressed(last *ethereum.SyncProgress, new *ethereum.SyncProgress) bool {
 	if last == nil {
+		return false
+	}
+
+	if new == nil {
 		return true
 	}
 

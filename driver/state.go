@@ -381,7 +381,8 @@ func (s *State) resetL1Current(ctx context.Context, heightOrID *HeightOrID) (*bi
 		err             error
 	)
 
-	if heightOrID.ID.Cmp(common.Big0) == 0 || heightOrID.Height.Cmp(common.Big0) == 0 {
+	if (heightOrID.ID != nil && heightOrID.ID.Cmp(common.Big0) == 0) ||
+		(heightOrID.Height != nil && heightOrID.Height.Cmp(common.Big0) == 0) {
 		s.l1Current, err = s.rpc.L1.HeaderByNumber(ctx, s.genesisL1Height)
 		return common.Big0, err
 	}

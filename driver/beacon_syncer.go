@@ -50,7 +50,11 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	}
 
 	// Update sync status.
-	s.syncProgressTracker.UpdateMeta(blockID, latestVerifiedHeadPayload.BlockHash)
+	s.syncProgressTracker.UpdateMeta(
+		blockID,
+		new(big.Int).SetUint64(latestVerifiedHeadPayload.Number),
+		latestVerifiedHeadPayload.BlockHash,
+	)
 
 	log.Info(
 		"⛓️ Beacon-sync triggered",
