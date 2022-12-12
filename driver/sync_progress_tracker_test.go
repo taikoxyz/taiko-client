@@ -5,7 +5,7 @@ import (
 )
 
 func (s *DriverTestSuite) TestSyncProgressed() {
-	s.True(syncProgressed(nil, &ethereum.SyncProgress{}))
+	s.False(syncProgressed(nil, &ethereum.SyncProgress{}), nil)
 	s.False(syncProgressed(&ethereum.SyncProgress{}, &ethereum.SyncProgress{}))
 
 	// Block
