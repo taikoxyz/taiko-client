@@ -29,7 +29,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 	endIter eventIterator.EndBlockProposedEventIterFunc,
 ) error {
 	// No need to insert genesis again, its already in L2 block chain.
-	if event.Id.Cmp(common.Big0) == 0 {
+	if event.Id.Cmp(common.Big0) == 0 || (s.lastInsertedBlockID != nil && event.Id.Cmp(s.lastInsertedBlockID) <= 0) {
 		return nil
 	}
 
@@ -136,7 +136,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 		return nil
 	}
 
-	log.Debug("Payload data", "payload", payloadData)
+	log.Debug("Payload data", "hash", payloadData.BlockHash, "txs", len(payloadData.Transactions))
 
 	log.Info(
 		"🔗 New L2 block inserted",
@@ -150,6 +150,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 	)
 
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
+	s.lastInsertedBlockID = event.Id
 
 	if !l1Origin.Throwaway && s.syncProgressTracker.Triggered() {
 		s.syncProgressTracker.ClearMeta()
@@ -326,6 +327,10 @@ func (s *L2ChainSyncer) createExecutionPayloads(
 	payload, err := s.rpc.L2Engine.GetPayload(ctx, fcRes.PayloadID)
 	if err != nil {
 		return nil, err, nil
+	}
+
+	if payload == nil {
+		return nil, nil, fmt.Errorf("empty payload body")
 	}
 
 	// Step 3, execute the payload

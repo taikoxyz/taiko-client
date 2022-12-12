@@ -68,6 +68,10 @@ func (s *BeaconSyncProgressTracker) track(ctx context.Context) {
 		return
 	}
 
+	if s.outOfSync {
+		return
+	}
+
 	progress, err := s.client.SyncProgress(ctx)
 	if err != nil {
 		log.Error("Get L2 execution engine sync progress error", "error", err)
@@ -146,6 +150,7 @@ func (s *BeaconSyncProgressTracker) ClearMeta() {
 	s.triggered = false
 	s.lastSyncedVerifiedBlockID = nil
 	s.lastSyncedVerifiedBlockHash = common.Hash{}
+	s.outOfSync = false
 }
 
 // HeadChanged checks if a new beacon sync request will be needed.

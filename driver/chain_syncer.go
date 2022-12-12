@@ -44,6 +44,9 @@ type L2ChainSyncer struct {
 	p2pSyncVerifiedBlocks bool
 	// Monitor the L2 execution engine's sync progress
 	syncProgressTracker *BeaconSyncProgressTracker
+
+	// Used by BlockInster
+	lastInsertedBlockID *big.Int
 }
 
 // NewL2ChainSyncer creates a new chain syncer instance.

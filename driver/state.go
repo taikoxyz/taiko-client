@@ -280,7 +280,7 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 		select {
 		case e := <-newHeaderSyncedCh:
 			if err := s.VerifyL2Block(ctx, e.SrcHash); err != nil {
-				log.Error("Check new verified L2 block error", "error", err)
+				log.Debug("Check new verified L2 block error", "error", err)
 				continue
 			}
 			id, err := s.getSyncedHeaderID(e.Raw.BlockNumber, e.SrcHash)
@@ -376,6 +376,8 @@ func (s *State) resetL1Current(ctx context.Context, heightOrID *HeightOrID) (*bi
 		return nil, fmt.Errorf("empty input %v", heightOrID)
 	}
 
+	log.Info("Reset L1 current cursor", "heightOrID", heightOrID)
+
 	var (
 		l1CurrentHeight *big.Int
 		err             error
@@ -402,13 +404,14 @@ func (s *State) resetL1Current(ctx context.Context, heightOrID *HeightOrID) (*bi
 				TaikoL1:     s.rpc.TaikoL1,
 				StartHeight: s.genesisL1Height,
 				EndHeight:   s.GetL1Head().Number,
-				FilterQuery: []*big.Int{heightOrID.ID},
+				FilterQuery: []*big.Int{},
 				Reverse:     true,
 				OnBlockProvenEvent: func(
 					ctx context.Context,
 					e *bindings.TaikoL1ClientBlockProven,
 					end eventIterator.EndBlockProvenEventIterFunc,
 				) error {
+					log.Debug("Filtered BlockProven event", "ID", e.Id, "hash", common.Hash(e.BlockHash))
 					if e.BlockHash == targetHash {
 						heightOrID.ID = e.Id
 						end()
