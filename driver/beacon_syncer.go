@@ -59,7 +59,7 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	log.Info(
 		"⛓️ Beacon-sync triggered",
 		"newHeadID", blockID,
-		"newHeadHeight", latestVerifiedHeadPayload.Number,
+		"newHeadHeight", s.syncProgressTracker.LastSyncedVerifiedBlockHeight(),
 		"newHeadHash", s.syncProgressTracker.LastSyncedVerifiedBlockHash(),
 	)
 

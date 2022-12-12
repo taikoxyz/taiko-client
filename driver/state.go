@@ -279,8 +279,12 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 	for {
 		select {
 		case e := <-newHeaderSyncedCh:
+			// L2 execution has not synced that verified block yet.
+			if s.GetL2Head().Number.Cmp(e.Height) < 0 {
+				continue
+			}
 			if err := s.VerifyL2Block(ctx, e.SrcHash); err != nil {
-				log.Debug("Check new verified L2 block error", "error", err)
+				log.Error("Check new verified L2 block error", "error", err)
 				continue
 			}
 			id, err := s.getSyncedHeaderID(e.Raw.BlockNumber, e.SrcHash)

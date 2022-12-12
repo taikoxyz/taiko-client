@@ -28,7 +28,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 	event *bindings.TaikoL1ClientBlockProposed,
 	endIter eventIterator.EndBlockProposedEventIterFunc,
 ) error {
-	// No need to insert genesis again, its already in L2 block chain.
+	// Ignore those already inserted blocks.
 	if event.Id.Cmp(common.Big0) == 0 || (s.lastInsertedBlockID != nil && event.Id.Cmp(s.lastInsertedBlockID) <= 0) {
 		return nil
 	}
@@ -137,7 +137,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 	}
 
 	if payloadData == nil {
-		return fmt.Errorf("empty payload data")
+		return fmt.Errorf("empty payload data, context error: %w", s.ctx.Err())
 	}
 
 	log.Debug("Payload data", "hash", payloadData.BlockHash, "txs", len(payloadData.Transactions))

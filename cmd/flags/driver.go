@@ -39,7 +39,7 @@ var (
 	P2PSyncTimeout = cli.UintFlag{
 		Name: "p2p.syncTimeout",
 		Usage: "P2P syncing timeout in seconds, if no sync progress is made within this time span, " +
-			"driver will stop the P2P beacon sync and insert the L2 blocks one by one",
+			"driver will stop the P2P sync and insert all remaining L2 blocks one by one",
 		Value:    120,
 		Category: driverCategory,
 	}

@@ -45,7 +45,7 @@ type L2ChainSyncer struct {
 	// Monitor the L2 execution engine's sync progress
 	syncProgressTracker *BeaconSyncProgressTracker
 
-	// Used by BlockInster
+	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
 }
 
@@ -126,7 +126,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 			return err
 		}
 
-		// Make sure the execution engine's chain head was recorded in protocol.
+		// Make sure the execution engine's chain head is recorded in protocol.
 		l2HeadHash, err := s.rpc.TaikoL1.GetSyncedHeader(nil, l2Head.Number)
 		if err != nil {
 			return err
