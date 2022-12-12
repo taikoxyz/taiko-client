@@ -136,6 +136,10 @@ func (s *L2ChainSyncer) onBlockProposed(
 		return nil
 	}
 
+	if payloadData == nil {
+		return fmt.Errorf("empty payload data")
+	}
+
 	log.Debug("Payload data", "hash", payloadData.BlockHash, "txs", len(payloadData.Transactions))
 
 	log.Info(
@@ -327,10 +331,6 @@ func (s *L2ChainSyncer) createExecutionPayloads(
 	payload, err := s.rpc.L2Engine.GetPayload(ctx, fcRes.PayloadID)
 	if err != nil {
 		return nil, err, nil
-	}
-
-	if payload == nil {
-		return nil, nil, fmt.Errorf("empty payload body")
 	}
 
 	// Step 3, execute the payload

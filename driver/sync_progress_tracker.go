@@ -94,7 +94,7 @@ func (s *BeaconSyncProgressTracker) track(ctx context.Context) {
 
 		if new(big.Int).SetUint64(headHeight).Cmp(s.lastSyncedVerifiedBlockHeight) >= 0 {
 			s.lastProgressedTime = time.Now()
-			log.Info("L2 execution engine has finished the P2P sync work")
+			log.Info("L2 execution engine has finished the P2P sync work, will switch to insert pending blocks ony be one")
 			return
 		}
 
