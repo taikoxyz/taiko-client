@@ -136,10 +136,6 @@ func (s *L2ChainSyncer) onBlockProposed(
 		return nil
 	}
 
-	if payloadData == nil {
-		return fmt.Errorf("empty payload data, context error: %w", s.ctx.Err())
-	}
-
 	log.Debug("Payload data", "hash", payloadData.BlockHash, "txs", len(payloadData.Transactions))
 
 	log.Info(
@@ -172,7 +168,7 @@ func (s *L2ChainSyncer) insertNewHead(
 	headBlockID *big.Int,
 	txListBytes []byte,
 	l1Origin *rawdb.L1Origin,
-) (payloadData *beacon.ExecutableDataV1, rpcError error, payloadError error) {
+) (*beacon.ExecutableDataV1, error, error) {
 	log.Debug(
 		"Try to insert a new L2 head block",
 		"parentNumber", parent.Number,
@@ -218,7 +214,7 @@ func (s *L2ChainSyncer) insertNewHead(
 	)
 
 	if rpcErr != nil || payloadErr != nil {
-		return nil, rpcError, payloadErr
+		return nil, rpcErr, payloadErr
 	}
 
 	fc := &beacon.ForkchoiceStateV1{HeadBlockHash: parent.Hash()}
@@ -247,7 +243,7 @@ func (s *L2ChainSyncer) insertThrowAwayBlock(
 	headBlockID *big.Int,
 	txListBytes []byte,
 	l1Origin *rawdb.L1Origin,
-) (payloadData *beacon.ExecutableDataV1, rpcError error, payloadError error) {
+) (*beacon.ExecutableDataV1, error, error) {
 	log.Info(
 		"Try to insert a new L2 throwaway block",
 		"parentHash", parent.Hash(),
