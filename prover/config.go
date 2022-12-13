@@ -32,8 +32,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	return &Config{
-		L1Endpoint:          c.String(flags.L1NodeEndpoint.Name),
-		L2Endpoint:          c.String(flags.L2NodeEndpoint.Name),
+		L1Endpoint:          c.String(flags.L1WSEndpoint.Name),
+		L2Endpoint:          c.String(flags.L2WSEndpoint.Name),
 		TaikoL1Address:      common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:      common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		L1ProverPrivKey:     l1ProverPrivKey,

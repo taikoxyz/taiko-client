@@ -61,7 +61,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	return fmt.Errorf("genesis block not found in TaikoL1")
 }
 
-// LatestL2KnownL1Header fetches the L2 node's latest known L1 header.
+// LatestL2KnownL1Header fetches the L2 execution engine's latest known L1 header.
 func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, error) {
 	headL1Origin, err := c.L2.HeadL1Origin(ctx)
 
@@ -102,7 +102,7 @@ func (c *Client) GetGenesisL1Header(ctx context.Context) (*types.Header, error) 
 	return c.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(stateVars.GenesisHeight))
 }
 
-// L2ParentByBlockId fetches the block header from L2 node with the largest block id that
+// L2ParentByBlockId fetches the block header from L2 execution engine with the largest block id that
 // smaller than the given `blockId`.
 func (c *Client) L2ParentByBlockId(ctx context.Context, blockID *big.Int) (*types.Header, error) {
 	parentBlockId := new(big.Int).Sub(blockID, common.Big1)
@@ -128,7 +128,7 @@ func (c *Client) L2ParentByBlockId(ctx context.Context, blockID *big.Int) (*type
 	return c.L2.HeaderByNumber(ctx, common.Big0)
 }
 
-// WaitL1Origin keeps waiting until the L1Origin with given block ID appears on the L2 node.
+// WaitL1Origin keeps waiting until the L1Origin with given block ID appears on the L2 execution engine.
 func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1Origin, error) {
 	var (
 		l1Origin *rawdb.L1Origin
@@ -138,7 +138,7 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	log.Debug("Start fetching L1Origin from L2 node", "blockID", blockID)
+	log.Debug("Start fetching L1Origin from L2 execution engine", "blockID", blockID)
 
 	for {
 		select {
@@ -147,7 +147,7 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 		case <-ticker.C:
 			l1Origin, err = c.L2.L1OriginByID(ctx, blockID)
 			if err != nil {
-				log.Warn("Failed to fetch L1Origin from L2 node", "blockID", blockID, "error", err)
+				log.Warn("Failed to fetch L1Origin from L2 execution engine", "blockID", blockID, "error", err)
 				continue
 			}
 
@@ -194,7 +194,7 @@ func (t TxLists) Len() int {
 	return length
 }
 
-// L2PoolContent fetches the transaction pool content from L2 node.
+// L2PoolContent fetches the transaction pool content from a L2 execution engine.
 func (c *Client) L2PoolContent(ctx context.Context) (pending PoolContent, queued PoolContent, err error) {
 	var res map[string]PoolContent
 	if err := c.L2RawRPC.CallContext(ctx, &res, "txpool_content"); err != nil {

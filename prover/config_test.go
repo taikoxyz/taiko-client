@@ -11,14 +11,14 @@ import (
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 	l1Endpoint := os.Getenv("L1_NODE_ENDPOINT")
-	l2Endpoint := os.Getenv("L2_NODE_ENDPOINT")
+	l2Endpoint := os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT")
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
-		&cli.StringFlag{Name: flags.L1NodeEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2NodeEndpoint.Name},
+		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
+		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
 		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
@@ -43,8 +43,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 
 	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"-" + flags.L1NodeEndpoint.Name, l1Endpoint,
-		"-" + flags.L2NodeEndpoint.Name, l2Endpoint,
+		"-" + flags.L1WSEndpoint.Name, l1Endpoint,
+		"-" + flags.L2WSEndpoint.Name, l2Endpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),

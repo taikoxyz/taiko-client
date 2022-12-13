@@ -33,11 +33,12 @@ func (p *Prover) proveBlockInvalid(
 
 	log.Debug("Throwaway block", "header", throwAwayBlock.Header())
 
+	// Request proof.
 	proofOpts := &producer.ProofRequestOptions{
-		Height:         throwAwayBlock.Header().Number,
-		L2NodeEndpoint: p.cfg.L2Endpoint,
-		Retry:          false,
-		Param:          p.cfg.ZkEvmRpcdParamsPath,
+		Height:     throwAwayBlock.Header().Number,
+		L2Endpoint: p.cfg.L2Endpoint,
+		Retry:      false,
+		Param:      p.cfg.ZkEvmRpcdParamsPath,
 	}
 
 	if err := p.proofProducer.RequestProof(
@@ -143,7 +144,7 @@ func (p *Prover) submitInvalidBlockProof(
 	if err := backoff.Retry(func() error {
 		tx, err := p.rpc.TaikoL1.ProveBlockInvalid(txOpts, blockID, input)
 		if err != nil {
-			if IsSubmitProofTxErrorRetryable(err) {
+			if isSubmitProofTxErrorRetryable(err) {
 				log.Warn("Retry sending TaikoL1.proveBlockInvalid transaction", "error", err)
 				return err
 			}

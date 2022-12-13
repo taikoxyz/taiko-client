@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -16,6 +17,19 @@ import (
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
+// HeightOrID contains a block height or a block ID.
+type HeightOrID struct {
+	Height *big.Int
+	ID     *big.Int
+}
+
+// NotEmpty checks whether this is an empty struct.
+func (h *HeightOrID) NotEmpty() bool {
+	return h.Height != nil || h.ID != nil
+}
+
+// L2ChainSyncer is responsible for keeping the L2 execution engine's local chain in sync with the one
+// in TaikoL1 contract.
 type L2ChainSyncer struct {
 	ctx                           context.Context
 	state                         *State                           // Driver's state
@@ -23,13 +37,16 @@ type L2ChainSyncer struct {
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                // Private key of L2 throwaway blocks builder
 	txListValidator               *txListValidator.TxListValidator // Transactions list validator
 	anchorConstructor             *AnchorConstructor               // TaikoL2.anchor transactions constructor
-	protocolConstants             *bindings.ProtocolConstants
+	protocolConstants             *bindings.ProtocolConstants      // Protocol constants
 
-	// Try P2P beacon-sync if current node is behind of  the protocol's latest verified block head
-	p2pSyncVerifiedBlocks       bool
-	lastSyncedVerifiedBlockHash common.Hash
-	lastSyncedVerifiedBlockID   *big.Int
-	beaconSyncTriggered         bool
+	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
+	// latest verified block head
+	p2pSyncVerifiedBlocks bool
+	// Monitor the L2 execution engine's sync progress
+	syncProgressTracker *BeaconSyncProgressTracker
+
+	// Used by BlockInserter
+	lastInsertedBlockID *big.Int
 }
 
 // NewL2ChainSyncer creates a new chain syncer instance.
@@ -39,6 +56,7 @@ func NewL2ChainSyncer(
 	state *State,
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
 	p2pSyncVerifiedBlocks bool,
+	p2pSyncTimeout time.Duration,
 ) (*L2ChainSyncer, error) {
 	constants, err := rpc.GetProtocolConstants(nil)
 	if err != nil {
@@ -55,6 +73,9 @@ func NewL2ChainSyncer(
 		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
 	}
 
+	tracker := NewBeaconSyncProgressTracker(rpc.L2, p2pSyncTimeout)
+	go tracker.Track(ctx)
+
 	return &L2ChainSyncer{
 		ctx:                           ctx,
 		rpc:                           rpc,
@@ -70,53 +91,90 @@ func NewL2ChainSyncer(
 		),
 		anchorConstructor:     anchorConstructor,
 		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
+		syncProgressTracker:   tracker,
 	}, nil
 }
 
-// Sync performs a sync operation to L2 node's local chain.
+// Sync performs a sync operation to L2 execution engine's local chain.
 func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
-	// If current L2 node's chain is behind of the protocol's latest verified block head, and the
-	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon-sync in L2 node to catch up the
+	// If current L2 execution engine's chain is behind of the protocol's latest verified block head, and the
+	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
 	// latest verified block head.
-	// TODO: check whether the engine is not syncing through P2P (eth_syncing)
-	if s.p2pSyncVerifiedBlocks && s.state.getLastVerifiedBlock().Height.Uint64() > 0 && !s.AheadOfProtocolVerifiedHead() {
+	if s.p2pSyncVerifiedBlocks &&
+		s.state.getLatestVerifiedBlock().Height.Uint64() > 0 &&
+		!s.AheadOfProtocolVerifiedHead() &&
+		!s.syncProgressTracker.OutOfSync() {
 		if err := s.TriggerBeaconSync(); err != nil {
-			return fmt.Errorf("trigger beacon-sync error: %w", err)
+			return fmt.Errorf("trigger beacon sync error: %w", err)
 		}
 
 		return nil
 	}
 
-	if s.beaconSyncTriggered {
-		log.Info("Switch to insert pending blocks one by one")
+	// We have triggered at least a beacon sync in L2 execution engine, we should reset the L1Current
+	// cursor at first, before start inserting pending L2 blocks one by one.
+	if s.syncProgressTracker.Triggered() {
+		log.Info(
+			"Switch to insert pending blocks one by one",
+			"p2pEnabled", s.p2pSyncVerifiedBlocks,
+			"p2pOutOfSync", s.syncProgressTracker.OutOfSync(),
+		)
 
+		// Get the execution engine's chain head.
 		l2Head, err := s.rpc.L2.HeaderByNumber(s.ctx, nil)
 		if err != nil {
 			return err
 		}
 
-		if l2Head.Hash() != s.lastSyncedVerifiedBlockHash {
-			log.Crit(
-				"Verified header mismatch, height: %d, hash: %s != %s",
-				l2Head.Number, l2Head.Hash(), s.lastSyncedVerifiedBlockHash,
-			)
-		}
-
-		if err := s.state.resetL1Current(s.ctx, s.lastSyncedVerifiedBlockID); err != nil {
+		// Make sure the execution engine's chain head is recorded in protocol.
+		l2HeadHash, err := s.rpc.TaikoL1.GetSyncedHeader(nil, l2Head.Number)
+		if err != nil {
 			return err
 		}
+
+		heightOrID := &HeightOrID{Height: l2Head.Number}
+		// If there is a verified block hash mismatch, log the error and then try to re-sync from genesis one by one.
+		if l2Head.Hash() != l2HeadHash {
+			log.Error(
+				"L2 block hash mismatch, re-sync from genesis",
+				"height", l2Head.Number,
+				"hash in protocol", common.Hash(l2HeadHash),
+				"hash in execution engine", l2Head.Hash(),
+			)
+
+			heightOrID.ID = common.Big0
+			heightOrID.Height = common.Big0
+			if l2HeadHash, err = s.rpc.TaikoL1.GetSyncedHeader(nil, common.Big0); err != nil {
+				return err
+			}
+		}
+
+		// If the L2 execution engine has synced to latest verified block.
+		if l2HeadHash == s.syncProgressTracker.LastSyncedVerifiedBlockHash() {
+			heightOrID.ID = s.syncProgressTracker.LastSyncedVerifiedBlockID()
+		}
+
+		// Reset the L1Current cursor.
+		blockID, err := s.state.resetL1Current(s.ctx, heightOrID)
+		if err != nil {
+			return err
+		}
+
+		// Reset to the latest L2 execution engine's chain status.
+		s.syncProgressTracker.UpdateMeta(blockID, heightOrID.Height, l2HeadHash)
 	}
 
+	// Insert the proposed block one by one.
 	return s.ProcessL1Blocks(s.ctx, l1End)
 }
 
 // AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
 func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
-	return s.state.GetL2Head().Number.Cmp(s.state.getLastVerifiedBlock().Height) >= 0
+	return s.state.GetL2Head().Number.Cmp(s.state.getLatestVerifiedBlock().Height) >= 0
 }
 
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
-// L1 block heights, and then tries inserting them into L2 node's block chain.
+// L1 block heights, and then tries inserting them into L2 execution engine's block chain.
 func (s *L2ChainSyncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
 	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
 		Client:               s.rpc.L1,

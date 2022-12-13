@@ -26,31 +26,32 @@ import (
 func (s *L2ChainSyncer) onBlockProposed(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
-	endIter eventIterator.EndBlockProposeEventIterFunc,
+	endIter eventIterator.EndBlockProposedEventIterFunc,
 ) error {
+	// Ignore those already inserted blocks.
+	if event.Id.Cmp(common.Big0) == 0 || (s.lastInsertedBlockID != nil && event.Id.Cmp(s.lastInsertedBlockID) <= 0) {
+		return nil
+	}
+
 	log.Info(
 		"New BlockProposed event",
 		"L1Height", event.Raw.BlockNumber,
 		"L1Hash", event.Raw.BlockHash,
 		"BlockID", event.Id,
 	)
-	// No need to insert genesis again, its already in L2 block chain.
-	if event.Id.Cmp(common.Big0) == 0 {
-		return nil
-	}
 
 	// Fetch the L2 parent block.
 	var (
 		parent *types.Header
 		err    error
 	)
-	if s.beaconSyncTriggered {
-		// Already synced through beacon-sync, just skip this event.
-		if event.Id.Cmp(s.lastSyncedVerifiedBlockID) <= 0 {
+	if s.syncProgressTracker.Triggered() {
+		// Already synced through beacon sync, just skip this event.
+		if event.Id.Cmp(s.syncProgressTracker.LastSyncedVerifiedBlockID()) <= 0 {
 			return nil
 		}
 
-		parent, err = s.rpc.L2.HeaderByHash(ctx, s.lastSyncedVerifiedBlockHash)
+		parent, err = s.rpc.L2.HeaderByHash(ctx, s.syncProgressTracker.LastSyncedVerifiedBlockHash())
 	} else {
 		parent, err = s.rpc.L2ParentByBlockId(ctx, event.Id)
 	}
@@ -125,7 +126,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 
 	// RPC errors are recoverable.
 	if rpcError != nil {
-		return fmt.Errorf("failed to insert new head to L2 node: %w", rpcError)
+		return fmt.Errorf("failed to insert new head to L2 execution engine: %w", rpcError)
 	}
 
 	if payloadError != nil {
@@ -135,7 +136,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 		return nil
 	}
 
-	log.Debug("Payload data", "payload", payloadData)
+	log.Debug("Payload data", "hash", payloadData.BlockHash, "txs", len(payloadData.Transactions))
 
 	log.Info(
 		"🔗 New L2 block inserted",
@@ -143,21 +144,22 @@ func (s *L2ChainSyncer) onBlockProposed(
 		"blockID", event.Id,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
-		"lastVerifiedBlockHeight", s.state.getLastVerifiedBlock().Height,
-		"lastVerifiedBlockHash", s.state.getLastVerifiedBlock().Hash,
+		"latestVerifiedBlockHeight", s.state.getLatestVerifiedBlock().Height,
+		"latestVerifiedBlockHash", s.state.getLatestVerifiedBlock().Hash,
 		"transactions", len(payloadData.Transactions),
 	)
 
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
+	s.lastInsertedBlockID = event.Id
 
-	if !l1Origin.Throwaway && s.beaconSyncTriggered {
-		s.beaconSyncTriggered = false
+	if !l1Origin.Throwaway && s.syncProgressTracker.Triggered() {
+		s.syncProgressTracker.ClearMeta()
 	}
 
 	return nil
 }
 
-// insertNewHead tries to insert a new head block to the L2 node's local
+// insertNewHead tries to insert a new head block to the L2 execution engine's local
 // block chain through Engine APIs.
 func (s *L2ChainSyncer) insertNewHead(
 	ctx context.Context,
@@ -166,7 +168,7 @@ func (s *L2ChainSyncer) insertNewHead(
 	headBlockID *big.Int,
 	txListBytes []byte,
 	l1Origin *rawdb.L1Origin,
-) (payloadData *beacon.ExecutableDataV1, rpcError error, payloadError error) {
+) (*beacon.ExecutableDataV1, error, error) {
 	log.Debug(
 		"Try to insert a new L2 head block",
 		"parentNumber", parent.Number,
@@ -212,7 +214,7 @@ func (s *L2ChainSyncer) insertNewHead(
 	)
 
 	if rpcErr != nil || payloadErr != nil {
-		return nil, rpcError, payloadErr
+		return nil, rpcErr, payloadErr
 	}
 
 	fc := &beacon.ForkchoiceStateV1{HeadBlockHash: parent.Hash()}
@@ -230,7 +232,7 @@ func (s *L2ChainSyncer) insertNewHead(
 	return payload, nil, nil
 }
 
-// insertThrowAwayBlock tries to insert a throw away block to the L2 node's local
+// insertThrowAwayBlock tries to insert a throw away block to the L2 execution engine's local
 // block chain through Engine APIs.
 func (s *L2ChainSyncer) insertThrowAwayBlock(
 	ctx context.Context,
@@ -241,7 +243,7 @@ func (s *L2ChainSyncer) insertThrowAwayBlock(
 	headBlockID *big.Int,
 	txListBytes []byte,
 	l1Origin *rawdb.L1Origin,
-) (payloadData *beacon.ExecutableDataV1, rpcError error, payloadError error) {
+) (*beacon.ExecutableDataV1, error, error) {
 	log.Info(
 		"Try to insert a new L2 throwaway block",
 		"parentHash", parent.Hash(),

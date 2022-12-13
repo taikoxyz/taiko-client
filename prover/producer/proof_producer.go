@@ -9,11 +9,11 @@ import (
 
 // ProofRequestOptions contains all options that need to be passed to zkEVM rpcd service.
 type ProofRequestOptions struct {
-	Height         *big.Int                       // the block number
-	Meta           *bindings.LibDataBlockMetadata // block meta data
-	L2NodeEndpoint string                         // the L2 node rpc endpoint url
-	Retry          bool                           // retry proof computation if error
-	Param          string                         // parameter file to use
+	Height     *big.Int                       // the block number
+	Meta       *bindings.LibDataBlockMetadata // block meta data
+	L2Endpoint string                         // a L2 execution engine's RPC endpoint
+	Retry      bool                           // retry proof computation if error
+	Param      string                         // parameter file to use
 }
 
 type ProofWithHeader struct {

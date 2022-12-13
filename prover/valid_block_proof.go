@@ -36,10 +36,10 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 
 	// Request proof.
 	opts := &producer.ProofRequestOptions{
-		Height:         header.Number,
-		L2NodeEndpoint: p.cfg.L2Endpoint,
-		Retry:          false,
-		Param:          p.cfg.ZkEvmRpcdParamsPath,
+		Height:     header.Number,
+		L2Endpoint: p.cfg.L2Endpoint,
+		Retry:      false,
+		Param:      p.cfg.ZkEvmRpcdParamsPath,
 	}
 
 	if err := p.proofProducer.RequestProof(opts, event.Id, &event.Meta, header, p.proveValidProofCh); err != nil {
@@ -151,7 +151,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 	if err := backoff.Retry(func() error {
 		tx, err := p.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
 		if err != nil {
-			if IsSubmitProofTxErrorRetryable(err) {
+			if isSubmitProofTxErrorRetryable(err) {
 				log.Warn("Retry sending TaikoL1.proveBlock transaction", "error", err)
 				return err
 			}

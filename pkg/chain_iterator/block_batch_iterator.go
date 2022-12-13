@@ -155,6 +155,7 @@ func (i *BlockBatchIterator) Iter() error {
 				if errors.Is(err, errContinue) {
 					continue
 				}
+				log.Error("Block batch iterator callback error", "error", err)
 				return err
 			}
 		}

@@ -216,7 +216,7 @@ func (p *Prover) proveOp() error {
 func (p *Prover) onBlockProposed(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
-	end eventIterator.EndBlockProposeEventIterFunc,
+	end eventIterator.EndBlockProposedEventIterFunc,
 ) error {
 	// If there is newly generated proofs, we need to submit them as soon as possible.
 	if len(p.proveValidProofCh) > 0 || len(p.proveInvalidProofCh) > 0 {
@@ -375,9 +375,9 @@ func (p *Prover) isProvenByCurrentProver(id *big.Int) (bool, error) {
 	return false, nil
 }
 
-// IsSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
+// isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
-func IsSubmitProofTxErrorRetryable(err error) bool {
+func isSubmitProofTxErrorRetryable(err error) bool {
 	// Not an error returned by eth_estimateGas.
 	if !strings.Contains(err.Error(), "L1:") {
 		return true

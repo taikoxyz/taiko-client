@@ -12,9 +12,8 @@ import (
 )
 
 // poolContentSplitter is responsible for splitting the pool content
-// which fetched from `txpool_content` RPC into several transactions lists
-// and make sure each splitted list satisfies the limits defined in Taiko
-// protocol.
+// which fetched from a `txpool_content` RPC call response into several smaller transactions lists
+// and make sure each splitted list satisfies the limits defined in Taiko protocol.
 type poolContentSplitter struct {
 	shufflePoolContent bool
 	blockMaxTxs        uint64
