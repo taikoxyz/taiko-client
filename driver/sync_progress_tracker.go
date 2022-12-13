@@ -191,7 +191,7 @@ func (s *BeaconSyncProgressTracker) LastSyncedVerifiedBlockID() *big.Int {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	return s.lastSyncedVerifiedBlockID
+	return new(big.Int).Set(s.lastSyncedVerifiedBlockID)
 }
 
 // LastSyncedVerifiedBlockHeight returns tracker.lastSyncedVerifiedBlockHeight.
@@ -199,7 +199,7 @@ func (s *BeaconSyncProgressTracker) LastSyncedVerifiedBlockHeight() *big.Int {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	return s.lastSyncedVerifiedBlockHeight
+	return new(big.Int).Set(s.lastSyncedVerifiedBlockHeight)
 }
 
 // LastSyncedVerifiedBlockHash returns tracker.lastSyncedVerifiedBlockHash.
