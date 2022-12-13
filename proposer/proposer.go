@@ -157,8 +157,12 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return p.CustomProposeOpHook()
 	}
 	syncProgress, err := p.rpc.L2.SyncProgress(ctx)
-	if err != nil || syncProgress != nil {
-		return fmt.Errorf("l2 execution engine is syncing: %w, syncProgress: %v", err, syncProgress)
+	if err != nil {
+		return fmt.Errorf("failed to get L2 execution engine sync progress: %w", err)
+	}
+	if syncProgress != nil {
+		log.Info("L2 execution engine is syncing", "progress", syncProgress)
+		return nil
 	}
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
