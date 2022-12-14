@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -32,7 +33,8 @@ type Proposer struct {
 	l2SuggestedFeeRecipient common.Address
 
 	// Proposing configuration
-	proposingInterval time.Duration
+	proposingInterval *time.Duration
+	proposingTimer    *time.Timer
 	commitSlot        uint64
 
 	poolContentSplitter *poolContentSplitter
@@ -116,17 +118,18 @@ func (p *Proposer) Start() error {
 
 // eventLoop starts the main loop of Taiko proposer.
 func (p *Proposer) eventLoop() {
-	ticker := time.NewTicker(p.proposingInterval)
 	defer func() {
-		ticker.Stop()
+		p.proposingTimer.Stop()
 		p.wg.Done()
 	}()
 
 	for {
+		p.updateProposingTicker()
+
 		select {
 		case <-p.ctx.Done():
 			return
-		case <-ticker.C:
+		case <-p.proposingTimer.C:
 			metrics.ProposerProposeEpochCounter.Inc(1)
 
 			if err := p.ProposeOp(p.ctx); err != nil {
@@ -304,6 +307,24 @@ func (p *Proposer) ProposeTxList(
 	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))
 
 	return nil
+}
+
+// updateProposingTicker updates the internal proposing timer.
+func (p *Proposer) updateProposingTicker() {
+	if p.proposingTimer != nil {
+		p.proposingTimer.Stop()
+	}
+
+	var duration time.Duration
+	if p.proposingInterval != nil {
+		duration = *p.proposingInterval
+	} else {
+		// Random number between 12 - 60
+		randomSeconds := rand.Intn((60 - 11)) + 12
+		duration = time.Duration(randomSeconds) * time.Second
+	}
+
+	p.proposingTimer = time.NewTimer(duration)
 }
 
 // Name returns the application name.

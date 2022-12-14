@@ -52,6 +52,7 @@ func (s *DriverTestSuite) SetupTest() {
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 
+	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(proposer.InitFromConfig(context.Background(), p, (&proposer.Config{
 		L1Endpoint:              os.Getenv("L1_NODE_ENDPOINT"),
 		L2Endpoint:              os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
@@ -59,7 +60,7 @@ func (s *DriverTestSuite) SetupTest() {
 		TaikoL2Address:          common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L1ProposerPrivKey:       l1ProposerPrivKey,
 		L2SuggestedFeeRecipient: common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:         1024 * time.Hour, // No need to periodically propose transactions list in unit tests
+		ProposeInterval:         &proposeInterval, // No need to periodically propose transactions list in unit tests
 	})))
 	s.p = p
 	s.p.AfterCommitHook = s.MineL1Confirmations

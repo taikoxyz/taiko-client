@@ -19,7 +19,7 @@ type Config struct {
 	TaikoL2Address          common.Address
 	L1ProposerPrivKey       *ecdsa.PrivateKey
 	L2SuggestedFeeRecipient common.Address
-	ProposeInterval         time.Duration
+	ProposeInterval         *time.Duration
 	ShufflePoolContent      bool
 	CommitSlot              uint64
 }
@@ -35,9 +35,13 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	// Proposing configuration
-	proposingInterval, err := time.ParseDuration(c.String(flags.ProposeInterval.Name))
-	if err != nil {
-		return nil, fmt.Errorf("invalid proposing interval: %w", err)
+	var proposingInterval *time.Duration
+	if c.IsSet(flags.ProposeInterval.Name) {
+		interval, err := time.ParseDuration(c.String(flags.ProposeInterval.Name))
+		if err != nil {
+			return nil, fmt.Errorf("invalid proposing interval: %w", err)
+		}
+		proposingInterval = &interval
 	}
 
 	l2SuggestedFeeRecipient := c.String(flags.L2SuggestedFeeRecipient.Name)

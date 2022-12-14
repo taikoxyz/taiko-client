@@ -1,7 +1,9 @@
 package main
 
 import (
+	"math/rand"
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
@@ -12,6 +14,10 @@ import (
 	"github.com/taikoxyz/taiko-client/version"
 	"github.com/urfave/cli/v2"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func main() {
 	app := cli.NewApp()
