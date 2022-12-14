@@ -311,6 +311,10 @@ func (p *Proposer) ProposeTxList(
 
 // updateProposingTicker updates the internal proposing timer.
 func (p *Proposer) updateProposingTicker() {
+	if p.proposingTimer != nil {
+		p.proposingTimer.Stop()
+	}
+
 	var duration time.Duration
 	if p.proposingInterval != nil {
 		duration = *p.proposingInterval
@@ -319,6 +323,7 @@ func (p *Proposer) updateProposingTicker() {
 		randomSeconds := rand.Intn((60 - 11)) + 12
 		duration = time.Duration(randomSeconds) * time.Second
 	}
+
 	p.proposingTimer = time.NewTimer(duration)
 }
 
