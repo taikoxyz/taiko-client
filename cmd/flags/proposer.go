@@ -20,16 +20,15 @@ var (
 		Required: true,
 		Category: proposerCategory,
 	}
-	ProposeInterval = cli.StringFlag{
-		Name:     "proposeInterval",
-		Usage:    "Time interval to propose L2 pending transactions",
-		Required: true,
-		Category: proposerCategory,
-	}
 )
 
 // Optional flags used by proposer.
 var (
+	ProposeInterval = cli.StringFlag{
+		Name:     "proposeInterval",
+		Usage:    "Time interval to propose L2 pending transactions",
+		Category: proposerCategory,
+	}
 	CommitSlot = cli.Uint64Flag{
 		Name:     "commitSlot",
 		Usage:    "The commit slot will be used by proposer, by default, a random number will be used",

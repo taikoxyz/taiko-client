@@ -49,6 +49,7 @@ func (s *ProposerTestSuite) SetupTest() {
 
 	p := new(Proposer)
 
+	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(InitFromConfig(context.Background(), p, (&Config{
 		L1Endpoint:              os.Getenv("L1_NODE_ENDPOINT"),
 		L2Endpoint:              os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
@@ -56,7 +57,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		TaikoL2Address:          common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L1ProposerPrivKey:       l1ProposerPrivKey,
 		L2SuggestedFeeRecipient: common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:         1024 * time.Hour, // No need to periodically propose transactions list in unit tests
+		ProposeInterval:         &proposeInterval,
 	})))
 
 	s.p = p
