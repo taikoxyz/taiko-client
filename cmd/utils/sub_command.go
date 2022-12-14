@@ -2,11 +2,9 @@ package utils
 
 import (
 	"context"
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/cmd/logger"
@@ -27,8 +25,6 @@ func SubcommandAction(app SubcommandApplication) cli.ActionFunc {
 
 		ctx, ctxClose := context.WithCancel(context.Background())
 		defer func() { ctxClose() }()
-
-		rand.Seed(time.Now().UnixNano())
 
 		if err := app.InitFromCli(ctx, c); err != nil {
 			return err
