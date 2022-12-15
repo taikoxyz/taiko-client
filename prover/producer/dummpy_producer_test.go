@@ -52,15 +52,23 @@ func TestProofDelay(t *testing.T) {
 	dummyProofProducer := &DummyProofProducer{}
 	require.Equal(t, time.Duration(0), dummyProofProducer.proofDelay())
 
-	var delays []time.Duration
+	var (
+		delays    []time.Duration
+		oneSecond = 1 * time.Second
+		oneDay    = 24 * time.Hour
+	)
 	for i := 0; i < 1024; i++ {
-		oneSecond := 1 * time.Second
-		oneDay := 24 * time.Hour
-		dummyProofProducer = &DummyProofProducer{
+		dummyProofProducer := &DummyProofProducer{
 			RandomDummyProofDelayLowerBound: &oneSecond,
 			RandomDummyProofDelayUpperBound: &oneDay,
 		}
-		delays = append(delays, dummyProofProducer.proofDelay())
+
+		delay := dummyProofProducer.proofDelay()
+
+		require.LessOrEqual(t, delay, oneDay)
+		require.Greater(t, delay, oneSecond)
+
+		delays = append(delays, delay)
 	}
 
 	allSame := func(d []time.Duration) bool {

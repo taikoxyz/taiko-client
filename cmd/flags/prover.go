@@ -39,7 +39,6 @@ var (
 		Name: "randomDummyProofDelay",
 		Usage: "Set the random dummy proof delay between the bounds using the format: " +
 			"`lowerBound-upperBound` (e.g. `30m-1h`), testing purposes only",
-		Value:    "0s-0s",
 		Category: proverCategory,
 	}
 )
