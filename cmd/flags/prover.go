@@ -31,8 +31,15 @@ var (
 var (
 	Dummy = cli.BoolFlag{
 		Name:     "dummy",
-		Usage:    "Produce dummy proofs",
+		Usage:    "Produce dummy proofs, testing purposes only",
 		Value:    false,
+		Category: proverCategory,
+	}
+	RandomDummyProofDelay = cli.StringFlag{
+		Name: "randomDummyProofDelay",
+		Usage: "Set the random dummy proof delay between the bounds using the format: " +
+			"`lowerBound-upperBound` (e.g. `30m-1h`), testing purposes only",
+		Value:    "0s-0s",
 		Category: proverCategory,
 	}
 )
@@ -43,4 +50,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&ZkEvmRpcdParamsPath,
 	&L1ProverPrivKey,
 	&Dummy,
+	&RandomDummyProofDelay,
 })

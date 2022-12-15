@@ -115,7 +115,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	if cfg.Dummy {
-		p.proofProducer = new(producer.DummyProofProducer)
+		p.proofProducer = &producer.DummyProofProducer{
+			RandomDummyProofDelayLowerBound: p.cfg.RandomDummyProofDelayLowerBound,
+			RandomDummyProofDelayUpperBound: p.cfg.RandomDummyProofDelayUpperBound,
+		}
 	} else {
 		if p.proofProducer, err = producer.NewZkevmRpcdProducer(cfg.ZKEvmRpcdEndpoint); err != nil {
 			return err

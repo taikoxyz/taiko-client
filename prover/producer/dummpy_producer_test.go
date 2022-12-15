@@ -48,6 +48,33 @@ func TestRequestProof(t *testing.T) {
 	require.NotEmpty(t, res.ZkProof)
 }
 
+func TestProofDelay(t *testing.T) {
+	dummyProofProducer := &DummyProofProducer{}
+	require.Equal(t, time.Duration(0), dummyProofProducer.proofDelay())
+
+	var delays []time.Duration
+	for i := 0; i < 1024; i++ {
+		oneSecond := 1 * time.Second
+		oneDay := 24 * time.Hour
+		dummyProofProducer = &DummyProofProducer{
+			RandomDummyProofDelayLowerBound: &oneSecond,
+			RandomDummyProofDelayUpperBound: &oneDay,
+		}
+		delays = append(delays, dummyProofProducer.proofDelay())
+	}
+
+	allSame := func(d []time.Duration) bool {
+		for i := 1; i < len(d); i++ {
+			if d[i] != d[0] {
+				return false
+			}
+		}
+		return true
+	}
+
+	require.True(t, allSame(delays))
+}
+
 func randHash() common.Hash {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
