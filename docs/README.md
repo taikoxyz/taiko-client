@@ -43,7 +43,7 @@ If the txList is **invalid**:
 
 ### Proposing strategy
 
-Since tokenomics have not been fully implemented in the Taiko protocol, the current proposing strategy is simply based on time interval (which is a required command line flag).
+Since tokenomics have not been fully implemented in the Taiko protocol, the current proposing strategy is simply based on time interval.
 
 ### Proposing process
 
@@ -53,7 +53,7 @@ Proposing a block involves a few steps:
 2. If there are too many pending transactions in the L2 execution engine, split them into several smaller txLists. This is because the Taiko protocol restricts the max size of each proposed txList.
 3. Commit hashes of the txLists by sending `TaikoL1.commitBlock` transactions to L1.
 4. Wait for `LibConstants.TAIKO_COMMIT_DELAY_CONFIRMATIONS` (currently `4`) L1 blocks confirmations.
-5. Propose all txLists by sending transactions to `TaikoL1.proposeBlock`.
+5. Propose all splitted txLists by sending `TaikoL1.proposeBlock` transactions.
 
 ## Prover
 
