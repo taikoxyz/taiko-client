@@ -68,8 +68,6 @@ func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
 
 // InitFromConfig initializes the prover instance based on the given configurations.
 func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
-	log.Debug("Prover configurations", "config", cfg)
-
 	p.cfg = cfg
 	p.ctx = ctx
 

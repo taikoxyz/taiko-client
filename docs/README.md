@@ -2,7 +2,7 @@
 
 The compiled binary `bin/taiko-client` is the main entrypoint which includes three sub-commands:
 
-- `driver`: keep the L2 execution engine's chain in sync with the `TaikoL1` contract, by directing the L2 [execution engine](https://github.com/ethereum/execution-apis/tree/main/src/engine).
+- `driver`: keep the L2 execution engine's chain in sync with the `TaikoL1` contract, by directing the L2 [execution engine](https://ethereum.org/en/glossary/#execution-client).
 - `proposer`: propose new transactions from the L2 execution engine's transaction pool to the `TaikoL1` contract.
 - `prover`: request ZK proofs from the zkEVM, and send transactions to prove the proposed blocks are valid or invalid.
 
@@ -10,13 +10,15 @@ The compiled binary `bin/taiko-client` is the main entrypoint which includes thr
 
 ### Engine API
 
-The driver directs a L2 execution engine to insert new blocks or reorg the local chain through the [Engine API](https://github.com/ethereum/execution-apis/blob/main/src/engine/specification.md).
+Driver directs a L2 execution engine to insert new blocks or reorg the local chain through the [Engine API](https://github.com/ethereum/execution-apis/blob/main/src/engine/specification.md).
 
 ### Chain synchronization process
 
 > NOTE: The Taiko protocol allows a block's timestamp to be equal to its parent block's timestamp, which differs from the original Ethereum protocol. So it's fine that there are two `TaikoL1.proposeBlock` transactions included in one L1 block.
 
-The driver subscribes to `TaikoL1.BlockProposed` events, and when a new block is proposed:
+Driver will inform the L2 execution engine Taiko protocol contract's latest verfied L2 head, and try to let it catch up the latest verfied L2 block through P2P at first. Driver will monitor the execution engine's sync progress, if it is not able to make any new sync progress in a period of time, driver will switch to insert the verfied blocks to its local chain through the Engine API one by one.
+
+After the L2 execution engine catchs up the latest verfied L2 head, driver will subscribe to `TaikoL1.BlockProposed` events, and when a new pending block is proposed:
 
 1. Get the corresponding `TaikoL1.proposeBlock` L1 transaction.
 2. Decode the txList and block metadata from the transaction's calldata.
@@ -43,7 +45,7 @@ If the txList is **invalid**:
 
 ### Proposing strategy
 
-Since tokenomics have not been fully implemented in the Taiko protocol, the current proposing strategy is simply based on time interval (which is a required command line flag).
+Since tokenomics have not been fully implemented in the Taiko protocol, the current proposing strategy is simply based on time interval.
 
 ### Proposing process
 
@@ -53,7 +55,7 @@ Proposing a block involves a few steps:
 2. If there are too many pending transactions in the L2 execution engine, split them into several smaller txLists. This is because the Taiko protocol restricts the max size of each proposed txList.
 3. Commit hashes of the txLists by sending `TaikoL1.commitBlock` transactions to L1.
 4. Wait for `LibConstants.TAIKO_COMMIT_DELAY_CONFIRMATIONS` (currently `4`) L1 blocks confirmations.
-5. Propose all txLists by sending transactions to `TaikoL1.proposeBlock`.
+5. Propose all splitted txLists by sending `TaikoL1.proposeBlock` transactions.
 
 ## Prover
 

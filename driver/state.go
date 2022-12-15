@@ -279,13 +279,13 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 	for {
 		select {
 		case e := <-newHeaderSyncedCh:
-			// L2 execution has not synced that verified block yet.
-			if s.GetL2Head().Number.Cmp(e.Height) < 0 {
-				continue
-			}
-			if err := s.VerifyL2Block(ctx, e.SrcHash); err != nil {
-				log.Error("Check new verified L2 block error", "error", err)
-				continue
+			// Verify the protocol synced block, check if it exsists in
+			// L2 execution engine.
+			if s.GetL2Head().Number.Cmp(e.Height) >= 0 {
+				if err := s.VerifyL2Block(ctx, e.SrcHash); err != nil {
+					log.Error("Check new verified L2 block error", "error", err)
+					continue
+				}
 			}
 			id, err := s.getSyncedHeaderID(e.Raw.BlockNumber, e.SrcHash)
 			if err != nil {
@@ -362,6 +362,7 @@ func (s *State) VerifyL2Block(ctx context.Context, protocolBlockHash common.Hash
 	}
 
 	if header.Hash() != protocolBlockHash {
+		// TODO(david): do not exit but re-sync from genesis?
 		log.Crit(
 			"Verified block hash mismatch",
 			"protocolBlockHash", protocolBlockHash,

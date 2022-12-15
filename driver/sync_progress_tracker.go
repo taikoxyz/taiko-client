@@ -17,8 +17,8 @@ var (
 )
 
 // BeaconSyncProgressTracker is responsible for tracking the L2 execution engine's sync progress, after
-// a beacon sync is triggered in it, and check whether the L2 execution is out of sync (due to no connected peer
-// or some other reasons).
+// a beacon sync is triggered in it, and check whether the L2 execution is not able to sync through P2P (due to no
+// connected peer or some other reasons).
 type BeaconSyncProgressTracker struct {
 	// RPC client
 	client *ethclient.Client
@@ -121,7 +121,7 @@ func (s *BeaconSyncProgressTracker) track(ctx context.Context) {
 		s.outOfSync = true
 
 		log.Warn(
-			"L2 execution engine out of sync",
+			"L2 execution engine is not able to sync through P2P",
 			"lastProgressedTime", s.lastProgressedTime,
 			"timeout", s.timeout,
 		)

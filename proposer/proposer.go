@@ -62,8 +62,6 @@ func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
 
 // InitFromConfig initializes the proposer instance based on the given configurations.
 func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
-	log.Debug("Proposer configurations", "config", cfg)
-
 	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
 	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
 	p.proposingInterval = cfg.ProposeInterval
