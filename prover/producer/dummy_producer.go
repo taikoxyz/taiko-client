@@ -53,6 +53,9 @@ func (d *DummyProofProducer) proofDelay() time.Duration {
 	upperSeconds := int(d.RandomDummyProofDelayUpperBound.Seconds())
 
 	randomDurationSeconds := rand.Intn((upperSeconds - lowerSeconds)) + lowerSeconds
+	delay := time.Duration(randomDurationSeconds) * time.Second
 
-	return time.Duration(randomDurationSeconds) * time.Second
+	log.Info("Random dummy proof delay", "delay", delay)
+
+	return delay
 }
