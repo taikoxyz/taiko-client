@@ -72,7 +72,7 @@ func TestProofDelay(t *testing.T) {
 		return true
 	}
 
-	require.True(t, allSame(delays))
+	require.False(t, allSame(delays))
 }
 
 func randHash() common.Hash {
