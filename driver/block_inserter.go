@@ -40,33 +40,8 @@ func (s *L2ChainSyncer) onBlockProposed(
 		"BlockID", event.Id,
 	)
 
-	// Fetch the L2 parent block.
-	var (
-		parent *types.Header
-		err    error
-	)
-	if s.syncProgressTracker.Triggered() {
-		// Already synced through beacon sync, just skip this event.
-		if event.Id.Cmp(s.syncProgressTracker.LastSyncedVerifiedBlockID()) <= 0 {
-			return nil
-		}
-
-		parent, err = s.rpc.L2.HeaderByHash(ctx, s.syncProgressTracker.LastSyncedVerifiedBlockHash())
-	} else {
-		parent, err = s.rpc.L2ParentByBlockId(ctx, event.Id)
-	}
-
-	if err != nil {
-		return fmt.Errorf("failed to fetch L2 parent block: %w", err)
-	}
-
-	log.Debug("Parent block", "height", parent.Number, "hash", parent.Hash())
-
-	tx, err := s.rpc.L1.TransactionInBlock(
-		ctx,
-		event.Raw.BlockHash,
-		event.Raw.TxIndex,
-	)
+	// Get the original TaikoL1.proposeBlock transaction.
+	tx, err := s.rpc.L1.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
 	if err != nil {
 		return fmt.Errorf("failed to fetch original TaikoL1.proposeBlock transaction: %w", err)
 	}
@@ -84,12 +59,39 @@ func (s *L2ChainSyncer) onBlockProposed(
 		"invalidTxIndex", invalidTxIndex,
 	)
 
+	// Fetch the L2 parent block.
+	var (
+		parent    *types.Header
+		throwaway = hint != txListValidator.HintOK
+	)
+	if s.syncProgressTracker.Triggered() {
+		// Already synced through beacon sync, just skip this event.
+		if event.Id.Cmp(s.syncProgressTracker.LastSyncedVerifiedBlockID()) <= 0 {
+			return nil
+		}
+
+		parent, err = s.rpc.L2.HeaderByHash(ctx, s.syncProgressTracker.LastSyncedVerifiedBlockHash())
+	} else {
+		if throwaway {
+			// NOTE: for throwaway blocks, use genesis block as the pre-state now, which may change in future.
+			parent, err = s.rpc.L2.HeaderByNumber(s.ctx, common.Big0)
+		} else {
+			parent, err = s.rpc.L2ParentByBlockId(ctx, event.Id)
+		}
+	}
+
+	if err != nil {
+		return fmt.Errorf("failed to fetch L2 parent block: %w", err)
+	}
+
+	log.Debug("Parent block", "height", parent.Number, "hash", parent.Hash())
+
 	l1Origin := &rawdb.L1Origin{
 		BlockID:       event.Id,
 		L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
 		L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
 		L1BlockHash:   event.Raw.BlockHash,
-		Throwaway:     hint != txListValidator.HintOK,
+		Throwaway:     throwaway,
 	}
 
 	if event.Meta.Timestamp > uint64(time.Now().Unix()) {
@@ -361,6 +363,7 @@ func (s *L2ChainSyncer) getInvalidateBlockTxOpts(ctx context.Context, height *bi
 		return nil, err
 	}
 
+	opts.GasPrice = common.Big0
 	opts.Nonce = new(big.Int).SetUint64(nonce)
 	opts.NoSend = true
 
