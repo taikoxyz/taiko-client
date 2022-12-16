@@ -2,14 +2,11 @@ package driver
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -68,15 +65,6 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 
 	if d.state, err = NewState(d.ctx, d.rpc); err != nil {
 		return err
-	}
-
-	balance, err := d.rpc.L2.BalanceAt(d.ctx, crypto.PubkeyToAddress(cfg.ThrowawayBlocksBuilderPrivKey.PublicKey), nil)
-	if err != nil {
-		return fmt.Errorf("failed to get throwaway blocks builder balance: %w", err)
-	}
-
-	if balance.Cmp(common.Big0) == 0 {
-		return fmt.Errorf("throwaway blocks builder has no fund")
 	}
 
 	peers, err := d.rpc.L2.PeerCount(d.ctx)
