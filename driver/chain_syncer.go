@@ -170,7 +170,16 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 
 // AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
 func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
-	return s.state.GetL2Head().Number.Cmp(s.state.getLatestVerifiedBlock().Height) >= 0
+	verifiedHeightToCompare := s.state.getLatestVerifiedBlock().Height.Uint64()
+	if verifiedHeightToCompare > 0 {
+		// If latest verified head height is equal to L2 execution engine's synced head height minus one,
+		// we also mark the triggered P2P sync progress as finished to prevent a protenial `InsertBlockWithoutSetHead` in
+		// execution engine, which may cause errors since we do not pass all transactions in ExecutePayload when calling
+		// NewPayloadV1.
+		verifiedHeightToCompare -= 1
+	}
+	return (s.state.GetL2Head().Number.Uint64() >= verifiedHeightToCompare) &&
+		(s.state.GetL2Head().Number.Uint64() >= s.syncProgressTracker.LastSyncedVerifiedBlockHeight().Uint64())
 }
 
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given

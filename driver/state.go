@@ -279,7 +279,7 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 	for {
 		select {
 		case e := <-newHeaderSyncedCh:
-			// Verify the protocol synced block, check if it exsists in
+			// Verify the protocol synced block, check if it exists in
 			// L2 execution engine.
 			if s.GetL2Head().Number.Cmp(e.Height) >= 0 {
 				if err := s.VerifyL2Block(ctx, e.SrcHash); err != nil {
@@ -470,7 +470,7 @@ func (s *State) resetL1Current(ctx context.Context, heightOrID *HeightOrID) (*bi
 	}
 
 	if l1CurrentHeight == nil {
-		return nil, fmt.Errorf("BlockProprosed event not found, blockID: %s", heightOrID.ID)
+		return nil, fmt.Errorf("BlockProposed event not found, blockID: %s", heightOrID.ID)
 	}
 
 	if s.l1Current, err = s.rpc.L1.HeaderByNumber(ctx, l1CurrentHeight); err != nil {

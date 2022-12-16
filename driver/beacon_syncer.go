@@ -115,7 +115,7 @@ func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, 
 		)
 	}
 
-	// Get the latest verfiied block's header, then convert it to ExecutableDataV1.
+	// Get the latest verified block's header, then convert it to ExecutableDataV1.
 	proveBlockTx, _, err := s.rpc.L1.TransactionByHash(s.ctx, proveBlockTxHash)
 	if err != nil {
 		return nil, nil, err
