@@ -187,7 +187,7 @@ func (p *Prover) Close() {
 	p.wg.Wait()
 }
 
-// proveOp perfors a proving operation, find current unproven blocks, then
+// proveOp performs a proving operation, find current unproven blocks, then
 // request generating proofs for them.
 func (p *Prover) proveOp() error {
 	isHalted, err := p.rpc.TaikoL1.IsHalted(nil)
