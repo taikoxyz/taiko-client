@@ -172,8 +172,8 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 	verifiedHeightToCompare := s.state.getLatestVerifiedBlock().Height.Uint64()
 	if verifiedHeightToCompare > 0 {
-		// If latest verified head height is equal to L2 execution engine's synced height minus one,
-		// we also mark P2P sync progress as finished to prevent a protenial `InsertBlockWithoutSetHead` in
+		// If latest verified head height is equal to L2 execution engine's synced head height minus one,
+		// we also mark the triggered P2P sync progress as finished to prevent a protenial `InsertBlockWithoutSetHead` in
 		// execution engine, which may cause errors since we do not pass all transactions in ExecutePayload when calling
 		// NewPayloadV1.
 		verifiedHeightToCompare -= 1
