@@ -6,7 +6,7 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.2.1
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0
-	github.com/ethereum/go-ethereum v1.10.25
+	github.com/ethereum/go-ethereum v1.10.26
 	github.com/prysmaticlabs/prysm v1.4.2-0.20220805185555-4e225fc667d8
 	github.com/stretchr/testify v1.8.0
 	github.com/urfave/cli/v2 v2.11.1
@@ -59,4 +59,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.10.25 => github.com/taikoxyz/taiko-geth v0.0.0-20221202110111-204eb68d377d
+replace github.com/ethereum/go-ethereum v1.10.26 => github.com/taikoxyz/taiko-geth v0.0.0-20221202110111-204eb68d377d
