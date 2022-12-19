@@ -42,8 +42,8 @@ var (
 	ProverReceivedProposedBlockGauge  = metrics.NewRegisteredGauge("prover/proposed/received", nil)
 )
 
-// Serve starts the metrics server on the given address, will be close when the given
-// context is canceled.
+// Serve starts the metrics server on the given address, will be closed when the given
+// context is cancelled.
 func Serve(ctx context.Context, c *cli.Context) error {
 	if !c.Bool(flags.MetricsEnabled.Name) {
 		return nil

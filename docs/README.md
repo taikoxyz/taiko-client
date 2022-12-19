@@ -16,9 +16,9 @@ Driver directs a L2 execution engine to insert new blocks or reorg the local cha
 
 > NOTE: The Taiko protocol allows a block's timestamp to be equal to its parent block's timestamp, which differs from the original Ethereum protocol. So it's fine that there are two `TaikoL1.proposeBlock` transactions included in one L1 block.
 
-Driver will inform the L2 execution engine Taiko protocol contract's latest verfied L2 head, and try to let it catch up the latest verfied L2 block through P2P at first. Driver will monitor the execution engine's sync progress, if it is not able to make any new sync progress in a period of time, driver will switch to insert the verfied blocks to its local chain through the Engine API one by one.
+Driver will inform the L2 execution engine Taiko protocol contract's latest verified L2 head, and try to let it catch up the latest verified L2 block through P2P at first. Driver will monitor the execution engine's sync progress, if it is not able to make any new sync progress in a period of time, driver will switch to insert the verified blocks to its local chain through the Engine API one by one.
 
-After the L2 execution engine catchs up the latest verfied L2 head, driver will subscribe to `TaikoL1.BlockProposed` events, and when a new pending block is proposed:
+After the L2 execution engine catches up the latest verified L2 head, driver will subscribe to `TaikoL1.BlockProposed` events, and when a new pending block is proposed:
 
 1. Get the corresponding `TaikoL1.proposeBlock` L1 transaction.
 2. Decode the txList and block metadata from the transaction's calldata.
