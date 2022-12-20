@@ -178,8 +178,16 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 		// NewPayloadV1.
 		verifiedHeightToCompare -= 1
 	}
-	return (s.state.GetL2Head().Number.Uint64() >= verifiedHeightToCompare) &&
-		(s.state.GetL2Head().Number.Uint64() >= s.syncProgressTracker.LastSyncedVerifiedBlockHeight().Uint64())
+
+	if s.state.GetL2Head().Number.Uint64() < verifiedHeightToCompare {
+		return false
+	}
+
+	if s.syncProgressTracker.LastSyncedVerifiedBlockHeight() != nil {
+		return s.state.GetL2Head().Number.Uint64() >= s.syncProgressTracker.LastSyncedVerifiedBlockHeight().Uint64()
+	}
+
+	return true
 }
 
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
