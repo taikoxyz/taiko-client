@@ -301,7 +301,7 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 		select {
 		case e := <-blockVerifiedCh:
 			if e.BlockHash != s.blockDeadendHash {
-				log.Info("📈 Valid block verified", "blockID", e.Id, "hash", e.BlockHash)
+				log.Info("📈 Valid block verified", "blockID", e.Id, "hash", common.Hash(e.BlockHash))
 			} else {
 				log.Info("🗑 Invalid block verified", "blockID", e.Id)
 			}
@@ -379,7 +379,7 @@ func (s *State) watchBlockProven(ctx context.Context) (ethereum.Subscription, er
 		select {
 		case e := <-newBlockProvenCh:
 			if e.BlockHash != s.blockDeadendHash {
-				log.Info("✅ Valid block proven", "blockID", e.Id, "hash", e.BlockHash, "prover", e.Prover)
+				log.Info("✅ Valid block proven", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
 			} else {
 				log.Info("❎ Invalid block proven", "blockID", e.Id, "prover", e.Prover)
 			}
