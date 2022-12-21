@@ -181,7 +181,7 @@ func (p *Prover) submitInvalidBlockProof(
 	return nil
 }
 
-// getThrowAwayBlock keeps waitting till the throwaway block inserted into the L2 chain.
+// getThrowAwayBlock keeps waiting till the throwaway block inserted into the L2 chain.
 func (p *Prover) getThrowAwayBlock(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
