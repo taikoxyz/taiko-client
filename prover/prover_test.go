@@ -144,11 +144,11 @@ func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 }
 
 func (s *ProverTestSuite) TestIsSubmitProofTxErrorRetryable() {
-	s.True(isSubmitProofTxErrorRetryable(errors.New(testAddr.String())))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:proof:tooMany")))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:tooLate")))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:prover:dup")))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:" + testAddr.String())))
+	s.True(isSubmitProofTxErrorRetryable(errors.New(testAddr.String()), common.Big0))
+	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:proof:tooMany"), common.Big0))
+	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:tooLate"), common.Big0))
+	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:prover:dup"), common.Big0))
+	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:"+testAddr.String()), common.Big0))
 }
 
 func TestProverTestSuite(t *testing.T) {

@@ -56,6 +56,7 @@ type Prover struct {
 	// Concurrency guards
 	proposeConcurrencyGuard     chan struct{}
 	submitProofConcurrencyGuard chan struct{}
+	submitProofTxMutex          sync.Mutex
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -288,6 +289,10 @@ func (p *Prover) onBlockProposed(
 	}
 
 	p.proposeConcurrencyGuard <- struct{}{}
+
+	p.l1Current = event.Raw.BlockNumber
+	p.lastHandledBlockID = event.Id.Uint64()
+
 	go func() {
 		if err := handleBlockProposedEvent(); err != nil {
 			log.Error("Handle new BlockProposed event error", "error", err)
@@ -427,13 +432,13 @@ func (p *Prover) isProvenByCurrentProver(id *big.Int) (bool, error) {
 
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
-func isSubmitProofTxErrorRetryable(err error) bool {
+func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
 	// Not an error returned by eth_estimateGas.
 	if !strings.Contains(err.Error(), "L1:") {
 		return true
 	}
 
 	// Contract errors, returned by eth_estimateGas.
-	log.Warn("🤷‍♂️ Unretryable proof submission error", "error", err)
+	log.Warn("🤷‍♂️ Unretryable proof submission error", "error", err, "blockID", blockID)
 	return false
 }
