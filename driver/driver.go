@@ -208,7 +208,7 @@ func (d *Driver) reportProtocolStatus() {
 				"📖 Protocol status",
 				"latestVerifiedId", vars.LatestVerifiedID,
 				"latestVerifiedHeight", vars.LatestVerifiedHeight,
-				"pendingBlocksCount", vars.NextBlockID-vars.LatestVerifiedID-1,
+				"pendingBlocks", vars.NextBlockID-vars.LatestVerifiedID-1,
 				"availableSolts", vars.LatestVerifiedID+maxNumBlocks-vars.NextBlockID,
 			)
 		}
