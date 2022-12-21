@@ -177,11 +177,10 @@ func (d *Driver) reportProtocolStatus() {
 	}()
 
 	var maxNumBlocks uint64
-	backoff.Retry(
+	if err := backoff.Retry(
 		func() error {
 			constants, err := d.rpc.GetProtocolConstants(nil)
 			if err != nil {
-				log.Error("Failed to get protocol state variables", "error", err)
 				return err
 			}
 
@@ -189,7 +188,10 @@ func (d *Driver) reportProtocolStatus() {
 			return nil
 		},
 		backoff.NewConstantBackOff(RetryDelay),
-	)
+	); err != nil {
+		log.Error("Failed to get protocol state variables", "error", err)
+		return
+	}
 
 	for {
 		select {
