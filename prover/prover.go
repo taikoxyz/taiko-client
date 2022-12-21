@@ -384,12 +384,7 @@ func isSubmitProofTxErrorRetryable(err error) bool {
 		return true
 	}
 
-	if strings.Contains(err.Error(), "L1:proof:tooMany") ||
-		strings.Contains(err.Error(), "L1:tooLate") ||
-		strings.Contains(err.Error(), "L1:prover:dup") {
-		log.Warn("🤷‍♂️ Unretryable proof submission error", "error", err)
-		return false
-	}
-
-	return true
+	// Contract errors, returned by eth_estimateGas.
+	log.Warn("🤷‍♂️ Unretryable proof submission error", "error", err)
+	return false
 }
