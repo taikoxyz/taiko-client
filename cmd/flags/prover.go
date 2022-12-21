@@ -27,8 +27,20 @@ var (
 	}
 )
 
-// Special flags for testing.
+// Optional flags used by prover.
 var (
+	StartingBlockID = cli.Uint64Flag{
+		Name:     "startingBlockID",
+		Usage:    "If set, prover will start proving blocks from the block with this ID",
+		Category: proverCategory,
+	}
+	MaxConcurrentProvingJobs = cli.UintFlag{
+		Name:     "maxConcurrentProvingJobs",
+		Usage:    "Limits the number of concurrent proving blocks jobs",
+		Value:    1,
+		Category: proverCategory,
+	}
+	// Special flags for testing.
 	Dummy = cli.BoolFlag{
 		Name:     "dummy",
 		Usage:    "Produce dummy proofs, testing purposes only",
@@ -48,6 +60,8 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&ZkEvmRpcdEndpoint,
 	&ZkEvmRpcdParamsPath,
 	&L1ProverPrivKey,
+	&StartingBlockID,
+	&MaxConcurrentProvingJobs,
 	&Dummy,
 	&RandomDummyProofDelay,
 })

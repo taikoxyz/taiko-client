@@ -53,6 +53,10 @@ type Prover struct {
 	proveInvalidProofCh chan *producer.ProofWithHeader
 	proofProducer       producer.ProofProducer
 
+	// Concurrency guards
+	proposeConcurrencyGuard     chan struct{}
+	submitProofConcurrencyGuard chan struct{}
+
 	ctx context.Context
 	wg  sync.WaitGroup
 }
@@ -111,9 +115,13 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxNumBlocks.Uint64())
 	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxNumBlocks.Uint64())
 	p.proveNotify = make(chan struct{}, 1)
-	if err := p.initL1Current(); err != nil {
+	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
 	}
+
+	// Concurrency guards
+	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
+	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
 	if cfg.Dummy {
 		p.proofProducer = &producer.DummyProofProducer{
@@ -167,13 +175,9 @@ func (p *Prover) eventLoop() {
 		case <-p.ctx.Done():
 			return
 		case proofWithHeader := <-p.proveValidProofCh:
-			if err := p.submitValidBlockProof(p.ctx, proofWithHeader); err != nil {
-				log.Error("Prove valid block error", "error", err)
-			}
+			p.submitProofOp(p.ctx, proofWithHeader, true)
 		case proofWithHeader := <-p.proveInvalidProofCh:
-			if err := p.submitInvalidBlockProof(p.ctx, proofWithHeader); err != nil {
-				log.Error("Prove invalid block error", "error", err)
-			}
+			p.submitProofOp(p.ctx, proofWithHeader, false)
 		case <-p.proveNotify:
 			if err := p.proveOp(); err != nil {
 				log.Error("Prove new blocks error", "error", err)
@@ -239,45 +243,77 @@ func (p *Prover) onBlockProposed(
 	log.Info("Proposed block", "blockID", event.Id)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
 
-	// Check whether the block has been verified.
-	isVerified, err := p.isBlockVerified(event.Id)
-	if err != nil {
-		return err
+	handleBlockProposedEvent := func() error {
+		defer func() { <-p.proposeConcurrencyGuard }()
+
+		// Check whether the block has been verified.
+		isVerified, err := p.isBlockVerified(event.Id)
+		if err != nil {
+			return err
+		}
+
+		if isVerified {
+			log.Info("📋 Block has been verified", "blockID", event.Id)
+			return nil
+		}
+
+		isProven, err := p.isProvenByCurrentProver(event.Id)
+		if err != nil {
+			return fmt.Errorf("failed to check whether the L2 block has been proven by current prover: %w", err)
+		}
+
+		if isProven {
+			log.Info("📬 Block's proof has already been submitted by current prover", "blockID", event.Id)
+			return nil
+		}
+
+		// Check whether the transactions list is valid.
+		proposeBlockTx, err := p.rpc.L1.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
+		if err != nil {
+			return err
+		}
+
+		_, hint, invalidTxIndex, err := p.txListValidator.ValidateTxList(event.Id, proposeBlockTx.Data())
+		if err != nil {
+			return err
+		}
+
+		// Prove the proposed block is valid.
+		if hint == txListValidator.HintOK {
+			return p.proveBlockValid(ctx, event)
+		}
+
+		// Otherwise, prove the proposed block is invalid.
+		return p.proveBlockInvalid(ctx, event, hint, invalidTxIndex)
 	}
 
-	if isVerified {
-		log.Info("📋 Block has been verified", "blockID", event.Id)
-		return nil
-	}
+	p.proposeConcurrencyGuard <- struct{}{}
+	go func() {
+		if err := handleBlockProposedEvent(); err != nil {
+			log.Error("Handle new BlockProposed event error", "error", err)
+		}
+	}()
 
-	isProven, err := p.isProvenByCurrentProver(event.Id)
-	if err != nil {
-		return fmt.Errorf("failed to check whether the L2 block has been proven by current prover: %w", err)
-	}
+	return nil
+}
 
-	if isProven {
-		log.Info("📬 Block's proof has already been submitted by current prover", "blockID", event.Id)
-		return nil
-	}
+// submitProofOp performs a (valid block / invalid block) proof submission operation.
+func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *producer.ProofWithHeader, isValidProof bool) {
+	p.submitProofConcurrencyGuard <- struct{}{}
+	go func() {
+		defer func() { <-p.submitProofConcurrencyGuard }()
 
-	// Check whether the transactions list is valid.
-	proposeBlockTx, err := p.rpc.L1.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
-	if err != nil {
-		return err
-	}
+		var err error
+		if isValidProof {
+			err = p.submitValidBlockProof(p.ctx, proofWithHeader)
+		} else {
+			err = p.submitInvalidBlockProof(p.ctx, proofWithHeader)
+		}
 
-	_, hint, invalidTxIndex, err := p.txListValidator.ValidateTxList(event.Id, proposeBlockTx.Data())
-	if err != nil {
-		return err
-	}
-
-	// Prove the proposed block is valid.
-	if hint == txListValidator.HintOK {
-		return p.proveBlockValid(ctx, event)
-	}
-
-	// Otherwise, prove the proposed block is invalid.
-	return p.proveBlockInvalid(ctx, event, hint, invalidTxIndex)
+		if err != nil {
+			log.Error("Submit proof error", "isValidProof", isValidProof, "error", err)
+		}
+	}()
 }
 
 // onBlockVerified update the latestVerified block in current state.
@@ -322,18 +358,22 @@ func (p *Prover) getProveBlocksTxOpts(ctx context.Context, cli *ethclient.Client
 }
 
 // initL1Current initializes prover's L1Current cursor.
-func (p *Prover) initL1Current() error {
-	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
-	if err != nil {
-		return err
+func (p *Prover) initL1Current(startingBlockID *big.Int) error {
+	if startingBlockID == nil {
+		stateVars, err := p.rpc.GetProtocolStateVariables(nil)
+		if err != nil {
+			return err
+		}
+
+		if stateVars.LatestVerifiedID == 0 {
+			p.l1Current = 0
+			return nil
+		}
+
+		startingBlockID = new(big.Int).SetUint64(stateVars.LatestVerifiedID)
 	}
 
-	if stateVars.LatestVerifiedID == 0 {
-		p.l1Current = 0
-		return nil
-	}
-
-	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, new(big.Int).SetUint64(stateVars.LatestVerifiedID))
+	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
 	if err != nil {
 		return err
 	}

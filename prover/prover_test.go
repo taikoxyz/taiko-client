@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -57,12 +56,13 @@ func (s *ProverTestSuite) SetupTest() {
 
 	p := new(Prover)
 	s.Nil(InitFromConfig(context.Background(), p, (&Config{
-		L1Endpoint:      os.Getenv("L1_NODE_ENDPOINT"),
-		L2Endpoint:      os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
-		TaikoL1Address:  common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:  common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		L1ProverPrivKey: l1ProverPrivKey,
-		Dummy:           true,
+		L1Endpoint:               os.Getenv("L1_NODE_ENDPOINT"),
+		L2Endpoint:               os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
+		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1ProverPrivKey:          l1ProverPrivKey,
+		Dummy:                    true,
+		MaxConcurrentProvingJobs: 1,
 	})))
 	s.p = p
 
@@ -134,16 +134,6 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	e = testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.submitInvalidBlockProof(context.Background(), <-s.p.proveInvalidProofCh))
-}
-
-func (s *ProverTestSuite) TestOnBlockProposedTxNotFound() {
-	s.ErrorContains(
-		s.p.onBlockProposed(context.Background(), &bindings.TaikoL1ClientBlockProposed{
-			Id:  common.Big2,
-			Raw: types.Log{BlockHash: common.Hash{}, TxIndex: 0},
-		}, func() {}),
-		ethereum.NotFound.Error(),
-	)
 }
 
 func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {

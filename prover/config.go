@@ -3,6 +3,7 @@ package prover
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
@@ -21,6 +22,8 @@ type Config struct {
 	L1ProverPrivKey                 *ecdsa.PrivateKey
 	ZKEvmRpcdEndpoint               string
 	ZkEvmRpcdParamsPath             string
+	StartingBlockID                 *big.Int
+	MaxConcurrentProvingJobs        uint
 	Dummy                           bool
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
@@ -64,6 +67,11 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		}
 	}
 
+	var startingBlockID *big.Int
+	if c.IsSet(flags.StartingBlockID.Name) {
+		startingBlockID = new(big.Int).SetUint64(c.Uint64(flags.StartingBlockID.Name))
+	}
+
 	return &Config{
 		L1Endpoint:                      c.String(flags.L1WSEndpoint.Name),
 		L2Endpoint:                      c.String(flags.L2WSEndpoint.Name),
@@ -72,6 +80,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L1ProverPrivKey:                 l1ProverPrivKey,
 		ZKEvmRpcdEndpoint:               c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath:             c.String(flags.ZkEvmRpcdParamsPath.Name),
+		StartingBlockID:                 startingBlockID,
+		MaxConcurrentProvingJobs:        c.Uint(flags.MaxConcurrentProvingJobs.Name),
 		Dummy:                           c.Bool(flags.Dummy.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
