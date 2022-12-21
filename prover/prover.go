@@ -384,7 +384,7 @@ func isSubmitProofTxErrorRetryable(err error) bool {
 		return true
 	}
 
-	// Contract errors.
+	// Contract errors, returned by eth_estimateGas.
 	log.Warn("🤷‍♂️ Unretryable proof submission error", "error", err)
 	return false
 }
