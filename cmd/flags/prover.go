@@ -27,8 +27,15 @@ var (
 	}
 )
 
-// Special flags for testing.
+// Optional flags used by prover.
 var (
+	MaxConcurrentProvingJobs = cli.UintFlag{
+		Name:     "maxConcurrentProvingJobs",
+		Usage:    "Limits the number of concurrent proving blocks jobs",
+		Value:    1,
+		Category: proverCategory,
+	}
+	// Special flags for testing.
 	Dummy = cli.BoolFlag{
 		Name:     "dummy",
 		Usage:    "Produce dummy proofs, testing purposes only",
@@ -48,6 +55,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&ZkEvmRpcdEndpoint,
 	&ZkEvmRpcdParamsPath,
 	&L1ProverPrivKey,
+	&MaxConcurrentProvingJobs,
 	&Dummy,
 	&RandomDummyProofDelay,
 })

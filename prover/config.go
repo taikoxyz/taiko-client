@@ -21,6 +21,7 @@ type Config struct {
 	L1ProverPrivKey                 *ecdsa.PrivateKey
 	ZKEvmRpcdEndpoint               string
 	ZkEvmRpcdParamsPath             string
+	MaxConcurrentProvingJobs        uint
 	Dummy                           bool
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
@@ -72,6 +73,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L1ProverPrivKey:                 l1ProverPrivKey,
 		ZKEvmRpcdEndpoint:               c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath:             c.String(flags.ZkEvmRpcdParamsPath.Name),
+		MaxConcurrentProvingJobs:        c.Uint(flags.MaxConcurrentProvingJobs.Name),
 		Dummy:                           c.Bool(flags.Dummy.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
