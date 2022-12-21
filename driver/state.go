@@ -30,6 +30,7 @@ type State struct {
 	// Subscriptions, will automatically resubscribe on errors
 	l1HeadSub          event.Subscription // L1 new heads
 	l2HeadSub          event.Subscription // L2 new heads
+	l2BlockProvenSub   event.Subscription // TaikoL1.BlockProven events
 	l2BlockVerifiedSub event.Subscription // TaikoL1.BlockVerified events
 	l2BlockProposedSub event.Subscription // TaikoL1.BlockProposed events
 
@@ -175,6 +176,17 @@ func (s *State) initSubscriptions(ctx context.Context) error {
 		},
 	)
 
+	s.l2BlockProvenSub = event.ResubscribeErr(
+		backoff.DefaultMaxInterval,
+		func(ctx context.Context, err error) (event.Subscription, error) {
+			if err != nil {
+				log.Warn("Failed to subscribe TaikoL1.BlockProven events, try resubscribing", "error", err)
+			}
+
+			return s.watchBlockProven(ctx)
+		},
+	)
+
 	return nil
 }
 
@@ -279,15 +291,19 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 	defer headerSyncedSub.Unsubscribe()
 
 	blockVerifiedSub, err := s.rpc.TaikoL1.WatchBlockVerified(nil, blockVerifiedCh, nil)
+	if err != nil {
+		log.Error("Create TaikoL1.BlockVerified subscription error", "error", err)
+		return nil, err
+	}
 	defer blockVerifiedSub.Unsubscribe()
 
 	for {
 		select {
 		case e := <-blockVerifiedCh:
 			if e.BlockHash != s.blockDeadendHash {
-				log.Info("✅ Valid block verified", "blockID", e.Id, "hash", e.BlockHash)
+				log.Info("📈 Valid block verified", "blockID", e.Id, "hash", e.BlockHash)
 			} else {
-				log.Info("❎ Invalid block verified", "blockID", e.Id)
+				log.Info("🗑 Invalid block verified", "blockID", e.Id)
 			}
 		case e := <-newHeaderSyncedCh:
 			// Verify the protocol synced block, check if it exists in
@@ -363,9 +379,9 @@ func (s *State) watchBlockProven(ctx context.Context) (ethereum.Subscription, er
 		select {
 		case e := <-newBlockProvenCh:
 			if e.BlockHash != s.blockDeadendHash {
-				log.Info("⭕️ Valid block proven", "blockID", e.Id, "hash", e.BlockHash, "prover", e.Prover)
+				log.Info("✅ Valid block proven", "blockID", e.Id, "hash", e.BlockHash, "prover", e.Prover)
 			} else {
-				log.Info("❌ Invalid block proven", "blockID", e.Id, "prover", e.Prover)
+				log.Info("❎ Invalid block proven", "blockID", e.Id, "prover", e.Prover)
 			}
 		case err := <-sub.Err():
 			return sub, err
