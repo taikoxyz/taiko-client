@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -152,6 +153,12 @@ func (p *Prover) eventLoop() {
 		}
 	}
 
+	// If there is too many (LibConstants.K_MAX_NUM_BLOCKS) pending blocks in TaikoL1 contract, there will be no new
+	// BlockProposed temporarily, so except the BlockProposed subscription, we need another trigger to start
+	// fetching the proposed blocks.
+	forceProvingTicker := time.NewTicker(15 * time.Second)
+	defer forceProvingTicker.Stop()
+
 	// Call reqProving() right away to catch up with the latest state.
 	reqProving()
 
@@ -177,6 +184,8 @@ func (p *Prover) eventLoop() {
 			if err := p.onBlockVerified(p.ctx, e); err != nil {
 				log.Error("Handle BlockVerified event error", "error", err)
 			}
+		case <-forceProvingTicker.C:
+			reqProving()
 		}
 	}
 }
