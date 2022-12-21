@@ -115,7 +115,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxNumBlocks.Uint64())
 	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxNumBlocks.Uint64())
 	p.proveNotify = make(chan struct{}, 1)
-	if err := p.initL1Current(); err != nil {
+	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
 	}
 
@@ -358,18 +358,22 @@ func (p *Prover) getProveBlocksTxOpts(ctx context.Context, cli *ethclient.Client
 }
 
 // initL1Current initializes prover's L1Current cursor.
-func (p *Prover) initL1Current() error {
-	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
-	if err != nil {
-		return err
+func (p *Prover) initL1Current(startingBlockID *big.Int) error {
+	if startingBlockID == nil {
+		stateVars, err := p.rpc.GetProtocolStateVariables(nil)
+		if err != nil {
+			return err
+		}
+
+		if stateVars.LatestVerifiedID == 0 {
+			p.l1Current = 0
+			return nil
+		}
+
+		startingBlockID = new(big.Int).SetUint64(stateVars.LatestVerifiedID)
 	}
 
-	if stateVars.LatestVerifiedID == 0 {
-		p.l1Current = 0
-		return nil
-	}
-
-	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, new(big.Int).SetUint64(stateVars.LatestVerifiedID))
+	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
 	if err != nil {
 		return err
 	}
