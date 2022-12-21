@@ -48,8 +48,6 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 
 	metrics.ProverQueuedProofCounter.Inc(1)
 	metrics.ProverQueuedValidProofCounter.Inc(1)
-	p.l1Current = event.Raw.BlockNumber
-	p.lastHandledBlockID = event.Id.Uint64()
 
 	return nil
 }
@@ -149,9 +147,12 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 
 	var isUnretryableError bool
 	if err := backoff.Retry(func() error {
+		p.submitProofTxMutex.Lock()
+		defer p.submitProofTxMutex.Unlock()
+
 		tx, err := p.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
 		if err != nil {
-			if isSubmitProofTxErrorRetryable(err) {
+			if isSubmitProofTxErrorRetryable(err, blockID) {
 				log.Info("Retry sending TaikoL1.proveBlock transaction", "reason", err)
 				return err
 			}
