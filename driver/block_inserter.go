@@ -34,7 +34,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 	}
 
 	log.Info(
-		"New BlockProposed event",
+		"📝 New proposed pending block",
 		"L1Height", event.Raw.BlockNumber,
 		"L1Hash", event.Raw.BlockHash,
 		"BlockID", event.Id,

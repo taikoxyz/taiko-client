@@ -43,7 +43,8 @@ type State struct {
 	l1Current      *types.Header // Current L1 block sync cursor
 
 	// Constants
-	genesisL1Height *big.Int
+	genesisL1Height  *big.Int
+	blockDeadendHash common.Hash
 
 	// RPC clients
 	rpc *rpc.Client
@@ -65,13 +66,14 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 	log.Info("Genesis L1 height", "height", stateVars.GenesisHeight)
 
 	s := &State{
-		rpc:             rpc,
-		genesisL1Height: new(big.Int).SetUint64(stateVars.GenesisHeight),
-		l1Head:          new(atomic.Value),
-		l2Head:          new(atomic.Value),
-		l2HeadBlockID:   new(atomic.Value),
-		l2VerifiedHead:  new(atomic.Value),
-		l1Current:       latestL2KnownL1Header,
+		rpc:              rpc,
+		genesisL1Height:  new(big.Int).SetUint64(stateVars.GenesisHeight),
+		l1Head:           new(atomic.Value),
+		l2Head:           new(atomic.Value),
+		l2HeadBlockID:    new(atomic.Value),
+		l2VerifiedHead:   new(atomic.Value),
+		l1Current:        latestL2KnownL1Header,
+		blockDeadendHash: common.BigToHash(common.Big1),
 	}
 
 	if err := s.initSubscriptions(ctx); err != nil {
@@ -267,17 +269,26 @@ func (s *State) GetL2Head() *types.Header {
 // driver state.
 func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, error) {
 	newHeaderSyncedCh := make(chan *bindings.TaikoL1ClientHeaderSynced, 10)
+	blockVerifiedCh := make(chan *bindings.TaikoL1ClientBlockVerified, 10)
 
-	sub, err := s.rpc.TaikoL1.WatchHeaderSynced(nil, newHeaderSyncedCh, nil, nil)
+	headerSyncedSub, err := s.rpc.TaikoL1.WatchHeaderSynced(nil, newHeaderSyncedCh, nil, nil)
 	if err != nil {
 		log.Error("Create TaikoL1.HeaderSynced subscription error", "error", err)
 		return nil, err
 	}
+	defer headerSyncedSub.Unsubscribe()
 
-	defer sub.Unsubscribe()
+	blockVerifiedSub, err := s.rpc.TaikoL1.WatchBlockVerified(nil, blockVerifiedCh, nil)
+	defer blockVerifiedSub.Unsubscribe()
 
 	for {
 		select {
+		case e := <-blockVerifiedCh:
+			if e.BlockHash != s.blockDeadendHash {
+				log.Info("✅ Valid block verified", "blockID", e.Id, "hash", e.BlockHash)
+			} else {
+				log.Info("❎ Invalid block verified", "blockID", e.Id)
+			}
 		case e := <-newHeaderSyncedCh:
 			// Verify the protocol synced block, check if it exists in
 			// L2 execution engine.
@@ -293,10 +304,10 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 				continue
 			}
 			s.setLatestVerifiedBlockHash(id, e.SrcHeight, e.SrcHash)
-		case err := <-sub.Err():
-			return sub, err
+		case err := <-headerSyncedSub.Err():
+			return headerSyncedSub, err
 		case <-ctx.Done():
-			return sub, nil
+			return headerSyncedSub, nil
 		}
 	}
 }
@@ -329,6 +340,33 @@ func (s *State) watchBlockProposed(ctx context.Context) (ethereum.Subscription, 
 		select {
 		case e := <-newBlockProposedCh:
 			s.setHeadBlockID(e.Id)
+		case err := <-sub.Err():
+			return sub, err
+		case <-ctx.Done():
+			return sub, nil
+		}
+	}
+}
+
+// watchBlockProven watches newly proven blocks.
+func (s *State) watchBlockProven(ctx context.Context) (ethereum.Subscription, error) {
+	newBlockProvenCh := make(chan *bindings.TaikoL1ClientBlockProven, 10)
+	sub, err := s.rpc.TaikoL1.WatchBlockProven(nil, newBlockProvenCh, nil)
+	if err != nil {
+		log.Error("Create TaikoL1.BlockProven subscription error", "error", err)
+		return nil, err
+	}
+
+	defer sub.Unsubscribe()
+
+	for {
+		select {
+		case e := <-newBlockProvenCh:
+			if e.BlockHash != s.blockDeadendHash {
+				log.Info("⭕️ Valid block proven", "blockID", e.Id, "hash", e.BlockHash, "prover", e.Prover)
+			} else {
+				log.Info("❌ Invalid block proven", "blockID", e.Id, "prover", e.Prover)
+			}
 		case err := <-sub.Err():
 			return sub, err
 		case <-ctx.Done():
