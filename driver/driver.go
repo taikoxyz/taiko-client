@@ -94,8 +94,9 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 
 // Start starts the driver instance.
 func (d *Driver) Start() error {
-	d.wg.Add(1)
+	d.wg.Add(2)
 	go d.eventLoop()
+	go d.reportProtocolStatus()
 
 	return nil
 }
@@ -165,6 +166,53 @@ func (d *Driver) doSync() error {
 // ChainSyncer returns the driver's chain syncer.
 func (d *Driver) ChainSyncer() *L2ChainSyncer {
 	return d.l2ChainSyncer
+}
+
+// reportProtocolStatus reports some protocol status intervally.
+func (d *Driver) reportProtocolStatus() {
+	ticker := time.NewTicker(30 * time.Second)
+	defer func() {
+		ticker.Stop()
+		d.wg.Done()
+	}()
+
+	var maxNumBlocks uint64
+	if err := backoff.Retry(
+		func() error {
+			constants, err := d.rpc.GetProtocolConstants(nil)
+			if err != nil {
+				return err
+			}
+
+			maxNumBlocks = constants.MaxNumBlocks.Uint64()
+			return nil
+		},
+		backoff.NewConstantBackOff(RetryDelay),
+	); err != nil {
+		log.Error("Failed to get protocol state variables", "error", err)
+		return
+	}
+
+	for {
+		select {
+		case <-d.ctx.Done():
+			return
+		case <-ticker.C:
+			vars, err := d.rpc.GetProtocolStateVariables(nil)
+			if err != nil {
+				log.Error("Failed to get protocol state variables", "error", err)
+				continue
+			}
+
+			log.Info(
+				"📖 Protocol status",
+				"latestVerifiedId", vars.LatestVerifiedID,
+				"latestVerifiedHeight", vars.LatestVerifiedHeight,
+				"pendingBlocks", vars.NextBlockID-vars.LatestVerifiedID-1,
+				"availableSolts", vars.LatestVerifiedID+maxNumBlocks-vars.NextBlockID,
+			)
+		}
+	}
 }
 
 // Name returns the application name.

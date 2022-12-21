@@ -33,12 +33,21 @@ func (s *L2ChainSyncer) onBlockProposed(
 		return nil
 	}
 
-	log.Info(
-		"New BlockProposed event",
-		"L1Height", event.Raw.BlockNumber,
-		"L1Hash", event.Raw.BlockHash,
-		"BlockID", event.Id,
-	)
+	if event.Id.Uint64() < s.state.getHeadBlockID().Uint64() {
+		log.Info(
+			"Pending proposed block to sync",
+			"L1Height", event.Raw.BlockNumber,
+			"L1Hash", event.Raw.BlockHash,
+			"BlockID", event.Id,
+		)
+	} else {
+		log.Info(
+			"📝 New proposed block",
+			"L1Height", event.Raw.BlockNumber,
+			"L1Hash", event.Raw.BlockHash,
+			"BlockID", event.Id,
+		)
+	}
 
 	// Get the original TaikoL1.proposeBlock transaction.
 	tx, err := s.rpc.L1.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
