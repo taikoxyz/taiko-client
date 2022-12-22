@@ -118,6 +118,8 @@ func (s *State) initSubscriptions(ctx context.Context) error {
 		return err
 	}
 
+	log.Info("L2 execution engine head", "header", l2Head)
+
 	s.setL2Head(l2Head)
 
 	s.l2HeadSub = event.ResubscribeErr(
