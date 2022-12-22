@@ -41,7 +41,7 @@ func (d *ZkevmRpcdProducer) RequestProof(
 	log.Info(
 		"Request proof from ZKEVM RPCD service",
 		"blockID", blockID,
-		"meta", meta,
+		"beneficiary", meta.Beneficiary,
 		"height", header.Number,
 		"hash", header.Hash(),
 	)

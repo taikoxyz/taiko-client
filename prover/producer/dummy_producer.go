@@ -27,7 +27,7 @@ func (d *DummyProofProducer) RequestProof(
 	log.Info(
 		"Request dummy proof",
 		"blockID", blockID,
-		"meta", meta,
+		"beneficiary", meta.Beneficiary,
 		"height", header.Number,
 		"hash", header.Hash(),
 	)

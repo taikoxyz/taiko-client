@@ -25,6 +25,7 @@ func (s *ProverTestSuite) TestSubmitInvalidBlockProofThrowawayBlockNotFound() {
 		s.p.submitInvalidBlockProof(
 			context.Background(), &producer.ProofWithHeader{
 				BlockID: common.Big256,
+				Meta:    &bindings.LibDataBlockMetadata{},
 				Header:  &types.Header{},
 				ZkProof: []byte{0xff},
 			},

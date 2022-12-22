@@ -57,7 +57,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 	log.Info(
 		"New valid block proof",
 		"blockID", proofWithHeader.BlockID,
-		"meta", proofWithHeader.Meta,
+		"beneficiary", proofWithHeader.Meta.Beneficiary,
 		"hash", proofWithHeader.Header.Hash(),
 		"proof", proofWithHeader.ZkProof,
 	)
@@ -83,6 +83,10 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		"root", header.Root.String(),
 		"transactions", len(block.Transactions()),
 	)
+
+	if block.Transactions().Len() == 0 {
+		return fmt.Errorf("invalid block without anchor transaction, blockID %s", blockID)
+	}
 
 	// Validate TaikoL2.anchor transaction inside the L2 block.
 	anchorTx := block.Transactions()[0]
