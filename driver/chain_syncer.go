@@ -174,7 +174,7 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 	log.Info(
 		"Checking whether the execution engine is head of protocol's verfiied head",
 		"latestVerifiedBlock", verifiedHeightToCompare,
-		"executionEngineHead", s.state.GetL2Head(),
+		"executionEngineHead", s.state.GetL2Head().Number,
 	)
 	if verifiedHeightToCompare > 0 {
 		// If latest verified head height is equal to L2 execution engine's synced head height minus one,

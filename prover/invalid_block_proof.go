@@ -61,7 +61,7 @@ func (p *Prover) submitInvalidBlockProof(
 	log.Info(
 		"New invalid block proof",
 		"blockID", proofWithHeader.BlockID,
-		"meta", proofWithHeader.Meta,
+		"beneficiary", proofWithHeader.Meta.Beneficiary,
 		"hash", proofWithHeader.Header.Hash(),
 		"proof", proofWithHeader.ZkProof,
 	)
@@ -79,6 +79,10 @@ func (p *Prover) submitInvalidBlockProof(
 	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to get the throwaway block (id: %d): %w", blockID, err)
+	}
+
+	if block.Transactions().Len() == 0 {
+		return fmt.Errorf("invalid throwaway block without any transaction, blockID %s", blockID)
 	}
 
 	// Fetch all receipts inside that L2 throwaway block.
