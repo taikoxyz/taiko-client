@@ -33,6 +33,10 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	if err != nil {
 		return err
 	}
+	if status.Status == beacon.VALID {
+		log.Info("Already known beacon payload", "blockID", blockID)
+		return nil
+	}
 	if status.Status != beacon.SYNCING {
 		return fmt.Errorf("unexpected NewPayload response status: %s", status.Status)
 	}
