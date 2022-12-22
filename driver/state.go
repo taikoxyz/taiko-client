@@ -118,7 +118,7 @@ func (s *State) initSubscriptions(ctx context.Context) error {
 		return err
 	}
 
-	log.Info("L2 execution engine head", "header", l2Head)
+	log.Info("L2 execution engine head", "height", l2Head.Number, "hash", l2Head.Hash())
 
 	s.setL2Head(l2Head)
 
