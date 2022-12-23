@@ -358,6 +358,7 @@ func (p *Prover) getProveBlocksTxOpts(ctx context.Context, cli *ethclient.Client
 	}
 
 	opts.GasTipCap = gasTipCap
+	opts.GasLimit = submitProofGasLimit
 
 	return opts, nil
 }

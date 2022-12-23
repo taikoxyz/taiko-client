@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -151,10 +152,14 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 
 	var isUnretryableError bool
 	if err := backoff.Retry(func() error {
-		p.submitProofTxMutex.Lock()
-		defer p.submitProofTxMutex.Unlock()
+		sendTx := func() (*types.Transaction, error) {
+			p.submitProofTxMutex.Lock()
+			defer p.submitProofTxMutex.Unlock()
 
-		tx, err := p.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
+			return p.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
+		}
+
+		tx, err := sendTx()
 		if err != nil {
 			if isSubmitProofTxErrorRetryable(err, blockID) {
 				log.Info("Retry sending TaikoL1.proveBlock transaction", "reason", err)
@@ -166,7 +171,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		}
 
 		if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx); err != nil {
-			log.Warn("Failed to wait till transaction executed", "txHash", tx.Hash(), "error", err)
+			log.Warn("Failed to wait till transaction executed", "blockID", blockID, "txHash", tx.Hash(), "error", err)
 			return err
 		}
 
