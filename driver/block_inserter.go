@@ -244,7 +244,7 @@ func (s *L2ChainSyncer) insertThrowAwayBlock(
 	txListBytes []byte,
 	l1Origin *rawdb.L1Origin,
 ) (*beacon.ExecutableDataV1, error, error) {
-	log.Info(
+	log.Debug(
 		"Try to insert a new L2 throwaway block",
 		"parentHash", parent.Hash(),
 		"headBlockID", headBlockID,
