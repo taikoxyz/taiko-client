@@ -147,7 +147,6 @@ func (p *Prover) submitInvalidBlockProof(
 		if p.ctx.Err() != nil {
 			return nil
 		}
-
 		sendTx := func() (*types.Transaction, error) {
 			p.submitProofTxMutex.Lock()
 			defer p.submitProofTxMutex.Unlock()
