@@ -152,6 +152,9 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 
 	var isUnretryableError bool
 	if err := backoff.Retry(func() error {
+		if p.ctx.Err() != nil {
+			return nil
+		}
 		sendTx := func() (*types.Transaction, error) {
 			p.submitProofTxMutex.Lock()
 			defer p.submitProofTxMutex.Unlock()
@@ -178,6 +181,10 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 		return nil
 	}, backoff.NewExponentialBackOff()); err != nil {
 		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
+	}
+
+	if p.ctx.Err() != nil {
+		return p.ctx.Err()
 	}
 
 	if isUnretryableError {
