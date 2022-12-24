@@ -31,7 +31,7 @@ func (p *Prover) proveBlockInvalid(
 		return err
 	}
 
-	log.Debug("Throwaway block", "header", throwAwayBlock.Header())
+	log.Debug("Throwaway block", "height", throwAwayBlock.Header().Number, "hash", throwAwayBlock.Header().Hash())
 
 	// Request proof.
 	proofOpts := &producer.ProofRequestOptions{
@@ -144,6 +144,9 @@ func (p *Prover) submitInvalidBlockProof(
 
 	var isUnretryableError bool
 	if err := backoff.Retry(func() error {
+		if p.ctx.Err() != nil {
+			return nil
+		}
 		sendTx := func() (*types.Transaction, error) {
 			p.submitProofTxMutex.Lock()
 			defer p.submitProofTxMutex.Unlock()
@@ -170,6 +173,10 @@ func (p *Prover) submitInvalidBlockProof(
 		return nil
 	}, backoff.NewExponentialBackOff()); err != nil {
 		return fmt.Errorf("failed to send TaikoL1.proveBlockInvalid transaction: %w", err)
+	}
+
+	if p.ctx.Err() != nil {
+		return p.ctx.Err()
 	}
 
 	if isUnretryableError {
