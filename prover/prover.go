@@ -97,7 +97,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		return fmt.Errorf("prover %s is not whitelisted", p.proverAddress)
 	}
 
-	// Constants
+	// Configs
 	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(nil)
 	if err != nil {
 		return fmt.Errorf("failed to get protocol configs: %w", err)
@@ -164,7 +164,7 @@ func (p *Prover) eventLoop() {
 		}
 	}
 
-	// If there is too many (LibConstants.K_MAX_NUM_BLOCKS) pending blocks in TaikoL1 contract, there will be no new
+	// If there is too many (TaikoData.Config.maxNumBlocks) pending blocks in TaikoL1 contract, there will be no new
 	// BlockProposed temporarily, so except the BlockProposed subscription, we need another trigger to start
 	// fetching the proposed blocks.
 	forceProvingTicker := time.NewTicker(15 * time.Second)

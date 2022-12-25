@@ -54,7 +54,7 @@ Proposing a block involves a few steps:
 1. Fetch the pending transactions from the L2 execution engine through the `txpool_content` RPC method.
 2. If there are too many pending transactions in the L2 execution engine, split them into several smaller txLists. This is because the Taiko protocol restricts the max size of each proposed txList.
 3. Commit hashes of the txLists by sending `TaikoL1.commitBlock` transactions to L1.
-4. Wait for `LibConstants.TAIKO_COMMIT_DELAY_CONFIRMATIONS` (currently `4`) L1 blocks confirmations.
+4. Wait for `TaikoData.Config.commitConfirmations` (currently `0`) L1 blocks confirmations.
 5. Propose all splitted txLists by sending `TaikoL1.proposeBlock` transactions.
 
 ## Prover

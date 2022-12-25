@@ -88,14 +88,14 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		return fmt.Errorf("proposer %s is not whitelisted", proposerAddress)
 	}
 
-	// Protocol constants
+	// Protocol configs
 	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(nil)
 	if err != nil {
-		return fmt.Errorf("failed to get protocol constants: %w", err)
+		return fmt.Errorf("failed to get protocol configs: %w", err)
 	}
 	p.protocolConfigs = &protocolConfigs
 
-	log.Info("Protocol constants", "constants", p.protocolConfigs)
+	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
 	p.poolContentSplitter = &poolContentSplitter{
 		shufflePoolContent:      cfg.ShufflePoolContent,
