@@ -117,12 +117,6 @@ func TestIsProposerWhitelisted(t *testing.T) {
 	require.Nil(t, err)
 }
 
-func TestGetProtocolConstants(t *testing.T) {
-	client := newTestClient(t)
-	_, err := client.GetProtocolConstants(nil)
-	require.Nil(t, err)
-}
-
 func TestGetProtocolStateVariables(t *testing.T) {
 	client := newTestClient(t)
 	_, err := client.GetProtocolStateVariables(nil)

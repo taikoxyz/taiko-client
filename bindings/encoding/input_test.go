@@ -96,7 +96,7 @@ func TestDecodeEvidenceHeader(t *testing.T) {
 	require.NotNil(t, err)
 
 	b, err := EncodeEvidence(&TaikoL1Evidence{
-		Meta: bindings.LibDataBlockMetadata{
+		Meta: bindings.TaikoDataBlockMetadata{
 			Id:           new(big.Int).SetUint64(rand.Uint64()),
 			L1Height:     new(big.Int).SetUint64(rand.Uint64()),
 			L1Hash:       testutils.RandomHash(),

@@ -33,8 +33,8 @@ type Prover struct {
 	rpc *rpc.Client
 
 	// Contract configurations
-	txListValidator   *txListValidator.TxListValidator
-	protocolConstants *bindings.ProtocolConstants
+	txListValidator *txListValidator.TxListValidator
+	protocolConfigs *bindings.TaikoDataConfig
 
 	// States
 	latestVerifiedL1Height uint64
@@ -98,23 +98,25 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// Constants
-	if p.protocolConstants, err = p.rpc.GetProtocolConstants(nil); err != nil {
-		return fmt.Errorf("failed to get protocol constants: %w", err)
+	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(nil)
+	if err != nil {
+		return fmt.Errorf("failed to get protocol configs: %w", err)
 	}
+	p.protocolConfigs = &protocolConfigs
 
-	log.Info("Protocol constants", "constants", p.protocolConstants)
+	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
 	p.txListValidator = txListValidator.NewTxListValidator(
-		p.protocolConstants.BlockMaxGasLimit.Uint64(),
-		p.protocolConstants.BlockMaxTxs.Uint64(),
-		p.protocolConstants.TxListMaxBytes.Uint64(),
-		p.protocolConstants.TxMinGasLimit.Uint64(),
+		p.protocolConfigs.BlockMaxGasLimit.Uint64(),
+		p.protocolConfigs.MaxTransactionsPerBlock.Uint64(),
+		p.protocolConfigs.MaxBytesPerTxList.Uint64(),
+		p.protocolConfigs.MinTxGasLimit.Uint64(),
 		p.rpc.L2ChainID,
 	)
-	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.protocolConstants.MaxNumBlocks.Uint64())
-	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.protocolConstants.MaxNumBlocks.Uint64())
-	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxNumBlocks.Uint64())
-	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.protocolConstants.MaxNumBlocks.Uint64())
+	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.protocolConfigs.MaxNumBlocks.Uint64())
+	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.protocolConfigs.MaxNumBlocks.Uint64())
+	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())
+	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)

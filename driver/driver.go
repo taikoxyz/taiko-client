@@ -179,12 +179,12 @@ func (d *Driver) reportProtocolStatus() {
 	var maxNumBlocks uint64
 	if err := backoff.Retry(
 		func() error {
-			constants, err := d.rpc.GetProtocolConstants(nil)
+			configs, err := d.rpc.TaikoL1.GetConfig(nil)
 			if err != nil {
 				return err
 			}
 
-			maxNumBlocks = constants.MaxNumBlocks.Uint64()
+			maxNumBlocks = configs.MaxNumBlocks.Uint64()
 			return nil
 		},
 		backoff.NewConstantBackOff(RetryDelay),

@@ -32,7 +32,7 @@ var (
 		Nonce:       types.EncodeNonce(rand.Uint64()),
 		BaseFee:     new(big.Int).SetUint64(rand.Uint64()),
 	}
-	testMeta = bindings.LibDataBlockMetadata{
+	testMeta = bindings.TaikoDataBlockMetadata{
 		Id:          new(big.Int).SetUint64(rand.Uint64()),
 		L1Height:    new(big.Int).SetUint64(rand.Uint64()),
 		L1Hash:      testutils.RandomHash(),

@@ -44,6 +44,7 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
+          ref: tokenomics_implementation
 
       - name: Set up Go
         uses: actions/setup-go@v3

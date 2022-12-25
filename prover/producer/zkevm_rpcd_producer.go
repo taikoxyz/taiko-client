@@ -34,7 +34,7 @@ func NewZkevmRpcdProducer(rpcdEndpoint string) (*ZkevmRpcdProducer, error) {
 func (d *ZkevmRpcdProducer) RequestProof(
 	opts *ProofRequestOptions,
 	blockID *big.Int,
-	meta *bindings.LibDataBlockMetadata,
+	meta *bindings.TaikoDataBlockMetadata,
 	header *types.Header,
 	resultCh chan *ProofWithHeader,
 ) error {

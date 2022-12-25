@@ -127,7 +127,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 
 	// Assemble the TaikoL1.proveBlock transaction inputs.
 	proofs := [][]byte{}
-	for i := 0; i < int(p.protocolConstants.ZKProofsPerBlock.Uint64()); i++ {
+	for i := 0; i < int(p.protocolConfigs.ZkProofsPerBlock.Uint64()); i++ {
 		proofs = append(proofs, zkProof)
 	}
 	proofs = append(proofs, [][]byte{anchorTxProof, anchorReceiptProof}...)

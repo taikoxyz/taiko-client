@@ -243,11 +243,6 @@ func (c *Client) IsProposerWhitelisted(proposer common.Address) (bool, error) {
 	return whitelisted, nil
 }
 
-// GetProtocolConstants gets the protocol constants from TaikoL1 contract.
-func (c *Client) GetProtocolConstants(opts *bind.CallOpts) (*bindings.ProtocolConstants, error) {
-	return GetProtocolConstants(c.TaikoL1, opts)
-}
-
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
 func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*bindings.ProtocolStateVariables, error) {
 	return GetProtocolStateVariables(c.TaikoL1, opts)

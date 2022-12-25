@@ -26,7 +26,13 @@ type ProtocolConstants struct {
 // ref: https://github.com/taikoxyz/taiko-mono/blob/main/packages/protocol/contracts/L1/LibData.sol
 type ProtocolStateVariables struct {
 	GenesisHeight        uint64
+	GenesisTimestamp     uint64
+	StatusBits           uint64
+	FeeBase              *big.Int
+	NextBlockID          uint64
+	LastProposedAt       uint64
+	AvgBlockTime         uint64
 	LatestVerifiedHeight uint64
 	LatestVerifiedID     uint64
-	NextBlockID          uint64
+	AvgProofTime         uint64
 }

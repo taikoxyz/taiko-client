@@ -16,13 +16,13 @@ type Proposer interface {
 	utils.SubcommandApplication
 	ProposeOp(ctx context.Context) error
 	CommitTxList(ctx context.Context, txListBytes []byte, gasLimit uint64, splittedIdx int) (
-		*bindings.LibDataBlockMetadata,
+		*bindings.TaikoDataBlockMetadata,
 		*types.Transaction,
 		error,
 	)
 	ProposeTxList(
 		ctx context.Context,
-		meta *bindings.LibDataBlockMetadata,
+		meta *bindings.TaikoDataBlockMetadata,
 		commitTx *types.Transaction,
 		txListBytes []byte,
 		txNum uint,
