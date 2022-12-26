@@ -78,7 +78,7 @@ jobs:
 
       - name: Install protocol dependences
         working-directory: ${{ env.TAIKO_MONO_DIR }}
-        run: cd ./packages/protocol && pnpm install
+        run: cd ./packages/protocol && npm install
 
       - name: Build
         working-directory: ${{ env.CLIENT_DIR }}
