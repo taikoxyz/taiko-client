@@ -175,7 +175,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 
 		if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx); err != nil {
 			log.Warn("Failed to wait till transaction executed", "blockID", blockID, "txHash", tx.Hash(), "error", err)
-			return err
+			return nil
 		}
 
 		return nil
