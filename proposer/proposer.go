@@ -23,6 +23,10 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+const (
+	maxProposeBatch = 10
+)
+
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
 type Proposer struct {
 	// RPC clients
@@ -201,9 +205,15 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		}
 	}
 
+	proposed := 0
 	for _, res := range commitTxListResQueue {
 		if err := p.ProposeTxList(ctx, res.meta, res.commitTx, res.txListBytes, res.txNum); err != nil {
 			return fmt.Errorf("failed to propose transactions: %w", err)
+		}
+
+		proposed++
+		if proposed > maxProposeBatch {
+			return nil
 		}
 	}
 
