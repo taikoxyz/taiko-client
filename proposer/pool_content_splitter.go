@@ -2,6 +2,7 @@ package proposer
 
 import (
 	"fmt"
+	"math/rand"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/les/utils"
@@ -34,6 +35,8 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 
 	if p.shufflePoolContent {
 		txLists = p.weightedShuffle(txLists)
+	} else {
+		rand.Shuffle(len(txLists), func(i, j int) { txLists[i], txLists[j] = txLists[j], txLists[i] })
 	}
 
 	for _, txList := range txLists {
