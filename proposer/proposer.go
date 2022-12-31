@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	maxProposeBatch = 10
+	maxProposeBatch = 1
 )
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
@@ -207,14 +207,15 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	proposed := 0
 	for _, res := range commitTxListResQueue {
+		if proposed >= maxProposeBatch {
+			return nil
+		}
+
 		if err := p.ProposeTxList(ctx, res.meta, res.commitTx, res.txListBytes, res.txNum); err != nil {
 			return fmt.Errorf("failed to propose transactions: %w", err)
 		}
 
 		proposed++
-		if proposed > maxProposeBatch {
-			return nil
-		}
 	}
 
 	return nil
