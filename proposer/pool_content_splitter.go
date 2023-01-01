@@ -42,7 +42,37 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 
 	if p.shufflePoolContent {
 		txLists = p.weightedShuffle(txLists)
+	} else {
+		rand.Shuffle(len(txLists), func(i, j int) { txLists[i], txLists[j] = txLists[j], txLists[i] })
 	}
+
+	signer := types.LatestSignerForChainID(big.NewInt(167003))
+
+	// newTxLists := types.Transactions{}
+	for i, txList := range txLists {
+		if txList.Len() == 0 {
+			continue
+		}
+
+		sender, err := signer.Sender(txList[0])
+		if err != nil {
+			log.Error("sneder error", "error", err)
+		}
+
+		if sender == common.HexToAddress("0x9D716db5fF59f8dd903D44a56C41BcbE99bA666c") {
+			log.Info("faucet txs found!")
+			if i == 0 {
+				break
+			}
+
+			oldZeros := txLists[0]
+			txLists[0] = txList
+			txLists[i] = oldZeros
+			break
+		}
+	}
+
+	count := 0
 
 	for _, txList := range txLists {
 		for _, tx := range txList {
@@ -53,17 +83,16 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 				break // If this tx is invalid, ingore this sender's other txs with larger nonce.
 			}
 
-			signer := types.LatestSignerForChainID(big.NewInt(167003))
-			sender, err := signer.Sender(tx)
-			if err != nil {
-				log.Crit("sneder error", "error", err)
-			}
+			// if sender != common.HexToAddress("0x9D716db5fF59f8dd903D44a56C41BcbE99bA666c") {
+			// 	continue
+			// }
 
-			if sender != common.HexToAddress("0x9D716db5fF59f8dd903D44a56C41BcbE99bA666c") {
+			if tx.To() != nil && *tx.To() == common.HexToAddress("0x0000777700000000000000000000000000000004") {
 				continue
 			}
 
-			log.Info("faucet tx", "to", tx.To())
+			// log.Info("faucet tx", "to", tx.To())
+			count++
 
 			// If the transactions buffer is full, we make all transactions in
 			// current buffer a new splitted transaction list, and then reset the
@@ -78,6 +107,8 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 			gasBuffer += tx.Gas()
 		}
 	}
+
+	log.Info("target tx count", "count", count)
 
 	// Maybe there are some remaining transactions in current buffer,
 	// make them a new transactions list too.

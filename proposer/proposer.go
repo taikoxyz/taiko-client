@@ -139,6 +139,17 @@ func (p *Proposer) eventLoop() {
 
 	for {
 		p.updateProposingTicker()
+		// if p.ctx.Err() == nil {
+		// 	if err := p.ProposeOp(p.ctx); err != nil {
+		// 		log.Error("ProposeOp error", "err", err)
+		// 		time.Sleep(3 * time.Second)
+		// 		continue
+		// 	} else {
+		// 		time.Sleep(10 * time.Second)
+		// 	}
+		// }
+
+		// t := time.NewTicker(3 * time.Second)
 
 		select {
 		case <-p.ctx.Done():
@@ -151,9 +162,12 @@ func (p *Proposer) eventLoop() {
 				log.Error("ProposeOp error", "err", err)
 				time.Sleep(3 * time.Second)
 				continue
-			} else {
-				time.Sleep(10 * time.Second)
 			}
+			// case <-t.C:
+			// 	if err := p.ProposeOp(p.ctx); err != nil {
+			// 		log.Error("ProposeOp error", "err", err)
+			// 		continue
+			// 	}
 		}
 	}
 }
@@ -249,26 +263,27 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 		Beneficiary: p.l2SuggestedFeeRecipient,
 		GasLimit:    gasLimit,
 		TxListHash:  crypto.Keccak256Hash(txListBytes),
-		CommitSlot:  rand.Uint64(),
+		CommitSlot:  common.Big0.Uint64(),
 	}
-	log.Info("CommitSlot1", "slot", meta.CommitSlot)
+	// log.Info("CommitSlot1", "slot", meta.CommitSlot)
 
 	if p.protocolConstants.CommitDelayConfirmations.Cmp(common.Big0) == 0 {
 		log.Debug("No commit delay confirmation, skip committing transactions list")
 		return meta, nil, nil
 	}
 
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID, 1.1)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	commitHash := common.BytesToHash(encoding.EncodeCommitHash(meta.Beneficiary, meta.TxListHash))
-
 	commitTx, err := p.rpc.TaikoL1.CommitBlock(opts, meta.CommitSlot, commitHash)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	log.Info("tx2", "hash", commitTx.Hash())
 
 	return meta, commitTx, nil
 }
@@ -314,7 +329,24 @@ func (p *Proposer) ProposeTxList(
 
 	log.Info("CommitSlot2", "slot", meta.CommitSlot)
 
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
+	key1, err := crypto.HexToECDSA("eed858a6f8b22fea58762091e0237ed59b3555f83e72d5e398a3f436464a4306")
+	if err != nil {
+		return err
+	}
+
+	opts1, err := getTxOpts(ctx, p.rpc.L1, key1, p.rpc.L1ChainID, 10)
+	if err != nil {
+		return err
+	}
+
+	tx1, err := p.rpc.TaikoL1.VerifyBlocks(opts1, new(big.Int).SetUint64(100))
+	if err != nil {
+		log.Error("tx error", "err", err)
+	} else {
+		log.Info("tx1", "hash", tx1.Hash())
+	}
+
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID, 1.5)
 	if err != nil {
 		return err
 	}
@@ -324,7 +356,7 @@ func (p *Proposer) ProposeTxList(
 		return err
 	}
 
-	log.Info("TX", "tx", proposeTx.Hash())
+	log.Info("tx2", "tx", proposeTx.Hash())
 	fmt.Println(proposeTx.Hash())
 
 	if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, proposeTx); err != nil {
@@ -377,6 +409,7 @@ func getTxOpts(
 	cli *ethclient.Client,
 	privKey *ecdsa.PrivateKey,
 	chainID *big.Int,
+	gasTip float32,
 ) (*bind.TransactOpts, error) {
 	opts, err := bind.NewKeyedTransactorWithChainID(privKey, chainID)
 	if err != nil {
@@ -409,7 +442,7 @@ func getTxOpts(
 	// }
 
 	// log.Info("gasPrice", "gasPrice", gasPrice)
-	opts.GasTipCap = new(big.Int).SetUint64(gasTipCap.Uint64() * 3)
+	opts.GasTipCap = new(big.Int).SetUint64(gasTipCap.Uint64() * uint64(gasTip))
 	opts.Nonce = new(big.Int).SetUint64(nonce)
 	log.Info("Nonce", "nonce", nonce)
 	// opts.GasPrice = big.NewInt(1499999992 * 10)

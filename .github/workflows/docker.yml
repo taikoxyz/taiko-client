@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [faucet-proposer]
+    branches: [faucet-proposer-3]
     tags:
       - "v*"
 
