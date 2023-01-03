@@ -15,6 +15,10 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
+const (
+	waitReceiptTimeout = 120 * time.Second
+)
+
 // GetProtocolConstants gets the protocol constants from TaikoL1 contract.
 func GetProtocolConstants(
 	taikoL1Client *bindings.TaikoL1Client,
@@ -92,10 +96,14 @@ func WaitReceipt(ctx context.Context, client *ethclient.Client, tx *types.Transa
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
+	timeoutCh := time.After(waitReceiptTimeout)
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
+		case <-timeoutCh:
+			return nil, fmt.Errorf("wait transaction executed timeout, hash: %s", tx.Hash())
 		case <-ticker.C:
 			receipt, err := client.TransactionReceipt(ctx, tx.Hash())
 			if err != nil {

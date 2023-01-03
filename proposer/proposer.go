@@ -172,7 +172,9 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
-	pendingContent, _, err := p.rpc.L2PoolContent(ctx)
+	getPoolContentCtx, canecl := context.WithTimeout(ctx, 30*time.Second)
+	defer canecl()
+	pendingContent, _, err := p.rpc.L2PoolContent(getPoolContentCtx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
 	}
@@ -333,6 +335,8 @@ func (p *Proposer) updateProposingTicker() {
 		duration = time.Duration(randomSeconds) * time.Second
 	}
 
+	log.Debug("Proposing delay", "delay", duration)
+
 	p.proposingTimer = time.NewTimer(duration)
 }
 
@@ -362,6 +366,15 @@ func getTxOpts(
 		return nil, fmt.Errorf("failed to generate prepareBlock transaction options: %w", err)
 	}
 
+	head, err := cli.BlockNumber(ctx)
+	if err != nil {
+		return nil, err
+	}
+	nonce, err := cli.NonceAt(ctx, crypto.PubkeyToAddress(privKey.PublicKey), new(big.Int).SetUint64(head))
+	if err != nil {
+		return nil, err
+	}
+
 	gasTipCap, err := cli.SuggestGasTipCap(ctx)
 	if err != nil {
 		if rpc.IsMaxPriorityFeePerGasNotFoundError(err) {
@@ -372,6 +385,7 @@ func getTxOpts(
 	}
 
 	opts.GasTipCap = gasTipCap
+	opts.Nonce = new(big.Int).SetUint64(nonce)
 
 	return opts, nil
 }
