@@ -48,19 +48,25 @@ func ProposeAndInsertEmptyBlocks(
 		close(sink)
 	}()
 
+	// Zero byte txList
+	meta, commitTx, err := proposer.CommitTxList(context.Background(), []byte{}, 1024, 0)
+	s.Nil(err)
+
+	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, []byte{}, 0))
+
 	// RLP encoded empty list
 	var emptyTxs []types.Transaction
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	meta, commitTx, err := proposer.CommitTxList(context.Background(), encoded, 1024, 0)
+	meta, commitTx, err = proposer.CommitTxList(context.Background(), encoded, 1024, 0)
 	s.Nil(err)
 
 	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, encoded, 0))
 
 	ProposeInvalidTxListBytes(s, proposer)
 
-	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink}...)
+	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink}...)
 
 	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), events[len(events)-1].Raw.TxHash)
 	s.Nil(err)
