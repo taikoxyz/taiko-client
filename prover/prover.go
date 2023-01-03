@@ -87,16 +87,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		return err
 	}
 
-	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
-	isWhitelisted, err := p.rpc.IsProverWhitelisted(p.proverAddress)
-	if err != nil {
-		return fmt.Errorf("failed to check whether current prover %s is whitelisted: %w", p.proverAddress, err)
-	}
-
-	if !isWhitelisted {
-		return fmt.Errorf("prover %s is not whitelisted", p.proverAddress)
-	}
-
 	// Configs
 	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(nil)
 	if err != nil {
@@ -113,6 +103,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.protocolConfigs.MinTxGasLimit.Uint64(),
 		p.rpc.L2ChainID,
 	)
+	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.protocolConfigs.MaxNumBlocks.Uint64())
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.protocolConfigs.MaxNumBlocks.Uint64())
 	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())

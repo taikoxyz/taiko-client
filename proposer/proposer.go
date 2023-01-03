@@ -78,16 +78,6 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		return fmt.Errorf("initialize rpc clients error: %w", err)
 	}
 
-	proposerAddress := crypto.PubkeyToAddress(cfg.L1ProposerPrivKey.PublicKey)
-	isWhitelisted, err := p.rpc.IsProposerWhitelisted(proposerAddress)
-	if err != nil {
-		return fmt.Errorf("failed to check whether current proposer %s is whitelisted: %w", proposerAddress, err)
-	}
-
-	if !isWhitelisted {
-		return fmt.Errorf("proposer %s is not whitelisted", proposerAddress)
-	}
-
 	// Protocol configs
 	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(nil)
 	if err != nil {
