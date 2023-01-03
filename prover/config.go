@@ -13,11 +13,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const (
-	// Currently submitting a proof will cost ~600000 gas, use 1000000 as gas limit for now.
-	submitProofGasLimit = 1000000
-)
-
 // Config contains the configurations to initialize a Taiko prover.
 type Config struct {
 	L1Endpoint                      string
