@@ -312,7 +312,7 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 			// L2 execution engine.
 			if s.GetL2Head().Number.Cmp(e.Height) >= 0 {
 				if err := s.VerifyL2Block(ctx, e.SrcHash); err != nil {
-					log.Error("Check new verified L2 block error", "error", err)
+					log.Debug("Check new verified L2 block error", "error", err)
 					continue
 				}
 			}
