@@ -20,7 +20,7 @@ type DummyProofProducer struct {
 func (d *DummyProofProducer) RequestProof(
 	opts *ProofRequestOptions,
 	blockID *big.Int,
-	meta *bindings.LibDataBlockMetadata,
+	meta *bindings.TaikoDataBlockMetadata,
 	header *types.Header,
 	resultCh chan *ProofWithHeader,
 ) error {

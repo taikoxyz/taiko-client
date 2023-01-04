@@ -177,7 +177,7 @@ func init() {
 }
 
 // EncodeBlockMetadata performs the solidity `abi.encode` for the given blockMetadata.
-func EncodeBlockMetadata(meta *bindings.LibDataBlockMetadata) ([]byte, error) {
+func EncodeBlockMetadata(meta *bindings.TaikoDataBlockMetadata) ([]byte, error) {
 	b, err := blockMetadataArgs.Pack(meta)
 	if err != nil {
 		return nil, fmt.Errorf("failed to abi.encode block metadata, %w", err)
@@ -204,7 +204,7 @@ func EncodeCommitHash(beneficiary common.Address, txListHash [32]byte) []byte {
 }
 
 // EncodeProposeBlockInput encodes the input params for TaikoL1.proposeBlock.
-func EncodeProposeBlockInput(meta *bindings.LibDataBlockMetadata, txListBytes []byte) ([][]byte, error) {
+func EncodeProposeBlockInput(meta *bindings.TaikoDataBlockMetadata, txListBytes []byte) ([][]byte, error) {
 	metaBytes, err := EncodeBlockMetadata(meta)
 	if err != nil {
 		return nil, err
@@ -239,7 +239,7 @@ func EncodeProveBlockInput(
 // EncodeProveBlockInvalidInput encodes the input params for TaikoL1.proveBlockInvalid.
 func EncodeProveBlockInvalidInput(
 	evidence *TaikoL1Evidence,
-	target *bindings.LibDataBlockMetadata,
+	target *bindings.TaikoDataBlockMetadata,
 	receipt *types.Receipt,
 ) ([][]byte, error) {
 	evidenceBytes, err := EncodeEvidence(evidence)

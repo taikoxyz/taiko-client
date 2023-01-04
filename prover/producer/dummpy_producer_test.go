@@ -37,7 +37,7 @@ func TestRequestProof(t *testing.T) {
 	require.Nil(t, dummyProofProducer.RequestProof(
 		&ProofRequestOptions{},
 		blockID,
-		&bindings.LibDataBlockMetadata{},
+		&bindings.TaikoDataBlockMetadata{},
 		header,
 		resCh,
 	))

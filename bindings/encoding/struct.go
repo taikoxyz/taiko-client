@@ -29,7 +29,7 @@ type BlockHeader struct {
 }
 
 type TaikoL1Evidence struct {
-	Meta   bindings.LibDataBlockMetadata
+	Meta   bindings.TaikoDataBlockMetadata
 	Header BlockHeader
 	Prover common.Address
 	Proofs [][]byte

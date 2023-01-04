@@ -15,11 +15,11 @@ import (
 // which fetched from a `txpool_content` RPC call response into several smaller transactions lists
 // and make sure each splitted list satisfies the limits defined in Taiko protocol.
 type poolContentSplitter struct {
-	shufflePoolContent bool
-	blockMaxTxs        uint64
-	blockMaxGasLimit   uint64
-	txListMaxBytes     uint64
-	txMinGasLimit      uint64
+	shufflePoolContent      bool
+	maxTransactionsPerBlock uint64
+	blockMaxGasLimit        uint64
+	maxBytesPerTxList       uint64
+	minTxGasLimit           uint64
 }
 
 // split splits the given transaction pool content to make each splitted
@@ -28,7 +28,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 	var (
 		txLists                = poolContent.ToTxLists()
 		splittedTxLists        = make([][]*types.Transaction, 0)
-		txBuffer               = make([]*types.Transaction, 0, p.blockMaxTxs)
+		txBuffer               = make([]*types.Transaction, 0, p.maxTransactionsPerBlock)
 		gasBuffer       uint64 = 0
 	)
 
@@ -50,7 +50,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 			// buffer.
 			if p.isTxBufferFull(tx, txBuffer, gasBuffer) {
 				splittedTxLists = append(splittedTxLists, txBuffer)
-				txBuffer = make([]*types.Transaction, 0, p.blockMaxTxs)
+				txBuffer = make([]*types.Transaction, 0, p.maxTransactionsPerBlock)
 				gasBuffer = 0
 			}
 
@@ -76,10 +76,10 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 // validateTx checks whether the given transaction is valid according
 // to the rules in Taiko protocol.
 func (p *poolContentSplitter) validateTx(tx *types.Transaction) error {
-	if tx.Gas() < p.txMinGasLimit || tx.Gas() > p.blockMaxGasLimit {
+	if tx.Gas() < p.minTxGasLimit || tx.Gas() > p.blockMaxGasLimit {
 		return fmt.Errorf(
 			"transaction %s gas limit reaches the limits, got=%v, lowerBound=%v, upperBound=%v",
-			tx.Hash(), tx.Gas(), p.txMinGasLimit, p.blockMaxGasLimit,
+			tx.Hash(), tx.Gas(), p.minTxGasLimit, p.blockMaxGasLimit,
 		)
 	}
 
@@ -90,10 +90,10 @@ func (p *poolContentSplitter) validateTx(tx *types.Transaction) error {
 		)
 	}
 
-	if len(b) > int(p.txListMaxBytes) {
+	if len(b) > int(p.maxBytesPerTxList) {
 		return fmt.Errorf(
 			"size of transaction %s's rlp encoded bytes is bigger than the limit, got=%v, limit=%v",
-			tx.Hash(), len(b), p.txListMaxBytes,
+			tx.Hash(), len(b), p.maxBytesPerTxList,
 		)
 	}
 
@@ -105,7 +105,7 @@ func (p *poolContentSplitter) validateTx(tx *types.Transaction) error {
 // NOTE: this function *MUST* be called after using `validateTx` to check every
 // inside transaction is valid.
 func (p *poolContentSplitter) isTxBufferFull(t *types.Transaction, txs []*types.Transaction, gas uint64) bool {
-	if len(txs) >= int(p.blockMaxTxs) {
+	if len(txs) >= int(p.maxTransactionsPerBlock) {
 		return true
 	}
 
@@ -115,7 +115,7 @@ func (p *poolContentSplitter) isTxBufferFull(t *types.Transaction, txs []*types.
 
 	// Transactions list's RLP encoding error has already been checked in
 	// `validateTx`, so no need to check the error here.
-	if b, _ := rlp.EncodeToBytes(append([]*types.Transaction{t}, txs...)); len(b) > int(p.txListMaxBytes) {
+	if b, _ := rlp.EncodeToBytes(append([]*types.Transaction{t}, txs...)); len(b) > int(p.maxBytesPerTxList) {
 		return true
 	}
 

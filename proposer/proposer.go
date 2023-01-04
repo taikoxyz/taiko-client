@@ -32,15 +32,15 @@ type Proposer struct {
 	l1ProposerPrivKey       *ecdsa.PrivateKey
 	l2SuggestedFeeRecipient common.Address
 
-	// Proposing configuration
+	// Proposing configurations
 	proposingInterval *time.Duration
 	proposingTimer    *time.Timer
 	commitSlot        uint64
 
 	poolContentSplitter *poolContentSplitter
 
-	// Constants in LibConstants
-	protocolConstants *bindings.ProtocolConstants
+	// Protocol configurations
+	protocolConfigs *bindings.TaikoDataConfig
 
 	// Only for testing purposes
 	CustomProposeOpHook func() error
@@ -78,29 +78,21 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		return fmt.Errorf("initialize rpc clients error: %w", err)
 	}
 
-	proposerAddress := crypto.PubkeyToAddress(cfg.L1ProposerPrivKey.PublicKey)
-	isWhitelisted, err := p.rpc.IsProposerWhitelisted(proposerAddress)
+	// Protocol configs
+	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(nil)
 	if err != nil {
-		return fmt.Errorf("failed to check whether current proposer %s is whitelisted: %w", proposerAddress, err)
+		return fmt.Errorf("failed to get protocol configs: %w", err)
 	}
+	p.protocolConfigs = &protocolConfigs
 
-	if !isWhitelisted {
-		return fmt.Errorf("proposer %s is not whitelisted", proposerAddress)
-	}
-
-	// Protocol constants
-	if p.protocolConstants, err = p.rpc.GetProtocolConstants(nil); err != nil {
-		return fmt.Errorf("failed to get protocol constants: %w", err)
-	}
-
-	log.Info("Protocol constants", "constants", p.protocolConstants)
+	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
 	p.poolContentSplitter = &poolContentSplitter{
-		shufflePoolContent: cfg.ShufflePoolContent,
-		blockMaxTxs:        p.protocolConstants.BlockMaxTxs.Uint64(),
-		blockMaxGasLimit:   p.protocolConstants.BlockMaxGasLimit.Uint64(),
-		txListMaxBytes:     p.protocolConstants.TxListMaxBytes.Uint64(),
-		txMinGasLimit:      p.protocolConstants.TxMinGasLimit.Uint64(),
+		shufflePoolContent:      cfg.ShufflePoolContent,
+		maxTransactionsPerBlock: p.protocolConfigs.MaxTransactionsPerBlock.Uint64(),
+		blockMaxGasLimit:        p.protocolConfigs.BlockMaxGasLimit.Uint64(),
+		maxBytesPerTxList:       p.protocolConfigs.MaxBytesPerTxList.Uint64(),
+		minTxGasLimit:           p.protocolConfigs.MinTxGasLimit.Uint64(),
 	}
 	p.commitSlot = cfg.CommitSlot
 
@@ -144,7 +136,7 @@ func (p *Proposer) Close() {
 }
 
 type commitTxListRes struct {
-	meta        *bindings.LibDataBlockMetadata
+	meta        *bindings.TaikoDataBlockMetadata
 	commitTx    *types.Transaction
 	txListBytes []byte
 	txNum       uint
@@ -211,12 +203,12 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 }
 
 func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimit uint64, splittedIdx int) (
-	*bindings.LibDataBlockMetadata,
+	*bindings.TaikoDataBlockMetadata,
 	*types.Transaction,
 	error,
 ) {
 	// Assemble the block context and commit the txList
-	meta := &bindings.LibDataBlockMetadata{
+	meta := &bindings.TaikoDataBlockMetadata{
 		Id:          common.Big0,
 		L1Height:    common.Big0,
 		L1Hash:      common.Hash{},
@@ -226,8 +218,8 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 		CommitSlot:  p.commitSlot + uint64(splittedIdx),
 	}
 
-	if p.protocolConstants.CommitDelayConfirmations.Cmp(common.Big0) == 0 {
-		log.Debug("No commit delay confirmation, skip committing transactions list")
+	if p.protocolConfigs.CommitConfirmations.Cmp(common.Big0) == 0 {
+		log.Debug("No commit confirmation delay, skip committing transactions list")
 		return meta, nil, nil
 	}
 
@@ -248,12 +240,12 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
-	meta *bindings.LibDataBlockMetadata,
+	meta *bindings.TaikoDataBlockMetadata,
 	commitTx *types.Transaction,
 	txListBytes []byte,
 	txNum uint,
 ) error {
-	if p.protocolConstants.CommitDelayConfirmations.Cmp(common.Big0) > 0 {
+	if p.protocolConfigs.CommitConfirmations.Cmp(common.Big0) > 0 {
 		receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, commitTx)
 		if err != nil {
 			return err
@@ -267,13 +259,13 @@ func (p *Proposer) ProposeTxList(
 		log.Info(
 			"Commit block finished, wait some L1 blocks confirmations before proposing",
 			"commitHeight", receipt.BlockNumber,
-			"confirmations", p.protocolConstants.CommitDelayConfirmations,
+			"commitConfirmations", p.protocolConfigs.CommitConfirmations,
 		)
 
 		meta.CommitHeight = receipt.BlockNumber.Uint64()
 
 		if err := rpc.WaitConfirmations(
-			ctx, p.rpc.L1, p.protocolConstants.CommitDelayConfirmations.Uint64(), receipt.BlockNumber.Uint64(),
+			ctx, p.rpc.L1, p.protocolConfigs.CommitConfirmations.Uint64(), receipt.BlockNumber.Uint64(),
 		); err != nil {
 			return fmt.Errorf("wait L1 blocks confirmations error, commitHash %s: %w", receipt.BlockNumber, err)
 		}

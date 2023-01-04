@@ -7,15 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
@@ -33,26 +30,6 @@ func (s *ProverTestSuite) SetupTest() {
 	// Init prover
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
-
-	// Whitelist current prover
-	whitelisted, err := s.RpcClient.IsProverWhitelisted(crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
-	s.Nil(err)
-
-	if !whitelisted {
-		l1ContractOwnerPrivateKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
-		s.Nil(err)
-
-		opts, err := bind.NewKeyedTransactorWithChainID(l1ContractOwnerPrivateKey, s.RpcClient.L1ChainID)
-		s.Nil(err)
-		opts.GasTipCap = rpc.FallbackGasTipCap
-
-		tx, err := s.RpcClient.TaikoL1.WhitelistProver(opts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), true)
-		s.Nil(err)
-
-		receipt, err := rpc.WaitReceipt(context.Background(), s.RpcClient.L1, tx)
-		s.Nil(err)
-		s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
-	}
 
 	p := new(Prover)
 	s.Nil(InitFromConfig(context.Background(), p, (&Config{

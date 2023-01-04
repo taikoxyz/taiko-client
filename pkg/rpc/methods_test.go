@@ -105,24 +105,6 @@ func TestWaitL1OriginTimeout(t *testing.T) {
 	require.Nil(t, err)
 }
 
-func TestIsProverWhitelisted(t *testing.T) {
-	client := newTestClient(t)
-	_, err := client.IsProverWhitelisted(testAddress1)
-	require.Nil(t, err)
-}
-
-func TestIsProposerWhitelisted(t *testing.T) {
-	client := newTestClient(t)
-	_, err := client.IsProposerWhitelisted(testAddress1)
-	require.Nil(t, err)
-}
-
-func TestGetProtocolConstants(t *testing.T) {
-	client := newTestClient(t)
-	_, err := client.GetProtocolConstants(nil)
-	require.Nil(t, err)
-}
-
 func TestGetProtocolStateVariables(t *testing.T) {
 	client := newTestClient(t)
 	_, err := client.GetProtocolStateVariables(nil)

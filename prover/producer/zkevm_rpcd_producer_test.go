@@ -39,7 +39,7 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 	require.Nil(t, dummyZKEvmProducer.RequestProof(
 		&ProofRequestOptions{},
 		blockID,
-		&bindings.LibDataBlockMetadata{},
+		&bindings.TaikoDataBlockMetadata{},
 		header,
 		resCh,
 	))

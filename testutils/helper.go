@@ -14,14 +14,14 @@ import (
 )
 
 func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
-	constants, err := s.RpcClient.GetProtocolConstants(nil)
+	configs, err := s.RpcClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
 
 	invalidTxListBytes := RandomBytes(256)
 	meta, commitTx, err := proposer.CommitTxList(
 		context.Background(),
 		invalidTxListBytes,
-		uint64(rand.Int63n(constants.BlockMaxGasLimit.Int64())),
+		uint64(rand.Int63n(configs.BlockMaxGasLimit.Int64())),
 		0,
 	)
 	s.Nil(err)

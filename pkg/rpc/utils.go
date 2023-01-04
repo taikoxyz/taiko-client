@@ -15,32 +15,6 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
-// GetProtocolConstants gets the protocol constants from TaikoL1 contract.
-func GetProtocolConstants(
-	taikoL1Client *bindings.TaikoL1Client,
-	opts *bind.CallOpts,
-) (*bindings.ProtocolConstants, error) {
-	var (
-		constants = new(bindings.ProtocolConstants)
-		err       error
-	)
-
-	constants.ZKProofsPerBlock,
-		constants.ChainID,
-		constants.MaxNumBlocks,
-		constants.MaxVerificationsPerTx,
-		constants.CommitDelayConfirmations,
-		constants.MaxProofsPerForkChoice,
-		constants.BlockMaxGasLimit,
-		constants.BlockMaxTxs,
-		constants.TxListMaxBytes,
-		constants.TxMinGasLimit,
-		constants.AnchorTxGasLimit,
-		err = taikoL1Client.GetConstants(opts)
-
-	return constants, err
-}
-
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
 func GetProtocolStateVariables(
 	taikoL1Client *bindings.TaikoL1Client,
@@ -52,9 +26,15 @@ func GetProtocolStateVariables(
 	)
 
 	stateVars.GenesisHeight,
+		stateVars.GenesisTimestamp,
+		stateVars.StatusBits,
+		stateVars.FeeBase,
+		stateVars.NextBlockID,
+		stateVars.LastProposedAt,
+		stateVars.AvgBlockTime,
 		stateVars.LatestVerifiedHeight,
 		stateVars.LatestVerifiedID,
-		stateVars.NextBlockID,
+		stateVars.AvgProofTime,
 		err = taikoL1Client.GetStateVariables(opts)
 
 	return stateVars, err

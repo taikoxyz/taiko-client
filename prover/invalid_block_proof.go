@@ -104,7 +104,7 @@ func (p *Prover) submitInvalidBlockProof(
 
 	// Assemble the TaikoL1.proveBlockInvalid transaction inputs.
 	proofs := [][]byte{}
-	for i := 0; i < int(p.protocolConstants.ZKProofsPerBlock.Uint64()); i++ {
+	for i := 0; i < int(p.protocolConfigs.ZkProofsPerBlock.Uint64()); i++ {
 		proofs = append(proofs, zkProof)
 	}
 	proofs = append(proofs, receiptProof)
@@ -115,12 +115,12 @@ func (p *Prover) submitInvalidBlockProof(
 	}
 
 	evidence := &encoding.TaikoL1Evidence{
-		Meta: bindings.LibDataBlockMetadata{
+		Meta: bindings.TaikoDataBlockMetadata{
 			Id:          meta.Id,
 			L1Height:    meta.L1Height,
 			L1Hash:      meta.L1Hash,
 			Beneficiary: header.Coinbase,
-			GasLimit:    header.GasLimit - p.protocolConstants.AnchorTxGasLimit.Uint64(),
+			GasLimit:    header.GasLimit - p.protocolConfigs.AnchorTxGasLimit.Uint64(),
 			Timestamp:   header.Time,
 			TxListHash:  crypto.Keccak256Hash(txListBytes),
 			MixHash:     header.MixDigest,
