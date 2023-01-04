@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
@@ -147,6 +148,32 @@ func GetReceiptsByBlock(ctx context.Context, cli *rpc.Client, block *types.Block
 	}
 
 	return receipts, nil
+}
+
+func GetPendingTxByNonce(
+	ctx context.Context,
+	rpc *rpc.Client,
+	address common.Address,
+	nonce uint64,
+) (*types.Transaction, error) {
+	var res map[string]PoolContent
+	if err := rpc.CallContext(ctx, &res, "txpool_contentFrom", address); err != nil {
+		return nil, err
+	}
+
+	for _, tx := range res["pending"][address] {
+		if tx.Nonce() == nonce {
+			return tx, nil
+		}
+	}
+
+	for _, tx := range res["queued"][address] {
+		if tx.Nonce() == nonce {
+			return tx, nil
+		}
+	}
+
+	return nil, nil
 }
 
 // SetHead makes a `debug_setHead` RPC call to set the chain's head, should only be used

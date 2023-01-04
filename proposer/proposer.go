@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -304,6 +305,29 @@ func (p *Proposer) ProposeTxList(
 	}
 
 	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs)
+
+	if err != nil && strings.Contains(err.Error(), "replacement transaction underpriced") {
+		proposerAddress := crypto.PubkeyToAddress(p.l1ProposerPrivKey.PublicKey)
+
+		log.Info("Increase GasTipCap", "address", proposerAddress, "nonce", opts.Nonce)
+
+		originalTx, err := rpc.GetPendingTxByNonce(p.ctx, p.rpc.L2RawRPC, proposerAddress, opts.Nonce.Uint64())
+		if err != nil || originalTx == nil {
+			opts.GasTipCap = new(big.Int).Mul(opts.GasTipCap, common.Big2)
+		} else {
+			newTipCap := new(big.Int).Mul(originalTx.GasTipCap(), common.Big2)
+			if newTipCap.Cmp(opts.GasTipCap) <= 0 {
+				opts.GasTipCap = new(big.Int).Mul(opts.GasTipCap, common.Big2)
+			} else {
+				opts.GasTipCap = newTipCap
+			}
+		}
+
+		if proposeTx, err = p.rpc.TaikoL1.ProposeBlock(opts, inputs); err != nil {
+			return err
+		}
+	}
+
 	if err != nil {
 		return err
 	}
