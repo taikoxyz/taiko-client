@@ -172,7 +172,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 	verifiedHeightToCompare := s.state.getLatestVerifiedBlock().Height.Uint64()
 	log.Debug(
-		"Checking whether the execution engine is head of protocol's verfiied head",
+		"Checking whether the execution engine is ahead of protocol's verified head",
 		"latestVerifiedBlock", verifiedHeightToCompare,
 		"executionEngineHead", s.state.GetL2Head().Number,
 	)
