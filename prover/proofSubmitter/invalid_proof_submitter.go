@@ -1,10 +1,13 @@
-package prover
+package proofSubmitter
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"fmt"
+	"sync"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -13,20 +16,46 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 	"github.com/taikoxyz/taiko-client/prover/producer"
 )
 
-// proveBlockInvalid tries to generate a ZK proof to prove the given
-// block is invalid.
-func (p *Prover) proveBlockInvalid(
-	ctx context.Context,
-	event *bindings.TaikoL1ClientBlockProposed,
-	hint txListValidator.InvalidTxListReason,
-	invalidTxIndex int,
-) error {
+var _ ProofSubmitter = (*InvalidProofSubmitter)(nil)
+
+type InvalidProofSubmitter struct {
+	rpc              *rpc.Client
+	proofProducer    producer.ProofProducer
+	reusltCh         chan *producer.ProofWithHeader
+	proverPrivKey    *ecdsa.PrivateKey
+	proverAddress    common.Address
+	zkProofsPerBlock uint64
+	anchorTxGasLimit uint64
+	mutex            *sync.Mutex
+}
+
+func NewInvalidProofSubmitter(
+	rpc *rpc.Client,
+	proofProducer producer.ProofProducer,
+	reusltCh chan *producer.ProofWithHeader,
+	proverPrivKey *ecdsa.PrivateKey,
+	zkProofsPerBlock uint64,
+	anchorTxGasLimit uint64,
+	mutex *sync.Mutex,
+) *InvalidProofSubmitter {
+	return &InvalidProofSubmitter{
+		rpc:              rpc,
+		proofProducer:    proofProducer,
+		reusltCh:         reusltCh,
+		proverPrivKey:    proverPrivKey,
+		proverAddress:    crypto.PubkeyToAddress(proverPrivKey.PublicKey),
+		zkProofsPerBlock: zkProofsPerBlock,
+		anchorTxGasLimit: anchorTxGasLimit,
+		mutex:            mutex,
+	}
+}
+
+func (s *InvalidProofSubmitter) RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
 	// Get the throwaway block from L2 execution engine.
-	throwAwayBlock, err := p.getThrowAwayBlock(ctx, event)
+	throwAwayBlock, err := s.getThrowAwayBlock(ctx, event)
 	if err != nil {
 		return err
 	}
@@ -34,15 +63,10 @@ func (p *Prover) proveBlockInvalid(
 	log.Debug("Throwaway block", "height", throwAwayBlock.Header().Number, "hash", throwAwayBlock.Header().Hash())
 
 	// Request proof.
-	proofOpts := &producer.ProofRequestOptions{
-		Height:     throwAwayBlock.Header().Number,
-		L2Endpoint: p.cfg.L2Endpoint,
-		Retry:      false,
-		Param:      p.cfg.ZkEvmRpcdParamsPath,
-	}
+	proofOpts := &producer.ProofRequestOptions{Height: throwAwayBlock.Header().Number}
 
-	if err := p.proofProducer.RequestProof(
-		proofOpts, event.Id, &event.Meta, throwAwayBlock.Header(), p.proveInvalidProofCh,
+	if err := s.proofProducer.RequestProof(
+		proofOpts, event.Id, &event.Meta, throwAwayBlock.Header(), s.reusltCh,
 	); err != nil {
 		return err
 	}
@@ -53,8 +77,7 @@ func (p *Prover) proveBlockInvalid(
 	return nil
 }
 
-// submitInvalidBlockProof submits the generated ZK proof to TaikoL1 contract.
-func (p *Prover) submitInvalidBlockProof(
+func (s *InvalidProofSubmitter) SubmitProof(
 	ctx context.Context,
 	proofWithHeader *producer.ProofWithHeader,
 ) (err error) {
@@ -76,7 +99,7 @@ func (p *Prover) submitInvalidBlockProof(
 	metrics.ProverReceivedInvalidProofCounter.Inc(1)
 
 	// Get the corresponding L2 throwaway block, which is not in the L2 execution engine's canonical chain.
-	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
+	block, err := s.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to get the throwaway block (id: %d): %w", blockID, err)
 	}
@@ -86,7 +109,7 @@ func (p *Prover) submitInvalidBlockProof(
 	}
 
 	// Fetch all receipts inside that L2 throwaway block.
-	receipts, err := p.rpc.L2.GetThrowawayTransactionReceipts(ctx, header.Hash())
+	receipts, err := s.rpc.L2.GetThrowawayTransactionReceipts(ctx, header.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to fetch the throwaway block's transaction receipts (id: %d): %w", blockID, err)
 	}
@@ -104,7 +127,7 @@ func (p *Prover) submitInvalidBlockProof(
 
 	// Assemble the TaikoL1.proveBlockInvalid transaction inputs.
 	proofs := [][]byte{}
-	for i := 0; i < int(p.protocolConfigs.ZkProofsPerBlock.Uint64()); i++ {
+	for i := 0; i < int(s.zkProofsPerBlock); i++ {
 		proofs = append(proofs, zkProof)
 	}
 	proofs = append(proofs, receiptProof)
@@ -120,14 +143,14 @@ func (p *Prover) submitInvalidBlockProof(
 			L1Height:    meta.L1Height,
 			L1Hash:      meta.L1Hash,
 			Beneficiary: header.Coinbase,
-			GasLimit:    header.GasLimit - p.protocolConfigs.AnchorTxGasLimit.Uint64(),
+			GasLimit:    header.GasLimit - s.anchorTxGasLimit,
 			Timestamp:   header.Time,
 			TxListHash:  crypto.Keccak256Hash(txListBytes),
 			MixHash:     header.MixDigest,
 			ExtraData:   header.Extra,
 		},
 		Header: *encoding.FromGethHeader(header),
-		Prover: crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey),
+		Prover: s.proverAddress,
 		Proofs: proofs,
 	}
 
@@ -137,21 +160,21 @@ func (p *Prover) submitInvalidBlockProof(
 	}
 
 	// Send the TaikoL1.proveBlockInvalid transaction.
-	txOpts, err := p.getProveBlocksTxOpts(ctx, p.rpc.L1)
+	txOpts, err := getProveBlocksTxOpts(ctx, s.rpc.L1, s.rpc.L1ChainID, s.proverPrivKey)
 	if err != nil {
 		return err
 	}
 
 	var isUnretryableError bool
 	if err := backoff.Retry(func() error {
-		if p.ctx.Err() != nil {
+		if ctx.Err() != nil {
 			return nil
 		}
 		sendTx := func() (*types.Transaction, error) {
-			p.submitProofTxMutex.Lock()
-			defer p.submitProofTxMutex.Unlock()
+			s.mutex.Lock()
+			defer s.mutex.Unlock()
 
-			return p.rpc.TaikoL1.ProveBlockInvalid(txOpts, blockID, input)
+			return s.rpc.TaikoL1.ProveBlockInvalid(txOpts, blockID, input)
 		}
 
 		tx, err := sendTx()
@@ -165,7 +188,7 @@ func (p *Prover) submitInvalidBlockProof(
 			return nil
 		}
 
-		if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx); err != nil {
+		if _, err := rpc.WaitReceipt(ctx, s.rpc.L1, tx); err != nil {
 			log.Warn("Failed to wait till transaction executed", "blockID", blockID, "txHash", tx.Hash(), "error", err)
 			return err
 		}
@@ -175,8 +198,8 @@ func (p *Prover) submitInvalidBlockProof(
 		return fmt.Errorf("failed to send TaikoL1.proveBlockInvalid transaction: %w", err)
 	}
 
-	if p.ctx.Err() != nil {
-		return p.ctx.Err()
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
 
 	if isUnretryableError {
@@ -197,11 +220,11 @@ func (p *Prover) submitInvalidBlockProof(
 }
 
 // getThrowAwayBlock keeps waiting till the throwaway block inserted into the L2 chain.
-func (p *Prover) getThrowAwayBlock(
+func (s *InvalidProofSubmitter) getThrowAwayBlock(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 ) (*types.Block, error) {
-	l1Origin, err := p.rpc.WaitL1Origin(ctx, event.Id)
+	l1Origin, err := s.rpc.WaitL1Origin(ctx, event.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch L1origin, blockID: %d, err: %w", event.Id, err)
 	}
@@ -210,5 +233,5 @@ func (p *Prover) getThrowAwayBlock(
 		return nil, fmt.Errorf("invalid throwaway block's L1origin found, blockID: %d: %+v", event.Id, l1Origin)
 	}
 
-	return p.rpc.L2.BlockByHash(ctx, l1Origin.L2BlockHash)
+	return s.rpc.L2.BlockByHash(ctx, l1Origin.L2BlockHash)
 }

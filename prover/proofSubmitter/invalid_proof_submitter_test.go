@@ -1,4 +1,4 @@
-package prover
+package proofSubmitter
 
 import (
 	"context"
@@ -10,18 +10,19 @@ import (
 	"github.com/taikoxyz/taiko-client/prover/producer"
 )
 
-func (s *ProverTestSuite) TestProveBlockValidL1OriginTimeout() {
+func (s *ProofSubmitterTestSuite) TestProveBlockInvalidL1OriginTimeout() {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	s.ErrorContains(
-		s.p.proveBlockValid(ctx, &bindings.TaikoL1ClientBlockProposed{Id: common.Big256}), "context deadline exceeded",
+		s.invalidProofSubmitter.RequestProof(ctx, &bindings.TaikoL1ClientBlockProposed{Id: common.Big256}),
+		"context deadline exceeded",
 	)
 }
 
-func (s *ProverTestSuite) TestSubmitValidBlockProofMetadataNotFound() {
+func (s *ProofSubmitterTestSuite) TestSubmitInvalidBlockProofThrowawayBlockNotFound() {
 	s.Error(
-		s.p.submitValidBlockProof(
+		s.invalidProofSubmitter.SubmitProof(
 			context.Background(), &producer.ProofWithHeader{
 				BlockID: common.Big256,
 				Meta:    &bindings.TaikoDataBlockMetadata{},

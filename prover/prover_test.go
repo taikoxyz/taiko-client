@@ -2,7 +2,6 @@ package prover
 
 import (
 	"context"
-	"errors"
 	"os"
 	"testing"
 	"time"
@@ -99,18 +98,18 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	// Valid block
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
-	s.Nil(s.p.submitValidBlockProof(context.Background(), <-s.p.proveValidProofCh))
+	s.Nil(s.p.validProofSubmitter.SubmitProof(context.Background(), <-s.p.proveValidProofCh))
 
 	// Empty blocks
 	for _, e = range testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer()) {
 		s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
-		s.Nil(s.p.submitValidBlockProof(context.Background(), <-s.p.proveValidProofCh))
+		s.Nil(s.p.validProofSubmitter.SubmitProof(context.Background(), <-s.p.proveValidProofCh))
 	}
 
 	// Invalid block
 	e = testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
-	s.Nil(s.p.submitInvalidBlockProof(context.Background(), <-s.p.proveInvalidProofCh))
+	s.Nil(s.p.invalidProofSubmitter.SubmitProof(context.Background(), <-s.p.proveInvalidProofCh))
 }
 
 func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
@@ -118,14 +117,6 @@ func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 		Id:        common.Big1,
 		BlockHash: common.Hash{}},
 	))
-}
-
-func (s *ProverTestSuite) TestIsSubmitProofTxErrorRetryable() {
-	s.True(isSubmitProofTxErrorRetryable(errors.New(testAddr.String()), common.Big0))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:proof:tooMany"), common.Big0))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:tooLate"), common.Big0))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:prover:dup"), common.Big0))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:"+testAddr.String()), common.Big0))
 }
 
 func TestProverTestSuite(t *testing.T) {
