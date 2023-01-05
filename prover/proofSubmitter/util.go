@@ -3,13 +3,21 @@ package proofSubmitter
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
+	"fmt"
 	"math/big"
 	"strings"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+)
+
+var (
+	errUnretryable = errors.New("unretryable")
 )
 
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
@@ -49,4 +57,45 @@ func getProveBlocksTxOpts(
 	opts.GasTipCap = gasTipCap
 
 	return opts, nil
+}
+
+// sendTxWithBackoff tries to send the given proof submission transaction with a backoff policy.
+func sendTxWithBackoff(
+	ctx context.Context,
+	cli *rpc.Client,
+	blockID *big.Int,
+	sendTxFunc func() (*types.Transaction, error),
+) error {
+	var isUnretryableError bool
+	if err := backoff.Retry(func() error {
+		if ctx.Err() != nil {
+			return nil
+		}
+
+		tx, err := sendTxFunc()
+		if err != nil {
+			if isSubmitProofTxErrorRetryable(err, blockID) {
+				log.Info("Retry sending TaikoL1.proveBlock transaction", "reason", err)
+				return err
+			}
+
+			isUnretryableError = true
+			return nil
+		}
+
+		if _, err := rpc.WaitReceipt(ctx, cli.L1, tx); err != nil {
+			log.Warn("Failed to wait till transaction executed", "blockID", blockID, "txHash", tx.Hash(), "error", err)
+			return err
+		}
+
+		return nil
+	}, backoff.NewExponentialBackOff()); err != nil {
+		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
+	}
+
+	if isUnretryableError {
+		return errUnretryable
+	}
+
+	return nil
 }

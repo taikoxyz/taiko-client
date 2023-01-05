@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -21,6 +20,8 @@ import (
 
 var _ ProofSubmitter = (*ValidProofSubmitter)(nil)
 
+// ValidProofSubmitter is responsible requesting zk proofs for the given valid L2
+// blocks, and submitting the generated proofs to the TaikoL1 smart contract.
 type ValidProofSubmitter struct {
 	rpc               *rpc.Client
 	proofProducer     producer.ProofProducer
@@ -32,6 +33,7 @@ type ValidProofSubmitter struct {
 	mutex             *sync.Mutex
 }
 
+// NewValidProofSubmitter creates a new ValidProofSubmitter instance.
 func NewValidProofSubmitter(
 	rpc *rpc.Client,
 	proofProducer producer.ProofProducer,
@@ -53,6 +55,7 @@ func NewValidProofSubmitter(
 	}
 }
 
+// RequestProof implements the ProofSubmitter interface.
 func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
 	l1Origin, err := s.rpc.WaitL1Origin(ctx, event.Id)
 	if err != nil {
@@ -86,6 +89,7 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 	return nil
 }
 
+// SubmitProof implements the ProofSubmitter interface.
 func (s *ValidProofSubmitter) SubmitProof(ctx context.Context, proofWithHeader *producer.ProofWithHeader) (err error) {
 	log.Info(
 		"New valid block proof",
@@ -182,45 +186,19 @@ func (s *ValidProofSubmitter) SubmitProof(ctx context.Context, proofWithHeader *
 		return err
 	}
 
-	var isUnretryableError bool
-	if err := backoff.Retry(func() error {
-		if ctx.Err() != nil {
-			return nil
-		}
-		sendTx := func() (*types.Transaction, error) {
-			s.mutex.Lock()
-			defer s.mutex.Unlock()
+	sendTx := func() (*types.Transaction, error) {
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
 
-			return s.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
-		}
+		return s.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
+	}
 
-		tx, err := sendTx()
-		if err != nil {
-			if isSubmitProofTxErrorRetryable(err, blockID) {
-				log.Info("Retry sending TaikoL1.proveBlock transaction", "reason", err)
-				return err
-			}
-
-			isUnretryableError = true
+	if err := sendTxWithBackoff(ctx, s.rpc, blockID, sendTx); err != nil {
+		if err == errUnretryable {
 			return nil
 		}
 
-		if _, err := rpc.WaitReceipt(ctx, s.rpc.L1, tx); err != nil {
-			log.Warn("Failed to wait till transaction executed", "blockID", blockID, "txHash", tx.Hash(), "error", err)
-			return err
-		}
-
-		return nil
-	}, backoff.NewExponentialBackOff()); err != nil {
-		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
-	}
-
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-
-	if isUnretryableError {
-		return nil
+		return err
 	}
 
 	log.Info(
