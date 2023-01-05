@@ -19,7 +19,7 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 	"github.com/taikoxyz/taiko-client/prover/producer"
-	"github.com/taikoxyz/taiko-client/prover/proofSubmitter"
+	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/urfave/cli/v2"
 )
 
