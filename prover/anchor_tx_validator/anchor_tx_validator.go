@@ -46,7 +46,10 @@ func (v *AnchorTxValidator) ValidateAnchorTx(ctx context.Context, tx *types.Tran
 }
 
 // GetAndValidateAnchorTxReceipt gets and validates the `TaikoL2.anchor` transaction's receipt.
-func (v *AnchorTxValidator) GetAndValidateAnchorTxReceipt(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
+func (v *AnchorTxValidator) GetAndValidateAnchorTxReceipt(
+	ctx context.Context,
+	tx *types.Transaction,
+) (*types.Receipt, error) {
 	receipt, err := v.rpc.L2.TransactionReceipt(ctx, tx.Hash())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get TaikoL2.anchor transaction receipt, err: %w", err)
