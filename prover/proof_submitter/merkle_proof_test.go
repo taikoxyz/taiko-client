@@ -1,4 +1,4 @@
-package proofSubmitter
+package submitter
 
 import (
 	"math/big"

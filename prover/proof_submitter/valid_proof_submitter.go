@@ -1,8 +1,9 @@
-package proofSubmitter
+package submitter
 
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	anchorTxValidator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
-	"github.com/taikoxyz/taiko-client/prover/producer"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 var _ ProofSubmitter = (*ValidProofSubmitter)(nil)
@@ -24,8 +25,8 @@ var _ ProofSubmitter = (*ValidProofSubmitter)(nil)
 // blocks, and submitting the generated proofs to the TaikoL1 smart contract.
 type ValidProofSubmitter struct {
 	rpc               *rpc.Client
-	proofProducer     producer.ProofProducer
-	reusltCh          chan *producer.ProofWithHeader
+	proofProducer     proofProducer.ProofProducer
+	reusltCh          chan *proofProducer.ProofWithHeader
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	proverPrivKey     *ecdsa.PrivateKey
 	proverAddress     common.Address
@@ -36,8 +37,8 @@ type ValidProofSubmitter struct {
 // NewValidProofSubmitter creates a new ValidProofSubmitter instance.
 func NewValidProofSubmitter(
 	rpc *rpc.Client,
-	proofProducer producer.ProofProducer,
-	reusltCh chan *producer.ProofWithHeader,
+	proofProducer proofProducer.ProofProducer,
+	reusltCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
 	zkProofsPerBlock uint64,
@@ -75,7 +76,7 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 	}
 
 	// Request proof.
-	opts := &producer.ProofRequestOptions{
+	opts := &proofProducer.ProofRequestOptions{
 		Height: header.Number,
 	}
 
@@ -90,7 +91,10 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 }
 
 // SubmitProof implements the ProofSubmitter interface.
-func (s *ValidProofSubmitter) SubmitProof(ctx context.Context, proofWithHeader *producer.ProofWithHeader) (err error) {
+func (s *ValidProofSubmitter) SubmitProof(
+	ctx context.Context,
+	proofWithHeader *proofProducer.ProofWithHeader,
+) (err error) {
 	log.Info(
 		"New valid block proof",
 		"blockID", proofWithHeader.BlockID,
@@ -194,7 +198,7 @@ func (s *ValidProofSubmitter) SubmitProof(ctx context.Context, proofWithHeader *
 	}
 
 	if err := sendTxWithBackoff(ctx, s.rpc, blockID, sendTx); err != nil {
-		if err == errUnretryable {
+		if errors.Is(err, errUnretryable) {
 			return nil
 		}
 

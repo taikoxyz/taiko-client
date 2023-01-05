@@ -18,7 +18,7 @@ import (
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
-	"github.com/taikoxyz/taiko-client/prover/producer"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/urfave/cli/v2"
 )
@@ -53,8 +53,8 @@ type Prover struct {
 	proveNotify      chan struct{}
 
 	// Proof related
-	proveValidProofCh   chan *producer.ProofWithHeader
-	proveInvalidProofCh chan *producer.ProofWithHeader
+	proveValidProofCh   chan *proofProducer.ProofWithHeader
+	proveInvalidProofCh chan *proofProducer.ProofWithHeader
 
 	// Concurrency guards
 	proposeConcurrencyGuard     chan struct{}
@@ -110,8 +110,8 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.protocolConfigs.MaxNumBlocks.Uint64())
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.protocolConfigs.MaxNumBlocks.Uint64())
-	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())
-	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())
+	p.proveValidProofCh = make(chan *proofProducer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())
+	p.proveInvalidProofCh = make(chan *proofProducer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
@@ -121,14 +121,14 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
-	var proofProducer producer.ProofProducer
+	var producer proofProducer.ProofProducer
 	if cfg.Dummy {
-		proofProducer = &producer.DummyProofProducer{
+		producer = &proofProducer.DummyProofProducer{
 			RandomDummyProofDelayLowerBound: p.cfg.RandomDummyProofDelayLowerBound,
 			RandomDummyProofDelayUpperBound: p.cfg.RandomDummyProofDelayUpperBound,
 		}
 	} else {
-		if proofProducer, err = producer.NewZkevmRpcdProducer(
+		if producer, err = proofProducer.NewZkevmRpcdProducer(
 			cfg.ZKEvmRpcdEndpoint,
 			cfg.ZkEvmRpcdParamsPath,
 			cfg.L2Endpoint,
@@ -141,7 +141,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	// Proof submitters
 	p.validProofSubmitter = proofSubmitter.NewValidProofSubmitter(
 		p.rpc,
-		proofProducer,
+		producer,
 		p.proveValidProofCh,
 		p.cfg.TaikoL2Address,
 		p.cfg.L1ProverPrivKey,
@@ -150,7 +150,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	)
 	p.invalidProofSubmitter = proofSubmitter.NewInvalidProofSubmitter(
 		p.rpc,
-		proofProducer,
+		producer,
 		p.proveInvalidProofCh,
 		p.cfg.L1ProverPrivKey,
 		protocolConfigs.ZkProofsPerBlock.Uint64(),
@@ -326,7 +326,7 @@ func (p *Prover) onBlockProposed(
 }
 
 // submitProofOp performs a (valid block / invalid block) proof submission operation.
-func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *producer.ProofWithHeader, isValidProof bool) {
+func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader, isValidProof bool) {
 	p.submitProofConcurrencyGuard <- struct{}{}
 	go func() {
 		defer func() { <-p.submitProofConcurrencyGuard }()

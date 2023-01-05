@@ -1,4 +1,4 @@
-package proofSubmitter
+package submitter
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/prover/producer"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -21,8 +21,8 @@ type ProofSubmitterTestSuite struct {
 	testutils.ClientTestSuite
 	validProofSubmitter   *ValidProofSubmitter
 	invalidProofSubmitter *InvalidProofSubmitter
-	validProofCh          chan *producer.ProofWithHeader
-	invalidProofCh        chan *producer.ProofWithHeader
+	validProofCh          chan *proofProducer.ProofWithHeader
+	invalidProofCh        chan *proofProducer.ProofWithHeader
 }
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
@@ -33,7 +33,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 
 	s.validProofSubmitter = NewValidProofSubmitter(
 		s.RpcClient,
-		&producer.DummyProofProducer{},
+		&proofProducer.DummyProofProducer{},
 		s.validProofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		l1ProverPrivKey,
@@ -43,7 +43,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 
 	s.invalidProofSubmitter = NewInvalidProofSubmitter(
 		s.RpcClient,
-		&producer.DummyProofProducer{},
+		&proofProducer.DummyProofProducer{},
 		s.invalidProofCh,
 		l1ProverPrivKey,
 		1,
@@ -65,7 +65,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProof() {
 func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotFound() {
 	s.Error(
 		s.validProofSubmitter.SubmitProof(
-			context.Background(), &producer.ProofWithHeader{
+			context.Background(), &proofProducer.ProofWithHeader{
 				BlockID: common.Big256,
 				Meta:    &bindings.TaikoDataBlockMetadata{},
 				Header:  &types.Header{},

@@ -1,4 +1,4 @@
-package proofSubmitter
+package submitter
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/prover/producer"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 func (s *ProofSubmitterTestSuite) TestProveBlockInvalidL1OriginTimeout() {
@@ -23,7 +23,7 @@ func (s *ProofSubmitterTestSuite) TestProveBlockInvalidL1OriginTimeout() {
 func (s *ProofSubmitterTestSuite) TestSubmitInvalidBlockProofThrowawayBlockNotFound() {
 	s.Error(
 		s.invalidProofSubmitter.SubmitProof(
-			context.Background(), &producer.ProofWithHeader{
+			context.Background(), &proofProducer.ProofWithHeader{
 				BlockID: common.Big256,
 				Meta:    &bindings.TaikoDataBlockMetadata{},
 				Header:  &types.Header{},

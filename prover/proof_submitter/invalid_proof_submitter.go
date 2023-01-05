@@ -1,8 +1,9 @@
-package proofSubmitter
+package submitter
 
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/prover/producer"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 var _ ProofSubmitter = (*InvalidProofSubmitter)(nil)
@@ -24,8 +25,8 @@ var _ ProofSubmitter = (*InvalidProofSubmitter)(nil)
 // blocks, and submitting the generated proofs to the TaikoL1 smart contract.
 type InvalidProofSubmitter struct {
 	rpc              *rpc.Client
-	proofProducer    producer.ProofProducer
-	reusltCh         chan *producer.ProofWithHeader
+	proofProducer    proofProducer.ProofProducer
+	reusltCh         chan *proofProducer.ProofWithHeader
 	proverPrivKey    *ecdsa.PrivateKey
 	proverAddress    common.Address
 	zkProofsPerBlock uint64
@@ -36,8 +37,8 @@ type InvalidProofSubmitter struct {
 // NewInvalidProofSubmitter creates a new InvalidProofSubmitter instance.
 func NewInvalidProofSubmitter(
 	rpc *rpc.Client,
-	proofProducer producer.ProofProducer,
-	reusltCh chan *producer.ProofWithHeader,
+	proofProducer proofProducer.ProofProducer,
+	reusltCh chan *proofProducer.ProofWithHeader,
 	proverPrivKey *ecdsa.PrivateKey,
 	zkProofsPerBlock uint64,
 	anchorTxGasLimit uint64,
@@ -66,7 +67,7 @@ func (s *InvalidProofSubmitter) RequestProof(ctx context.Context, event *binding
 	log.Debug("Throwaway block", "height", throwAwayBlock.Header().Number, "hash", throwAwayBlock.Header().Hash())
 
 	// Request proof.
-	proofOpts := &producer.ProofRequestOptions{Height: throwAwayBlock.Header().Number}
+	proofOpts := &proofProducer.ProofRequestOptions{Height: throwAwayBlock.Header().Number}
 
 	if err := s.proofProducer.RequestProof(
 		proofOpts, event.Id, &event.Meta, throwAwayBlock.Header(), s.reusltCh,
@@ -83,7 +84,7 @@ func (s *InvalidProofSubmitter) RequestProof(ctx context.Context, event *binding
 // SubmitProof implements the ProofSubmitter interface.
 func (s *InvalidProofSubmitter) SubmitProof(
 	ctx context.Context,
-	proofWithHeader *producer.ProofWithHeader,
+	proofWithHeader *proofProducer.ProofWithHeader,
 ) (err error) {
 	log.Info(
 		"New invalid block proof",
@@ -177,7 +178,7 @@ func (s *InvalidProofSubmitter) SubmitProof(
 	}
 
 	if err := sendTxWithBackoff(ctx, s.rpc, blockID, sendTx); err != nil {
-		if err == errUnretryable {
+		if errors.Is(err, errUnretryable) {
 			return nil
 		}
 

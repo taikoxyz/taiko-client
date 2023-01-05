@@ -1,13 +1,13 @@
-package proofSubmitter
+package submitter
 
 import (
 	"context"
 
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/prover/producer"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 type ProofSubmitter interface {
 	RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error
-	SubmitProof(ctx context.Context, proofWithHeader *producer.ProofWithHeader) error
+	SubmitProof(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader) error
 }
