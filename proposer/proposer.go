@@ -227,7 +227,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			txListBytes: txListBytes,
 			txNum:       uint(len(txs)),
 		})
-		break
 	}
 
 	if p.AfterCommitHook != nil {
@@ -241,10 +240,15 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		time.Sleep(60 * time.Second)
 	}
 
+	var i = 0
 	for _, res := range commitTxListResQueue {
+		if i > 20 {
+			break
+		}
 		if err := p.ProposeTxList(ctx, res.meta, res.commitTx, res.txListBytes, res.txNum); err != nil {
 			return fmt.Errorf("failed to propose transactions: %w", err)
 		}
+		i += 1
 	}
 
 	return nil
@@ -359,11 +363,12 @@ func (p *Proposer) ProposeTxList(
 	log.Info("tx2", "tx", proposeTx.Hash())
 	fmt.Println(proposeTx.Hash())
 
-	if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, proposeTx); err != nil {
-		return err
-	}
+	// if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, proposeTx); err != nil {
+	// 	return err
+	// }
 
 	log.Info("📝 Propose transactions succeeded")
+	time.Sleep(1 * time.Second)
 
 	metrics.ProposerProposedTxListsCounter.Inc(1)
 	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))
@@ -443,7 +448,7 @@ func getTxOpts(
 
 	// log.Info("gasPrice", "gasPrice", gasPrice)
 	opts.GasTipCap = new(big.Int).SetUint64(gasTipCap.Uint64() * uint64(gasTip))
-	opts.Nonce = new(big.Int).SetUint64(nonce)
+	// opts.Nonce = new(big.Int).SetUint64(nonce)
 	log.Info("Nonce", "nonce", nonce)
 	// opts.GasPrice = big.NewInt(1499999992 * 10)
 

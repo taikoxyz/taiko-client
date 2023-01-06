@@ -74,6 +74,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 
 	count := 0
 
+out:
 	for _, txList := range txLists {
 		for _, tx := range txList {
 			// If the transaction is invalid, we simply ignore it.
@@ -88,7 +89,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 			// }
 
 			if tx.To() != nil && *tx.To() == common.HexToAddress("0x0000777700000000000000000000000000000004") {
-				continue
+				continue out
 			}
 
 			// log.Info("faucet tx", "to", tx.To())
