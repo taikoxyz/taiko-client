@@ -139,17 +139,6 @@ func (p *Proposer) eventLoop() {
 
 	for {
 		p.updateProposingTicker()
-		// if p.ctx.Err() == nil {
-		// 	if err := p.ProposeOp(p.ctx); err != nil {
-		// 		log.Error("ProposeOp error", "err", err)
-		// 		time.Sleep(3 * time.Second)
-		// 		continue
-		// 	} else {
-		// 		time.Sleep(10 * time.Second)
-		// 	}
-		// }
-
-		// t := time.NewTicker(3 * time.Second)
 
 		select {
 		case <-p.ctx.Done():
@@ -163,11 +152,6 @@ func (p *Proposer) eventLoop() {
 				time.Sleep(3 * time.Second)
 				continue
 			}
-			// case <-t.C:
-			// 	if err := p.ProposeOp(p.ctx); err != nil {
-			// 		log.Error("ProposeOp error", "err", err)
-			// 		continue
-			// 	}
 		}
 	}
 }
@@ -242,7 +226,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	var i = 0
 	for _, res := range commitTxListResQueue {
-		if i > 20 {
+		if i > 2 {
 			break
 		}
 		if err := p.ProposeTxList(ctx, res.meta, res.commitTx, res.txListBytes, res.txNum); err != nil {
@@ -287,8 +271,6 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 		return nil, nil, err
 	}
 
-	log.Info("tx2", "hash", commitTx.Hash())
-
 	return meta, commitTx, nil
 }
 
@@ -331,24 +313,24 @@ func (p *Proposer) ProposeTxList(
 		return err
 	}
 
-	log.Info("CommitSlot2", "slot", meta.CommitSlot)
+	// log.Info("CommitSlot2", "slot", meta.CommitSlot)
 
-	key1, err := crypto.HexToECDSA("eed858a6f8b22fea58762091e0237ed59b3555f83e72d5e398a3f436464a4306")
-	if err != nil {
-		return err
-	}
+	// key1, err := crypto.HexToECDSA("eed858a6f8b22fea58762091e0237ed59b3555f83e72d5e398a3f436464a4306")
+	// if err != nil {
+	// 	return err
+	// }
 
-	opts1, err := getTxOpts(ctx, p.rpc.L1, key1, p.rpc.L1ChainID, 10)
-	if err != nil {
-		return err
-	}
+	// opts1, err := getTxOpts(ctx, p.rpc.L1, key1, p.rpc.L1ChainID, 10)
+	// if err != nil {
+	// 	return err
+	// }
 
-	tx1, err := p.rpc.TaikoL1.VerifyBlocks(opts1, new(big.Int).SetUint64(100))
-	if err != nil {
-		log.Error("tx error", "err", err)
-	} else {
-		log.Info("tx1", "hash", tx1.Hash())
-	}
+	// tx1, err := p.rpc.TaikoL1.VerifyBlocks(opts1, new(big.Int).SetUint64(100))
+	// if err != nil {
+	// 	log.Error("tx error", "err", err)
+	// } else {
+	// 	log.Info("tx1", "hash", tx1.Hash())
+	// }
 
 	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID, 1.5)
 	if err != nil {
@@ -363,9 +345,9 @@ func (p *Proposer) ProposeTxList(
 	log.Info("tx2", "tx", proposeTx.Hash())
 	fmt.Println(proposeTx.Hash())
 
-	// if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, proposeTx); err != nil {
-	// 	return err
-	// }
+	if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, proposeTx); err != nil {
+		return err
+	}
 
 	log.Info("📝 Propose transactions succeeded")
 	time.Sleep(1 * time.Second)
