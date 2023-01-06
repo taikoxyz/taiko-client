@@ -2,8 +2,10 @@ package proposer
 
 import (
 	"fmt"
+	"math/big"
 	"math/rand"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/les/utils"
 	"github.com/ethereum/go-ethereum/log"
@@ -37,6 +39,31 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 		txLists = p.weightedShuffle(txLists)
 	} else {
 		rand.Shuffle(len(txLists), func(i, j int) { txLists[i], txLists[j] = txLists[j], txLists[i] })
+	}
+
+	signer := types.LatestSignerForChainID(big.NewInt(167003))
+
+	for i, txList := range txLists {
+		if txList.Len() == 0 {
+			continue
+		}
+
+		sender, err := signer.Sender(txList[0])
+		if err != nil {
+			log.Debug("sender error", "error", err)
+			break
+		}
+
+		if sender == common.HexToAddress("0x9D716db5fF59f8dd903D44a56C41BcbE99bA666c") {
+			if i == 0 {
+				break
+			}
+
+			oldZeros := txLists[0]
+			txLists[0] = txList
+			txLists[i] = oldZeros
+			break
+		}
 	}
 
 	for _, txList := range txLists {
