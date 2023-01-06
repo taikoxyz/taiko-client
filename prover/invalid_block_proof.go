@@ -3,6 +3,7 @@ package prover
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -167,6 +168,10 @@ func (p *Prover) submitInvalidBlockProof(
 
 		if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx); err != nil {
 			log.Warn("Failed to wait till transaction executed", "blockID", blockID, "txHash", tx.Hash(), "error", err)
+			if strings.Contains(err.Error(), "transaction reverted") {
+				isUnretryableError = true
+				return nil
+			}
 			return err
 		}
 
