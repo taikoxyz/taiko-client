@@ -14,28 +14,28 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-// AnchorConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
+// AnchorTxConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
 // each L2 block, which is always the first transaction.
-type AnchorConstructor struct {
+type AnchorTxConstructor struct {
 	rpc                *rpc.Client
 	gasLimit           uint64
 	goldenTouchAddress common.Address
 	signer             *signer.FixedKSigner
 }
 
-// NewAnchorConstructor creates a new AnchorConstructor instance.
-func NewAnchorConstructor(
+// NewAnchorTxConstructor creates a new AnchorConstructor instance.
+func NewAnchorTxConstructor(
 	rpc *rpc.Client,
 	gasLimit uint64,
 	goldenTouchAddress common.Address,
 	goldenTouchPrivKey string,
-) (*AnchorConstructor, error) {
+) (*AnchorTxConstructor, error) {
 	signer, err := signer.NewFixedKSigner(goldenTouchPrivKey)
 	if err != nil {
 		return nil, fmt.Errorf("invalid golden touch private key %s", goldenTouchPrivKey)
 	}
 
-	return &AnchorConstructor{
+	return &AnchorTxConstructor{
 		rpc:                rpc,
 		gasLimit:           gasLimit,
 		goldenTouchAddress: goldenTouchAddress,
@@ -44,7 +44,7 @@ func NewAnchorConstructor(
 }
 
 // AssembleAnchorTx assembles a signed TaikoL2.anchor transaction.
-func (c *AnchorConstructor) AssembleAnchorTx(
+func (c *AnchorTxConstructor) AssembleAnchorTx(
 	ctx context.Context,
 	// Parameters of the TaikoL2.anchor transaction.
 	l1Height *big.Int,
@@ -62,7 +62,7 @@ func (c *AnchorConstructor) AssembleAnchorTx(
 
 // transactOpts is a utility method to create some transact options of the anchor transaction in given L2 block with
 // golden touch account's private key.
-func (c *AnchorConstructor) transactOpts(ctx context.Context, l2Height *big.Int) (*bind.TransactOpts, error) {
+func (c *AnchorTxConstructor) transactOpts(ctx context.Context, l2Height *big.Int) (*bind.TransactOpts, error) {
 	signer := types.LatestSignerForChainID(c.rpc.L2ChainID)
 
 	// Get the nonce of golden touch account at the specified height.
@@ -93,7 +93,7 @@ func (c *AnchorConstructor) transactOpts(ctx context.Context, l2Height *big.Int)
 
 // signTxPayload calculates an ECDSA signature for an anchor transaction.
 // ref: https://github.com/taikoxyz/taiko-mono/blob/main/packages/protocol/contracts/libs/LibAnchorSignature.sol
-func (c *AnchorConstructor) signTxPayload(hash []byte) ([]byte, error) {
+func (c *AnchorTxConstructor) signTxPayload(hash []byte) ([]byte, error) {
 	if len(hash) != 32 {
 		return nil, fmt.Errorf("hash is required to be exactly 32 bytes (%d)", len(hash))
 	}

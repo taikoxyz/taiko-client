@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strings"
 	"sync"
 	"time"
 
@@ -19,7 +18,8 @@ import (
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
-	"github.com/taikoxyz/taiko-client/prover/producer"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/urfave/cli/v2"
 )
 
@@ -41,6 +41,10 @@ type Prover struct {
 	lastHandledBlockID     uint64
 	l1Current              uint64
 
+	// Proof submitters
+	validProofSubmitter   proofSubmitter.ProofSubmitter
+	invalidProofSubmitter proofSubmitter.ProofSubmitter
+
 	// Subscriptions
 	blockProposedCh  chan *bindings.TaikoL1ClientBlockProposed
 	blockProposedSub event.Subscription
@@ -49,14 +53,13 @@ type Prover struct {
 	proveNotify      chan struct{}
 
 	// Proof related
-	proveValidProofCh   chan *producer.ProofWithHeader
-	proveInvalidProofCh chan *producer.ProofWithHeader
-	proofProducer       producer.ProofProducer
+	proveValidProofCh   chan *proofProducer.ProofWithHeader
+	proveInvalidProofCh chan *proofProducer.ProofWithHeader
 
 	// Concurrency guards
 	proposeConcurrencyGuard     chan struct{}
 	submitProofConcurrencyGuard chan struct{}
-	submitProofTxMutex          sync.Mutex
+	submitProofTxMutex          *sync.Mutex
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -96,6 +99,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
+	p.submitProofTxMutex = &sync.Mutex{}
 	p.txListValidator = txListValidator.NewTxListValidator(
 		p.protocolConfigs.BlockMaxGasLimit.Uint64(),
 		p.protocolConfigs.MaxTransactionsPerBlock.Uint64(),
@@ -106,8 +110,8 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.protocolConfigs.MaxNumBlocks.Uint64())
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.protocolConfigs.MaxNumBlocks.Uint64())
-	p.proveValidProofCh = make(chan *producer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())
-	p.proveInvalidProofCh = make(chan *producer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())
+	p.proveValidProofCh = make(chan *proofProducer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())
+	p.proveInvalidProofCh = make(chan *proofProducer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
@@ -117,16 +121,42 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
+	var producer proofProducer.ProofProducer
 	if cfg.Dummy {
-		p.proofProducer = &producer.DummyProofProducer{
+		producer = &proofProducer.DummyProofProducer{
 			RandomDummyProofDelayLowerBound: p.cfg.RandomDummyProofDelayLowerBound,
 			RandomDummyProofDelayUpperBound: p.cfg.RandomDummyProofDelayUpperBound,
 		}
 	} else {
-		if p.proofProducer, err = producer.NewZkevmRpcdProducer(cfg.ZKEvmRpcdEndpoint); err != nil {
+		if producer, err = proofProducer.NewZkevmRpcdProducer(
+			cfg.ZKEvmRpcdEndpoint,
+			cfg.ZkEvmRpcdParamsPath,
+			cfg.L2Endpoint,
+			true,
+		); err != nil {
 			return err
 		}
 	}
+
+	// Proof submitters
+	p.validProofSubmitter = proofSubmitter.NewValidProofSubmitter(
+		p.rpc,
+		producer,
+		p.proveValidProofCh,
+		p.cfg.TaikoL2Address,
+		p.cfg.L1ProverPrivKey,
+		protocolConfigs.ZkProofsPerBlock.Uint64(),
+		p.submitProofTxMutex,
+	)
+	p.invalidProofSubmitter = proofSubmitter.NewInvalidProofSubmitter(
+		p.rpc,
+		producer,
+		p.proveInvalidProofCh,
+		p.cfg.L1ProverPrivKey,
+		protocolConfigs.ZkProofsPerBlock.Uint64(),
+		protocolConfigs.AnchorTxGasLimit.Uint64(),
+		p.submitProofTxMutex,
+	)
 
 	return nil
 }
@@ -267,18 +297,18 @@ func (p *Prover) onBlockProposed(
 			return err
 		}
 
-		_, hint, invalidTxIndex, err := p.txListValidator.ValidateTxList(event.Id, proposeBlockTx.Data())
+		_, hint, _, err := p.txListValidator.ValidateTxList(event.Id, proposeBlockTx.Data())
 		if err != nil {
 			return err
 		}
 
 		// Prove the proposed block is valid.
 		if hint == txListValidator.HintOK {
-			return p.proveBlockValid(ctx, event)
+			return p.validProofSubmitter.RequestProof(ctx, event)
 		}
 
 		// Otherwise, prove the proposed block is invalid.
-		return p.proveBlockInvalid(ctx, event, hint, invalidTxIndex)
+		return p.invalidProofSubmitter.RequestProof(ctx, event)
 	}
 
 	p.proposeConcurrencyGuard <- struct{}{}
@@ -296,16 +326,16 @@ func (p *Prover) onBlockProposed(
 }
 
 // submitProofOp performs a (valid block / invalid block) proof submission operation.
-func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *producer.ProofWithHeader, isValidProof bool) {
+func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader, isValidProof bool) {
 	p.submitProofConcurrencyGuard <- struct{}{}
 	go func() {
 		defer func() { <-p.submitProofConcurrencyGuard }()
 
 		var err error
 		if isValidProof {
-			err = p.submitValidBlockProof(p.ctx, proofWithHeader)
+			err = p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader)
 		} else {
-			err = p.submitInvalidBlockProof(p.ctx, proofWithHeader)
+			err = p.invalidProofSubmitter.SubmitProof(p.ctx, proofWithHeader)
 		}
 
 		if err != nil {
@@ -421,17 +451,4 @@ func (p *Prover) isProvenByCurrentProver(id *big.Int) (bool, error) {
 	}
 
 	return false, nil
-}
-
-// isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
-// is retryable.
-func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
-	// Not an error returned by eth_estimateGas.
-	if !strings.Contains(err.Error(), "L1:") {
-		return true
-	}
-
-	// Contract errors, returned by eth_estimateGas.
-	log.Warn("🤷‍♂️ Unretryable proof submission error", "error", err, "blockID", blockID)
-	return false
 }

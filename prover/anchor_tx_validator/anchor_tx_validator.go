@@ -1,21 +1,34 @@
-package prover
+package anchorTxValidator
 
 import (
 	"context"
 	"fmt"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+type AnchorTxValidator struct {
+	taikoL2Address common.Address
+	chainID        *big.Int
+	rpc            *rpc.Client
+}
+
+func NewAnchorTxValidator(taikoL2Address common.Address, chainID *big.Int, rpc *rpc.Client) *AnchorTxValidator {
+	return &AnchorTxValidator{taikoL2Address, chainID, rpc}
+}
+
 // validateAnchorTx checks whether the given transaction is a valid `TaikoL2.anchor` transaction.
-func (p *Prover) validateAnchorTx(ctx context.Context, tx *types.Transaction) error {
-	if tx.To() == nil || *tx.To() != p.cfg.TaikoL2Address {
-		return fmt.Errorf("invalid TaikoL2.anchor transaction to: %s, want: %s", tx.To(), p.cfg.TaikoL2Address)
+func (v *AnchorTxValidator) ValidateAnchorTx(ctx context.Context, tx *types.Transaction) error {
+	if tx.To() == nil || *tx.To() != v.taikoL2Address {
+		return fmt.Errorf("invalid TaikoL2.anchor transaction to: %s, want: %s", tx.To(), v.taikoL2Address)
 	}
 
-	sender, err := types.LatestSignerForChainID(p.rpc.L2ChainID).Sender(tx)
+	sender, err := types.LatestSignerForChainID(v.chainID).Sender(tx)
 	if err != nil {
 		return fmt.Errorf("failed to get TaikoL2.anchor transaction sender: %w", err)
 	}
@@ -32,9 +45,12 @@ func (p *Prover) validateAnchorTx(ctx context.Context, tx *types.Transaction) er
 	return nil
 }
 
-// getAndValidateAnchorTxReceipt gets and validates the `TaikoL2.anchor` transaction's receipt.
-func (p *Prover) getAndValidateAnchorTxReceipt(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
-	receipt, err := p.rpc.L2.TransactionReceipt(ctx, tx.Hash())
+// GetAndValidateAnchorTxReceipt gets and validates the `TaikoL2.anchor` transaction's receipt.
+func (v *AnchorTxValidator) GetAndValidateAnchorTxReceipt(
+	ctx context.Context,
+	tx *types.Transaction,
+) (*types.Receipt, error) {
+	receipt, err := v.rpc.L2.TransactionReceipt(ctx, tx.Hash())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get TaikoL2.anchor transaction receipt, err: %w", err)
 	}

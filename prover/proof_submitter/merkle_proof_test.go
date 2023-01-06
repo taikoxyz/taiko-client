@@ -1,4 +1,4 @@
-package prover
+package submitter
 
 import (
 	"math/big"
@@ -59,7 +59,7 @@ func generateTestChain() []*types.Block {
 	return blocks
 }
 
-func (s *ProverTestSuite) TestGenerateTrieProof() {
+func (s *ProofSubmitterTestSuite) TestGenerateTrieProof() {
 	blocks := generateTestChain()
 	testBlock := blocks[len(blocks)-1]
 

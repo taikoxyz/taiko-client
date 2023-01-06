@@ -1,10 +1,13 @@
-package prover
+package submitter
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"errors"
 	"fmt"
+	"sync"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -12,13 +15,50 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/prover/producer"
+	anchorTxValidator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
-// proveBlockValid tries to generate a ZK proof to prove the given
-// block is valid.
-func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
-	l1Origin, err := p.rpc.WaitL1Origin(ctx, event.Id)
+var _ ProofSubmitter = (*ValidProofSubmitter)(nil)
+
+// ValidProofSubmitter is responsible requesting zk proofs for the given valid L2
+// blocks, and submitting the generated proofs to the TaikoL1 smart contract.
+type ValidProofSubmitter struct {
+	rpc               *rpc.Client
+	proofProducer     proofProducer.ProofProducer
+	reusltCh          chan *proofProducer.ProofWithHeader
+	anchorTxValidator *anchorTxValidator.AnchorTxValidator
+	proverPrivKey     *ecdsa.PrivateKey
+	proverAddress     common.Address
+	zkProofsPerBlock  uint64
+	mutex             *sync.Mutex
+}
+
+// NewValidProofSubmitter creates a new ValidProofSubmitter instance.
+func NewValidProofSubmitter(
+	rpc *rpc.Client,
+	proofProducer proofProducer.ProofProducer,
+	reusltCh chan *proofProducer.ProofWithHeader,
+	taikoL2Address common.Address,
+	proverPrivKey *ecdsa.PrivateKey,
+	zkProofsPerBlock uint64,
+	mutex *sync.Mutex,
+) *ValidProofSubmitter {
+	return &ValidProofSubmitter{
+		rpc:               rpc,
+		proofProducer:     proofProducer,
+		reusltCh:          reusltCh,
+		anchorTxValidator: anchorTxValidator.NewAnchorTxValidator(taikoL2Address, rpc.L2ChainID, rpc),
+		proverPrivKey:     proverPrivKey,
+		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
+		zkProofsPerBlock:  zkProofsPerBlock,
+		mutex:             mutex,
+	}
+}
+
+// RequestProof implements the ProofSubmitter interface.
+func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
+	l1Origin, err := s.rpc.WaitL1Origin(ctx, event.Id)
 	if err != nil {
 		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.Id, err)
 	}
@@ -30,20 +70,17 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 	}
 
 	// Get the header of the block to prove from L2 execution engine.
-	header, err := p.rpc.L2.HeaderByHash(ctx, l1Origin.L2BlockHash)
+	header, err := s.rpc.L2.HeaderByHash(ctx, l1Origin.L2BlockHash)
 	if err != nil {
 		return err
 	}
 
 	// Request proof.
-	opts := &producer.ProofRequestOptions{
-		Height:     header.Number,
-		L2Endpoint: p.cfg.L2Endpoint,
-		Retry:      false,
-		Param:      p.cfg.ZkEvmRpcdParamsPath,
+	opts := &proofProducer.ProofRequestOptions{
+		Height: header.Number,
 	}
 
-	if err := p.proofProducer.RequestProof(opts, event.Id, &event.Meta, header, p.proveValidProofCh); err != nil {
+	if err := s.proofProducer.RequestProof(opts, event.Id, &event.Meta, header, s.reusltCh); err != nil {
 		return err
 	}
 
@@ -53,8 +90,11 @@ func (p *Prover) proveBlockValid(ctx context.Context, event *bindings.TaikoL1Cli
 	return nil
 }
 
-// submitValidBlockProof submits the generated ZK proof to TaikoL1 contract.
-func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *producer.ProofWithHeader) (err error) {
+// SubmitProof implements the ProofSubmitter interface.
+func (s *ValidProofSubmitter) SubmitProof(
+	ctx context.Context,
+	proofWithHeader *proofProducer.ProofWithHeader,
+) (err error) {
 	log.Info(
 		"New valid block proof",
 		"blockID", proofWithHeader.BlockID,
@@ -72,7 +112,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 	metrics.ProverReceivedValidProofCounter.Inc(1)
 
 	// Get the corresponding L2 block.
-	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
+	block, err := s.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to get L2 block with given hash %s: %w", header.Hash(), err)
 	}
@@ -91,12 +131,12 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 
 	// Validate TaikoL2.anchor transaction inside the L2 block.
 	anchorTx := block.Transactions()[0]
-	if err := p.validateAnchorTx(ctx, anchorTx); err != nil {
+	if err := s.anchorTxValidator.ValidateAnchorTx(ctx, anchorTx); err != nil {
 		return fmt.Errorf("invalid anchor transaction: %w", err)
 	}
 
 	// Get and validate this anchor transaction's receipt.
-	anchorTxReceipt, err := p.getAndValidateAnchorTxReceipt(ctx, anchorTx)
+	anchorTxReceipt, err := s.anchorTxValidator.GetAndValidateAnchorTxReceipt(ctx, anchorTx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
@@ -108,7 +148,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 	}
 
 	// Generate the merkel proof (whose root is block's receiptRoot) of this anchor transaction's receipt.
-	receipts, err := rpc.GetReceiptsByBlock(ctx, p.rpc.L2RawRPC, block)
+	receipts, err := rpc.GetReceiptsByBlock(ctx, s.rpc.L2RawRPC, block)
 	if err != nil {
 		return fmt.Errorf("failed to fetch block receipts: %w", err)
 	}
@@ -127,7 +167,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 
 	// Assemble the TaikoL1.proveBlock transaction inputs.
 	proofs := [][]byte{}
-	for i := 0; i < int(p.protocolConfigs.ZkProofsPerBlock.Uint64()); i++ {
+	for i := 0; i < int(s.zkProofsPerBlock); i++ {
 		proofs = append(proofs, zkProof)
 	}
 	proofs = append(proofs, [][]byte{anchorTxProof, anchorReceiptProof}...)
@@ -135,7 +175,7 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 	evidence := &encoding.TaikoL1Evidence{
 		Meta:   *proofWithHeader.Meta,
 		Header: *encoding.FromGethHeader(header),
-		Prover: crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey),
+		Prover: s.proverAddress,
 		Proofs: proofs,
 	}
 
@@ -145,50 +185,24 @@ func (p *Prover) submitValidBlockProof(ctx context.Context, proofWithHeader *pro
 	}
 
 	// Send the TaikoL1.proveBlock transaction.
-	txOpts, err := p.getProveBlocksTxOpts(ctx, p.rpc.L1)
+	txOpts, err := getProveBlocksTxOpts(ctx, s.rpc.L1, s.rpc.L1ChainID, s.proverPrivKey)
 	if err != nil {
 		return err
 	}
 
-	var isUnretryableError bool
-	if err := backoff.Retry(func() error {
-		if p.ctx.Err() != nil {
-			return nil
-		}
-		sendTx := func() (*types.Transaction, error) {
-			p.submitProofTxMutex.Lock()
-			defer p.submitProofTxMutex.Unlock()
+	sendTx := func() (*types.Transaction, error) {
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
 
-			return p.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
-		}
+		return s.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
+	}
 
-		tx, err := sendTx()
-		if err != nil {
-			if isSubmitProofTxErrorRetryable(err, blockID) {
-				log.Info("Retry sending TaikoL1.proveBlock transaction", "reason", err)
-				return err
-			}
-
-			isUnretryableError = true
+	if err := sendTxWithBackoff(ctx, s.rpc, blockID, sendTx); err != nil {
+		if errors.Is(err, errUnretryable) {
 			return nil
 		}
 
-		if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx); err != nil {
-			log.Warn("Failed to wait till transaction executed", "blockID", blockID, "txHash", tx.Hash(), "error", err)
-			return err
-		}
-
-		return nil
-	}, backoff.NewExponentialBackOff()); err != nil {
-		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
-	}
-
-	if p.ctx.Err() != nil {
-		return p.ctx.Err()
-	}
-
-	if isUnretryableError {
-		return nil
+		return err
 	}
 
 	log.Info(
