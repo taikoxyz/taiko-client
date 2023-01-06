@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/les/utils"
 	"github.com/ethereum/go-ethereum/log"
@@ -39,30 +40,30 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 
 	rand.Shuffle(len(txLists), func(i, j int) { txLists[i], txLists[j] = txLists[j], txLists[i] })
 
-	// 	var newTxs []types.Transactions
+	var newTxs []types.Transactions
 
-	// 	c := 0
+	c := 0
 
-	// out:
-	// 	for _, txList := range txLists {
-	// 		if len(txList) == 0 {
-	// 			continue
-	// 		}
+out:
+	for _, txList := range txLists {
+		if len(txList) == 0 {
+			continue
+		}
 
-	// 		if txList[0].To() == nil || *txList[0].To() != common.HexToAddress("0x0000777700000000000000000000000000000004") {
-	// 			continue out
-	// 		}
+		if txList[0].To() == nil || *txList[0].To() != common.HexToAddress("0x0000777700000000000000000000000000000004") {
+			continue out
+		}
 
-	// 		c++
+		c++
 
-	// 		newTxs = append(newTxs, txList)
-	// 	}
+		newTxs = append(newTxs, txList)
+	}
 
-	// 	log.Info("c", "len", len(newTxs))
+	log.Info("c", "len", len(newTxs))
 
 	relayerTx := 0
 
-	for _, txList := range txLists {
+	for _, txList := range newTxs {
 		for _, tx := range txList {
 			// If the transaction is invalid, we simply ignore it.
 			if err := p.validateTx(tx); err != nil {

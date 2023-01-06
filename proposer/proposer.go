@@ -311,7 +311,7 @@ func (p *Proposer) ProposeTxList(
 	// }
 
 	log.Info("📝 Propose transactions succeeded", "num", txNum, "tx", proposeTx.Hash())
-	time.Sleep(10 * time.Second)
+	// time.Sleep(10 * time.Second)
 
 	succeeded = true
 
