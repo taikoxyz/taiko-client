@@ -16,9 +16,17 @@ var (
 
 type ZkevmRpcdProducer struct {
 	RpcdEndpoint string
+	Param        string // parameter file to use
+	L2Endpoint   string // a L2 execution engine's RPC endpoint
+	Retry        bool   // retry proof computation if error
 }
 
-func NewZkevmRpcdProducer(rpcdEndpoint string) (*ZkevmRpcdProducer, error) {
+func NewZkevmRpcdProducer(
+	rpcdEndpoint string,
+	param string,
+	l2Endpoint string,
+	retry bool,
+) (*ZkevmRpcdProducer, error) {
 	resp, err := http.Get(rpcdEndpoint + "/health")
 	if err != nil {
 		return nil, err
@@ -27,7 +35,7 @@ func NewZkevmRpcdProducer(rpcdEndpoint string) (*ZkevmRpcdProducer, error) {
 		return nil, errRpcdUnhealthy
 	}
 
-	return &ZkevmRpcdProducer{RpcdEndpoint: rpcdEndpoint}, nil
+	return &ZkevmRpcdProducer{RpcdEndpoint: rpcdEndpoint, Param: param, L2Endpoint: l2Endpoint, Retry: retry}, nil
 }
 
 // RequestProof implements the ProofProducer interface.

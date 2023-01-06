@@ -13,7 +13,7 @@ import (
 
 func (s *DriverTestSuite) TestNewAnchorTransactor() {
 	gasLimit := rand.Uint64()
-	c, err := NewAnchorConstructor(
+	c, err := NewAnchorTxConstructor(
 		s.RpcClient,
 		gasLimit, bindings.GoldenTouchAddress,
 		bindings.GoldenTouchPrivKey,

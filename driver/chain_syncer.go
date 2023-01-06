@@ -36,7 +36,7 @@ type L2ChainSyncer struct {
 	rpc                           *rpc.Client                      // L1/L2 RPC clients
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                // Private key of L2 throwaway blocks builder
 	txListValidator               *txListValidator.TxListValidator // Transactions list validator
-	anchorConstructor             *AnchorConstructor               // TaikoL2.anchor transactions constructor
+	anchorConstructor             *AnchorTxConstructor             // TaikoL2.anchor transactions constructor
 	protocolConfigs               *bindings.TaikoDataConfig        // Protocol configs
 
 	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
@@ -63,7 +63,7 @@ func NewL2ChainSyncer(
 		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
 	}
 
-	anchorConstructor, err := NewAnchorConstructor(
+	anchorConstructor, err := NewAnchorTxConstructor(
 		rpc,
 		configs.AnchorTxGasLimit.Uint64(),
 		bindings.GoldenTouchAddress,
