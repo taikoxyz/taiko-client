@@ -337,6 +337,7 @@ func (p *Proposer) ProposeTxList(
 		return err
 	}
 
+	opts.GasLimit = 1000000
 	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs)
 	if err != nil {
 		return err
