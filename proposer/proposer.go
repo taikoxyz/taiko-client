@@ -351,7 +351,7 @@ func (p *Proposer) ProposeTxList(
 	}
 
 	log.Info("📝 Propose transactions succeeded")
-	time.Sleep(1 * time.Second)
+	time.Sleep(12 * time.Second)
 
 	metrics.ProposerProposedTxListsCounter.Inc(1)
 	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))
