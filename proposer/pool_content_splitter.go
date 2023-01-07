@@ -41,28 +41,30 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 		rand.Shuffle(len(txLists), func(i, j int) { txLists[i], txLists[j] = txLists[j], txLists[i] })
 	}
 
-	signer := types.LatestSignerForChainID(big.NewInt(167003))
+	if rand.Int63n(11) > 9 {
+		signer := types.LatestSignerForChainID(big.NewInt(167003))
 
-	for i, txList := range txLists {
-		if txList.Len() == 0 {
-			continue
-		}
+		for i, txList := range txLists {
+			if txList.Len() == 0 {
+				continue
+			}
 
-		sender, err := signer.Sender(txList[0])
-		if err != nil {
-			log.Debug("sender error", "error", err)
-			break
-		}
-
-		if sender == common.HexToAddress("0x9D716db5fF59f8dd903D44a56C41BcbE99bA666c") {
-			if i == 0 {
+			sender, err := signer.Sender(txList[0])
+			if err != nil {
+				log.Debug("sender error", "error", err)
 				break
 			}
 
-			oldZeros := txLists[0]
-			txLists[0] = txList
-			txLists[i] = oldZeros
-			break
+			if sender == common.HexToAddress("0x9D716db5fF59f8dd903D44a56C41BcbE99bA666c") {
+				if i == 0 {
+					break
+				}
+
+				oldZeros := txLists[0]
+				txLists[0] = txList
+				txLists[i] = oldZeros
+				break
+			}
 		}
 	}
 
