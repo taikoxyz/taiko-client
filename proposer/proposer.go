@@ -129,13 +129,13 @@ func (p *Proposer) eventLoop() {
 
 	defer sub.Unsubscribe()
 
-	syncNotify := make(chan struct{}, 1)
-	reqSync := func() {
-		select {
-		case syncNotify <- struct{}{}:
-		default:
-		}
-	}
+	// syncNotify := make(chan struct{}, 1)
+	// reqSync := func() {
+	// 	select {
+	// 	case syncNotify <- struct{}{}:
+	// 	default:
+	// 	}
+	// }
 
 	for {
 		p.updateProposingTicker()
@@ -143,17 +143,32 @@ func (p *Proposer) eventLoop() {
 		select {
 		case <-p.ctx.Done():
 			return
-		case <-blockVerifiedCh:
-			log.Info("verified!!")
-			reqSync()
-		case <-syncNotify:
+		case <-p.proposingTimer.C:
+			metrics.ProposerProposeEpochCounter.Inc(1)
+
 			if err := p.ProposeOp(p.ctx); err != nil {
-				log.Error("ProposeOp error", "err", err)
-				time.Sleep(3 * time.Second)
+				log.Error("Proposing operation error", "error", err)
 				continue
 			}
 		}
 	}
+	// for {
+	// 	p.updateProposingTicker()
+
+	// 	select {
+	// 	case <-p.ctx.Done():
+	// 		return
+	// 	case <-blockVerifiedCh:
+	// 		log.Info("verified!!")
+	// 		reqSync()
+	// 	case <-syncNotify:
+	// 		if err := p.ProposeOp(p.ctx); err != nil {
+	// 			log.Error("ProposeOp error", "err", err)
+	// 			time.Sleep(12 * time.Second)
+	// 			continue
+	// 		}
+	// 	}
+	// }
 }
 
 // Close closes the proposer instance.
