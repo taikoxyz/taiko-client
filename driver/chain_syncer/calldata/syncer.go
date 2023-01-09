@@ -77,9 +77,34 @@ func NewSyncer(
 	}, nil
 }
 
+// ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
+// L1 block heights, and then tries inserting them into L2 execution engine's block chain.
+func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
+	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
+		Client:               s.rpc.L1,
+		TaikoL1:              s.rpc.TaikoL1,
+		StartHeight:          s.state.GetL1Current().Number,
+		EndHeight:            l1End.Number,
+		FilterQuery:          nil,
+		OnBlockProposedEvent: s.onBlockProposed,
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := iter.Iter(); err != nil {
+		return err
+	}
+
+	s.state.SetL1Current(l1End)
+	metrics.DriverL1CurrentHeightGauge.Update(s.state.GetL1Current().Number.Int64())
+
+	return nil
+}
+
 // OnBlockProposed is a `BlockProposed` event callback which responsible for
 // inserting the proposed block one by one to the L2 execution engine.
-func (s *Syncer) OnBlockProposed(
+func (s *Syncer) onBlockProposed(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	endIter eventIterator.EndBlockProposedEventIterFunc,

@@ -13,8 +13,6 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
 	progressTracker "github.com/taikoxyz/taiko-client/driver/chain_syncer/progress_tracker"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	"github.com/taikoxyz/taiko-client/metrics"
-	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -136,7 +134,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	}
 
 	// Insert the proposed block one by one.
-	return s.ProcessL1Blocks(s.ctx, l1End)
+	return s.calldataSyncer.ProcessL1Blocks(s.ctx, l1End)
 }
 
 // AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
@@ -166,27 +164,10 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 	return true
 }
 
-// ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
-// L1 block heights, and then tries inserting them into L2 execution engine's block chain.
-func (s *L2ChainSyncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
-	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
-		Client:               s.rpc.L1,
-		TaikoL1:              s.rpc.TaikoL1,
-		StartHeight:          s.state.GetL1Current().Number,
-		EndHeight:            l1End.Number,
-		FilterQuery:          nil,
-		OnBlockProposedEvent: s.calldataSyncer.OnBlockProposed,
-	})
-	if err != nil {
-		return err
-	}
+func (s *L2ChainSyncer) BeaconSyncer() *beacon.Syncer {
+	return s.beaconSyncer
+}
 
-	if err := iter.Iter(); err != nil {
-		return err
-	}
-
-	s.state.SetL1Current(l1End)
-	metrics.DriverL1CurrentHeightGauge.Update(s.state.GetL1Current().Number.Int64())
-
-	return nil
+func (s *L2ChainSyncer) CalldataSyncer() *calldata.Syncer {
+	return s.calldataSyncer
 }

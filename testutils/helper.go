@@ -32,7 +32,7 @@ func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
 func ProposeAndInsertEmptyBlocks(
 	s *ClientTestSuite,
 	proposer Proposer,
-	chainSyncer L2ChainSyncer,
+	calldataSyncer CalldataSyncer,
 ) []*bindings.TaikoL1ClientBlockProposed {
 	var events []*bindings.TaikoL1ClientBlockProposed
 
@@ -83,7 +83,7 @@ func ProposeAndInsertEmptyBlocks(
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	s.Nil(chainSyncer.ProcessL1Blocks(ctx, newL1Head))
+	s.Nil(calldataSyncer.ProcessL1Blocks(ctx, newL1Head))
 
 	return events
 }
@@ -93,7 +93,7 @@ func ProposeAndInsertEmptyBlocks(
 func ProposeAndInsertThrowawayBlock(
 	s *ClientTestSuite,
 	proposer Proposer,
-	chainSyncer L2ChainSyncer,
+	calldataSyncer CalldataSyncer,
 ) *bindings.TaikoL1ClientBlockProposed {
 	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -129,7 +129,7 @@ func ProposeAndInsertThrowawayBlock(
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	s.Nil(chainSyncer.ProcessL1Blocks(ctx, newL1Head))
+	s.Nil(calldataSyncer.ProcessL1Blocks(ctx, newL1Head))
 
 	newL2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -144,7 +144,7 @@ func ProposeAndInsertThrowawayBlock(
 func ProposeAndInsertValidBlock(
 	s *ClientTestSuite,
 	proposer Proposer,
-	chainSyncer L2ChainSyncer,
+	calldataSyncer CalldataSyncer,
 ) *bindings.TaikoL1ClientBlockProposed {
 	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -200,7 +200,7 @@ func ProposeAndInsertValidBlock(
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	s.Nil(chainSyncer.ProcessL1Blocks(ctx, newL1Head))
+	s.Nil(calldataSyncer.ProcessL1Blocks(ctx, newL1Head))
 
 	newL2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)

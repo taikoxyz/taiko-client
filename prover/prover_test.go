@@ -96,18 +96,22 @@ func (s *ProverTestSuite) TestGetProveBlocksTxOpts() {
 
 func (s *ProverTestSuite) TestOnBlockProposed() {
 	// Valid block
-	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer())
+	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.validProofSubmitter.SubmitProof(context.Background(), <-s.p.proveValidProofCh))
 
 	// Empty blocks
-	for _, e = range testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer()) {
+	for _, e = range testutils.ProposeAndInsertEmptyBlocks(
+		&s.ClientTestSuite,
+		s.proposer,
+		s.d.ChainSyncer().CalldataSyncer(),
+	) {
 		s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 		s.Nil(s.p.validProofSubmitter.SubmitProof(context.Background(), <-s.p.proveValidProofCh))
 	}
 
 	// Invalid block
-	e = testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer())
+	e = testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.invalidProofSubmitter.SubmitProof(context.Background(), <-s.p.proveInvalidProofCh))
 }
