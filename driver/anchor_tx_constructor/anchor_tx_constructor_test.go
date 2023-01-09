@@ -25,7 +25,7 @@ func (s *AnchorTxConstructorTestSuite) SetupTest() {
 	c, err := New(
 		s.RpcClient,
 		protocolConfigs.AnchorTxGasLimit.Uint64(),
-		s.c.goldenTouchAddress,
+		bindings.GoldenTouchAddress,
 		bindings.GoldenTouchPrivKey,
 	)
 	s.Nil(err)
