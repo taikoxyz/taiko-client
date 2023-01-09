@@ -31,7 +31,7 @@ L2_GENESIS_ALLOC=$(cat $DIR/nodes/deployments/mainnet.json)
 TAIKO_L1_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq .contracts.TaikoL1 | sed 's/\"//g')
 TAIKO_L2_CONTRACT_ADDRESS=$(echo $L2_GENESIS_ALLOC | jq 'to_entries[] | select(.value.contractName=="TaikoL2") | .key' | sed 's/\"//g')
 
-trap "docker compose -f $TESTNET_CONFIG down" EXIT INT KILL ERR
+trap "docker compose -f $TESTNET_CONFIG down -v" EXIT INT KILL ERR
 
 RUN_TESTS=${RUN_TESTS:-false}
 

@@ -23,7 +23,7 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 	state, err := state.New(context.Background(), s.RpcClient)
 	s.Nil(err)
 
-	throwawayBlocksBuilderPrivKey, err := crypto.HexToECDSA(bindings.GoldenTouchPrivKey)
+	throwawayBlocksBuilderPrivKey, err := crypto.HexToECDSA(bindings.GoldenTouchPrivKey[2:])
 	s.Nil(err)
 
 	syncer, err := New(
@@ -36,6 +36,11 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 	)
 	s.Nil(err)
 	s.s = syncer
+}
+
+func (s *ChainSyncerTestSuite) TestGetInnerSyncers() {
+	s.NotNil(s.s.BeaconSyncer())
+	s.NotNil(s.s.CalldataSyncer())
 }
 
 func TestChainSyncerTestSuite(t *testing.T) {

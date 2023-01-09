@@ -25,7 +25,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	state, err := state.New(context.Background(), s.RpcClient)
 	s.Nil(err)
 
-	throwawayBlocksBuilderPrivKey, err := crypto.HexToECDSA(bindings.GoldenTouchPrivKey)
+	throwawayBlocksBuilderPrivKey, err := crypto.HexToECDSA(bindings.GoldenTouchPrivKey[2:])
 	s.Nil(err)
 
 	syncer, err := NewSyncer(

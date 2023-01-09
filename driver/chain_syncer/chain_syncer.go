@@ -164,10 +164,12 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 	return true
 }
 
+// BeaconSyncer returns the inner beacon syncer.
 func (s *L2ChainSyncer) BeaconSyncer() *beacon.Syncer {
 	return s.beaconSyncer
 }
 
+// CalldataSyncer returns the inner calldata syncer.
 func (s *L2ChainSyncer) CalldataSyncer() *calldata.Syncer {
 	return s.calldataSyncer
 }
