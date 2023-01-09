@@ -11,8 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	beacon "github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
+	progressTracker "github.com/taikoxyz/taiko-client/driver/chain_syncer/progress_tracker"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	syncProgressTracker "github.com/taikoxyz/taiko-client/driver/sync_progress_tracker"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -30,7 +30,7 @@ type L2ChainSyncer struct {
 	calldataSyncer *calldata.Syncer
 
 	// Monitors
-	syncProgressTracker *syncProgressTracker.BeaconSyncProgressTracker
+	progressTracker *progressTracker.BeaconSyncProgressTracker
 
 	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
 	// latest verified block head
@@ -46,7 +46,7 @@ func New(
 	p2pSyncVerifiedBlocks bool,
 	p2pSyncTimeout time.Duration,
 ) (*L2ChainSyncer, error) {
-	tracker := syncProgressTracker.New(rpc.L2, p2pSyncTimeout)
+	tracker := progressTracker.New(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
 	beaconSyncer := beacon.NewSyncer(ctx, rpc, state, tracker)
@@ -61,7 +61,7 @@ func New(
 		state:                 state,
 		beaconSyncer:          beaconSyncer,
 		calldataSyncer:        calldataSyncer,
-		syncProgressTracker:   tracker,
+		progressTracker:       tracker,
 		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
 	}, nil
 }
@@ -74,7 +74,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	if s.p2pSyncVerifiedBlocks &&
 		s.state.GetLatestVerifiedBlock().Height.Uint64() > 0 &&
 		!s.AheadOfProtocolVerifiedHead() &&
-		!s.syncProgressTracker.OutOfSync() {
+		!s.progressTracker.OutOfSync() {
 		if err := s.beaconSyncer.TriggerBeaconSync(); err != nil {
 			return fmt.Errorf("trigger beacon sync error: %w", err)
 		}
@@ -84,11 +84,11 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 
 	// We have triggered at least a beacon sync in L2 execution engine, we should reset the L1Current
 	// cursor at first, before start inserting pending L2 blocks one by one.
-	if s.syncProgressTracker.Triggered() {
+	if s.progressTracker.Triggered() {
 		log.Info(
 			"Switch to insert pending blocks one by one",
 			"p2pEnabled", s.p2pSyncVerifiedBlocks,
-			"p2pOutOfSync", s.syncProgressTracker.OutOfSync(),
+			"p2pOutOfSync", s.progressTracker.OutOfSync(),
 		)
 
 		// Get the execution engine's chain head.
@@ -121,8 +121,8 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		}
 
 		// If the L2 execution engine has synced to latest verified block.
-		if l2HeadHash == s.syncProgressTracker.LastSyncedVerifiedBlockHash() {
-			heightOrID.ID = s.syncProgressTracker.LastSyncedVerifiedBlockID()
+		if l2HeadHash == s.progressTracker.LastSyncedVerifiedBlockHash() {
+			heightOrID.ID = s.progressTracker.LastSyncedVerifiedBlockID()
 		}
 
 		// Reset the L1Current cursor.
@@ -132,7 +132,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		}
 
 		// Reset to the latest L2 execution engine's chain status.
-		s.syncProgressTracker.UpdateMeta(blockID, heightOrID.Height, l2HeadHash)
+		s.progressTracker.UpdateMeta(blockID, heightOrID.Height, l2HeadHash)
 	}
 
 	// Insert the proposed block one by one.
@@ -159,8 +159,8 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 		return false
 	}
 
-	if s.syncProgressTracker.LastSyncedVerifiedBlockHeight() != nil {
-		return s.state.GetL2Head().Number.Uint64() >= s.syncProgressTracker.LastSyncedVerifiedBlockHeight().Uint64()
+	if s.progressTracker.LastSyncedVerifiedBlockHeight() != nil {
+		return s.state.GetL2Head().Number.Uint64() >= s.progressTracker.LastSyncedVerifiedBlockHeight().Uint64()
 	}
 
 	return true

@@ -18,8 +18,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
+	progressTracker "github.com/taikoxyz/taiko-client/driver/chain_syncer/progress_tracker"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	syncProgressTracker "github.com/taikoxyz/taiko-client/driver/sync_progress_tracker"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -30,7 +30,7 @@ type Syncer struct {
 	ctx                           context.Context
 	rpc                           *rpc.Client
 	state                         *state.State
-	syncProgressTracker           *syncProgressTracker.BeaconSyncProgressTracker
+	progressTracker               *progressTracker.BeaconSyncProgressTracker
 	anchorConstructor             *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
 	txListValidator               *txListValidator.TxListValidator         // Transactions list validator
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                        // Private key of L2 throwaway blocks builder
@@ -42,7 +42,7 @@ func NewSyncer(
 	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
-	syncProgressTracker *syncProgressTracker.BeaconSyncProgressTracker,
+	progressTracker *progressTracker.BeaconSyncProgressTracker,
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey, // Private key of L2 throwaway blocks builder
 ) (*Syncer, error) {
 	configs, err := rpc.TaikoL1.GetConfig(nil)
@@ -64,6 +64,7 @@ func NewSyncer(
 		ctx:               ctx,
 		rpc:               rpc,
 		state:             state,
+		progressTracker:   progressTracker,
 		anchorConstructor: constructor,
 		txListValidator: txListValidator.NewTxListValidator(
 			configs.BlockMaxGasLimit.Uint64(),
@@ -100,13 +101,13 @@ func (s *Syncer) OnBlockProposed(
 		parent *types.Header
 		err    error
 	)
-	if s.syncProgressTracker.Triggered() {
+	if s.progressTracker.Triggered() {
 		// Already synced through beacon sync, just skip this event.
-		if event.Id.Cmp(s.syncProgressTracker.LastSyncedVerifiedBlockID()) <= 0 {
+		if event.Id.Cmp(s.progressTracker.LastSyncedVerifiedBlockID()) <= 0 {
 			return nil
 		}
 
-		parent, err = s.rpc.L2.HeaderByHash(ctx, s.syncProgressTracker.LastSyncedVerifiedBlockHash())
+		parent, err = s.rpc.L2.HeaderByHash(ctx, s.progressTracker.LastSyncedVerifiedBlockHash())
 	} else {
 		parent, err = s.rpc.L2ParentByBlockId(ctx, event.Id)
 	}
@@ -207,8 +208,8 @@ func (s *Syncer) OnBlockProposed(
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
 	s.lastInsertedBlockID = event.Id
 
-	if !l1Origin.Throwaway && s.syncProgressTracker.Triggered() {
-		s.syncProgressTracker.ClearMeta()
+	if !l1Origin.Throwaway && s.progressTracker.Triggered() {
+		s.progressTracker.ClearMeta()
 	}
 
 	return nil

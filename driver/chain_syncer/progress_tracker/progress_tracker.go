@@ -1,4 +1,4 @@
-package syncProgressTracker
+package progressTracker
 
 import (
 	"context"

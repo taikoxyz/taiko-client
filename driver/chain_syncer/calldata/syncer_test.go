@@ -9,8 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
+	progressTracker "github.com/taikoxyz/taiko-client/driver/chain_syncer/progress_tracker"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	syncProgressTracker "github.com/taikoxyz/taiko-client/driver/sync_progress_tracker"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -32,7 +32,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		context.Background(),
 		s.RpcClient,
 		state,
-		syncProgressTracker.New(s.RpcClient.L2, 1*time.Hour),
+		progressTracker.New(s.RpcClient.L2, 1*time.Hour),
 		throwawayBlocksBuilderPrivKey,
 	)
 	s.Nil(err)

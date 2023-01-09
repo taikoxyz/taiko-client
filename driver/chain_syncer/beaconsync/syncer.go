@@ -11,26 +11,26 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	progressTracker "github.com/taikoxyz/taiko-client/driver/chain_syncer/progress_tracker"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	syncProgressTracker "github.com/taikoxyz/taiko-client/driver/sync_progress_tracker"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 type Syncer struct {
-	ctx                 context.Context
-	rpc                 *rpc.Client
-	state               *state.State
-	syncProgressTracker *syncProgressTracker.BeaconSyncProgressTracker
+	ctx             context.Context
+	rpc             *rpc.Client
+	state           *state.State
+	progressTracker *progressTracker.BeaconSyncProgressTracker
 }
 
 func NewSyncer(
 	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
-	syncProgressTracker *syncProgressTracker.BeaconSyncProgressTracker,
+	progressTracker *progressTracker.BeaconSyncProgressTracker,
 ) *Syncer {
-	return &Syncer{ctx, rpc, state, syncProgressTracker}
+	return &Syncer{ctx, rpc, state, progressTracker}
 }
 
 // TriggerBeaconSync triggers the L2 execution engine to start performing a beacon sync.
@@ -40,7 +40,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 		return err
 	}
 
-	if !s.syncProgressTracker.HeadChanged(blockID) {
+	if !s.progressTracker.HeadChanged(blockID) {
 		log.Debug("Verified head has not changed", "blockID", blockID, "hash", latestVerifiedHeadPayload.BlockHash)
 		return nil
 	}
@@ -70,7 +70,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 	}
 
 	// Update sync status.
-	s.syncProgressTracker.UpdateMeta(
+	s.progressTracker.UpdateMeta(
 		blockID,
 		new(big.Int).SetUint64(latestVerifiedHeadPayload.Number),
 		latestVerifiedHeadPayload.BlockHash,
@@ -79,8 +79,8 @@ func (s *Syncer) TriggerBeaconSync() error {
 	log.Info(
 		"⛓️ Beacon-sync triggered",
 		"newHeadID", blockID,
-		"newHeadHeight", s.syncProgressTracker.LastSyncedVerifiedBlockHeight(),
-		"newHeadHash", s.syncProgressTracker.LastSyncedVerifiedBlockHash(),
+		"newHeadHeight", s.progressTracker.LastSyncedVerifiedBlockHeight(),
+		"newHeadHash", s.progressTracker.LastSyncedVerifiedBlockHash(),
 	)
 
 	return nil
