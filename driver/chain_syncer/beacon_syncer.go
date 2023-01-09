@@ -1,4 +1,4 @@
-package driver
+package chainSyncer
 
 import (
 	"bytes"
@@ -72,14 +72,14 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *beacon.ExecutableDataV1, error) {
 	var (
 		proveBlockTxHash    common.Hash
-		latestVerifiedBlock = s.state.getLatestVerifiedBlock()
+		latestVerifiedBlock = s.state.GetLatestVerifiedBlock()
 	)
 
 	// Get the latest verified block's corresponding BlockProven event.
 	iter, err := eventIterator.NewBlockProvenIterator(s.ctx, &eventIterator.BlockProvenIteratorConfig{
 		Client:      s.rpc.L1,
 		TaikoL1:     s.rpc.TaikoL1,
-		StartHeight: s.state.genesisL1Height,
+		StartHeight: s.state.GenesisL1Height,
 		EndHeight:   s.state.GetL1Head().Number,
 		FilterQuery: []*big.Int{latestVerifiedBlock.ID},
 		Reverse:     true,

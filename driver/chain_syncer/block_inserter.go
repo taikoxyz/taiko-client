@@ -1,4 +1,4 @@
-package driver
+package chainSyncer
 
 import (
 	"context"
@@ -107,7 +107,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 			ctx,
 			event,
 			parent,
-			s.state.getHeadBlockID(),
+			s.state.GetHeadBlockID(),
 			txListBytes,
 			l1Origin,
 		)
@@ -118,7 +118,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 			parent,
 			uint8(hint),
 			new(big.Int).SetInt64(int64(invalidTxIndex)),
-			s.state.getHeadBlockID(),
+			s.state.GetHeadBlockID(),
 			txListBytes,
 			l1Origin,
 		)
@@ -144,8 +144,8 @@ func (s *L2ChainSyncer) onBlockProposed(
 		"blockID", event.Id,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
-		"latestVerifiedBlockHeight", s.state.getLatestVerifiedBlock().Height,
-		"latestVerifiedBlockHash", s.state.getLatestVerifiedBlock().Hash,
+		"latestVerifiedBlockHeight", s.state.GetLatestVerifiedBlock().Height,
+		"latestVerifiedBlockHash", s.state.GetLatestVerifiedBlock().Hash,
 		"transactions", len(payloadData.Transactions),
 	)
 

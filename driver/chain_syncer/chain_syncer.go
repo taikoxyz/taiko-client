@@ -1,4 +1,4 @@
-package driver
+package chainSyncer
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
+	"github.com/taikoxyz/taiko-client/driver/state"
 	syncProgressTracker "github.com/taikoxyz/taiko-client/driver/sync_progress_tracker"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
@@ -19,22 +20,11 @@ import (
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
-// HeightOrID contains a block height or a block ID.
-type HeightOrID struct {
-	Height *big.Int
-	ID     *big.Int
-}
-
-// NotEmpty checks whether this is an empty struct.
-func (h *HeightOrID) NotEmpty() bool {
-	return h.Height != nil || h.ID != nil
-}
-
 // L2ChainSyncer is responsible for keeping the L2 execution engine's local chain in sync with the one
 // in TaikoL1 contract.
 type L2ChainSyncer struct {
 	ctx                           context.Context
-	state                         *State                                   // Driver's state
+	state                         *state.State                             // Driver's state
 	rpc                           *rpc.Client                              // L1/L2 RPC clients
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                        // Private key of L2 throwaway blocks builder
 	txListValidator               *txListValidator.TxListValidator         // Transactions list validator
@@ -51,11 +41,11 @@ type L2ChainSyncer struct {
 	lastInsertedBlockID *big.Int
 }
 
-// NewL2ChainSyncer creates a new chain syncer instance.
-func NewL2ChainSyncer(
+// New creates a new chain syncer instance.
+func New(
 	ctx context.Context,
 	rpc *rpc.Client,
-	state *State,
+	state *state.State,
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
 	p2pSyncVerifiedBlocks bool,
 	p2pSyncTimeout time.Duration,
@@ -103,7 +93,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
 	// latest verified block head.
 	if s.p2pSyncVerifiedBlocks &&
-		s.state.getLatestVerifiedBlock().Height.Uint64() > 0 &&
+		s.state.GetLatestVerifiedBlock().Height.Uint64() > 0 &&
 		!s.AheadOfProtocolVerifiedHead() &&
 		!s.syncProgressTracker.OutOfSync() {
 		if err := s.TriggerBeaconSync(); err != nil {
@@ -134,7 +124,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 			return err
 		}
 
-		heightOrID := &HeightOrID{Height: l2Head.Number}
+		heightOrID := &state.HeightOrID{Height: l2Head.Number}
 		// If there is a verified block hash mismatch, log the error and then try to re-sync from genesis one by one.
 		if l2Head.Hash() != l2HeadHash {
 			log.Error(
@@ -157,7 +147,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		}
 
 		// Reset the L1Current cursor.
-		blockID, err := s.state.resetL1Current(s.ctx, heightOrID)
+		blockID, err := s.state.ResetL1Current(s.ctx, heightOrID)
 		if err != nil {
 			return err
 		}
@@ -172,7 +162,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 
 // AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
 func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
-	verifiedHeightToCompare := s.state.getLatestVerifiedBlock().Height.Uint64()
+	verifiedHeightToCompare := s.state.GetLatestVerifiedBlock().Height.Uint64()
 	log.Debug(
 		"Checking whether the execution engine is ahead of protocol's verified head",
 		"latestVerifiedBlock", verifiedHeightToCompare,
@@ -203,7 +193,7 @@ func (s *L2ChainSyncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header
 	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
 		Client:               s.rpc.L1,
 		TaikoL1:              s.rpc.TaikoL1,
-		StartHeight:          s.state.l1Current.Number,
+		StartHeight:          s.state.GetL1Current().Number,
 		EndHeight:            l1End.Number,
 		FilterQuery:          nil,
 		OnBlockProposedEvent: s.onBlockProposed,
@@ -216,8 +206,8 @@ func (s *L2ChainSyncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header
 		return err
 	}
 
-	s.state.l1Current = l1End
-	metrics.DriverL1CurrentHeightGauge.Update(s.state.l1Current.Number.Int64())
+	s.state.SetL1Current(l1End)
+	metrics.DriverL1CurrentHeightGauge.Update(s.state.GetL1Current().Number.Int64())
 
 	return nil
 }

@@ -9,6 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
+	chainSyncer "github.com/taikoxyz/taiko-client/driver/chain_syncer"
+	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
@@ -24,8 +26,8 @@ const (
 // contract.
 type Driver struct {
 	rpc           *rpc.Client
-	l2ChainSyncer *L2ChainSyncer
-	state         *State
+	l2ChainSyncer *chainSyncer.L2ChainSyncer
+	state         *state.State
 
 	l1HeadCh   chan *types.Header
 	l1HeadSub  event.Subscription
@@ -63,7 +65,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		return err
 	}
 
-	if d.state, err = NewState(d.ctx, d.rpc); err != nil {
+	if d.state, err = state.New(d.ctx, d.rpc); err != nil {
 		return err
 	}
 
@@ -76,7 +78,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
 	}
 
-	if d.l2ChainSyncer, err = NewL2ChainSyncer(
+	if d.l2ChainSyncer, err = chainSyncer.New(
 		d.ctx,
 		d.rpc,
 		d.state,
@@ -164,7 +166,7 @@ func (d *Driver) doSync() error {
 }
 
 // ChainSyncer returns the driver's chain syncer.
-func (d *Driver) ChainSyncer() *L2ChainSyncer {
+func (d *Driver) ChainSyncer() *chainSyncer.L2ChainSyncer {
 	return d.l2ChainSyncer
 }
 

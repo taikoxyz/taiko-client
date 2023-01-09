@@ -1,4 +1,4 @@
-package driver
+package state
 
 import (
 	"bytes"
@@ -19,6 +19,17 @@ import (
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
+
+// HeightOrID contains a block height or a block ID.
+type HeightOrID struct {
+	Height *big.Int
+	ID     *big.Int
+}
+
+// NotEmpty checks whether this is an empty struct.
+func (h *HeightOrID) NotEmpty() bool {
+	return h.Height != nil || h.ID != nil
+}
 
 type VerifiedHeaderInfo struct {
 	ID     *big.Int
@@ -41,24 +52,18 @@ type State struct {
 	l2Head         *atomic.Value // Current L2 execution engine's local chain head
 	l2HeadBlockID  *atomic.Value // Latest known L2 block ID
 	l2VerifiedHead *atomic.Value // Latest known L2 verified head
-	l1Current      *types.Header // Current L1 block sync cursor
+	l1Current      *atomic.Value // Current L1 block sync cursor
 
 	// Constants
-	genesisL1Height  *big.Int
-	blockDeadendHash common.Hash
+	GenesisL1Height  *big.Int
+	BlockDeadendHash common.Hash
 
 	// RPC clients
 	rpc *rpc.Client
 }
 
-// NewState creates a new driver state instance.
-func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
-	// Set the L2 head's latest known L1 origin as current L1 sync cursor.
-	latestL2KnownL1Header, err := rpc.LatestL2KnownL1Header(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+// New creates a new driver state instance.
+func New(ctx context.Context, rpc *rpc.Client) (*State, error) {
 	stateVars, err := rpc.GetProtocolStateVariables(nil)
 	if err != nil {
 		return nil, err
@@ -68,14 +73,22 @@ func NewState(ctx context.Context, rpc *rpc.Client) (*State, error) {
 
 	s := &State{
 		rpc:              rpc,
-		genesisL1Height:  new(big.Int).SetUint64(stateVars.GenesisHeight),
+		GenesisL1Height:  new(big.Int).SetUint64(stateVars.GenesisHeight),
 		l1Head:           new(atomic.Value),
 		l2Head:           new(atomic.Value),
 		l2HeadBlockID:    new(atomic.Value),
 		l2VerifiedHead:   new(atomic.Value),
-		l1Current:        latestL2KnownL1Header,
-		blockDeadendHash: common.BigToHash(common.Big1),
+		l1Current:        new(atomic.Value),
+		BlockDeadendHash: common.BigToHash(common.Big1),
 	}
+
+	// Set the L2 head's latest known L1 origin as current L1 sync cursor.
+	latestL2KnownL1Header, err := rpc.LatestL2KnownL1Header(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	s.l1Current.Store(latestL2KnownL1Header)
 
 	if err := s.initSubscriptions(ctx); err != nil {
 		return nil, err
@@ -302,7 +315,7 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 	for {
 		select {
 		case e := <-blockVerifiedCh:
-			if e.BlockHash != s.blockDeadendHash {
+			if e.BlockHash != s.BlockDeadendHash {
 				log.Info("📈 Valid block verified", "blockID", e.Id, "hash", common.Hash(e.BlockHash))
 			} else {
 				log.Info("🗑 Invalid block verified", "blockID", e.Id)
@@ -337,8 +350,8 @@ func (s *State) setLatestVerifiedBlockHash(id *big.Int, height *big.Int, hash co
 	s.l2VerifiedHead.Store(&VerifiedHeaderInfo{ID: id, Height: height, Hash: hash})
 }
 
-// getLatestVerifiedBlock reads the latest verified L2 block concurrent safely.
-func (s *State) getLatestVerifiedBlock() *VerifiedHeaderInfo {
+// GetLatestVerifiedBlock reads the latest verified L2 block concurrent safely.
+func (s *State) GetLatestVerifiedBlock() *VerifiedHeaderInfo {
 	return s.l2VerifiedHead.Load().(*VerifiedHeaderInfo)
 }
 
@@ -380,7 +393,7 @@ func (s *State) watchBlockProven(ctx context.Context) (ethereum.Subscription, er
 	for {
 		select {
 		case e := <-newBlockProvenCh:
-			if e.BlockHash != s.blockDeadendHash {
+			if e.BlockHash != s.BlockDeadendHash {
 				log.Info("✅ Valid block proven", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
 			} else {
 				log.Info("❎ Invalid block proven", "blockID", e.Id, "prover", e.Prover)
@@ -400,8 +413,8 @@ func (s *State) setHeadBlockID(id *big.Int) {
 	s.l2HeadBlockID.Store(id)
 }
 
-// getHeadBlockID reads the last pending block ID concurrent safely.
-func (s *State) getHeadBlockID() *big.Int {
+// GetHeadBlockID reads the last pending block ID concurrent safely.
+func (s *State) GetHeadBlockID() *big.Int {
 	return s.l2HeadBlockID.Load().(*big.Int)
 }
 
@@ -430,9 +443,24 @@ func (s *State) VerifyL2Block(ctx context.Context, protocolBlockHash common.Hash
 	return nil
 }
 
-// resetL1Current resets the l1Current cursor to the L1 height which emitted a
+// GetL1Current reads the L1 current cursor concurrent safely.
+func (s *State) GetL1Current() *types.Header {
+	return s.l1Current.Load().(*types.Header)
+}
+
+// SetL1Current sets the L1 current cursor concurrent safely.
+func (s *State) SetL1Current(h *types.Header) {
+	if h == nil {
+		log.Warn("Empty l1 current cursor")
+		return
+	}
+	log.Debug("Set L1 current cursor", "number", h.Number)
+	s.l1Current.Store(h)
+}
+
+// ResetL1Current resets the l1Current cursor to the L1 height which emitted a
 // BlockProven event with given blockID / blockHash.
-func (s *State) resetL1Current(ctx context.Context, heightOrID *HeightOrID) (*big.Int, error) {
+func (s *State) ResetL1Current(ctx context.Context, heightOrID *HeightOrID) (*big.Int, error) {
 	if !heightOrID.NotEmpty() {
 		return nil, fmt.Errorf("empty input %v", heightOrID)
 	}
@@ -446,8 +474,12 @@ func (s *State) resetL1Current(ctx context.Context, heightOrID *HeightOrID) (*bi
 
 	if (heightOrID.ID != nil && heightOrID.ID.Cmp(common.Big0) == 0) ||
 		(heightOrID.Height != nil && heightOrID.Height.Cmp(common.Big0) == 0) {
-		s.l1Current, err = s.rpc.L1.HeaderByNumber(ctx, s.genesisL1Height)
-		return common.Big0, err
+		l1Current, err := s.rpc.L1.HeaderByNumber(ctx, s.GenesisL1Height)
+		if err != nil {
+			return nil, err
+		}
+		s.SetL1Current(l1Current)
+		return common.Big0, nil
 	}
 
 	// Need to find the block ID at first, before filtering the BlockProposed events.
@@ -463,7 +495,7 @@ func (s *State) resetL1Current(ctx context.Context, heightOrID *HeightOrID) (*bi
 			&eventIterator.BlockProvenIteratorConfig{
 				Client:      s.rpc.L1,
 				TaikoL1:     s.rpc.TaikoL1,
-				StartHeight: s.genesisL1Height,
+				StartHeight: s.GenesisL1Height,
 				EndHeight:   s.GetL1Head().Number,
 				FilterQuery: []*big.Int{},
 				Reverse:     true,
@@ -501,7 +533,7 @@ func (s *State) resetL1Current(ctx context.Context, heightOrID *HeightOrID) (*bi
 		&eventIterator.BlockProposedIteratorConfig{
 			Client:      s.rpc.L1,
 			TaikoL1:     s.rpc.TaikoL1,
-			StartHeight: s.genesisL1Height,
+			StartHeight: s.GenesisL1Height,
 			EndHeight:   s.GetL1Head().Number,
 			FilterQuery: []*big.Int{heightOrID.ID},
 			Reverse:     true,
@@ -529,11 +561,13 @@ func (s *State) resetL1Current(ctx context.Context, heightOrID *HeightOrID) (*bi
 		return nil, fmt.Errorf("BlockProposed event not found, blockID: %s", heightOrID.ID)
 	}
 
-	if s.l1Current, err = s.rpc.L1.HeaderByNumber(ctx, l1CurrentHeight); err != nil {
+	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, l1CurrentHeight)
+	if err != nil {
 		return nil, err
 	}
+	s.SetL1Current(l1Current)
 
-	log.Info("Reset L1 current cursor", "height", s.l1Current.Number)
+	log.Info("Reset L1 current cursor", "height", s.GetL1Current().Number)
 
 	return heightOrID.ID, nil
 }

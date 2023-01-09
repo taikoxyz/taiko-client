@@ -31,6 +31,7 @@ func (s *AnchorTxConstructorTestSuite) SetupTest() {
 	s.Nil(err)
 	s.c = c
 }
+
 func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
 	gasLimit := rand.Uint64()
 	c, err := New(
