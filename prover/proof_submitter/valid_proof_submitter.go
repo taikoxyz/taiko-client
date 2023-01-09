@@ -48,7 +48,7 @@ func NewValidProofSubmitter(
 		rpc:               rpc,
 		proofProducer:     proofProducer,
 		reusltCh:          reusltCh,
-		anchorTxValidator: anchorTxValidator.NewAnchorTxValidator(taikoL2Address, rpc.L2ChainID, rpc),
+		anchorTxValidator: anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc),
 		proverPrivKey:     proverPrivKey,
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		zkProofsPerBlock:  zkProofsPerBlock,

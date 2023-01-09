@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -32,12 +33,12 @@ func (h *HeightOrID) NotEmpty() bool {
 // in TaikoL1 contract.
 type L2ChainSyncer struct {
 	ctx                           context.Context
-	state                         *State                           // Driver's state
-	rpc                           *rpc.Client                      // L1/L2 RPC clients
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                // Private key of L2 throwaway blocks builder
-	txListValidator               *txListValidator.TxListValidator // Transactions list validator
-	anchorConstructor             *AnchorTxConstructor             // TaikoL2.anchor transactions constructor
-	protocolConfigs               *bindings.TaikoDataConfig        // Protocol configs
+	state                         *State                                   // Driver's state
+	rpc                           *rpc.Client                              // L1/L2 RPC clients
+	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                        // Private key of L2 throwaway blocks builder
+	txListValidator               *txListValidator.TxListValidator         // Transactions list validator
+	anchorConstructor             *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
+	protocolConfigs               *bindings.TaikoDataConfig                // Protocol configs
 
 	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
 	// latest verified block head
@@ -63,7 +64,7 @@ func NewL2ChainSyncer(
 		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
 	}
 
-	anchorConstructor, err := NewAnchorTxConstructor(
+	anchorConstructor, err := anchorTxConstructor.New(
 		rpc,
 		configs.AnchorTxGasLimit.Uint64(),
 		bindings.GoldenTouchAddress,
