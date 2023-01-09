@@ -1,7 +1,8 @@
-package chainSyncer
+package calldata
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"math/big"
@@ -16,14 +17,68 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
+	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
+	"github.com/taikoxyz/taiko-client/driver/state"
+	syncProgressTracker "github.com/taikoxyz/taiko-client/driver/sync_progress_tracker"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
-// onBlockProposed is a `BlockProposed` event callback which responsible for
+type Syncer struct {
+	ctx                           context.Context
+	rpc                           *rpc.Client
+	state                         *state.State
+	syncProgressTracker           *syncProgressTracker.BeaconSyncProgressTracker
+	anchorConstructor             *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
+	txListValidator               *txListValidator.TxListValidator         // Transactions list validator
+	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                        // Private key of L2 throwaway blocks builder
+	// Used by BlockInserter
+	lastInsertedBlockID *big.Int
+}
+
+func NewSyncer(
+	ctx context.Context,
+	rpc *rpc.Client,
+	state *state.State,
+	syncProgressTracker *syncProgressTracker.BeaconSyncProgressTracker,
+	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey, // Private key of L2 throwaway blocks builder
+) (*Syncer, error) {
+	configs, err := rpc.TaikoL1.GetConfig(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
+	}
+
+	constructor, err := anchorTxConstructor.New(
+		rpc,
+		configs.AnchorTxGasLimit.Uint64(),
+		bindings.GoldenTouchAddress,
+		bindings.GoldenTouchPrivKey,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
+	}
+
+	return &Syncer{
+		ctx:               ctx,
+		rpc:               rpc,
+		state:             state,
+		anchorConstructor: constructor,
+		txListValidator: txListValidator.NewTxListValidator(
+			configs.BlockMaxGasLimit.Uint64(),
+			configs.MaxTransactionsPerBlock.Uint64(),
+			configs.MaxBytesPerTxList.Uint64(),
+			configs.MinTxGasLimit.Uint64(),
+			rpc.L2ChainID,
+		),
+		throwawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
+	}, nil
+}
+
+// OnBlockProposed is a `BlockProposed` event callback which responsible for
 // inserting the proposed block one by one to the L2 execution engine.
-func (s *L2ChainSyncer) onBlockProposed(
+func (s *Syncer) OnBlockProposed(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	endIter eventIterator.EndBlockProposedEventIterFunc,
@@ -161,7 +216,7 @@ func (s *L2ChainSyncer) onBlockProposed(
 
 // insertNewHead tries to insert a new head block to the L2 execution engine's local
 // block chain through Engine APIs.
-func (s *L2ChainSyncer) insertNewHead(
+func (s *Syncer) insertNewHead(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	parent *types.Header,
@@ -234,7 +289,7 @@ func (s *L2ChainSyncer) insertNewHead(
 
 // insertThrowAwayBlock tries to insert a throw away block to the L2 execution engine's local
 // block chain through Engine APIs.
-func (s *L2ChainSyncer) insertThrowAwayBlock(
+func (s *Syncer) insertThrowAwayBlock(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	parent *types.Header,
@@ -286,7 +341,7 @@ func (s *L2ChainSyncer) insertThrowAwayBlock(
 
 // createExecutionPayloads creates a new execution payloads through
 // Engine APIs.
-func (s *L2ChainSyncer) createExecutionPayloads(
+func (s *Syncer) createExecutionPayloads(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	parentHash common.Hash,
@@ -302,7 +357,7 @@ func (s *L2ChainSyncer) createExecutionPayloads(
 		BlockMetadata: &beacon.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
-			GasLimit:       event.Meta.GasLimit + s.protocolConfigs.AnchorTxGasLimit.Uint64(),
+			GasLimit:       event.Meta.GasLimit + s.anchorConstructor.GasLimit(),
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
@@ -343,7 +398,7 @@ func (s *L2ChainSyncer) createExecutionPayloads(
 
 // getInvalidateBlockTxOpts signs the transaction with a the
 // throwaway blocks builder private key.
-func (s *L2ChainSyncer) getInvalidateBlockTxOpts(ctx context.Context, height *big.Int) (*bind.TransactOpts, error) {
+func (s *Syncer) getInvalidateBlockTxOpts(ctx context.Context, height *big.Int) (*bind.TransactOpts, error) {
 	opts, err := bind.NewKeyedTransactorWithChainID(
 		s.throwawayBlocksBuilderPrivKey,
 		s.rpc.L2ChainID,

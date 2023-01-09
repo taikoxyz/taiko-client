@@ -1,4 +1,4 @@
-package chainSyncer
+package beaconsync
 
 import (
 	"bytes"
@@ -11,11 +11,30 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/driver/state"
+	syncProgressTracker "github.com/taikoxyz/taiko-client/driver/sync_progress_tracker"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+type Syncer struct {
+	ctx                 context.Context
+	rpc                 *rpc.Client
+	state               *state.State
+	syncProgressTracker *syncProgressTracker.BeaconSyncProgressTracker
+}
+
+func NewSyncer(
+	ctx context.Context,
+	rpc *rpc.Client,
+	state *state.State,
+	syncProgressTracker *syncProgressTracker.BeaconSyncProgressTracker,
+) *Syncer {
+	return &Syncer{ctx, rpc, state, syncProgressTracker}
+}
+
 // TriggerBeaconSync triggers the L2 execution engine to start performing a beacon sync.
-func (s *L2ChainSyncer) TriggerBeaconSync() error {
+func (s *Syncer) TriggerBeaconSync() error {
 	blockID, latestVerifiedHeadPayload, err := s.getVerifiedBlockPayload(s.ctx)
 	if err != nil {
 		return err
@@ -69,7 +88,7 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 
 // getVerifiedBlockPayload fetches the latest verified block's header, and converts it to an Engine API executable data,
 // which will be used to let the node to start beacon syncing.
-func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *beacon.ExecutableDataV1, error) {
+func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *beacon.ExecutableDataV1, error) {
 	var (
 		proveBlockTxHash    common.Hash
 		latestVerifiedBlock = s.state.GetLatestVerifiedBlock()

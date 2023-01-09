@@ -4,41 +4,37 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikoxyz/taiko-client/bindings"
-	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
+	beacon "github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	syncProgressTracker "github.com/taikoxyz/taiko-client/driver/sync_progress_tracker"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
 // L2ChainSyncer is responsible for keeping the L2 execution engine's local chain in sync with the one
 // in TaikoL1 contract.
 type L2ChainSyncer struct {
-	ctx                           context.Context
-	state                         *state.State                             // Driver's state
-	rpc                           *rpc.Client                              // L1/L2 RPC clients
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                        // Private key of L2 throwaway blocks builder
-	txListValidator               *txListValidator.TxListValidator         // Transactions list validator
-	anchorConstructor             *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
-	protocolConfigs               *bindings.TaikoDataConfig                // Protocol configs
+	ctx   context.Context
+	state *state.State // Driver's state
+	rpc   *rpc.Client  // L1/L2 RPC clients
+
+	// Syncers
+	beaconSyncer   *beacon.Syncer
+	calldataSyncer *calldata.Syncer
+
+	// Monitors
+	syncProgressTracker *syncProgressTracker.BeaconSyncProgressTracker
 
 	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
 	// latest verified block head
 	p2pSyncVerifiedBlocks bool
-	// Monitor the L2 execution engine's sync progress
-	syncProgressTracker *syncProgressTracker.BeaconSyncProgressTracker
-
-	// Used by BlockInserter
-	lastInsertedBlockID *big.Int
 }
 
 // New creates a new chain syncer instance.
@@ -50,40 +46,23 @@ func New(
 	p2pSyncVerifiedBlocks bool,
 	p2pSyncTimeout time.Duration,
 ) (*L2ChainSyncer, error) {
-	configs, err := rpc.TaikoL1.GetConfig(nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
-	}
-
-	anchorConstructor, err := anchorTxConstructor.New(
-		rpc,
-		configs.AnchorTxGasLimit.Uint64(),
-		bindings.GoldenTouchAddress,
-		bindings.GoldenTouchPrivKey,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
-	}
-
 	tracker := syncProgressTracker.New(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
+	beaconSyncer := beacon.NewSyncer(ctx, rpc, state, tracker)
+	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, throwawayBlocksBuilderPrivKey)
+	if err != nil {
+		return nil, err
+	}
+
 	return &L2ChainSyncer{
-		ctx:                           ctx,
-		rpc:                           rpc,
-		state:                         state,
-		throwawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
-		protocolConfigs:               &configs,
-		txListValidator: txListValidator.NewTxListValidator(
-			configs.BlockMaxGasLimit.Uint64(),
-			configs.MaxTransactionsPerBlock.Uint64(),
-			configs.MaxBytesPerTxList.Uint64(),
-			configs.MinTxGasLimit.Uint64(),
-			rpc.L2ChainID,
-		),
-		anchorConstructor:     anchorConstructor,
-		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
+		ctx:                   ctx,
+		rpc:                   rpc,
+		state:                 state,
+		beaconSyncer:          beaconSyncer,
+		calldataSyncer:        calldataSyncer,
 		syncProgressTracker:   tracker,
+		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
 	}, nil
 }
 
@@ -96,7 +75,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		s.state.GetLatestVerifiedBlock().Height.Uint64() > 0 &&
 		!s.AheadOfProtocolVerifiedHead() &&
 		!s.syncProgressTracker.OutOfSync() {
-		if err := s.TriggerBeaconSync(); err != nil {
+		if err := s.beaconSyncer.TriggerBeaconSync(); err != nil {
 			return fmt.Errorf("trigger beacon sync error: %w", err)
 		}
 
@@ -196,7 +175,7 @@ func (s *L2ChainSyncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header
 		StartHeight:          s.state.GetL1Current().Number,
 		EndHeight:            l1End.Number,
 		FilterQuery:          nil,
-		OnBlockProposedEvent: s.onBlockProposed,
+		OnBlockProposedEvent: s.calldataSyncer.OnBlockProposed,
 	})
 	if err != nil {
 		return err
