@@ -17,9 +17,7 @@ import (
 
 const (
 	// Time to wait before the next try, when receiving subscription errors.
-	RetryDelay         = 10 * time.Second
-	MaxReorgDepth      = 500
-	ReorgRollbackDepth = 20
+	RetryDelay = 10 * time.Second
 )
 
 // Driver keeps the L2 execution engine's local block chain in sync with the TaikoL1
