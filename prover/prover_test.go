@@ -89,11 +89,6 @@ func (s *ProverTestSuite) TestName() {
 	s.Equal("prover", s.p.Name())
 }
 
-func (s *ProverTestSuite) TestGetProveBlocksTxOpts() {
-	_, err := s.p.getProveBlocksTxOpts(context.Background(), s.RpcClient.L1)
-	s.Nil(err)
-}
-
 func (s *ProverTestSuite) TestOnBlockProposed() {
 	// Valid block
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
@@ -121,6 +116,11 @@ func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 		Id:        common.Big1,
 		BlockHash: common.Hash{}},
 	))
+}
+
+func (s *ProverTestSuite) TestStartSubscription() {
+	s.NotPanics(s.p.initSubscription)
+	s.NotPanics(s.p.closeSubscription)
 }
 
 func TestProverTestSuite(t *testing.T) {

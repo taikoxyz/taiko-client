@@ -7,8 +7,6 @@ import (
 	"math/big"
 	"sync/atomic"
 
-	"github.com/cenkalti/backoff/v4"
-	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -16,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/metrics"
-	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -40,6 +37,13 @@ type State struct {
 	l2BlockVerifiedSub event.Subscription // TaikoL1.BlockVerified events
 	l2BlockProposedSub event.Subscription // TaikoL1.BlockProposed events
 
+	l1HeadCh        chan *types.Header
+	l2HeadCh        chan *types.Header
+	blockProposedCh chan *bindings.TaikoL1ClientBlockProposed
+	blockProvenCh   chan *bindings.TaikoL1ClientBlockProven
+	blockVerifiedCh chan *bindings.TaikoL1ClientBlockVerified
+	headerSyncedCh  chan *bindings.TaikoL1ClientHeaderSynced
+
 	// Feeds
 	l1HeadsFeed event.Feed // L1 new heads notification feed
 
@@ -59,35 +63,27 @@ type State struct {
 
 // New creates a new driver state instance.
 func New(ctx context.Context, rpc *rpc.Client) (*State, error) {
-	stateVars, err := rpc.GetProtocolStateVariables(nil)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Info("Genesis L1 height", "height", stateVars.GenesisHeight)
-
 	s := &State{
 		rpc:              rpc,
-		GenesisL1Height:  new(big.Int).SetUint64(stateVars.GenesisHeight),
 		l1Head:           new(atomic.Value),
 		l2Head:           new(atomic.Value),
 		l2HeadBlockID:    new(atomic.Value),
 		l2VerifiedHead:   new(atomic.Value),
 		l1Current:        new(atomic.Value),
+		l1HeadCh:         make(chan *types.Header, 10),
+		l2HeadCh:         make(chan *types.Header, 10),
+		blockProposedCh:  make(chan *bindings.TaikoL1ClientBlockProposed, 10),
+		blockProvenCh:    make(chan *bindings.TaikoL1ClientBlockProven, 10),
+		blockVerifiedCh:  make(chan *bindings.TaikoL1ClientBlockVerified, 10),
+		headerSyncedCh:   make(chan *bindings.TaikoL1ClientHeaderSynced, 10),
 		BlockDeadendHash: common.BigToHash(common.Big1),
 	}
 
-	// Set the L2 head's latest known L1 origin as current L1 sync cursor.
-	latestL2KnownL1Header, err := rpc.LatestL2KnownL1Header(ctx)
-	if err != nil {
+	if err := s.init(ctx); err != nil {
 		return nil, err
 	}
 
-	s.l1Current.Store(latestL2KnownL1Header)
-
-	if err := s.initSubscriptions(ctx); err != nil {
-		return nil, err
-	}
+	s.startSubscriptions(ctx)
 
 	return s, nil
 }
@@ -99,26 +95,29 @@ func (s *State) Close() {
 	s.l2BlockProposedSub.Unsubscribe()
 }
 
-// initSubscriptions initializes all subscriptions in the given state instance.
-func (s *State) initSubscriptions(ctx context.Context) error {
+// init fetches the latest status and initializes the state instance.
+func (s *State) init(ctx context.Context) error {
+	stateVars, err := s.rpc.GetProtocolStateVariables(nil)
+	if err != nil {
+		return err
+	}
+
+	log.Info("Genesis L1 height", "height", stateVars.GenesisHeight)
+	s.GenesisL1Height = new(big.Int).SetUint64(stateVars.GenesisHeight)
+
+	// Set the L2 head's latest known L1 origin as current L1 sync cursor.
+	latestL2KnownL1Header, err := s.rpc.LatestL2KnownL1Header(ctx)
+	if err != nil {
+		return err
+	}
+	s.l1Current.Store(latestL2KnownL1Header)
+
 	// L1 head
 	l1Head, err := s.rpc.L1.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return err
 	}
-
 	s.setL1Head(l1Head)
-
-	s.l1HeadSub = event.ResubscribeErr(
-		backoff.DefaultMaxInterval,
-		func(ctx context.Context, err error) (event.Subscription, error) {
-			if err != nil {
-				log.Warn("Failed to subscribe L1 head, try resubscribing", "error", err)
-			}
-
-			return s.watchL1Head(ctx)
-		},
-	)
 
 	// L2 head
 	l2Head, err := s.rpc.L2.HeaderByNumber(ctx, nil)
@@ -127,25 +126,7 @@ func (s *State) initSubscriptions(ctx context.Context) error {
 	}
 
 	log.Info("L2 execution engine head", "height", l2Head.Number, "hash", l2Head.Hash())
-
 	s.setL2Head(l2Head)
-
-	s.l2HeadSub = event.ResubscribeErr(
-		backoff.DefaultMaxInterval,
-		func(ctx context.Context, err error) (event.Subscription, error) {
-			if err != nil {
-				log.Warn("Failed to subscribe L2 head, try resubscribing", "error", err)
-			}
-
-			return s.watchL2Head(ctx)
-		},
-	)
-
-	// TaikoL1.BlockVerified events
-	stateVars, err := s.rpc.GetProtocolStateVariables(nil)
-	if err != nil {
-		return err
-	}
 
 	latestVerifiedBlockHash, err := s.rpc.TaikoL1.GetSyncedHeader(
 		nil,
@@ -160,70 +141,61 @@ func (s *State) initSubscriptions(ctx context.Context) error {
 		new(big.Int).SetUint64(stateVars.LatestVerifiedHeight),
 		latestVerifiedBlockHash,
 	)
-
-	s.l2BlockVerifiedSub = event.ResubscribeErr(
-		backoff.DefaultMaxInterval,
-		func(ctx context.Context, err error) (event.Subscription, error) {
-			if err != nil {
-				log.Warn("Failed to subscribe TaikoL1.BlockVerifiedId events, try resubscribing", "error", err)
-			}
-
-			return s.watchBlockVerified(ctx)
-		},
-	)
-
-	// TaikoL1.BlockProposed events
 	s.setHeadBlockID(new(big.Int).SetUint64(stateVars.NextBlockID - 1))
-
-	s.l2BlockProposedSub = event.ResubscribeErr(
-		backoff.DefaultMaxInterval,
-		func(ctx context.Context, err error) (event.Subscription, error) {
-			if err != nil {
-				log.Warn("Failed to subscribe TaikoL1.BlockProposed events, try resubscribing", "error", err)
-			}
-
-			return s.watchBlockProposed(ctx)
-		},
-	)
-
-	s.l2BlockProvenSub = event.ResubscribeErr(
-		backoff.DefaultMaxInterval,
-		func(ctx context.Context, err error) (event.Subscription, error) {
-			if err != nil {
-				log.Warn("Failed to subscribe TaikoL1.BlockProven events, try resubscribing", "error", err)
-			}
-
-			return s.watchBlockProven(ctx)
-		},
-	)
 
 	return nil
 }
 
-// watchL1Head watches new L1 head blocks and keep updating current
-// driver state.
-func (s *State) watchL1Head(ctx context.Context) (event.Subscription, error) {
-	newL1HeadCh := make(chan *types.Header, 10)
+// startSubscriptions initializes all subscriptions in the given state instance.
+func (s *State) startSubscriptions(ctx context.Context) {
+	s.l1HeadSub = rpc.SubscribeChainHead(s.rpc.L1, s.l1HeadCh)
+	s.l2HeadSub = rpc.SubscribeChainHead(s.rpc.L2, s.l2HeadCh)
+	s.l2BlockVerifiedSub = rpc.SubscribeBlockVerified(s.rpc.TaikoL1, s.blockVerifiedCh)
+	s.l2BlockProposedSub = rpc.SubscribeBlockProposed(s.rpc.TaikoL1, s.blockProposedCh)
+	s.l2BlockProvenSub = rpc.SubscribeBlockProven(s.rpc.TaikoL1, s.blockProvenCh)
 
-	sub, err := s.rpc.L1.SubscribeNewHead(ctx, newL1HeadCh)
-	if err != nil {
-		log.Error("Create L1 head subscription error", "error", err)
-		return nil, err
-	}
-
-	defer sub.Unsubscribe()
-
-	for {
-		select {
-		case newHead := <-newL1HeadCh:
-			s.setL1Head(newHead)
-			s.l1HeadsFeed.Send(newHead)
-		case err := <-sub.Err():
-			return sub, err
-		case <-ctx.Done():
-			return sub, nil
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case newHead := <-s.l1HeadCh:
+				s.setL1Head(newHead)
+				s.l1HeadsFeed.Send(newHead)
+			case newHead := <-s.l2HeadCh:
+				s.setL2Head(newHead)
+			case e := <-s.blockProposedCh:
+				s.setHeadBlockID(e.Id)
+			case e := <-s.blockProvenCh:
+				if e.BlockHash != s.BlockDeadendHash {
+					log.Info("✅ Valid block proven", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
+				} else {
+					log.Info("❎ Invalid block proven", "blockID", e.Id, "prover", e.Prover)
+				}
+			case e := <-s.blockVerifiedCh:
+				if e.BlockHash != s.BlockDeadendHash {
+					log.Info("📈 Valid block verified", "blockID", e.Id, "hash", common.Hash(e.BlockHash))
+				} else {
+					log.Info("🗑 Invalid block verified", "blockID", e.Id)
+				}
+			case e := <-s.headerSyncedCh:
+				// Verify the protocol synced block, check if it exists in
+				// L2 execution engine.
+				if s.GetL2Head().Number.Cmp(e.Height) >= 0 {
+					if err := s.VerifyL2Block(ctx, e.SrcHash); err != nil {
+						log.Error("Check new verified L2 block error", "error", err)
+						continue
+					}
+				}
+				id, err := s.getSyncedHeaderID(e.Raw.BlockNumber, e.SrcHash)
+				if err != nil {
+					log.Error("Get synced header block ID error", "error", err)
+					continue
+				}
+				s.setLatestVerifiedBlockHash(id, e.SrcHeight, e.SrcHash)
+			}
 		}
-	}
+	}()
 }
 
 // setL1Head sets the L1 head concurrent safely.
@@ -244,31 +216,6 @@ func (s *State) GetL1Head() *types.Header {
 	return s.l1Head.Load().(*types.Header)
 }
 
-// watchL2Head watches new L2 head blocks and keep updating current
-// driver state.
-func (s *State) watchL2Head(ctx context.Context) (event.Subscription, error) {
-	newL2HeadCh := make(chan *types.Header, 10)
-
-	sub, err := s.rpc.L2.SubscribeNewHead(ctx, newL2HeadCh)
-	if err != nil {
-		log.Error("Create L2 head subscription error", "error", err)
-		return nil, err
-	}
-
-	defer sub.Unsubscribe()
-
-	for {
-		select {
-		case newHead := <-newL2HeadCh:
-			s.setL2Head(newHead)
-		case err := <-sub.Err():
-			return sub, err
-		case <-ctx.Done():
-			return sub, nil
-		}
-	}
-}
-
 // setL1Head sets the L2 head concurrent safely.
 func (s *State) setL2Head(l2Head *types.Header) {
 	if l2Head == nil {
@@ -285,57 +232,6 @@ func (s *State) setL2Head(l2Head *types.Header) {
 // GetL2Head reads the L2 head concurrent safely.
 func (s *State) GetL2Head() *types.Header {
 	return s.l2Head.Load().(*types.Header)
-}
-
-// watchBlockVerified watches newly verified blocks and keep updating current
-// driver state.
-func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, error) {
-	newHeaderSyncedCh := make(chan *bindings.TaikoL1ClientHeaderSynced, 10)
-	blockVerifiedCh := make(chan *bindings.TaikoL1ClientBlockVerified, 10)
-
-	headerSyncedSub, err := s.rpc.TaikoL1.WatchHeaderSynced(nil, newHeaderSyncedCh, nil, nil)
-	if err != nil {
-		log.Error("Create TaikoL1.HeaderSynced subscription error", "error", err)
-		return nil, err
-	}
-	defer headerSyncedSub.Unsubscribe()
-
-	blockVerifiedSub, err := s.rpc.TaikoL1.WatchBlockVerified(nil, blockVerifiedCh, nil)
-	if err != nil {
-		log.Error("Create TaikoL1.BlockVerified subscription error", "error", err)
-		return nil, err
-	}
-	defer blockVerifiedSub.Unsubscribe()
-
-	for {
-		select {
-		case e := <-blockVerifiedCh:
-			if e.BlockHash != s.BlockDeadendHash {
-				log.Info("📈 Valid block verified", "blockID", e.Id, "hash", common.Hash(e.BlockHash))
-			} else {
-				log.Info("🗑 Invalid block verified", "blockID", e.Id)
-			}
-		case e := <-newHeaderSyncedCh:
-			// Verify the protocol synced block, check if it exists in
-			// L2 execution engine.
-			if s.GetL2Head().Number.Cmp(e.Height) >= 0 {
-				if err := s.VerifyL2Block(ctx, e.SrcHash); err != nil {
-					log.Error("Check new verified L2 block error", "error", err)
-					continue
-				}
-			}
-			id, err := s.getSyncedHeaderID(e.Raw.BlockNumber, e.SrcHash)
-			if err != nil {
-				log.Error("Get synced header block ID error", "error", err)
-				continue
-			}
-			s.setLatestVerifiedBlockHash(id, e.SrcHeight, e.SrcHash)
-		case err := <-headerSyncedSub.Err():
-			return headerSyncedSub, err
-		case <-ctx.Done():
-			return headerSyncedSub, nil
-		}
-	}
 }
 
 // VerifiedHeaderInfo contains information about a verified L2 block header.
@@ -355,57 +251,6 @@ func (s *State) setLatestVerifiedBlockHash(id *big.Int, height *big.Int, hash co
 // GetLatestVerifiedBlock reads the latest verified L2 block concurrent safely.
 func (s *State) GetLatestVerifiedBlock() *VerifiedHeaderInfo {
 	return s.l2VerifiedHead.Load().(*VerifiedHeaderInfo)
-}
-
-// watchBlockProposed watches newly proposed blocks and keeps updating current
-// driver state.
-func (s *State) watchBlockProposed(ctx context.Context) (ethereum.Subscription, error) {
-	newBlockProposedCh := make(chan *bindings.TaikoL1ClientBlockProposed, 10)
-	sub, err := s.rpc.TaikoL1.WatchBlockProposed(nil, newBlockProposedCh, nil)
-	if err != nil {
-		log.Error("Create TaikoL1.BlockProposed subscription error", "error", err)
-		return nil, err
-	}
-
-	defer sub.Unsubscribe()
-
-	for {
-		select {
-		case e := <-newBlockProposedCh:
-			s.setHeadBlockID(e.Id)
-		case err := <-sub.Err():
-			return sub, err
-		case <-ctx.Done():
-			return sub, nil
-		}
-	}
-}
-
-// watchBlockProven watches newly proven blocks.
-func (s *State) watchBlockProven(ctx context.Context) (ethereum.Subscription, error) {
-	newBlockProvenCh := make(chan *bindings.TaikoL1ClientBlockProven, 10)
-	sub, err := s.rpc.TaikoL1.WatchBlockProven(nil, newBlockProvenCh, nil)
-	if err != nil {
-		log.Error("Create TaikoL1.BlockProven subscription error", "error", err)
-		return nil, err
-	}
-
-	defer sub.Unsubscribe()
-
-	for {
-		select {
-		case e := <-newBlockProvenCh:
-			if e.BlockHash != s.BlockDeadendHash {
-				log.Info("✅ Valid block proven", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
-			} else {
-				log.Info("❎ Invalid block proven", "blockID", e.Id, "prover", e.Prover)
-			}
-		case err := <-sub.Err():
-			return sub, err
-		case <-ctx.Done():
-			return sub, nil
-		}
-	}
 }
 
 // setHeadBlockID sets the last pending block ID concurrent safely.
@@ -445,135 +290,7 @@ func (s *State) VerifyL2Block(ctx context.Context, protocolBlockHash common.Hash
 	return nil
 }
 
-// GetL1Current reads the L1 current cursor concurrent safely.
-func (s *State) GetL1Current() *types.Header {
-	return s.l1Current.Load().(*types.Header)
-}
-
-// SetL1Current sets the L1 current cursor concurrent safely.
-func (s *State) SetL1Current(h *types.Header) {
-	if h == nil {
-		log.Warn("Empty l1 current cursor")
-		return
-	}
-	log.Debug("Set L1 current cursor", "number", h.Number)
-	s.l1Current.Store(h)
-}
-
-// ResetL1Current resets the l1Current cursor to the L1 height which emitted a
-// BlockProven event with given blockID / blockHash.
-func (s *State) ResetL1Current(ctx context.Context, heightOrID *HeightOrID) (*big.Int, error) {
-	if !heightOrID.NotEmpty() {
-		return nil, fmt.Errorf("empty input %v", heightOrID)
-	}
-
-	log.Info("Reset L1 current cursor", "heightOrID", heightOrID)
-
-	var (
-		l1CurrentHeight *big.Int
-		err             error
-	)
-
-	if (heightOrID.ID != nil && heightOrID.ID.Cmp(common.Big0) == 0) ||
-		(heightOrID.Height != nil && heightOrID.Height.Cmp(common.Big0) == 0) {
-		l1Current, err := s.rpc.L1.HeaderByNumber(ctx, s.GenesisL1Height)
-		if err != nil {
-			return nil, err
-		}
-		s.SetL1Current(l1Current)
-		return common.Big0, nil
-	}
-
-	// Need to find the block ID at first, before filtering the BlockProposed events.
-	if heightOrID.ID == nil {
-		header, err := s.rpc.L2.HeaderByNumber(context.Background(), heightOrID.Height)
-		if err != nil {
-			return nil, err
-		}
-		targetHash := header.Hash()
-
-		iter, err := eventIterator.NewBlockProvenIterator(
-			ctx,
-			&eventIterator.BlockProvenIteratorConfig{
-				Client:      s.rpc.L1,
-				TaikoL1:     s.rpc.TaikoL1,
-				StartHeight: s.GenesisL1Height,
-				EndHeight:   s.GetL1Head().Number,
-				FilterQuery: []*big.Int{},
-				Reverse:     true,
-				OnBlockProvenEvent: func(
-					ctx context.Context,
-					e *bindings.TaikoL1ClientBlockProven,
-					end eventIterator.EndBlockProvenEventIterFunc,
-				) error {
-					log.Debug("Filtered BlockProven event", "ID", e.Id, "hash", common.Hash(e.BlockHash))
-					if e.BlockHash == targetHash {
-						heightOrID.ID = e.Id
-						end()
-					}
-
-					return nil
-				},
-			},
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		if err := iter.Iter(); err != nil {
-			return nil, err
-		}
-
-		if heightOrID.ID == nil {
-			return nil, fmt.Errorf("BlockProven event not found, hash: %s", targetHash)
-		}
-	}
-
-	iter, err := eventIterator.NewBlockProposedIterator(
-		ctx,
-		&eventIterator.BlockProposedIteratorConfig{
-			Client:      s.rpc.L1,
-			TaikoL1:     s.rpc.TaikoL1,
-			StartHeight: s.GenesisL1Height,
-			EndHeight:   s.GetL1Head().Number,
-			FilterQuery: []*big.Int{heightOrID.ID},
-			Reverse:     true,
-			OnBlockProposedEvent: func(
-				ctx context.Context,
-				e *bindings.TaikoL1ClientBlockProposed,
-				end eventIterator.EndBlockProposedEventIterFunc,
-			) error {
-				l1CurrentHeight = new(big.Int).SetUint64(e.Raw.BlockNumber)
-				end()
-				return nil
-			},
-		},
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if err := iter.Iter(); err != nil {
-		return nil, err
-	}
-
-	if l1CurrentHeight == nil {
-		return nil, fmt.Errorf("BlockProposed event not found, blockID: %s", heightOrID.ID)
-	}
-
-	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, l1CurrentHeight)
-	if err != nil {
-		return nil, err
-	}
-	s.SetL1Current(l1Current)
-
-	log.Info("Reset L1 current cursor", "height", s.GetL1Current().Number)
-
-	return heightOrID.ID, nil
-}
-
+// getSyncedHeaderID fetches the block ID of the synced L2 header.
 func (s *State) getSyncedHeaderID(l1Height uint64, hash common.Hash) (*big.Int, error) {
 	iter, err := s.rpc.TaikoL1.FilterBlockVerified(&bind.FilterOpts{
 		Start: l1Height,
