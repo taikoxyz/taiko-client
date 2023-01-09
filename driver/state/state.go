@@ -164,11 +164,6 @@ func (s *State) startSubscriptions(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				return
-			case newHead := <-s.l1HeadCh:
-				s.setL1Head(newHead)
-				s.l1HeadsFeed.Send(newHead)
-			case newHead := <-s.l2HeadCh:
-				s.setL2Head(newHead)
 			case e := <-s.blockProposedCh:
 				s.setHeadBlockID(e.Id)
 			case e := <-s.blockProvenCh:
@@ -198,6 +193,11 @@ func (s *State) startSubscriptions(ctx context.Context) {
 					continue
 				}
 				s.setLatestVerifiedBlockHash(id, e.SrcHeight, e.SrcHash)
+			case newHead := <-s.l1HeadCh:
+				s.setL1Head(newHead)
+				s.l1HeadsFeed.Send(newHead)
+			case newHead := <-s.l2HeadCh:
+				s.setL2Head(newHead)
 			}
 		}
 	}()
