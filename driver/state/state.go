@@ -31,12 +31,7 @@ func (h *HeightOrID) NotEmpty() bool {
 	return h.Height != nil || h.ID != nil
 }
 
-type VerifiedHeaderInfo struct {
-	ID     *big.Int
-	Hash   common.Hash
-	Height *big.Int
-}
-
+// State contains all states which will be used by driver.
 type State struct {
 	// Subscriptions, will automatically resubscribe on errors
 	l1HeadSub          event.Subscription // L1 new heads
@@ -341,6 +336,13 @@ func (s *State) watchBlockVerified(ctx context.Context) (ethereum.Subscription, 
 			return headerSyncedSub, nil
 		}
 	}
+}
+
+// VerifiedHeaderInfo contains information about a verified L2 block header.
+type VerifiedHeaderInfo struct {
+	ID     *big.Int
+	Hash   common.Hash
+	Height *big.Int
 }
 
 // setLatestVerifiedBlockHash sets the latest verified L2 block hash concurrent safely.
