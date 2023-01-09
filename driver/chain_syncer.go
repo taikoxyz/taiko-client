@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
+	syncProgressTracker "github.com/taikoxyz/taiko-client/driver/sync_progress_tracker"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -44,7 +45,7 @@ type L2ChainSyncer struct {
 	// latest verified block head
 	p2pSyncVerifiedBlocks bool
 	// Monitor the L2 execution engine's sync progress
-	syncProgressTracker *BeaconSyncProgressTracker
+	syncProgressTracker *syncProgressTracker.BeaconSyncProgressTracker
 
 	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
@@ -74,7 +75,7 @@ func NewL2ChainSyncer(
 		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
 	}
 
-	tracker := NewBeaconSyncProgressTracker(rpc.L2, p2pSyncTimeout)
+	tracker := syncProgressTracker.New(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
 	return &L2ChainSyncer{
