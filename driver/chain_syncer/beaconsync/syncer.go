@@ -17,13 +17,16 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+// Syncer responsible for letting the L2 execution engine catching up with protocol's latest
+// verified block through P2P beacon sync.
 type Syncer struct {
 	ctx             context.Context
 	rpc             *rpc.Client
 	state           *state.State
-	progressTracker *progressTracker.BeaconSyncProgressTracker
+	progressTracker *progressTracker.BeaconSyncProgressTracker // Sync progress tracker
 }
 
+// NewSyncer creates a new syncer instance.
 func NewSyncer(
 	ctx context.Context,
 	rpc *rpc.Client,
@@ -77,7 +80,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 	)
 
 	log.Info(
-		"⛓️ Beacon-sync triggered",
+		"⛓️ Beacon sync triggered",
 		"newHeadID", blockID,
 		"newHeadHeight", s.progressTracker.LastSyncedVerifiedBlockHeight(),
 		"newHeadHash", s.progressTracker.LastSyncedVerifiedBlockHash(),

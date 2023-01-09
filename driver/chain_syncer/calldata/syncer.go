@@ -26,18 +26,21 @@ import (
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
+// Syncer responsible for letting the L2 execution engine catching up with protocol's latest
+// pending block through deriving L1 calldata.
 type Syncer struct {
 	ctx                           context.Context
 	rpc                           *rpc.Client
 	state                         *state.State
-	progressTracker               *progressTracker.BeaconSyncProgressTracker
-	anchorConstructor             *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
-	txListValidator               *txListValidator.TxListValidator         // Transactions list validator
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                        // Private key of L2 throwaway blocks builder
+	progressTracker               *progressTracker.BeaconSyncProgressTracker // Sync progress tracker
+	anchorConstructor             *anchorTxConstructor.AnchorTxConstructor   // TaikoL2.anchor transactions constructor
+	txListValidator               *txListValidator.TxListValidator           // Transactions list validator
+	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                          // Private key of L2 throwaway blocks builder
 	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
 }
 
+// NewSyncer creates a new syncer instance.
 func NewSyncer(
 	ctx context.Context,
 	rpc *rpc.Client,
