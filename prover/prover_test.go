@@ -19,6 +19,7 @@ import (
 type ProverTestSuite struct {
 	testutils.ClientTestSuite
 	p        *Prover
+	cancel   context.CancelFunc
 	d        *driver.Driver
 	proposer *proposer.Proposer
 }
@@ -30,8 +31,9 @@ func (s *ProverTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
+	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
-	s.Nil(InitFromConfig(context.Background(), p, (&Config{
+	s.Nil(InitFromConfig(ctx, p, (&Config{
 		L1Endpoint:               os.Getenv("L1_NODE_ENDPOINT"),
 		L2Endpoint:               os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
@@ -41,6 +43,7 @@ func (s *ProverTestSuite) SetupTest() {
 		MaxConcurrentProvingJobs: 1,
 	})))
 	s.p = p
+	s.cancel = cancel
 
 	// Init driver
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
@@ -121,6 +124,12 @@ func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 func (s *ProverTestSuite) TestStartSubscription() {
 	s.NotPanics(s.p.initSubscription)
 	s.NotPanics(s.p.closeSubscription)
+}
+
+func (s *ProverTestSuite) TestStartClose() {
+	s.Nil(s.p.Start())
+	s.cancel()
+	s.NotPanics(s.p.Close)
 }
 
 func TestProverTestSuite(t *testing.T) {

@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 var (
@@ -68,4 +69,9 @@ func (s *ProofSubmitterTestSuite) TestGenerateTrieProof() {
 	s.Nil(err)
 	s.Equal(testBlock.TxHash(), root)
 	s.NotEmpty(proof)
+}
+
+func (s *ProofSubmitterTestSuite) TestProofListDelete() {
+	list := proofList{}
+	s.NotNil(list.Delete(testutils.RandomBytes(1024)))
 }
