@@ -7,12 +7,14 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/proposer"
+	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -119,6 +121,25 @@ func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 		Id:        common.Big1,
 		BlockHash: common.Hash{}},
 	))
+}
+
+func (s *ProverTestSuite) TestSubmitProofOp() {
+	s.NotPanics(func() {
+		s.p.submitProofOp(context.Background(), &producer.ProofWithHeader{
+			BlockID: common.Big1,
+			Meta:    &bindings.TaikoDataBlockMetadata{},
+			Header:  &types.Header{},
+			ZkProof: []byte{},
+		}, true)
+	})
+	s.NotPanics(func() {
+		s.p.submitProofOp(context.Background(), &producer.ProofWithHeader{
+			BlockID: common.Big1,
+			Meta:    &bindings.TaikoDataBlockMetadata{},
+			Header:  &types.Header{},
+			ZkProof: []byte{},
+		}, false)
+	})
 }
 
 func (s *ProverTestSuite) TestStartSubscription() {
