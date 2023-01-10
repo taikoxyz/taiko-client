@@ -20,7 +20,7 @@ func (s *DriverStateTestSuite) SetupTest() {
 	s.s = state
 }
 
-func (s *DriverStateTestSuite) TestVerfiyL2Block() {
+func (s *DriverStateTestSuite) TestVerifyL2Block() {
 	head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 
 	s.Nil(err)
