@@ -9,7 +9,7 @@ DIR=$(
 
 echo "Starting testnet..."
 
-docker compose -f $TESTNET_CONFIG down --remove-orphans &>/dev/null
+docker compose -f $TESTNET_CONFIG down -v --remove-orphans &>/dev/null
 docker compose -f $TESTNET_CONFIG up -d
 
 if [ "$COMPILE_PROTOCOL" == "true" ]; then
