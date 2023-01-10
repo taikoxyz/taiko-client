@@ -68,7 +68,7 @@ func (s *DriverStateTestSuite) TestSubL1HeadsFeed() {
 	s.NotNil(s.s.SubL1HeadsFeed(make(chan *types.Header)))
 }
 
-func (s *DriverStateTestSuite) TestGetSyncedHeaderID(t *testing.T) {
+func (s *DriverStateTestSuite) TestGetSyncedHeaderID() {
 	l2Genesis, err := s.RpcClient.L2.BlockByNumber(context.Background(), common.Big0)
 	s.Nil(err)
 
