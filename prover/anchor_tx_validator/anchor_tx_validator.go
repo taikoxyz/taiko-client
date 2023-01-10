@@ -12,13 +12,16 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+// AnchorTxValidator is responsible for validating the anchor transaction (TaikoL2.anchor) in
+// each L2 block, which is always the first transaction.
 type AnchorTxValidator struct {
 	taikoL2Address common.Address
 	chainID        *big.Int
 	rpc            *rpc.Client
 }
 
-func NewAnchorTxValidator(taikoL2Address common.Address, chainID *big.Int, rpc *rpc.Client) *AnchorTxValidator {
+// New creates a new AnchorTxValidator instance.
+func New(taikoL2Address common.Address, chainID *big.Int, rpc *rpc.Client) *AnchorTxValidator {
 	return &AnchorTxValidator{taikoL2Address, chainID, rpc}
 }
 

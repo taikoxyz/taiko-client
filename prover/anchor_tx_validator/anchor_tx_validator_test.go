@@ -20,7 +20,7 @@ type AnchorTxValidatorTestSuite struct {
 
 func (s *AnchorTxValidatorTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
-	s.v = NewAnchorTxValidator(common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")), s.RpcClient.L2ChainID, s.RpcClient)
+	s.v = New(common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")), s.RpcClient.L2ChainID, s.RpcClient)
 }
 
 func (s *AnchorTxValidatorTestSuite) TestValidateAnchorTx() {

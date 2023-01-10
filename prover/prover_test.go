@@ -89,25 +89,24 @@ func (s *ProverTestSuite) TestName() {
 	s.Equal("prover", s.p.Name())
 }
 
-func (s *ProverTestSuite) TestGetProveBlocksTxOpts() {
-	_, err := s.p.getProveBlocksTxOpts(context.Background(), s.RpcClient.L1)
-	s.Nil(err)
-}
-
 func (s *ProverTestSuite) TestOnBlockProposed() {
 	// Valid block
-	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer())
+	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.validProofSubmitter.SubmitProof(context.Background(), <-s.p.proveValidProofCh))
 
 	// Empty blocks
-	for _, e = range testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer()) {
+	for _, e = range testutils.ProposeAndInsertEmptyBlocks(
+		&s.ClientTestSuite,
+		s.proposer,
+		s.d.ChainSyncer().CalldataSyncer(),
+	) {
 		s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 		s.Nil(s.p.validProofSubmitter.SubmitProof(context.Background(), <-s.p.proveValidProofCh))
 	}
 
 	// Invalid block
-	e = testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer())
+	e = testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.invalidProofSubmitter.SubmitProof(context.Background(), <-s.p.proveInvalidProofCh))
 }
@@ -117,6 +116,11 @@ func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 		Id:        common.Big1,
 		BlockHash: common.Hash{}},
 	))
+}
+
+func (s *ProverTestSuite) TestStartSubscription() {
+	s.NotPanics(s.p.initSubscription)
+	s.NotPanics(s.p.closeSubscription)
 }
 
 func TestProverTestSuite(t *testing.T) {

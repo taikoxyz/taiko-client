@@ -7,10 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -164,7 +162,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 // Start starts the main loop of the L2 block prover.
 func (p *Prover) Start() error {
 	p.wg.Add(1)
-	p.startSubscription()
+	p.initSubscription()
 	go p.eventLoop()
 
 	return nil
@@ -364,27 +362,6 @@ func (p *Prover) Name() string {
 	return "prover"
 }
 
-// getProveBlocksTxOpts creates a bind.TransactOpts instance using the given private key.
-// Used for creating TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
-func (p *Prover) getProveBlocksTxOpts(ctx context.Context, cli *ethclient.Client) (*bind.TransactOpts, error) {
-	opts, err := bind.NewKeyedTransactorWithChainID(p.cfg.L1ProverPrivKey, p.rpc.L1ChainID)
-	if err != nil {
-		return nil, err
-	}
-	gasTipCap, err := cli.SuggestGasTipCap(ctx)
-	if err != nil {
-		if rpc.IsMaxPriorityFeePerGasNotFoundError(err) {
-			gasTipCap = rpc.FallbackGasTipCap
-		} else {
-			return nil, err
-		}
-	}
-
-	opts.GasTipCap = gasTipCap
-
-	return opts, nil
-}
-
 // initL1Current initializes prover's L1Current cursor.
 func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 	if startingBlockID == nil {
@@ -451,4 +428,16 @@ func (p *Prover) isProvenByCurrentProver(id *big.Int) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// initSubscription initializes all subscriptions in current prover instance.
+func (p *Prover) initSubscription() {
+	p.blockProposedSub = rpc.SubscribeBlockProposed(p.rpc.TaikoL1, p.blockProposedCh)
+	p.blockVerifiedSub = rpc.SubscribeBlockVerified(p.rpc.TaikoL1, p.blockVerifiedCh)
+}
+
+// closeSubscription closes all subscriptions.
+func (p *Prover) closeSubscription() {
+	p.blockVerifiedSub.Unsubscribe()
+	p.blockProposedSub.Unsubscribe()
 }

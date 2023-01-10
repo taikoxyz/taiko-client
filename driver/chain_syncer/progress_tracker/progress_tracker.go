@@ -1,4 +1,4 @@
-package driver
+package progressTracker
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	syncProgressFetchInterval = 10 * time.Second
+	syncProgressCheckInterval = 10 * time.Second
 )
 
 // BeaconSyncProgressTracker is responsible for tracking the L2 execution engine's sync progress, after
@@ -40,9 +40,9 @@ type BeaconSyncProgressTracker struct {
 	mutex sync.RWMutex
 }
 
-// NewBeaconSyncProgressTracker creates a new BeaconSyncProgressTracker instance.
-func NewBeaconSyncProgressTracker(c *ethclient.Client, timeout time.Duration) *BeaconSyncProgressTracker {
-	return &BeaconSyncProgressTracker{client: c, timeout: timeout, ticker: time.NewTicker(syncProgressFetchInterval)}
+// New creates a new BeaconSyncProgressTracker instance.
+func New(c *ethclient.Client, timeout time.Duration) *BeaconSyncProgressTracker {
+	return &BeaconSyncProgressTracker{client: c, timeout: timeout, ticker: time.NewTicker(syncProgressCheckInterval)}
 }
 
 // Track starts the inner event loop, to monitor the sync progress.

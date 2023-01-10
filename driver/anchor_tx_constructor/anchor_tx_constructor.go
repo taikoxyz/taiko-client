@@ -1,4 +1,4 @@
-package driver
+package anchorTxConstructor
 
 import (
 	"context"
@@ -23,8 +23,8 @@ type AnchorTxConstructor struct {
 	signer             *signer.FixedKSigner
 }
 
-// NewAnchorTxConstructor creates a new AnchorConstructor instance.
-func NewAnchorTxConstructor(
+// New creates a new AnchorConstructor instance.
+func New(
 	rpc *rpc.Client,
 	gasLimit uint64,
 	goldenTouchAddress common.Address,
@@ -109,4 +109,9 @@ func (c *AnchorTxConstructor) signTxPayload(hash []byte) ([]byte, error) {
 	}
 
 	return sig[:], nil
+}
+
+// GasLimit returns protocol's anchorTxGasLimit constant.
+func (c *AnchorTxConstructor) GasLimit() uint64 {
+	return c.gasLimit
 }

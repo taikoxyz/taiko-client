@@ -8,7 +8,7 @@ import (
 	"github.com/taikoxyz/taiko-client/cmd/utils"
 )
 
-type L2ChainSyncer interface {
+type CalldataSyncer interface {
 	ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 }
 

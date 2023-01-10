@@ -1,4 +1,4 @@
-package driver
+package beaconsync
 
 import (
 	"bytes"
@@ -11,17 +11,39 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	progressTracker "github.com/taikoxyz/taiko-client/driver/chain_syncer/progress_tracker"
+	"github.com/taikoxyz/taiko-client/driver/state"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+// Syncer responsible for letting the L2 execution engine catching up with protocol's latest
+// verified block through P2P beacon sync.
+type Syncer struct {
+	ctx             context.Context
+	rpc             *rpc.Client
+	state           *state.State
+	progressTracker *progressTracker.BeaconSyncProgressTracker // Sync progress tracker
+}
+
+// NewSyncer creates a new syncer instance.
+func NewSyncer(
+	ctx context.Context,
+	rpc *rpc.Client,
+	state *state.State,
+	progressTracker *progressTracker.BeaconSyncProgressTracker,
+) *Syncer {
+	return &Syncer{ctx, rpc, state, progressTracker}
+}
+
 // TriggerBeaconSync triggers the L2 execution engine to start performing a beacon sync.
-func (s *L2ChainSyncer) TriggerBeaconSync() error {
+func (s *Syncer) TriggerBeaconSync() error {
 	blockID, latestVerifiedHeadPayload, err := s.getVerifiedBlockPayload(s.ctx)
 	if err != nil {
 		return err
 	}
 
-	if !s.syncProgressTracker.HeadChanged(blockID) {
+	if !s.progressTracker.HeadChanged(blockID) {
 		log.Debug("Verified head has not changed", "blockID", blockID, "hash", latestVerifiedHeadPayload.BlockHash)
 		return nil
 	}
@@ -51,17 +73,17 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 	}
 
 	// Update sync status.
-	s.syncProgressTracker.UpdateMeta(
+	s.progressTracker.UpdateMeta(
 		blockID,
 		new(big.Int).SetUint64(latestVerifiedHeadPayload.Number),
 		latestVerifiedHeadPayload.BlockHash,
 	)
 
 	log.Info(
-		"⛓️ Beacon-sync triggered",
+		"⛓️ Beacon sync triggered",
 		"newHeadID", blockID,
-		"newHeadHeight", s.syncProgressTracker.LastSyncedVerifiedBlockHeight(),
-		"newHeadHash", s.syncProgressTracker.LastSyncedVerifiedBlockHash(),
+		"newHeadHeight", s.progressTracker.LastSyncedVerifiedBlockHeight(),
+		"newHeadHash", s.progressTracker.LastSyncedVerifiedBlockHash(),
 	)
 
 	return nil
@@ -69,17 +91,17 @@ func (s *L2ChainSyncer) TriggerBeaconSync() error {
 
 // getVerifiedBlockPayload fetches the latest verified block's header, and converts it to an Engine API executable data,
 // which will be used to let the node to start beacon syncing.
-func (s *L2ChainSyncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *beacon.ExecutableDataV1, error) {
+func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *beacon.ExecutableDataV1, error) {
 	var (
 		proveBlockTxHash    common.Hash
-		latestVerifiedBlock = s.state.getLatestVerifiedBlock()
+		latestVerifiedBlock = s.state.GetLatestVerifiedBlock()
 	)
 
 	// Get the latest verified block's corresponding BlockProven event.
 	iter, err := eventIterator.NewBlockProvenIterator(s.ctx, &eventIterator.BlockProvenIteratorConfig{
 		Client:      s.rpc.L1,
 		TaikoL1:     s.rpc.TaikoL1,
-		StartHeight: s.state.genesisL1Height,
+		StartHeight: s.state.GenesisL1Height,
 		EndHeight:   s.state.GetL1Head().Number,
 		FilterQuery: []*big.Int{latestVerifiedBlock.ID},
 		Reverse:     true,

@@ -1,19 +1,40 @@
-package driver
+package anchorTxConstructor
 
 import (
 	"context"
 	"math/rand"
+	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
-func (s *DriverTestSuite) TestNewAnchorTransactor() {
+type AnchorTxConstructorTestSuite struct {
+	testutils.ClientTestSuite
+	c *AnchorTxConstructor
+}
+
+func (s *AnchorTxConstructorTestSuite) SetupTest() {
+	s.ClientTestSuite.SetupTest()
+	protocolConfigs, err := s.RpcClient.TaikoL1.GetConfig(nil)
+	s.Nil(err)
+	c, err := New(
+		s.RpcClient,
+		protocolConfigs.AnchorTxGasLimit.Uint64(),
+		bindings.GoldenTouchAddress,
+		bindings.GoldenTouchPrivKey,
+	)
+	s.Nil(err)
+	s.c = c
+}
+
+func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
 	gasLimit := rand.Uint64()
-	c, err := NewAnchorTxConstructor(
+	c, err := New(
 		s.RpcClient,
 		gasLimit, bindings.GoldenTouchAddress,
 		bindings.GoldenTouchPrivKey,
@@ -29,7 +50,7 @@ func (s *DriverTestSuite) TestNewAnchorTransactor() {
 	s.Equal(bindings.GoldenTouchAddress, opts.From)
 }
 
-func (s *DriverTestSuite) TestSign() {
+func (s *AnchorTxConstructorTestSuite) TestSign() {
 	// Payload 1
 	hash := hexutil.MustDecode("0x44943399d1507f3ce7525e9be2f987c3db9136dc759cb7f92f742154196868b9")
 	signatureBytes := testutils.SignatureFromRSV(
@@ -39,9 +60,9 @@ func (s *DriverTestSuite) TestSign() {
 	)
 	pubKey, err := crypto.Ecrecover(hash, signatureBytes)
 	s.Nil(err)
-	isVsalid := crypto.VerifySignature(pubKey, hash, signatureBytes[:64])
-	s.True(isVsalid)
-	signed, err := s.d.l2ChainSyncer.anchorConstructor.signTxPayload(hash)
+	isValid := crypto.VerifySignature(pubKey, hash, signatureBytes[:64])
+	s.True(isValid)
+	signed, err := s.c.signTxPayload(hash)
 	s.Nil(err)
 	s.Equal(signatureBytes, signed)
 
@@ -54,9 +75,13 @@ func (s *DriverTestSuite) TestSign() {
 	)
 	pubKey, err = crypto.Ecrecover(hash, signatureBytes)
 	s.Nil(err)
-	isVsalid = crypto.VerifySignature(pubKey, hash, signatureBytes[:64])
-	s.True(isVsalid)
-	signed, err = s.d.l2ChainSyncer.anchorConstructor.signTxPayload(hash)
+	isValid = crypto.VerifySignature(pubKey, hash, signatureBytes[:64])
+	s.True(isValid)
+	signed, err = s.c.signTxPayload(hash)
 	s.Nil(err)
 	s.Equal(signatureBytes, signed)
+}
+
+func TestAnchorTxConstructorTestSuite(t *testing.T) {
+	suite.Run(t, new(AnchorTxConstructorTestSuite))
 }
