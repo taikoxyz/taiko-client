@@ -66,7 +66,8 @@ func TestFromGethHeader(t *testing.T) {
 	require.Equal(t, testHeader.BaseFee.Uint64(), header.BaseFeePerGas.Uint64())
 }
 
-func TestFromGethHeaderLegacyTx(t *testing.T) {
+func TestFromToGethHeaderLegacyTx(t *testing.T) {
+	testHeader := testHeader // Copy the original struct
 	testHeader.BaseFee = nil
 	header := FromGethHeader(testHeader)
 
@@ -86,4 +87,25 @@ func TestFromGethHeaderLegacyTx(t *testing.T) {
 	require.Equal(t, testHeader.MixDigest, common.BytesToHash(header.MixHash[:]))
 	require.Equal(t, testHeader.Nonce.Uint64(), header.Nonce)
 	require.Equal(t, new(big.Int).SetInt64(0).Uint64(), header.BaseFeePerGas.Uint64())
+
+	gethHeader := ToGethHeader(header)
+	require.Equal(t, testHeader, gethHeader)
+}
+
+func TestToExecutableDataV1(t *testing.T) {
+	data := ToExecutableDataV1(testHeader)
+	require.Equal(t, testHeader.ParentHash, data.ParentHash)
+	require.Equal(t, testHeader.Coinbase, data.FeeRecipient)
+	require.Equal(t, testHeader.Root, data.StateRoot)
+	require.Equal(t, testHeader.ReceiptHash, data.ReceiptsRoot)
+	require.Equal(t, testHeader.Bloom.Bytes(), data.LogsBloom)
+	require.Equal(t, testHeader.MixDigest, data.Random)
+	require.Equal(t, testHeader.Number.Uint64(), data.Number)
+	require.Equal(t, testHeader.GasLimit, data.GasLimit)
+	require.Equal(t, testHeader.GasUsed, data.GasUsed)
+	require.Equal(t, testHeader.Time, data.Timestamp)
+	require.Equal(t, testHeader.Extra, data.ExtraData)
+	require.Equal(t, testHeader.BaseFee, data.BaseFeePerGas)
+	require.Equal(t, testHeader.Hash(), data.BlockHash)
+	require.Equal(t, testHeader.TxHash, data.TxHash)
 }
