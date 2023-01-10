@@ -92,7 +92,7 @@ func TestL2ParentByBlockId(t *testing.T) {
 	require.Zero(t, header.Number.Uint64())
 
 	_, err = client.L2ParentByBlockId(context.Background(), common.Big2)
-	require.Nil(t, err)
+	require.NotNil(t, err)
 }
 
 func TestWaitL1OriginTimeout(t *testing.T) {
