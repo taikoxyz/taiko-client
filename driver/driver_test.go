@@ -134,6 +134,11 @@ func (s *DriverTestSuite) TestDoSyncNoNewL2Blocks() {
 	s.Nil(s.d.doSync())
 }
 
+func (s *DriverTestSuite) TestStartClose() {
+	s.Nil(s.d.Start())
+	s.NotPanics(s.d.Close)
+}
+
 func TestDriverTestSuite(t *testing.T) {
 	suite.Run(t, new(DriverTestSuite))
 }

@@ -2,7 +2,6 @@ package submitter
 
 import (
 	"context"
-	"errors"
 	"os"
 	"sync"
 	"testing"
@@ -73,14 +72,6 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotF
 			},
 		),
 	)
-}
-
-func (s *ProofSubmitterTestSuite) TestIsSubmitProofTxErrorRetryable() {
-	s.True(isSubmitProofTxErrorRetryable(errors.New(testAddr.String()), common.Big0))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:proof:tooMany"), common.Big0))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:tooLate"), common.Big0))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:prover:dup"), common.Big0))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:"+testAddr.String()), common.Big0))
 }
 
 func TestProofSubmitterTestSuite(t *testing.T) {
