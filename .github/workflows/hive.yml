@@ -20,4 +20,4 @@ jobs:
           -H "Accept: application/vnd.github.everest-preview+json" \
           -H "Authorization: Bearer ${{secrets.HIVETEST_TOKEN}}" \
           https://api.github.com/repos/taikoxyz/hive/dispatches \
-          -d '{"event_type":"trigger-taiko-client-integration-tests","client_payload":{"message":"triggered by taiko-client"}}'
+          -d '{"event_type":"start","client_payload":{"repo":"${{ github.repository }}", "ref": "${{ github.head_ref || github.ref }}" }}'
