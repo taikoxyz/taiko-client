@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  taiko-test:
+  trigger-hive-test:
     name: Trigger Hive Integration Tests
     runs-on: ubuntu-latest
     steps:
