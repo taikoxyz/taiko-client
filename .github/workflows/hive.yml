@@ -1,4 +1,4 @@
-name: run taiko hive tests
+name: Run Hive Integration Tests
 
 on:
   push:
@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   taiko-test:
-    name: Start Hive Test
+    name: Start Hive Integration Tests
     runs-on: ubuntu-latest
     steps:
       - run: |
@@ -20,4 +20,4 @@ jobs:
           -H "Accept: application/vnd.github.everest-preview+json" \
           -H "Authorization: Bearer ${{secrets.HIVETEST_TOKEN}}" \
           https://api.github.com/repos/taikoxyz/hive/dispatches \
-          -d '{"event_type":"start-taiko-test","client_payload":{"message":"start from taiko-client"}}'
+          -d '{"event_type":"start-taiko-client-integration-tests","client_payload":{"message":"triggered by taiko-client"}}'
