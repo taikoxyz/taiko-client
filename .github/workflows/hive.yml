@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  trigger-hive-test:
+  trigger-hive-tests:
     name: Trigger Hive Integration Tests
     runs-on: ubuntu-latest
     steps:
