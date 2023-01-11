@@ -17,7 +17,8 @@ import (
 
 type ProposerTestSuite struct {
 	testutils.ClientTestSuite
-	p *Proposer
+	p      *Proposer
+	cancel context.CancelFunc
 }
 
 func (s *ProposerTestSuite) SetupTest() {
@@ -28,8 +29,9 @@ func (s *ProposerTestSuite) SetupTest() {
 
 	p := new(Proposer)
 
+	ctx, cancel := context.WithCancel(context.Background())
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
-	s.Nil(InitFromConfig(context.Background(), p, (&Config{
+	s.Nil(InitFromConfig(ctx, p, (&Config{
 		L1Endpoint:              os.Getenv("L1_NODE_ENDPOINT"),
 		L2Endpoint:              os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
 		TaikoL1Address:          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
@@ -41,6 +43,7 @@ func (s *ProposerTestSuite) SetupTest() {
 
 	s.p = p
 	s.p.AfterCommitHook = s.MineL1Confirmations
+	s.cancel = cancel
 }
 
 func (s *ProposerTestSuite) TestSumTxsGasLimit() {
@@ -125,6 +128,21 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 
 	s.Nil(s.p.ProposeOp(context.Background()))
 	s.True(flag)
+}
+
+func (s *ProposerTestSuite) TestUpdateProposingTicker() {
+	oneHour := 1 * time.Hour
+	s.p.proposingInterval = &oneHour
+	s.NotPanics(s.p.updateProposingTicker)
+
+	s.p.proposingInterval = nil
+	s.NotPanics(s.p.updateProposingTicker)
+}
+
+func (s *ProposerTestSuite) TestStartClose() {
+	s.Nil(s.p.Start())
+	s.cancel()
+	s.NotPanics(s.p.Close)
 }
 
 func TestProposerTestSuite(t *testing.T) {

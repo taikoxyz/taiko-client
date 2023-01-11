@@ -63,6 +63,19 @@ func (s *AnchorTxValidatorTestSuite) TestValidateAnchorTx() {
 	s.ErrorContains(s.v.ValidateAnchorTx(context.Background(), tx), "invalid TaikoL2.anchor transaction selector")
 }
 
+func (s *AnchorTxValidatorTestSuite) TestGetAndValidateAnchorTxReceipt() {
+	tx := types.NewTransaction(
+		100,
+		common.BytesToAddress(testutils.RandomBytes(32)),
+		common.Big1,
+		100000,
+		common.Big1,
+		[]byte{},
+	)
+	_, err := s.v.GetAndValidateAnchorTxReceipt(context.Background(), tx)
+	s.NotNil(err)
+}
+
 func TestAnchorTxValidatorTestSuite(t *testing.T) {
 	suite.Run(t, new(AnchorTxValidatorTestSuite))
 }

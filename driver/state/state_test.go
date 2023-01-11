@@ -2,8 +2,12 @@ package state
 
 import (
 	"context"
+	"math/big"
+	"math/rand"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
@@ -39,6 +43,38 @@ func (s *DriverStateTestSuite) TestGetLatestVerifiedBlock() {
 
 func (s *DriverStateTestSuite) TestGetHeadBlockID() {
 	s.Equal(uint64(0), s.s.GetHeadBlockID().Uint64())
+}
+
+func (s *DriverStateTestSuite) TestHeightOrIDNotEmpty() {
+	s.False((&HeightOrID{}).NotEmpty())
+	s.True((&HeightOrID{Height: common.Big0}).NotEmpty())
+	s.True((&HeightOrID{ID: common.Big0}).NotEmpty())
+}
+
+func (s *DriverStateTestSuite) TestClose() {
+	s.NotPanics(s.s.Close)
+}
+
+func (s *DriverStateTestSuite) TestGetL2Head() {
+	testHeight := rand.Uint64()
+
+	s.s.setL2Head(nil)
+	s.s.setL2Head(&types.Header{Number: new(big.Int).SetUint64(testHeight)})
+	h := s.s.GetL2Head()
+	s.Equal(testHeight, h.Number.Uint64())
+}
+
+func (s *DriverStateTestSuite) TestSubL1HeadsFeed() {
+	s.NotNil(s.s.SubL1HeadsFeed(make(chan *types.Header)))
+}
+
+func (s *DriverStateTestSuite) TestGetSyncedHeaderID() {
+	l2Genesis, err := s.RpcClient.L2.BlockByNumber(context.Background(), common.Big0)
+	s.Nil(err)
+
+	id, err := s.s.getSyncedHeaderID(s.s.GenesisL1Height.Uint64(), l2Genesis.Hash())
+	s.Nil(err)
+	s.Zero(id.Uint64())
 }
 
 func TestDriverStateTestSuite(t *testing.T) {

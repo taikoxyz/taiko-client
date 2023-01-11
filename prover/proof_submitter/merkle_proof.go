@@ -1,9 +1,10 @@
 package submitter
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
 )
@@ -19,8 +20,7 @@ func (n *proofList) Put(key []byte, value []byte) error {
 
 // Delete implements ethdb.KeyValueWriter interface.
 func (n *proofList) Delete(key []byte) error {
-	log.Crit("proofList.Delete not supported")
-	return nil
+	return fmt.Errorf("proofList.Delete not supported")
 }
 
 // generateTrieProof generates a merkle proof of the i'th item in a MPT of given

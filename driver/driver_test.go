@@ -19,8 +19,9 @@ import (
 
 type DriverTestSuite struct {
 	testutils.ClientTestSuite
-	p *proposer.Proposer
-	d *Driver
+	cancel context.CancelFunc
+	p      *proposer.Proposer
+	d      *Driver
 }
 
 func (s *DriverTestSuite) SetupTest() {
@@ -37,7 +38,9 @@ func (s *DriverTestSuite) SetupTest() {
 	s.Nil(err)
 
 	d := new(Driver)
-	s.Nil(InitFromConfig(context.Background(), d, &Config{
+	ctx, cancel := context.WithCancel(context.Background())
+	s.cancel = cancel
+	s.Nil(InitFromConfig(ctx, d, &Config{
 		L1Endpoint:                    os.Getenv("L1_NODE_ENDPOINT"),
 		L2Endpoint:                    os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
 		L2EngineEndpoint:              os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
@@ -132,6 +135,12 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 
 func (s *DriverTestSuite) TestDoSyncNoNewL2Blocks() {
 	s.Nil(s.d.doSync())
+}
+
+func (s *DriverTestSuite) TestStartClose() {
+	s.Nil(s.d.Start())
+	s.cancel()
+	s.d.Close()
 }
 
 func TestDriverTestSuite(t *testing.T) {
