@@ -1,0 +1,23 @@
+name: run taiko hive tests
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  taiko-test:
+    name: Start Hive Test
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -X POST \
+          -H "Accept: application/vnd.github.everest-preview+json" \
+          -H "Authorization: Bearer ${{secrets.HIVETEST_TOKEN}}" \
+          https://api.github.com/repos/taikoxyz/hive/dispatches \
+          -d '{"event_type":"start-taiko-test","client_payload":{"message":"start from taiko-client"}}'
