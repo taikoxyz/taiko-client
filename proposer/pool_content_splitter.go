@@ -44,7 +44,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) []types.Transac
 		if err := p.validateTx(tx); err != nil {
 			log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
 			metrics.ProposerInvalidTxsCounter.Inc(1)
-			txs.Pop() // If this tx is invalid, ingore this sender's other txs with larger nonce.
+			txs.Pop() // If this tx is invalid, ignore this sender's other txs in pool.
 			continue
 		}
 
