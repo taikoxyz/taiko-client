@@ -63,6 +63,7 @@ var (
 
 // All prover flags.
 var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
+	&ZkEvmProverCMDPath,
 	&ZkEvmRpcdEndpoint,
 	&ZkEvmRpcdParamsPath,
 	&L1ProverPrivKey,

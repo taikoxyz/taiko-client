@@ -50,7 +50,7 @@ func (d *ZkevmCmdProducer) RequestProof(
 			err   error
 		)
 		if err := backoff.Retry(func() error {
-			if proof, err = d.ExecProverCmd(header.Number); err != nil {
+			if proof, err = d.ExecProverCmd(opts.Height); err != nil {
 				log.Error("Execute prover cmd error", "error", err)
 				return err
 			}
@@ -83,7 +83,11 @@ func (d *ZkevmCmdProducer) ExecProverCmd(height *big.Int) ([]byte, error) {
 		return nil, err
 	}
 
-	outputPath := filepath.Join(d.CmdPath, fmt.Sprintf("../block-%s_proof.json", height))
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	outputPath := filepath.Join(wd, fmt.Sprintf("./block-%s_proof.json", height))
 
 	log.Info("Exec prover cmd finished", "outputPath", outputPath, "time", time.Since(start))
 
