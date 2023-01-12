@@ -49,14 +49,16 @@ func (d *ZkevmCmdProducer) RequestProof(
 			proof []byte
 			err   error
 		)
-		backoff.Retry(func() error {
+		if err := backoff.Retry(func() error {
 			if proof, err = d.ExecProverCmd(header.Number); err != nil {
 				log.Error("Execute prover cmd error", "error", err)
 				return err
 			}
 
 			return nil
-		}, backoff.NewConstantBackOff(3*time.Second))
+		}, backoff.NewConstantBackOff(3*time.Second)); err != nil {
+			log.Error("Failed to generate proof", "error", err)
+		}
 
 		resultCh <- &ProofWithHeader{
 			BlockID: blockID,
