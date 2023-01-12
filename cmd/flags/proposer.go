@@ -41,6 +41,12 @@ var (
 		Value:    false,
 		Category: proposerCategory,
 	}
+	TxPoolLocals = cli.StringFlag{
+		Name:     "txpool.locals",
+		Usage:    "Perform a weighted shuffle when building the transactions list to propose",
+		Value:    "Comma separated accounts to treat as locals (priority inclusion)",
+		Category: proposerCategory,
+	}
 )
 
 // All proposer flags.
@@ -50,4 +56,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&ProposeInterval,
 	&ShufflePoolContent,
 	&CommitSlot,
+	&TxPoolLocals,
 })

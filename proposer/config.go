@@ -3,6 +3,7 @@ package proposer
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -22,6 +23,7 @@ type Config struct {
 	ProposeInterval         *time.Duration
 	ShufflePoolContent      bool
 	CommitSlot              uint64
+	LocalAddresses          []common.Address
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -49,6 +51,17 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, fmt.Errorf("invalid L2 suggested fee recipient address: %s", l2SuggestedFeeRecipient)
 	}
 
+	localAddresses := []common.Address{}
+	if c.IsSet(flags.TxPoolLocals.Name) {
+		for _, account := range strings.Split(c.String(flags.TxPoolLocals.Name), ",") {
+			if trimmed := strings.TrimSpace(account); !common.IsHexAddress(trimmed) {
+				return nil, fmt.Errorf("invalid account in --txpool.locals: %s", trimmed)
+			} else {
+				localAddresses = append(localAddresses, common.HexToAddress(account))
+			}
+		}
+	}
+
 	return &Config{
 		L1Endpoint:              c.String(flags.L1WSEndpoint.Name),
 		L2Endpoint:              c.String(flags.L2WSEndpoint.Name),
@@ -59,5 +72,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProposeInterval:         proposingInterval,
 		ShufflePoolContent:      c.Bool(flags.ShufflePoolContent.Name),
 		CommitSlot:              c.Uint64(flags.CommitSlot.Name),
+		LocalAddresses:          localAddresses,
 	}, nil
 }

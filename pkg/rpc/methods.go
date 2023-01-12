@@ -174,16 +174,33 @@ func (pc PoolContent) Len() int {
 }
 
 // ToTxsByPriceAndNonce creates a transaction set that can retrieve price sorted transactions in a nonce-honouring way.
-func (pc PoolContent) ToTxsByPriceAndNonce(chainID *big.Int) *types.TransactionsByPriceAndNonce {
-	txs := map[common.Address]types.Transactions{}
+func (pc PoolContent) ToTxsByPriceAndNonce(
+	chainID *big.Int,
+	localAddresses []common.Address,
+) (
+	locals *types.TransactionsByPriceAndNonce,
+	remotes *types.TransactionsByPriceAndNonce,
+) {
+	var (
+		localTxs  = map[common.Address]types.Transactions{}
+		remoteTxs = map[common.Address]types.Transactions{}
+	)
 
 	for address, txsWithNonce := range pc {
+	out:
 		for _, tx := range txsWithNonce {
-			txs[address] = append(txs[address], tx)
+			for _, localAddress := range localAddresses {
+				if address == localAddress {
+					localTxs[address] = append(localTxs[address], tx)
+					continue out
+				}
+			}
+			remoteTxs[address] = append(remoteTxs[address], tx)
 		}
 	}
 
-	return types.NewTransactionsByPriceAndNonce(types.LatestSignerForChainID(chainID), txs, nil)
+	return types.NewTransactionsByPriceAndNonce(types.LatestSignerForChainID(chainID), localTxs, nil),
+		types.NewTransactionsByPriceAndNonce(types.LatestSignerForChainID(chainID), remoteTxs, nil)
 }
 
 // L2PoolContent fetches the transaction pool content from a L2 execution engine.

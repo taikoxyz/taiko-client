@@ -94,6 +94,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		blockMaxGasLimit:        p.protocolConfigs.BlockMaxGasLimit.Uint64(),
 		maxBytesPerTxList:       p.protocolConfigs.MaxBytesPerTxList.Uint64(),
 		minTxGasLimit:           p.protocolConfigs.MinTxGasLimit.Uint64(),
+		locals:                  cfg.LocalAddresses,
 	}
 	p.commitSlot = cfg.CommitSlot
 
@@ -169,7 +170,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	log.Info("Fetching L2 pending transactions finished", "length", pendingContent.Len())
 
 	var commitTxListResQueue []*commitTxListRes
-	for i, txs := range p.poolContentSplitter.split(pendingContent) {
+	for i, txs := range p.poolContentSplitter.Split(pendingContent) {
 		txListBytes, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			return fmt.Errorf("failed to encode transactions: %w", err)

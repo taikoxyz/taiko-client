@@ -60,7 +60,10 @@ func TestToTxsByPriceAndNonce(t *testing.T) {
 		},
 	}
 
-	require.NotNil(t, poolContent.ToTxsByPriceAndNonce(newTestClient(t).L2ChainID))
+	locals, remotes := poolContent.ToTxsByPriceAndNonce(newTestClient(t).L2ChainID, []common.Address{})
+
+	require.Empty(t, locals)
+	require.NotEmpty(t, remotes)
 }
 
 func TestGetGenesisL1Header(t *testing.T) {
