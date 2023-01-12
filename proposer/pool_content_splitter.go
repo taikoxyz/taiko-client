@@ -2,6 +2,7 @@ package proposer
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/les/utils"
@@ -15,6 +16,7 @@ import (
 // which fetched from a `txpool_content` RPC call response into several smaller transactions lists
 // and make sure each splitted list satisfies the limits defined in Taiko protocol.
 type poolContentSplitter struct {
+	chainID                 *big.Int
 	shufflePoolContent      bool
 	maxTransactionsPerBlock uint64
 	blockMaxGasLimit        uint64
@@ -24,39 +26,41 @@ type poolContentSplitter struct {
 
 // split splits the given transaction pool content to make each splitted
 // transactions list satisfies the rules defined in Taiko protocol.
-func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Transaction {
+func (p *poolContentSplitter) split(poolContent rpc.PoolContent) []types.Transactions {
 	var (
-		txLists                = poolContent.ToTxLists()
-		splittedTxLists        = make([][]*types.Transaction, 0)
+		txs                    = poolContent.ToTxsByPriceAndNonce(p.chainID)
+		splittedTxLists        = make([]types.Transactions, 0)
 		txBuffer               = make([]*types.Transaction, 0, p.maxTransactionsPerBlock)
 		gasBuffer       uint64 = 0
 	)
 
-	if p.shufflePoolContent {
-		txLists = p.weightedShuffle(txLists)
-	}
-
-	for _, txList := range txLists {
-		for _, tx := range txList {
-			// If the transaction is invalid, we simply ignore it.
-			if err := p.validateTx(tx); err != nil {
-				log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
-				metrics.ProposerInvalidTxsCounter.Inc(1)
-				break // If this tx is invalid, ingore this sender's other txs with larger nonce.
-			}
-
-			// If the transactions buffer is full, we make all transactions in
-			// current buffer a new splitted transaction list, and then reset the
-			// buffer.
-			if p.isTxBufferFull(tx, txBuffer, gasBuffer) {
-				splittedTxLists = append(splittedTxLists, txBuffer)
-				txBuffer = make([]*types.Transaction, 0, p.maxTransactionsPerBlock)
-				gasBuffer = 0
-			}
-
-			txBuffer = append(txBuffer, tx)
-			gasBuffer += tx.Gas()
+	for {
+		tx := txs.Peek()
+		if tx == nil {
+			break
 		}
+
+		// If the transaction is invalid, we simply ignore it.
+		if err := p.validateTx(tx); err != nil {
+			log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
+			metrics.ProposerInvalidTxsCounter.Inc(1)
+			txs.Pop() // If this tx is invalid, ignore this sender's other txs in pool.
+			continue
+		}
+
+		// If the transactions buffer is full, we make all transactions in
+		// current buffer a new splitted transaction list, and then reset the
+		// buffer.
+		if p.isTxBufferFull(tx, txBuffer, gasBuffer) {
+			splittedTxLists = append(splittedTxLists, txBuffer)
+			txBuffer = make([]*types.Transaction, 0, p.maxTransactionsPerBlock)
+			gasBuffer = 0
+		}
+
+		txBuffer = append(txBuffer, tx)
+		gasBuffer += tx.Gas()
+
+		txs.Shift()
 	}
 
 	// Maybe there are some remaining transactions in current buffer,
@@ -67,7 +71,7 @@ func (p *poolContentSplitter) split(poolContent rpc.PoolContent) [][]*types.Tran
 
 	// If the pool content is shuffled, we will only propose the first transactions list.
 	if p.shufflePoolContent && len(splittedTxLists) > 0 {
-		splittedTxLists = [][]*types.Transaction{splittedTxLists[0]}
+		splittedTxLists = []types.Transactions{p.weightedShuffle(splittedTxLists)[0]}
 	}
 
 	return splittedTxLists

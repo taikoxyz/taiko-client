@@ -6,14 +6,19 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 func (s *ProposerTestSuite) TestPoolContentSplit() {
 	// Gas limit is smaller than the limit.
-	splitter := &poolContentSplitter{minTxGasLimit: 21000}
+	splitter := &poolContentSplitter{
+		chainID:       s.RpcClient.L2ChainID,
+		minTxGasLimit: 21000,
+	}
 
 	splitted := splitter.split(rpc.PoolContent{
 		common.BytesToAddress(testutils.RandomBytes(32)): {
@@ -24,7 +29,10 @@ func (s *ProposerTestSuite) TestPoolContentSplit() {
 	s.Empty(splitted)
 
 	// Gas limit is larger than the limit.
-	splitter = &poolContentSplitter{minTxGasLimit: 21000}
+	splitter = &poolContentSplitter{
+		chainID:       s.RpcClient.L2ChainID,
+		minTxGasLimit: 21000,
+	}
 
 	splitted = splitter.split(rpc.PoolContent{
 		common.BytesToAddress(testutils.RandomBytes(32)): {
@@ -42,6 +50,7 @@ func (s *ProposerTestSuite) TestPoolContentSplit() {
 	s.NotEmpty(bytes)
 
 	splitter = &poolContentSplitter{
+		chainID:           s.RpcClient.L2ChainID,
 		maxBytesPerTxList: uint64(len(bytes) - 1),
 		minTxGasLimit:     uint64(len(bytes) - 2),
 	}
@@ -53,21 +62,27 @@ func (s *ProposerTestSuite) TestPoolContentSplit() {
 	s.Empty(splitted)
 
 	// Transactions that meet the limits
-	tx := types.NewTx(&types.LegacyTx{Gas: 21001})
+	goldenTouchPriKey, err := crypto.HexToECDSA(bindings.GoldenTouchPrivKey[2:])
+	s.Nil(err)
 
-	bytes, err = rlp.EncodeToBytes(tx)
+	signer := types.LatestSignerForChainID(s.RpcClient.L2ChainID)
+	tx1 := types.MustSignNewTx(goldenTouchPriKey, signer, &types.LegacyTx{Gas: 21001, Nonce: 1})
+	tx2 := types.MustSignNewTx(goldenTouchPriKey, signer, &types.LegacyTx{Gas: 21001, Nonce: 2})
+
+	bytes, err = rlp.EncodeToBytes(tx1)
 	s.Nil(err)
 	s.NotEmpty(bytes)
 
 	splitter = &poolContentSplitter{
+		chainID:                 s.RpcClient.L2ChainID,
 		minTxGasLimit:           21000,
-		maxBytesPerTxList:       uint64(len(bytes) + 1),
+		maxBytesPerTxList:       uint64(len(bytes) + 1000),
 		maxTransactionsPerBlock: 1,
-		blockMaxGasLimit:        tx.Gas() + 1,
+		blockMaxGasLimit:        tx1.Gas() + 1000,
 	}
 
 	splitted = splitter.split(rpc.PoolContent{
-		common.BytesToAddress(testutils.RandomBytes(32)): {"0": tx, "1": tx},
+		bindings.GoldenTouchAddress: {"1": tx1, "2": tx2},
 	})
 
 	s.Equal(2, len(splitted))

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"sort"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
@@ -162,35 +161,29 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 // PoolContent represents a response body of a `txpool_content` RPC call.
 type PoolContent map[common.Address]map[string]*types.Transaction
 
-type TxLists []types.Transactions
-
-// ToTxLists flattens all transactions in pool content into transactions lists,
-// each list contains transactions from a single account sorted by nonce.
-func (pc PoolContent) ToTxLists() TxLists {
-	txLists := make([]types.Transactions, 0)
-
+// Len returns the number of transactions in the PoolContent.
+func (pc PoolContent) Len() int {
+	len := 0
 	for _, pendingTxs := range pc {
-		var txsByNonce types.TxByNonce
-
-		for _, pendingTx := range pendingTxs {
-			txsByNonce = append(txsByNonce, pendingTx)
+		for range pendingTxs {
+			len += 1
 		}
-
-		sort.Sort(txsByNonce)
-
-		txLists = append(txLists, types.Transactions(txsByNonce))
 	}
 
-	return txLists
+	return len
 }
 
-// Len returns the number of transactions inside the transactions lists.
-func (t TxLists) Len() int {
-	var length = 0
-	for _, pendingTxs := range t {
-		length += len(pendingTxs)
+// ToTxsByPriceAndNonce creates a transaction set that can retrieve price sorted transactions in a nonce-honouring way.
+func (pc PoolContent) ToTxsByPriceAndNonce(chainID *big.Int) *types.TransactionsByPriceAndNonce {
+	txs := map[common.Address]types.Transactions{}
+
+	for address, txsWithNonce := range pc {
+		for _, tx := range txsWithNonce {
+			txs[address] = append(txs[address], tx)
+		}
 	}
-	return length
+
+	return types.NewTransactionsByPriceAndNonce(types.LatestSignerForChainID(chainID), txs, nil)
 }
 
 // L2PoolContent fetches the transaction pool content from a L2 execution engine.
