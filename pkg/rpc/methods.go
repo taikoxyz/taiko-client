@@ -184,6 +184,21 @@ func (pc PoolContent) ToTxLists() TxLists {
 	return txLists
 }
 
+// ToTxsByPriceAndNonce creates a transaction set that can retrieve price sorted transactions in a nonce-honouring way.
+func (pc PoolContent) ToTxsByPriceAndNonce(chainID *big.Int) *types.TransactionsByPriceAndNonce {
+	signer := types.LatestSignerForChainID(chainID)
+
+	txs := map[common.Address]types.Transactions{}
+
+	for address, txsWithNonce := range pc {
+		for _, tx := range txsWithNonce {
+			txs[address] = append(txs[address], tx)
+		}
+	}
+
+	return types.NewTransactionsByPriceAndNonce(signer, txs, nil)
+}
+
 // Len returns the number of transactions inside the transactions lists.
 func (t TxLists) Len() int {
 	var length = 0
