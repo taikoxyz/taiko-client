@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"os"
 	"strings"
 	"time"
 
@@ -70,6 +71,15 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	var startingBlockID *big.Int
 	if c.IsSet(flags.StartingBlockID.Name) {
 		startingBlockID = new(big.Int).SetUint64(c.Uint64(flags.StartingBlockID.Name))
+	}
+
+	proverCmdStat, err := os.Stat(c.String(flags.ZkEvmProverCMDPath.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	if proverCmdStat.Mode()&0111 != 0 {
+		return nil, fmt.Errorf("prover cmd file is not executable: %s", c.String(flags.ZkEvmProverCMDPath.Name))
 	}
 
 	return &Config{
