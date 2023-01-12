@@ -6,6 +6,7 @@
 *.dylib
 bin
 coverage.out
+generated
 
 # Test binary, built with `go test -c`
 *.test
