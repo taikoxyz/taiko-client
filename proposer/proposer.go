@@ -166,7 +166,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
 	}
 
-	log.Info("Fetching L2 pending transactions finished", "length", pendingContent.ToTxLists().Len())
+	log.Info("Fetching L2 pending transactions finished", "length", pendingContent.Len())
 
 	var commitTxListResQueue []*commitTxListRes
 	for i, txs := range p.poolContentSplitter.split(pendingContent) {
