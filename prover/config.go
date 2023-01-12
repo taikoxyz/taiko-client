@@ -21,6 +21,7 @@ type Config struct {
 	TaikoL1Address                  common.Address
 	TaikoL2Address                  common.Address
 	L1ProverPrivKey                 *ecdsa.PrivateKey
+	ZkEvmProverCMDPath              string
 	ZKEvmRpcdEndpoint               string
 	ZkEvmRpcdParamsPath             string
 	StartingBlockID                 *big.Int
@@ -73,13 +74,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		startingBlockID = new(big.Int).SetUint64(c.Uint64(flags.StartingBlockID.Name))
 	}
 
-	proverCmdStat, err := os.Stat(c.String(flags.ZkEvmProverCMDPath.Name))
-	if err != nil {
+	zkEvmProverCMDPath := c.String(flags.ZkEvmProverCMDPath.Name)
+	if _, err := os.Stat(zkEvmProverCMDPath); err != nil {
 		return nil, err
-	}
-
-	if proverCmdStat.Mode()&0111 != 0 {
-		return nil, fmt.Errorf("prover cmd file is not executable: %s", c.String(flags.ZkEvmProverCMDPath.Name))
 	}
 
 	return &Config{
@@ -88,6 +85,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		TaikoL1Address:                  common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                  common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		L1ProverPrivKey:                 l1ProverPrivKey,
+		ZkEvmProverCMDPath:              zkEvmProverCMDPath,
 		ZKEvmRpcdEndpoint:               c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath:             c.String(flags.ZkEvmRpcdParamsPath.Name),
 		StartingBlockID:                 startingBlockID,
