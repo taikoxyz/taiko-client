@@ -12,6 +12,12 @@ RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /taiko-client/bin/taiko-client /usr/local/bin/
 
+RUN git clone --depth 1 --branch feature/root-circuit https://github.com/smtmfft/zkevm-circuits.git /zkevm-circuits
+
+RUN cd /zkevm-circuits && ./build_pi_integration.sh && \
+  chmod +x ./pi_circuit_integration && \
+  cp ./pi_circuit_integration /usr/local/bin/pi_circuit_integration
+
 EXPOSE 6060
 
 ENTRYPOINT ["taiko-client"]
