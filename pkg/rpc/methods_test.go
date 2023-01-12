@@ -47,6 +47,22 @@ func TestPoolContentLen(t *testing.T) {
 	require.Equal(t, 5, poolContent.Len())
 }
 
+func TestToTxsByPriceAndNonce(t *testing.T) {
+	poolContent := &PoolContent{
+		testAddress1: map[string]*types.Transaction{
+			"6": types.NewTransaction(6, common.Address{}, common.Big0, 0, common.Big0, []byte{}),
+			"5": types.NewTransaction(5, common.Address{}, common.Big0, 0, common.Big0, []byte{}),
+			"7": types.NewTransaction(7, common.Address{}, common.Big0, 0, common.Big0, []byte{}),
+		},
+		testAddress2: map[string]*types.Transaction{
+			"2": types.NewTransaction(2, common.Address{}, common.Big0, 0, common.Big0, []byte{}),
+			"1": types.NewTransaction(1, common.Address{}, common.Big0, 0, common.Big0, []byte{}),
+		},
+	}
+
+	require.NotNil(t, poolContent.ToTxsByPriceAndNonce(newTestClient(t).L2ChainID))
+}
+
 func TestGetGenesisL1Header(t *testing.T) {
 	client := newTestClient(t)
 
