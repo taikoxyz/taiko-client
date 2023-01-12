@@ -20,7 +20,7 @@ func (s *ProposerTestSuite) TestPoolContentSplit() {
 		minTxGasLimit: 21000,
 	}
 
-	splitted := splitter.split(rpc.PoolContent{
+	splitted := splitter.Split(rpc.PoolContent{
 		common.BytesToAddress(testutils.RandomBytes(32)): {
 			"0": types.NewTx(&types.LegacyTx{}),
 		},
@@ -34,7 +34,7 @@ func (s *ProposerTestSuite) TestPoolContentSplit() {
 		minTxGasLimit: 21000,
 	}
 
-	splitted = splitter.split(rpc.PoolContent{
+	splitted = splitter.Split(rpc.PoolContent{
 		common.BytesToAddress(testutils.RandomBytes(32)): {
 			"0": types.NewTx(&types.LegacyTx{Gas: 21001}),
 		},
@@ -55,7 +55,7 @@ func (s *ProposerTestSuite) TestPoolContentSplit() {
 		minTxGasLimit:     uint64(len(bytes) - 2),
 	}
 
-	splitted = splitter.split(rpc.PoolContent{
+	splitted = splitter.Split(rpc.PoolContent{
 		common.BytesToAddress(testutils.RandomBytes(32)): {"0": txBytesTooLarge},
 	})
 
@@ -81,7 +81,7 @@ func (s *ProposerTestSuite) TestPoolContentSplit() {
 		blockMaxGasLimit:        tx1.Gas() + 1000,
 	}
 
-	splitted = splitter.split(rpc.PoolContent{
+	splitted = splitter.Split(rpc.PoolContent{
 		bindings.GoldenTouchAddress: {"1": tx1, "2": tx2},
 	})
 
