@@ -29,7 +29,7 @@ var (
 	// errSyncing is returned when the L2 execution engine is syncing.
 	errSyncing = errors.New("syncing")
 	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
-	// if the first check failed.
+	// if the previous check failed.
 	syncProgressRecheckDelay = 12 * time.Second
 )
 
