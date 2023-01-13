@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/les/utils"
 	"github.com/ethereum/go-ethereum/log"
@@ -22,57 +23,24 @@ type poolContentSplitter struct {
 	blockMaxGasLimit        uint64
 	maxBytesPerTxList       uint64
 	minTxGasLimit           uint64
+	locals                  []common.Address
 }
 
-// split splits the given transaction pool content to make each splitted
+// Split splits the given transaction pool content to make each splitted
 // transactions list satisfies the rules defined in Taiko protocol.
-func (p *poolContentSplitter) split(poolContent rpc.PoolContent) []types.Transactions {
+func (p *poolContentSplitter) Split(poolContent rpc.PoolContent) []types.Transactions {
 	var (
-		txs                    = poolContent.ToTxsByPriceAndNonce(p.chainID)
-		splittedTxLists        = make([]types.Transactions, 0)
-		txBuffer               = make([]*types.Transaction, 0, p.maxTransactionsPerBlock)
-		gasBuffer       uint64 = 0
+		localTxs, remoteTxs   = poolContent.ToTxsByPriceAndNonce(p.chainID, p.locals)
+		splittedLocalTxLists  = p.splitTxs(localTxs)
+		splittedRemoteTxLists = p.splitTxs(remoteTxs)
 	)
 
-	for {
-		tx := txs.Peek()
-		if tx == nil {
-			break
-		}
-
-		// If the transaction is invalid, we simply ignore it.
-		if err := p.validateTx(tx); err != nil {
-			log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
-			metrics.ProposerInvalidTxsCounter.Inc(1)
-			txs.Pop() // If this tx is invalid, ignore this sender's other txs in pool.
-			continue
-		}
-
-		// If the transactions buffer is full, we make all transactions in
-		// current buffer a new splitted transaction list, and then reset the
-		// buffer.
-		if p.isTxBufferFull(tx, txBuffer, gasBuffer) {
-			splittedTxLists = append(splittedTxLists, txBuffer)
-			txBuffer = make([]*types.Transaction, 0, p.maxTransactionsPerBlock)
-			gasBuffer = 0
-		}
-
-		txBuffer = append(txBuffer, tx)
-		gasBuffer += tx.Gas()
-
-		txs.Shift()
-	}
-
-	// Maybe there are some remaining transactions in current buffer,
-	// make them a new transactions list too.
-	if len(txBuffer) > 0 {
-		splittedTxLists = append(splittedTxLists, txBuffer)
-	}
-
 	// If the pool content is shuffled, we will only propose the first transactions list.
-	if p.shufflePoolContent && len(splittedTxLists) > 0 {
-		splittedTxLists = []types.Transactions{p.weightedShuffle(splittedTxLists)[0]}
+	if p.shufflePoolContent && len(splittedRemoteTxLists) > 0 {
+		splittedRemoteTxLists = []types.Transactions{p.weightedShuffle(splittedRemoteTxLists)[0]}
 	}
+
+	splittedTxLists := append(splittedLocalTxLists, splittedRemoteTxLists...)
 
 	return splittedTxLists
 }
@@ -150,4 +118,50 @@ func (p *poolContentSplitter) weightedShuffle(txLists []types.Transactions) []ty
 	}
 
 	return shuffled
+}
+
+// splitTxs the internal implementation Split, splits the given transactions into small transactions lists
+// which satisfy the protocol constraints.
+func (p *poolContentSplitter) splitTxs(txs *types.TransactionsByPriceAndNonce) []types.Transactions {
+	var (
+		splittedTxLists        = make([]types.Transactions, 0)
+		txBuffer               = make([]*types.Transaction, 0, p.maxTransactionsPerBlock)
+		gasBuffer       uint64 = 0
+	)
+	for {
+		tx := txs.Peek()
+		if tx == nil {
+			break
+		}
+
+		// If the transaction is invalid, we simply ignore it.
+		if err := p.validateTx(tx); err != nil {
+			log.Debug("Invalid pending transaction", "hash", tx.Hash(), "error", err)
+			metrics.ProposerInvalidTxsCounter.Inc(1)
+			txs.Pop() // If this tx is invalid, ignore this sender's other txs in pool.
+			continue
+		}
+
+		// If the transactions buffer is full, we make all transactions in
+		// current buffer a new splitted transaction list, and then reset the
+		// buffer.
+		if p.isTxBufferFull(tx, txBuffer, gasBuffer) {
+			splittedTxLists = append(splittedTxLists, txBuffer)
+			txBuffer = make([]*types.Transaction, 0, p.maxTransactionsPerBlock)
+			gasBuffer = 0
+		}
+
+		txBuffer = append(txBuffer, tx)
+		gasBuffer += tx.Gas()
+
+		txs.Shift()
+	}
+
+	// Maybe there are some remaining transactions in current buffer,
+	// make them a new transactions list too.
+	if len(txBuffer) > 0 {
+		splittedTxLists = append(splittedTxLists, txBuffer)
+	}
+
+	return splittedTxLists
 }
