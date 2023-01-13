@@ -29,6 +29,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
 		&cli.StringFlag{Name: flags.ProposeInterval.Name},
 		&cli.Uint64Flag{Name: flags.CommitSlot.Name},
+		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
@@ -41,6 +42,8 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(bindings.GoldenTouchAddress, c.L2SuggestedFeeRecipient)
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
 		s.Equal(uint64(commitSlot), c.CommitSlot)
+		s.Equal(1, len(c.LocalAddresses))
+		s.Equal(bindings.GoldenTouchAddress, c.LocalAddresses[0])
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -56,5 +59,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L2SuggestedFeeRecipient.Name, bindings.GoldenTouchAddress.Hex(),
 		"-" + flags.ProposeInterval.Name, proposeInterval,
 		"-" + flags.CommitSlot.Name, strconv.Itoa(commitSlot),
+		"-" + flags.TxPoolLocals.Name, bindings.GoldenTouchAddress.Hex(),
 	}))
 }
