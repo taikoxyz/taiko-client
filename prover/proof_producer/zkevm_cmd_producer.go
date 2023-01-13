@@ -15,11 +15,13 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
+// ZkevmCmdProducer is responsible for generating zk proofs from the given command line binary file.
 type ZkevmCmdProducer struct {
 	CmdPath    string
 	L2Endpoint string // a L2 execution engine's RPC endpoint
 }
 
+// NewZkevmCmdProducer creates a new NewZkevmCmdProducer instance.
 func NewZkevmCmdProducer(
 	cmdPath string,
 	l2Endpoint string,
@@ -44,29 +46,28 @@ func (d *ZkevmCmdProducer) RequestProof(
 		"cmd", d.CmdPath,
 	)
 
-	go func() {
-		var (
-			proof []byte
-			err   error
-		)
-		if err := backoff.Retry(func() error {
-			if proof, err = d.ExecProverCmd(opts.Height); err != nil {
-				log.Error("Execute prover cmd error", "error", err)
-				return err
-			}
-
-			return nil
-		}, backoff.NewConstantBackOff(3*time.Second)); err != nil {
-			log.Error("Failed to generate proof", "error", err)
+	var (
+		proof []byte
+		err   error
+	)
+	if err := backoff.Retry(func() error {
+		if proof, err = d.ExecProverCmd(opts.Height); err != nil {
+			log.Error("Execute prover cmd error", "error", err)
+			return err
 		}
 
-		resultCh <- &ProofWithHeader{
-			BlockID: blockID,
-			Header:  header,
-			Meta:    meta,
-			ZkProof: proof,
-		}
-	}()
+		return nil
+	}, backoff.NewConstantBackOff(3*time.Second)); err != nil {
+		log.Error("Failed to generate proof", "error", err)
+	}
+
+	resultCh <- &ProofWithHeader{
+		BlockID: blockID,
+		Header:  header,
+		Meta:    meta,
+		ZkProof: proof,
+	}
+
 	return nil
 }
 

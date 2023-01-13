@@ -74,9 +74,12 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		startingBlockID = new(big.Int).SetUint64(c.Uint64(flags.StartingBlockID.Name))
 	}
 
-	zkEvmProverCMDPath := c.String(flags.ZkEvmProverCMDPath.Name)
-	if _, err := os.Stat(zkEvmProverCMDPath); err != nil {
-		return nil, err
+	var zkEvmProverCMDPath string
+	if !c.IsSet(flags.Dummy.Name) {
+		zkEvmProverCMDPath = c.String(flags.ZkEvmProverCMDPath.Name)
+		if _, err := os.Stat(zkEvmProverCMDPath); err != nil {
+			return nil, err
+		}
 	}
 
 	return &Config{
