@@ -226,7 +226,7 @@ func (c *Client) L2AccountNonce(
 }
 
 // L2SyncProgress represents the sync progress of a L2 execution engine, `ethereum.SyncProgress` is used to check
-// the sync porgress of verified blocks, and block IDs is used to check sync progress of pending blocks.
+// the sync progress of verified blocks, and block IDs are used to check the sync progress of pending blocks.
 type L2SyncProgress struct {
 	*ethereum.SyncProgress
 	CurrentBlockID *big.Int
@@ -236,16 +236,14 @@ type L2SyncProgress struct {
 // L2ExecutionEngineSyncProgress fetches the sync progress of the given L2 execution engine.
 func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProgress, error) {
 	var (
-		progress       *ethereum.SyncProgress
-		currentBlockID *big.Int
-		highestBlockID *big.Int
-		err            error
+		progress = new(L2SyncProgress)
+		err      error
 	)
 
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
-		progress, err = c.L2.SyncProgress(ctx)
+		progress.SyncProgress, err = c.L2.SyncProgress(ctx)
 		return err
 	})
 
@@ -254,8 +252,7 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 		if err != nil {
 			return err
 		}
-		highestBlockID = new(big.Int).SetUint64(stateVars.NextBlockID - 1)
-		log.Info("state vars", "vars", stateVars, "highest", highestBlockID)
+		progress.HighestBlockID = new(big.Int).SetUint64(stateVars.NextBlockID - 1)
 		return nil
 	})
 
@@ -264,12 +261,15 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 		if err != nil {
 			return err
 		}
-		currentBlockID = headL1Origin.BlockID
+		progress.CurrentBlockID = headL1Origin.BlockID
 		return nil
 	})
 
-	return &L2SyncProgress{SyncProgress: progress, CurrentBlockID: currentBlockID, HighestBlockID: highestBlockID},
-		g.Wait()
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return progress, nil
 }
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
