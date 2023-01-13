@@ -261,7 +261,8 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 		if err != nil {
 			switch err.Error() {
 			case ethereum.NotFound.Error():
-				// There is only genesis block in the L2 execution engine.
+				// There is only genesis block in the L2 execution engine, or it has not started
+				// syncing the pending blocks yet.
 				progress.CurrentBlockID = common.Big0
 				return nil
 			default:
