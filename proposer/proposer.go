@@ -312,7 +312,10 @@ func (p *Proposer) waitTillSynced() {
 				return err
 			}
 
-			if progress.SyncProgress != nil || progress.CurrentBlockID.Cmp(progress.HighestBlockID) < 0 {
+			if progress.SyncProgress != nil ||
+				progress.CurrentBlockID == nil ||
+				progress.HighestBlockID == nil ||
+				progress.CurrentBlockID.Cmp(progress.HighestBlockID) < 0 {
 				log.Info("L2 execution engine is syncing", "progress", progress)
 				return errSyncing
 			}
