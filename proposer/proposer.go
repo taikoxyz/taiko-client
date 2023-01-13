@@ -3,12 +3,14 @@ package proposer
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 	"math/rand"
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -21,6 +23,10 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
+)
+
+var (
+	errSyncing = errors.New("syncing")
 )
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
@@ -151,14 +157,9 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	if p.CustomProposeOpHook != nil {
 		return p.CustomProposeOpHook()
 	}
-	syncProgress, err := p.rpc.L2.SyncProgress(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get L2 execution engine sync progress: %w", err)
-	}
-	if syncProgress != nil {
-		log.Info("L2 execution engine is syncing", "progress", syncProgress)
-		return nil
-	}
+
+	// Wait until L2 execution engine is synced at first.
+	p.waitTillSynced()
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
@@ -299,6 +300,27 @@ func (p *Proposer) ProposeTxList(
 	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))
 
 	return nil
+}
+
+// waitTillSynced keeps waiting until the L2 execution engine is fully synced.
+func (p *Proposer) waitTillSynced() {
+	backoff.Retry(
+		func() error {
+			progress, err := p.rpc.L2ExecutionEngineSyncProgress(p.ctx)
+			if err != nil {
+				log.Error("Fetch L2 execution engine sync progress error", "error", err)
+				return err
+			}
+
+			if progress != nil || progress.CurrentBlockID.Cmp(progress.HighestBlockID) < 0 {
+				log.Info("L2 execution engine is syncing", "progress", progress)
+				return errSyncing
+			}
+
+			return nil
+		},
+		backoff.NewConstantBackOff(12*time.Second),
+	)
 }
 
 // updateProposingTicker updates the internal proposing timer.

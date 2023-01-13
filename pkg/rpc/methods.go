@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"golang.org/x/sync/errgroup"
 )
 
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
@@ -222,6 +223,51 @@ func (c *Client) L2AccountNonce(
 	var result hexutil.Uint64
 	err := c.L2RawRPC.CallContext(ctx, &result, "eth_getTransactionCount", account, hexutil.EncodeBig(height))
 	return uint64(result), err
+}
+
+// L2SyncProgress represents the sync progress of a L2 execution engine, `ethereum.SyncProgress` is used to check
+// the sync porgress of verified blocks, and block IDs is used to check sync progress of pending blocks.
+type L2SyncProgress struct {
+	*ethereum.SyncProgress
+	CurrentBlockID *big.Int
+	HighestBlockID *big.Int
+}
+
+// L2ExecutionEngineSyncProgress fetches the sync progress of the given L2 execution engine.
+func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProgress, error) {
+	var (
+		progress       *ethereum.SyncProgress
+		currentBlockID *big.Int
+		highestBlockID *big.Int
+		err            error
+	)
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		progress, err = c.L2.SyncProgress(ctx)
+		return err
+	})
+
+	g.Go(func() error {
+		stateVars, err := c.GetProtocolStateVariables(nil)
+		if err != nil {
+			return err
+		}
+		highestBlockID = new(big.Int).SetUint64(stateVars.NextBlockID - 1)
+		return nil
+	})
+
+	g.Go(func() error {
+		headL1Origin, err := c.L2.HeadL1Origin(ctx)
+		if err != nil {
+			return err
+		}
+		currentBlockID = headL1Origin.BlockID
+		return nil
+	})
+
+	return &L2SyncProgress{SyncProgress: progress, CurrentBlockID: currentBlockID, HighestBlockID: highestBlockID}, nil
 }
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
