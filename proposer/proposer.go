@@ -26,7 +26,11 @@ import (
 )
 
 var (
+	// errSyncing is returned when the L2 execution engine is syncing.
 	errSyncing = errors.New("syncing")
+	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
+	// if the first check failed.
+	syncProgressRecheckDelay = 12 * time.Second
 )
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
@@ -322,7 +326,7 @@ func (p *Proposer) waitTillSynced() {
 
 			return nil
 		},
-		backoff.NewConstantBackOff(12*time.Second),
+		backoff.NewConstantBackOff(syncProgressRecheckDelay),
 	)
 }
 
