@@ -147,13 +147,6 @@ func (p *Proposer) Close() {
 	p.wg.Wait()
 }
 
-type commitTxListRes struct {
-	meta        *bindings.TaikoDataBlockMetadata
-	commitTx    *types.Transaction
-	txListBytes []byte
-	txNum       uint
-}
-
 // ProposeOp performs a proposing operation, fetching transactions
 // from L2 execution engine's tx pool, splitting them by proposing constraints,
 // and then proposing them to TaikoL1 contract.
@@ -207,6 +200,15 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// commitTxListRes represents the result of a transactions list committing, will be used when proposing
+// the corresponding transactions list.
+type commitTxListRes struct {
+	meta        *bindings.TaikoDataBlockMetadata
+	commitTx    *types.Transaction
+	txListBytes []byte
+	txNum       uint
 }
 
 // CommitTxList submits a given transactions list's corresponding commit hash to TaikoL1 smart contract, then
