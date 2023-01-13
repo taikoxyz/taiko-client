@@ -209,6 +209,8 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	return nil
 }
 
+// CommitTxList submits a given transactions list's corresponding commit hash to TaikoL1 smart contract, then
+// after `protocolConfigs.CommitConfirmations` L1 blocks delay, the given transactions list can be proposed.
 func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimit uint64, splittedIdx int) (
 	*bindings.TaikoDataBlockMetadata,
 	*types.Transaction,
@@ -245,6 +247,7 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 	return meta, commitTx, nil
 }
 
+// ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
 	meta *bindings.TaikoDataBlockMetadata,
