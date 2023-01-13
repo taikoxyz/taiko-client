@@ -3,12 +3,14 @@ package proposer
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 	"math/rand"
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -21,6 +23,14 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
+)
+
+var (
+	// errSyncing is returned when the L2 execution engine is syncing.
+	errSyncing = errors.New("syncing")
+	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
+	// if the previous check failed.
+	syncProgressRecheckDelay = 12 * time.Second
 )
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
@@ -137,13 +147,6 @@ func (p *Proposer) Close() {
 	p.wg.Wait()
 }
 
-type commitTxListRes struct {
-	meta        *bindings.TaikoDataBlockMetadata
-	commitTx    *types.Transaction
-	txListBytes []byte
-	txNum       uint
-}
-
 // ProposeOp performs a proposing operation, fetching transactions
 // from L2 execution engine's tx pool, splitting them by proposing constraints,
 // and then proposing them to TaikoL1 contract.
@@ -151,13 +154,10 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	if p.CustomProposeOpHook != nil {
 		return p.CustomProposeOpHook()
 	}
-	syncProgress, err := p.rpc.L2.SyncProgress(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get L2 execution engine sync progress: %w", err)
-	}
-	if syncProgress != nil {
-		log.Info("L2 execution engine is syncing", "progress", syncProgress)
-		return nil
+
+	// Wait until L2 execution engine is synced at first.
+	if err := p.waitTillSynced(); err != nil {
+		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
 	}
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
@@ -204,6 +204,17 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	return nil
 }
 
+// commitTxListRes represents the result of a transactions list committing, will be used when proposing
+// the corresponding transactions list.
+type commitTxListRes struct {
+	meta        *bindings.TaikoDataBlockMetadata
+	commitTx    *types.Transaction
+	txListBytes []byte
+	txNum       uint
+}
+
+// CommitTxList submits a given transactions list's corresponding commit hash to TaikoL1 smart contract, then
+// after `protocolConfigs.CommitConfirmations` L1 blocks delay, the given transactions list can be proposed.
 func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimit uint64, splittedIdx int) (
 	*bindings.TaikoDataBlockMetadata,
 	*types.Transaction,
@@ -240,6 +251,7 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 	return meta, commitTx, nil
 }
 
+// ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
 	meta *bindings.TaikoDataBlockMetadata,
@@ -299,6 +311,30 @@ func (p *Proposer) ProposeTxList(
 	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))
 
 	return nil
+}
+
+// waitTillSynced keeps waiting until the L2 execution engine is fully synced.
+func (p *Proposer) waitTillSynced() error {
+	return backoff.Retry(
+		func() error {
+			progress, err := p.rpc.L2ExecutionEngineSyncProgress(p.ctx)
+			if err != nil {
+				log.Error("Fetch L2 execution engine sync progress error", "error", err)
+				return err
+			}
+
+			if progress.SyncProgress != nil ||
+				progress.CurrentBlockID == nil ||
+				progress.HighestBlockID == nil ||
+				progress.CurrentBlockID.Cmp(progress.HighestBlockID) < 0 {
+				log.Info("L2 execution engine is syncing", "progress", progress)
+				return errSyncing
+			}
+
+			return nil
+		},
+		backoff.NewConstantBackOff(syncProgressRecheckDelay),
+	)
 }
 
 // updateProposingTicker updates the internal proposing timer.
