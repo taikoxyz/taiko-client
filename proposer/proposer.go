@@ -156,7 +156,9 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	}
 
 	// Wait until L2 execution engine is synced at first.
-	p.waitTillSynced()
+	if err := p.waitTillSynced(); err != nil {
+		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
+	}
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
@@ -312,8 +314,8 @@ func (p *Proposer) ProposeTxList(
 }
 
 // waitTillSynced keeps waiting until the L2 execution engine is fully synced.
-func (p *Proposer) waitTillSynced() {
-	backoff.Retry(
+func (p *Proposer) waitTillSynced() error {
+	return backoff.Retry(
 		func() error {
 			progress, err := p.rpc.L2ExecutionEngineSyncProgress(p.ctx)
 			if err != nil {
