@@ -120,6 +120,14 @@ func TestL2ParentByBlockId(t *testing.T) {
 	require.NotNil(t, err)
 }
 
+func TestL2ExecutionEngineSyncProgress(t *testing.T) {
+	client := newTestClient(t)
+
+	progress, err := client.L2ExecutionEngineSyncProgress(context.Background())
+	require.Nil(t, err)
+	require.NotNil(t, progress)
+}
+
 func TestWaitL1OriginTimeout(t *testing.T) {
 	client := newTestClient(t)
 
