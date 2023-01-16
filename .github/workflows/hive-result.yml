@@ -2,17 +2,16 @@ name: Comment Hive Results
 
 on:
   repository_dispatch:
-    types: [write]
+    types: [comment]
   workflow_dispatch:
-  pull_request:
 
 jobs:
   comment:
     name: Comment Hive Tests Results
     runs-on: ubuntu-latest
     steps:
-      - name: Comment PR
+      - name: Comment Client Hive Test
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-            Hello world ! :wave:
+            Client hive test result: ${{ github.event.client_payload.pass }}, see more: ${{ github.event.client_payload.url }}
