@@ -7,9 +7,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -112,5 +114,32 @@ func (d *ZkevmCmdProducer) ExecProverCmd(height *big.Int) ([]byte, error) {
 		return nil, err
 	}
 
-	return proverCmdOutput.Proof, nil
+	return d.outputToCalldata(&proverCmdOutput), nil
+}
+
+func (d *ZkevmCmdProducer) outputToCalldata(output *ProverCmdOutput) []byte {
+	calldata := []byte{}
+
+	for i := 0; i < len(output.Instances); i++ {
+		uint256Bytes := [32]byte{}
+		evenHexLen := len(output.Instances[i]) - 2 + (len(output.Instances[i]) % 2)
+		instanceHex := output.Instances[i][2:]
+		if len(instanceHex) < evenHexLen {
+			instanceHex = strings.Repeat("0", evenHexLen-len(instanceHex)) + instanceHex
+		}
+		instanceBytes := common.Hex2Bytes(instanceHex)
+
+		for j := 0; j < len(instanceBytes); j++ {
+			uint256Bytes[31-j] = instanceBytes[len(instanceBytes)-1-j]
+		}
+		for k := 0; k < 32; k++ {
+			calldata = append(calldata, uint256Bytes[k])
+		}
+	}
+
+	for i := 0; i < len(output.Proof); i++ {
+		calldata = append(calldata, output.Proof...)
+	}
+
+	return calldata
 }
