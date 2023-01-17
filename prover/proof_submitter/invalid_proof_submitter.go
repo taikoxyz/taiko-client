@@ -91,7 +91,7 @@ func (s *InvalidProofSubmitter) SubmitProof(
 		"blockID", proofWithHeader.BlockID,
 		"beneficiary", proofWithHeader.Meta.Beneficiary,
 		"hash", proofWithHeader.Header.Hash(),
-		"proof", proofWithHeader.ZkProof,
+		"proof", common.Bytes2Hex(proofWithHeader.ZkProof),
 	)
 	var (
 		blockID = proofWithHeader.BlockID
