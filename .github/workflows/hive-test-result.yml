@@ -1,0 +1,17 @@
+name: Hive Test Result
+
+on:
+  repository_dispatch:
+    types: [comment]
+  workflow_dispatch:
+
+jobs:
+  comment_result:
+    name: Hive Test Result
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment Hive Test Result
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            Hive test result: ${{ github.event.client_payload.results }}
