@@ -119,6 +119,7 @@ func (d *ZkevmCmdProducer) ExecProverCmd(height *big.Int) ([]byte, error) {
 
 func (d *ZkevmCmdProducer) outputToCalldata(output *ProverCmdOutput) []byte {
 	calldata := []byte{}
+	bufLen := len(output.Instances)*32 + len(output.Proof)
 
 	for i := 0; i < len(output.Instances); i++ {
 		uint256Bytes := [32]byte{}
@@ -141,5 +142,5 @@ func (d *ZkevmCmdProducer) outputToCalldata(output *ProverCmdOutput) []byte {
 		calldata = append(calldata, output.Proof...)
 	}
 
-	return calldata
+	return calldata[:bufLen]
 }
