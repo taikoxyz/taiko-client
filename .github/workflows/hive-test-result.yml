@@ -1,4 +1,4 @@
-name: Comment Hive Results
+name: Hive Test Result
 
 on:
   repository_dispatch:
@@ -6,12 +6,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  comment:
-    name: Comment Hive Tests Results
+  comment_result:
+    name: Hive Test Result
     runs-on: ubuntu-latest
     steps:
-      - name: Comment Client Hive Test
+      - name: Comment Hive Test Result
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-            Hive results: ${{ github.event.client_payload.results }}
+            Hive test result: ${{ github.event.client_payload.results }}
