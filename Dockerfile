@@ -15,9 +15,9 @@ RUN ./build_pi_integration.sh && \
   chmod +x ./pi_circuit_integration && \
   cp ./pi_circuit_integration /usr/local/bin/pi_circuit_integration
 
-FROM rust:buster
+FROM golang:1.18
 
-RUN apt-get update && apt-get install -y ca-certificates build-essential
+RUN apt-get update && apt-get install -y ca-certificates
 
 COPY --from=builder /taiko-client/bin/taiko-client /usr/local/bin/
 COPY --from=builder /zkevm-circuits/pi_circuit_integration /usr/local/bin/
