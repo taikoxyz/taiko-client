@@ -18,6 +18,9 @@ RUN ./build_pi_integration.sh && \
   cp /zkevm-circuits/pi_circuit_integration /usr/local/bin/ && \
   cp /taiko-client/bin/taiko-client /usr/local/bin/
 
+RUN curl -o /usr/bin/solc -fL https://github.com/ethereum/solidity/releases/download/v0.8.9/solc-static-linux \
+  && chmod u+x /usr/bin/solc
+
 EXPOSE 6060
 
 ENTRYPOINT ["taiko-client"]
