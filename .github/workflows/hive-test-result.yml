@@ -13,5 +13,6 @@ jobs:
       - name: Comment Hive Test Result
         uses: thollander/actions-comment-pull-request@v2
         with:
+          pr_number: ${{ github.event.client_payload.pr_number }}
           message: |
             Hive test result: ${{ github.event.client_payload.results }}
