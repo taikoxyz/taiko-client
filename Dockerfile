@@ -17,7 +17,7 @@ RUN ./build_pi_integration.sh && \
 
 FROM rust:buster
 
-RUN apt-get update && apt-get install -y ca-certificates
+RUN apt-get update && apt-get install -y ca-certificates build-essential
 
 COPY --from=builder /taiko-client/bin/taiko-client /usr/local/bin/
 COPY --from=builder /zkevm-circuits/pi_circuit_integration /usr/local/bin/
