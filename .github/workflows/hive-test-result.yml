@@ -14,4 +14,4 @@ jobs:
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-            Hive test result: ${{ github.event.client_payload.results }}
+            Hive test result: \n ${{ github.event.client_payload.results }}
