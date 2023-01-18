@@ -1,6 +1,7 @@
 package producer
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -82,7 +83,13 @@ func (d *ZkevmCmdProducer) ExecProverCmd(height *big.Int) ([]byte, error) {
 	start := time.Now()
 	cmd := exec.Command(d.CmdPath, d.L2Endpoint, height.String())
 
+	var stdout, stderr bytes.Buffer
+
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
 	if err := cmd.Run(); err != nil {
+		log.Info("Exec output", "stdout", stdout.String(), "stderr", stderr.String())
 		return nil, err
 	}
 
