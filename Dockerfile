@@ -2,6 +2,7 @@ FROM golang:1.18 as builder
 
 RUN apt-get update && apt-get install -y git musl-dev curl build-essential make ca-certificates && \
   curl https://sh.rustup.rs -sSf | bash -s -- -y
+
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /taiko-client
