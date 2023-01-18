@@ -15,7 +15,7 @@ RUN ./build_pi_integration.sh && \
   chmod +x ./pi_circuit_integration && \
   cp ./pi_circuit_integration /usr/local/bin/pi_circuit_integration
 
-FROM node:current-buster
+FROM rust:buster
 
 RUN apt-get update && apt-get install -y ca-certificates
 
