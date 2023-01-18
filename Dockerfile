@@ -1,6 +1,6 @@
 FROM golang:1.18 as builder
 
-RUN apt-get update && apt-get install -y git musl-dev curl build-essential make && \
+RUN apt-get update && apt-get install -y git musl-dev curl build-essential make ca-certificates && \
   curl https://sh.rustup.rs -sSf | bash -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
@@ -15,12 +15,8 @@ RUN ./build_pi_integration.sh && \
   chmod +x ./pi_circuit_integration && \
   cp ./pi_circuit_integration /usr/local/bin/pi_circuit_integration
 
-FROM golang:1.18
-
-RUN apt-get update && apt-get install -y ca-certificates
-
-COPY --from=builder /taiko-client/bin/taiko-client /usr/local/bin/
-COPY --from=builder /zkevm-circuits/pi_circuit_integration /usr/local/bin/
+COPY /taiko-client/bin/taiko-client /usr/local/bin/
+COPY /zkevm-circuits/pi_circuit_integration /usr/local/bin/
 
 EXPOSE 6060
 
