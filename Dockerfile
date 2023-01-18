@@ -15,7 +15,7 @@ RUN ./build_pi_integration.sh && \
   chmod +x ./pi_circuit_integration && \
   cp ./pi_circuit_integration /usr/local/bin/pi_circuit_integration
 
-FROM alpine:latest
+FROM node:16
 
 RUN apk add --no-cache ca-certificates
 
