@@ -15,7 +15,6 @@ WORKDIR /zkevm-circuits
 RUN git reset bd22fc2 && \
   ./build_pi_integration.sh && \
   chmod +x ./pi_circuit_integration && \
-  cp -r /taiko-client/testutils/testdata/generated /zkevm-circuits && \
   cp /zkevm-circuits/pi_circuit_integration /usr/local/bin/ && \
   cp /taiko-client/bin/taiko-client /usr/local/bin/
 
