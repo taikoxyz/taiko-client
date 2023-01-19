@@ -9,7 +9,7 @@ WORKDIR /taiko-client
 COPY . .
 RUN make build
 
-RUN git clone --depth 1 --branch feature/root-circuit https://github.com/smtmfft/zkevm-circuits.git /zkevm-circuits
+RUN git clone --branch feature/root-circuit https://github.com/smtmfft/zkevm-circuits.git /zkevm-circuits
 
 WORKDIR /zkevm-circuits
 RUN git reset bd22fc2 && \
