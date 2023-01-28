@@ -15,7 +15,7 @@ func TestOutputToCalldata(t *testing.T) {
 	require.Nil(t, err)
 
 	var (
-		testCalldataHexHash = common.HexToHash("0x6a37a238e75278c1dd49b84a730dfa43a85ad01edad3f0f97b5a1c7e47f5123a")
+		testCalldataHexHash = common.HexToHash("0xfbc74eec1aa02cadd59cf2fdfb8c311b199a4f83d0046fd20a1a53081bb0de22")
 		proverCmdOutput     ProverCmdOutput
 	)
 	require.Nil(t, json.Unmarshal(output, &proverCmdOutput))
