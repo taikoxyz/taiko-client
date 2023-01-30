@@ -146,6 +146,10 @@ var (
 			Name: "proofs",
 			Type: "bytes[]",
 		},
+		{
+			Name: "circuits",
+			Type: "uint16[]",
+		},
 	}
 )
 

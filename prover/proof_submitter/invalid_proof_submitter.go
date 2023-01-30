@@ -154,9 +154,10 @@ func (s *InvalidProofSubmitter) SubmitProof(
 			MixHash:     header.MixDigest,
 			ExtraData:   header.Extra,
 		},
-		Header: *encoding.FromGethHeader(header),
-		Prover: s.proverAddress,
-		Proofs: proofs,
+		Header:   *encoding.FromGethHeader(header),
+		Prover:   s.proverAddress,
+		Proofs:   proofs,
+		Circuits: []uint16{0},
 	}
 
 	input, err := encoding.EncodeProveBlockInvalidInput(evidence, meta, receipts[0])

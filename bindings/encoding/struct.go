@@ -29,10 +29,11 @@ type BlockHeader struct {
 }
 
 type TaikoL1Evidence struct {
-	Meta   bindings.TaikoDataBlockMetadata
-	Header BlockHeader
-	Prover common.Address
-	Proofs [][]byte
+	Meta     bindings.TaikoDataBlockMetadata
+	Header   BlockHeader
+	Prover   common.Address
+	Proofs   [][]byte
+	Circuits []uint16
 }
 
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.

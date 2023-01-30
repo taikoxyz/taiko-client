@@ -173,10 +173,11 @@ func (s *ValidProofSubmitter) SubmitProof(
 	proofs = append(proofs, [][]byte{anchorTxProof, anchorReceiptProof}...)
 
 	evidence := &encoding.TaikoL1Evidence{
-		Meta:   *proofWithHeader.Meta,
-		Header: *encoding.FromGethHeader(header),
-		Prover: s.proverAddress,
-		Proofs: proofs,
+		Meta:     *proofWithHeader.Meta,
+		Header:   *encoding.FromGethHeader(header),
+		Prover:   s.proverAddress,
+		Proofs:   proofs,
+		Circuits: []uint16{0},
 	}
 
 	input, err := encoding.EncodeProveBlockInput(evidence, anchorTx, anchorTxReceipt)
