@@ -81,7 +81,7 @@ jobs:
 
       - name: Install protocol dependencies
         working-directory: ${{ env.TAIKO_MONO_DIR }}
-        run: cd ./packages/protocol && pnpm install
+        run: cd ./packages/protocol && pnpm install && ./scripts/download_solc.sh
 
       - name: Build
         working-directory: ${{ env.CLIENT_DIR }}
