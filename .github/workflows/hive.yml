@@ -3,6 +3,7 @@ name: Run Hive Integration Tests
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 # This allows a subsequently queued workflow run to interrupt previous runs.
