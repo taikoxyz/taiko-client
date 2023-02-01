@@ -61,6 +61,7 @@ cd $TAIKO_MONO_DIR/packages/protocol &&
     --network l1_test \
     --dao-vault 0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39 \
     --team-vault 0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39 \
+    --oracle-prover 0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39 \
     --l2-genesis-block-hash $L2_GENESIS_HASH \
     --taiko-l2 $TAIKO_L2_CONTRACT_ADDRESS \
     --confirmations 1
