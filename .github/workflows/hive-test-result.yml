@@ -15,4 +15,5 @@ jobs:
         with:
           pr_number: ${{ github.event.client_payload.pr_number }}
           message: |
-            Hive test result: ${{ github.event.client_payload.results }}
+            Hive test result:
+            ${{ github.event.client_payload.results }}
