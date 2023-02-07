@@ -263,6 +263,13 @@ func (p *Prover) onBlockProposed(
 	log.Info("Proposed block", "blockID", event.Id)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
 
+	if p.cfg.Total > 0 {
+		if event.Id.Uint64()%uint64(p.cfg.Total) != uint64(p.cfg.Idx) {
+			log.Info("Ignore proposed block", "blockID", event.Id, "idx", p.cfg.Idx, "total", p.cfg.Total)
+			return nil
+		}
+	}
+
 	handleBlockProposedEvent := func() error {
 		defer func() { <-p.proposeConcurrencyGuard }()
 
