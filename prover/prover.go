@@ -416,12 +416,12 @@ func (p *Prover) isProvenByCurrentProver(id *big.Int) (bool, error) {
 		parentHash = parentL1Origin.L2BlockHash
 	}
 
-	provers, err := p.rpc.TaikoL1.GetBlockProvers(nil, id, parentHash)
+	fc, err := p.rpc.TaikoL1.GetForkChoice(nil, id, parentHash)
 	if err != nil {
 		return false, err
 	}
 
-	for _, prover := range provers {
+	for _, prover := range fc.Provers {
 		if prover == p.proverAddress {
 			return true, nil
 		}
