@@ -4,7 +4,9 @@ import (
 	"errors"
 	"math/big"
 	"net/http"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -64,4 +66,48 @@ func (d *ZkevmRpcdProducer) RequestProof(
 		}
 	}()
 	return nil
+}
+
+type RpcdOutput struct {
+	Result struct {
+		Circuit struct {
+			Instances []string `json:"instances"`
+			Proof     string   `json:"proof"`
+		} `json:"circuit"`
+	} `json:"result"`
+}
+
+func (d *ZkevmRpcdProducer) outputToCalldata(output *RpcdOutput) []byte {
+	calldata := []byte{}
+	data := output.Result.Circuit
+	bufLen := len(data.Instances)*32 + len(data.Proof)
+
+	for i := 0; i < len(data.Instances); i++ {
+		uint256Bytes := [32]byte{}
+		evenHexLen := len(data.Instances[i]) - 2 + (len(data.Instances[i]) % 2)
+		instanceHex := data.Instances[i][2:]
+		if len(instanceHex) < evenHexLen {
+			instanceHex = strings.Repeat("0", evenHexLen-len(instanceHex)) + instanceHex
+		}
+		instanceBytes := common.Hex2Bytes(instanceHex)
+
+		for j := 0; j < len(instanceBytes); j++ {
+			uint256Bytes[31-j] = instanceBytes[len(instanceBytes)-1-j]
+		}
+		for k := 0; k < 32; k++ {
+			calldata = append(calldata, uint256Bytes[k])
+		}
+	}
+
+	evenHexLen := len(data.Proof) - 2 + (len(data.Proof) % 2)
+	proofBytesHex := data.Proof[2:]
+	if len(proofBytesHex) < evenHexLen {
+		proofBytesHex = strings.Repeat("0", evenHexLen-len(proofBytesHex)) + proofBytesHex
+	}
+	proofBytes := common.Hex2Bytes(proofBytesHex)
+	for i := 0; i < len(proofBytes); i++ {
+		calldata = append(calldata, proofBytes...)
+	}
+
+	return calldata[:bufLen]
 }
