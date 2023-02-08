@@ -141,11 +141,11 @@ func (s *State) init(ctx context.Context) error {
 	}
 
 	s.setLatestVerifiedBlockHash(
-		new(big.Int).SetUint64(stateVars.LatestVerifiedID),
+		new(big.Int).SetUint64(stateVars.LatestVerifiedId),
 		new(big.Int).SetUint64(stateVars.LatestVerifiedHeight),
 		latestVerifiedBlockHash,
 	)
-	s.setHeadBlockID(new(big.Int).SetUint64(stateVars.NextBlockID - 1))
+	s.setHeadBlockID(new(big.Int).SetUint64(stateVars.NextBlockId - 1))
 
 	return nil
 }

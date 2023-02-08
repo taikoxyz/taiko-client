@@ -4,6 +4,7 @@
 package bindings
 
 import (
+	"errors"
 	"math/big"
 	"strings"
 
@@ -14,6 +15,51 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
 )
+
+// Reference imports to suppress errors if they are not otherwise used.
+var (
+	_ = errors.New
+	_ = big.NewInt
+	_ = strings.NewReader
+	_ = ethereum.NotFound
+	_ = bind.Bind
+	_ = common.Big1
+	_ = types.BloomLookup
+	_ = event.NewSubscription
+)
+
+// TaikoDataConfig is an auto generated low-level Go binding around an user-defined struct.
+type TaikoDataConfig struct {
+	ChainId                        *big.Int
+	MaxNumBlocks                   *big.Int
+	BlockHashHistory               *big.Int
+	ZkProofsPerBlock               *big.Int
+	MaxVerificationsPerTx          *big.Int
+	CommitConfirmations            *big.Int
+	MaxProofsPerForkChoice         *big.Int
+	BlockMaxGasLimit               *big.Int
+	MaxTransactionsPerBlock        *big.Int
+	MaxBytesPerTxList              *big.Int
+	MinTxGasLimit                  *big.Int
+	AnchorTxGasLimit               *big.Int
+	FeePremiumLamda                *big.Int
+	RewardBurnBips                 *big.Int
+	ProposerDepositPctg            *big.Int
+	FeeBaseMAF                     *big.Int
+	BlockTimeMAF                   *big.Int
+	ProofTimeMAF                   *big.Int
+	RewardMultiplierPctg           uint64
+	FeeGracePeriodPctg             uint64
+	FeeMaxPeriodPctg               uint64
+	BlockTimeCap                   uint64
+	ProofTimeCap                   uint64
+	BootstrapDiscountHalvingPeriod uint64
+	InitialUncleDelay              uint64
+	EnableTokenomics               bool
+	EnablePublicInputsCheck        bool
+	EnableProofValidation          bool
+	EnableOracleProver             bool
+}
 
 // TaikoL2ClientMetaData contains all meta data concerning the TaikoL2Client contract.
 var TaikoL2ClientMetaData = &bind.MetaData{
