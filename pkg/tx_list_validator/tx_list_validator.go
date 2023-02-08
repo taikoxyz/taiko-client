@@ -10,15 +10,11 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
-// InvalidTxListReason represents a reason why a transactions list is invalid,
-// must match the definitions in LibInvalidTxList.sol:
+// InvalidTxListReason represents a reason why a transactions list is invalid, reasons defined in
+// protocol:
 //
 //	enum Reason {
-//		OK,
-//		BINARY_TOO_LARGE,
-//		BINARY_NOT_DECODABLE,
-//		BLOCK_TOO_MANY_TXS,
-//		BLOCK_GAS_LIMIT_TOO_LARGE,
+//		NONE,
 //		TX_INVALID_SIG,
 //		TX_GAS_LIMIT_TOO_SMALL
 //	}
@@ -26,11 +22,8 @@ type InvalidTxListReason uint8
 
 // All invalid transactions list reasons.
 const (
-	HintOK InvalidTxListReason = iota
-	HintBinaryTooLarge
-	HintBinaryNotDecodable
-	HintBlockTooManyTxs
-	HintBlockGasLimitTooLarge
+	HintOK InvalidTxListReason = iota // This reason dose not exist in protocol, only used in client.
+	HintNone
 	HintTxInvalidSig
 	HintTxGasLimitTooSmall
 )
@@ -67,7 +60,7 @@ func (v *TxListValidator) ValidateTxList(
 	proposeBlockTxInput []byte,
 ) (txListBytes []byte, hint InvalidTxListReason, txIdx int, err error) {
 	if txListBytes, err = encoding.UnpackTxListBytes(proposeBlockTxInput); err != nil {
-		return nil, HintBinaryNotDecodable, 0, err
+		return nil, HintNone, 0, err
 	}
 
 	if len(txListBytes) == 0 {
@@ -85,20 +78,20 @@ func (v *TxListValidator) ValidateTxList(
 func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
 	if len(txListBytes) > int(v.maxBytesPerTxList) {
 		log.Info("Transactions list binary too large", "length", len(txListBytes), "blockID", blockID)
-		return HintBinaryTooLarge, 0
+		return HintNone, 0
 	}
 
 	var txs types.Transactions
 	if err := rlp.DecodeBytes(txListBytes, &txs); err != nil {
 		log.Info("Failed to decode transactions list bytes", "blockID", blockID, "error", err)
-		return HintBinaryNotDecodable, 0
+		return HintNone, 0
 	}
 
 	log.Debug("Transactions list decoded", "blockID", blockID, "length", len(txs))
 
 	if txs.Len() > int(v.maxTransactionsPerBlock) {
 		log.Info("Too many transactions", "blockID", blockID, "count", txs.Len())
-		return HintBlockTooManyTxs, 0
+		return HintNone, 0
 	}
 
 	sumGasLimit := uint64(0)
@@ -108,7 +101,7 @@ func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (h
 
 	if sumGasLimit > v.blockMaxGasLimit {
 		log.Info("Accumulate gas limit too large", "blockID", blockID, "sumGasLimit", sumGasLimit)
-		return HintBlockGasLimitTooLarge, 0
+		return HintNone, 0
 	}
 
 	signer := types.LatestSignerForChainID(v.chainID)
