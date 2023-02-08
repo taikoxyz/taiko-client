@@ -415,6 +415,16 @@ func (p *Prover) NeedNewProof(id *big.Int) (bool, error) {
 		parentHash = parentL1Origin.L2BlockHash
 	}
 
+	isVerifiable, err := p.rpc.TaikoL1.IsBlockVerifiable(nil, id, parentHash)
+	if err != nil {
+		return false, err
+	}
+
+	if isVerifiable {
+		log.Info("⏰ Too late to submit a new proof", "blockID", id)
+		return false, nil
+	}
+
 	fc, err := p.rpc.TaikoL1.GetForkChoice(nil, id, parentHash)
 	if err != nil {
 		return false, err
