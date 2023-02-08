@@ -370,12 +370,12 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 			return err
 		}
 
-		if stateVars.LatestVerifiedID == 0 {
+		if stateVars.LatestVerifiedId == 0 {
 			p.l1Current = 0
 			return nil
 		}
 
-		startingBlockID = new(big.Int).SetUint64(stateVars.LatestVerifiedID)
+		startingBlockID = new(big.Int).SetUint64(stateVars.LatestVerifiedId)
 	}
 
 	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
@@ -394,7 +394,7 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 		return false, err
 	}
 
-	return id.Uint64() <= stateVars.LatestVerifiedID, nil
+	return id.Uint64() <= stateVars.LatestVerifiedId, nil
 }
 
 // isProvenByCurrentProver checks whether the L2 block has been already proven by current prover.
