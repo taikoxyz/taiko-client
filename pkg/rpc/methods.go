@@ -252,7 +252,7 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 		if err != nil {
 			return err
 		}
-		progress.HighestBlockID = new(big.Int).SetUint64(stateVars.NextBlockID - 1)
+		progress.HighestBlockID = new(big.Int).SetUint64(stateVars.NextBlockId - 1)
 		return nil
 	})
 
@@ -281,6 +281,6 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 }
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
-func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*bindings.ProtocolStateVariables, error) {
+func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*bindings.LibUtilsStateVariables, error) {
 	return GetProtocolStateVariables(c.TaikoL1, opts)
 }

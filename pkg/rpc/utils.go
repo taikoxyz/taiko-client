@@ -19,25 +19,12 @@ import (
 func GetProtocolStateVariables(
 	taikoL1Client *bindings.TaikoL1Client,
 	opts *bind.CallOpts,
-) (*bindings.ProtocolStateVariables, error) {
-	var (
-		stateVars = new(bindings.ProtocolStateVariables)
-		err       error
-	)
-
-	stateVars.GenesisHeight,
-		stateVars.GenesisTimestamp,
-		stateVars.StatusBits,
-		stateVars.FeeBase,
-		stateVars.NextBlockID,
-		stateVars.LastProposedAt,
-		stateVars.AvgBlockTime,
-		stateVars.LatestVerifiedHeight,
-		stateVars.LatestVerifiedID,
-		stateVars.AvgProofTime,
-		err = taikoL1Client.GetStateVariables(opts)
-
-	return stateVars, err
+) (*bindings.LibUtilsStateVariables, error) {
+	stateVars, err := taikoL1Client.GetStateVariables(opts)
+	if err != nil {
+		return nil, err
+	}
+	return &stateVars, nil
 }
 
 // WaitConfirmations won't return before N blocks confirmations have been seen
