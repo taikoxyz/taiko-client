@@ -46,7 +46,7 @@ L2_GENESIS_HASH=$(
 )
 
 docker cp \
-    $(docker-compose -f $TESTNET_CONFIG ps -q l2_execution_engine):/deployments/mainnet.json \
+    $(docker compose -f $TESTNET_CONFIG ps -q l2_execution_engine):/deployments/mainnet.json \
     $DIR/deployments/mainnet.json
 
 L2_GENESIS_ALLOC=$(cat $DIR/deployments/mainnet.json)

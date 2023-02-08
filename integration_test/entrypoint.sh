@@ -50,5 +50,5 @@ if [ "$RUN_TESTS" == "true" ]; then
         go test -v -p=1 ./... -coverprofile=coverage.out -covermode=atomic -timeout=300s
 else
     echo "💻 Local dev net started"
-    docker-compose -f $TESTNET_CONFIG logs -f l2_execution_engine
+    docker compose -f $TESTNET_CONFIG logs -f l2_execution_engine
 fi
