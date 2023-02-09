@@ -71,7 +71,7 @@ func (d *ZkevmRpcdProducer) RequestProof(
 type RpcdOutput struct {
 	Result struct {
 		Circuit struct {
-			Instances []string `json:"instances"`
+			Instances []string `json:"instance"`
 			Proof     string   `json:"proof"`
 		} `json:"circuit"`
 	} `json:"result"`
@@ -105,8 +105,10 @@ func (d *ZkevmRpcdProducer) outputToCalldata(output *RpcdOutput) []byte {
 		proofBytesHex = strings.Repeat("0", evenHexLen-len(proofBytesHex)) + proofBytesHex
 	}
 	proofBytes := common.Hex2Bytes(proofBytesHex)
-	for i := 0; i < len(proofBytes); i++ {
-		calldata = append(calldata, proofBytes...)
+	calldata = append(calldata, proofBytes...)
+
+	for i := len(calldata); i < bufLen; i++ {
+		calldata = append(calldata, byte(0))
 	}
 
 	return calldata[:bufLen]
