@@ -94,22 +94,27 @@ func (d *ZkevmRpcdProducer) RequestProof(
 		"hash", header.Hash(),
 	)
 
+	proof, err := d.callProverDeamon(opts)
+	if err != nil {
+		return err
+	}
+
 	resultCh <- &ProofWithHeader{
 		BlockID: blockID,
 		Header:  header,
 		Meta:    meta,
-		ZkProof: d.callProverDeamon(opts),
+		ZkProof: proof,
 	}
 
 	return nil
 }
 
-func (d *ZkevmRpcdProducer) callProverDeamon(opts *ProofRequestOptions) []byte {
+func (d *ZkevmRpcdProducer) callProverDeamon(opts *ProofRequestOptions) ([]byte, error) {
 	var (
 		proof []byte
 		start = time.Now()
 	)
-	backoff.Retry(func() error {
+	if err := backoff.Retry(func() error {
 		output, err := d.requestProof(opts)
 		if err != nil {
 			log.Error("Failed to request proof", "height", opts.Height, "err", err, "endpoint", d.RpcdEndpoint)
@@ -124,8 +129,10 @@ func (d *ZkevmRpcdProducer) callProverDeamon(opts *ProofRequestOptions) []byte {
 		proof = d.outputToCalldata(output)
 		log.Info("Proof generated", "heigth", opts.Height, "time", time.Since(start))
 		return nil
-	}, backoff.NewConstantBackOff(10*time.Second))
-	return proof
+	}, backoff.NewConstantBackOff(10*time.Second)); err != nil {
+		return nil, err
+	}
+	return proof, nil
 }
 
 func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput, error) {
