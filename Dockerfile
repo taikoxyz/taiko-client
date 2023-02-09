@@ -1,22 +1,16 @@
-FROM golang:1.18
+FROM golang:1.18-alpine as builder
 
-RUN apt-get update && apt-get install -y git musl-dev curl build-essential make ca-certificates && \
-  curl https://sh.rustup.rs -sSf | bash -s -- -y
-
-ENV PATH="/root/.cargo/bin:${PATH}"
+RUN apk add --no-cache gcc musl-dev linux-headers git make
 
 WORKDIR /taiko-client
 COPY . .
 RUN make build
 
-RUN git clone --branch feature/root-circuit https://github.com/smtmfft/zkevm-circuits.git /zkevm-circuits
+FROM alpine:latest
 
-WORKDIR /zkevm-circuits
-RUN git reset --hard bd22fc2 && \
-  ./build_pi_integration.sh && \
-  chmod +x ./pi_circuit_integration && \
-  cp /zkevm-circuits/pi_circuit_integration /usr/local/bin/ && \
-  cp /taiko-client/bin/taiko-client /usr/local/bin/
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /taiko-client/bin/taiko-client /usr/local/bin/
 
 EXPOSE 6060
 

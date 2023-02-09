@@ -126,9 +126,11 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			RandomDummyProofDelayUpperBound: p.cfg.RandomDummyProofDelayUpperBound,
 		}
 	} else {
-		if producer, err = proofProducer.NewZkevmCmdProducer(
-			cfg.ZkEvmProverCMDPath,
+		if producer, err = proofProducer.NewZkevmRpcdProducer(
+			cfg.ZKEvmRpcdEndpoint,
+			cfg.ZkEvmRpcdParamsPath,
 			cfg.L2Endpoint,
+			true,
 		); err != nil {
 			return err
 		}

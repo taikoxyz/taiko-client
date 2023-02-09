@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
-	"os"
 	"strings"
 	"time"
 
@@ -21,7 +20,6 @@ type Config struct {
 	TaikoL1Address                  common.Address
 	TaikoL2Address                  common.Address
 	L1ProverPrivKey                 *ecdsa.PrivateKey
-	ZkEvmProverCMDPath              string
 	ZKEvmRpcdEndpoint               string
 	ZkEvmRpcdParamsPath             string
 	StartingBlockID                 *big.Int
@@ -76,21 +74,12 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		startingBlockID = new(big.Int).SetUint64(c.Uint64(flags.StartingBlockID.Name))
 	}
 
-	var zkEvmProverCMDPath string
-	if !c.IsSet(flags.Dummy.Name) {
-		zkEvmProverCMDPath = c.String(flags.ZkEvmProverCMDPath.Name)
-		if _, err := os.Stat(zkEvmProverCMDPath); err != nil {
-			return nil, err
-		}
-	}
-
 	return &Config{
 		L1Endpoint:                      c.String(flags.L1WSEndpoint.Name),
 		L2Endpoint:                      c.String(flags.L2WSEndpoint.Name),
 		TaikoL1Address:                  common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                  common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		L1ProverPrivKey:                 l1ProverPrivKey,
-		ZkEvmProverCMDPath:              zkEvmProverCMDPath,
 		ZKEvmRpcdEndpoint:               c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath:             c.String(flags.ZkEvmRpcdParamsPath.Name),
 		StartingBlockID:                 startingBlockID,
