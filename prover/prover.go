@@ -279,13 +279,12 @@ func (p *Prover) onBlockProposed(
 			return nil
 		}
 
-		isProven, err := p.isProvenByCurrentProver(event.Id)
+		needNewProof, err := p.NeedNewProof(event.Id)
 		if err != nil {
-			return fmt.Errorf("failed to check whether the L2 block has been proven by current prover: %w", err)
+			return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
 		}
 
-		if isProven {
-			log.Info("📬 Block's proof has already been submitted by current prover", "blockID", event.Id)
+		if !needNewProof {
 			return nil
 		}
 
@@ -397,8 +396,8 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 	return id.Uint64() <= stateVars.LatestVerifiedId, nil
 }
 
-// isProvenByCurrentProver checks whether the L2 block has been already proven by current prover.
-func (p *Prover) isProvenByCurrentProver(id *big.Int) (bool, error) {
+// NeedNewProof checks whether the L2 block still needs a new proof.
+func (p *Prover) NeedNewProof(id *big.Int) (bool, error) {
 	var parentHash common.Hash
 	if id.Cmp(common.Big1) == 0 {
 		header, err := p.rpc.L2.HeaderByNumber(p.ctx, common.Big0)
@@ -416,18 +415,38 @@ func (p *Prover) isProvenByCurrentProver(id *big.Int) (bool, error) {
 		parentHash = parentL1Origin.L2BlockHash
 	}
 
+	isVerifiable, err := p.rpc.TaikoL1.IsBlockVerifiable(nil, id, parentHash)
+	if err != nil {
+		return false, err
+	}
+
+	if isVerifiable {
+		log.Info("⏰ Too late to submit a new proof", "blockID", id)
+		return false, nil
+	}
+
 	fc, err := p.rpc.TaikoL1.GetForkChoice(nil, id, parentHash)
 	if err != nil {
 		return false, err
 	}
 
+	if len(fc.Provers) >= int(p.protocolConfigs.MaxProofsPerForkChoice.Uint64()) {
+		log.Info(
+			"📧 The number of proofs submitted has reached the upper limit",
+			"blockID", id,
+			"limit", p.protocolConfigs.MaxProofsPerForkChoice,
+		)
+		return false, nil
+	}
+
 	for _, prover := range fc.Provers {
 		if prover == p.proverAddress {
-			return true, nil
+			log.Info("📬 Block's proof has already been submitted by current prover", "blockID", id)
+			return false, nil
 		}
 	}
 
-	return false, nil
+	return true, nil
 }
 
 // initSubscription initializes all subscriptions in current prover instance.
