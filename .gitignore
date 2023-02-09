@@ -6,7 +6,6 @@
 *.dylib
 bin
 coverage.out
-generated
 
 # Test binary, built with `go test -c`
 *.test
@@ -22,4 +21,3 @@ generated
 
 # Testing
 integration_test/nodes/deployments/mainnet.json
-PlonkEvmVerifier.sol

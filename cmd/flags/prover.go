@@ -6,12 +6,6 @@ import (
 
 // Required flags used by prover.
 var (
-	ZkEvmProverCMDPath = cli.StringFlag{
-		Name:     "zkEvmProverCMDPath",
-		Usage:    "Path of ZKEVM prover cmd file to use",
-		Required: true,
-		Category: proverCategory,
-	}
 	ZkEvmRpcdEndpoint = cli.StringFlag{
 		Name:     "zkevmRpcdEndpoint",
 		Usage:    "RPC endpoint of a ZKEVM RPCD service",
