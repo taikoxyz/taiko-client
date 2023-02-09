@@ -94,14 +94,13 @@ func (d *ZkevmRpcdProducer) RequestProof(
 		"hash", header.Hash(),
 	)
 
-	go func() {
-		resultCh <- &ProofWithHeader{
-			BlockID: blockID,
-			Header:  header,
-			Meta:    meta,
-			ZkProof: d.callProverDeamon(opts),
-		}
-	}()
+	resultCh <- &ProofWithHeader{
+		BlockID: blockID,
+		Header:  header,
+		Meta:    meta,
+		ZkProof: d.callProverDeamon(opts),
+	}
+
 	return nil
 }
 
