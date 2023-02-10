@@ -95,7 +95,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 	p.protocolConfigs = &protocolConfigs
 
-	log.Info("Protocol configs", "configs", p.protocolConfigs)
+	log.Info("Protocol configs", "configs", p.protocolConfigs, "totalProver", p.cfg.Total, "proverIdx", p.cfg.Idx)
 
 	p.submitProofTxMutex = &sync.Mutex{}
 	p.txListValidator = txListValidator.NewTxListValidator(
@@ -267,6 +267,13 @@ func (p *Prover) onBlockProposed(
 
 	handleBlockProposedEvent := func() error {
 		defer func() { <-p.proposeConcurrencyGuard }()
+
+		log.Info(
+			"Check proposed block",
+			"totalProver", p.cfg.Total,
+			"proverIdx", p.cfg.Idx,
+			"needToProve", event.Id.Uint64()%uint64(p.cfg.Total),
+		)
 
 		if p.cfg.Total > 0 {
 			if event.Id.Uint64()%uint64(p.cfg.Total) != uint64(p.cfg.Idx) {
