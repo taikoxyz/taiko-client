@@ -23,14 +23,16 @@ var (
 	errProofGenerating = errors.New("proof is generating")
 )
 
+// ZkevmRpcdProducer is responsible for requesting zk proofs from the given proverd endpoint.
 type ZkevmRpcdProducer struct {
-	RpcdEndpoint    string
+	RpcdEndpoint    string                 // a proverd RPC endpoint
 	Param           string                 // parameter file to use
 	L2Endpoint      string                 // a L2 execution engine's RPC endpoint
 	Retry           bool                   // retry proof computation if error
 	CustomProofHook func() ([]byte, error) // only for testing purposes
 }
 
+// RequestProofBody represents the JSON body for requesting the proof.
 type RequestProofBody struct {
 	JsonRPC string                   `json:"jsonrpc"`
 	ID      *big.Int                 `json:"id"`
@@ -38,6 +40,7 @@ type RequestProofBody struct {
 	Params  []*RequestProofBodyParam `json:"params"`
 }
 
+// RequestProofBody represents the JSON body of RequestProofBody's `param` field.
 type RequestProofBodyParam struct {
 	Circuit     string   `json:"circuit"`
 	Block       *big.Int `json:"block"`
@@ -49,12 +52,14 @@ type RequestProofBodyParam struct {
 	Aggregate   bool     `json:"aggregate"`
 }
 
+// RequestProofBodyResponse represents the JSON body of the response of the proof requests.
 type RequestProofBodyResponse struct {
 	JsonRPC string      `json:"jsonrpc"`
 	ID      *big.Int    `json:"id"`
 	Result  *RpcdOutput `json:"result"`
 }
 
+// RpcdOutput represents the JSON body of RequestProofBodyResponse's `result` field.
 type RpcdOutput struct {
 	Circuit struct {
 		Instances []string `json:"instance"`
@@ -62,6 +67,7 @@ type RpcdOutput struct {
 	} `json:"circuit"`
 }
 
+// NewZkevmRpcdProducer creates a new `ZkevmRpcdProducer` instance.
 func NewZkevmRpcdProducer(
 	rpcdEndpoint string,
 	param string,
@@ -118,6 +124,7 @@ func (d *ZkevmRpcdProducer) RequestProof(
 	return nil
 }
 
+// callProverDeamon keeps polling the proverd service to get the requested proof.
 func (d *ZkevmRpcdProducer) callProverDeamon(opts *ProofRequestOptions) ([]byte, error) {
 	var (
 		proof []byte
@@ -144,6 +151,7 @@ func (d *ZkevmRpcdProducer) callProverDeamon(opts *ProofRequestOptions) ([]byte,
 	return proof, nil
 }
 
+// requestProof sends a RPC request to proverd to try to get the requested proof.
 func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput, error) {
 	reqBody := RequestProofBody{
 		JsonRPC: "2.0",
@@ -189,6 +197,8 @@ func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 	return output.Result, nil
 }
 
+// outputToCalldata converts the response data to the proof bytes which will be
+// needed for verification contract.
 func (d *ZkevmRpcdProducer) outputToCalldata(output *RpcdOutput) []byte {
 	calldata := []byte{}
 	data := output.Circuit
