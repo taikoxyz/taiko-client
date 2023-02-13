@@ -24,10 +24,11 @@ var (
 )
 
 type ZkevmRpcdProducer struct {
-	RpcdEndpoint string
-	Param        string // parameter file to use
-	L2Endpoint   string // a L2 execution engine's RPC endpoint
-	Retry        bool   // retry proof computation if error
+	RpcdEndpoint    string
+	Param           string                 // parameter file to use
+	L2Endpoint      string                 // a L2 execution engine's RPC endpoint
+	Retry           bool                   // retry proof computation if error
+	CustomProofHook func() ([]byte, error) // only for testing purposes
 }
 
 type RequestProofBody struct {
@@ -94,7 +95,15 @@ func (d *ZkevmRpcdProducer) RequestProof(
 		"hash", header.Hash(),
 	)
 
-	proof, err := d.callProverDeamon(opts)
+	var (
+		proof []byte
+		err   error
+	)
+	if d.CustomProofHook != nil {
+		proof, err = d.CustomProofHook()
+	} else {
+		proof, err = d.callProverDeamon(opts)
+	}
 	if err != nil {
 		return err
 	}

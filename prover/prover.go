@@ -272,7 +272,6 @@ func (p *Prover) onBlockProposed(
 			"Check proposed block",
 			"totalProver", p.cfg.Total,
 			"proverIdx", p.cfg.Idx,
-			"needToProve", event.Id.Uint64()%uint64(p.cfg.Total),
 		)
 
 		if p.cfg.Total > 0 {

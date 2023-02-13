@@ -17,8 +17,12 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 	_, err := NewZkevmRpcdProducer("http://localhost:28551", "", "", false)
 	require.EqualError(t, err, errRpcdUnhealthy.Error())
 
-	dummyZKEvmProducer, err := NewZkevmRpcdProducer("http://localhost:18545", "", "", false)
+	dummpyZkevmRpcdProducer, err := NewZkevmRpcdProducer("http://localhost:18545", "", "", false)
 	require.Nil(t, err)
+
+	dummpyZkevmRpcdProducer.CustomProofHook = func() ([]byte, error) {
+		return []byte{0}, nil
+	}
 
 	resCh := make(chan *ProofWithHeader, 1)
 
@@ -39,7 +43,7 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, dummyZKEvmProducer.RequestProof(
+	require.Nil(t, dummpyZkevmRpcdProducer.RequestProof(
 		&ProofRequestOptions{},
 		blockID,
 		&bindings.TaikoDataBlockMetadata{},
