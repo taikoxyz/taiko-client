@@ -63,10 +63,10 @@ func TestZkevmRpcdProducerOutputToCalldata(t *testing.T) {
 	output, err := os.ReadFile("../../testutils/testdata/zkchain_proof.json")
 	require.Nil(t, err)
 
-	var zkevmRpcdOutput RpcdOutput
+	var zkevmRpcdOutput RequestProofBodyResponse
 	require.Nil(t, json.Unmarshal(output, &zkevmRpcdOutput))
 
-	calldata := new(ZkevmRpcdProducer).outputToCalldata(&zkevmRpcdOutput)
+	calldata := new(ZkevmRpcdProducer).outputToCalldata(zkevmRpcdOutput.Result)
 
 	require.Equal(t, common.HexToHash(testCalldataHexHash), crypto.Keccak256Hash(calldata))
 }
