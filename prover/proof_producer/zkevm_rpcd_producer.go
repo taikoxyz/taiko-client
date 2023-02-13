@@ -108,7 +108,7 @@ func (d *ZkevmRpcdProducer) RequestProof(
 	if d.CustomProofHook != nil {
 		proof, err = d.CustomProofHook()
 	} else {
-		proof, err = d.callProverDeamon(opts)
+		proof, err = d.callProverDaemon(opts)
 	}
 	if err != nil {
 		return err
@@ -124,8 +124,8 @@ func (d *ZkevmRpcdProducer) RequestProof(
 	return nil
 }
 
-// callProverDeamon keeps polling the proverd service to get the requested proof.
-func (d *ZkevmRpcdProducer) callProverDeamon(opts *ProofRequestOptions) ([]byte, error) {
+// callProverDaemon keeps polling the proverd service to get the requested proof.
+func (d *ZkevmRpcdProducer) callProverDaemon(opts *ProofRequestOptions) ([]byte, error) {
 	var (
 		proof []byte
 		start = time.Now()
@@ -143,7 +143,7 @@ func (d *ZkevmRpcdProducer) callProverDeamon(opts *ProofRequestOptions) ([]byte,
 			return errProofGenerating
 		}
 		proof = d.outputToCalldata(output)
-		log.Info("Proof generated", "heigth", opts.Height, "time", time.Since(start))
+		log.Info("Proof generated", "height", opts.Height, "time", time.Since(start))
 		return nil
 	}, backoff.NewConstantBackOff(10*time.Second)); err != nil {
 		return nil, err
