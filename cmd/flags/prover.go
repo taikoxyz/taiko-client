@@ -53,6 +53,16 @@ var (
 			"`lowerBound-upperBound` (e.g. `30m-1h`), testing purposes only",
 		Category: proverCategory,
 	}
+	ProverIdx = cli.UintFlag{
+		Name:     "proverIdx",
+		Value:    0,
+		Category: proverCategory,
+	}
+	TotalProvers = cli.UintFlag{
+		Name:     "totalProvers",
+		Value:    0,
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -64,4 +74,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&MaxConcurrentProvingJobs,
 	&Dummy,
 	&RandomDummyProofDelay,
+	&ProverIdx,
+	&TotalProvers,
 })
