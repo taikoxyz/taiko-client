@@ -324,8 +324,6 @@ func (p *Proposer) waitTillSynced() error {
 			}
 
 			if progress.SyncProgress != nil ||
-				progress.CurrentBlockID == nil ||
-				progress.HighestBlockID == nil ||
 				progress.CurrentBlockID.Cmp(progress.HighestBlockID) < 0 {
 				log.Info("L2 execution engine is syncing", "progress", progress)
 				return errSyncing
@@ -348,7 +346,7 @@ func (p *Proposer) updateProposingTicker() {
 		duration = *p.proposingInterval
 	} else {
 		// Random number between 12 - 60
-		randomSeconds := rand.Intn((60 - 11)) + 12
+		randomSeconds := rand.Intn(60-11) + 12
 		duration = time.Duration(randomSeconds) * time.Second
 	}
 

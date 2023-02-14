@@ -35,7 +35,7 @@ func (p *poolContentSplitter) Split(poolContent rpc.PoolContent) []types.Transac
 		splittedRemoteTxLists = p.splitTxs(remoteTxs)
 	)
 
-	// If the pool content is shuffled, we will only propose the first transactions list.
+	// If the pool content is shuffled, we will only propose the first remote transactions list.
 	if p.shufflePoolContent && len(splittedRemoteTxLists) > 0 {
 		splittedRemoteTxLists = []types.Transactions{p.weightedShuffle(splittedRemoteTxLists)[0]}
 	}

@@ -67,21 +67,12 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		return err
 	}
 
-	peers, err := d.rpc.L2.PeerCount(d.ctx)
-	if err != nil {
-		return err
-	}
-
-	if cfg.P2PSyncVerifiedBlocks && peers == 0 {
-		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
-	}
-
 	if d.l2ChainSyncer, err = chainSyncer.New(
 		d.ctx,
 		d.rpc,
 		d.state,
 		cfg.ThrowawayBlocksBuilderPrivKey,
-		cfg.P2PSyncVerifiedBlocks,
+		cfg.EnableP2PSync,
 		cfg.P2PSyncTimeout,
 	); err != nil {
 		return err
@@ -112,18 +103,9 @@ func (d *Driver) eventLoop() {
 	defer d.wg.Done()
 	exponentialBackoff := backoff.NewExponentialBackOff()
 
-	// reqSync requests performing a synchronising operation, won't block
-	// if we are already synchronising.
-	reqSync := func() {
-		select {
-		case d.syncNotify <- struct{}{}:
-		default:
-		}
-	}
-
 	// doSyncWithBackoff performs a synchronising operation with a backoff strategy.
 	doSyncWithBackoff := func() {
-		if err := backoff.Retry(d.doSync, exponentialBackoff); err != nil {
+		if err := backoff.Retry(d.sync, exponentialBackoff); err != nil {
 			log.Error("Sync L2 execution engine's block chain error", "error", err)
 		}
 	}
@@ -138,15 +120,15 @@ func (d *Driver) eventLoop() {
 		case <-d.syncNotify:
 			doSyncWithBackoff()
 		case <-d.l1HeadCh:
-			reqSync()
+			d.syncNotify <- struct{}{}
 		}
 	}
 }
 
-// doSync fetches all `BlockProposed` events emitted from local
+// sync fetches all `BlockProposed` events emitted from local
 // L1 sync cursor to the L1 head, and then applies all corresponding
 // L2 blocks into node's local block chain.
-func (d *Driver) doSync() error {
+func (d *Driver) sync() error {
 	// Check whether the application is closing.
 	if d.ctx.Err() != nil {
 		log.Warn("Driver context error", "error", d.ctx.Err())

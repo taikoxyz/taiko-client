@@ -134,7 +134,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 }
 
 func (s *DriverTestSuite) TestDoSyncNoNewL2Blocks() {
-	s.Nil(s.d.doSync())
+	s.Nil(s.d.sync())
 }
 
 func (s *DriverTestSuite) TestStartClose() {

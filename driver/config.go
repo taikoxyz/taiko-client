@@ -21,7 +21,7 @@ type Config struct {
 	TaikoL2Address                common.Address
 	ThrowawayBlocksBuilderPrivKey *ecdsa.PrivateKey
 	JwtSecret                     string
-	P2PSyncVerifiedBlocks         bool
+	EnableP2PSync                 bool
 	P2PSyncTimeout                time.Duration
 }
 
@@ -46,7 +46,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		TaikoL2Address:                common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		ThrowawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
 		JwtSecret:                     string(jwtSecret),
-		P2PSyncVerifiedBlocks:         c.Bool(flags.P2PSyncVerifiedBlocks.Name),
+		EnableP2PSync:                 c.Bool(flags.EnableP2PSync.Name),
 		P2PSyncTimeout:                time.Duration(int64(time.Second) * int64(c.Uint(flags.P2PSyncTimeout.Name))),
 	}, nil
 }

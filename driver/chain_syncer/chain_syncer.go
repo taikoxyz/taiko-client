@@ -9,9 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
-	beacon "github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
-	progressTracker "github.com/taikoxyz/taiko-client/driver/chain_syncer/progress_tracker"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -24,15 +23,15 @@ type L2ChainSyncer struct {
 	rpc   *rpc.Client  // L1/L2 RPC clients
 
 	// Syncers
-	beaconSyncer   *beacon.Syncer
+	beaconSyncer   *beaconsync.Syncer
 	calldataSyncer *calldata.Syncer
 
 	// Monitors
-	progressTracker *progressTracker.BeaconSyncProgressTracker
+	progressTracker *beaconsync.ProgressTracker
 
 	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
 	// latest verified block head
-	p2pSyncVerifiedBlocks bool
+	enableP2PSync bool
 }
 
 // New creates a new chain syncer instance.
@@ -41,26 +40,26 @@ func New(
 	rpc *rpc.Client,
 	state *state.State,
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
-	p2pSyncVerifiedBlocks bool,
+	enableP2PSync bool,
 	p2pSyncTimeout time.Duration,
 ) (*L2ChainSyncer, error) {
-	tracker := progressTracker.New(rpc.L2, p2pSyncTimeout)
+	tracker := beaconsync.NewProgressTracker(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
-	beaconSyncer := beacon.NewSyncer(ctx, rpc, state, tracker)
+	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, tracker)
 	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, throwawayBlocksBuilderPrivKey)
 	if err != nil {
 		return nil, err
 	}
 
 	return &L2ChainSyncer{
-		ctx:                   ctx,
-		rpc:                   rpc,
-		state:                 state,
-		beaconSyncer:          beaconSyncer,
-		calldataSyncer:        calldataSyncer,
-		progressTracker:       tracker,
-		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
+		ctx:             ctx,
+		rpc:             rpc,
+		state:           state,
+		beaconSyncer:    beaconSyncer,
+		calldataSyncer:  calldataSyncer,
+		progressTracker: tracker,
+		enableP2PSync:   enableP2PSync,
 	}, nil
 }
 
@@ -69,11 +68,8 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	// If current L2 execution engine's chain is behind of the protocol's latest verified block head, and the
 	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
 	// latest verified block head.
-	if s.p2pSyncVerifiedBlocks &&
-		s.state.GetLatestVerifiedBlock().Height.Uint64() > 0 &&
-		!s.AheadOfProtocolVerifiedHead() &&
-		!s.progressTracker.OutOfSync() {
-		if err := s.beaconSyncer.TriggerBeaconSync(); err != nil {
+	if s.needBeaconSync() {
+		if err := s.beaconSyncer.TriggerSync(); err != nil {
 			return fmt.Errorf("trigger beacon sync error: %w", err)
 		}
 
@@ -85,7 +81,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	if s.progressTracker.Triggered() {
 		log.Info(
 			"Switch to insert pending blocks one by one",
-			"p2pEnabled", s.p2pSyncVerifiedBlocks,
+			"p2pEnabled", s.enableP2PSync,
 			"p2pOutOfSync", s.progressTracker.OutOfSync(),
 		)
 
@@ -137,6 +133,16 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	return s.calldataSyncer.ProcessL1Blocks(s.ctx, l1End)
 }
 
+func (s *L2ChainSyncer) needBeaconSync() bool {
+	if s.enableP2PSync &&
+		s.state.GetLatestVerifiedBlock().Height.Uint64() > 0 &&
+		!s.AheadOfProtocolVerifiedHead() &&
+		!s.progressTracker.OutOfSync() {
+		return true
+	}
+	return false
+}
+
 // AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
 func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 	verifiedHeightToCompare := s.state.GetLatestVerifiedBlock().Height.Uint64()
@@ -165,7 +171,7 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 }
 
 // BeaconSyncer returns the inner beacon syncer.
-func (s *L2ChainSyncer) BeaconSyncer() *beacon.Syncer {
+func (s *L2ChainSyncer) BeaconSyncer() *beaconsync.Syncer {
 	return s.beaconSyncer
 }
 

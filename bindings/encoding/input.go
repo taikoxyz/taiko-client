@@ -155,8 +155,8 @@ var (
 
 var (
 	// BlockMetadata
-	blockMeatadataType, _ = abi.NewType("tuple", "LibData.BlockMetadata", blockMetadataComponents)
-	blockMetadataArgs     = abi.Arguments{{Name: "BlockMetadata", Type: blockMeatadataType}}
+	blockMetadataType, _ = abi.NewType("tuple", "LibData.BlockMetadata", blockMetadataComponents)
+	blockMetadataArgs    = abi.Arguments{{Name: "BlockMetadata", Type: blockMetadataType}}
 	// Evidence
 	EvidenceType, _ = abi.NewType("tuple", "V1Proving.Evidence", evidenceComponents)
 	EvidenceArgs    = abi.Arguments{{Name: "Evidence", Type: EvidenceType}}
@@ -201,7 +201,6 @@ func EncodeEvidence(e *TaikoL1Evidence) ([]byte, error) {
 // EncodeCommitHash performs the solidity `abi.encodePacked` for the given
 // commitHash components.
 func EncodeCommitHash(beneficiary common.Address, txListHash [32]byte) []byte {
-	// keccak256(abi.encodePacked(beneficiary, txListHash));
 	return crypto.Keccak256(
 		bytes.Join([][]byte{beneficiary.Bytes(), txListHash[:]}, nil),
 	)
