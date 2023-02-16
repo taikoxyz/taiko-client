@@ -24,7 +24,7 @@ var (
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
 	// Not an error returned by eth_estimateGas.
-	if !strings.Contains(err.Error(), "L1:") {
+	if !strings.Contains(err.Error(), "L1:") && !strings.Contains(err.Error(), "unrecognized custom error") {
 		return true
 	}
 
