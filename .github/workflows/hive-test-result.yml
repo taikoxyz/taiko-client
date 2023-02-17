@@ -17,3 +17,4 @@ jobs:
           message: |
             Hive test result:
             ${{ github.event.client_payload.results }}
+          comment_tag: hive
