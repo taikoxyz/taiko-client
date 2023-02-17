@@ -29,8 +29,8 @@ var (
 
 // Optional flags used by driver.
 var (
-	P2PSyncVerifiedBlocks = cli.BoolFlag{
-		Name: "p2p.syncVerifiedBlocks",
+	EnableP2PSync = cli.BoolFlag{
+		Name: "p2p.enableP2PSync",
 		Usage: "Try P2P syncing verified blocks between L2 execution engines, " +
 			"will be helpful to bring a new node online quickly",
 		Value:    false,
@@ -50,6 +50,6 @@ var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&L2AuthEndpoint,
 	&ThrowawayBlocksBuilderPrivKey,
 	&JWTSecret,
-	&P2PSyncVerifiedBlocks,
+	&EnableP2PSync,
 	&P2PSyncTimeout,
 })

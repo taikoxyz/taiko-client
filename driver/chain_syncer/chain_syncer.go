@@ -31,7 +31,7 @@ type L2ChainSyncer struct {
 
 	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
 	// latest verified block head
-	p2pSyncVerifiedBlocks bool
+	enableP2PSync bool
 }
 
 // New creates a new chain syncer instance.
@@ -40,7 +40,7 @@ func New(
 	rpc *rpc.Client,
 	state *state.State,
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
-	p2pSyncVerifiedBlocks bool,
+	enableP2PSync bool,
 	p2pSyncTimeout time.Duration,
 ) (*L2ChainSyncer, error) {
 	tracker := beaconsync.NewSyncProgressTracker(rpc.L2, p2pSyncTimeout)
@@ -53,13 +53,13 @@ func New(
 	}
 
 	return &L2ChainSyncer{
-		ctx:                   ctx,
-		rpc:                   rpc,
-		state:                 state,
-		beaconSyncer:          beaconSyncer,
-		calldataSyncer:        calldataSyncer,
-		progressTracker:       tracker,
-		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
+		ctx:             ctx,
+		rpc:             rpc,
+		state:           state,
+		beaconSyncer:    beaconSyncer,
+		calldataSyncer:  calldataSyncer,
+		progressTracker: tracker,
+		enableP2PSync:   enableP2PSync,
 	}, nil
 }
 
@@ -81,7 +81,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	if s.progressTracker.Triggered() {
 		log.Info(
 			"Switch to insert pending blocks one by one",
-			"p2pEnabled", s.p2pSyncVerifiedBlocks,
+			"p2pEnabled", s.enableP2PSync,
 			"p2pOutOfSync", s.progressTracker.OutOfSync(),
 		)
 
@@ -163,10 +163,19 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 // needNewBeaconSyncTriggered checks whether the current L2 execution engine needs to trigger
 // another new beacon sync.
 func (s *L2ChainSyncer) needNewBeaconSyncTriggered() bool {
-	return s.p2pSyncVerifiedBlocks &&
-		s.state.GetLatestVerifiedBlock().Height.Uint64() > 0 &&
-		!s.AheadOfProtocolVerifiedHead() &&
-		!s.progressTracker.OutOfSync()
+	if !s.enableP2PSync {
+		return false
+	}
+	if s.progressTracker.OutOfSync() {
+		return false
+	}
+	if s.state.GetLatestVerifiedBlock().Height.Uint64() == 0 {
+		return false
+	}
+	if s.AheadOfProtocolVerifiedHead() {
+		return false
+	}
+	return true
 }
 
 // BeaconSyncer returns the inner beacon syncer.
