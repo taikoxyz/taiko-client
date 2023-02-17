@@ -18,3 +18,4 @@ jobs:
             Hive test result:
             ${{ github.event.client_payload.results }}
           comment_tag: hive
+          mode: recreate
