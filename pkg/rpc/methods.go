@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sort"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
@@ -183,13 +184,26 @@ func (pc PoolContent) ToTxsByPriceAndNonce(
 	remotes *types.TransactionsByPriceAndNonce,
 ) {
 	var (
+		allTxs    = map[common.Address]types.Transactions{}
 		localTxs  = map[common.Address]types.Transactions{}
 		remoteTxs = map[common.Address]types.Transactions{}
 	)
 
 	for address, txsWithNonce := range pc {
-	out:
+		idx := 0
 		for _, tx := range txsWithNonce {
+			allTxs[address] = append(allTxs[address], tx)
+			idx += 1
+
+			if idx == len(txsWithNonce) {
+				sort.Sort(types.TxByNonce(allTxs[address]))
+			}
+		}
+	}
+
+	for address, txs := range allTxs {
+	out:
+		for _, tx := range txs {
 			for _, localAddress := range localAddresses {
 				if address == localAddress {
 					localTxs[address] = append(localTxs[address], tx)
