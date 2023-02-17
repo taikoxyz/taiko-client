@@ -160,7 +160,7 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 	return true
 }
 
-// needNewBeaconSyncTriggered checks wthether the current L2 execution engine needs to trigger
+// needNewBeaconSyncTriggered checks whether the current L2 execution engine needs to trigger
 // another new beacon sync.
 func (s *L2ChainSyncer) needNewBeaconSyncTriggered() bool {
 	return s.p2pSyncVerifiedBlocks &&
