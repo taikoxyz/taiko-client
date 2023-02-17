@@ -18,7 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
-	progressTracker "github.com/taikoxyz/taiko-client/driver/chain_syncer/progress_tracker"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
@@ -32,10 +32,10 @@ type Syncer struct {
 	ctx                           context.Context
 	rpc                           *rpc.Client
 	state                         *state.State
-	progressTracker               *progressTracker.BeaconSyncProgressTracker // Sync progress tracker
-	anchorConstructor             *anchorTxConstructor.AnchorTxConstructor   // TaikoL2.anchor transactions constructor
-	txListValidator               *txListValidator.TxListValidator           // Transactions list validator
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                          // Private key of L2 throwaway blocks builder
+	progressTracker               *beaconsync.SyncProgressTracker          // Sync progress tracker
+	anchorConstructor             *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
+	txListValidator               *txListValidator.TxListValidator         // Transactions list validator
+	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                        // Private key of L2 throwaway blocks builder
 	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
 }
@@ -45,7 +45,7 @@ func NewSyncer(
 	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
-	progressTracker *progressTracker.BeaconSyncProgressTracker,
+	progressTracker *beaconsync.SyncProgressTracker,
 	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey, // Private key of L2 throwaway blocks builder
 ) (*Syncer, error) {
 	configs, err := rpc.TaikoL1.GetConfig(nil)

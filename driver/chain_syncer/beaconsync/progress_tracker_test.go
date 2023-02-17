@@ -1,4 +1,4 @@
-package progressTracker
+package beaconsync
 
 import (
 	"context"
@@ -13,13 +13,13 @@ import (
 
 type BeaconSyncProgressTrackerTestSuite struct {
 	testutils.ClientTestSuite
-	t *BeaconSyncProgressTracker
+	t *SyncProgressTracker
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	s.t = New(s.RpcClient.L2, 30*time.Second)
+	s.t = NewSyncProgressTracker(s.RpcClient.L2, 30*time.Second)
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestSyncProgressed() {
