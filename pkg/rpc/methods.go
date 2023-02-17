@@ -201,8 +201,8 @@ func (pc PoolContent) ToTxsByPriceAndNonce(
 		}
 	}
 
-out:
 	for address, txs := range allTxs {
+	out:
 		for _, tx := range txs {
 			for _, localAddress := range localAddresses {
 				if address == localAddress {
