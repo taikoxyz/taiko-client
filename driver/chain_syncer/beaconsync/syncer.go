@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	progressTracker "github.com/taikoxyz/taiko-client/driver/chain_syncer/progress_tracker"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -23,7 +22,7 @@ type Syncer struct {
 	ctx             context.Context
 	rpc             *rpc.Client
 	state           *state.State
-	progressTracker *progressTracker.BeaconSyncProgressTracker // Sync progress tracker
+	progressTracker *SyncProgressTracker // Sync progress tracker
 }
 
 // NewSyncer creates a new syncer instance.
@@ -31,7 +30,7 @@ func NewSyncer(
 	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
-	progressTracker *progressTracker.BeaconSyncProgressTracker,
+	progressTracker *SyncProgressTracker,
 ) *Syncer {
 	return &Syncer{ctx, rpc, state, progressTracker}
 }

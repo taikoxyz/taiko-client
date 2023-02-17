@@ -9,9 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
-	beacon "github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
-	progressTracker "github.com/taikoxyz/taiko-client/driver/chain_syncer/progress_tracker"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -24,11 +23,11 @@ type L2ChainSyncer struct {
 	rpc   *rpc.Client  // L1/L2 RPC clients
 
 	// Syncers
-	beaconSyncer   *beacon.Syncer
+	beaconSyncer   *beaconsync.Syncer
 	calldataSyncer *calldata.Syncer
 
 	// Monitors
-	progressTracker *progressTracker.BeaconSyncProgressTracker
+	progressTracker *beaconsync.SyncProgressTracker
 
 	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
 	// latest verified block head
@@ -44,10 +43,10 @@ func New(
 	p2pSyncVerifiedBlocks bool,
 	p2pSyncTimeout time.Duration,
 ) (*L2ChainSyncer, error) {
-	tracker := progressTracker.New(rpc.L2, p2pSyncTimeout)
+	tracker := beaconsync.NewSyncProgressTracker(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
-	beaconSyncer := beacon.NewSyncer(ctx, rpc, state, tracker)
+	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, tracker)
 	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, throwawayBlocksBuilderPrivKey)
 	if err != nil {
 		return nil, err
@@ -69,10 +68,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	// If current L2 execution engine's chain is behind of the protocol's latest verified block head, and the
 	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
 	// latest verified block head.
-	if s.p2pSyncVerifiedBlocks &&
-		s.state.GetLatestVerifiedBlock().Height.Uint64() > 0 &&
-		!s.AheadOfProtocolVerifiedHead() &&
-		!s.progressTracker.OutOfSync() {
+	if s.needNewBeaconSyncTriggered() {
 		if err := s.beaconSyncer.TriggerBeaconSync(); err != nil {
 			return fmt.Errorf("trigger beacon sync error: %w", err)
 		}
@@ -164,8 +160,17 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 	return true
 }
 
+// needNewBeaconSyncTriggered checks wthether the current L2 execution engine needs to trigger
+// another new beacon sync.
+func (s *L2ChainSyncer) needNewBeaconSyncTriggered() bool {
+	return s.p2pSyncVerifiedBlocks &&
+		s.state.GetLatestVerifiedBlock().Height.Uint64() > 0 &&
+		!s.AheadOfProtocolVerifiedHead() &&
+		!s.progressTracker.OutOfSync()
+}
+
 // BeaconSyncer returns the inner beacon syncer.
-func (s *L2ChainSyncer) BeaconSyncer() *beacon.Syncer {
+func (s *L2ChainSyncer) BeaconSyncer() *beaconsync.Syncer {
 	return s.beaconSyncer
 }
 

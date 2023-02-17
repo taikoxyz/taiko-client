@@ -12,8 +12,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
-	progressTracker "github.com/taikoxyz/taiko-client/driver/chain_syncer/progress_tracker"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/proposer"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
@@ -63,7 +63,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	testState, err := state.New(context.Background(), s.RpcClient)
 	s.Nil(err)
 
-	tracker := progressTracker.New(s.RpcClient.L2, 30*time.Second)
+	tracker := beaconsync.NewSyncProgressTracker(s.RpcClient.L2, 30*time.Second)
 
 	throwawayBlocksBuilderPrivKey, err := crypto.HexToECDSA(bindings.GoldenTouchPrivKey[2:])
 	s.Nil(err)
