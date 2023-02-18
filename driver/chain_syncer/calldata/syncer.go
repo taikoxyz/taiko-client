@@ -105,6 +105,28 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 	return nil
 }
 
+func (s *Syncer) isInsertedBlock(blockID *big.Int) bool {
+	if blockID.Cmp(common.Big0) == 0 || (s.lastInsertedBlockID != nil && blockID.Cmp(s.lastInsertedBlockID) <= 0) {
+		return true
+	}
+	if s.progressTracker.Triggered() {
+		// Already synced through beacon sync, just skip this event.
+		if blockID.Cmp(s.progressTracker.LastSyncedVerifiedBlockID()) <= 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Syncer) fetchProposeBlockParent(ctx context.Context, blockID *big.Int) (parent *types.Header, err error) {
+	if s.progressTracker.Triggered() {
+		parent, err = s.rpc.L2.HeaderByHash(ctx, s.progressTracker.LastSyncedVerifiedBlockHash())
+	} else {
+		parent, err = s.rpc.L2ParentByBlockId(ctx, blockID)
+	}
+	return parent, err
+}
+
 // OnBlockProposed is a `BlockProposed` event callback which responsible for
 // inserting the proposed block one by one to the L2 execution engine.
 func (s *Syncer) onBlockProposed(
@@ -112,38 +134,21 @@ func (s *Syncer) onBlockProposed(
 	event *bindings.TaikoL1ClientBlockProposed,
 	endIter eventIterator.EndBlockProposedEventIterFunc,
 ) error {
-	// Ignore those already inserted blocks.
-	if event.Id.Cmp(common.Big0) == 0 || (s.lastInsertedBlockID != nil && event.Id.Cmp(s.lastInsertedBlockID) <= 0) {
-		return nil
-	}
-
 	log.Info(
 		"New BlockProposed event",
 		"L1Height", event.Raw.BlockNumber,
 		"L1Hash", event.Raw.BlockHash,
 		"BlockID", event.Id,
 	)
-
-	// Fetch the L2 parent block.
-	var (
-		parent *types.Header
-		err    error
-	)
-	if s.progressTracker.Triggered() {
-		// Already synced through beacon sync, just skip this event.
-		if event.Id.Cmp(s.progressTracker.LastSyncedVerifiedBlockID()) <= 0 {
-			return nil
-		}
-
-		parent, err = s.rpc.L2.HeaderByHash(ctx, s.progressTracker.LastSyncedVerifiedBlockHash())
-	} else {
-		parent, err = s.rpc.L2ParentByBlockId(ctx, event.Id)
+	// Ignore those already inserted blocks.
+	if s.isInsertedBlock(event.Id) {
+		return nil
 	}
 
+	parent, err := s.fetchProposeBlockParent(ctx, event.Id)
 	if err != nil {
 		return fmt.Errorf("failed to fetch L2 parent block: %w", err)
 	}
-
 	log.Debug("Parent block", "height", parent.Number, "hash", parent.Hash())
 
 	tx, err := s.rpc.L1.TransactionInBlock(
