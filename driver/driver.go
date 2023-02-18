@@ -27,8 +27,10 @@ type Driver struct {
 	l2ChainSyncer *chainSyncer.L2ChainSyncer
 	state         *state.State
 
-	l1HeadCh   chan *types.Header
-	l1HeadSub  event.Subscription
+	l1HeadCh chan *types.Header
+	// todo(alex): l1HeadSub is useless.
+	l1HeadSub event.Subscription
+	// todo(alex): can be removed? because l1HeadCh is enough.
 	syncNotify chan struct{}
 
 	ctx context.Context
@@ -66,7 +68,8 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 	if d.state, err = state.New(d.ctx, d.rpc); err != nil {
 		return err
 	}
-
+	// todo(alex): the driver should not be blocked here, in fact the peerCount should not be checked here,
+	// it should be handled in beaconsync.Syncer.
 	peers, err := d.rpc.L2.PeerCount(d.ctx)
 	if err != nil {
 		return err
@@ -152,7 +155,7 @@ func (d *Driver) doSync() error {
 		log.Warn("Driver context error", "error", d.ctx.Err())
 		return nil
 	}
-
+	// todo(alex): can we just use d.l1HeadCh？
 	l1Head := d.state.GetL1Head()
 
 	if err := d.l2ChainSyncer.Sync(l1Head); err != nil {

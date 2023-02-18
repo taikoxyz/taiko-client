@@ -29,15 +29,19 @@ func (h *HeightOrID) NotEmpty() bool {
 }
 
 // State contains all states which will be used by driver.
+// todo(alex): state should be a collection of variables representing the state of the driver,
+// and it should be up to the driver to update the variables in state.
+// init and update state should be in driver.Start function.
 type State struct {
 	// Subscriptions, will automatically resubscribe on errors
+	// todo(alex): these subscription should be move to L2ChainSyncer
 	l1HeadSub          event.Subscription // L1 new heads
 	l2HeadSub          event.Subscription // L2 new heads
 	l2BlockProvenSub   event.Subscription // TaikoL1.BlockProven events
 	l2BlockVerifiedSub event.Subscription // TaikoL1.BlockVerified events
 	l2BlockProposedSub event.Subscription // TaikoL1.BlockProposed events
 	l2HeaderSyncedSub  event.Subscription // TaikoL1.HeaderSynced events
-
+	// todo(alex): these channel should be move to L2ChainSyncer
 	l1HeadCh        chan *types.Header
 	l2HeadCh        chan *types.Header
 	blockProposedCh chan *bindings.TaikoL1ClientBlockProposed
@@ -52,7 +56,8 @@ type State struct {
 	l2Head         *atomic.Value // Current L2 execution engine's local chain head
 	l2HeadBlockID  *atomic.Value // Latest known L2 block ID
 	l2VerifiedHead *atomic.Value // Latest known L2 verified head
-	l1Current      *atomic.Value // Current L1 block sync cursor
+	// todo(alex): should rename l1Current to `knownL1Head`?
+	l1Current *atomic.Value // Current L1 block sync cursor
 
 	// Constants
 	GenesisL1Height  *big.Int
@@ -151,6 +156,7 @@ func (s *State) init(ctx context.Context) error {
 }
 
 // startSubscriptions initializes all subscriptions in the given state instance.
+// todo(alex): should be a function of Driver.
 func (s *State) startSubscriptions(ctx context.Context) {
 	s.l1HeadSub = rpc.SubscribeChainHead(s.rpc.L1, s.l1HeadCh)
 	s.l2HeadSub = rpc.SubscribeChainHead(s.rpc.L2, s.l2HeadCh)
@@ -271,6 +277,7 @@ func (s *State) GetHeadBlockID() *big.Int {
 }
 
 // SubL1HeadsFeed registers a subscription of new L1 heads.
+// todo(alex): should be done by Driver.
 func (s *State) SubL1HeadsFeed(ch chan *types.Header) event.Subscription {
 	return s.l1HeadsFeed.Subscribe(ch)
 }

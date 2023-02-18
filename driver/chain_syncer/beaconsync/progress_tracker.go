@@ -24,6 +24,7 @@ type SyncProgressTracker struct {
 	client *ethclient.Client
 
 	// Meta data
+	// todo(alex): triggered should be member of Syncer
 	triggered                     bool
 	lastSyncedVerifiedBlockID     *big.Int
 	lastSyncedVerifiedBlockHeight *big.Int

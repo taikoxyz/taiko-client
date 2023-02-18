@@ -17,6 +17,7 @@ import (
 
 // L2ChainSyncer is responsible for keeping the L2 execution engine's local chain in sync with the one
 // in TaikoL1 contract.
+// todo(alex): should rename `L2ChainSyncer` to `ChainSyncer`?
 type L2ChainSyncer struct {
 	ctx   context.Context
 	state *state.State // Driver's state
@@ -27,6 +28,7 @@ type L2ChainSyncer struct {
 	calldataSyncer *calldata.Syncer
 
 	// Monitors
+	// todo(alex): progressTracker is redundant because it is already in beaconSyncer.
 	progressTracker *beaconsync.SyncProgressTracker
 
 	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
@@ -43,6 +45,7 @@ func New(
 	enableP2PSync bool,
 	p2pSyncTimeout time.Duration,
 ) (*L2ChainSyncer, error) {
+	// todo(alex): tracker should be created in beaconsync.NewSyncer
 	tracker := beaconsync.NewSyncProgressTracker(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
