@@ -37,7 +37,7 @@ type Prover struct {
 	// States
 	latestVerifiedL1Height uint64
 	lastHandledBlockID     uint64
-	l1Current              uint64
+	l1CursorHeight         uint64
 
 	// Proof submitters
 	validProofSubmitter   proofSubmitter.ProofSubmitter
@@ -238,7 +238,7 @@ func (p *Prover) proveOp() error {
 	iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
 		Client:               p.rpc.L1,
 		TaikoL1:              p.rpc.TaikoL1,
-		StartHeight:          new(big.Int).SetUint64(p.l1Current),
+		StartHeight:          new(big.Int).SetUint64(p.l1CursorHeight),
 		OnBlockProposedEvent: p.onBlockProposed,
 	})
 	if err != nil {
@@ -310,7 +310,7 @@ func (p *Prover) onBlockProposed(
 
 	p.proposeConcurrencyGuard <- struct{}{}
 
-	p.l1Current = event.Raw.BlockNumber
+	p.l1CursorHeight = event.Raw.BlockNumber
 	p.lastHandledBlockID = event.Id.Uint64()
 
 	go func() {
@@ -370,7 +370,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 		}
 
 		if stateVars.LatestVerifiedId == 0 {
-			p.l1Current = 0
+			p.l1CursorHeight = 0
 			return nil
 		}
 
@@ -382,7 +382,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 		return err
 	}
 
-	p.l1Current = latestVerifiedHeaderL1Origin.L1BlockHeight.Uint64()
+	p.l1CursorHeight = latestVerifiedHeaderL1Origin.L1BlockHeight.Uint64()
 	return nil
 }
 
