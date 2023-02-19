@@ -189,7 +189,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 				// Verify the protocol synced block, check if it exists in
 				// L2 execution engine.
 				if s.GetL2Head().Number.Cmp(e.SrcHeight) >= 0 {
-					if err := s.VerifyL2Block(ctx, e.SrcHash); err != nil {
+					if err := s.VerifyL2Block(ctx, e.SrcHeight, e.SrcHash); err != nil {
 						log.Error("Check new verified L2 block error", "error", err)
 						continue
 					}
@@ -284,19 +284,19 @@ func (s *State) SubL1HeadsFeed(ch chan *types.Header) event.Subscription {
 }
 
 // VerifyL2Block checks whether the given block is in L2 execution engine's local chain.
-func (s *State) VerifyL2Block(ctx context.Context, protocolBlockHash common.Hash) error {
+func (s *State) VerifyL2Block(ctx context.Context, height *big.Int, hash common.Hash) error {
 	// todo(alex): 这里的逻辑不是应该对比根据 height 查询出来的 Hash 么？
-	header, err := s.rpc.L2.HeaderByHash(ctx, protocolBlockHash)
+	header, err := s.rpc.L2.HeaderByNumber(ctx, height)
 	if err != nil {
 		return err
 	}
 
 	// todo(alex): 这个比较不是一定是成功的么？
-	if header.Hash() != protocolBlockHash {
+	if header.Hash() != hash {
 		// TODO(david): do not exit but re-sync from genesis?
 		log.Crit(
 			"Verified block hash mismatch",
-			"protocolBlockHash", protocolBlockHash,
+			"protocolBlockHash", hash,
 			"block number in L2 execution engine", header.Number,
 			"block hash in L2 execution engine", header.Hash(),
 		)
