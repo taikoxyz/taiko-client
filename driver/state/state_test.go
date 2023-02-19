@@ -72,7 +72,7 @@ func (s *DriverStateTestSuite) TestGetSyncedHeaderID() {
 	l2Genesis, err := s.RpcClient.L2.BlockByNumber(context.Background(), common.Big0)
 	s.Nil(err)
 
-	id, err := s.s.getSyncedHeaderID(s.s.GenesisL1Height.Uint64(), l2Genesis.Hash())
+	id, err := s.s.getSyncedBlockID(s.s.GenesisL1Height.Uint64(), l2Genesis.Hash())
 	s.Nil(err)
 	s.Zero(id.Uint64())
 }

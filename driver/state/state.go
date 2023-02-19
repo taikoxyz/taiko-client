@@ -145,7 +145,7 @@ func (s *State) init(ctx context.Context) error {
 		return err
 	}
 
-	s.setLatestVerifiedBlockHash(
+	s.setLatestVerifiedBlockInfo(
 		new(big.Int).SetUint64(stateVars.LatestVerifiedId),
 		new(big.Int).SetUint64(stateVars.LatestVerifiedHeight),
 		latestVerifiedBlockHash,
@@ -193,12 +193,12 @@ func (s *State) startSubscriptions(ctx context.Context) {
 						continue
 					}
 				}
-				id, err := s.getSyncedHeaderID(e.Raw.BlockNumber, e.SrcHash)
+				id, err := s.getSyncedBlockID(e.Raw.BlockNumber, e.SrcHash)
 				if err != nil {
 					log.Error("Get synced header block ID error", "error", err)
 					continue
 				}
-				s.setLatestVerifiedBlockHash(id, e.SrcHeight, e.SrcHash)
+				s.setLatestVerifiedBlockInfo(id, e.SrcHeight, e.SrcHash)
 			case newHead := <-s.l1HeadCh:
 				s.setL1Head(newHead)
 				s.l1HeadsFeed.Send(newHead)
@@ -252,11 +252,11 @@ type VerifiedHeaderInfo struct {
 	Height *big.Int
 }
 
-// setLatestVerifiedBlockHash sets the latest verified L2 block hash concurrent safely.
-func (s *State) setLatestVerifiedBlockHash(id *big.Int, height *big.Int, hash common.Hash) {
+// setLatestVerifiedBlockInfo sets the latest verified L2 block hash concurrent safely.
+func (s *State) setLatestVerifiedBlockInfo(blockID *big.Int, height *big.Int, hash common.Hash) {
 	log.Debug("New verified block", "height", height, "hash", hash)
 	metrics.DriverL2VerifiedHeightGauge.Update(height.Int64())
-	s.l2VerifiedHead.Store(&VerifiedHeaderInfo{ID: id, Height: height, Hash: hash})
+	s.l2VerifiedHead.Store(&VerifiedHeaderInfo{ID: blockID, Height: height, Hash: hash})
 }
 
 // GetLatestVerifiedBlock reads the latest verified L2 block concurrent safely.
@@ -302,8 +302,8 @@ func (s *State) VerifyL2Block(ctx context.Context, protocolBlockHash common.Hash
 	return nil
 }
 
-// getSyncedHeaderID fetches the block ID of the synced L2 header.
-func (s *State) getSyncedHeaderID(l1Height uint64, hash common.Hash) (*big.Int, error) {
+// getSyncedBlockID fetches the block ID of the synced L2 header.
+func (s *State) getSyncedBlockID(l1Height uint64, hash common.Hash) (*big.Int, error) {
 	iter, err := s.rpc.TaikoL1.FilterBlockVerified(&bind.FilterOpts{
 		Start: l1Height,
 		End:   &l1Height,
