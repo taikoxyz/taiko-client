@@ -13,7 +13,7 @@ import (
 // InvalidTxListReason represents a reason why a transactions list is invalid, reasons defined in
 // protocol:
 //
-//	enum Reason {
+//	enum Hint {
 //		NONE,
 //		TX_INVALID_SIG,
 //		TX_GAS_LIMIT_TOO_SMALL
