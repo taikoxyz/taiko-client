@@ -26,7 +26,7 @@ var _ ProofSubmitter = (*InvalidProofSubmitter)(nil)
 type InvalidProofSubmitter struct {
 	rpc              *rpc.Client
 	proofProducer    proofProducer.ProofProducer
-	reusltCh         chan *proofProducer.ProofWithHeader
+	resultCh         chan *proofProducer.ProofWithHeader
 	proverPrivKey    *ecdsa.PrivateKey
 	proverAddress    common.Address
 	zkProofsPerBlock uint64
@@ -38,7 +38,7 @@ type InvalidProofSubmitter struct {
 func NewInvalidProofSubmitter(
 	rpc *rpc.Client,
 	proofProducer proofProducer.ProofProducer,
-	reusltCh chan *proofProducer.ProofWithHeader,
+	resultCh chan *proofProducer.ProofWithHeader,
 	proverPrivKey *ecdsa.PrivateKey,
 	zkProofsPerBlock uint64,
 	anchorTxGasLimit uint64,
@@ -47,7 +47,7 @@ func NewInvalidProofSubmitter(
 	return &InvalidProofSubmitter{
 		rpc:              rpc,
 		proofProducer:    proofProducer,
-		reusltCh:         reusltCh,
+		resultCh:         resultCh,
 		proverPrivKey:    proverPrivKey,
 		proverAddress:    crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		zkProofsPerBlock: zkProofsPerBlock,
@@ -70,7 +70,7 @@ func (s *InvalidProofSubmitter) RequestProof(ctx context.Context, event *binding
 	proofOpts := &proofProducer.ProofRequestOptions{Height: throwAwayBlock.Header().Number}
 
 	if err := s.proofProducer.RequestProof(
-		proofOpts, event.Id, &event.Meta, throwAwayBlock.Header(), s.reusltCh,
+		proofOpts, event.Id, &event.Meta, throwAwayBlock.Header(), s.resultCh,
 	); err != nil {
 		return err
 	}
