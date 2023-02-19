@@ -285,13 +285,11 @@ func (s *State) SubL1HeadsFeed(ch chan *types.Header) event.Subscription {
 
 // VerifyL2Block checks whether the given block is in L2 execution engine's local chain.
 func (s *State) VerifyL2Block(ctx context.Context, height *big.Int, hash common.Hash) error {
-	// todo(alex): 这里的逻辑不是应该对比根据 height 查询出来的 Hash 么？
 	header, err := s.rpc.L2.HeaderByNumber(ctx, height)
 	if err != nil {
 		return err
 	}
 
-	// todo(alex): 这个比较不是一定是成功的么？
 	if header.Hash() != hash {
 		// TODO(david): do not exit but re-sync from genesis?
 		log.Crit(
