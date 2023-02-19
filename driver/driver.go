@@ -156,7 +156,7 @@ func (d *Driver) doSync() error {
 		return nil
 	}
 	// todo(alex): can we just use d.l1HeadCh？
-	l1Head := d.state.GetL1Head()
+	l1Head := d.state.GetLatestL1Head()
 
 	if err := d.l2ChainSyncer.Sync(l1Head); err != nil {
 		log.Error("Process new L1 blocks error", "error", err)

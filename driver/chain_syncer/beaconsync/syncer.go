@@ -101,7 +101,7 @@ func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *beacon
 		Client:      s.rpc.L1,
 		TaikoL1:     s.rpc.TaikoL1,
 		StartHeight: s.state.GenesisL1Height,
-		EndHeight:   s.state.GetL1Head().Number,
+		EndHeight:   s.state.GetLatestL1Head().Number,
 		FilterQuery: []*big.Int{latestVerifiedBlock.ID},
 		Reverse:     true,
 		OnBlockProvenEvent: func(

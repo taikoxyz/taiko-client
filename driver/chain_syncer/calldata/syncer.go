@@ -86,7 +86,7 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
 		Client:               s.rpc.L1,
 		TaikoL1:              s.rpc.TaikoL1,
-		StartHeight:          s.state.GetL1Current().Number,
+		StartHeight:          s.state.GetL1Cursor().Number,
 		EndHeight:            l1End.Number,
 		FilterQuery:          nil,
 		OnBlockProposedEvent: s.onBlockProposed,
@@ -99,8 +99,8 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 		return err
 	}
 
-	s.state.SetL1Current(l1End)
-	metrics.DriverL1CurrentHeightGauge.Update(s.state.GetL1Current().Number.Int64())
+	s.state.SetL1Cursor(l1End)
+	metrics.DriverL1CurrentHeightGauge.Update(s.state.GetL1Cursor().Number.Int64())
 
 	return nil
 }

@@ -9,13 +9,13 @@ import (
 )
 
 func (s *DriverStateTestSuite) TestGetL1Current() {
-	s.NotNil(s.s.GetL1Current())
+	s.NotNil(s.s.GetL1Cursor())
 }
 
 func (s *DriverStateTestSuite) TestSetL1Current() {
 	h := &types.Header{ParentHash: testutils.RandomHash()}
-	s.s.SetL1Current(h)
-	s.Equal(h.Hash(), s.s.GetL1Current().Hash())
+	s.s.SetL1Cursor(h)
+	s.Equal(h.Hash(), s.s.GetL1Cursor().Hash())
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentEmptyHeight() {

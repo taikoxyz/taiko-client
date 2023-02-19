@@ -32,7 +32,7 @@ func (s *DriverStateTestSuite) TestVerifyL2Block() {
 }
 
 func (s *DriverStateTestSuite) TestGetL1Head() {
-	l1Head := s.s.GetL1Head()
+	l1Head := s.s.GetLatestL1Head()
 	s.NotNil(l1Head)
 }
 
@@ -58,9 +58,9 @@ func (s *DriverStateTestSuite) TestClose() {
 func (s *DriverStateTestSuite) TestGetL2Head() {
 	testHeight := rand.Uint64()
 
-	s.s.setL2Head(nil)
-	s.s.setL2Head(&types.Header{Number: new(big.Int).SetUint64(testHeight)})
-	h := s.s.GetL2Head()
+	s.s.setLatestL2Head(nil)
+	s.s.setLatestL2Head(&types.Header{Number: new(big.Int).SetUint64(testHeight)})
+	h := s.s.GetLatestL2Head()
 	s.Equal(testHeight, h.Number.Uint64())
 }
 

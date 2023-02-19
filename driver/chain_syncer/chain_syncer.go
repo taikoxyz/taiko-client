@@ -138,26 +138,26 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 
 // AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
 func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
-	verifiedHeightToCompare := s.state.GetLatestVerifiedBlock().Height.Uint64()
+	LatestVerifiedBlockHeight := s.state.GetLatestVerifiedBlock().Height.Uint64()
 	log.Debug(
 		"Checking whether the execution engine is ahead of protocol's verified head",
-		"latestVerifiedBlock", verifiedHeightToCompare,
-		"executionEngineHead", s.state.GetL2Head().Number,
+		"latestVerifiedBlockHeight", LatestVerifiedBlockHeight,
+		"executionEngineHead", s.state.GetLatestL2Head().Number,
 	)
-	if verifiedHeightToCompare > 0 {
+	if LatestVerifiedBlockHeight > 0 {
 		// If latest verified head height is equal to L2 execution engine's synced head height minus one,
 		// we also mark the triggered P2P sync progress as finished to prevent a potential `InsertBlockWithoutSetHead` in
 		// execution engine, which may cause errors since we do not pass all transactions in ExecutePayload when calling
 		// NewPayloadV1.
-		verifiedHeightToCompare -= 1
+		LatestVerifiedBlockHeight -= 1
 	}
 
-	if s.state.GetL2Head().Number.Uint64() < verifiedHeightToCompare {
+	if s.state.GetLatestL2Head().Number.Uint64() < LatestVerifiedBlockHeight {
 		return false
 	}
 
 	if s.progressTracker.LastSyncedVerifiedBlockHeight() != nil {
-		return s.state.GetL2Head().Number.Uint64() >= s.progressTracker.LastSyncedVerifiedBlockHeight().Uint64()
+		return s.state.GetLatestL2Head().Number.Uint64() >= s.progressTracker.LastSyncedVerifiedBlockHeight().Uint64()
 	}
 
 	return true
