@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strings"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
@@ -160,6 +159,8 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 	}
 }
 
+// GetPoolContent fetches the transactions list from L2 execution engine's transactions pool with given
+// upper limit.
 func (c *Client) GetPoolContent(
 	ctx context.Context,
 	maxTransactionsPerBlock *big.Int,
@@ -168,13 +169,13 @@ func (c *Client) GetPoolContent(
 	minTxGasLimit *big.Int,
 	locals []common.Address,
 ) (types.Transactions, error) {
-	var localsArgs []string
+	var localsArg []string
 	for _, local := range locals {
-		localsArgs = append(localsArgs, local.Hex())
+		localsArg = append(localsArg, local.Hex())
 	}
 
 	var result types.Transactions
-	if err := c.L2RawRPC.CallContext(
+	err := c.L2RawRPC.CallContext(
 		ctx,
 		&result,
 		"taiko_txPoolContent",
@@ -182,12 +183,10 @@ func (c *Client) GetPoolContent(
 		blockMaxGasLimit.Uint64(),
 		maxBytesPerTxList.Uint64(),
 		minTxGasLimit.Uint64(),
-		strings.Join(localsArgs, ","),
-	); err != nil {
-		return nil, err
-	}
+		localsArg,
+	)
 
-	return result, nil
+	return result, err
 }
 
 // L2AccountNonce fetches the nonce of the given L2 account at a specified height.

@@ -6,21 +6,17 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	prviKey1, _  = crypto.ToECDSA(common.Hex2Bytes("b4851b82a544ba35f2ed8690beec93c9bd2ee8d95bb1255365e70a91065c38c1"))
-	prviKey2, _  = crypto.ToECDSA(common.Hex2Bytes("6f20d1e42dfd1ca35c051f9a6730cd0c3003ce446e83b30bfcfff619d449b2cb"))
-	testAddress1 = common.HexToAddress("0x98f86166571FE624778203d87A8eD6fd84695B79")
-	testAddress2 = common.HexToAddress("0x283593Cd94F70EE3ded6eF92a46Da5Aa8803e7bf")
+	testAddress = common.HexToAddress("0x98f86166571FE624778203d87A8eD6fd84695B79")
 )
 
 func TestL2AccountNonce(t *testing.T) {
 	client := newTestClient(t)
 
-	nonce, err := client.L2AccountNonce(context.Background(), testAddress1, common.Big0)
+	nonce, err := client.L2AccountNonce(context.Background(), testAddress, common.Big0)
 
 	require.Nil(t, err)
 	require.Zero(t, nonce)
