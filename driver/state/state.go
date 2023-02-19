@@ -54,7 +54,7 @@ type State struct {
 
 	l1Head         *atomic.Value // Latest known L1 head
 	l2Head         *atomic.Value // Current L2 execution engine's local chain head
-	l2HeadBlockID  *atomic.Value // Latest known L2 block ID
+	LatestBlockID  *atomic.Value // Latest known L2 block ID
 	l2VerifiedHead *atomic.Value // Latest known L2 verified head
 	// todo(alex): should rename l1Current to `knownL1Head`?
 	l1Current *atomic.Value // Current L1 block sync cursor
@@ -73,7 +73,7 @@ func New(ctx context.Context, rpc *rpc.Client) (*State, error) {
 		rpc:              rpc,
 		l1Head:           new(atomic.Value),
 		l2Head:           new(atomic.Value),
-		l2HeadBlockID:    new(atomic.Value),
+		LatestBlockID:    new(atomic.Value),
 		l2VerifiedHead:   new(atomic.Value),
 		l1Current:        new(atomic.Value),
 		l1HeadCh:         make(chan *types.Header, 10),
@@ -150,7 +150,7 @@ func (s *State) init(ctx context.Context) error {
 		new(big.Int).SetUint64(stateVars.LatestVerifiedHeight),
 		latestVerifiedBlockHash,
 	)
-	s.setHeadBlockID(new(big.Int).SetUint64(stateVars.NextBlockId - 1))
+	s.setLatestBlockID(new(big.Int).SetUint64(stateVars.NextBlockId - 1))
 
 	return nil
 }
@@ -171,7 +171,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case e := <-s.blockProposedCh:
-				s.setHeadBlockID(e.Id)
+				s.setLatestBlockID(e.Id)
 			case e := <-s.blockProvenCh:
 				if e.BlockHash != s.BlockDeadendHash {
 					log.Info("✅ Valid block proven", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
@@ -193,12 +193,12 @@ func (s *State) startSubscriptions(ctx context.Context) {
 						continue
 					}
 				}
-				id, err := s.getSyncedBlockID(e.Raw.BlockNumber, e.SrcHash)
+				blockID, err := s.getVerifiedBlockID(e.Raw.BlockNumber, e.SrcHash)
 				if err != nil {
 					log.Error("Get synced header block ID error", "error", err)
 					continue
 				}
-				s.setLatestVerifiedBlockInfo(id, e.SrcHeight, e.SrcHash)
+				s.setLatestVerifiedBlockInfo(blockID, e.SrcHeight, e.SrcHash)
 			case newHead := <-s.l1HeadCh:
 				s.setL1Head(newHead)
 				s.l1HeadsFeed.Send(newHead)
@@ -264,16 +264,16 @@ func (s *State) GetLatestVerifiedBlock() *VerifiedHeaderInfo {
 	return s.l2VerifiedHead.Load().(*VerifiedHeaderInfo)
 }
 
-// setHeadBlockID sets the last pending block ID concurrent safely.
-func (s *State) setHeadBlockID(id *big.Int) {
+// setLatestBlockID sets the last pending block ID concurrent safely.
+func (s *State) setLatestBlockID(id *big.Int) {
 	log.Debug("New head block ID", "ID", id)
 	metrics.DriverL2HeadIDGauge.Update(id.Int64())
-	s.l2HeadBlockID.Store(id)
+	s.LatestBlockID.Store(id)
 }
 
-// GetHeadBlockID reads the last pending block ID concurrent safely.
-func (s *State) GetHeadBlockID() *big.Int {
-	return s.l2HeadBlockID.Load().(*big.Int)
+// GetLatestBlockID reads the last pending block ID concurrent safely.
+func (s *State) GetLatestBlockID() *big.Int {
+	return s.LatestBlockID.Load().(*big.Int)
 }
 
 // SubL1HeadsFeed registers a subscription of new L1 heads.
@@ -302,8 +302,8 @@ func (s *State) VerifyL2Block(ctx context.Context, protocolBlockHash common.Hash
 	return nil
 }
 
-// getSyncedBlockID fetches the block ID of the synced L2 header.
-func (s *State) getSyncedBlockID(l1Height uint64, hash common.Hash) (*big.Int, error) {
+// getVerifiedBlockID fetches the block ID of the verified L2 block.
+func (s *State) getVerifiedBlockID(l1Height uint64, hash common.Hash) (*big.Int, error) {
 	iter, err := s.rpc.TaikoL1.FilterBlockVerified(&bind.FilterOpts{
 		Start: l1Height,
 		End:   &l1Height,

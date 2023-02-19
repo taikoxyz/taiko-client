@@ -196,7 +196,7 @@ func (s *Syncer) onBlockProposed(
 			ctx,
 			event,
 			parent,
-			s.state.GetHeadBlockID(),
+			s.state.GetLatestBlockID(),
 			txListBytes,
 			l1Origin,
 		)
@@ -207,7 +207,7 @@ func (s *Syncer) onBlockProposed(
 			parent,
 			uint8(hint),
 			new(big.Int).SetInt64(int64(invalidTxIndex)),
-			s.state.GetHeadBlockID(),
+			s.state.GetLatestBlockID(),
 			txListBytes,
 			l1Origin,
 		)

@@ -42,7 +42,7 @@ func (s *DriverStateTestSuite) TestGetLatestVerifiedBlock() {
 }
 
 func (s *DriverStateTestSuite) TestGetHeadBlockID() {
-	s.Equal(uint64(0), s.s.GetHeadBlockID().Uint64())
+	s.Equal(uint64(0), s.s.GetLatestBlockID().Uint64())
 }
 
 func (s *DriverStateTestSuite) TestHeightOrIDNotEmpty() {
@@ -72,7 +72,7 @@ func (s *DriverStateTestSuite) TestGetSyncedHeaderID() {
 	l2Genesis, err := s.RpcClient.L2.BlockByNumber(context.Background(), common.Big0)
 	s.Nil(err)
 
-	id, err := s.s.getSyncedBlockID(s.s.GenesisL1Height.Uint64(), l2Genesis.Hash())
+	id, err := s.s.getVerifiedBlockID(s.s.GenesisL1Height.Uint64(), l2Genesis.Hash())
 	s.Nil(err)
 	s.Zero(id.Uint64())
 }
