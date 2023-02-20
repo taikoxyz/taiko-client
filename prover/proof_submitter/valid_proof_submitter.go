@@ -26,7 +26,7 @@ var _ ProofSubmitter = (*ValidProofSubmitter)(nil)
 type ValidProofSubmitter struct {
 	rpc               *rpc.Client
 	proofProducer     proofProducer.ProofProducer
-	reusltCh          chan *proofProducer.ProofWithHeader
+	resultCh          chan *proofProducer.ProofWithHeader
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	proverPrivKey     *ecdsa.PrivateKey
 	proverAddress     common.Address
@@ -38,7 +38,7 @@ type ValidProofSubmitter struct {
 func NewValidProofSubmitter(
 	rpc *rpc.Client,
 	proofProducer proofProducer.ProofProducer,
-	reusltCh chan *proofProducer.ProofWithHeader,
+	resultCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
 	zkProofsPerBlock uint64,
@@ -47,7 +47,7 @@ func NewValidProofSubmitter(
 	return &ValidProofSubmitter{
 		rpc:               rpc,
 		proofProducer:     proofProducer,
-		reusltCh:          reusltCh,
+		resultCh:          resultCh,
 		anchorTxValidator: anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc),
 		proverPrivKey:     proverPrivKey,
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
@@ -80,7 +80,7 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		Height: header.Number,
 	}
 
-	if err := s.proofProducer.RequestProof(opts, event.Id, &event.Meta, header, s.reusltCh); err != nil {
+	if err := s.proofProducer.RequestProof(opts, event.Id, &event.Meta, header, s.resultCh); err != nil {
 		return err
 	}
 
