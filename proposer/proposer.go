@@ -152,7 +152,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
-	pendingTxs, err := p.rpc.GetPoolContent(
+	txLists, err := p.rpc.GetPoolContent(
 		ctx,
 		p.protocolConfigs.MaxTransactionsPerBlock,
 		p.protocolConfigs.BlockMaxGasLimit,
@@ -165,7 +165,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	}
 
 	var commitTxListResQueue []*commitTxListRes
-	for i, txs := range []types.Transactions{pendingTxs} {
+	for i, txs := range txLists {
 		txListBytes, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			return fmt.Errorf("failed to encode transactions: %w", err)

@@ -168,13 +168,13 @@ func (c *Client) GetPoolContent(
 	maxBytesPerTxList *big.Int,
 	minTxGasLimit *big.Int,
 	locals []common.Address,
-) (types.Transactions, error) {
+) ([]types.Transactions, error) {
 	var localsArg []string
 	for _, local := range locals {
 		localsArg = append(localsArg, local.Hex())
 	}
 
-	var result types.Transactions
+	var result []types.Transactions
 	err := c.L2RawRPC.CallContext(
 		ctx,
 		&result,
