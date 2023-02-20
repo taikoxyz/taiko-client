@@ -181,7 +181,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 			case e := <-s.headerSyncedCh:
 				// Verify the protocol synced block, check if it exists in
 				// L2 execution engine.
-				if s.GetL2Head().Number.Cmp(e.Height) >= 0 {
+				if s.GetL2Head().Number.Cmp(e.SrcHeight) >= 0 {
 					if err := s.VerifyL2Block(ctx, e.SrcHash); err != nil {
 						log.Error("Check new verified L2 block error", "error", err)
 						continue
