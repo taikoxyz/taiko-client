@@ -95,7 +95,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 	p.protocolConfigs = &protocolConfigs
 
-	log.Info("Protocol configs", "configs")
+	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
 	p.submitProofTxMutex = &sync.Mutex{}
 	p.txListValidator = txListValidator.NewTxListValidator(
