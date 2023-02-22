@@ -300,7 +300,7 @@ func (p *Proposer) ProposeTxList(
 		return err
 	}
 
-	log.Info("📝 Propose transactions succeeded")
+	log.Info("📝 Propose transactions succeeded", "txs", txNum)
 
 	metrics.ProposerProposedTxListsCounter.Inc(1)
 	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))
