@@ -179,7 +179,7 @@ func (c *Client) GetPoolContent(
 		ctx,
 		&result,
 		"taiko_txPoolContent",
-		maxBytesPerTxList.Uint64(),
+		maxTransactionsPerBlock.Uint64(),
 		blockMaxGasLimit.Uint64(),
 		maxBytesPerTxList.Uint64(),
 		minTxGasLimit.Uint64(),
