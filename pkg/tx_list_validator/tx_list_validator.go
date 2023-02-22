@@ -89,7 +89,7 @@ func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (h
 
 	log.Debug("Transactions list decoded", "blockID", blockID, "length", len(txs))
 
-	if txs.Len() > int(v.maxTransactionsPerBlock) {
+	if txs.Len() > int(v.maxTransactionsPerBlock)+1 {
 		log.Info("Too many transactions", "blockID", blockID, "count", txs.Len())
 		return HintNone, 0
 	}
