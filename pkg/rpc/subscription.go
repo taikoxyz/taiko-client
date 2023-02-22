@@ -70,7 +70,7 @@ func SubscribeHeaderSynced(
 	ch chan *bindings.TaikoL1ClientHeaderSynced,
 ) event.Subscription {
 	return SubscribeEvent("HeaderSynced", func(ctx context.Context) (event.Subscription, error) {
-		sub, err := taikoL1.WatchHeaderSynced(nil, ch, nil, nil)
+		sub, err := taikoL1.WatchHeaderSynced(nil, ch, nil)
 		if err != nil {
 			log.Error("Create TaikoL1.HeaderSynced subscription error", "error", err)
 			return nil, err
