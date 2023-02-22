@@ -23,14 +23,6 @@ func (err *JsonRPCError) Error() string {
 	return err.Message
 }
 
-func (err *JsonRPCError) ErrorCode() int {
-	return err.Code
-}
-
-func (err *JsonRPCError) ErrorData() interface{} {
-	return err.Data
-}
-
 // GetRevertReasonHash parses solidity contract revert reason hash
 // from ethereum rpc calls.
 func GetRevertReasonHash(err error) (string, error) {
@@ -42,9 +34,9 @@ func GetRevertReasonHash(err error) (string, error) {
 	if err = json.Unmarshal(bytes, rErr); err != nil {
 		return "", err
 	}
-	reasonHash, ok := rErr.ErrorData().(string)
+	reasonHash, ok := rErr.Data.(string)
 	if !ok {
-		return "", fmt.Errorf("invalid revert error, %T", rErr.ErrorData())
+		return "", fmt.Errorf("invalid revert error, %T", rErr.Data)
 	}
 	return reasonHash, nil
 }
