@@ -113,10 +113,10 @@ func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (h
 			return HintTxInvalidSig, i
 		}
 
-		if tx.Gas() < v.minTxGasLimit {
-			log.Info("Transaction gas limit too small", "gasLimit", tx.Gas())
-			return HintTxGasLimitTooSmall, i
-		}
+		// if tx.Gas() < v.minTxGasLimit {
+		// 	log.Info("Transaction gas limit too small", "gasLimit", tx.Gas())
+		// 	return HintTxGasLimitTooSmall, i
+		// }
 	}
 
 	log.Info("Transaction list is valid", "blockID", blockID)
