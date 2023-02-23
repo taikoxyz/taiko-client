@@ -142,6 +142,11 @@ func (s *InvalidProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to encode throwaway block transactions: %w", err)
 	}
 
+	circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
+	if err != nil {
+		return err
+	}
+
 	evidence := &encoding.TaikoL1Evidence{
 		Meta: bindings.TaikoDataBlockMetadata{
 			Id:          meta.Id,
@@ -157,7 +162,7 @@ func (s *InvalidProofSubmitter) SubmitProof(
 		Header:   *encoding.FromGethHeader(header),
 		Prover:   s.proverAddress,
 		Proofs:   proofs,
-		Circuits: []uint16{0},
+		Circuits: []uint16{circuitsIdx},
 	}
 
 	input, err := encoding.EncodeProveBlockInvalidInput(evidence, meta, receipts[0])

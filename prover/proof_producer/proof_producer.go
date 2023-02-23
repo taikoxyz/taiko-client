@@ -1,10 +1,19 @@
 package producer
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikoxyz/taiko-client/bindings"
+)
+
+const (
+	CircuitsDegree10Txs = 19
+	CircuitsDegree80Txs = 21
+
+	CircuitsIdx10Txs = 0
+	CircuitsIdx80Txs = 1
 )
 
 // ProofRequestOptions contains all options that need to be passed to zkEVM rpcd service.
@@ -17,6 +26,7 @@ type ProofWithHeader struct {
 	Meta    *bindings.TaikoDataBlockMetadata
 	Header  *types.Header
 	ZkProof []byte
+	Degree  uint64
 }
 
 type ProofProducer interface {
@@ -27,4 +37,15 @@ type ProofProducer interface {
 		header *types.Header,
 		resultCh chan *ProofWithHeader,
 	) error
+}
+
+func DegreeToCircuitsIdx(degree uint64) (uint16, error) {
+	switch degree {
+	case CircuitsDegree10Txs:
+		return CircuitsIdx10Txs, nil
+	case CircuitsDegree80Txs:
+		return CircuitsIdx80Txs, nil
+	default:
+		return 0, fmt.Errorf("invalid degree: %d", degree)
+	}
 }

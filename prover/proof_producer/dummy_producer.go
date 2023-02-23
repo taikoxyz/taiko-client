@@ -34,7 +34,7 @@ func (d *DummyProofProducer) RequestProof(
 
 	time.AfterFunc(d.proofDelay(), func() {
 		resultCh <- &ProofWithHeader{
-			BlockID: blockID, Meta: meta, Header: header, ZkProof: []byte{0xff},
+			BlockID: blockID, Meta: meta, Header: header, ZkProof: []byte{0xff}, Degree: CircuitsDegree10Txs,
 		}
 	})
 

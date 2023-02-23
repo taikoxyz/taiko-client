@@ -20,8 +20,8 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 	dummpyZkevmRpcdProducer, err := NewZkevmRpcdProducer("http://localhost:18545", "", "", false)
 	require.Nil(t, err)
 
-	dummpyZkevmRpcdProducer.CustomProofHook = func() ([]byte, error) {
-		return []byte{0}, nil
+	dummpyZkevmRpcdProducer.CustomProofHook = func() ([]byte, uint64, error) {
+		return []byte{0}, CircuitsDegree10Txs, nil
 	}
 
 	resCh := make(chan *ProofWithHeader, 1)

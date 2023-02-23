@@ -25,11 +25,11 @@ var (
 
 // ZkevmRpcdProducer is responsible for requesting zk proofs from the given proverd endpoint.
 type ZkevmRpcdProducer struct {
-	RpcdEndpoint    string                 // a proverd RPC endpoint
-	Param           string                 // parameter file to use
-	L2Endpoint      string                 // a L2 execution engine's RPC endpoint
-	Retry           bool                   // retry proof computation if error
-	CustomProofHook func() ([]byte, error) // only for testing purposes
+	RpcdEndpoint    string                         // a proverd RPC endpoint
+	Param           string                         // parameter file to use
+	L2Endpoint      string                         // a L2 execution engine's RPC endpoint
+	Retry           bool                           // retry proof computation if error
+	CustomProofHook func() ([]byte, uint64, error) // only for testing purposes
 }
 
 // RequestProofBody represents the JSON body for requesting the proof.
@@ -64,6 +64,7 @@ type RpcdOutput struct {
 	Circuit struct {
 		Instances []string `json:"instance"`
 		Proof     string   `json:"proof"`
+		Degree    uint64   `json:"k"`
 	} `json:"circuit"`
 }
 
@@ -102,13 +103,14 @@ func (d *ZkevmRpcdProducer) RequestProof(
 	)
 
 	var (
-		proof []byte
-		err   error
+		proof  []byte
+		degree uint64
+		err    error
 	)
 	if d.CustomProofHook != nil {
-		proof, err = d.CustomProofHook()
+		proof, degree, err = d.CustomProofHook()
 	} else {
-		proof, err = d.callProverDaemon(opts)
+		proof, degree, err = d.callProverDaemon(opts)
 	}
 	if err != nil {
 		return err
@@ -119,16 +121,18 @@ func (d *ZkevmRpcdProducer) RequestProof(
 		Header:  header,
 		Meta:    meta,
 		ZkProof: proof,
+		Degree:  degree,
 	}
 
 	return nil
 }
 
 // callProverDaemon keeps polling the proverd service to get the requested proof.
-func (d *ZkevmRpcdProducer) callProverDaemon(opts *ProofRequestOptions) ([]byte, error) {
+func (d *ZkevmRpcdProducer) callProverDaemon(opts *ProofRequestOptions) ([]byte, uint64, error) {
 	var (
-		proof []byte
-		start = time.Now()
+		proof  []byte
+		degree uint64
+		start  = time.Now()
 	)
 	if err := backoff.Retry(func() error {
 		output, err := d.requestProof(opts)
@@ -143,12 +147,13 @@ func (d *ZkevmRpcdProducer) callProverDaemon(opts *ProofRequestOptions) ([]byte,
 			return errProofGenerating
 		}
 		proof = d.outputToCalldata(output)
-		log.Info("Proof generated", "height", opts.Height, "time", time.Since(start))
+		degree = output.Circuit.Degree
+		log.Info("Proof generated", "height", opts.Height, "degree", degree, "time", time.Since(start))
 		return nil
 	}, backoff.NewConstantBackOff(10*time.Second)); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return proof, nil
+	return proof, degree, nil
 }
 
 // requestProof sends a RPC request to proverd to try to get the requested proof.

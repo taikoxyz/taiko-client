@@ -172,12 +172,17 @@ func (s *ValidProofSubmitter) SubmitProof(
 	}
 	proofs = append(proofs, [][]byte{anchorTxProof, anchorReceiptProof}...)
 
+	circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
+	if err != nil {
+		return err
+	}
+
 	evidence := &encoding.TaikoL1Evidence{
 		Meta:     *proofWithHeader.Meta,
 		Header:   *encoding.FromGethHeader(header),
 		Prover:   s.proverAddress,
 		Proofs:   proofs,
-		Circuits: []uint16{0},
+		Circuits: []uint16{circuitsIdx},
 	}
 
 	input, err := encoding.EncodeProveBlockInput(evidence, anchorTx, anchorTxReceipt)
