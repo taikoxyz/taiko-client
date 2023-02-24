@@ -146,9 +146,9 @@ func (d *ZkevmRpcdProducer) callProverDaemon(opts *ProofRequestOptions) ([]byte,
 		if output == nil {
 			return errProofGenerating
 		}
-		proof = common.Hex2Bytes(output.Circuit.Proof)
+		proof = common.Hex2Bytes(output.Circuit.Proof[2:])
 		degree = output.Circuit.Degree
-		log.Info("Proof generated", "height", opts.Height, "degree", degree, "proof", proof, "time", time.Since(start))
+		log.Info("Proof generated", "height", opts.Height, "degree", degree, "time", time.Since(start))
 		return nil
 	}, backoff.NewConstantBackOff(10*time.Second)); err != nil {
 		return nil, 0, err
