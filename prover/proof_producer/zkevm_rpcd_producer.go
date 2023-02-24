@@ -8,7 +8,6 @@ import (
 	"io"
 	"math/big"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -146,7 +145,7 @@ func (d *ZkevmRpcdProducer) callProverDaemon(opts *ProofRequestOptions) ([]byte,
 		if output == nil {
 			return errProofGenerating
 		}
-		proof = d.outputToCalldata(output)
+		proof = common.Hex2Bytes(output.Circuit.Proof)
 		degree = output.Circuit.Degree
 		log.Info("Proof generated", "height", opts.Height, "degree", degree, "time", time.Since(start))
 		return nil
@@ -200,43 +199,4 @@ func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 	}
 
 	return output.Result, nil
-}
-
-// outputToCalldata converts the response data to the proof bytes which will be
-// needed for verification contract.
-func (d *ZkevmRpcdProducer) outputToCalldata(output *RpcdOutput) []byte {
-	calldata := []byte{}
-	data := output.Circuit
-	bufLen := len(data.Instances)*32 + len(data.Proof)
-
-	for i := 0; i < len(data.Instances); i++ {
-		uint256Bytes := [32]byte{}
-		evenHexLen := len(data.Instances[i]) - 2 + (len(data.Instances[i]) % 2)
-		instanceHex := data.Instances[i][2:]
-		if len(instanceHex) < evenHexLen {
-			instanceHex = strings.Repeat("0", evenHexLen-len(instanceHex)) + instanceHex
-		}
-		instanceBytes := common.Hex2Bytes(instanceHex)
-
-		for j := 0; j < len(instanceBytes); j++ {
-			uint256Bytes[31-j] = instanceBytes[len(instanceBytes)-1-j]
-		}
-		for k := 0; k < 32; k++ {
-			calldata = append(calldata, uint256Bytes[k])
-		}
-	}
-
-	evenHexLen := len(data.Proof) - 2 + (len(data.Proof) % 2)
-	proofBytesHex := data.Proof[2:]
-	if len(proofBytesHex) < evenHexLen {
-		proofBytesHex = strings.Repeat("0", evenHexLen-len(proofBytesHex)) + proofBytesHex
-	}
-	proofBytes := common.Hex2Bytes(proofBytesHex)
-	calldata = append(calldata, proofBytes...)
-
-	for i := len(calldata); i < bufLen; i++ {
-		calldata = append(calldata, byte(0))
-	}
-
-	return calldata[:bufLen]
 }
