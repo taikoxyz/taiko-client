@@ -49,6 +49,7 @@ type RequestProofBodyParam struct {
 	VerifyProof bool     `json:"verify_proof"`
 	Mock        bool     `json:"mock"`
 	Aggregate   bool     `json:"aggregate"`
+	Prover      string   `json:"prover"`
 }
 
 // RequestProofBodyResponse represents the JSON body of the response of the proof requests.
@@ -170,6 +171,7 @@ func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 			VerifyProof: true,
 			Mock:        false,
 			Aggregate:   false,
+			Prover:      opts.ProverAddress.Hex()[2:],
 		}},
 	}
 

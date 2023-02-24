@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
@@ -18,7 +19,8 @@ const (
 
 // ProofRequestOptions contains all options that need to be passed to zkEVM rpcd service.
 type ProofRequestOptions struct {
-	Height *big.Int // the block number
+	Height        *big.Int // the block number
+	ProverAddress common.Address
 }
 
 type ProofWithHeader struct {
