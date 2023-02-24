@@ -194,7 +194,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		Circuits: []uint16{circuitsIdx},
 	})
 
-	log.Info("instance", "instance", common.Bytes2Hex(instance[:]), "err", err, "idx", circuitsIdx)
+	log.Info("instance", "instance", common.Bytes2Hex(instance[:]), "err", err, "idx", circuitsIdx, "txlistHash", proofWithHeader.Meta.TxListHash, "header", *encoding.FromGethHeader2(header), "prover", s.proverAddress)
 
 	input, err := encoding.EncodeProveBlockInput(evidence, anchorTx, anchorTxReceipt)
 	if err != nil {
