@@ -11,10 +11,8 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
-	customError "github.com/taikoxyz/taiko-client/bindings/error"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -25,12 +23,6 @@ var (
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
-	hash, err := customError.GetRevertReasonHash(err)
-	if err != nil {
-		log.Error("err2", "err", err)
-	}
-	log.Info("err", "err", hash, "L1_ZKP()", crypto.Keccak256([]byte("L1_ZKP()"))[:10])
-
 	// Not an error returned by eth_estimateGas.
 	if !strings.Contains(err.Error(), "L1:") && !strings.Contains(err.Error(), "unrecognized custom error") {
 		return true

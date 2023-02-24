@@ -186,6 +186,16 @@ func (s *ValidProofSubmitter) SubmitProof(
 		Circuits: []uint16{circuitsIdx},
 	}
 
+	instance, err := s.rpc.TaikoL1.GetInstance(nil, bindings.LibProvingEvidence{
+		Meta:     *proofWithHeader.Meta,
+		Header:   *encoding.FromGethHeader2(header),
+		Prover:   s.proverAddress,
+		Proofs:   proofs,
+		Circuits: []uint16{circuitsIdx},
+	})
+
+	log.Info("instance", "instance", instance, "err", err, "idx", circuitsIdx)
+
 	input, err := encoding.EncodeProveBlockInput(evidence, anchorTx, anchorTxReceipt)
 	if err != nil {
 		return fmt.Errorf("failed to encode TaikoL1.proveBlock inputs: %w", err)

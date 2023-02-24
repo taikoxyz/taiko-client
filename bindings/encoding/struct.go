@@ -37,6 +37,32 @@ type TaikoL1Evidence struct {
 }
 
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.
+func FromGethHeader2(header *types.Header) *bindings.BlockHeader {
+	baseFeePerGas := header.BaseFee
+	if baseFeePerGas == nil {
+		baseFeePerGas = common.Big0
+	}
+	return &bindings.BlockHeader{
+		ParentHash:       header.ParentHash,
+		OmmersHash:       header.UncleHash,
+		Beneficiary:      header.Coinbase,
+		StateRoot:        header.Root,
+		TransactionsRoot: header.TxHash,
+		ReceiptsRoot:     header.ReceiptHash,
+		LogsBloom:        BloomToBytes(header.Bloom),
+		Difficulty:       header.Difficulty,
+		Height:           header.Number,
+		GasLimit:         header.GasLimit,
+		GasUsed:          header.GasUsed,
+		Timestamp:        header.Time,
+		ExtraData:        header.Extra,
+		MixHash:          header.MixDigest,
+		Nonce:            header.Nonce.Uint64(),
+		BaseFeePerGas:    baseFeePerGas,
+	}
+}
+
+// FromGethHeader converts a GETH *types.Header to *BlockHeader.
 func FromGethHeader(header *types.Header) *BlockHeader {
 	baseFeePerGas := header.BaseFee
 	if baseFeePerGas == nil {
