@@ -46,8 +46,7 @@ type Proposer struct {
 	proposingInterval *time.Duration
 	proposingTimer    *time.Timer
 	commitSlot        uint64
-
-	poolContentSplitter *poolContentSplitter
+	locals            []common.Address
 
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -76,6 +75,8 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
 	p.proposingInterval = cfg.ProposeInterval
 	p.wg = sync.WaitGroup{}
+	p.locals = cfg.LocalAddresses
+	p.commitSlot = cfg.CommitSlot
 	p.ctx = ctx
 
 	// RPC clients
@@ -96,17 +97,6 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.protocolConfigs = &protocolConfigs
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
-
-	p.poolContentSplitter = &poolContentSplitter{
-		chainID:                 p.rpc.L2ChainID,
-		shufflePoolContent:      cfg.ShufflePoolContent,
-		maxTransactionsPerBlock: p.protocolConfigs.MaxTransactionsPerBlock.Uint64(),
-		blockMaxGasLimit:        p.protocolConfigs.BlockMaxGasLimit.Uint64(),
-		maxBytesPerTxList:       p.protocolConfigs.MaxBytesPerTxList.Uint64(),
-		minTxGasLimit:           p.protocolConfigs.MinTxGasLimit.Uint64(),
-		locals:                  cfg.LocalAddresses,
-	}
-	p.commitSlot = cfg.CommitSlot
 
 	return nil
 }
@@ -162,15 +152,22 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
-	pendingContent, _, err := p.rpc.L2PoolContent(ctx)
+	txLists, err := p.rpc.GetPoolContent(
+		ctx,
+		p.protocolConfigs.MaxTransactionsPerBlock,
+		p.protocolConfigs.BlockMaxGasLimit,
+		p.protocolConfigs.MaxBytesPerTxList,
+		p.protocolConfigs.MinTxGasLimit,
+		p.locals,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
 	}
 
-	log.Info("Fetching L2 pending transactions finished", "length", pendingContent.Len())
+	log.Info("Transactions count", "count", len(txLists))
 
 	var commitTxListResQueue []*commitTxListRes
-	for i, txs := range p.poolContentSplitter.Split(pendingContent) {
+	for i, txs := range txLists {
 		txListBytes, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			return fmt.Errorf("failed to encode transactions: %w", err)
@@ -305,7 +302,7 @@ func (p *Proposer) ProposeTxList(
 		return err
 	}
 
-	log.Info("📝 Propose transactions succeeded")
+	log.Info("📝 Propose transactions succeeded", "txs", txNum)
 
 	metrics.ProposerProposedTxListsCounter.Inc(1)
 	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))

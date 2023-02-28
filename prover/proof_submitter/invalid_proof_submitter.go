@@ -29,7 +29,6 @@ type InvalidProofSubmitter struct {
 	reusltCh         chan *proofProducer.ProofWithHeader
 	proverPrivKey    *ecdsa.PrivateKey
 	proverAddress    common.Address
-	zkProofsPerBlock uint64
 	anchorTxGasLimit uint64
 	mutex            *sync.Mutex
 }
@@ -40,7 +39,6 @@ func NewInvalidProofSubmitter(
 	proofProducer proofProducer.ProofProducer,
 	reusltCh chan *proofProducer.ProofWithHeader,
 	proverPrivKey *ecdsa.PrivateKey,
-	zkProofsPerBlock uint64,
 	anchorTxGasLimit uint64,
 	mutex *sync.Mutex,
 ) *InvalidProofSubmitter {
@@ -50,7 +48,6 @@ func NewInvalidProofSubmitter(
 		reusltCh:         reusltCh,
 		proverPrivKey:    proverPrivKey,
 		proverAddress:    crypto.PubkeyToAddress(proverPrivKey.PublicKey),
-		zkProofsPerBlock: zkProofsPerBlock,
 		anchorTxGasLimit: anchorTxGasLimit,
 		mutex:            mutex,
 	}
@@ -67,7 +64,11 @@ func (s *InvalidProofSubmitter) RequestProof(ctx context.Context, event *binding
 	log.Debug("Throwaway block", "height", throwAwayBlock.Header().Number, "hash", throwAwayBlock.Header().Hash())
 
 	// Request proof.
-	proofOpts := &proofProducer.ProofRequestOptions{Height: throwAwayBlock.Header().Number}
+	proofOpts := &proofProducer.ProofRequestOptions{
+		Height:             throwAwayBlock.Header().Number,
+		ProverAddress:      s.proverAddress,
+		ProposeBlockTxHash: event.Raw.TxHash,
+	}
 
 	if err := s.proofProducer.RequestProof(
 		proofOpts, event.Id, &event.Meta, throwAwayBlock.Header(), s.reusltCh,
@@ -131,15 +132,14 @@ func (s *InvalidProofSubmitter) SubmitProof(
 	}
 
 	// Assemble the TaikoL1.proveBlockInvalid transaction inputs.
-	proofs := [][]byte{}
-	for i := 0; i < int(s.zkProofsPerBlock); i++ {
-		proofs = append(proofs, zkProof)
-	}
-	proofs = append(proofs, receiptProof)
-
 	txListBytes, err := rlp.EncodeToBytes(block.Transactions())
 	if err != nil {
 		return fmt.Errorf("failed to encode throwaway block transactions: %w", err)
+	}
+
+	circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
+	if err != nil {
+		return err
 	}
 
 	evidence := &encoding.TaikoL1Evidence{
@@ -156,8 +156,8 @@ func (s *InvalidProofSubmitter) SubmitProof(
 		},
 		Header:   *encoding.FromGethHeader(header),
 		Prover:   s.proverAddress,
-		Proofs:   proofs,
-		Circuits: []uint16{0},
+		Proofs:   [][]byte{zkProof, receiptProof},
+		Circuits: circuitsIdx,
 	}
 
 	input, err := encoding.EncodeProveBlockInvalidInput(evidence, meta, receipts[0])

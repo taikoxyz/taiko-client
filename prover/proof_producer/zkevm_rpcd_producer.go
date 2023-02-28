@@ -8,7 +8,6 @@ import (
 	"io"
 	"math/big"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -25,11 +24,12 @@ var (
 
 // ZkevmRpcdProducer is responsible for requesting zk proofs from the given proverd endpoint.
 type ZkevmRpcdProducer struct {
-	RpcdEndpoint    string                 // a proverd RPC endpoint
-	Param           string                 // parameter file to use
-	L2Endpoint      string                 // a L2 execution engine's RPC endpoint
-	Retry           bool                   // retry proof computation if error
-	CustomProofHook func() ([]byte, error) // only for testing purposes
+	RpcdEndpoint    string                         // a proverd RPC endpoint
+	Param           string                         // parameter file to use
+	L1Endpoint      string                         // a L1 node RPC endpoint
+	L2Endpoint      string                         // a L2 execution engine's RPC endpoint
+	Retry           bool                           // retry proof computation if error
+	CustomProofHook func() ([]byte, uint64, error) // only for testing purposes
 }
 
 // RequestProofBody represents the JSON body for requesting the proof.
@@ -42,14 +42,17 @@ type RequestProofBody struct {
 
 // RequestProofBody represents the JSON body of RequestProofBody's `param` field.
 type RequestProofBodyParam struct {
-	Circuit     string   `json:"circuit"`
-	Block       *big.Int `json:"block"`
-	RPC         string   `json:"rpc"`
-	Retry       bool     `json:"retry"`
-	Param       string   `json:"param"`
-	VerifyProof bool     `json:"verify_proof"`
-	Mock        bool     `json:"mock"`
-	Aggregate   bool     `json:"aggregate"`
+	Circuit            string   `json:"circuit"`
+	Block              *big.Int `json:"block"`
+	L1RPC              string   `json:"l1_rpc"`
+	L2RPC              string   `json:"l2_rpc"`
+	ProposeBlockTxHash string   `json:"propose_tx_hash"`
+	Retry              bool     `json:"retry"`
+	Param              string   `json:"param"`
+	VerifyProof        bool     `json:"verify_proof"`
+	Mock               bool     `json:"mock"`
+	Aggregate          bool     `json:"aggregate"`
+	Prover             string   `json:"prover"`
 }
 
 // RequestProofBodyResponse represents the JSON body of the response of the proof requests.
@@ -64,6 +67,7 @@ type RpcdOutput struct {
 	Circuit struct {
 		Instances []string `json:"instance"`
 		Proof     string   `json:"proof"`
+		Degree    uint64   `json:"k"`
 	} `json:"circuit"`
 }
 
@@ -71,6 +75,7 @@ type RpcdOutput struct {
 func NewZkevmRpcdProducer(
 	rpcdEndpoint string,
 	param string,
+	l1Endpoint string,
 	l2Endpoint string,
 	retry bool,
 ) (*ZkevmRpcdProducer, error) {
@@ -82,7 +87,13 @@ func NewZkevmRpcdProducer(
 		return nil, errRpcdUnhealthy
 	}
 
-	return &ZkevmRpcdProducer{RpcdEndpoint: rpcdEndpoint, Param: param, L2Endpoint: l2Endpoint, Retry: retry}, nil
+	return &ZkevmRpcdProducer{
+		RpcdEndpoint: rpcdEndpoint,
+		Param:        param,
+		L1Endpoint:   l1Endpoint,
+		L2Endpoint:   l2Endpoint,
+		Retry:        retry,
+	}, nil
 }
 
 // RequestProof implements the ProofProducer interface.
@@ -102,13 +113,14 @@ func (d *ZkevmRpcdProducer) RequestProof(
 	)
 
 	var (
-		proof []byte
-		err   error
+		proof  []byte
+		degree uint64
+		err    error
 	)
 	if d.CustomProofHook != nil {
-		proof, err = d.CustomProofHook()
+		proof, degree, err = d.CustomProofHook()
 	} else {
-		proof, err = d.callProverDaemon(opts)
+		proof, degree, err = d.callProverDaemon(opts)
 	}
 	if err != nil {
 		return err
@@ -119,16 +131,18 @@ func (d *ZkevmRpcdProducer) RequestProof(
 		Header:  header,
 		Meta:    meta,
 		ZkProof: proof,
+		Degree:  degree,
 	}
 
 	return nil
 }
 
 // callProverDaemon keeps polling the proverd service to get the requested proof.
-func (d *ZkevmRpcdProducer) callProverDaemon(opts *ProofRequestOptions) ([]byte, error) {
+func (d *ZkevmRpcdProducer) callProverDaemon(opts *ProofRequestOptions) ([]byte, uint64, error) {
 	var (
-		proof []byte
-		start = time.Now()
+		proof  []byte
+		degree uint64
+		start  = time.Now()
 	)
 	if err := backoff.Retry(func() error {
 		output, err := d.requestProof(opts)
@@ -142,13 +156,14 @@ func (d *ZkevmRpcdProducer) callProverDaemon(opts *ProofRequestOptions) ([]byte,
 		if output == nil {
 			return errProofGenerating
 		}
-		proof = d.outputToCalldata(output)
-		log.Info("Proof generated", "height", opts.Height, "time", time.Since(start))
+		proof = common.Hex2Bytes(output.Circuit.Proof[2:])
+		degree = output.Circuit.Degree
+		log.Info("Proof generated", "height", opts.Height, "degree", degree, "time", time.Since(start))
 		return nil
 	}, backoff.NewConstantBackOff(10*time.Second)); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return proof, nil
+	return proof, degree, nil
 }
 
 // requestProof sends a RPC request to proverd to try to get the requested proof.
@@ -158,14 +173,17 @@ func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 		ID:      common.Big1,
 		Method:  "proof",
 		Params: []*RequestProofBodyParam{{
-			Circuit:     "pi",
-			Block:       opts.Height,
-			RPC:         d.L2Endpoint,
-			Retry:       true,
-			Param:       d.Param,
-			VerifyProof: true,
-			Mock:        false,
-			Aggregate:   false,
+			Circuit:            "pi",
+			Block:              opts.Height,
+			L1RPC:              d.L1Endpoint,
+			L2RPC:              d.L2Endpoint,
+			Retry:              true,
+			Param:              d.Param,
+			VerifyProof:        true,
+			Mock:               false,
+			Aggregate:          false,
+			Prover:             opts.ProverAddress.Hex()[2:],
+			ProposeBlockTxHash: opts.ProposeBlockTxHash.Hex()[2:],
 		}},
 	}
 
@@ -195,43 +213,4 @@ func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 	}
 
 	return output.Result, nil
-}
-
-// outputToCalldata converts the response data to the proof bytes which will be
-// needed for verification contract.
-func (d *ZkevmRpcdProducer) outputToCalldata(output *RpcdOutput) []byte {
-	calldata := []byte{}
-	data := output.Circuit
-	bufLen := len(data.Instances)*32 + len(data.Proof)
-
-	for i := 0; i < len(data.Instances); i++ {
-		uint256Bytes := [32]byte{}
-		evenHexLen := len(data.Instances[i]) - 2 + (len(data.Instances[i]) % 2)
-		instanceHex := data.Instances[i][2:]
-		if len(instanceHex) < evenHexLen {
-			instanceHex = strings.Repeat("0", evenHexLen-len(instanceHex)) + instanceHex
-		}
-		instanceBytes := common.Hex2Bytes(instanceHex)
-
-		for j := 0; j < len(instanceBytes); j++ {
-			uint256Bytes[31-j] = instanceBytes[len(instanceBytes)-1-j]
-		}
-		for k := 0; k < 32; k++ {
-			calldata = append(calldata, uint256Bytes[k])
-		}
-	}
-
-	evenHexLen := len(data.Proof) - 2 + (len(data.Proof) % 2)
-	proofBytesHex := data.Proof[2:]
-	if len(proofBytesHex) < evenHexLen {
-		proofBytesHex = strings.Repeat("0", evenHexLen-len(proofBytesHex)) + proofBytesHex
-	}
-	proofBytes := common.Hex2Bytes(proofBytesHex)
-	calldata = append(calldata, proofBytes...)
-
-	for i := len(calldata); i < bufLen; i++ {
-		calldata = append(calldata, byte(0))
-	}
-
-	return calldata[:bufLen]
 }

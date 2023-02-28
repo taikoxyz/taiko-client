@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"sort"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
@@ -160,72 +159,34 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 	}
 }
 
-// PoolContent represents a response body of a `txpool_content` RPC call.
-type PoolContent map[common.Address]map[string]*types.Transaction
-
-// Len returns the number of transactions in the PoolContent.
-func (pc PoolContent) Len() int {
-	len := 0
-	for _, pendingTxs := range pc {
-		for range pendingTxs {
-			len += 1
-		}
+// GetPoolContent fetches the transactions list from L2 execution engine's transactions pool with given
+// upper limit.
+func (c *Client) GetPoolContent(
+	ctx context.Context,
+	maxTransactionsPerBlock *big.Int,
+	blockMaxGasLimit *big.Int,
+	maxBytesPerTxList *big.Int,
+	minTxGasLimit *big.Int,
+	locals []common.Address,
+) ([]types.Transactions, error) {
+	var localsArg []string
+	for _, local := range locals {
+		localsArg = append(localsArg, local.Hex())
 	}
 
-	return len
-}
-
-// ToTxsByPriceAndNonce creates a transaction set that can retrieve price sorted transactions in a nonce-honouring way.
-func (pc PoolContent) ToTxsByPriceAndNonce(
-	chainID *big.Int,
-	localAddresses []common.Address,
-) (
-	locals *types.TransactionsByPriceAndNonce,
-	remotes *types.TransactionsByPriceAndNonce,
-) {
-	var (
-		allTxs    = map[common.Address]types.Transactions{}
-		localTxs  = map[common.Address]types.Transactions{}
-		remoteTxs = map[common.Address]types.Transactions{}
+	var result []types.Transactions
+	err := c.L2RawRPC.CallContext(
+		ctx,
+		&result,
+		"taiko_txPoolContent",
+		maxTransactionsPerBlock.Uint64(),
+		blockMaxGasLimit.Uint64(),
+		maxBytesPerTxList.Uint64(),
+		minTxGasLimit.Uint64(),
+		localsArg,
 	)
 
-	for address, txsWithNonce := range pc {
-		idx := 0
-		for _, tx := range txsWithNonce {
-			allTxs[address] = append(allTxs[address], tx)
-			idx += 1
-
-			if idx == len(txsWithNonce) {
-				sort.Sort(types.TxByNonce(allTxs[address]))
-			}
-		}
-	}
-
-	for address, txs := range allTxs {
-	out:
-		for _, tx := range txs {
-			for _, localAddress := range localAddresses {
-				if address == localAddress {
-					localTxs[address] = append(localTxs[address], tx)
-					continue out
-				}
-			}
-			remoteTxs[address] = append(remoteTxs[address], tx)
-		}
-	}
-
-	return types.NewTransactionsByPriceAndNonce(types.LatestSignerForChainID(chainID), localTxs, nil),
-		types.NewTransactionsByPriceAndNonce(types.LatestSignerForChainID(chainID), remoteTxs, nil)
-}
-
-// L2PoolContent fetches the transaction pool content from a L2 execution engine.
-func (c *Client) L2PoolContent(ctx context.Context) (pending PoolContent, queued PoolContent, err error) {
-	var res map[string]PoolContent
-	if err := c.L2RawRPC.CallContext(ctx, &res, "txpool_content"); err != nil {
-		return nil, nil, err
-	}
-
-	return res["pending"], res["queued"], nil
+	return result, err
 }
 
 // L2AccountNonce fetches the nonce of the given L2 account at a specified height.

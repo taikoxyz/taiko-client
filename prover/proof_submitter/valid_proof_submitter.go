@@ -30,7 +30,6 @@ type ValidProofSubmitter struct {
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	proverPrivKey     *ecdsa.PrivateKey
 	proverAddress     common.Address
-	zkProofsPerBlock  uint64
 	mutex             *sync.Mutex
 }
 
@@ -41,7 +40,6 @@ func NewValidProofSubmitter(
 	reusltCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
-	zkProofsPerBlock uint64,
 	mutex *sync.Mutex,
 ) *ValidProofSubmitter {
 	return &ValidProofSubmitter{
@@ -51,7 +49,6 @@ func NewValidProofSubmitter(
 		anchorTxValidator: anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc),
 		proverPrivKey:     proverPrivKey,
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
-		zkProofsPerBlock:  zkProofsPerBlock,
 		mutex:             mutex,
 	}
 }
@@ -77,7 +74,9 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 
 	// Request proof.
 	opts := &proofProducer.ProofRequestOptions{
-		Height: header.Number,
+		Height:             header.Number,
+		ProverAddress:      s.proverAddress,
+		ProposeBlockTxHash: event.Raw.TxHash,
 	}
 
 	if err := s.proofProducer.RequestProof(opts, event.Id, &event.Meta, header, s.reusltCh); err != nil {
@@ -165,19 +164,17 @@ func (s *ValidProofSubmitter) SubmitProof(
 		)
 	}
 
-	// Assemble the TaikoL1.proveBlock transaction inputs.
-	proofs := [][]byte{}
-	for i := 0; i < int(s.zkProofsPerBlock); i++ {
-		proofs = append(proofs, zkProof)
+	circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
+	if err != nil {
+		return err
 	}
-	proofs = append(proofs, [][]byte{anchorTxProof, anchorReceiptProof}...)
 
 	evidence := &encoding.TaikoL1Evidence{
 		Meta:     *proofWithHeader.Meta,
 		Header:   *encoding.FromGethHeader(header),
 		Prover:   s.proverAddress,
-		Proofs:   proofs,
-		Circuits: []uint16{0},
+		Proofs:   [][]byte{zkProof, anchorTxProof, anchorReceiptProof},
+		Circuits: circuitsIdx,
 	}
 
 	input, err := encoding.EncodeProveBlockInput(evidence, anchorTx, anchorTxReceipt)
