@@ -134,7 +134,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		if producer, err = proofProducer.NewZkevmRpcdProducer(
 			cfg.ZKEvmRpcdEndpoint,
 			cfg.ZkEvmRpcdParamsPath,
-			cfg.L1HTTPEndpoint,
+			cfg.L1Endpoint,
 			cfg.L2Endpoint,
 			true,
 		); err != nil {
