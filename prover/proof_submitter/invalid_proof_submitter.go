@@ -157,7 +157,7 @@ func (s *InvalidProofSubmitter) SubmitProof(
 		Header:   *encoding.FromGethHeader(header),
 		Prover:   s.proverAddress,
 		Proofs:   [][]byte{zkProof, receiptProof},
-		Circuits: []uint16{circuitsIdx},
+		Circuits: circuitsIdx,
 	}
 
 	input, err := encoding.EncodeProveBlockInvalidInput(evidence, meta, receipts[0])

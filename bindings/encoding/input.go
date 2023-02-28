@@ -148,7 +148,7 @@ var (
 		},
 		{
 			Name: "circuits",
-			Type: "uint16[]",
+			Type: "uint16",
 		},
 	}
 )

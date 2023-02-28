@@ -174,7 +174,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		Header:   *encoding.FromGethHeader(header),
 		Prover:   s.proverAddress,
 		Proofs:   [][]byte{zkProof, anchorTxProof, anchorReceiptProof},
-		Circuits: []uint16{circuitsIdx},
+		Circuits: circuitsIdx,
 	}
 
 	input, err := encoding.EncodeProveBlockInput(evidence, anchorTx, anchorTxReceipt)
