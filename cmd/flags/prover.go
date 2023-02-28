@@ -53,6 +53,12 @@ var (
 			"`lowerBound-upperBound` (e.g. `30m-1h`), testing purposes only",
 		Category: proverCategory,
 	}
+	L1HTTPEndpoint = cli.StringFlag{
+		Name:     "l1.http",
+		Usage:    "HTTP RPC endpoint of a L1 ethereum node",
+		Required: true,
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -64,4 +70,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	&MaxConcurrentProvingJobs,
 	&Dummy,
 	&RandomDummyProofDelay,
+	&L1HTTPEndpoint,
 })

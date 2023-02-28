@@ -24,6 +24,7 @@ type Config struct {
 	ZkEvmRpcdParamsPath             string
 	StartingBlockID                 *big.Int
 	MaxConcurrentProvingJobs        uint
+	L1HTTPEndpoint                  string
 	Dummy                           bool
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
@@ -83,6 +84,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		StartingBlockID:                 startingBlockID,
 		MaxConcurrentProvingJobs:        c.Uint(flags.MaxConcurrentProvingJobs.Name),
 		Dummy:                           c.Bool(flags.Dummy.Name),
+		L1HTTPEndpoint:                  c.String(flags.L1HTTPEndpoint.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
 	}, nil
