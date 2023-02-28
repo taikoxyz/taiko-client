@@ -29,7 +29,6 @@ type InvalidProofSubmitter struct {
 	reusltCh         chan *proofProducer.ProofWithHeader
 	proverPrivKey    *ecdsa.PrivateKey
 	proverAddress    common.Address
-	zkProofsPerBlock uint64
 	anchorTxGasLimit uint64
 	mutex            *sync.Mutex
 }
@@ -40,7 +39,6 @@ func NewInvalidProofSubmitter(
 	proofProducer proofProducer.ProofProducer,
 	reusltCh chan *proofProducer.ProofWithHeader,
 	proverPrivKey *ecdsa.PrivateKey,
-	zkProofsPerBlock uint64,
 	anchorTxGasLimit uint64,
 	mutex *sync.Mutex,
 ) *InvalidProofSubmitter {
@@ -50,7 +48,6 @@ func NewInvalidProofSubmitter(
 		reusltCh:         reusltCh,
 		proverPrivKey:    proverPrivKey,
 		proverAddress:    crypto.PubkeyToAddress(proverPrivKey.PublicKey),
-		zkProofsPerBlock: zkProofsPerBlock,
 		anchorTxGasLimit: anchorTxGasLimit,
 		mutex:            mutex,
 	}
@@ -134,12 +131,6 @@ func (s *InvalidProofSubmitter) SubmitProof(
 	}
 
 	// Assemble the TaikoL1.proveBlockInvalid transaction inputs.
-	proofs := [][]byte{}
-	for i := 0; i < int(s.zkProofsPerBlock); i++ {
-		proofs = append(proofs, zkProof)
-	}
-	proofs = append(proofs, receiptProof)
-
 	txListBytes, err := rlp.EncodeToBytes(block.Transactions())
 	if err != nil {
 		return fmt.Errorf("failed to encode throwaway block transactions: %w", err)
@@ -164,7 +155,7 @@ func (s *InvalidProofSubmitter) SubmitProof(
 		},
 		Header:   *encoding.FromGethHeader(header),
 		Prover:   s.proverAddress,
-		Proofs:   proofs,
+		Proofs:   [][]byte{zkProof, receiptProof},
 		Circuits: []uint16{circuitsIdx},
 	}
 

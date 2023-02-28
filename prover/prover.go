@@ -143,7 +143,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.proveValidProofCh,
 		p.cfg.TaikoL2Address,
 		p.cfg.L1ProverPrivKey,
-		protocolConfigs.ZkProofsPerBlock.Uint64(),
 		p.submitProofTxMutex,
 	)
 	p.invalidProofSubmitter = proofSubmitter.NewInvalidProofSubmitter(
@@ -151,7 +150,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		producer,
 		p.proveInvalidProofCh,
 		p.cfg.L1ProverPrivKey,
-		protocolConfigs.ZkProofsPerBlock.Uint64(),
 		protocolConfigs.AnchorTxGasLimit.Uint64(),
 		p.submitProofTxMutex,
 	)
@@ -225,16 +223,6 @@ func (p *Prover) Close() {
 // proveOp performs a proving operation, find current unproven blocks, then
 // request generating proofs for them.
 func (p *Prover) proveOp() error {
-	isHalted, err := p.rpc.TaikoL1.IsHalted(nil)
-	if err != nil {
-		return err
-	}
-
-	if isHalted {
-		log.Warn("L2 chain halted")
-		return nil
-	}
-
 	iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
 		Client:               p.rpc.L1,
 		TaikoL1:              p.rpc.TaikoL1,
@@ -415,35 +403,14 @@ func (p *Prover) NeedNewProof(id *big.Int) (bool, error) {
 		parentHash = parentL1Origin.L2BlockHash
 	}
 
-	isVerifiable, err := p.rpc.TaikoL1.IsBlockVerifiable(nil, id, parentHash)
-	if err != nil {
-		return false, err
-	}
-
-	if isVerifiable {
-		log.Info("⏰ Too late to submit a new proof", "blockID", id)
-		return false, nil
-	}
-
 	fc, err := p.rpc.TaikoL1.GetForkChoice(nil, id, parentHash)
 	if err != nil {
 		return false, err
 	}
 
-	if len(fc.Provers) >= int(p.protocolConfigs.MaxProofsPerForkChoice.Uint64()) {
-		log.Info(
-			"📧 The number of proofs submitted has reached the upper limit",
-			"blockID", id,
-			"limit", p.protocolConfigs.MaxProofsPerForkChoice,
-		)
+	if p.proverAddress == fc.Prover {
+		log.Info("📬 Block's proof has already been submitted by current prover", "blockID", id)
 		return false, nil
-	}
-
-	for _, prover := range fc.Provers {
-		if prover == p.proverAddress {
-			log.Info("📬 Block's proof has already been submitted by current prover", "blockID", id)
-			return false, nil
-		}
 	}
 
 	return true, nil

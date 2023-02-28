@@ -30,7 +30,6 @@ type ValidProofSubmitter struct {
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	proverPrivKey     *ecdsa.PrivateKey
 	proverAddress     common.Address
-	zkProofsPerBlock  uint64
 	mutex             *sync.Mutex
 }
 
@@ -41,7 +40,6 @@ func NewValidProofSubmitter(
 	reusltCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
-	zkProofsPerBlock uint64,
 	mutex *sync.Mutex,
 ) *ValidProofSubmitter {
 	return &ValidProofSubmitter{
@@ -51,7 +49,6 @@ func NewValidProofSubmitter(
 		anchorTxValidator: anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc),
 		proverPrivKey:     proverPrivKey,
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
-		zkProofsPerBlock:  zkProofsPerBlock,
 		mutex:             mutex,
 	}
 }
@@ -166,13 +163,6 @@ func (s *ValidProofSubmitter) SubmitProof(
 		)
 	}
 
-	// Assemble the TaikoL1.proveBlock transaction inputs.
-	proofs := [][]byte{}
-	for i := 0; i < int(s.zkProofsPerBlock); i++ {
-		proofs = append(proofs, zkProof)
-	}
-	proofs = append(proofs, [][]byte{anchorTxProof, anchorReceiptProof}...)
-
 	circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
 	if err != nil {
 		return err
@@ -182,7 +172,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		Meta:     *proofWithHeader.Meta,
 		Header:   *encoding.FromGethHeader(header),
 		Prover:   s.proverAddress,
-		Proofs:   proofs,
+		Proofs:   [][]byte{zkProof, anchorTxProof, anchorReceiptProof},
 		Circuits: []uint16{circuitsIdx},
 	}
 

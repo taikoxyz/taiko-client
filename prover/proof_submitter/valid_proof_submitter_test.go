@@ -45,7 +45,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		s.validProofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		l1ProverPrivKey,
-		1,
 		&sync.Mutex{},
 	)
 
@@ -54,7 +53,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		&proofProducer.DummyProofProducer{},
 		s.invalidProofCh,
 		l1ProverPrivKey,
-		1,
 		100000,
 		&sync.Mutex{},
 	)
