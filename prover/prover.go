@@ -106,10 +106,15 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.rpc.L2ChainID,
 	)
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
-	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, p.protocolConfigs.MaxNumBlocks.Uint64())
-	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, p.protocolConfigs.MaxNumBlocks.Uint64())
-	p.proveValidProofCh = make(chan *proofProducer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())
-	p.proveInvalidProofCh = make(chan *proofProducer.ProofWithHeader, p.protocolConfigs.MaxNumBlocks.Uint64())
+
+	chBufferSize := p.protocolConfigs.MaxNumBlocks.Uint64()
+	if chBufferSize >= 1<<16 {
+		chBufferSize = 1<<16 - 1
+	}
+	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
+	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
+	p.proveValidProofCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
+	p.proveInvalidProofCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
