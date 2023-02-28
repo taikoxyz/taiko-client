@@ -74,8 +74,9 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 
 	// Request proof.
 	opts := &proofProducer.ProofRequestOptions{
-		Height:        header.Number,
-		ProverAddress: s.proverAddress,
+		Height:             header.Number,
+		ProverAddress:      s.proverAddress,
+		ProposeBlockTxHash: event.Raw.TxHash,
 	}
 
 	if err := s.proofProducer.RequestProof(opts, event.Id, &event.Meta, header, s.reusltCh); err != nil {

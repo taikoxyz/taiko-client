@@ -26,6 +26,7 @@ var (
 type ZkevmRpcdProducer struct {
 	RpcdEndpoint    string                         // a proverd RPC endpoint
 	Param           string                         // parameter file to use
+	L1Endpoint      string                         // a L1 node RPC endpoint
 	L2Endpoint      string                         // a L2 execution engine's RPC endpoint
 	Retry           bool                           // retry proof computation if error
 	CustomProofHook func() ([]byte, uint64, error) // only for testing purposes
@@ -41,15 +42,17 @@ type RequestProofBody struct {
 
 // RequestProofBody represents the JSON body of RequestProofBody's `param` field.
 type RequestProofBodyParam struct {
-	Circuit     string   `json:"circuit"`
-	Block       *big.Int `json:"block"`
-	RPC         string   `json:"rpc"`
-	Retry       bool     `json:"retry"`
-	Param       string   `json:"param"`
-	VerifyProof bool     `json:"verify_proof"`
-	Mock        bool     `json:"mock"`
-	Aggregate   bool     `json:"aggregate"`
-	Prover      string   `json:"prover"`
+	Circuit            string   `json:"circuit"`
+	Block              *big.Int `json:"block"`
+	L1RPC              string   `json:"l1_rpc"`
+	L2RPC              string   `json:"l2_rpc"`
+	ProposeBlockTxHash string   `json:"propose_tx_hash"`
+	Retry              bool     `json:"retry"`
+	Param              string   `json:"param"`
+	VerifyProof        bool     `json:"verify_proof"`
+	Mock               bool     `json:"mock"`
+	Aggregate          bool     `json:"aggregate"`
+	Prover             string   `json:"prover"`
 }
 
 // RequestProofBodyResponse represents the JSON body of the response of the proof requests.
@@ -72,6 +75,7 @@ type RpcdOutput struct {
 func NewZkevmRpcdProducer(
 	rpcdEndpoint string,
 	param string,
+	l1Endpoint string,
 	l2Endpoint string,
 	retry bool,
 ) (*ZkevmRpcdProducer, error) {
@@ -83,7 +87,13 @@ func NewZkevmRpcdProducer(
 		return nil, errRpcdUnhealthy
 	}
 
-	return &ZkevmRpcdProducer{RpcdEndpoint: rpcdEndpoint, Param: param, L2Endpoint: l2Endpoint, Retry: retry}, nil
+	return &ZkevmRpcdProducer{
+		RpcdEndpoint: rpcdEndpoint,
+		Param:        param,
+		L1Endpoint:   l1Endpoint,
+		L2Endpoint:   l2Endpoint,
+		Retry:        retry,
+	}, nil
 }
 
 // RequestProof implements the ProofProducer interface.
@@ -163,15 +173,17 @@ func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 		ID:      common.Big1,
 		Method:  "proof",
 		Params: []*RequestProofBodyParam{{
-			Circuit:     "pi",
-			Block:       opts.Height,
-			RPC:         d.L2Endpoint,
-			Retry:       true,
-			Param:       d.Param,
-			VerifyProof: true,
-			Mock:        false,
-			Aggregate:   false,
-			Prover:      opts.ProverAddress.Hex()[2:],
+			Circuit:            "pi",
+			Block:              opts.Height,
+			L1RPC:              d.L1Endpoint,
+			L2RPC:              d.L2Endpoint,
+			Retry:              true,
+			Param:              d.Param,
+			VerifyProof:        true,
+			Mock:               false,
+			Aggregate:          false,
+			Prover:             opts.ProverAddress.Hex()[2:],
+			ProposeBlockTxHash: opts.ProposeBlockTxHash.Hex()[2:],
 		}},
 	}
 

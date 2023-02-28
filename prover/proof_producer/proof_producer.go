@@ -19,8 +19,9 @@ const (
 
 // ProofRequestOptions contains all options that need to be passed to zkEVM rpcd service.
 type ProofRequestOptions struct {
-	Height        *big.Int // the block number
-	ProverAddress common.Address
+	Height             *big.Int // the block number
+	ProverAddress      common.Address
+	ProposeBlockTxHash common.Hash
 }
 
 type ProofWithHeader struct {

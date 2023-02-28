@@ -164,6 +164,8 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
 	}
 
+	log.Info("Transactions count", "count", len(txLists))
+
 	var commitTxListResQueue []*commitTxListRes
 	for i, txs := range txLists {
 		txListBytes, err := rlp.EncodeToBytes(txs)

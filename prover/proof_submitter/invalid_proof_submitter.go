@@ -65,8 +65,9 @@ func (s *InvalidProofSubmitter) RequestProof(ctx context.Context, event *binding
 
 	// Request proof.
 	proofOpts := &proofProducer.ProofRequestOptions{
-		Height:        throwAwayBlock.Header().Number,
-		ProverAddress: s.proverAddress,
+		Height:             throwAwayBlock.Header().Number,
+		ProverAddress:      s.proverAddress,
+		ProposeBlockTxHash: event.Raw.TxHash,
 	}
 
 	if err := s.proofProducer.RequestProof(
