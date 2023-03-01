@@ -29,8 +29,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
-		s.Equal(l1Endpoint, c.L1Endpoint)
-		s.Equal(l2Endpoint, c.L2Endpoint)
+		s.Equal(l1Endpoint, c.L1WsEndpoint)
+		s.Equal(l2Endpoint, c.L2WsEndpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
 		s.Equal(

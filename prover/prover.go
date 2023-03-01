@@ -80,8 +80,8 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
-		L1Endpoint:     cfg.L1Endpoint,
-		L2Endpoint:     cfg.L2Endpoint,
+		L1Endpoint:     cfg.L1WsEndpoint,
+		L2Endpoint:     cfg.L2WsEndpoint,
 		TaikoL1Address: cfg.TaikoL1Address,
 		TaikoL2Address: cfg.TaikoL2Address,
 	}); err != nil {
@@ -131,8 +131,8 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		if producer, err = proofProducer.NewZkevmRpcdProducer(
 			cfg.ZKEvmRpcdEndpoint,
 			cfg.ZkEvmRpcdParamsPath,
-			cfg.L1Endpoint,
-			cfg.L2Endpoint,
+			cfg.L1HttpEndpoint,
+			cfg.L2HttpEndpoint,
 			true,
 		); err != nil {
 			return err

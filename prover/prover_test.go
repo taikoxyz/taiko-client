@@ -36,8 +36,8 @@ func (s *ProverTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
 	s.Nil(InitFromConfig(ctx, p, (&Config{
-		L1Endpoint:               os.Getenv("L1_NODE_ENDPOINT"),
-		L2Endpoint:               os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
+		L1WsEndpoint:             os.Getenv("L1_NODE_ENDPOINT"),
+		L2WsEndpoint:             os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L1ProverPrivKey:          l1ProverPrivKey,
