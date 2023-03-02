@@ -36,8 +36,10 @@ trap "docker compose -f $TESTNET_CONFIG down -v" EXIT INT KILL ERR
 RUN_TESTS=${RUN_TESTS:-false}
 
 if [ "$RUN_TESTS" == "true" ]; then
-    L1_NODE_ENDPOINT=ws://localhost:18546 \
-    L2_EXECUTION_ENGINE_ENDPOINT=ws://localhost:28546 \
+    L1_NODE_HTTP_ENDPOINT=http://localhost:18545 \
+    L1_NODE_WS_ENDPOINT=ws://localhost:18546 \
+    L2_EXECUTION_ENGINE_HTTP_ENDPOINT=http://localhost:28545 \
+    L2_EXECUTION_ENGINE_WS_ENDPOINT=ws://localhost:28546 \
     L2_EXECUTION_ENGINE_AUTH_ENDPOINT=http://localhost:28551 \
     TAIKO_L1_ADDRESS=$TAIKO_L1_CONTRACT_ADDRESS \
     TAIKO_L2_ADDRESS=$TAIKO_L2_CONTRACT_ADDRESS \

@@ -15,8 +15,10 @@ import (
 
 // Config contains the configurations to initialize a Taiko prover.
 type Config struct {
-	L1Endpoint                      string
-	L2Endpoint                      string
+	L1WsEndpoint                    string
+	L1HttpEndpoint                  string
+	L2WsEndpoint                    string
+	L2HttpEndpoint                  string
 	TaikoL1Address                  common.Address
 	TaikoL2Address                  common.Address
 	L1ProverPrivKey                 *ecdsa.PrivateKey
@@ -73,8 +75,10 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	return &Config{
-		L1Endpoint:                      c.String(flags.L1WSEndpoint.Name),
-		L2Endpoint:                      c.String(flags.L2WSEndpoint.Name),
+		L1WsEndpoint:                    c.String(flags.L1WSEndpoint.Name),
+		L1HttpEndpoint:                  c.String(flags.L1HTTPEndpoint.Name),
+		L2WsEndpoint:                    c.String(flags.L2WSEndpoint.Name),
+		L2HttpEndpoint:                  c.String(flags.L2HTTPEndpoint.Name),
 		TaikoL1Address:                  common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                  common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		L1ProverPrivKey:                 l1ProverPrivKey,

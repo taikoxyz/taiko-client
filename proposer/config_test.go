@@ -12,8 +12,8 @@ import (
 )
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
-	l1Endpoint := os.Getenv("L1_NODE_ENDPOINT")
-	l2Endpoint := os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT")
+	l1Endpoint := os.Getenv("L1_NODE_WS_ENDPOINT")
+	l2Endpoint := os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 	proposeInterval := "10s"
@@ -22,7 +22,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
+		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
 		&cli.StringFlag{Name: flags.L1ProposerPrivKey.Name},
@@ -52,7 +52,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"-" + flags.L1WSEndpoint.Name, l1Endpoint,
-		"-" + flags.L2WSEndpoint.Name, l2Endpoint,
+		"-" + flags.L2HTTPEndpoint.Name, l2Endpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.L1ProposerPrivKey.Name, bindings.GoldenTouchPrivKey[2:],

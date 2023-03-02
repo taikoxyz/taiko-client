@@ -15,25 +15,37 @@ var (
 
 // Required flags used by all client softwares.
 var (
-	L1WSEndpoint = cli.StringFlag{
+	L1WSEndpoint = &cli.StringFlag{
 		Name:     "l1.ws",
 		Usage:    "Websocket RPC endpoint of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
 	}
-	L2WSEndpoint = cli.StringFlag{
+	L2WSEndpoint = &cli.StringFlag{
 		Name:     "l2.ws",
 		Usage:    "Websocket RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
 	}
-	TaikoL1Address = cli.StringFlag{
+	L1HTTPEndpoint = &cli.StringFlag{
+		Name:     "l1.http",
+		Usage:    "HTTP RPC endpoint of a L1 ethereum node",
+		Required: true,
+		Category: commonCategory,
+	}
+	L2HTTPEndpoint = &cli.StringFlag{
+		Name:     "l2.http",
+		Usage:    "HTTP RPC endpoint of a L2 taiko-geth execution engine",
+		Required: true,
+		Category: commonCategory,
+	}
+	TaikoL1Address = &cli.StringFlag{
 		Name:     "taikoL1",
 		Usage:    "TaikoL1 contract address",
 		Required: true,
 		Category: commonCategory,
 	}
-	TaikoL2Address = cli.StringFlag{
+	TaikoL2Address = &cli.StringFlag{
 		Name:     "taikoL2",
 		Usage:    "TaikoL2 contract address",
 		Required: true,
@@ -76,10 +88,9 @@ var (
 // All common flags.
 var CommonFlags = []cli.Flag{
 	// Required
-	&L1WSEndpoint,
-	&L2WSEndpoint,
-	&TaikoL1Address,
-	&TaikoL2Address,
+	L1WSEndpoint,
+	TaikoL1Address,
+	TaikoL2Address,
 	// Optional
 	Verbosity,
 	LogJson,

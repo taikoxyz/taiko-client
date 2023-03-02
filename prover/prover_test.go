@@ -36,8 +36,10 @@ func (s *ProverTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
 	s.Nil(InitFromConfig(ctx, p, (&Config{
-		L1Endpoint:               os.Getenv("L1_NODE_ENDPOINT"),
-		L2Endpoint:               os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
+		L1WsEndpoint:             os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:           os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:             os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:           os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L1ProverPrivKey:          l1ProverPrivKey,
@@ -59,8 +61,8 @@ func (s *ProverTestSuite) SetupTest() {
 
 	d := new(driver.Driver)
 	s.Nil(driver.InitFromConfig(context.Background(), d, &driver.Config{
-		L1Endpoint:                    os.Getenv("L1_NODE_ENDPOINT"),
-		L2Endpoint:                    os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
+		L1Endpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		L2EngineEndpoint:              os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		TaikoL1Address:                common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:                common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
@@ -77,8 +79,8 @@ func (s *ProverTestSuite) SetupTest() {
 
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
-		L1Endpoint:              os.Getenv("L1_NODE_ENDPOINT"),
-		L2Endpoint:              os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
+		L1Endpoint:              os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:              os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:          common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L1ProposerPrivKey:       l1ProposerPrivKey,

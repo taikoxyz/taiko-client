@@ -11,15 +11,19 @@ import (
 )
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext() {
-	l1Endpoint := os.Getenv("L1_NODE_ENDPOINT")
-	l2Endpoint := os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT")
+	l1WsEndpoint := os.Getenv("L1_NODE_WS_ENDPOINT")
+	l1HttpEndpoint := os.Getenv("L1_NODE_HTTP_ENDPOINT")
+	l2WsEndpoint := os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
+	l2HttpEndpoint := os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
+		&cli.StringFlag{Name: flags.L1HTTPEndpoint.Name},
 		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
+		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
 		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
@@ -29,8 +33,10 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
-		s.Equal(l1Endpoint, c.L1Endpoint)
-		s.Equal(l2Endpoint, c.L2Endpoint)
+		s.Equal(l1WsEndpoint, c.L1WsEndpoint)
+		s.Equal(l1HttpEndpoint, c.L1HttpEndpoint)
+		s.Equal(l2WsEndpoint, c.L2WsEndpoint)
+		s.Equal(l2HttpEndpoint, c.L2HttpEndpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
 		s.Equal(
@@ -47,8 +53,10 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 
 	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"-" + flags.L1WSEndpoint.Name, l1Endpoint,
-		"-" + flags.L2WSEndpoint.Name, l2Endpoint,
+		"-" + flags.L1WSEndpoint.Name, l1WsEndpoint,
+		"-" + flags.L1HTTPEndpoint.Name, l1HttpEndpoint,
+		"-" + flags.L2WSEndpoint.Name, l2WsEndpoint,
+		"-" + flags.L2HTTPEndpoint.Name, l2HttpEndpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
