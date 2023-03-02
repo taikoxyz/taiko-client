@@ -92,8 +92,6 @@ var CommonFlags = []cli.Flag{
 	TaikoL1Address,
 	TaikoL2Address,
 	// Optional
-	L1HTTPEndpoint,
-	L2HTTPEndpoint,
 	Verbosity,
 	LogJson,
 	MetricsEnabled,
