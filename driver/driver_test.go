@@ -41,8 +41,8 @@ func (s *DriverTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.Background())
 	s.cancel = cancel
 	s.Nil(InitFromConfig(ctx, d, &Config{
-		L1Endpoint:                    os.Getenv("L1_NODE_ENDPOINT"),
-		L2Endpoint:                    os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
+		L1Endpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		L2EngineEndpoint:              os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		TaikoL1Address:                common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:                common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
@@ -59,8 +59,8 @@ func (s *DriverTestSuite) SetupTest() {
 
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(proposer.InitFromConfig(context.Background(), p, (&proposer.Config{
-		L1Endpoint:              os.Getenv("L1_NODE_ENDPOINT"),
-		L2Endpoint:              os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"),
+		L1Endpoint:              os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:              os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:          common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L1ProposerPrivKey:       l1ProposerPrivKey,

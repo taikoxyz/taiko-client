@@ -12,8 +12,8 @@ import (
 )
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
-	l1Endpoint := os.Getenv("L1_NODE_ENDPOINT")
-	l2Endpoint := os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT")
+	l1Endpoint := os.Getenv("L1_NODE_WS_ENDPOINT")
+	l2Endpoint := os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 	proposeInterval := "10s"

@@ -32,7 +32,7 @@ func TestDialEngineClientWithBackoff(t *testing.T) {
 }
 
 func TestDialClientWithBackoff(t *testing.T) {
-	client, err := DialClientWithBackoff(context.Background(), os.Getenv("L2_EXECUTION_ENGINE_ENDPOINT"))
+	client, err := DialClientWithBackoff(context.Background(), os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"))
 	require.Nil(t, err)
 
 	genesis, err := client.HeaderByNumber(context.Background(), common.Big0)
