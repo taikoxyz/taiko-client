@@ -89,7 +89,6 @@ var (
 var CommonFlags = []cli.Flag{
 	// Required
 	L1WSEndpoint,
-	L2WSEndpoint,
 	TaikoL1Address,
 	TaikoL2Address,
 	// Optional
