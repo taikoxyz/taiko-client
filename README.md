@@ -13,7 +13,7 @@ Taiko protocol's client software implementation in Go.
 | `cmd/`              | Main executable for this project                                                                                                         |
 | `docs/`             | Documentation                                                                                                                            |
 | `driver/`           | Driver sub-command                                                                                                                       |
-| `integration_test/` | Scripts to do the integration testing of all client softwares                                                                            |
+| `integration_test/` | Scripts to do the integration testing of all client software                                                                            |
 | `metrics/`          | Metrics related                                                                                                                          |
 | `pkg/`              | Library code which used by all sub-commands                                                                                              |
 | `proposer/`         | Proposer sub-command                                                                                                                     |
