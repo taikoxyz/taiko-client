@@ -242,7 +242,7 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 
 	commitTx, err := p.rpc.TaikoL1.CommitBlock(opts, meta.CommitSlot, commitHash)
 	if err != nil {
-		return nil, nil, encoding.TryParseCustomError(err)
+		return nil, nil, encoding.TryParsingCustomError(err)
 	}
 
 	return meta, commitTx, nil
@@ -295,7 +295,7 @@ func (p *Proposer) ProposeTxList(
 
 	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs)
 	if err != nil {
-		return encoding.TryParseCustomError(err)
+		return encoding.TryParsingCustomError(err)
 	}
 
 	if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, proposeTx); err != nil {

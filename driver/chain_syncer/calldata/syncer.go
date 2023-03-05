@@ -351,7 +351,7 @@ func (s *Syncer) insertThrowAwayBlock(
 		invalidTxIndex,
 	)
 	if err != nil {
-		return nil, nil, encoding.TryParseCustomError(err)
+		return nil, nil, encoding.TryParsingCustomError(err)
 	}
 
 	throwawayBlockTxListBytes, err := rlp.EncodeToBytes(types.Transactions{invalidateBlockTx})
