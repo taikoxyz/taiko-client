@@ -22,10 +22,10 @@ type InvalidTxListReason uint8
 
 // All invalid transactions list reasons.
 const (
-	HintOK InvalidTxListReason = iota // This reason dose not exist in protocol, only used in client.
-	HintNone
+	HintNone InvalidTxListReason = iota
 	HintTxInvalidSig
 	HintTxGasLimitTooSmall
+	HintOK // This reason dose not exist in protocol, only used in client.
 )
 
 type TxListValidator struct {

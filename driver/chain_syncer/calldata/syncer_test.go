@@ -95,6 +95,7 @@ func (s *CalldataSyncerTestSuite) TestInsertThrowAwayBlock() {
 	parent, err := s.s.rpc.L2.HeaderByNumber(context.Background(), common.Big0)
 	s.Nil(err)
 	txListBytes := testutils.RandomBytes(1024)
+
 	_, rpcErr, payloadErr := s.s.insertThrowAwayBlock(
 		context.Background(),
 		&bindings.TaikoL1ClientBlockProposed{
@@ -112,7 +113,7 @@ func (s *CalldataSyncerTestSuite) TestInsertThrowAwayBlock() {
 			},
 		},
 		parent,
-		2, // BINARY_NOT_DECODABLE
+		0, // reason: BINARY_NOT_DECODABLE
 		common.Big0,
 		common.Big2,
 		txListBytes,

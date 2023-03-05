@@ -24,12 +24,10 @@ var (
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
-	// Not an error returned by eth_estimateGas.
-	if !strings.HasPrefix(err.Error(), "L1_") {
+	if strings.HasPrefix(err.Error(), "L1_CANNOT_BE_FIRST_PROVER") || !strings.HasPrefix(err.Error(), "L1_") {
 		return true
 	}
 
-	// Contract errors, returned by eth_estimateGas.
 	log.Warn("🤷‍♂️ Unretryable proof submission error", "error", err, "blockID", blockID)
 	return false
 }
