@@ -1,6 +1,7 @@
 package producer
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 
@@ -34,6 +35,7 @@ type ProofWithHeader struct {
 
 type ProofProducer interface {
 	RequestProof(
+		ctx context.Context,
 		opts *ProofRequestOptions,
 		blockID *big.Int,
 		meta *bindings.TaikoDataBlockMetadata,

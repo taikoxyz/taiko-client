@@ -71,7 +71,7 @@ func (s *InvalidProofSubmitter) RequestProof(ctx context.Context, event *binding
 	}
 
 	if err := s.proofProducer.RequestProof(
-		proofOpts, event.Id, &event.Meta, throwAwayBlock.Header(), s.reusltCh,
+		ctx, proofOpts, event.Id, &event.Meta, throwAwayBlock.Header(), s.reusltCh,
 	); err != nil {
 		return err
 	}

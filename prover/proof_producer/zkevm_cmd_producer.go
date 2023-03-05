@@ -2,6 +2,7 @@ package producer
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -34,6 +35,7 @@ func NewZkevmCmdProducer(
 
 // RequestProof implements the ProofProducer interface.
 func (d *ZkevmCmdProducer) RequestProof(
+	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,

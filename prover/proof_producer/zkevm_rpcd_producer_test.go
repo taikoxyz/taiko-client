@@ -1,6 +1,7 @@
 package producer
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -41,6 +42,7 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 		Nonce:       types.BlockNonce{},
 	}
 	require.Nil(t, dummpyZkevmRpcdProducer.RequestProof(
+		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
 		&bindings.TaikoDataBlockMetadata{},
