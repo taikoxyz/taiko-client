@@ -32,7 +32,7 @@ services:
       - --datadir
       - /data/taiko-geth
       - --networkid
-      - "167"
+      - "167001"
       - --metrics
       - --metrics.expensive
       - --metrics.addr

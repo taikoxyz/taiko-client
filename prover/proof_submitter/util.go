@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -24,7 +25,7 @@ var (
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
 	// Not an error returned by eth_estimateGas.
-	if !strings.Contains(err.Error(), "L1:") && !strings.Contains(err.Error(), "unrecognized custom error") {
+	if !strings.HasPrefix(err.Error(), "L1_") {
 		return true
 	}
 
@@ -74,6 +75,7 @@ func sendTxWithBackoff(
 
 		tx, err := sendTxFunc()
 		if err != nil {
+			err = encoding.TryParseCustomError(err)
 			if isSubmitProofTxErrorRetryable(err, blockID) {
 				log.Info("Retry sending TaikoL1.proveBlock transaction", "reason", err)
 				return err
