@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -23,12 +24,10 @@ var (
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
-	// Not an error returned by eth_estimateGas.
-	if !strings.Contains(err.Error(), "L1:") && !strings.Contains(err.Error(), "unrecognized custom error") {
+	if strings.HasPrefix(err.Error(), "L1_CANNOT_BE_FIRST_PROVER") || !strings.HasPrefix(err.Error(), "L1_") {
 		return true
 	}
 
-	// Contract errors, returned by eth_estimateGas.
 	log.Warn("🤷‍♂️ Unretryable proof submission error", "error", err, "blockID", blockID)
 	return false
 }
@@ -74,6 +73,7 @@ func sendTxWithBackoff(
 
 		tx, err := sendTxFunc()
 		if err != nil {
+			err = encoding.TryParsingCustomError(err)
 			if isSubmitProofTxErrorRetryable(err, blockID) {
 				log.Info("Retry sending TaikoL1.proveBlock transaction", "reason", err)
 				return err

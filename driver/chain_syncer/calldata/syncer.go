@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
@@ -333,6 +334,8 @@ func (s *Syncer) insertThrowAwayBlock(
 		"parentHash", parent.Hash(),
 		"headBlockID", headBlockID,
 		"l1Origin", l1Origin,
+		"hint", hint,
+		"invalidTxIndex", invalidTxIndex,
 	)
 
 	// Assemble a TaikoL2.invalidateBlock transaction
@@ -348,12 +351,10 @@ func (s *Syncer) insertThrowAwayBlock(
 		invalidTxIndex,
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, encoding.TryParsingCustomError(err)
 	}
 
-	throwawayBlockTxListBytes, err := rlp.EncodeToBytes(
-		types.Transactions{invalidateBlockTx},
-	)
+	throwawayBlockTxListBytes, err := rlp.EncodeToBytes(types.Transactions{invalidateBlockTx})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to encode TaikoL2.InvalidateBlock transaction bytes, err: %w", err)
 	}

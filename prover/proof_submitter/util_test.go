@@ -11,10 +11,9 @@ import (
 
 func (s *ProofSubmitterTestSuite) TestIsSubmitProofTxErrorRetryable() {
 	s.True(isSubmitProofTxErrorRetryable(errors.New(testAddr.String()), common.Big0))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:proof:tooMany"), common.Big0))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:tooLate"), common.Big0))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:prover:dup"), common.Big0))
-	s.False(isSubmitProofTxErrorRetryable(errors.New("L1:"+testAddr.String()), common.Big0))
+	s.True(isSubmitProofTxErrorRetryable(errors.New("L1_CANNOT_BE_FIRST_PROVER"), common.Big0))
+	s.False(isSubmitProofTxErrorRetryable(errors.New("L1_DUP_PROVERS"), common.Big0))
+	s.False(isSubmitProofTxErrorRetryable(errors.New("L1_"+testAddr.String()), common.Big0))
 }
 
 func (s *ProofSubmitterTestSuite) TestGetProveBlocksTxOpts() {
@@ -29,7 +28,7 @@ func (s *ProofSubmitterTestSuite) TestGetProveBlocksTxOpts() {
 
 func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 	err := sendTxWithBackoff(context.Background(), s.RpcClient, common.Big1, func() (*types.Transaction, error) {
-		return nil, errors.New("L1:test")
+		return nil, errors.New("L1_TEST")
 	})
 
 	s.NotNil(err)
