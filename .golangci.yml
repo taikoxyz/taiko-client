@@ -8,6 +8,12 @@ run:
     - bindings/gen_taiko_l1.go
     - bindings/gen_taiko_l2.go
 
+issues:
+  exclude-rules:
+    - path: bindings/encoding/custom_error.go
+      linters:
+        - errorlint
+
 linters:
   disable-all: true
   enable:
