@@ -2,6 +2,7 @@ package producer
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -98,6 +99,7 @@ func NewZkevmRpcdProducer(
 
 // RequestProof implements the ProofProducer interface.
 func (d *ZkevmRpcdProducer) RequestProof(
+	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,
@@ -120,7 +122,7 @@ func (d *ZkevmRpcdProducer) RequestProof(
 	if d.CustomProofHook != nil {
 		proof, degree, err = d.CustomProofHook()
 	} else {
-		proof, degree, err = d.callProverDaemon(opts)
+		proof, degree, err = d.callProverDaemon(ctx, opts)
 	}
 	if err != nil {
 		return err
@@ -138,13 +140,16 @@ func (d *ZkevmRpcdProducer) RequestProof(
 }
 
 // callProverDaemon keeps polling the proverd service to get the requested proof.
-func (d *ZkevmRpcdProducer) callProverDaemon(opts *ProofRequestOptions) ([]byte, uint64, error) {
+func (d *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofRequestOptions) ([]byte, uint64, error) {
 	var (
 		proof  []byte
 		degree uint64
 		start  = time.Now()
 	)
 	if err := backoff.Retry(func() error {
+		if ctx.Err() != nil {
+			return nil
+		}
 		output, err := d.requestProof(opts)
 		if err != nil {
 			log.Error("Failed to request proof", "height", opts.Height, "err", err, "endpoint", d.RpcdEndpoint)

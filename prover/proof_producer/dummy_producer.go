@@ -1,6 +1,7 @@
 package producer
 
 import (
+	"context"
 	"math/big"
 	"math/rand"
 	"time"
@@ -18,6 +19,7 @@ type DummyProofProducer struct {
 
 // RequestProof implements the ProofProducer interface.
 func (d *DummyProofProducer) RequestProof(
+	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,

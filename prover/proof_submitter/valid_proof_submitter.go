@@ -79,7 +79,7 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		ProposeBlockTxHash: event.Raw.TxHash,
 	}
 
-	if err := s.proofProducer.RequestProof(opts, event.Id, &event.Meta, header, s.reusltCh); err != nil {
+	if err := s.proofProducer.RequestProof(ctx, opts, event.Id, &event.Meta, header, s.reusltCh); err != nil {
 		return err
 	}
 
