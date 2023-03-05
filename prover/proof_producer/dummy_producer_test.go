@@ -1,6 +1,7 @@
 package producer
 
 import (
+	"context"
 	"crypto/rand"
 	"testing"
 	"time"
@@ -35,6 +36,7 @@ func TestRequestProof(t *testing.T) {
 		Nonce:       types.BlockNonce{},
 	}
 	require.Nil(t, dummyProofProducer.RequestProof(
+		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
 		&bindings.TaikoDataBlockMetadata{},
