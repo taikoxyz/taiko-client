@@ -26,7 +26,6 @@ var (
 	ProposerProposeEpochCounter    = metrics.NewRegisteredCounter("proposer/epoch", nil)
 	ProposerProposedTxListsCounter = metrics.NewRegisteredCounter("proposer/proposed/txLists", nil)
 	ProposerProposedTxsCounter     = metrics.NewRegisteredCounter("proposer/proposed/txs", nil)
-	ProposerInvalidTxsCounter      = metrics.NewRegisteredCounter("proposer/invalid/txs", nil)
 
 	// Prover
 	ProverLatestVerifiedIDGauge       = metrics.NewRegisteredGauge("prover/latestVerified/id", nil)
