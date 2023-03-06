@@ -29,6 +29,7 @@ var (
 
 	// Prover
 	ProverLatestVerifiedIDGauge       = metrics.NewRegisteredGauge("prover/latestVerified/id", nil)
+	ProverLatestProvenBlockIDGauge    = metrics.NewRegisteredGauge("prover/latestProven/id", nil)
 	ProverQueuedProofCounter          = metrics.NewRegisteredCounter("prover/proof/all/queued", nil)
 	ProverQueuedValidProofCounter     = metrics.NewRegisteredCounter("prover/proof/valid/queued", nil)
 	ProverQueuedInvalidProofCounter   = metrics.NewRegisteredCounter("prover/proof/invalid/queued", nil)

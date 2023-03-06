@@ -212,6 +212,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 
 	metrics.ProverSentProofCounter.Inc(1)
 	metrics.ProverSentValidProofCounter.Inc(1)
+	metrics.ProverLatestProvenBlockIDGauge.Update(proofWithHeader.BlockID.Int64())
 
 	return nil
 }
