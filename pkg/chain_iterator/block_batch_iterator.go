@@ -295,10 +295,10 @@ func (i *BlockBatchIterator) ensureCurrentNotReorged() error {
 
 	// Reorg detected, rewind back `ReorgRewindDepth` blocks
 	var newCurrentHeight uint64
-	if current.Number.Uint64() <= ReorgRewindDepth {
+	if i.current.Number.Uint64() <= ReorgRewindDepth {
 		newCurrentHeight = 0
 	} else {
-		newCurrentHeight = current.Number.Uint64() - ReorgRewindDepth
+		newCurrentHeight = i.current.Number.Uint64() - ReorgRewindDepth
 	}
 
 	i.current, err = i.client.HeaderByNumber(i.ctx, new(big.Int).SetUint64(newCurrentHeight))
