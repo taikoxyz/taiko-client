@@ -3,14 +3,12 @@ package proposer
 import (
 	"context"
 	"crypto/ecdsa"
-	"errors"
 	"fmt"
 	"math/big"
 	"math/rand"
 	"sync"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -23,14 +21,6 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
-)
-
-var (
-	// errSyncing is returned when the L2 execution engine is syncing.
-	errSyncing = errors.New("syncing")
-	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
-	// if the previous check failed.
-	syncProgressRecheckDelay = 12 * time.Second
 )
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
@@ -146,7 +136,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	}
 
 	// Wait until L2 execution engine is synced at first.
-	if err := p.waitTillSynced(ctx); err != nil {
+	if err := p.rpc.WaitTillL2Synced(ctx); err != nil {
 		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
 	}
 
@@ -308,33 +298,6 @@ func (p *Proposer) ProposeTxList(
 	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))
 
 	return nil
-}
-
-// waitTillSynced keeps waiting until the L2 execution engine is fully synced.
-func (p *Proposer) waitTillSynced(ctx context.Context) error {
-	return backoff.Retry(
-		func() error {
-			if ctx.Err() != nil {
-				return nil
-			}
-			progress, err := p.rpc.L2ExecutionEngineSyncProgress(p.ctx)
-			if err != nil {
-				log.Error("Fetch L2 execution engine sync progress error", "error", err)
-				return err
-			}
-
-			if progress.SyncProgress != nil ||
-				progress.CurrentBlockID == nil ||
-				progress.HighestBlockID == nil ||
-				progress.CurrentBlockID.Cmp(progress.HighestBlockID) < 0 {
-				log.Info("L2 execution engine is syncing", "progress", progress)
-				return errSyncing
-			}
-
-			return nil
-		},
-		backoff.NewConstantBackOff(syncProgressRecheckDelay),
-	)
 }
 
 // updateProposingTicker updates the internal proposing timer.

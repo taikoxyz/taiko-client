@@ -2,10 +2,12 @@ package rpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -15,6 +17,14 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"golang.org/x/sync/errgroup"
+)
+
+var (
+	// errSyncing is returned when the L2 execution engine is syncing.
+	errSyncing = errors.New("syncing")
+	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
+	// if the previous check failed.
+	syncProgressRecheckDelay = 12 * time.Second
 )
 
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
@@ -58,6 +68,33 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	}
 
 	return fmt.Errorf("genesis block not found in TaikoL1")
+}
+
+// WaitTillL2Synced keeps waiting until the L2 execution engine is fully synced.
+func (c *Client) WaitTillL2Synced(ctx context.Context) error {
+	return backoff.Retry(
+		func() error {
+			if ctx.Err() != nil {
+				return nil
+			}
+			progress, err := c.L2ExecutionEngineSyncProgress(ctx)
+			if err != nil {
+				log.Error("Fetch L2 execution engine sync progress error", "error", err)
+				return err
+			}
+
+			if progress.SyncProgress != nil ||
+				progress.CurrentBlockID == nil ||
+				progress.HighestBlockID == nil ||
+				progress.CurrentBlockID.Cmp(progress.HighestBlockID) < 0 {
+				log.Info("L2 execution engine is syncing", "progress", progress)
+				return errSyncing
+			}
+
+			return nil
+		},
+		backoff.NewConstantBackOff(syncProgressRecheckDelay),
+	)
 }
 
 // LatestL2KnownL1Header fetches the L2 execution engine's latest known L1 header.
