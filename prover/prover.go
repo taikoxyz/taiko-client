@@ -354,6 +354,10 @@ func (p *Prover) Name() string {
 
 // initL1Current initializes prover's L1Current cursor.
 func (p *Prover) initL1Current(startingBlockID *big.Int) error {
+	if err := p.rpc.WaitTillL2Synced(p.ctx); err != nil {
+		return err
+	}
+
 	if startingBlockID == nil {
 		stateVars, err := p.rpc.GetProtocolStateVariables(nil)
 		if err != nil {
