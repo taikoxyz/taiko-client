@@ -129,13 +129,15 @@ func (p *Proposer) eventLoop() {
 				}
 
 				if p.proposeEmptyBlocksInterval != nil {
-					if time.Now().After(lastNonEmptyBlockProposedAt.Add(*p.proposeEmptyBlocksInterval)) {
+					if time.Now().Before(lastNonEmptyBlockProposedAt.Add(*p.proposeEmptyBlocksInterval)) {
 						continue
 					}
 
 					if err := p.ProposeEmptyBlockOp(p.ctx); err != nil {
 						log.Error("Proposing an empty block operation error", "error", err)
 					}
+
+					lastNonEmptyBlockProposedAt = time.Now()
 				}
 
 				continue
