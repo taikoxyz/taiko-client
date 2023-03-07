@@ -35,12 +35,6 @@ var (
 		Value:    rand.Uint64(),
 		Category: proposerCategory,
 	}
-	ShufflePoolContent = &cli.BoolFlag{
-		Name:     "shufflePoolContent",
-		Usage:    "Perform a weighted shuffle when building the transactions list to propose",
-		Value:    false,
-		Category: proposerCategory,
-	}
 	TxPoolLocals = &cli.StringFlag{
 		Name:     "txpool.locals",
 		Usage:    "Perform a weighted shuffle when building the transactions list to propose",
@@ -60,7 +54,6 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L1ProposerPrivKey,
 	L2SuggestedFeeRecipient,
 	ProposeInterval,
-	ShufflePoolContent,
 	CommitSlot,
 	TxPoolLocals,
 	ProposeEmptyBlocksInterval,

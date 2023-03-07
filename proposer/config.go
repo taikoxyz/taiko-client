@@ -21,7 +21,6 @@ type Config struct {
 	L1ProposerPrivKey          *ecdsa.PrivateKey
 	L2SuggestedFeeRecipient    common.Address
 	ProposeInterval            *time.Duration
-	ShufflePoolContent         bool
 	CommitSlot                 uint64
 	LocalAddresses             []common.Address
 	ProposeEmptyBlocksInterval *time.Duration
@@ -79,7 +78,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:    common.HexToAddress(l2SuggestedFeeRecipient),
 		ProposeInterval:            proposingInterval,
-		ShufflePoolContent:         c.Bool(flags.ShufflePoolContent.Name),
 		CommitSlot:                 c.Uint64(flags.CommitSlot.Name),
 		LocalAddresses:             localAddresses,
 		ProposeEmptyBlocksInterval: proposeEmptyBlocksInterval,
