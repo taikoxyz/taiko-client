@@ -62,7 +62,7 @@ func (s *ProposerTestSuite) TestName() {
 
 func (s *ProposerTestSuite) TestProposeOp() {
 	// Nothing to propose
-	s.Nil(s.p.ProposeOp(context.Background()))
+	s.EqualError(errNoNewTxs, s.p.ProposeOp(context.Background()).Error())
 
 	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
@@ -101,6 +101,10 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	receipt, err := s.p.rpc.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
+}
+
+func (s *ProposerTestSuite) TestProposeEmptyBlockOp() {
+	s.Nil(s.p.ProposeEmptyBlockOp(context.Background()))
 }
 
 func (s *ProposerTestSuite) TestCommitTxList() {

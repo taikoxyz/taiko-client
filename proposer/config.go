@@ -14,16 +14,17 @@ import (
 
 // Config contains all configurations to initialize a Taiko proposer.
 type Config struct {
-	L1Endpoint              string
-	L2Endpoint              string
-	TaikoL1Address          common.Address
-	TaikoL2Address          common.Address
-	L1ProposerPrivKey       *ecdsa.PrivateKey
-	L2SuggestedFeeRecipient common.Address
-	ProposeInterval         *time.Duration
-	ShufflePoolContent      bool
-	CommitSlot              uint64
-	LocalAddresses          []common.Address
+	L1Endpoint                 string
+	L2Endpoint                 string
+	TaikoL1Address             common.Address
+	TaikoL2Address             common.Address
+	L1ProposerPrivKey          *ecdsa.PrivateKey
+	L2SuggestedFeeRecipient    common.Address
+	ProposeInterval            *time.Duration
+	ShufflePoolContent         bool
+	CommitSlot                 uint64
+	LocalAddresses             []common.Address
+	ProposeEmptyBlocksInterval *time.Duration
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -45,6 +46,14 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		}
 		proposingInterval = &interval
 	}
+	var proposeEmptyBlocksInterval *time.Duration
+	if c.IsSet(flags.ProposeEmptyBlocksInterval.Name) {
+		interval, err := time.ParseDuration(c.String(flags.ProposeEmptyBlocksInterval.Name))
+		if err != nil {
+			return nil, fmt.Errorf("invalid proposing empty blocks interval: %w", err)
+		}
+		proposeEmptyBlocksInterval = &interval
+	}
 
 	l2SuggestedFeeRecipient := c.String(flags.L2SuggestedFeeRecipient.Name)
 	if !common.IsHexAddress(l2SuggestedFeeRecipient) {
@@ -63,15 +72,16 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	return &Config{
-		L1Endpoint:              c.String(flags.L1WSEndpoint.Name),
-		L2Endpoint:              c.String(flags.L2HTTPEndpoint.Name),
-		TaikoL1Address:          common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
-		TaikoL2Address:          common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-		L1ProposerPrivKey:       l1ProposerPrivKey,
-		L2SuggestedFeeRecipient: common.HexToAddress(l2SuggestedFeeRecipient),
-		ProposeInterval:         proposingInterval,
-		ShufflePoolContent:      c.Bool(flags.ShufflePoolContent.Name),
-		CommitSlot:              c.Uint64(flags.CommitSlot.Name),
-		LocalAddresses:          localAddresses,
+		L1Endpoint:                 c.String(flags.L1WSEndpoint.Name),
+		L2Endpoint:                 c.String(flags.L2HTTPEndpoint.Name),
+		TaikoL1Address:             common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
+		TaikoL2Address:             common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
+		L1ProposerPrivKey:          l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:    common.HexToAddress(l2SuggestedFeeRecipient),
+		ProposeInterval:            proposingInterval,
+		ShufflePoolContent:         c.Bool(flags.ShufflePoolContent.Name),
+		CommitSlot:                 c.Uint64(flags.CommitSlot.Name),
+		LocalAddresses:             localAddresses,
+		ProposeEmptyBlocksInterval: proposeEmptyBlocksInterval,
 	}, nil
 }

@@ -15,6 +15,7 @@ type CalldataSyncer interface {
 type Proposer interface {
 	utils.SubcommandApplication
 	ProposeOp(ctx context.Context) error
+	ProposeEmptyBlockOp(ctx context.Context) error
 	CommitTxList(ctx context.Context, txListBytes []byte, gasLimit uint64, splittedIdx int) (
 		*bindings.TaikoDataBlockMetadata,
 		*types.Transaction,

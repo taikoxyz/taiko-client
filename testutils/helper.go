@@ -49,17 +49,14 @@ func ProposeAndInsertEmptyBlocks(
 	}()
 
 	// Zero byte txList
-	meta, commitTx, err := proposer.CommitTxList(context.Background(), []byte{}, 1024, 0)
-	s.Nil(err)
-
-	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, []byte{}, 0))
+	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
 
 	// RLP encoded empty list
 	var emptyTxs []types.Transaction
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	meta, commitTx, err = proposer.CommitTxList(context.Background(), encoded, 1024, 0)
+	meta, commitTx, err := proposer.CommitTxList(context.Background(), encoded, 1024, 0)
 	s.Nil(err)
 
 	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, encoded, 0))
