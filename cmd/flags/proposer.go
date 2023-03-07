@@ -47,6 +47,11 @@ var (
 		Value:    "Comma separated accounts to treat as locals (priority inclusion)",
 		Category: proposerCategory,
 	}
+	ProposeEmptyBlocksInterval = &cli.StringFlag{
+		Name:     "proposeEmptyBlockInterval",
+		Usage:    "Time interval to propose empty blocks",
+		Category: proposerCategory,
+	}
 )
 
 // All proposer flags.
@@ -58,4 +63,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ShufflePoolContent,
 	CommitSlot,
 	TxPoolLocals,
+	ProposeEmptyBlocksInterval,
 })

@@ -3,6 +3,7 @@ package proposer
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -23,6 +24,10 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var (
+	errNoNewTxs = errors.New("no new transactions")
+)
+
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
 type Proposer struct {
 	// RPC clients
@@ -33,10 +38,11 @@ type Proposer struct {
 	l2SuggestedFeeRecipient common.Address
 
 	// Proposing configurations
-	proposingInterval *time.Duration
-	proposingTimer    *time.Timer
-	commitSlot        uint64
-	locals            []common.Address
+	proposingInterval          *time.Duration
+	proposeEmptyBlocksInterval *time.Duration
+	proposingTimer             *time.Timer
+	commitSlot                 uint64
+	locals                     []common.Address
 
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -64,6 +70,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
 	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
 	p.proposingInterval = cfg.ProposeInterval
+	p.proposeEmptyBlocksInterval = cfg.ProposeEmptyBlocksInterval
 	p.wg = sync.WaitGroup{}
 	p.locals = cfg.LocalAddresses
 	p.commitSlot = cfg.CommitSlot
@@ -105,6 +112,7 @@ func (p *Proposer) eventLoop() {
 		p.wg.Done()
 	}()
 
+	var lastNonEmptyBlockProposedAt = time.Now()
 	for {
 		p.updateProposingTicker()
 
@@ -115,9 +123,27 @@ func (p *Proposer) eventLoop() {
 			metrics.ProposerProposeEpochCounter.Inc(1)
 
 			if err := p.ProposeOp(p.ctx); err != nil {
-				log.Error("Proposing operation error", "error", err)
+				if !errors.Is(err, errNoNewTxs) {
+					log.Error("Proposing operation error", "error", err)
+					continue
+				}
+
+				if p.proposeEmptyBlocksInterval != nil {
+					if time.Now().Before(lastNonEmptyBlockProposedAt.Add(*p.proposeEmptyBlocksInterval)) {
+						continue
+					}
+
+					if err := p.ProposeEmptyBlockOp(p.ctx); err != nil {
+						log.Error("Proposing an empty block operation error", "error", err)
+					}
+
+					lastNonEmptyBlockProposedAt = time.Now()
+				}
+
 				continue
 			}
+
+			lastNonEmptyBlockProposedAt = time.Now()
 		}
 	}
 }
@@ -154,7 +180,11 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
 	}
 
-	log.Info("Transactions count", "count", len(txLists))
+	log.Info("Transactions lists count", "count", len(txLists))
+
+	if len(txLists) == 0 {
+		return errNoNewTxs
+	}
 
 	var commitTxListResQueue []*commitTxListRes
 	for i, txs := range txLists {
@@ -296,6 +326,20 @@ func (p *Proposer) ProposeTxList(
 
 	metrics.ProposerProposedTxListsCounter.Inc(1)
 	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))
+
+	return nil
+}
+
+// ProposeEmptyBlockOp performs a proposing one empty block operation.
+func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
+	meta, commitTx, err := p.CommitTxList(ctx, []byte{}, 21000, 0)
+	if err != nil {
+		return fmt.Errorf("failed to commit an empty block: %w", err)
+	}
+
+	if err := p.ProposeTxList(ctx, meta, commitTx, []byte{}, 0); err != nil {
+		return fmt.Errorf("failed to propose an empty block: %w", err)
+	}
 
 	return nil
 }
