@@ -25,7 +25,8 @@ import (
 )
 
 var (
-	errNoNewTxs = errors.New("no new transactions")
+	errNoNewTxs               = errors.New("no new transactions")
+	proposeEmptyBlockGasLimit = 200_000
 )
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
@@ -311,6 +312,10 @@ func (p *Proposer) ProposeTxList(
 	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
 	if err != nil {
 		return err
+	}
+
+	if len(txListBytes) == 0 {
+		opts.GasLimit = uint64(proposeEmptyBlockGasLimit)
 	}
 
 	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs)
