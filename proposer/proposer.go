@@ -26,7 +26,7 @@ import (
 
 var (
 	errNoNewTxs               = errors.New("no new transactions")
-	proposeEmptyBlockGasLimit = 200_000
+	proposeEmptyBlockGasLimit = 500_000
 )
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
