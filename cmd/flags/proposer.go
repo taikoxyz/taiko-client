@@ -37,8 +37,7 @@ var (
 	}
 	TxPoolLocals = &cli.StringFlag{
 		Name:     "txpool.locals",
-		Usage:    "Perform a weighted shuffle when building the transactions list to propose",
-		Value:    "Comma separated accounts to treat as locals (priority inclusion)",
+		Usage:    "Comma separated accounts to treat as locals (priority inclusion)",
 		Category: proposerCategory,
 	}
 	ProposeEmptyBlocksInterval = &cli.StringFlag{
