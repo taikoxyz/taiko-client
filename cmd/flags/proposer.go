@@ -37,13 +37,17 @@ var (
 	}
 	TxPoolLocals = &cli.StringFlag{
 		Name:     "txpool.locals",
-		Usage:    "Perform a weighted shuffle when building the transactions list to propose",
-		Value:    "Comma separated accounts to treat as locals (priority inclusion)",
+		Usage:    "Comma separated accounts to treat as locals (priority inclusion)",
 		Category: proposerCategory,
 	}
 	ProposeEmptyBlocksInterval = &cli.StringFlag{
 		Name:     "proposeEmptyBlockInterval",
 		Usage:    "Time interval to propose empty blocks",
+		Category: proposerCategory,
+	}
+	MaxProposedTxListsPerEpoch = &cli.Uint64Flag{
+		Name:     "maxProposedTxListsPerEpoch",
+		Value:    1,
 		Category: proposerCategory,
 	}
 )
@@ -57,4 +61,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	CommitSlot,
 	TxPoolLocals,
 	ProposeEmptyBlocksInterval,
+	MaxProposedTxListsPerEpoch,
 })

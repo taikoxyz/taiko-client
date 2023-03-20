@@ -44,6 +44,7 @@ type Proposer struct {
 	proposingTimer             *time.Timer
 	commitSlot                 uint64
 	locals                     []common.Address
+	maxProposedTxListsPerEpoch uint64
 
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -75,6 +76,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.wg = sync.WaitGroup{}
 	p.locals = cfg.LocalAddresses
 	p.commitSlot = cfg.CommitSlot
+	p.maxProposedTxListsPerEpoch = cfg.MaxProposedTxListsPerEpoch
 	p.ctx = ctx
 
 	// RPC clients
@@ -213,10 +215,17 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		}
 	}
 
+	proposedTxListsPerEpoch := 0
 	for _, res := range commitTxListResQueue {
 		if err := p.ProposeTxList(ctx, res.meta, res.commitTx, res.txListBytes, res.txNum); err != nil {
 			return fmt.Errorf("failed to propose transactions: %w", err)
 		}
+
+		proposedTxListsPerEpoch += 1
+		if proposedTxListsPerEpoch >= int(p.maxProposedTxListsPerEpoch) {
+			break
+		}
+
 	}
 
 	return nil
