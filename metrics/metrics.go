@@ -28,6 +28,7 @@ var (
 	ProposerProposedTxsCounter     = metrics.NewRegisteredCounter("proposer/proposed/txs", nil)
 
 	// Prover
+	ProverPendingBlocksGauge          = metrics.NewRegisteredGauge("prover/pending/blocks", nil)
 	ProverLatestVerifiedIDGauge       = metrics.NewRegisteredGauge("prover/latestVerified/id", nil)
 	ProverLatestProvenBlockIDGauge    = metrics.NewRegisteredGauge("prover/latestProven/id", nil)
 	ProverQueuedProofCounter          = metrics.NewRegisteredCounter("prover/proof/all/queued", nil)

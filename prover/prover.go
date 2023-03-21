@@ -338,6 +338,13 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
 	p.latestVerifiedL1Height = event.Raw.BlockNumber
 
+	vars, err := p.rpc.GetProtocolStateVariables(nil)
+	if err != nil {
+		return err
+	}
+
+	metrics.ProverPendingBlocksGauge.Update(int64(vars.NextBlockId - vars.LatestVerifiedId - 1))
+
 	if event.BlockHash == (common.Hash{}) {
 		log.Info("New verified invalid block", "blockID", event.Id)
 		return nil
