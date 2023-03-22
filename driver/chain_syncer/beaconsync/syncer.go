@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/beacon"
 	"github.com/ethereum/go-ethereum/log"
@@ -37,10 +39,17 @@ func NewSyncer(
 
 // TriggerBeaconSync triggers the L2 execution engine to start performing a beacon sync.
 func (s *Syncer) TriggerBeaconSync() error {
-	blockID, latestVerifiedHeadPayload, err := s.getVerifiedBlockPayload(s.ctx)
-	if err != nil {
-		return err
-	}
+	var (
+		blockID                   *big.Int
+		latestVerifiedHeadPayload *beacon.ExecutableDataV1
+	)
+
+	backoff.Retry(func() (err error) {
+		if blockID, latestVerifiedHeadPayload, err = s.getVerifiedBlockPayload(s.ctx); err != nil {
+			return err
+		}
+		return nil
+	}, backoff.NewConstantBackOff(12*time.Second))
 
 	if !s.progressTracker.HeadChanged(blockID) {
 		log.Debug("Verified head has not changed", "blockID", blockID, "hash", latestVerifiedHeadPayload.BlockHash)
