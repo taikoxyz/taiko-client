@@ -46,6 +46,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 
 	backoff.Retry(func() (err error) {
 		if blockID, latestVerifiedHeadPayload, err = s.getVerifiedBlockPayload(s.ctx); err != nil {
+			log.Error("Get verified block payload error, retrying", "error", err)
 			return err
 		}
 		return nil
