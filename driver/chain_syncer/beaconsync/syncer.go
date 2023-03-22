@@ -44,13 +44,22 @@ func (s *Syncer) TriggerBeaconSync() error {
 		latestVerifiedHeadPayload *beacon.ExecutableDataV1
 	)
 
+	var ctxError error
 	backoff.Retry(func() (err error) {
+		if s.ctx.Err() != nil {
+			ctxError = s.ctx.Err()
+			return nil
+		}
 		if blockID, latestVerifiedHeadPayload, err = s.getVerifiedBlockPayload(s.ctx); err != nil {
 			log.Error("Get verified block payload error, retrying", "error", err)
 			return err
 		}
 		return nil
 	}, backoff.NewConstantBackOff(12*time.Second))
+
+	if ctxError != nil {
+		return ctxError
+	}
 
 	if !s.progressTracker.HeadChanged(blockID) {
 		log.Debug("Verified head has not changed", "blockID", blockID, "hash", latestVerifiedHeadPayload.BlockHash)
