@@ -187,7 +187,7 @@ func (s *InvalidProofSubmitter) SubmitProof(
 	}
 
 	log.Info(
-		"❎ Invalid block proved",
+		"❎ Invalid block proof submitted",
 		"blockID", proofWithHeader.BlockID,
 		"height", block.Number(),
 		"hash", header.Hash(),

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
@@ -113,8 +114,16 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proveValidProofCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proveInvalidProofCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
-	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
-		return fmt.Errorf("initialize L1 current cursor error: %w", err)
+
+	backoff.Retry(func() error {
+		if ctx.Err() != nil {
+			return nil
+		}
+		return p.initL1Current(cfg.StartingBlockID)
+	}, backoff.NewExponentialBackOff())
+
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
 
 	// Concurrency guards
