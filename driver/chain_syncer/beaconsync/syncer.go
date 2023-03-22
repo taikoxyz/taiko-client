@@ -96,12 +96,17 @@ func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *beacon
 		latestVerifiedBlock = s.state.GetLatestVerifiedBlock()
 	)
 
+	endHeight, err := s.rpc.L1.BlockNumber(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// Get the latest verified block's corresponding BlockProven event.
 	iter, err := eventIterator.NewBlockProvenIterator(s.ctx, &eventIterator.BlockProvenIteratorConfig{
 		Client:      s.rpc.L1,
 		TaikoL1:     s.rpc.TaikoL1,
 		StartHeight: s.state.GenesisL1Height,
-		EndHeight:   s.state.GetL1Head().Number,
+		EndHeight:   new(big.Int).SetUint64(endHeight),
 		FilterQuery: []*big.Int{latestVerifiedBlock.ID},
 		Reverse:     true,
 		OnBlockProvenEvent: func(
