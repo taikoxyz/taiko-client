@@ -168,7 +168,11 @@ func (s *State) startSubscriptions(ctx context.Context) {
 				s.setHeadBlockID(e.Id)
 			case e := <-s.blockProvenCh:
 				if e.BlockHash != s.BlockDeadendHash {
-					log.Info("✅ Valid block proven", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
+					if e.Prover == (common.Address{}) {
+						log.Info("🔮 Valid block proven by oracle prover", "blockID", e.Id, "hash", common.Hash(e.BlockHash))
+					} else {
+						log.Info("✅ Valid block proven", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
+					}
 				} else {
 					log.Info("❎ Invalid block proven", "blockID", e.Id, "prover", e.Prover)
 				}
