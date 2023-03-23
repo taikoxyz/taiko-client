@@ -29,6 +29,8 @@ type Config struct {
 	Dummy                           bool
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
+	OnlyProveOddNumberBlocks        bool
+	OnlyProveEvenNumberBlocks       bool
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -89,5 +91,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		Dummy:                           c.Bool(flags.Dummy.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
+		OnlyProveOddNumberBlocks:        c.Bool(flags.OnlyProveOddNumberBlocks.Name),
+		OnlyProveEvenNumberBlocks:       c.Bool(flags.OnlyProveEvenNumberBlocks.Name),
 	}, nil
 }

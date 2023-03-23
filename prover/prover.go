@@ -279,6 +279,15 @@ func (p *Prover) onBlockProposed(
 	if event.Id.Uint64() <= p.lastHandledBlockID {
 		return nil
 	}
+	if p.cfg.OnlyProveEvenNumberBlocks && event.Id.Uint64()%2 != 0 {
+		log.Info("Skip a block with even number", "id", event.Id)
+		return nil
+	}
+	if p.cfg.OnlyProveOddNumberBlocks && event.Id.Uint64()%2 == 0 {
+		log.Info("Skip a block with odd number", "id", event.Id)
+		return nil
+	}
+
 	log.Info("Proposed block", "blockID", event.Id)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
 

@@ -53,6 +53,18 @@ var (
 			"`lowerBound-upperBound` (e.g. `30m-1h`), testing purposes only",
 		Category: proverCategory,
 	}
+	OnlyProveOddNumberBlocks = &cli.BoolFlag{
+		Name:     "onlyProveOddNumberBlocks",
+		Usage:    "Let the prover only proves blocks with odd number",
+		Value:    false,
+		Category: proverCategory,
+	}
+	OnlyProveEvenNumberBlocks = &cli.BoolFlag{
+		Name:     "onlyProveEvenNumberBlocks",
+		Usage:    "Let the prover only proves blocks with even number",
+		Value:    false,
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -67,4 +79,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxConcurrentProvingJobs,
 	Dummy,
 	RandomDummyProofDelay,
+	OnlyProveOddNumberBlocks,
+	OnlyProveEvenNumberBlocks,
 })
