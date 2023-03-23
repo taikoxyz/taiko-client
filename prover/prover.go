@@ -202,6 +202,23 @@ func (p *Prover) eventLoop() {
 	// Call reqProving() right away to catch up with the latest state.
 	reqProving()
 
+	go func() {
+		for {
+			select {
+			case <-p.ctx.Done():
+				return
+			case <-time.NewTicker(30 * time.Second).C:
+				vars, err := p.rpc.GetProtocolStateVariables(nil)
+				if err != nil {
+					log.Error("Get protocol state variables error", "error", err)
+					continue
+				}
+
+				metrics.ProverPendingBlocksGauge.Update(int64(vars.NextBlockId - vars.LatestVerifiedId - 1))
+			}
+		}
+	}()
+
 	for {
 		select {
 		case <-p.ctx.Done():
@@ -347,13 +364,6 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
 	p.latestVerifiedL1Height = event.Raw.BlockNumber
 
-	vars, err := p.rpc.GetProtocolStateVariables(nil)
-	if err != nil {
-		return err
-	}
-
-	metrics.ProverPendingBlocksGauge.Update(int64(vars.NextBlockId - vars.LatestVerifiedId - 1))
-
 	if event.BlockHash == (common.Hash{}) {
 		log.Info("New verified invalid block", "blockID", event.Id)
 		return nil
@@ -431,8 +441,8 @@ func (p *Prover) NeedNewProof(id *big.Int) (bool, error) {
 		return false, err
 	}
 
-	if p.proverAddress == fc.Prover {
-		log.Info("📬 Block's proof has already been submitted by current prover", "blockID", id)
+	if fc.Prover != (common.Address{}) {
+		log.Info("📬 Block's proof has already been submitted", "blockID", id, "prover", fc.Prover)
 		return false, nil
 	}
 
