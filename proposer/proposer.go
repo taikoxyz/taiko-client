@@ -22,6 +22,7 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -215,17 +216,37 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		}
 	}
 
-	proposedTxListsPerEpoch := 0
-	for _, res := range commitTxListResQueue {
-		if err := p.ProposeTxList(ctx, res.meta, res.commitTx, res.txListBytes, res.txNum); err != nil {
-			return fmt.Errorf("failed to propose transactions: %w", err)
-		}
+	head, err := p.rpc.L1.BlockNumber(ctx)
+	if err != nil {
+		return err
+	}
+	nonce, err := p.rpc.L1.NonceAt(
+		ctx,
+		crypto.PubkeyToAddress(p.l1ProposerPrivKey.PublicKey),
+		new(big.Int).SetUint64(head),
+	)
+	if err != nil {
+		return err
+	}
 
-		proposedTxListsPerEpoch += 1
-		if proposedTxListsPerEpoch >= int(p.maxProposedTxListsPerEpoch) {
-			break
-		}
+	log.Info("Proposer account information", "chainHead", head, "nonce", nonce)
 
+	g := new(errgroup.Group)
+
+	for i, res := range commitTxListResQueue {
+		func(i int, res *commitTxListRes) {
+			g.Go(func() error {
+				if i > int(p.maxProposedTxListsPerEpoch) {
+					return nil
+				}
+
+				return p.ProposeTxListWithNonce(ctx, res.meta, res.commitTx, res.txListBytes, res.txNum, nonce+uint64(i))
+			})
+		}(i, res)
+	}
+
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("failed to propose transactions: %w", err)
 	}
 
 	return nil
@@ -276,6 +297,75 @@ func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimi
 	}
 
 	return meta, commitTx, nil
+}
+
+// ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
+func (p *Proposer) ProposeTxListWithNonce(
+	ctx context.Context,
+	meta *bindings.TaikoDataBlockMetadata,
+	commitTx *types.Transaction,
+	txListBytes []byte,
+	txNum uint,
+	nonce uint64,
+) error {
+	if p.protocolConfigs.CommitConfirmations.Cmp(common.Big0) > 0 {
+		receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, commitTx)
+		if err != nil {
+			return err
+		}
+
+		if receipt.Status != types.ReceiptStatusSuccessful {
+			log.Error("Failed to commit transactions list", "txHash", receipt.TxHash)
+			return nil
+		}
+
+		log.Info(
+			"Commit block finished, wait some L1 blocks confirmations before proposing",
+			"commitHeight", receipt.BlockNumber,
+			"commitConfirmations", p.protocolConfigs.CommitConfirmations,
+		)
+
+		meta.CommitHeight = receipt.BlockNumber.Uint64()
+
+		if err := rpc.WaitConfirmations(
+			ctx, p.rpc.L1, p.protocolConfigs.CommitConfirmations.Uint64(), receipt.BlockNumber.Uint64(),
+		); err != nil {
+			return fmt.Errorf("wait L1 blocks confirmations error, commitHash %s: %w", receipt.BlockNumber, err)
+		}
+	}
+
+	// Propose the transactions list
+	inputs, err := encoding.EncodeProposeBlockInput(meta, txListBytes)
+	if err != nil {
+		return err
+	}
+
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
+	if err != nil {
+		return err
+	}
+
+	if len(txListBytes) == 0 {
+		opts.GasLimit = uint64(proposeEmptyBlockGasLimit)
+	}
+
+	opts.Nonce = new(big.Int).SetUint64(nonce)
+
+	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs)
+	if err != nil {
+		return encoding.TryParsingCustomError(err)
+	}
+
+	if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, proposeTx); err != nil {
+		return err
+	}
+
+	log.Info("📝 Propose transactions succeeded", "txs", txNum)
+
+	metrics.ProposerProposedTxListsCounter.Inc(1)
+	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))
+
+	return nil
 }
 
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
