@@ -236,7 +236,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	for i, res := range commitTxListResQueue {
 		func(i int, res *commitTxListRes) {
 			g.Go(func() error {
-				if i > int(p.maxProposedTxListsPerEpoch) {
+				if i >= int(p.maxProposedTxListsPerEpoch) {
 					return nil
 				}
 
