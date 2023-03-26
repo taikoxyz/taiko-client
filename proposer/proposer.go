@@ -349,6 +349,7 @@ func (p *Proposer) ProposeTxListWithNonce(
 		opts.GasLimit = uint64(proposeEmptyBlockGasLimit)
 	} else {
 		opts.GasLimit = uint64(opts.GasLimit * 2)
+		opts.GasTipCap = new(big.Int).SetUint64(opts.GasTipCap.Uint64() * 2)
 	}
 
 	opts.Nonce = new(big.Int).SetUint64(nonce)
