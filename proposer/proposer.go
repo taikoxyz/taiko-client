@@ -358,7 +358,9 @@ func (p *Proposer) ProposeTxListWithNonce(
 		return encoding.TryParsingCustomError(err)
 	}
 
-	if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, proposeTx); err != nil {
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+	if _, err := rpc.WaitReceipt(ctxWithTimeout, p.rpc.L1, proposeTx); err != nil {
 		return err
 	}
 
