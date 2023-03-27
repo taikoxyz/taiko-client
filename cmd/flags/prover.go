@@ -65,10 +65,9 @@ var (
 		Value:    false,
 		Category: proverCategory,
 	}
-	ProofSubmittorPrivKey = &cli.BoolFlag{
+	ProofSubmittorPrivKey = &cli.StringFlag{
 		Name:     "proofSubmittorPrivKey",
 		Usage:    "Private key of L1 proof submittor",
-		Value:    false,
 		Category: proverCategory,
 	}
 )
