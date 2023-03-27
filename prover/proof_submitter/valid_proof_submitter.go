@@ -30,6 +30,7 @@ type ValidProofSubmitter struct {
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	proverPrivKey     *ecdsa.PrivateKey
 	proverAddress     common.Address
+	submittorPrivKey  *ecdsa.PrivateKey
 	mutex             *sync.Mutex
 }
 
@@ -40,6 +41,7 @@ func NewValidProofSubmitter(
 	reusltCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
+	submittorPrivKey *ecdsa.PrivateKey,
 	mutex *sync.Mutex,
 ) *ValidProofSubmitter {
 	return &ValidProofSubmitter{
@@ -49,6 +51,7 @@ func NewValidProofSubmitter(
 		anchorTxValidator: anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc),
 		proverPrivKey:     proverPrivKey,
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
+		submittorPrivKey:  submittorPrivKey,
 		mutex:             mutex,
 	}
 }
@@ -183,7 +186,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 	}
 
 	// Send the TaikoL1.proveBlock transaction.
-	txOpts, err := getProveBlocksTxOpts(ctx, s.rpc.L1, s.rpc.L1ChainID, s.proverPrivKey)
+	txOpts, err := getProveBlocksTxOpts(ctx, s.rpc.L1, s.rpc.L1ChainID, s.submittorPrivKey)
 	if err != nil {
 		return err
 	}

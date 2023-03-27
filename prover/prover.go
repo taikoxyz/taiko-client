@@ -155,6 +155,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.proveValidProofCh,
 		p.cfg.TaikoL2Address,
 		p.cfg.L1ProverPrivKey,
+		p.cfg.ProofSubmittorPrivKey,
 		p.submitProofTxMutex,
 	)
 	p.invalidProofSubmitter = proofSubmitter.NewInvalidProofSubmitter(

@@ -22,6 +22,7 @@ type Config struct {
 	TaikoL1Address                  common.Address
 	TaikoL2Address                  common.Address
 	L1ProverPrivKey                 *ecdsa.PrivateKey
+	ProofSubmittorPrivKey           *ecdsa.PrivateKey
 	ZKEvmRpcdEndpoint               string
 	ZkEvmRpcdParamsPath             string
 	StartingBlockID                 *big.Int
@@ -40,6 +41,16 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(l1ProverPrivKeyStr))
 	if err != nil {
 		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
+	}
+
+	var proofSubmittorPrivKey *ecdsa.PrivateKey
+	if c.IsSet(flags.ProofSubmittorPrivKey.Name) {
+		proofSubmittorPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(c.String(flags.ProofSubmittorPrivKey.Name)))
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		proofSubmittorPrivKey = l1ProverPrivKey
 	}
 
 	var (
@@ -84,6 +95,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		TaikoL1Address:                  common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                  common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		L1ProverPrivKey:                 l1ProverPrivKey,
+		ProofSubmittorPrivKey:           proofSubmittorPrivKey,
 		ZKEvmRpcdEndpoint:               c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath:             c.String(flags.ZkEvmRpcdParamsPath.Name),
 		StartingBlockID:                 startingBlockID,

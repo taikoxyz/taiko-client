@@ -65,6 +65,12 @@ var (
 		Value:    false,
 		Category: proverCategory,
 	}
+	ProofSubmittorPrivKey = &cli.BoolFlag{
+		Name:     "proofSubmittorPrivKey",
+		Usage:    "Private key of L1 proof submittor",
+		Value:    false,
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
