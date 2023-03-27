@@ -81,6 +81,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ZkEvmRpcdEndpoint,
 	ZkEvmRpcdParamsPath,
 	L1ProverPrivKey,
+	ProofSubmittorPrivKey,
 	StartingBlockID,
 	MaxConcurrentProvingJobs,
 	Dummy,
