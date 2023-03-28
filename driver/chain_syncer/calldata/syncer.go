@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
@@ -56,7 +55,6 @@ func NewSyncer(
 
 	constructor, err := anchorTxConstructor.New(
 		rpc,
-		configs.AnchorTxGasLimit.Uint64(),
 		bindings.GoldenTouchAddress,
 		bindings.GoldenTouchPrivKey,
 	)
@@ -197,16 +195,17 @@ func (s *Syncer) onBlockProposed(
 			l1Origin,
 		)
 	} else {
-		payloadData, rpcError, payloadError = s.insertThrowAwayBlock(
-			ctx,
-			event,
-			parent,
-			uint8(hint),
-			new(big.Int).SetInt64(int64(invalidTxIndex)),
-			s.state.GetHeadBlockID(),
-			txListBytes,
-			l1Origin,
-		)
+		// TODO: insert empty block
+		// payloadData, rpcError, payloadError = s.insertThrowAwayBlock(
+		// 	ctx,
+		// 	event,
+		// 	parent,
+		// 	uint8(hint),
+		// 	new(big.Int).SetInt64(int64(invalidTxIndex)),
+		// 	s.state.GetHeadBlockID(),
+		// 	txListBytes,
+		// 	l1Origin,
+		// )
 	}
 
 	// RPC errors are recoverable.
@@ -274,7 +273,7 @@ func (s *Syncer) insertNewHead(
 	// Assemble a TaikoL2.anchor transaction
 	anchorTx, err := s.anchorConstructor.AssembleAnchorTx(
 		ctx,
-		event.Meta.L1Height,
+		new(big.Int).SetUint64(event.Meta.L1Height),
 		event.Meta.L1Hash,
 		parent.Number,
 	)
@@ -317,58 +316,6 @@ func (s *Syncer) insertNewHead(
 	return payload, nil, nil
 }
 
-// insertThrowAwayBlock tries to insert a throw away block to the L2 execution engine's local
-// block chain through Engine APIs.
-func (s *Syncer) insertThrowAwayBlock(
-	ctx context.Context,
-	event *bindings.TaikoL1ClientBlockProposed,
-	parent *types.Header,
-	hint uint8,
-	invalidTxIndex *big.Int,
-	headBlockID *big.Int,
-	txListBytes []byte,
-	l1Origin *rawdb.L1Origin,
-) (*beacon.ExecutableDataV1, error, error) {
-	log.Debug(
-		"Try to insert a new L2 throwaway block",
-		"parentHash", parent.Hash(),
-		"headBlockID", headBlockID,
-		"l1Origin", l1Origin,
-		"hint", hint,
-		"invalidTxIndex", invalidTxIndex,
-	)
-
-	// Assemble a TaikoL2.invalidateBlock transaction
-	opts, err := s.getInvalidateBlockTxOpts(ctx, parent.Number)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	invalidateBlockTx, err := s.rpc.TaikoL2.InvalidateBlock(
-		opts,
-		txListBytes,
-		hint,
-		invalidTxIndex,
-	)
-	if err != nil {
-		return nil, nil, encoding.TryParsingCustomError(err)
-	}
-
-	throwawayBlockTxListBytes, err := rlp.EncodeToBytes(types.Transactions{invalidateBlockTx})
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to encode TaikoL2.InvalidateBlock transaction bytes, err: %w", err)
-	}
-
-	return s.createExecutionPayloads(
-		ctx,
-		event,
-		parent.Hash(),
-		l1Origin,
-		headBlockID,
-		throwawayBlockTxListBytes,
-	)
-}
-
 // createExecutionPayloads creates a new execution payloads through
 // Engine APIs.
 func (s *Syncer) createExecutionPayloads(
@@ -387,11 +334,11 @@ func (s *Syncer) createExecutionPayloads(
 		BlockMetadata: &beacon.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
-			GasLimit:       event.Meta.GasLimit + s.anchorConstructor.GasLimit(),
+			GasLimit:       uint64(event.Meta.GasLimit), // TODO: + s.anchorConstructor.GasLimit()
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
-			ExtraData:      event.Meta.ExtraData,
+			ExtraData:      []byte{},
 		},
 		L1Origin: l1Origin,
 	}

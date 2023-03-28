@@ -184,7 +184,7 @@ func (d *Driver) reportProtocolStatus() {
 				return err
 			}
 
-			maxNumBlocks = configs.MaxNumBlocks.Uint64()
+			maxNumBlocks = configs.MaxNumProposedBlocks.Uint64()
 			return nil
 		},
 		backoff.NewConstantBackOff(RetryDelay),
@@ -206,10 +206,9 @@ func (d *Driver) reportProtocolStatus() {
 
 			log.Info(
 				"📖 Protocol status",
-				"latestVerifiedId", vars.LatestVerifiedId,
-				"latestVerifiedHeight", vars.LatestVerifiedHeight,
-				"pendingBlocks", vars.NextBlockId-vars.LatestVerifiedId-1,
-				"availableSlots", vars.LatestVerifiedId+maxNumBlocks-vars.NextBlockId,
+				"lastVerifiedBlockId", vars.LastVerifiedBlockId,
+				"pendingBlocks", vars.NumBlocks-vars.LastVerifiedBlockId-1,
+				"availableSlots", vars.LastVerifiedBlockId+maxNumBlocks-vars.NumBlocks,
 			)
 		}
 	}

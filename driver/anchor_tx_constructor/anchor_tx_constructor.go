@@ -26,7 +26,6 @@ type AnchorTxConstructor struct {
 // New creates a new AnchorConstructor instance.
 func New(
 	rpc *rpc.Client,
-	gasLimit uint64,
 	goldenTouchAddress common.Address,
 	goldenTouchPrivKey string,
 ) (*AnchorTxConstructor, error) {
@@ -37,7 +36,6 @@ func New(
 
 	return &AnchorTxConstructor{
 		rpc:                rpc,
-		gasLimit:           gasLimit,
 		goldenTouchAddress: goldenTouchAddress,
 		signer:             signer,
 	}, nil
@@ -57,7 +55,7 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 		return nil, err
 	}
 
-	return c.rpc.TaikoL2.Anchor(opts, l1Height, l1Hash)
+	return c.rpc.TaikoL2.Anchor(opts, l1Height, l1Hash, common.Hash{}) // TODO: add signal service root
 }
 
 // transactOpts is a utility method to create some transact options of the anchor transaction in given L2 block with
