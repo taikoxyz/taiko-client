@@ -64,15 +64,15 @@ func SubscribeBlockProposed(
 	})
 }
 
-// SubscribeHeaderSynced subscribes the protocol's HeaderSynced events.
-func SubscribeHeaderSynced(
+// SubscribeXchainSynced subscribes the protocol's XchainSynced events.
+func SubscribeXchainSynced(
 	taikoL1 *bindings.TaikoL1Client,
-	ch chan *bindings.TaikoL1ClientHeaderSynced,
+	ch chan *bindings.TaikoL1ClientXchainSynced,
 ) event.Subscription {
-	return SubscribeEvent("HeaderSynced", func(ctx context.Context) (event.Subscription, error) {
-		sub, err := taikoL1.WatchHeaderSynced(nil, ch, nil)
+	return SubscribeEvent("XchainSynced", func(ctx context.Context) (event.Subscription, error) {
+		sub, err := taikoL1.WatchXchainSynced(nil, ch, nil)
 		if err != nil {
-			log.Error("Create TaikoL1.HeaderSynced subscription error", "error", err)
+			log.Error("Create TaikoL1.XchainSynced subscription error", "error", err)
 			return nil, err
 		}
 

@@ -19,7 +19,7 @@ import (
 func GetProtocolStateVariables(
 	taikoL1Client *bindings.TaikoL1Client,
 	opts *bind.CallOpts,
-) (*bindings.LibUtilsStateVariables, error) {
+) (*bindings.TaikoDataStateVariables, error) {
 	stateVars, err := taikoL1Client.GetStateVariables(opts)
 	if err != nil {
 		return nil, err

@@ -154,7 +154,7 @@ func (s *State) init(ctx context.Context) error {
 func (s *State) startSubscriptions(ctx context.Context) {
 	s.l1HeadSub = rpc.SubscribeChainHead(s.rpc.L1, s.l1HeadCh)
 	s.l2HeadSub = rpc.SubscribeChainHead(s.rpc.L2, s.l2HeadCh)
-	s.l2HeaderSyncedSub = rpc.SubscribeHeaderSynced(s.rpc.TaikoL1, s.headerSyncedCh)
+	s.l2HeaderSyncedSub = rpc.SubscribeXchainSynced(s.rpc.TaikoL1, s.headerSyncedCh)
 	s.l2BlockVerifiedSub = rpc.SubscribeBlockVerified(s.rpc.TaikoL1, s.blockVerifiedCh)
 	s.l2BlockProposedSub = rpc.SubscribeBlockProposed(s.rpc.TaikoL1, s.blockProposedCh)
 	s.l2BlockProvenSub = rpc.SubscribeBlockProven(s.rpc.TaikoL1, s.blockProvenCh)
