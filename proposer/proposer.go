@@ -292,6 +292,11 @@ func (p *Proposer) Name() string {
 	return "proposer"
 }
 
+// L2SuggestedFeeRecipient returns the L2 suggested fee recipient of the current proposer.
+func (p *Proposer) L2SuggestedFeeRecipient() common.Address {
+	return p.l2SuggestedFeeRecipient
+}
+
 // sumTxsGasLimit calculates the accumulated gas limit of all transactions in the list.
 func sumTxsGasLimit(txs []*types.Transaction) uint64 {
 	var total uint64

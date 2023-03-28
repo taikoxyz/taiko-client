@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -18,15 +19,15 @@ func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
 	s.Nil(err)
 
 	invalidTxListBytes := RandomBytes(256)
-	meta, commitTx, err := proposer.CommitTxList(
-		context.Background(),
-		invalidTxListBytes,
-		uint64(rand.Int63n(configs.BlockMaxGasLimit.Int64())),
-		0,
-	)
-	s.Nil(err)
 
-	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, invalidTxListBytes, 1))
+	s.Nil(proposer.ProposeTxList(context.Background(), &bindings.TaikoDataBlockMetadata{
+		Id:          0,
+		L1Height:    0,
+		L1Hash:      common.Hash{},
+		Beneficiary: proposer.L2SuggestedFeeRecipient(),
+		GasLimit:    uint32(rand.Int63n(configs.BlockMaxGasLimit.Int64())),
+		TxListHash:  crypto.Keccak256Hash(invalidTxListBytes),
+	}, invalidTxListBytes, 1))
 }
 
 func ProposeAndInsertEmptyBlocks(
@@ -56,10 +57,14 @@ func ProposeAndInsertEmptyBlocks(
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	meta, commitTx, err := proposer.CommitTxList(context.Background(), encoded, 1024, 0)
-	s.Nil(err)
-
-	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, encoded, 0))
+	s.Nil(proposer.ProposeTxList(context.Background(), &bindings.TaikoDataBlockMetadata{
+		Id:          0,
+		L1Height:    0,
+		L1Hash:      common.Hash{},
+		Beneficiary: proposer.L2SuggestedFeeRecipient(),
+		GasLimit:    0,
+		TxListHash:  crypto.Keccak256Hash(encoded),
+	}, encoded, 0))
 
 	ProposeInvalidTxListBytes(s, proposer)
 

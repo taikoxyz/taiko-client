@@ -40,8 +40,7 @@ type Prover struct {
 	l1Current              uint64
 
 	// Proof submitters
-	validProofSubmitter   proofSubmitter.ProofSubmitter
-	invalidProofSubmitter proofSubmitter.ProofSubmitter
+	validProofSubmitter proofSubmitter.ProofSubmitter
 
 	// Subscriptions
 	blockProposedCh  chan *bindings.TaikoL1ClientBlockProposed
@@ -107,7 +106,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	)
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 
-	chBufferSize := p.protocolConfigs.MaxNumBlocks.Uint64()
+	chBufferSize := p.protocolConfigs.MaxNumProposedBlocks.Uint64()
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	p.proveValidProofCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
@@ -146,14 +145,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.proveValidProofCh,
 		p.cfg.TaikoL2Address,
 		p.cfg.L1ProverPrivKey,
-		p.submitProofTxMutex,
-	)
-	p.invalidProofSubmitter = proofSubmitter.NewInvalidProofSubmitter(
-		p.rpc,
-		producer,
-		p.proveInvalidProofCh,
-		p.cfg.L1ProverPrivKey,
-		protocolConfigs.AnchorTxGasLimit.Uint64(),
 		p.submitProofTxMutex,
 	)
 
@@ -279,24 +270,7 @@ func (p *Prover) onBlockProposed(
 			return nil
 		}
 
-		// Check whether the transactions list is valid.
-		proposeBlockTx, err := p.rpc.L1.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
-		if err != nil {
-			return err
-		}
-
-		_, hint, _, err := p.txListValidator.ValidateTxList(event.Id, proposeBlockTx.Data())
-		if err != nil {
-			return err
-		}
-
-		// Prove the proposed block is valid.
-		if hint == txListValidator.HintOK {
-			return p.validProofSubmitter.RequestProof(ctx, event)
-		}
-
-		// Otherwise, prove the proposed block is invalid.
-		return p.invalidProofSubmitter.RequestProof(ctx, event)
+		return p.validProofSubmitter.RequestProof(ctx, event)
 	}
 
 	p.proposeConcurrencyGuard <- struct{}{}
@@ -319,14 +293,7 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 	go func() {
 		defer func() { <-p.submitProofConcurrencyGuard }()
 
-		var err error
-		if isValidProof {
-			err = p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader)
-		} else {
-			err = p.invalidProofSubmitter.SubmitProof(p.ctx, proofWithHeader)
-		}
-
-		if err != nil {
+		if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
 			log.Error("Submit proof error", "isValidProof", isValidProof, "error", err)
 		}
 	}()
@@ -364,12 +331,12 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 			return err
 		}
 
-		if stateVars.LatestVerifiedId == 0 {
+		if stateVars.LastVerifiedBlockId == 0 {
 			p.l1Current = 0
 			return nil
 		}
 
-		startingBlockID = new(big.Int).SetUint64(stateVars.LatestVerifiedId)
+		startingBlockID = new(big.Int).SetUint64(stateVars.LastVerifiedBlockId)
 	}
 
 	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
@@ -388,7 +355,7 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 		return false, err
 	}
 
-	return id.Uint64() <= stateVars.LatestVerifiedId, nil
+	return id.Uint64() <= stateVars.LastVerifiedBlockId, nil
 }
 
 // NeedNewProof checks whether the L2 block still needs a new proof.

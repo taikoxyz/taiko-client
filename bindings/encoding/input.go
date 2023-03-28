@@ -221,23 +221,13 @@ func EncodeProveBlockInput(
 	evidence *TaikoL1Evidence,
 	anchorTx *types.Transaction,
 	anchorReceipt *types.Receipt,
-) ([][]byte, error) {
+) ([]byte, error) {
 	evidenceBytes, err := EncodeEvidence(evidence)
 	if err != nil {
 		return nil, err
 	}
 
-	anchorTxBytes, err := rlp.EncodeToBytes(anchorTx)
-	if err != nil {
-		return nil, err
-	}
-
-	anchorReceiptBytes, err := rlp.EncodeToBytes(anchorReceipt)
-	if err != nil {
-		return nil, err
-	}
-
-	return [][]byte{evidenceBytes, anchorTxBytes, anchorReceiptBytes}, nil
+	return evidenceBytes, nil
 }
 
 // EncodeProveBlockInvalidInput encodes the input params for TaikoL1.proveBlockInvalid.
