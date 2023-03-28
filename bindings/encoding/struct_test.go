@@ -33,15 +33,14 @@ var (
 		BaseFee:     new(big.Int).SetUint64(rand.Uint64()),
 	}
 	testMeta = bindings.TaikoDataBlockMetadata{
-		Id:          new(big.Int).SetUint64(rand.Uint64()),
-		L1Height:    new(big.Int).SetUint64(rand.Uint64()),
+		Id:          rand.Uint64(),
+		L1Height:    rand.Uint64(),
 		L1Hash:      testutils.RandomHash(),
 		Beneficiary: common.BytesToAddress(testutils.RandomHash().Bytes()),
-		GasLimit:    rand.Uint64(),
+		GasLimit:    rand.Uint32(),
 		Timestamp:   uint64(time.Now().Unix()),
 		TxListHash:  testutils.RandomHash(),
 		MixHash:     testutils.RandomHash(),
-		ExtraData:   testutils.RandomHash().Bytes(),
 	}
 )
 

@@ -208,12 +208,12 @@ func EncodeCommitHash(beneficiary common.Address, txListHash [32]byte) []byte {
 }
 
 // EncodeProposeBlockInput encodes the input params for TaikoL1.proposeBlock.
-func EncodeProposeBlockInput(meta *bindings.TaikoDataBlockMetadata, txListBytes []byte) ([][]byte, error) {
+func EncodeProposeBlockInput(meta *bindings.TaikoDataBlockMetadata) ([]byte, error) {
 	metaBytes, err := EncodeBlockMetadata(meta)
 	if err != nil {
 		return nil, err
 	}
-	return [][]byte{metaBytes, txListBytes}, nil
+	return metaBytes, nil
 }
 
 // EncodeProveBlockInput encodes the input params for TaikoL1.proveBlock.

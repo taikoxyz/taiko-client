@@ -32,7 +32,7 @@ func TestEncodeCommitHash(t *testing.T) {
 }
 
 func TestEncodeProposeBlockInput(t *testing.T) {
-	encoded, err := EncodeProposeBlockInput(&testMeta, testutils.RandomHash().Bytes())
+	encoded, err := EncodeProposeBlockInput(&testMeta)
 
 	require.Nil(t, err)
 	require.NotNil(t, encoded)
@@ -97,17 +97,14 @@ func TestDecodeEvidenceHeader(t *testing.T) {
 
 	b, err := EncodeEvidence(&TaikoL1Evidence{
 		Meta: bindings.TaikoDataBlockMetadata{
-			Id:           new(big.Int).SetUint64(rand.Uint64()),
-			L1Height:     new(big.Int).SetUint64(rand.Uint64()),
-			L1Hash:       testutils.RandomHash(),
-			Beneficiary:  common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
-			TxListHash:   testutils.RandomHash(),
-			MixHash:      testutils.RandomHash(),
-			ExtraData:    testutils.RandomHash().Bytes(),
-			GasLimit:     rand.Uint64(),
-			Timestamp:    rand.Uint64(),
-			CommitHeight: rand.Uint64(),
-			CommitSlot:   rand.Uint64(),
+			Id:          rand.Uint64(),
+			L1Height:    rand.Uint64(),
+			L1Hash:      testutils.RandomHash(),
+			Beneficiary: common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
+			TxListHash:  testutils.RandomHash(),
+			MixHash:     testutils.RandomHash(),
+			GasLimit:    rand.Uint32(),
+			Timestamp:   rand.Uint64(),
 		},
 		Header: *FromGethHeader(testHeader),
 		Prover: common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
