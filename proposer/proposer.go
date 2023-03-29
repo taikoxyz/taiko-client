@@ -174,7 +174,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	txLists, err := p.rpc.GetPoolContent(
 		ctx,
-		p.protocolConfigs.MaxTransactionsPerBlock,
+		new(big.Int).SetUint64(9),
 		p.protocolConfigs.BlockMaxGasLimit,
 		p.protocolConfigs.MaxBytesPerTxList,
 		p.protocolConfigs.MinTxGasLimit,
