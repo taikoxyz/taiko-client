@@ -18,113 +18,49 @@ var (
 	blockMetadataComponents = []abi.ArgumentMarshaling{
 		{
 			Name: "id",
-			Type: "uint256",
+			Type: "uint64",
+		},
+		{
+			Name: "timestamp",
+			Type: "uint64",
 		},
 		{
 			Name: "l1Height",
-			Type: "uint256",
-		},
-		{
-			Name: "l1Hash",
 			Type: "bytes32",
 		},
 		{
 			Name: "beneficiary",
 			Type: "address",
+		},
+		{
+			Name: "mixHash",
+			Type: "bytes32",
 		},
 		{
 			Name: "txListHash",
 			Type: "bytes32",
 		},
 		{
-			Name: "mixHash",
-			Type: "bytes32",
+			Name: "txListByteStart",
+			Type: "uint24",
 		},
 		{
-			Name: "extraData",
-			Type: "bytes",
-		},
-		{
-			Name: "gasLimit",
-			Type: "uint64",
-		},
-		{
-			Name: "timestamp",
-			Type: "uint64",
-		},
-		{
-			Name: "commitHeight",
-			Type: "uint64",
-		},
-		{
-			Name: "commitSlot",
-			Type: "uint64",
-		},
-	}
-	blockHeaderComponents = []abi.ArgumentMarshaling{
-		{
-			Name: "parentHash",
-			Type: "bytes32",
-		},
-		{
-			Name: "ommersHash",
-			Type: "bytes32",
+			Name: "txListByteEnd", 
+			Type: "uint24",
 		},
 		{
 			Name: "beneficiary",
 			Type: "address",
 		},
+	}
+	zkProofComponents = []abi.ArgumentMarshaling{
 		{
-			Name: "stateRoot",
-			Type: "bytes32",
-		},
-		{
-			Name: "transactionsRoot",
-			Type: "bytes32",
-		},
-		{
-			Name: "receiptsRoot",
-			Type: "bytes32",
-		},
-		{
-			Name: "logsBloom",
-			Type: "bytes32[8]",
-		},
-		{
-			Name: "difficulty",
-			Type: "uint256",
-		},
-		{
-			Name: "height",
-			Type: "uint128",
-		},
-		{
-			Name: "gasLimit",
-			Type: "uint64",
-		},
-		{
-			Name: "gasUsed",
-			Type: "uint64",
-		},
-		{
-			Name: "timestamp",
-			Type: "uint64",
-		},
-		{
-			Name: "extraData",
+			Name: "data",
 			Type: "bytes",
 		},
 		{
-			Name: "mixHash",
-			Type: "bytes32",
-		},
-		{
-			Name: "nonce",
-			Type: "uint64",
-		},
-		{
-			Name: "baseFeePerGas",
-			Type: "uint256",
+			Name: "verifierId",
+			Type: "uint16",
 		},
 	}
 	evidenceComponents = []abi.ArgumentMarshaling{
@@ -134,21 +70,29 @@ var (
 			Components: blockMetadataComponents,
 		},
 		{
-			Name:       "header",
+			Name:       "zkproof",
 			Type:       "tuple",
-			Components: blockHeaderComponents,
+			Components: zkProofComponents,
+		},
+		{
+			Name: "parentHash",
+			Type: "bytes32",
+		},
+		{
+			Name: "blockHash",
+			Type: "bytes32",
+		},
+		{
+			Name: "signalRoot",
+			Type: "bytes32",
+		},
+		{
+			Name: "graffiti",
+			Type: "bytes32",
 		},
 		{
 			Name: "prover",
 			Type: "address",
-		},
-		{
-			Name: "proofs",
-			Type: "bytes[]",
-		},
-		{
-			Name: "circuits",
-			Type: "uint16",
 		},
 	}
 )
