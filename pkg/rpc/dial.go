@@ -70,7 +70,7 @@ func DialEngineClient(ctx context.Context, endpointUrl string, jwtSecret string)
 	}
 	switch u.Scheme {
 	case "http", "https":
-		client, err = rpc.DialHTTPWithClient(endpoint.Url, endpoint.HttpClient())
+		client, err = rpc.DialOptions(ctx, endpoint.Url, rpc.WithHTTPClient(endpoint.HttpClient()))
 		if err != nil {
 			return nil, err
 		}

@@ -168,7 +168,7 @@ func EncodeBlockMetadataInput(meta *TaikoL1BlockMetadataInput) ([]byte, error) {
 
 // EncodeBlockMetadata performs the solidity `abi.encode` for the given blockMetadata.
 func EncodeBlockMetadata(meta *bindings.TaikoDataBlockMetadata) ([]byte, error) {
-	b, err := blockMetadataInputArgs.Pack(meta)
+	b, err := blockMetadataArgs.Pack(meta)
 	if err != nil {
 		return nil, fmt.Errorf("failed to abi.encode block metadata, %w", err)
 	}

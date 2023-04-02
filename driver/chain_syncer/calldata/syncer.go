@@ -206,6 +206,7 @@ func (s *Syncer) onBlockProposed(
 		// 	txListBytes,
 		// 	l1Origin,
 		// )
+		log.Info("Insert empty block")
 	}
 
 	// RPC errors are recoverable.
