@@ -89,7 +89,6 @@ func (s *ProverTestSuite) SetupTest() {
 	})))
 
 	s.proposer = prop
-	s.proposer.AfterCommitHook = s.MineL1Confirmations
 }
 
 func (s *ProverTestSuite) TestName() {

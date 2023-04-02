@@ -41,7 +41,6 @@ func (s *ProposerTestSuite) SetupTest() {
 	})))
 
 	s.p = p
-	s.p.AfterCommitHook = s.MineL1Confirmations
 	s.cancel = cancel
 }
 

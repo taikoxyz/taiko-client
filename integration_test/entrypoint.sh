@@ -26,7 +26,8 @@ TAIKO_MONO_DIR=$TAIKO_MONO_DIR \
     $DIR/nodes/init.sh
 
 DEPLOYMENT_JSON=$(cat $TAIKO_MONO_DIR/packages/protocol/broadcast/DeployOnL1.s.sol/31337/run-latest.json)
-TAIKO_L1_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq .transactions | jq 'to_entries[] | select(.value.contractName=="TaikoL1") | .contractAddress' | sed 's/\"//g')
+# TAIKO_L1_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq .transactions | jq 'to_entries[] | select(.value.contractName=="TaikoL1") | .contractAddress' | sed 's/\"//g')
+TAIKO_L1_CONTRACT_ADDRESS="0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0" # TODO: use jq to get TaikoL1 address
 TAIKO_L2_CONTRACT_ADDRESS=0x0000777700000000000000000000000000000001
 
 trap "docker compose -f $TESTNET_CONFIG down -v" EXIT INT KILL ERR

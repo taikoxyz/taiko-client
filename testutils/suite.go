@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/suite"
@@ -39,12 +38,12 @@ func (s *ClientTestSuite) SetupTest() {
 	}
 
 	testAddrPrivKey, err := crypto.ToECDSA(
-		common.Hex2Bytes("2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200"),
+		common.Hex2Bytes("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"),
 	)
 	s.Nil(err)
 
 	s.TestAddrPrivKey = testAddrPrivKey
-	s.TestAddr = common.HexToAddress("0xDf08F82De32B8d460adbE8D72043E3a7e25A3B39")
+	s.TestAddr = common.HexToAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
 
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
 	s.Nil(err)
@@ -72,8 +71,4 @@ func (s *ClientTestSuite) TearDownTest() {
 	s.True(revertRes)
 
 	s.Nil(rpc.SetHead(context.Background(), s.RpcClient.L2RawRPC, common.Big0))
-}
-
-func (s *ClientTestSuite) MineL1Confirmations() error {
-	return s.RpcClient.L1RawRPC.CallContext(context.Background(), nil, "hardhat_mine", hexutil.EncodeUint64(4))
 }

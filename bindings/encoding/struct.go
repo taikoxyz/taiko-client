@@ -36,6 +36,15 @@ type TaikoL1Evidence struct {
 	Circuits uint16
 }
 
+type TaikoL1BlockMetadataInput struct {
+	TxListHash      [32]byte
+	Beneficiary     common.Address
+	GasLimit        uint32
+	TxListByteStart *big.Int
+	TxListByteEnd   *big.Int
+	CacheTxListInfo uint8
+}
+
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.
 func FromGethHeader(header *types.Header) *BlockHeader {
 	baseFeePerGas := header.BaseFee

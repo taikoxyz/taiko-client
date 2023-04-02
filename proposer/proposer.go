@@ -193,13 +193,13 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			return fmt.Errorf("failed to encode transactions: %w", err)
 		}
 
-		if err := p.ProposeTxList(ctx, &bindings.TaikoDataBlockMetadata{
-			Id:          0,
-			L1Height:    0,
-			L1Hash:      common.Hash{},
-			Beneficiary: p.l2SuggestedFeeRecipient,
-			GasLimit:    uint32(sumTxsGasLimit(txs)),
-			TxListHash:  crypto.Keccak256Hash(txListBytes),
+		if err := p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
+			Beneficiary:     p.l2SuggestedFeeRecipient,
+			GasLimit:        uint32(sumTxsGasLimit(txs)),
+			TxListHash:      crypto.Keccak256Hash(txListBytes),
+			TxListByteStart: common.Big0,
+			TxListByteEnd:   new(big.Int).SetUint64(uint64(len(txListBytes))),
+			CacheTxListInfo: 0,
 		}, txListBytes, uint(txs.Len())); err != nil {
 			return fmt.Errorf("failed to propose transactions: %w", err)
 		}
@@ -217,7 +217,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
-	meta *bindings.TaikoDataBlockMetadata,
+	meta *encoding.TaikoL1BlockMetadataInput,
 	txListBytes []byte,
 	txNum uint,
 ) error {
@@ -230,10 +230,6 @@ func (p *Proposer) ProposeTxList(
 	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
 	if err != nil {
 		return err
-	}
-
-	if len(txListBytes) == 0 {
-		opts.GasLimit = uint64(proposeEmptyBlockGasLimit)
 	}
 
 	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs, txListBytes)
@@ -255,17 +251,13 @@ func (p *Proposer) ProposeTxList(
 
 // ProposeEmptyBlockOp performs a proposing one empty block operation.
 func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
-	return p.ProposeTxList(ctx, &bindings.TaikoDataBlockMetadata{
-		Id:              0,
-		L1Height:        0,
-		L1Hash:          common.Hash{},
-		MixHash:         common.Hash{},
-		Timestamp:       0,
-		Beneficiary:     p.l2SuggestedFeeRecipient,
+	return p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
+		TxListHash:      crypto.Keccak256Hash([]byte{}),
+		Beneficiary:     p.L2SuggestedFeeRecipient(),
 		GasLimit:        0,
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
-		TxListHash:      crypto.Keccak256Hash([]byte{}),
+		CacheTxListInfo: 0,
 	}, []byte{}, 0)
 }
 

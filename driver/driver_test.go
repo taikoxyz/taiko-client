@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -68,18 +67,10 @@ func (s *DriverTestSuite) SetupTest() {
 		ProposeInterval:         &proposeInterval, // No need to periodically propose transactions list in unit tests
 	})))
 	s.p = p
-	s.p.AfterCommitHook = s.MineL1Confirmations
 }
 
 func (s *DriverTestSuite) TestName() {
 	s.Equal("driver", s.d.Name())
-}
-
-func (s *DriverTestSuite) MineL1Confirmations() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	return s.d.rpc.L1RawRPC.CallContext(ctx, nil, "hardhat_mine", hexutil.EncodeUint64(4))
 }
 
 func (s *DriverTestSuite) TestProcessL1Blocks() {

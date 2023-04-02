@@ -10,15 +10,14 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 func TestEncodeEvidence(t *testing.T) {
 	evidence := &TaikoL1Evidence{
 		Meta:   testMeta,
 		Header: *FromGethHeader(testHeader),
-		Prover: common.BytesToAddress(testutils.RandomHash().Bytes()),
-		Proofs: [][]byte{testutils.RandomHash().Bytes(), testutils.RandomHash().Bytes(), testutils.RandomHash().Bytes()},
+		Prover: common.BytesToAddress(randomHash().Bytes()),
+		Proofs: [][]byte{randomHash().Bytes(), randomHash().Bytes(), randomHash().Bytes()},
 	}
 
 	b, err := EncodeEvidence(evidence)
@@ -28,11 +27,11 @@ func TestEncodeEvidence(t *testing.T) {
 }
 
 func TestEncodeCommitHash(t *testing.T) {
-	require.NotEmpty(t, EncodeCommitHash(common.BytesToAddress(testutils.RandomHash().Bytes()), testutils.RandomHash()))
+	require.NotEmpty(t, EncodeCommitHash(common.BytesToAddress(randomHash().Bytes()), randomHash()))
 }
 
 func TestEncodeProposeBlockInput(t *testing.T) {
-	encoded, err := EncodeProposeBlockInput(&testMeta)
+	encoded, err := EncodeProposeBlockInput(&testMetaInput)
 
 	require.Nil(t, err)
 	require.NotNil(t, encoded)
@@ -43,17 +42,17 @@ func TestEncodeProveBlockInput(t *testing.T) {
 		&TaikoL1Evidence{
 			Meta:   testMeta,
 			Header: *FromGethHeader(testHeader),
-			Prover: common.BytesToAddress(testutils.RandomHash().Bytes()),
+			Prover: common.BytesToAddress(randomHash().Bytes()),
 		},
 		types.NewTransaction(
 			0,
-			common.BytesToAddress(testutils.RandomHash().Bytes()),
+			common.BytesToAddress(randomHash().Bytes()),
 			common.Big0,
 			0,
 			common.Big0,
-			testutils.RandomHash().Bytes(),
+			randomHash().Bytes(),
 		),
-		types.NewReceipt(testutils.RandomHash().Bytes(), false, 1024),
+		types.NewReceipt(randomHash().Bytes(), false, 1024),
 	)
 
 	require.Nil(t, err)
@@ -65,10 +64,10 @@ func TestEncodeProveBlockInvalidInput(t *testing.T) {
 		&TaikoL1Evidence{
 			Meta:   testMeta,
 			Header: *FromGethHeader(testHeader),
-			Prover: common.BytesToAddress(testutils.RandomHash().Bytes()),
+			Prover: common.BytesToAddress(randomHash().Bytes()),
 		},
 		&testMeta,
-		types.NewReceipt(testutils.RandomHash().Bytes(), false, 1024),
+		types.NewReceipt(randomHash().Bytes(), false, 1024),
 	)
 
 	require.Nil(t, err)
@@ -76,7 +75,7 @@ func TestEncodeProveBlockInvalidInput(t *testing.T) {
 }
 
 func TestUnpackTxListBytes(t *testing.T) {
-	_, err := UnpackTxListBytes(testutils.RandomBytes(1024))
+	_, err := UnpackTxListBytes(randomBytes(1024))
 	require.NotNil(t, err)
 
 	_, err = UnpackTxListBytes(
@@ -89,26 +88,26 @@ func TestUnpackTxListBytes(t *testing.T) {
 }
 
 func TestDecodeEvidenceHeader(t *testing.T) {
-	_, err := UnpackEvidenceHeader(testutils.RandomBytes(1024))
+	_, err := UnpackEvidenceHeader(randomBytes(1024))
 	require.NotNil(t, err)
 
-	_, err = decodeEvidenceHeader(testutils.RandomBytes(1024))
+	_, err = decodeEvidenceHeader(randomBytes(1024))
 	require.NotNil(t, err)
 
 	b, err := EncodeEvidence(&TaikoL1Evidence{
 		Meta: bindings.TaikoDataBlockMetadata{
 			Id:          rand.Uint64(),
 			L1Height:    rand.Uint64(),
-			L1Hash:      testutils.RandomHash(),
+			L1Hash:      randomHash(),
 			Beneficiary: common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
-			TxListHash:  testutils.RandomHash(),
-			MixHash:     testutils.RandomHash(),
+			TxListHash:  randomHash(),
+			MixHash:     randomHash(),
 			GasLimit:    rand.Uint32(),
 			Timestamp:   rand.Uint64(),
 		},
 		Header: *FromGethHeader(testHeader),
 		Prover: common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
-		Proofs: [][]byte{testutils.RandomBytes(1024)},
+		Proofs: [][]byte{randomBytes(1024)},
 	})
 	require.Nil(t, err)
 

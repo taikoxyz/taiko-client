@@ -15,6 +15,32 @@ import (
 
 // ABI arguments marshaling components.
 var (
+	blockMetadataInputComponents = []abi.ArgumentMarshaling{
+		{
+			Name: "txListHash",
+			Type: "bytes32",
+		},
+		{
+			Name: "beneficiary",
+			Type: "address",
+		},
+		{
+			Name: "gasLimit",
+			Type: "uint32",
+		},
+		{
+			Name: "txListByteStart",
+			Type: "uint24",
+		},
+		{
+			Name: "txListByteEnd",
+			Type: "uint24",
+		},
+		{
+			Name: "cacheTxListInfo",
+			Type: "uint8",
+		},
+	}
 	blockMetadataComponents = []abi.ArgumentMarshaling{
 		{
 			Name: "id",
@@ -26,11 +52,15 @@ var (
 		},
 		{
 			Name: "l1Height",
-			Type: "bytes32",
+			Type: "uint64",
 		},
 		{
-			Name: "beneficiary",
-			Type: "address",
+			Name: "gasLimit",
+			Type: "uint32",
+		},
+		{
+			Name: "l1Hash",
+			Type: "bytes32",
 		},
 		{
 			Name: "mixHash",
@@ -98,11 +128,14 @@ var (
 )
 
 var (
+	// BlockMetadataInput
+	blockMetadataInputType, _ = abi.NewType("tuple", "TaikoData.BlockMetadataInput", blockMetadataInputComponents)
+	blockMetadataInputArgs    = abi.Arguments{{Name: "BlockMetadataInput", Type: blockMetadataInputType}}
 	// BlockMetadata
 	blockMetadataType, _ = abi.NewType("tuple", "LibData.BlockMetadata", blockMetadataComponents)
 	blockMetadataArgs    = abi.Arguments{{Name: "BlockMetadata", Type: blockMetadataType}}
 	// Evidence
-	EvidenceType, _ = abi.NewType("tuple", "V1Proving.Evidence", evidenceComponents)
+	EvidenceType, _ = abi.NewType("tuple", "TaikoData.BlockEvidence", evidenceComponents)
 	EvidenceArgs    = abi.Arguments{{Name: "Evidence", Type: EvidenceType}}
 )
 
@@ -124,9 +157,18 @@ func init() {
 	}
 }
 
+// EncodeBlockMetadataInput performs the solidity `abi.encode` for the given blockMetadataInput.
+func EncodeBlockMetadataInput(meta *TaikoL1BlockMetadataInput) ([]byte, error) {
+	b, err := blockMetadataInputArgs.Pack(meta)
+	if err != nil {
+		return nil, fmt.Errorf("failed to abi.encode block metadata input, %w", err)
+	}
+	return b, nil
+}
+
 // EncodeBlockMetadata performs the solidity `abi.encode` for the given blockMetadata.
 func EncodeBlockMetadata(meta *bindings.TaikoDataBlockMetadata) ([]byte, error) {
-	b, err := blockMetadataArgs.Pack(meta)
+	b, err := blockMetadataInputArgs.Pack(meta)
 	if err != nil {
 		return nil, fmt.Errorf("failed to abi.encode block metadata, %w", err)
 	}
@@ -152,8 +194,8 @@ func EncodeCommitHash(beneficiary common.Address, txListHash [32]byte) []byte {
 }
 
 // EncodeProposeBlockInput encodes the input params for TaikoL1.proposeBlock.
-func EncodeProposeBlockInput(meta *bindings.TaikoDataBlockMetadata) ([]byte, error) {
-	metaBytes, err := EncodeBlockMetadata(meta)
+func EncodeProposeBlockInput(metadataInput *TaikoL1BlockMetadataInput) ([]byte, error) {
+	metaBytes, err := EncodeBlockMetadataInput(metadataInput)
 	if err != nil {
 		return nil, err
 	}

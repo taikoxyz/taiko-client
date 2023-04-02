@@ -7,17 +7,16 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
-	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type testJsonError struct{}
 
-func (e *testJsonError) Error() string { return common.Bytes2Hex(testutils.RandomBytes(10)) }
+func (e *testJsonError) Error() string { return common.Bytes2Hex(randomBytes(10)) }
 
 func (e *testJsonError) ErrorData() interface{} { return "0xb6d363fd" }
 
 func TestTryParsingCustomError(t *testing.T) {
-	randomErr := common.Bytes2Hex(testutils.RandomBytes(10))
+	randomErr := common.Bytes2Hex(randomBytes(10))
 	require.Equal(t, randomErr, TryParsingCustomError(errors.New(randomErr)).Error())
 
 	err := TryParsingCustomError(errors.New(
