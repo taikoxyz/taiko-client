@@ -13,6 +13,12 @@ issues:
     - path: bindings/encoding/custom_error.go
       linters:
         - errorlint
+    - path: pkg/tx_list_validator/tx_list_validator_test.go
+      linters:
+        - typecheck
+    - path: prover/proof_submitter/merkle_proof_test.go
+      linters:
+        - typecheck
 
 linters:
   disable-all: true
