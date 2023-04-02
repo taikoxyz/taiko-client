@@ -45,7 +45,7 @@ var (
 			Type: "uint24",
 		},
 		{
-			Name: "txListByteEnd", 
+			Name: "txListByteEnd",
 			Type: "uint24",
 		},
 		{

@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/beacon"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -181,7 +181,7 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	var (
-		payloadData  *beacon.ExecutableDataV1
+		payloadData  *engine.ExecutableData
 		rpcError     error
 		payloadError error
 	)
@@ -252,7 +252,7 @@ func (s *Syncer) insertNewHead(
 	headBlockID *big.Int,
 	txListBytes []byte,
 	l1Origin *rawdb.L1Origin,
-) (*beacon.ExecutableDataV1, error, error) {
+) (*engine.ExecutableData, error, error) {
 	log.Debug(
 		"Try to insert a new L2 head block",
 		"parentNumber", parent.Number,
@@ -301,7 +301,7 @@ func (s *Syncer) insertNewHead(
 		return nil, rpcErr, payloadErr
 	}
 
-	fc := &beacon.ForkchoiceStateV1{HeadBlockHash: parent.Hash()}
+	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parent.Hash()}
 
 	// Update the fork choice
 	fc.HeadBlockHash = payload.BlockHash
@@ -309,7 +309,7 @@ func (s *Syncer) insertNewHead(
 	if err != nil {
 		return nil, err, nil
 	}
-	if fcRes.PayloadStatus.Status != beacon.VALID {
+	if fcRes.PayloadStatus.Status != engine.VALID {
 		return nil, nil, fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
 	}
 
@@ -325,13 +325,13 @@ func (s *Syncer) createExecutionPayloads(
 	l1Origin *rawdb.L1Origin,
 	headBlockID *big.Int,
 	txListBytes []byte,
-) (payloadData *beacon.ExecutableDataV1, rpcError error, payloadError error) {
-	fc := &beacon.ForkchoiceStateV1{HeadBlockHash: parentHash}
-	attributes := &beacon.PayloadAttributesV1{
+) (payloadData *engine.ExecutableData, rpcError error, payloadError error) {
+	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parentHash}
+	attributes := &engine.PayloadAttributes{
 		Timestamp:             event.Meta.Timestamp,
 		Random:                event.Meta.MixHash,
 		SuggestedFeeRecipient: event.Meta.Beneficiary,
-		BlockMetadata: &beacon.BlockMetadata{
+		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
 			GasLimit:       uint64(event.Meta.GasLimit), // TODO: + s.anchorConstructor.GasLimit()
@@ -348,7 +348,7 @@ func (s *Syncer) createExecutionPayloads(
 	if err != nil {
 		return nil, err, nil
 	}
-	if fcRes.PayloadStatus.Status != beacon.VALID {
+	if fcRes.PayloadStatus.Status != engine.VALID {
 		return nil, nil, fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
 	}
 	if fcRes.PayloadID == nil {
@@ -366,7 +366,7 @@ func (s *Syncer) createExecutionPayloads(
 	if err != nil {
 		return nil, err, nil
 	}
-	if execStatus.Status != beacon.VALID {
+	if execStatus.Status != engine.VALID {
 		return nil, nil, fmt.Errorf("unexpected NewPayload response status: %s", execStatus.Status)
 	}
 

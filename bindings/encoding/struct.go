@@ -3,8 +3,8 @@ package encoding
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/beacon"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
@@ -89,8 +89,8 @@ func ToGethHeader(header *BlockHeader) *types.Header {
 }
 
 // ToExecutableDataV1 converts a GETH *types.Header to *beacon.ExecutableDataV1.
-func ToExecutableDataV1(header *types.Header) *beacon.ExecutableDataV1 {
-	return &beacon.ExecutableDataV1{
+func ToExecutableDataV1(header *types.Header) *engine.ExecutableData {
+	return &engine.ExecutableData{
 		ParentHash:    header.ParentHash,
 		FeeRecipient:  header.Coinbase,
 		StateRoot:     header.Root,

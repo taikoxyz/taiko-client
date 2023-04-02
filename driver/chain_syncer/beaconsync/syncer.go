@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/beacon"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -55,11 +55,11 @@ func (s *Syncer) TriggerBeaconSync() error {
 		return err
 	}
 
-	if status.Status != beacon.SYNCING && status.Status != beacon.VALID {
+	if status.Status != engine.SYNCING && status.Status != engine.VALID {
 		return fmt.Errorf("unexpected NewPayload response status: %s", status.Status)
 	}
 
-	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &beacon.ForkchoiceStateV1{
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &engine.ForkchoiceStateV1{
 		HeadBlockHash:      latestVerifiedHeadPayload.BlockHash,
 		SafeBlockHash:      latestVerifiedHeadPayload.BlockHash,
 		FinalizedBlockHash: latestVerifiedHeadPayload.BlockHash,
@@ -67,7 +67,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 	if err != nil {
 		return err
 	}
-	if fcRes.PayloadStatus.Status != beacon.SYNCING {
+	if fcRes.PayloadStatus.Status != engine.SYNCING {
 		return fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", status.Status)
 	}
 
@@ -90,7 +90,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 
 // getVerifiedBlockPayload fetches the latest verified block's header, and converts it to an Engine API executable data,
 // which will be used to let the node to start beacon syncing.
-func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *beacon.ExecutableDataV1, error) {
+func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *engine.ExecutableData, error) {
 	var (
 		proveBlockTxHash    common.Hash
 		latestVerifiedBlock = s.state.GetLatestVerifiedBlock()
