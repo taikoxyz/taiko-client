@@ -47,6 +47,9 @@ jobs:
           path: ${{ env.TAIKO_MONO_DIR }}
           ref: major_protocol_upgrade_rebase
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
