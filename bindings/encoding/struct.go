@@ -29,11 +29,18 @@ type BlockHeader struct {
 }
 
 type TaikoL1Evidence struct {
-	Meta     bindings.TaikoDataBlockMetadata
-	Header   BlockHeader
-	Prover   common.Address
-	Proofs   [][]byte
-	Circuits uint16
+	Meta       bindings.TaikoDataBlockMetadata
+	Zkproof    ZkProof
+	ParentHash [32]byte
+	BlockHash  [32]byte
+	SignalRoot [32]byte
+	Graffiti   [32]byte
+	Prover     common.Address
+}
+
+type ZkProof struct {
+	Data       []byte
+	VerifierId uint16
 }
 
 type TaikoL1BlockMetadataInput struct {

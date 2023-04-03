@@ -15,7 +15,6 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 	l2EngineEndpoint := os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
-	throwawayBlocksBuilderPrivKey := os.Getenv("THROWAWAY_BLOCKS_BUILDER_PRIV_KEY")
 
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
@@ -24,7 +23,6 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		&cli.StringFlag{Name: flags.L2AuthEndpoint.Name},
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
-		&cli.StringFlag{Name: flags.ThrowawayBlocksBuilderPrivKey.Name},
 		&cli.StringFlag{Name: flags.JWTSecret.Name},
 		&cli.UintFlag{Name: flags.P2PSyncTimeout.Name},
 	}
@@ -50,7 +48,6 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L2AuthEndpoint.Name, l2EngineEndpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
-		"-" + flags.ThrowawayBlocksBuilderPrivKey.Name, throwawayBlocksBuilderPrivKey,
 		"-" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
 		"-" + flags.P2PSyncTimeout.Name, "120",
 	}))

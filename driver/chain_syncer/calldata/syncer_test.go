@@ -8,7 +8,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
@@ -27,25 +26,14 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	state, err := state.New(context.Background(), s.RpcClient)
 	s.Nil(err)
 
-	throwawayBlocksBuilderPrivKey, err := crypto.HexToECDSA(bindings.GoldenTouchPrivKey[2:])
-	s.Nil(err)
-
 	syncer, err := NewSyncer(
 		context.Background(),
 		s.RpcClient,
 		state,
 		beaconsync.NewSyncProgressTracker(s.RpcClient.L2, 1*time.Hour),
-		throwawayBlocksBuilderPrivKey,
 	)
 	s.Nil(err)
 	s.s = syncer
-}
-
-func (s *CalldataSyncerTestSuite) TestGetInvalidateBlockTxOpts() {
-	opts, err := s.s.getInvalidateBlockTxOpts(context.Background(), common.Big0)
-
-	s.Nil(err)
-	s.True(opts.NoSend)
 }
 
 func (s *CalldataSyncerTestSuite) TestProcessL1Blocks() {

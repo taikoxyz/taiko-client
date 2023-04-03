@@ -12,13 +12,6 @@ var (
 		Required: true,
 		Category: driverCategory,
 	}
-	ThrowawayBlocksBuilderPrivKey = &cli.StringFlag{
-		Name: "l2.throwawayBlockBuilderPrivKey",
-		Usage: "Private key of the L2 throwaway blocks builder," +
-			"who will be the suggested fee recipient of L2 throwaway blocks",
-		Required: true,
-		Category: driverCategory,
-	}
 	JWTSecret = &cli.StringFlag{
 		Name:     "jwtSecret",
 		Usage:    "Path to a JWT secret to use for authenticated RPC endpoints",
@@ -49,7 +42,6 @@ var (
 var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2WSEndpoint,
 	L2AuthEndpoint,
-	ThrowawayBlocksBuilderPrivKey,
 	JWTSecret,
 	P2PSyncVerifiedBlocks,
 	P2PSyncTimeout,

@@ -3,6 +3,7 @@ package encoding
 import (
 	"bytes"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -307,5 +308,22 @@ func decodeEvidenceHeader(evidenceBytes []byte) (*BlockHeader, error) {
 		return nil, err
 	}
 
-	return &evidence.Header, nil
+	return &BlockHeader{
+		ParentHash:  evidence.ParentHash,
+		OmmersHash:  types.EmptyUncleHash,
+		Beneficiary: evidence.Meta.Beneficiary,
+		// StateRoot: , // ?
+		// TransactionsRoot: , // ?
+		// ReceiptsRoot: , // ?
+		// LogsBloom:  , // ?
+		Difficulty: common.Big0,
+		Height:     new(big.Int).SetUint64(evidence.Meta.Id),
+		GasLimit:   uint64(evidence.Meta.GasLimit),
+		// GasUsed: , // ?
+		Timestamp:     evidence.Meta.Timestamp,
+		ExtraData:     []byte{},
+		MixHash:       evidence.Meta.MixHash,
+		Nonce:         0,
+		BaseFeePerGas: nil,
+	}, nil
 }

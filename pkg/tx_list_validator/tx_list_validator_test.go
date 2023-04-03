@@ -90,13 +90,6 @@ func TestIsTxListValid(t *testing.T) {
 			0,
 		},
 		{
-			"invalid signature",
-			chainID,
-			rlpEncodedTransactionBytes(1, false),
-			HintTxInvalidSig,
-			0,
-		},
-		{
 			"success empty tx list",
 			chainID,
 			rlpEncodedTransactionBytes(0, true),

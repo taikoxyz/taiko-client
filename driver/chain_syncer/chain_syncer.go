@@ -2,7 +2,6 @@ package chainSyncer
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"fmt"
 	"time"
 
@@ -39,7 +38,6 @@ func New(
 	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
 	p2pSyncVerifiedBlocks bool,
 	p2pSyncTimeout time.Duration,
 ) (*L2ChainSyncer, error) {
@@ -47,7 +45,7 @@ func New(
 	go tracker.Track(ctx)
 
 	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, tracker)
-	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, throwawayBlocksBuilderPrivKey)
+	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker)
 	if err != nil {
 		return nil, err
 	}

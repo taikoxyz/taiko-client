@@ -53,15 +53,11 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 
 	tracker := beaconsync.NewSyncProgressTracker(s.RpcClient.L2, 30*time.Second)
 
-	throwawayBlocksBuilderPrivKey, err := crypto.HexToECDSA(bindings.GoldenTouchPrivKey[2:])
-	s.Nil(err)
-
 	s.calldataSyncer, err = calldata.NewSyncer(
 		context.Background(),
 		s.RpcClient,
 		testState,
 		tracker,
-		throwawayBlocksBuilderPrivKey,
 	)
 	s.Nil(err)
 

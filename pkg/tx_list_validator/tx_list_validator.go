@@ -3,29 +3,20 @@ package tx_list_validator
 import (
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
-// InvalidTxListReason represents a reason why a transactions list is invalid, reasons defined in
-// protocol:
-//
-//	enum Reason {
-//		NONE,
-//		TX_INVALID_SIG,
-//		TX_GAS_LIMIT_TOO_SMALL
-//	}
+// InvalidTxListReason represents a reason why a transactions list is invalid.
 type InvalidTxListReason uint8
 
 // All invalid transactions list reasons.
 const (
 	HintNone InvalidTxListReason = iota
-	HintTxInvalidSig
 	HintTxGasLimitTooSmall
-	HintOK // This reason dose not exist in protocol, only used in client.
+	HintOK
 )
 
 type TxListValidator struct {
@@ -104,15 +95,7 @@ func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (h
 		return HintNone, 0
 	}
 
-	signer := types.LatestSignerForChainID(v.chainID)
-
 	for i, tx := range txs {
-		sender, err := types.Sender(signer, tx)
-		if err != nil || sender == (common.Address{}) {
-			log.Info("Invalid transaction signature", "error", err)
-			return HintTxInvalidSig, i
-		}
-
 		if tx.Gas() < v.minTxGasLimit {
 			log.Info("Transaction gas limit too small", "gasLimit", tx.Gas())
 			return HintTxGasLimitTooSmall, i

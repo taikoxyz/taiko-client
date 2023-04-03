@@ -332,7 +332,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 		}
 
 		if stateVars.LastVerifiedBlockId == 0 {
-			p.l1Current = 0
+			p.l1Current = stateVars.GenesisHeight
 			return nil
 		}
 

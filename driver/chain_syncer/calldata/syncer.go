@@ -2,18 +2,15 @@ package calldata
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -29,13 +26,12 @@ import (
 // Syncer responsible for letting the L2 execution engine catching up with protocol's latest
 // pending block through deriving L1 calldata.
 type Syncer struct {
-	ctx                           context.Context
-	rpc                           *rpc.Client
-	state                         *state.State
-	progressTracker               *beaconsync.SyncProgressTracker          // Sync progress tracker
-	anchorConstructor             *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
-	txListValidator               *txListValidator.TxListValidator         // Transactions list validator
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                        // Private key of L2 throwaway blocks builder
+	ctx               context.Context
+	rpc               *rpc.Client
+	state             *state.State
+	progressTracker   *beaconsync.SyncProgressTracker          // Sync progress tracker
+	anchorConstructor *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
+	txListValidator   *txListValidator.TxListValidator         // Transactions list validator
 	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
 }
@@ -46,7 +42,6 @@ func NewSyncer(
 	rpc *rpc.Client,
 	state *state.State,
 	progressTracker *beaconsync.SyncProgressTracker,
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey, // Private key of L2 throwaway blocks builder
 ) (*Syncer, error) {
 	configs, err := rpc.TaikoL1.GetConfig(nil)
 	if err != nil {
@@ -75,7 +70,6 @@ func NewSyncer(
 			configs.MinTxGasLimit.Uint64(),
 			rpc.L2ChainID,
 		),
-		throwawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
 	}, nil
 }
 
@@ -172,7 +166,7 @@ func (s *Syncer) onBlockProposed(
 		L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
 		L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
 		L1BlockHash:   event.Raw.BlockHash,
-		Throwaway:     hint != txListValidator.HintOK,
+		Throwaway:     false, // TODO: remove this field
 	}
 
 	if event.Meta.Timestamp > uint64(time.Now().Unix()) {
@@ -180,34 +174,19 @@ func (s *Syncer) onBlockProposed(
 		time.Sleep(time.Until(time.Unix(int64(event.Meta.Timestamp), 0)))
 	}
 
-	var (
-		payloadData  *engine.ExecutableData
-		rpcError     error
-		payloadError error
-	)
-	if hint == txListValidator.HintOK {
-		payloadData, rpcError, payloadError = s.insertNewHead(
-			ctx,
-			event,
-			parent,
-			s.state.GetHeadBlockID(),
-			txListBytes,
-			l1Origin,
-		)
-	} else {
-		// TODO: insert empty block
-		// payloadData, rpcError, payloadError = s.insertThrowAwayBlock(
-		// 	ctx,
-		// 	event,
-		// 	parent,
-		// 	uint8(hint),
-		// 	new(big.Int).SetInt64(int64(invalidTxIndex)),
-		// 	s.state.GetHeadBlockID(),
-		// 	txListBytes,
-		// 	l1Origin,
-		// )
-		log.Info("Insert empty block")
+	// If the transactions list is invalid, we simply insert an empty L2 block.
+	if hint != txListValidator.HintOK {
+		txListBytes = []byte{}
 	}
+
+	payloadData, rpcError, payloadError := s.insertNewHead(
+		ctx,
+		event,
+		parent,
+		s.state.GetHeadBlockID(),
+		txListBytes,
+		l1Origin,
+	)
 
 	// RPC errors are recoverable.
 	if rpcError != nil {
@@ -372,31 +351,4 @@ func (s *Syncer) createExecutionPayloads(
 	}
 
 	return payload, nil, nil
-}
-
-// getInvalidateBlockTxOpts signs the transaction with a the
-// throwaway blocks builder private key.
-func (s *Syncer) getInvalidateBlockTxOpts(ctx context.Context, height *big.Int) (*bind.TransactOpts, error) {
-	opts, err := bind.NewKeyedTransactorWithChainID(
-		s.throwawayBlocksBuilderPrivKey,
-		s.rpc.L2ChainID,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	nonce, err := s.rpc.L2AccountNonce(
-		ctx,
-		crypto.PubkeyToAddress(s.throwawayBlocksBuilderPrivKey.PublicKey),
-		height,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	opts.GasPrice = common.Big0
-	opts.Nonce = new(big.Int).SetUint64(nonce)
-	opts.NoSend = true
-
-	return opts, nil
 }

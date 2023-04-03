@@ -92,57 +92,6 @@ func ProposeAndInsertEmptyBlocks(
 	return events
 }
 
-// ProposeAndInsertThrowawayBlock proposes an invalid tx list and then insert it
-// into L2 execution engine's local chain.
-func ProposeAndInsertThrowawayBlock(
-	s *ClientTestSuite,
-	proposer Proposer,
-	calldataSyncer CalldataSyncer,
-) *bindings.TaikoL1ClientBlockProposed {
-	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-
-	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-
-	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
-
-	sub, err := s.RpcClient.TaikoL1.WatchBlockProposed(nil, sink, nil)
-	s.Nil(err)
-	defer func() {
-		sub.Unsubscribe()
-		close(sink)
-	}()
-
-	ProposeInvalidTxListBytes(s, proposer)
-
-	event := <-sink
-
-	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
-	s.Nil(err)
-	s.False(isPending)
-
-	newL1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-	s.Greater(newL1Head.Number.Uint64(), l1Head.Number.Uint64())
-
-	syncProgress, err := s.RpcClient.L2.SyncProgress(context.Background())
-	s.Nil(err)
-	s.Nil(syncProgress)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
-	s.Nil(calldataSyncer.ProcessL1Blocks(ctx, newL1Head))
-
-	newL2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-
-	s.Equal(newL2Head.Number.Uint64(), l2Head.Number.Uint64())
-
-	return event
-}
-
 // ProposeAndInsertValidBlock proposes an valid tx list and then insert it
 // into L2 execution engine's local chain.
 func ProposeAndInsertValidBlock(

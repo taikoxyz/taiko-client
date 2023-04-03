@@ -14,10 +14,13 @@ import (
 
 func TestEncodeEvidence(t *testing.T) {
 	evidence := &TaikoL1Evidence{
-		Meta:   testMeta,
-		Header: *FromGethHeader(testHeader),
-		Prover: common.BytesToAddress(randomHash().Bytes()),
-		Proofs: [][]byte{randomHash().Bytes(), randomHash().Bytes(), randomHash().Bytes()},
+		Meta:       testMeta,
+		Zkproof:    ZkProof{Data: randomHash().Big().Bytes(), VerifierId: uint16(rand.Uint32())},
+		ParentHash: randomHash(),
+		BlockHash:  randomHash(),
+		SignalRoot: randomHash(),
+		Graffiti:   randomHash(),
+		Prover:     common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
 	}
 
 	b, err := EncodeEvidence(evidence)
@@ -40,9 +43,13 @@ func TestEncodeProposeBlockInput(t *testing.T) {
 func TestEncodeProveBlockInput(t *testing.T) {
 	encoded, err := EncodeProveBlockInput(
 		&TaikoL1Evidence{
-			Meta:   testMeta,
-			Header: *FromGethHeader(testHeader),
-			Prover: common.BytesToAddress(randomHash().Bytes()),
+			Meta:       testMeta,
+			Zkproof:    ZkProof{Data: randomHash().Big().Bytes(), VerifierId: uint16(rand.Uint32())},
+			ParentHash: randomHash(),
+			BlockHash:  randomHash(),
+			SignalRoot: randomHash(),
+			Graffiti:   randomHash(),
+			Prover:     common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
 		},
 		types.NewTransaction(
 			0,
@@ -62,9 +69,13 @@ func TestEncodeProveBlockInput(t *testing.T) {
 func TestEncodeProveBlockInvalidInput(t *testing.T) {
 	encoded, err := EncodeProveBlockInvalidInput(
 		&TaikoL1Evidence{
-			Meta:   testMeta,
-			Header: *FromGethHeader(testHeader),
-			Prover: common.BytesToAddress(randomHash().Bytes()),
+			Meta:       testMeta,
+			Zkproof:    ZkProof{Data: randomHash().Big().Bytes(), VerifierId: uint16(rand.Uint32())},
+			ParentHash: randomHash(),
+			BlockHash:  randomHash(),
+			SignalRoot: randomHash(),
+			Graffiti:   randomHash(),
+			Prover:     common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
 		},
 		&testMeta,
 		types.NewReceipt(randomHash().Bytes(), false, 1024),
@@ -105,9 +116,12 @@ func TestDecodeEvidenceHeader(t *testing.T) {
 			GasLimit:    rand.Uint32(),
 			Timestamp:   rand.Uint64(),
 		},
-		Header: *FromGethHeader(testHeader),
-		Prover: common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
-		Proofs: [][]byte{randomBytes(1024)},
+		Zkproof:    ZkProof{Data: randomHash().Big().Bytes(), VerifierId: uint16(rand.Uint32())},
+		ParentHash: randomHash(),
+		BlockHash:  randomHash(),
+		SignalRoot: randomHash(),
+		Graffiti:   randomHash(),
+		Prover:     common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
 	})
 	require.Nil(t, err)
 
