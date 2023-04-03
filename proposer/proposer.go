@@ -217,21 +217,8 @@ func (p *Proposer) ProposeOp(ctx context.Context, epoch uint64) error {
 		return errNoNewTxs
 	}
 
-	j := 0
-	for i, txs := range txLists {
-		if maxTransactionsPerBlock.Cmp(p.protocolConfigs.MaxTransactionsPerBlock) == 0 && txs.Len() > 11 {
-			j = i
-			break
-		}
-	}
-
-	log.Info("Transactions lists starting index", "index", j)
-
 	var commitTxListResQueue []*commitTxListRes
 	for i, txs := range txLists {
-		if j != 0 && i < j {
-			continue
-		}
 		txListBytes, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			return fmt.Errorf("failed to encode transactions: %w", err)
