@@ -195,6 +195,8 @@ func (p *Proposer) ProposeOp(ctx context.Context, epoch uint64) error {
 		"feeBaseLen", len(stateVars.FeeBase.String()),
 	)
 
+	metrics.ProposerBaseFeeLenMetrics.Update(int64(len(stateVars.FeeBase.String())))
+
 	txLists, err := p.rpc.GetPoolContent(
 		ctx,
 		maxTransactionsPerBlock,
