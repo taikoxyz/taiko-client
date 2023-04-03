@@ -174,31 +174,25 @@ func (p *Proposer) ProposeOp(ctx context.Context, epoch uint64) error {
 		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
 	}
 
+	stateVars, err := p.rpc.TaikoL1.GetStateVariables(nil)
+	if err != nil {
+		return fmt.Errorf("failed to get TaikoL1 status variables: %w", err)
+	}
+
 	var (
 		maxTransactionsPerBlock = new(big.Int).SetUint64(10)
-		locals                  = p.locals
 	)
 
-	if epoch%2 == 0 {
+	if epoch%2 == 0 && len(stateVars.FeeBase.String()) < 36 {
 		maxTransactionsPerBlock = p.protocolConfigs.MaxTransactionsPerBlock
-		locals = append(
-			locals,
-			common.HexToAddress("0xAe5C05D961B834Bc5752d4BC6774b1d47E53A64C"),
-			common.HexToAddress("0x0000777700000000000000000000000000000002"),
-		)
-	} else {
-		locals = append(
-			locals,
-			common.HexToAddress("0x6C671d2C641CE1b99F17755fd45441fa4326C3B1"),
-			common.HexToAddress("0x9E5da4B6D25Ee5A68aa8c29B6B87C82f7F463893"),
-		)
 	}
 
 	log.Info(
 		"Start fetching L2 execution engine's transaction pool content",
 		"epoch", epoch,
 		"maxTransactionsPerBlock", maxTransactionsPerBlock,
-		"locals", locals,
+		"feeBase", stateVars.FeeBase,
+		"feeBaseLen", len(stateVars.FeeBase.String()),
 	)
 
 	txLists, err := p.rpc.GetPoolContent(
@@ -207,7 +201,7 @@ func (p *Proposer) ProposeOp(ctx context.Context, epoch uint64) error {
 		p.protocolConfigs.BlockMaxGasLimit,
 		p.protocolConfigs.MaxBytesPerTxList,
 		p.protocolConfigs.MinTxGasLimit,
-		locals,
+		p.locals,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
