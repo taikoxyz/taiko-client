@@ -184,7 +184,7 @@ func (p *Proposer) ProposeOp(ctx context.Context, epoch uint64) error {
 		pendings                = stateVars.NextBlockId - stateVars.LatestVerifiedId - 1
 	)
 
-	if epoch%2 == 0 && len(stateVars.FeeBase.String()) < 36 && pendings < 50 {
+	if epoch%3 == 0 && len(stateVars.FeeBase.String()) < 36 && pendings < 50 {
 		maxTransactionsPerBlock = p.protocolConfigs.MaxTransactionsPerBlock
 	}
 
