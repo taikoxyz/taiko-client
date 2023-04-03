@@ -181,9 +181,10 @@ func (p *Proposer) ProposeOp(ctx context.Context, epoch uint64) error {
 
 	var (
 		maxTransactionsPerBlock = new(big.Int).SetUint64(10)
+		pendings                = stateVars.NextBlockId - stateVars.LatestVerifiedId - 1
 	)
 
-	if epoch%2 == 0 && len(stateVars.FeeBase.String()) < 36 {
+	if epoch%2 == 0 && len(stateVars.FeeBase.String()) < 36 && pendings < 50 {
 		maxTransactionsPerBlock = p.protocolConfigs.MaxTransactionsPerBlock
 	}
 
@@ -193,6 +194,7 @@ func (p *Proposer) ProposeOp(ctx context.Context, epoch uint64) error {
 		"maxTransactionsPerBlock", maxTransactionsPerBlock,
 		"feeBase", stateVars.FeeBase,
 		"feeBaseLen", len(stateVars.FeeBase.String()),
+		"pendings", pendings,
 	)
 
 	metrics.ProposerBaseFeeLenMetrics.Update(int64(len(stateVars.FeeBase.String())))
@@ -215,8 +217,21 @@ func (p *Proposer) ProposeOp(ctx context.Context, epoch uint64) error {
 		return errNoNewTxs
 	}
 
+	j := 0
+	for i, txs := range txLists {
+		if maxTransactionsPerBlock.Cmp(p.protocolConfigs.MaxTransactionsPerBlock) == 0 && txs.Len() > 11 {
+			j = i
+			break
+		}
+	}
+
+	log.Info("Transactions lists starting index", "index", j)
+
 	var commitTxListResQueue []*commitTxListRes
 	for i, txs := range txLists {
+		if j != 0 && i < j {
+			continue
+		}
 		txListBytes, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			return fmt.Errorf("failed to encode transactions: %w", err)
