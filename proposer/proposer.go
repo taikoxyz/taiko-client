@@ -174,13 +174,22 @@ func (p *Proposer) ProposeOp(ctx context.Context, epoch uint64) error {
 		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
 	}
 
-	log.Info("Start fetching L2 execution engine's transaction pool content", "epoch", epoch)
-
-	var maxTransactionsPerBlock = new(big.Int).SetUint64(10)
+	var (
+		maxTransactionsPerBlock = new(big.Int).SetUint64(10)
+		locals                  = p.locals
+	)
 
 	if epoch%2 == 0 {
 		maxTransactionsPerBlock = p.protocolConfigs.MaxTransactionsPerBlock
+		locals = append(locals, common.HexToAddress("0x6C671d2C641CE1b99F17755fd45441fa4326C3B1"))
 	}
+
+	log.Info(
+		"Start fetching L2 execution engine's transaction pool content",
+		"epoch", epoch,
+		"maxTransactionsPerBlock", maxTransactionsPerBlock,
+		"locals", locals,
+	)
 
 	txLists, err := p.rpc.GetPoolContent(
 		ctx,
@@ -188,7 +197,7 @@ func (p *Proposer) ProposeOp(ctx context.Context, epoch uint64) error {
 		p.protocolConfigs.BlockMaxGasLimit,
 		p.protocolConfigs.MaxBytesPerTxList,
 		p.protocolConfigs.MinTxGasLimit,
-		p.locals,
+		locals,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
