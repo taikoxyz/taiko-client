@@ -58,6 +58,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		s.RpcClient,
 		testState,
 		tracker,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 

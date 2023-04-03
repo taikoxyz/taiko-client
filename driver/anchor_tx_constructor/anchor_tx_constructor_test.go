@@ -2,6 +2,7 @@ package anchorTxConstructor
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -23,6 +24,7 @@ func (s *AnchorTxConstructorTestSuite) SetupTest() {
 		s.RpcClient,
 		bindings.GoldenTouchAddress,
 		bindings.GoldenTouchPrivKey,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 	s.c = c
@@ -43,6 +45,7 @@ func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
 		s.RpcClient,
 		bindings.GoldenTouchAddress,
 		bindings.GoldenTouchPrivKey,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 

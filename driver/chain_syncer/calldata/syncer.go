@@ -42,6 +42,7 @@ func NewSyncer(
 	rpc *rpc.Client,
 	state *state.State,
 	progressTracker *beaconsync.SyncProgressTracker,
+	signalServiceAddress common.Address,
 ) (*Syncer, error) {
 	configs, err := rpc.TaikoL1.GetConfig(nil)
 	if err != nil {
@@ -52,6 +53,7 @@ func NewSyncer(
 		rpc,
 		bindings.GoldenTouchAddress,
 		bindings.GoldenTouchPrivKey,
+		signalServiceAddress,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
@@ -166,7 +168,6 @@ func (s *Syncer) onBlockProposed(
 		L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
 		L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
 		L1BlockHash:   event.Raw.BlockHash,
-		Throwaway:     false, // TODO: remove this field
 	}
 
 	if event.Meta.Timestamp > uint64(time.Now().Unix()) {
@@ -176,6 +177,7 @@ func (s *Syncer) onBlockProposed(
 
 	// If the transactions list is invalid, we simply insert an empty L2 block.
 	if hint != txListValidator.HintOK {
+		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", event.Id)
 		txListBytes = []byte{}
 	}
 
@@ -204,7 +206,6 @@ func (s *Syncer) onBlockProposed(
 
 	log.Info(
 		"🔗 New L2 block inserted",
-		"throwaway", l1Origin.Throwaway,
 		"blockID", event.Id,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
@@ -216,7 +217,7 @@ func (s *Syncer) onBlockProposed(
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
 	s.lastInsertedBlockID = event.Id
 
-	if !l1Origin.Throwaway && s.progressTracker.Triggered() {
+	if s.progressTracker.Triggered() {
 		s.progressTracker.ClearMeta()
 	}
 
@@ -311,6 +312,7 @@ func (s *Syncer) createExecutionPayloads(
 		Timestamp:             event.Meta.Timestamp,
 		Random:                event.Meta.MixHash,
 		SuggestedFeeRecipient: event.Meta.Beneficiary,
+		Withdrawals:           nil,
 		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
@@ -349,6 +351,8 @@ func (s *Syncer) createExecutionPayloads(
 	if execStatus.Status != engine.VALID {
 		return nil, nil, fmt.Errorf("unexpected NewPayload response status: %s", execStatus.Status)
 	}
+
+	log.Info("Paylod", "payload", payload)
 
 	return payload, nil, nil
 }

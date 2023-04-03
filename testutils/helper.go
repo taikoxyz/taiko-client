@@ -70,7 +70,7 @@ func ProposeAndInsertEmptyBlocks(
 
 	ProposeInvalidTxListBytes(s, proposer)
 
-	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink}...)
+	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
 
 	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), events[len(events)-1].Raw.TxHash)
 	s.Nil(err)

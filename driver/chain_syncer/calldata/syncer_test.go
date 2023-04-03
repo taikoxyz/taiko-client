@@ -3,6 +3,7 @@ package calldata
 import (
 	"context"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -31,6 +32,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		s.RpcClient,
 		state,
 		beaconsync.NewSyncProgressTracker(s.RpcClient.L2, 1*time.Hour),
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 	s.s = syncer

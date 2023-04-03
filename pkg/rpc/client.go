@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
@@ -15,6 +16,9 @@ type Client struct {
 	// Geth ethclient clients
 	L1 *ethclient.Client
 	L2 *ethclient.Client
+	// Geth gethclient clients
+	L1GethClient *gethclient.Client
+	L2GethClient *gethclient.Client
 	// Geth raw RPC clients
 	L1RawRPC *rpc.Client
 	L2RawRPC *rpc.Client
@@ -93,15 +97,17 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	}
 
 	client := &Client{
-		L1:        l1RPC,
-		L2:        l2RPC,
-		L1RawRPC:  l1RawRPC,
-		L2RawRPC:  l2RawRPC,
-		L2Engine:  l2AuthRPC,
-		TaikoL1:   taikoL1,
-		TaikoL2:   taikoL2,
-		L1ChainID: l1ChainID,
-		L2ChainID: l2ChainID,
+		L1:           l1RPC,
+		L2:           l2RPC,
+		L1RawRPC:     l1RawRPC,
+		L2RawRPC:     l2RawRPC,
+		L1GethClient: gethclient.New(l1RawRPC),
+		L2GethClient: gethclient.New(l2RawRPC),
+		L2Engine:     l2AuthRPC,
+		TaikoL1:      taikoL1,
+		TaikoL2:      taikoL2,
+		L1ChainID:    l1ChainID,
+		L2ChainID:    l2ChainID,
 	}
 
 	if err := client.ensureGenesisMatched(ctx); err != nil {

@@ -2,9 +2,11 @@ package chainSyncer
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/testutils"
@@ -27,6 +29,7 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		state,
 		false,
 		1*time.Hour,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 	s.s = syncer

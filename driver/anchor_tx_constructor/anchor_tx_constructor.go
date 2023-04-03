@@ -17,10 +17,11 @@ import (
 // AnchorTxConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
 // each L2 block, which is always the first transaction.
 type AnchorTxConstructor struct {
-	rpc                *rpc.Client
-	gasLimit           uint64
-	goldenTouchAddress common.Address
-	signer             *signer.FixedKSigner
+	rpc                  *rpc.Client
+	gasLimit             uint64
+	goldenTouchAddress   common.Address
+	signalServiceAddress common.Address
+	signer               *signer.FixedKSigner
 }
 
 // New creates a new AnchorConstructor instance.
@@ -28,6 +29,7 @@ func New(
 	rpc *rpc.Client,
 	goldenTouchAddress common.Address,
 	goldenTouchPrivKey string,
+	signalServiceAddress common.Address,
 ) (*AnchorTxConstructor, error) {
 	signer, err := signer.NewFixedKSigner(goldenTouchPrivKey)
 	if err != nil {
@@ -35,9 +37,10 @@ func New(
 	}
 
 	return &AnchorTxConstructor{
-		rpc:                rpc,
-		goldenTouchAddress: goldenTouchAddress,
-		signer:             signer,
+		rpc:                  rpc,
+		goldenTouchAddress:   goldenTouchAddress,
+		signalServiceAddress: signalServiceAddress,
+		signer:               signer,
 	}, nil
 }
 
@@ -55,7 +58,12 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 		return nil, err
 	}
 
-	return c.rpc.TaikoL2.Anchor(opts, l1Height, l1Hash, common.Hash{}) // TODO: add signal service root
+	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.signalServiceAddress, l1Height)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.rpc.TaikoL2.Anchor(opts, l1Height, l1Hash, signalRoot)
 }
 
 // transactOpts is a utility method to create some transact options of the anchor transaction in given L2 block with

@@ -2,6 +2,7 @@ package encoding
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -259,13 +260,13 @@ func UnpackTxListBytes(txData []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	inputs, ok := args["inputs"].([][]byte)
+	inputs, ok := args["txList"].([]byte)
 
-	if !ok || len(inputs) < 2 {
-		return nil, fmt.Errorf("invalid transaction inputs map length, get: %d", len(inputs))
+	if !ok {
+		return nil, errors.New("failed to get txList bytes")
 	}
 
-	return inputs[1], nil
+	return inputs, nil
 }
 
 // UnpackEvidenceHeader unpacks the evidence data of a TaikoL1.proveBlock transaction, and returns

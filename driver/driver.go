@@ -82,6 +82,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		d.state,
 		cfg.P2PSyncVerifiedBlocks,
 		cfg.P2PSyncTimeout,
+		cfg.SignalServiceAddress,
 	); err != nil {
 		return err
 	}

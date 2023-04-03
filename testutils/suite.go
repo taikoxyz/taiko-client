@@ -5,7 +5,9 @@ import (
 	"crypto/ecdsa"
 	"os"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/suite"
@@ -63,6 +65,24 @@ func (s *ClientTestSuite) SetupTest() {
 	s.NotEmpty(s.testnetL1SnapshotID)
 
 	s.RpcClient = rpcCli
+
+	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	balance, err := s.RpcClient.TaikoL1.GetBalance(nil, crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey))
+	s.Nil(err)
+
+	if balance.Cmp(common.Big0) > 0 {
+		opts, err := bind.NewKeyedTransactorWithChainID(l1ProposerPrivKey, s.RpcClient.L1ChainID)
+		s.Nil(err)
+
+		tx, err := s.RpcClient.TaikoL1.Deposit(opts, balance)
+		s.Nil(err)
+
+		receipt, err := rpc.WaitReceipt(context.Background(), s.RpcClient.L1, tx)
+		s.Nil(err)
+		s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
+	}
 }
 
 func (s *ClientTestSuite) TearDownTest() {

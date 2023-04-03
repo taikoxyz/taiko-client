@@ -40,12 +40,13 @@ func New(
 	state *state.State,
 	p2pSyncVerifiedBlocks bool,
 	p2pSyncTimeout time.Duration,
+	signalServiceAddress common.Address,
 ) (*L2ChainSyncer, error) {
 	tracker := beaconsync.NewSyncProgressTracker(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
 	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, tracker)
-	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker)
+	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, signalServiceAddress)
 	if err != nil {
 		return nil, err
 	}

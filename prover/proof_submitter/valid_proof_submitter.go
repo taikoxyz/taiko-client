@@ -60,12 +60,6 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.Id, err)
 	}
 
-	// This should not be reached, only check for safety.
-	if l1Origin.Throwaway {
-		log.Error("Get a block metadata with invalid transaction list", "l1Origin", l1Origin)
-		return nil
-	}
-
 	// Get the header of the block to prove from L2 execution engine.
 	header, err := s.rpc.L2.HeaderByHash(ctx, l1Origin.L2BlockHash)
 	if err != nil {
@@ -140,41 +134,24 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
-	// Generate the merkel proof (whose root is block's txRoot) of this anchor transaction.
-	txRoot, anchorTxProof, err := generateTrieProof(block.Transactions(), 0)
-	if err != nil {
-		return fmt.Errorf("failed to generate anchor transaction proof: %w", err)
-	}
-
-	// Generate the merkel proof (whose root is block's receiptRoot) of this anchor transaction's receipt.
-	receipts, err := rpc.GetReceiptsByBlock(ctx, s.rpc.L2RawRPC, block)
-	if err != nil {
-		return fmt.Errorf("failed to fetch block receipts: %w", err)
-	}
-	receiptRoot, anchorReceiptProof, err := generateTrieProof(receipts, 0)
-	if err != nil {
-		return fmt.Errorf("failed to generate anchor receipt proof: %w", err)
-	}
-
-	// Double check the calculated roots.
-	if txRoot != block.TxHash() || receiptRoot != block.ReceiptHash() {
-		return fmt.Errorf(
-			"txHash or receiptHash mismatch, txRoot: %s, header.TxHash: %s, receiptRoot: %s, header.ReceiptHash: %s",
-			txRoot, header.TxHash, receiptRoot, header.ReceiptHash,
-		)
-	}
-
 	circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
 	if err != nil {
 		return err
 	}
 
+	signalRoot, err := s.anchorTxValidator.GetAnchoredSignalRoot(ctx, anchorTx)
+	if err != nil {
+		return err
+	}
+
 	evidence := &encoding.TaikoL1Evidence{
-		Meta:     *proofWithHeader.Meta,
-		Header:   *encoding.FromGethHeader(header),
-		Prover:   s.proverAddress,
-		Proofs:   [][]byte{zkProof, anchorTxProof, anchorReceiptProof},
-		Circuits: circuitsIdx,
+		Meta:       *proofWithHeader.Meta,
+		Zkproof:    encoding.ZkProof{Data: zkProof, VerifierId: circuitsIdx},
+		ParentHash: block.ParentHash(),
+		BlockHash:  block.Hash(),
+		SignalRoot: signalRoot,
+		Graffiti:   [32]byte{},
+		Prover:     s.proverAddress,
 	}
 
 	input, err := encoding.EncodeProveBlockInput(evidence, anchorTx, anchorTxReceipt)
