@@ -181,7 +181,12 @@ func (p *Proposer) ProposeOp(ctx context.Context, epoch uint64) error {
 
 	if epoch%2 == 0 {
 		maxTransactionsPerBlock = p.protocolConfigs.MaxTransactionsPerBlock
-		locals = append(locals, common.HexToAddress("0x6C671d2C641CE1b99F17755fd45441fa4326C3B1"))
+	} else {
+		locals = append(
+			locals,
+			common.HexToAddress("0x6C671d2C641CE1b99F17755fd45441fa4326C3B1"),
+			common.HexToAddress("0x9E5da4B6D25Ee5A68aa8c29B6B87C82f7F463893"),
+		)
 	}
 
 	log.Info(
