@@ -116,7 +116,10 @@ func (p *Proposer) eventLoop() {
 		p.wg.Done()
 	}()
 
-	var lastNonEmptyBlockProposedAt = time.Now()
+	var (
+		lastNonEmptyBlockProposedAt        = time.Now()
+		epoch                       uint64 = 0
+	)
 	for {
 		p.updateProposingTicker()
 
@@ -125,8 +128,9 @@ func (p *Proposer) eventLoop() {
 			return
 		case <-p.proposingTimer.C:
 			metrics.ProposerProposeEpochCounter.Inc(1)
+			epoch += 1
 
-			if err := p.ProposeOp(p.ctx); err != nil {
+			if err := p.ProposeOp(p.ctx, epoch); err != nil {
 				if !errors.Is(err, errNoNewTxs) {
 					log.Error("Proposing operation error", "error", err)
 					continue
@@ -160,7 +164,7 @@ func (p *Proposer) Close() {
 // ProposeOp performs a proposing operation, fetching transactions
 // from L2 execution engine's tx pool, splitting them by proposing constraints,
 // and then proposing them to TaikoL1 contract.
-func (p *Proposer) ProposeOp(ctx context.Context) error {
+func (p *Proposer) ProposeOp(ctx context.Context, epoch uint64) error {
 	if p.CustomProposeOpHook != nil {
 		return p.CustomProposeOpHook()
 	}
@@ -170,11 +174,17 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
 	}
 
-	log.Info("Start fetching L2 execution engine's transaction pool content")
+	log.Info("Start fetching L2 execution engine's transaction pool content", "epoch", epoch)
+
+	var maxTransactionsPerBlock = new(big.Int).SetUint64(10)
+
+	if epoch%2 == 0 {
+		maxTransactionsPerBlock = p.protocolConfigs.MaxTransactionsPerBlock
+	}
 
 	txLists, err := p.rpc.GetPoolContent(
 		ctx,
-		new(big.Int).SetUint64(9),
+		maxTransactionsPerBlock,
 		p.protocolConfigs.BlockMaxGasLimit,
 		p.protocolConfigs.MaxBytesPerTxList,
 		p.protocolConfigs.MinTxGasLimit,
