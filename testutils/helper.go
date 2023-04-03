@@ -174,7 +174,7 @@ func ProposeAndInsertValidBlock(
 	s.Nil(err)
 	s.Nil(s.RpcClient.L2.SendTransaction(context.Background(), signedTx))
 
-	s.Nil(proposer.ProposeOp(context.Background()))
+	s.Nil(proposer.ProposeOp(context.Background(), 0))
 
 	event := <-sink
 

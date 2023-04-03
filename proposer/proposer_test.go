@@ -62,7 +62,7 @@ func (s *ProposerTestSuite) TestName() {
 
 func (s *ProposerTestSuite) TestProposeOp() {
 	// Nothing to propose
-	s.EqualError(errNoNewTxs, s.p.ProposeOp(context.Background()).Error())
+	s.EqualError(errNoNewTxs, s.p.ProposeOp(context.Background(), 0).Error())
 
 	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
@@ -89,7 +89,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	s.Nil(err)
 	s.Nil(s.p.rpc.L2.SendTransaction(context.Background(), signedTx))
 
-	s.Nil(s.p.ProposeOp(context.Background()))
+	s.Nil(s.p.ProposeOp(context.Background(), 0))
 
 	event := <-sink
 
@@ -130,7 +130,7 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 		return nil
 	}
 
-	s.Nil(s.p.ProposeOp(context.Background()))
+	s.Nil(s.p.ProposeOp(context.Background(), 0))
 	s.True(flag)
 }
 
