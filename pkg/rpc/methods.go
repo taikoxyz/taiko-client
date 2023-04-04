@@ -158,7 +158,7 @@ func (c *Client) L2ParentByBlockId(ctx context.Context, blockID *big.Int) (*type
 
 	parent, err := c.L2.HeaderByNumber(ctx, parentBlockId)
 
-	log.Debug("Parent test", "parent", parent, "err", err)
+	log.Debug("Parent test", "parent", parent, "err", err, "hash", parent.Hash())
 
 	return c.L2.HeaderByHash(ctx, l1Origin.L2BlockHash)
 }
