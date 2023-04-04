@@ -2,6 +2,7 @@ package anchorTxConstructor
 
 import (
 	"context"
+	"math/big"
 	"os"
 	"testing"
 
@@ -15,7 +16,9 @@ import (
 
 type AnchorTxConstructorTestSuite struct {
 	testutils.ClientTestSuite
-	c *AnchorTxConstructor
+	l1Height *big.Int
+	l1Hash   common.Hash
+	c        *AnchorTxConstructor
 }
 
 func (s *AnchorTxConstructorTestSuite) SetupTest() {
@@ -27,6 +30,10 @@ func (s *AnchorTxConstructorTestSuite) SetupTest() {
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
+	head, err := s.RpcClient.L1.BlockByNumber(context.Background(), nil)
+	s.Nil(err)
+	s.l1Height = head.Number()
+	s.l1Hash = head.Hash()
 	s.c = c
 }
 
@@ -35,7 +42,7 @@ func (s *AnchorTxConstructorTestSuite) TestGasLimit() {
 }
 
 func (s *AnchorTxConstructorTestSuite) TestAssembleAnchorTx() {
-	tx, err := s.c.AssembleAnchorTx(context.Background(), common.Big256, testutils.RandomHash(), common.Big0)
+	tx, err := s.c.AssembleAnchorTx(context.Background(), s.l1Height, s.l1Hash, common.Big0)
 	s.Nil(err)
 	s.NotNil(tx)
 }

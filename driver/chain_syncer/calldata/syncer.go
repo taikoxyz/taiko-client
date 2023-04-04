@@ -316,7 +316,7 @@ func (s *Syncer) createExecutionPayloads(
 		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
-			GasLimit:       uint64(event.Meta.GasLimit), // TODO: + s.anchorConstructor.GasLimit()
+			GasLimit:       uint64(event.Meta.GasLimit) + bindings.AnchorGasLimit,
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
@@ -351,8 +351,6 @@ func (s *Syncer) createExecutionPayloads(
 	if execStatus.Status != engine.VALID {
 		return nil, nil, fmt.Errorf("unexpected NewPayload response status: %s", execStatus.Status)
 	}
-
-	log.Info("Paylod", "payload", payload)
 
 	return payload, nil, nil
 }

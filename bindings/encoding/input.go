@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -267,64 +266,4 @@ func UnpackTxListBytes(txData []byte) ([]byte, error) {
 	}
 
 	return inputs, nil
-}
-
-// UnpackEvidenceHeader unpacks the evidence data of a TaikoL1.proveBlock transaction, and returns
-// the block header inside.
-func UnpackEvidenceHeader(txData []byte) (*BlockHeader, error) {
-	method, err := TaikoL1ABI.MethodById(txData)
-	if err != nil {
-		return nil, err
-	}
-
-	// Only check for safety.
-	if method.Name != "proveBlock" {
-		return nil, fmt.Errorf("invalid method name: %s", method.Name)
-	}
-
-	args := map[string]interface{}{}
-
-	if err := method.Inputs.UnpackIntoMap(args, txData[4:]); err != nil {
-		return nil, err
-	}
-
-	inputs, ok := args["inputs"].([][]byte)
-
-	if !ok || len(inputs) < 3 {
-		return nil, fmt.Errorf("invalid transaction inputs map length, get: %d", len(inputs))
-	}
-
-	return decodeEvidenceHeader(inputs[0])
-}
-
-// decodeEvidenceHeader decodes the encoded evidence bytes, and then returns its inner header.
-func decodeEvidenceHeader(evidenceBytes []byte) (*BlockHeader, error) {
-	unpacked, err := EvidenceArgs.Unpack(evidenceBytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode evidence meta")
-	}
-
-	evidence := new(TaikoL1Evidence)
-	if err := EvidenceArgs.Copy(&evidence, unpacked); err != nil {
-		return nil, err
-	}
-
-	return &BlockHeader{
-		ParentHash:  evidence.ParentHash,
-		OmmersHash:  types.EmptyUncleHash,
-		Beneficiary: evidence.Meta.Beneficiary,
-		// StateRoot: , // ?
-		// TransactionsRoot: , // ?
-		// ReceiptsRoot: , // ?
-		// LogsBloom:  , // ?
-		Difficulty: common.Big0,
-		Height:     new(big.Int).SetUint64(evidence.Meta.Id),
-		GasLimit:   uint64(evidence.Meta.GasLimit),
-		// GasUsed: , // ?
-		Timestamp:     evidence.Meta.Timestamp,
-		ExtraData:     []byte{},
-		MixHash:       evidence.Meta.MixHash,
-		Nonce:         0,
-		BaseFeePerGas: nil,
-	}, nil
 }

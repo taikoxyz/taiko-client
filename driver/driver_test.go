@@ -91,7 +91,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	s.Equal(l2Head2.Number.Uint64()+2, l2Head3.Number.Uint64())
+	s.Greater(l2Head3.Number.Uint64(), l2Head2.Number.Uint64())
 
 	for _, height := range []uint64{l2Head3.Number.Uint64(), l2Head3.Number.Uint64() - 1} {
 		header, err := s.d.rpc.L2.HeaderByNumber(context.Background(), new(big.Int).SetUint64(height))

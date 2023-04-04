@@ -52,14 +52,16 @@ func (s *CalldataSyncerTestSuite) TestOnBlockProposed() {
 func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 	parent, err := s.s.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
+	l1Head, err := s.s.rpc.L1.BlockByNumber(context.Background(), nil)
+	s.Nil(err)
 	_, rpcErr, payloadErr := s.s.insertNewHead(
 		context.Background(),
 		&bindings.TaikoL1ClientBlockProposed{
 			Id: common.Big1,
 			Meta: bindings.TaikoDataBlockMetadata{
 				Id:          1,
-				L1Height:    1,
-				L1Hash:      testutils.RandomHash(),
+				L1Height:    l1Head.NumberU64(),
+				L1Hash:      l1Head.Hash(),
 				Beneficiary: common.BytesToAddress(testutils.RandomBytes(1024)),
 				TxListHash:  testutils.RandomHash(),
 				MixHash:     testutils.RandomHash(),

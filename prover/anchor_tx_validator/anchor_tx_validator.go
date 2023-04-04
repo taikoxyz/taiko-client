@@ -74,6 +74,5 @@ func (v *AnchorTxValidator) GetAnchoredSignalRoot(
 	ctx context.Context,
 	tx *types.Transaction,
 ) (common.Hash, error) {
-	// TODO: implementation
-	return common.Hash{}, nil
+	return common.BytesToHash(tx.Data()[len(tx.Data())-32:]), nil
 }

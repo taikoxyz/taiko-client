@@ -16,17 +16,17 @@ func TestL2EngineBorbidden(t *testing.T) {
 		&engine.ForkchoiceStateV1{},
 		&engine.PayloadAttributes{},
 	)
-	require.ErrorContains(t, err, "Forbidden")
+	require.ErrorContains(t, err, "Unauthorized")
 
 	_, err = c.L2Engine.NewPayload(
 		context.Background(),
 		&engine.ExecutableData{},
 	)
-	require.ErrorContains(t, err, "Forbidden")
+	require.ErrorContains(t, err, "Unauthorized")
 
 	_, err = c.L2Engine.GetPayload(
 		context.Background(),
 		&engine.PayloadID{},
 	)
-	require.ErrorContains(t, err, "Forbidden")
+	require.ErrorContains(t, err, "Unauthorized")
 }

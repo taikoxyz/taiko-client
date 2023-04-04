@@ -55,6 +55,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 	if d.rpc, err = rpc.NewClient(d.ctx, &rpc.ClientConfig{
 		L1Endpoint:       cfg.L1Endpoint,
 		L2Endpoint:       cfg.L2Endpoint,
+		L2CheckPoint:     cfg.L2CheckPoint,
 		TaikoL1Address:   cfg.TaikoL1Address,
 		TaikoL2Address:   cfg.TaikoL2Address,
 		L2EngineEndpoint: cfg.L2EngineEndpoint,

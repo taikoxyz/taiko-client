@@ -12,9 +12,6 @@ import (
 )
 
 func TestNewZkevmRpcdProducer(t *testing.T) {
-	_, err := NewZkevmRpcdProducer("http://localhost:28551", "", "", "", false)
-	require.EqualError(t, err, errRpcdUnhealthy.Error())
-
 	dummpyZkevmRpcdProducer, err := NewZkevmRpcdProducer("http://localhost:18545", "", "", "", false)
 	require.Nil(t, err)
 

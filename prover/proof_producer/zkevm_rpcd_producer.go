@@ -19,7 +19,6 @@ import (
 )
 
 var (
-	errRpcdUnhealthy   = errors.New("ZKEVM RPCD endpoint is unhealthy")
 	errProofGenerating = errors.New("proof is generating")
 )
 
@@ -80,14 +79,6 @@ func NewZkevmRpcdProducer(
 	l2Endpoint string,
 	retry bool,
 ) (*ZkevmRpcdProducer, error) {
-	resp, err := http.Get(rpcdEndpoint + "/health")
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != 200 {
-		return nil, errRpcdUnhealthy
-	}
-
 	return &ZkevmRpcdProducer{
 		RpcdEndpoint: rpcdEndpoint,
 		Param:        param,

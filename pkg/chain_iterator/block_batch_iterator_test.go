@@ -49,7 +49,7 @@ func (s *BlockBatchIteratorTestSuite) TestIter() {
 func (s *BlockBatchIteratorTestSuite) TestIterReverse() {
 	var (
 		maxBlocksReadPerEpoch uint64 = 2
-		startHeight           uint64 = 6
+		startHeight           uint64 = 0
 	)
 
 	headHeight, err := s.RpcClient.L1.BlockNumber(context.Background())

@@ -39,7 +39,12 @@ var (
 		Name: "p2p.syncTimeout",
 		Usage: "P2P syncing timeout in seconds, if no sync progress is made within this time span, " +
 			"driver will stop the P2P sync and insert all remaining L2 blocks one by one",
-		Value:    120,
+		Value:    600,
+		Category: driverCategory,
+	}
+	CheckPointSyncUrl = &cli.StringFlag{
+		Name:     "p2p.checkPointSyncUrl",
+		Usage:    "HTTP RPC endpoint of another synced L2 execution engine node",
 		Category: driverCategory,
 	}
 )

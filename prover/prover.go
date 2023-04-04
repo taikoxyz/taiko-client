@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strings"
 	"sync"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -378,8 +380,8 @@ func (p *Prover) NeedNewProof(id *big.Int) (bool, error) {
 	}
 
 	fc, err := p.rpc.TaikoL1.GetForkChoice(nil, id, parentHash)
-	if err != nil {
-		return false, err
+	if err != nil && !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
+		return false, encoding.TryParsingCustomError(err)
 	}
 
 	if p.proverAddress == fc.Prover {

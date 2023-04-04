@@ -41,14 +41,16 @@ var (
 		CacheTxListInfo: 0,
 	}
 	testMeta = bindings.TaikoDataBlockMetadata{
-		Id:          rand.Uint64(),
-		L1Height:    rand.Uint64(),
-		L1Hash:      randomHash(),
-		Beneficiary: common.BytesToAddress(randomHash().Bytes()),
-		GasLimit:    rand.Uint32(),
-		Timestamp:   uint64(time.Now().Unix()),
-		TxListHash:  randomHash(),
-		MixHash:     randomHash(),
+		Id:              rand.Uint64(),
+		L1Height:        rand.Uint64(),
+		L1Hash:          randomHash(),
+		Beneficiary:     common.BytesToAddress(randomHash().Bytes()),
+		GasLimit:        rand.Uint32(),
+		Timestamp:       uint64(time.Now().Unix()),
+		TxListHash:      randomHash(),
+		MixHash:         randomHash(),
+		TxListByteStart: common.Big0,
+		TxListByteEnd:   common.Big256,
 	}
 )
 
