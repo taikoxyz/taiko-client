@@ -8,8 +8,8 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/prysmaticlabs/prysm/network"
-	"github.com/prysmaticlabs/prysm/network/authorization"
+	"github.com/prysmaticlabs/prysm/v4/network"
+	"github.com/prysmaticlabs/prysm/v4/network/authorization"
 )
 
 // DialClientWithBackoff connects a ethereum RPC client at the given URL with
@@ -70,7 +70,7 @@ func DialEngineClient(ctx context.Context, endpointUrl string, jwtSecret string)
 	}
 	switch u.Scheme {
 	case "http", "https":
-		client, err = rpc.DialHTTPWithClient(endpoint.Url, endpoint.HttpClient())
+		client, err = rpc.DialOptions(ctx, endpoint.Url, rpc.WithHTTPClient(endpoint.HttpClient()))
 		if err != nil {
 			return nil, err
 		}

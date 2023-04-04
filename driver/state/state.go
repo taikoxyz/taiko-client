@@ -43,7 +43,7 @@ type State struct {
 	blockProposedCh chan *bindings.TaikoL1ClientBlockProposed
 	blockProvenCh   chan *bindings.TaikoL1ClientBlockProven
 	blockVerifiedCh chan *bindings.TaikoL1ClientBlockVerified
-	headerSyncedCh  chan *bindings.TaikoL1ClientHeaderSynced
+	xchainSynced    chan *bindings.TaikoL1ClientXchainSynced
 
 	// Feeds
 	l1HeadsFeed event.Feed // L1 new heads notification feed
@@ -76,7 +76,7 @@ func New(ctx context.Context, rpc *rpc.Client) (*State, error) {
 		blockProposedCh:  make(chan *bindings.TaikoL1ClientBlockProposed, 10),
 		blockProvenCh:    make(chan *bindings.TaikoL1ClientBlockProven, 10),
 		blockVerifiedCh:  make(chan *bindings.TaikoL1ClientBlockVerified, 10),
-		headerSyncedCh:   make(chan *bindings.TaikoL1ClientHeaderSynced, 10),
+		xchainSynced:     make(chan *bindings.TaikoL1ClientXchainSynced, 10),
 		BlockDeadendHash: common.BigToHash(common.Big1),
 	}
 
@@ -132,20 +132,20 @@ func (s *State) init(ctx context.Context) error {
 	log.Info("L2 execution engine head", "height", l2Head.Number, "hash", l2Head.Hash())
 	s.setL2Head(l2Head)
 
-	latestVerifiedBlockHash, err := s.rpc.TaikoL1.GetSyncedHeader(
+	latestVerifiedBlockHash, err := s.rpc.TaikoL1.GetXchainBlockHash(
 		nil,
-		new(big.Int).SetUint64(stateVars.LatestVerifiedHeight),
+		new(big.Int).SetUint64(stateVars.LastVerifiedBlockId),
 	)
 	if err != nil {
 		return err
 	}
 
 	s.setLatestVerifiedBlockHash(
-		new(big.Int).SetUint64(stateVars.LatestVerifiedId),
-		new(big.Int).SetUint64(stateVars.LatestVerifiedHeight),
+		new(big.Int).SetUint64(stateVars.LastVerifiedBlockId),
+		new(big.Int).SetUint64(stateVars.LastVerifiedBlockId),
 		latestVerifiedBlockHash,
 	)
-	s.setHeadBlockID(new(big.Int).SetUint64(stateVars.NextBlockId - 1))
+	s.setHeadBlockID(new(big.Int).SetUint64(stateVars.NumBlocks - 1))
 
 	return nil
 }
@@ -154,7 +154,7 @@ func (s *State) init(ctx context.Context) error {
 func (s *State) startSubscriptions(ctx context.Context) {
 	s.l1HeadSub = rpc.SubscribeChainHead(s.rpc.L1, s.l1HeadCh)
 	s.l2HeadSub = rpc.SubscribeChainHead(s.rpc.L2, s.l2HeadCh)
-	s.l2HeaderSyncedSub = rpc.SubscribeHeaderSynced(s.rpc.TaikoL1, s.headerSyncedCh)
+	s.l2HeaderSyncedSub = rpc.SubscribeXchainSynced(s.rpc.TaikoL1, s.xchainSynced)
 	s.l2BlockVerifiedSub = rpc.SubscribeBlockVerified(s.rpc.TaikoL1, s.blockVerifiedCh)
 	s.l2BlockProposedSub = rpc.SubscribeBlockProposed(s.rpc.TaikoL1, s.blockProposedCh)
 	s.l2BlockProvenSub = rpc.SubscribeBlockProven(s.rpc.TaikoL1, s.blockProvenCh)
@@ -178,21 +178,21 @@ func (s *State) startSubscriptions(ctx context.Context) {
 				} else {
 					log.Info("🗑 Invalid block verified", "blockID", e.Id)
 				}
-			case e := <-s.headerSyncedCh:
+			case e := <-s.xchainSynced:
 				// Verify the protocol synced block, check if it exists in
 				// L2 execution engine.
 				if s.GetL2Head().Number.Cmp(e.SrcHeight) >= 0 {
-					if err := s.VerifyL2Block(ctx, e.SrcHeight, e.SrcHash); err != nil {
+					if err := s.VerifyL2Block(ctx, e.SrcHeight, e.BlockHash); err != nil {
 						log.Error("Check new verified L2 block error", "error", err)
 						continue
 					}
 				}
-				id, err := s.getSyncedHeaderID(e.Raw.BlockNumber, e.SrcHash)
+				id, err := s.getSyncedHeaderID(e.Raw.BlockNumber, e.BlockHash)
 				if err != nil {
 					log.Error("Get synced header block ID error", "error", err)
 					continue
 				}
-				s.setLatestVerifiedBlockHash(id, e.SrcHeight, e.SrcHash)
+				s.setLatestVerifiedBlockHash(id, e.SrcHeight, e.BlockHash)
 			case newHead := <-s.l1HeadCh:
 				s.setL1Head(newHead)
 				s.l1HeadsFeed.Send(newHead)

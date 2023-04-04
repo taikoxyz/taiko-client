@@ -55,6 +55,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 	if d.rpc, err = rpc.NewClient(d.ctx, &rpc.ClientConfig{
 		L1Endpoint:       cfg.L1Endpoint,
 		L2Endpoint:       cfg.L2Endpoint,
+		L2CheckPoint:     cfg.L2CheckPoint,
 		TaikoL1Address:   cfg.TaikoL1Address,
 		TaikoL2Address:   cfg.TaikoL2Address,
 		L2EngineEndpoint: cfg.L2EngineEndpoint,
@@ -80,9 +81,9 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		d.ctx,
 		d.rpc,
 		d.state,
-		cfg.ThrowawayBlocksBuilderPrivKey,
 		cfg.P2PSyncVerifiedBlocks,
 		cfg.P2PSyncTimeout,
+		cfg.SignalServiceAddress,
 	); err != nil {
 		return err
 	}
@@ -184,7 +185,7 @@ func (d *Driver) reportProtocolStatus() {
 				return err
 			}
 
-			maxNumBlocks = configs.MaxNumBlocks.Uint64()
+			maxNumBlocks = configs.MaxNumProposedBlocks.Uint64()
 			return nil
 		},
 		backoff.NewConstantBackOff(RetryDelay),
@@ -206,10 +207,9 @@ func (d *Driver) reportProtocolStatus() {
 
 			log.Info(
 				"📖 Protocol status",
-				"latestVerifiedId", vars.LatestVerifiedId,
-				"latestVerifiedHeight", vars.LatestVerifiedHeight,
-				"pendingBlocks", vars.NextBlockId-vars.LatestVerifiedId-1,
-				"availableSlots", vars.LatestVerifiedId+maxNumBlocks-vars.NextBlockId,
+				"lastVerifiedBlockId", vars.LastVerifiedBlockId,
+				"pendingBlocks", vars.NumBlocks-vars.LastVerifiedBlockId-1,
+				"availableSlots", vars.LastVerifiedBlockId+maxNumBlocks-vars.NumBlocks,
 			)
 		}
 	}

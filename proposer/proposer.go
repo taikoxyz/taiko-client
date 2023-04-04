@@ -25,8 +25,7 @@ import (
 )
 
 var (
-	errNoNewTxs               = errors.New("no new transactions")
-	proposeEmptyBlockGasLimit = 200_000
+	errNoNewTxs = errors.New("no new transactions")
 )
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
@@ -187,24 +186,22 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return errNoNewTxs
 	}
 
-	var commitTxListResQueue []*commitTxListRes
-	for i, txs := range txLists {
+	for _, txs := range txLists {
 		txListBytes, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			return fmt.Errorf("failed to encode transactions: %w", err)
 		}
 
-		meta, commitTx, err := p.CommitTxList(ctx, txListBytes, sumTxsGasLimit(txs), i)
-		if err != nil {
-			return fmt.Errorf("failed to commit transactions: %w", err)
+		if err := p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
+			Beneficiary:     p.l2SuggestedFeeRecipient,
+			GasLimit:        uint32(sumTxsGasLimit(txs)),
+			TxListHash:      crypto.Keccak256Hash(txListBytes),
+			TxListByteStart: common.Big0,
+			TxListByteEnd:   new(big.Int).SetUint64(uint64(len(txListBytes))),
+			CacheTxListInfo: 0,
+		}, txListBytes, uint(txs.Len())); err != nil {
+			return fmt.Errorf("failed to propose transactions: %w", err)
 		}
-
-		commitTxListResQueue = append(commitTxListResQueue, &commitTxListRes{
-			meta:        meta,
-			commitTx:    commitTx,
-			txListBytes: txListBytes,
-			txNum:       uint(len(txs)),
-		})
 	}
 
 	if p.AfterCommitHook != nil {
@@ -213,98 +210,18 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		}
 	}
 
-	for _, res := range commitTxListResQueue {
-		if err := p.ProposeTxList(ctx, res.meta, res.commitTx, res.txListBytes, res.txNum); err != nil {
-			return fmt.Errorf("failed to propose transactions: %w", err)
-		}
-	}
-
 	return nil
-}
-
-// commitTxListRes represents the result of a transactions list committing, will be used when proposing
-// the corresponding transactions list.
-type commitTxListRes struct {
-	meta        *bindings.TaikoDataBlockMetadata
-	commitTx    *types.Transaction
-	txListBytes []byte
-	txNum       uint
-}
-
-// CommitTxList submits a given transactions list's corresponding commit hash to TaikoL1 smart contract, then
-// after `protocolConfigs.CommitConfirmations` L1 blocks delay, the given transactions list can be proposed.
-func (p *Proposer) CommitTxList(ctx context.Context, txListBytes []byte, gasLimit uint64, splittedIdx int) (
-	*bindings.TaikoDataBlockMetadata,
-	*types.Transaction,
-	error,
-) {
-	// Assemble the block context and commit the txList
-	meta := &bindings.TaikoDataBlockMetadata{
-		Id:          common.Big0,
-		L1Height:    common.Big0,
-		L1Hash:      common.Hash{},
-		Beneficiary: p.l2SuggestedFeeRecipient,
-		GasLimit:    gasLimit,
-		TxListHash:  crypto.Keccak256Hash(txListBytes),
-		CommitSlot:  p.commitSlot + uint64(splittedIdx),
-	}
-
-	if p.protocolConfigs.CommitConfirmations.Cmp(common.Big0) == 0 {
-		log.Debug("No commit confirmation delay, skip committing transactions list")
-		return meta, nil, nil
-	}
-
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	commitHash := common.BytesToHash(encoding.EncodeCommitHash(meta.Beneficiary, meta.TxListHash))
-
-	commitTx, err := p.rpc.TaikoL1.CommitBlock(opts, meta.CommitSlot, commitHash)
-	if err != nil {
-		return nil, nil, encoding.TryParsingCustomError(err)
-	}
-
-	return meta, commitTx, nil
 }
 
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
-	meta *bindings.TaikoDataBlockMetadata,
-	commitTx *types.Transaction,
+	meta *encoding.TaikoL1BlockMetadataInput,
 	txListBytes []byte,
 	txNum uint,
 ) error {
-	if p.protocolConfigs.CommitConfirmations.Cmp(common.Big0) > 0 {
-		receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, commitTx)
-		if err != nil {
-			return err
-		}
-
-		if receipt.Status != types.ReceiptStatusSuccessful {
-			log.Error("Failed to commit transactions list", "txHash", receipt.TxHash)
-			return nil
-		}
-
-		log.Info(
-			"Commit block finished, wait some L1 blocks confirmations before proposing",
-			"commitHeight", receipt.BlockNumber,
-			"commitConfirmations", p.protocolConfigs.CommitConfirmations,
-		)
-
-		meta.CommitHeight = receipt.BlockNumber.Uint64()
-
-		if err := rpc.WaitConfirmations(
-			ctx, p.rpc.L1, p.protocolConfigs.CommitConfirmations.Uint64(), receipt.BlockNumber.Uint64(),
-		); err != nil {
-			return fmt.Errorf("wait L1 blocks confirmations error, commitHash %s: %w", receipt.BlockNumber, err)
-		}
-	}
-
 	// Propose the transactions list
-	inputs, err := encoding.EncodeProposeBlockInput(meta, txListBytes)
+	inputs, err := encoding.EncodeProposeBlockInput(meta)
 	if err != nil {
 		return err
 	}
@@ -314,11 +231,7 @@ func (p *Proposer) ProposeTxList(
 		return err
 	}
 
-	if len(txListBytes) == 0 {
-		opts.GasLimit = uint64(proposeEmptyBlockGasLimit)
-	}
-
-	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs)
+	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs, txListBytes)
 	if err != nil {
 		return encoding.TryParsingCustomError(err)
 	}
@@ -337,16 +250,14 @@ func (p *Proposer) ProposeTxList(
 
 // ProposeEmptyBlockOp performs a proposing one empty block operation.
 func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
-	meta, commitTx, err := p.CommitTxList(ctx, []byte{}, 21000, 0)
-	if err != nil {
-		return fmt.Errorf("failed to commit an empty block: %w", err)
-	}
-
-	if err := p.ProposeTxList(ctx, meta, commitTx, []byte{}, 0); err != nil {
-		return fmt.Errorf("failed to propose an empty block: %w", err)
-	}
-
-	return nil
+	return p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
+		TxListHash:      crypto.Keccak256Hash([]byte{}),
+		Beneficiary:     p.L2SuggestedFeeRecipient(),
+		GasLimit:        0,
+		TxListByteStart: common.Big0,
+		TxListByteEnd:   common.Big0,
+		CacheTxListInfo: 0,
+	}, []byte{}, 0)
 }
 
 // updateProposingTicker updates the internal proposing timer.
@@ -370,6 +281,11 @@ func (p *Proposer) updateProposingTicker() {
 // Name returns the application name.
 func (p *Proposer) Name() string {
 	return "proposer"
+}
+
+// L2SuggestedFeeRecipient returns the L2 suggested fee recipient of the current proposer.
+func (p *Proposer) L2SuggestedFeeRecipient() common.Address {
+	return p.l2SuggestedFeeRecipient
 }
 
 // sumTxsGasLimit calculates the accumulated gas limit of all transactions in the list.

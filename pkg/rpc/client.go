@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
@@ -13,8 +14,12 @@ import (
 // Client contains all L1/L2 RPC clients that a driver needs.
 type Client struct {
 	// Geth ethclient clients
-	L1 *ethclient.Client
-	L2 *ethclient.Client
+	L1           *ethclient.Client
+	L2           *ethclient.Client
+	L2CheckPoint *ethclient.Client
+	// Geth gethclient clients
+	L1GethClient *gethclient.Client
+	L2GethClient *gethclient.Client
 	// Geth raw RPC clients
 	L1RawRPC *rpc.Client
 	L2RawRPC *rpc.Client
@@ -34,6 +39,7 @@ type Client struct {
 type ClientConfig struct {
 	L1Endpoint       string
 	L2Endpoint       string
+	L2CheckPoint     string
 	TaikoL1Address   common.Address
 	TaikoL2Address   common.Address
 	L2EngineEndpoint string
@@ -86,22 +92,31 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	// won't be initialized.
 	var l2AuthRPC *EngineClient
 	if len(cfg.L2EngineEndpoint) != 0 && len(cfg.JwtSecret) != 0 {
-		l2AuthRPC, err = DialEngineClientWithBackoff(ctx, cfg.L2EngineEndpoint, cfg.JwtSecret)
-		if err != nil {
+		if l2AuthRPC, err = DialEngineClientWithBackoff(ctx, cfg.L2EngineEndpoint, cfg.JwtSecret); err != nil {
+			return nil, err
+		}
+	}
+
+	var l2CheckPoint *ethclient.Client
+	if len(cfg.L2CheckPoint) != 0 {
+		if l2CheckPoint, err = DialClientWithBackoff(ctx, cfg.L2CheckPoint); err != nil {
 			return nil, err
 		}
 	}
 
 	client := &Client{
-		L1:        l1RPC,
-		L2:        l2RPC,
-		L1RawRPC:  l1RawRPC,
-		L2RawRPC:  l2RawRPC,
-		L2Engine:  l2AuthRPC,
-		TaikoL1:   taikoL1,
-		TaikoL2:   taikoL2,
-		L1ChainID: l1ChainID,
-		L2ChainID: l2ChainID,
+		L1:           l1RPC,
+		L2:           l2RPC,
+		L2CheckPoint: l2CheckPoint,
+		L1RawRPC:     l1RawRPC,
+		L2RawRPC:     l2RawRPC,
+		L1GethClient: gethclient.New(l1RawRPC),
+		L2GethClient: gethclient.New(l2RawRPC),
+		L2Engine:     l2AuthRPC,
+		TaikoL1:      taikoL1,
+		TaikoL2:      taikoL2,
+		L1ChainID:    l1ChainID,
+		L2ChainID:    l2ChainID,
 	}
 
 	if err := client.ensureGenesisMatched(ctx); err != nil {

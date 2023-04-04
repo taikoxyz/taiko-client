@@ -22,12 +22,11 @@ import (
 
 type ProofSubmitterTestSuite struct {
 	testutils.ClientTestSuite
-	validProofSubmitter   *ValidProofSubmitter
-	invalidProofSubmitter *InvalidProofSubmitter
-	calldataSyncer        *calldata.Syncer
-	proposer              *proposer.Proposer
-	validProofCh          chan *proofProducer.ProofWithHeader
-	invalidProofCh        chan *proofProducer.ProofWithHeader
+	validProofSubmitter *ValidProofSubmitter
+	calldataSyncer      *calldata.Syncer
+	proposer            *proposer.Proposer
+	validProofCh        chan *proofProducer.ProofWithHeader
+	invalidProofCh      chan *proofProducer.ProofWithHeader
 }
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
@@ -48,30 +47,18 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		&sync.Mutex{},
 	)
 
-	s.invalidProofSubmitter = NewInvalidProofSubmitter(
-		s.RpcClient,
-		&proofProducer.DummyProofProducer{},
-		s.invalidProofCh,
-		l1ProverPrivKey,
-		100000,
-		&sync.Mutex{},
-	)
-
 	// Init calldata syncer
 	testState, err := state.New(context.Background(), s.RpcClient)
 	s.Nil(err)
 
 	tracker := beaconsync.NewSyncProgressTracker(s.RpcClient.L2, 30*time.Second)
 
-	throwawayBlocksBuilderPrivKey, err := crypto.HexToECDSA(bindings.GoldenTouchPrivKey[2:])
-	s.Nil(err)
-
 	s.calldataSyncer, err = calldata.NewSyncer(
 		context.Background(),
 		s.RpcClient,
 		testState,
 		tracker,
-		throwawayBlocksBuilderPrivKey,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 
@@ -124,10 +111,6 @@ func (s *ProofSubmitterTestSuite) TestValidSubmitProofs() {
 		proofWithHeader := <-s.validProofCh
 		s.Nil(s.validProofSubmitter.SubmitProof(context.Background(), proofWithHeader))
 	}
-
-	e := testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.calldataSyncer)
-	s.Nil(s.invalidProofSubmitter.RequestProof(context.Background(), e))
-	s.Nil(s.invalidProofSubmitter.SubmitProof(context.Background(), <-s.invalidProofCh))
 }
 
 func TestProofSubmitterTestSuite(t *testing.T) {

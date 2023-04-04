@@ -3,8 +3,8 @@ package encoding
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/beacon"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
@@ -29,11 +29,27 @@ type BlockHeader struct {
 }
 
 type TaikoL1Evidence struct {
-	Meta     bindings.TaikoDataBlockMetadata
-	Header   BlockHeader
-	Prover   common.Address
-	Proofs   [][]byte
-	Circuits uint16
+	Meta       bindings.TaikoDataBlockMetadata
+	Zkproof    ZkProof
+	ParentHash [32]byte
+	BlockHash  [32]byte
+	SignalRoot [32]byte
+	Graffiti   [32]byte
+	Prover     common.Address
+}
+
+type ZkProof struct {
+	Data       []byte
+	VerifierId uint16
+}
+
+type TaikoL1BlockMetadataInput struct {
+	TxListHash      [32]byte
+	Beneficiary     common.Address
+	GasLimit        uint32
+	TxListByteStart *big.Int
+	TxListByteEnd   *big.Int
+	CacheTxListInfo uint8
 }
 
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.
@@ -89,8 +105,8 @@ func ToGethHeader(header *BlockHeader) *types.Header {
 }
 
 // ToExecutableDataV1 converts a GETH *types.Header to *beacon.ExecutableDataV1.
-func ToExecutableDataV1(header *types.Header) *beacon.ExecutableDataV1 {
-	return &beacon.ExecutableDataV1{
+func ToExecutableDataV1(header *types.Header) *engine.ExecutableData {
+	return &engine.ExecutableData{
 		ParentHash:    header.ParentHash,
 		FeeRecipient:  header.Coinbase,
 		StateRoot:     header.Root,

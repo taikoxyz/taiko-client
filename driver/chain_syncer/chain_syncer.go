@@ -2,7 +2,6 @@ package chainSyncer
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"fmt"
 	"time"
 
@@ -39,15 +38,15 @@ func New(
 	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey,
 	p2pSyncVerifiedBlocks bool,
 	p2pSyncTimeout time.Duration,
+	signalServiceAddress common.Address,
 ) (*L2ChainSyncer, error) {
 	tracker := beaconsync.NewSyncProgressTracker(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
 	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, tracker)
-	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, throwawayBlocksBuilderPrivKey)
+	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, signalServiceAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +91,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		}
 
 		// Make sure the execution engine's chain head is recorded in protocol.
-		l2HeadHash, err := s.rpc.TaikoL1.GetSyncedHeader(nil, l2Head.Number)
+		l2HeadHash, err := s.rpc.TaikoL1.GetXchainBlockHash(nil, l2Head.Number)
 		if err != nil {
 			return err
 		}
@@ -109,7 +108,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 
 			heightOrID.ID = common.Big0
 			heightOrID.Height = common.Big0
-			if l2HeadHash, err = s.rpc.TaikoL1.GetSyncedHeader(nil, common.Big0); err != nil {
+			if l2HeadHash, err = s.rpc.TaikoL1.GetXchainBlockHash(nil, common.Big0); err != nil {
 				return err
 			}
 		}

@@ -2,15 +2,18 @@ package testutils
 
 import (
 	"context"
+	"math/big"
 	"math/rand"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
@@ -18,15 +21,15 @@ func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
 	s.Nil(err)
 
 	invalidTxListBytes := RandomBytes(256)
-	meta, commitTx, err := proposer.CommitTxList(
-		context.Background(),
-		invalidTxListBytes,
-		uint64(rand.Int63n(configs.BlockMaxGasLimit.Int64())),
-		0,
-	)
-	s.Nil(err)
 
-	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, invalidTxListBytes, 1))
+	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
+		Beneficiary:     proposer.L2SuggestedFeeRecipient(),
+		GasLimit:        uint32(rand.Int63n(configs.BlockMaxGasLimit.Int64())),
+		TxListHash:      crypto.Keccak256Hash(invalidTxListBytes),
+		TxListByteStart: common.Big0,
+		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(invalidTxListBytes))),
+		CacheTxListInfo: 0,
+	}, invalidTxListBytes, 1))
 }
 
 func ProposeAndInsertEmptyBlocks(
@@ -56,14 +59,18 @@ func ProposeAndInsertEmptyBlocks(
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	meta, commitTx, err := proposer.CommitTxList(context.Background(), encoded, 1024, 0)
-	s.Nil(err)
-
-	s.Nil(proposer.ProposeTxList(context.Background(), meta, commitTx, encoded, 0))
+	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
+		Beneficiary:     proposer.L2SuggestedFeeRecipient(),
+		GasLimit:        0,
+		TxListHash:      crypto.Keccak256Hash(encoded),
+		TxListByteStart: common.Big0,
+		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
+		CacheTxListInfo: 0,
+	}, encoded, 0))
 
 	ProposeInvalidTxListBytes(s, proposer)
 
-	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink}...)
+	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
 
 	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), events[len(events)-1].Raw.TxHash)
 	s.Nil(err)
@@ -83,57 +90,6 @@ func ProposeAndInsertEmptyBlocks(
 	s.Nil(calldataSyncer.ProcessL1Blocks(ctx, newL1Head))
 
 	return events
-}
-
-// ProposeAndInsertThrowawayBlock proposes an invalid tx list and then insert it
-// into L2 execution engine's local chain.
-func ProposeAndInsertThrowawayBlock(
-	s *ClientTestSuite,
-	proposer Proposer,
-	calldataSyncer CalldataSyncer,
-) *bindings.TaikoL1ClientBlockProposed {
-	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-
-	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-
-	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
-
-	sub, err := s.RpcClient.TaikoL1.WatchBlockProposed(nil, sink, nil)
-	s.Nil(err)
-	defer func() {
-		sub.Unsubscribe()
-		close(sink)
-	}()
-
-	ProposeInvalidTxListBytes(s, proposer)
-
-	event := <-sink
-
-	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
-	s.Nil(err)
-	s.False(isPending)
-
-	newL1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-	s.Greater(newL1Head.Number.Uint64(), l1Head.Number.Uint64())
-
-	syncProgress, err := s.RpcClient.L2.SyncProgress(context.Background())
-	s.Nil(err)
-	s.Nil(syncProgress)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
-	s.Nil(calldataSyncer.ProcessL1Blocks(ctx, newL1Head))
-
-	newL2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-
-	s.Equal(newL2Head.Number.Uint64(), l2Head.Number.Uint64())
-
-	return event
 }
 
 // ProposeAndInsertValidBlock proposes an valid tx list and then insert it

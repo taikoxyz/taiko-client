@@ -2,22 +2,18 @@ package calldata
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/beacon"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
@@ -30,13 +26,12 @@ import (
 // Syncer responsible for letting the L2 execution engine catching up with protocol's latest
 // pending block through deriving L1 calldata.
 type Syncer struct {
-	ctx                           context.Context
-	rpc                           *rpc.Client
-	state                         *state.State
-	progressTracker               *beaconsync.SyncProgressTracker          // Sync progress tracker
-	anchorConstructor             *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
-	txListValidator               *txListValidator.TxListValidator         // Transactions list validator
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey                        // Private key of L2 throwaway blocks builder
+	ctx               context.Context
+	rpc               *rpc.Client
+	state             *state.State
+	progressTracker   *beaconsync.SyncProgressTracker          // Sync progress tracker
+	anchorConstructor *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
+	txListValidator   *txListValidator.TxListValidator         // Transactions list validator
 	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
 }
@@ -47,7 +42,7 @@ func NewSyncer(
 	rpc *rpc.Client,
 	state *state.State,
 	progressTracker *beaconsync.SyncProgressTracker,
-	throwawayBlocksBuilderPrivKey *ecdsa.PrivateKey, // Private key of L2 throwaway blocks builder
+	signalServiceAddress common.Address,
 ) (*Syncer, error) {
 	configs, err := rpc.TaikoL1.GetConfig(nil)
 	if err != nil {
@@ -56,9 +51,9 @@ func NewSyncer(
 
 	constructor, err := anchorTxConstructor.New(
 		rpc,
-		configs.AnchorTxGasLimit.Uint64(),
 		bindings.GoldenTouchAddress,
 		bindings.GoldenTouchPrivKey,
+		signalServiceAddress,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
@@ -77,7 +72,6 @@ func NewSyncer(
 			configs.MinTxGasLimit.Uint64(),
 			rpc.L2ChainID,
 		),
-		throwawayBlocksBuilderPrivKey: throwawayBlocksBuilderPrivKey,
 	}, nil
 }
 
@@ -174,7 +168,6 @@ func (s *Syncer) onBlockProposed(
 		L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
 		L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
 		L1BlockHash:   event.Raw.BlockHash,
-		Throwaway:     hint != txListValidator.HintOK,
 	}
 
 	if event.Meta.Timestamp > uint64(time.Now().Unix()) {
@@ -182,32 +175,20 @@ func (s *Syncer) onBlockProposed(
 		time.Sleep(time.Until(time.Unix(int64(event.Meta.Timestamp), 0)))
 	}
 
-	var (
-		payloadData  *beacon.ExecutableDataV1
-		rpcError     error
-		payloadError error
-	)
-	if hint == txListValidator.HintOK {
-		payloadData, rpcError, payloadError = s.insertNewHead(
-			ctx,
-			event,
-			parent,
-			s.state.GetHeadBlockID(),
-			txListBytes,
-			l1Origin,
-		)
-	} else {
-		payloadData, rpcError, payloadError = s.insertThrowAwayBlock(
-			ctx,
-			event,
-			parent,
-			uint8(hint),
-			new(big.Int).SetInt64(int64(invalidTxIndex)),
-			s.state.GetHeadBlockID(),
-			txListBytes,
-			l1Origin,
-		)
+	// If the transactions list is invalid, we simply insert an empty L2 block.
+	if hint != txListValidator.HintOK {
+		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", event.Id)
+		txListBytes = []byte{}
 	}
+
+	payloadData, rpcError, payloadError := s.insertNewHead(
+		ctx,
+		event,
+		parent,
+		s.state.GetHeadBlockID(),
+		txListBytes,
+		l1Origin,
+	)
 
 	// RPC errors are recoverable.
 	if rpcError != nil {
@@ -225,7 +206,6 @@ func (s *Syncer) onBlockProposed(
 
 	log.Info(
 		"🔗 New L2 block inserted",
-		"throwaway", l1Origin.Throwaway,
 		"blockID", event.Id,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
@@ -237,7 +217,7 @@ func (s *Syncer) onBlockProposed(
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
 	s.lastInsertedBlockID = event.Id
 
-	if !l1Origin.Throwaway && s.progressTracker.Triggered() {
+	if s.progressTracker.Triggered() {
 		s.progressTracker.ClearMeta()
 	}
 
@@ -253,7 +233,7 @@ func (s *Syncer) insertNewHead(
 	headBlockID *big.Int,
 	txListBytes []byte,
 	l1Origin *rawdb.L1Origin,
-) (*beacon.ExecutableDataV1, error, error) {
+) (*engine.ExecutableData, error, error) {
 	log.Debug(
 		"Try to insert a new L2 head block",
 		"parentNumber", parent.Number,
@@ -274,7 +254,7 @@ func (s *Syncer) insertNewHead(
 	// Assemble a TaikoL2.anchor transaction
 	anchorTx, err := s.anchorConstructor.AssembleAnchorTx(
 		ctx,
-		event.Meta.L1Height,
+		new(big.Int).SetUint64(event.Meta.L1Height),
 		event.Meta.L1Hash,
 		parent.Number,
 	)
@@ -302,7 +282,7 @@ func (s *Syncer) insertNewHead(
 		return nil, rpcErr, payloadErr
 	}
 
-	fc := &beacon.ForkchoiceStateV1{HeadBlockHash: parent.Hash()}
+	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parent.Hash()}
 
 	// Update the fork choice
 	fc.HeadBlockHash = payload.BlockHash
@@ -310,63 +290,11 @@ func (s *Syncer) insertNewHead(
 	if err != nil {
 		return nil, err, nil
 	}
-	if fcRes.PayloadStatus.Status != beacon.VALID {
+	if fcRes.PayloadStatus.Status != engine.VALID {
 		return nil, nil, fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
 	}
 
 	return payload, nil, nil
-}
-
-// insertThrowAwayBlock tries to insert a throw away block to the L2 execution engine's local
-// block chain through Engine APIs.
-func (s *Syncer) insertThrowAwayBlock(
-	ctx context.Context,
-	event *bindings.TaikoL1ClientBlockProposed,
-	parent *types.Header,
-	hint uint8,
-	invalidTxIndex *big.Int,
-	headBlockID *big.Int,
-	txListBytes []byte,
-	l1Origin *rawdb.L1Origin,
-) (*beacon.ExecutableDataV1, error, error) {
-	log.Debug(
-		"Try to insert a new L2 throwaway block",
-		"parentHash", parent.Hash(),
-		"headBlockID", headBlockID,
-		"l1Origin", l1Origin,
-		"hint", hint,
-		"invalidTxIndex", invalidTxIndex,
-	)
-
-	// Assemble a TaikoL2.invalidateBlock transaction
-	opts, err := s.getInvalidateBlockTxOpts(ctx, parent.Number)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	invalidateBlockTx, err := s.rpc.TaikoL2.InvalidateBlock(
-		opts,
-		txListBytes,
-		hint,
-		invalidTxIndex,
-	)
-	if err != nil {
-		return nil, nil, encoding.TryParsingCustomError(err)
-	}
-
-	throwawayBlockTxListBytes, err := rlp.EncodeToBytes(types.Transactions{invalidateBlockTx})
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to encode TaikoL2.InvalidateBlock transaction bytes, err: %w", err)
-	}
-
-	return s.createExecutionPayloads(
-		ctx,
-		event,
-		parent.Hash(),
-		l1Origin,
-		headBlockID,
-		throwawayBlockTxListBytes,
-	)
 }
 
 // createExecutionPayloads creates a new execution payloads through
@@ -378,20 +306,21 @@ func (s *Syncer) createExecutionPayloads(
 	l1Origin *rawdb.L1Origin,
 	headBlockID *big.Int,
 	txListBytes []byte,
-) (payloadData *beacon.ExecutableDataV1, rpcError error, payloadError error) {
-	fc := &beacon.ForkchoiceStateV1{HeadBlockHash: parentHash}
-	attributes := &beacon.PayloadAttributesV1{
+) (payloadData *engine.ExecutableData, rpcError error, payloadError error) {
+	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parentHash}
+	attributes := &engine.PayloadAttributes{
 		Timestamp:             event.Meta.Timestamp,
 		Random:                event.Meta.MixHash,
 		SuggestedFeeRecipient: event.Meta.Beneficiary,
-		BlockMetadata: &beacon.BlockMetadata{
+		Withdrawals:           nil,
+		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
-			GasLimit:       event.Meta.GasLimit + s.anchorConstructor.GasLimit(),
+			GasLimit:       uint64(event.Meta.GasLimit) + bindings.AnchorGasLimit,
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
-			ExtraData:      event.Meta.ExtraData,
+			ExtraData:      []byte{},
 		},
 		L1Origin: l1Origin,
 	}
@@ -401,7 +330,7 @@ func (s *Syncer) createExecutionPayloads(
 	if err != nil {
 		return nil, err, nil
 	}
-	if fcRes.PayloadStatus.Status != beacon.VALID {
+	if fcRes.PayloadStatus.Status != engine.VALID {
 		return nil, nil, fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
 	}
 	if fcRes.PayloadID == nil {
@@ -419,36 +348,9 @@ func (s *Syncer) createExecutionPayloads(
 	if err != nil {
 		return nil, err, nil
 	}
-	if execStatus.Status != beacon.VALID {
+	if execStatus.Status != engine.VALID {
 		return nil, nil, fmt.Errorf("unexpected NewPayload response status: %s", execStatus.Status)
 	}
 
 	return payload, nil, nil
-}
-
-// getInvalidateBlockTxOpts signs the transaction with a the
-// throwaway blocks builder private key.
-func (s *Syncer) getInvalidateBlockTxOpts(ctx context.Context, height *big.Int) (*bind.TransactOpts, error) {
-	opts, err := bind.NewKeyedTransactorWithChainID(
-		s.throwawayBlocksBuilderPrivKey,
-		s.rpc.L2ChainID,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	nonce, err := s.rpc.L2AccountNonce(
-		ctx,
-		crypto.PubkeyToAddress(s.throwawayBlocksBuilderPrivKey.PublicKey),
-		height,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	opts.GasPrice = common.Big0
-	opts.Nonce = new(big.Int).SetUint64(nonce)
-	opts.NoSend = true
-
-	return opts, nil
 }

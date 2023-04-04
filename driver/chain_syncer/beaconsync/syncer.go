@@ -1,18 +1,14 @@
 package beaconsync
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/beacon"
+	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -55,11 +51,11 @@ func (s *Syncer) TriggerBeaconSync() error {
 		return err
 	}
 
-	if status.Status != beacon.SYNCING && status.Status != beacon.VALID {
+	if status.Status != engine.SYNCING && status.Status != engine.VALID {
 		return fmt.Errorf("unexpected NewPayload response status: %s", status.Status)
 	}
 
-	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &beacon.ForkchoiceStateV1{
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &engine.ForkchoiceStateV1{
 		HeadBlockHash:      latestVerifiedHeadPayload.BlockHash,
 		SafeBlockHash:      latestVerifiedHeadPayload.BlockHash,
 		FinalizedBlockHash: latestVerifiedHeadPayload.BlockHash,
@@ -67,7 +63,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 	if err != nil {
 		return err
 	}
-	if fcRes.PayloadStatus.Status != beacon.SYNCING {
+	if fcRes.PayloadStatus.Status != engine.SYNCING {
 		return fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", status.Status)
 	}
 
@@ -90,65 +86,15 @@ func (s *Syncer) TriggerBeaconSync() error {
 
 // getVerifiedBlockPayload fetches the latest verified block's header, and converts it to an Engine API executable data,
 // which will be used to let the node to start beacon syncing.
-func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *beacon.ExecutableDataV1, error) {
+func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *engine.ExecutableData, error) {
 	var (
-		proveBlockTxHash    common.Hash
 		latestVerifiedBlock = s.state.GetLatestVerifiedBlock()
 	)
 
-	// Get the latest verified block's corresponding BlockProven event.
-	iter, err := eventIterator.NewBlockProvenIterator(s.ctx, &eventIterator.BlockProvenIteratorConfig{
-		Client:      s.rpc.L1,
-		TaikoL1:     s.rpc.TaikoL1,
-		StartHeight: s.state.GenesisL1Height,
-		EndHeight:   s.state.GetL1Head().Number,
-		FilterQuery: []*big.Int{latestVerifiedBlock.ID},
-		Reverse:     true,
-		OnBlockProvenEvent: func(
-			ctx context.Context,
-			e *bindings.TaikoL1ClientBlockProven,
-			endIter eventIterator.EndBlockProvenEventIterFunc,
-		) error {
-			if bytes.Equal(e.BlockHash[:], latestVerifiedBlock.Hash.Bytes()) {
-				log.Info(
-					"Latest verified block's BlockProven event found",
-					"height", e.Raw.BlockNumber,
-					"txHash", e.Raw.TxHash,
-				)
-				proveBlockTxHash = e.Raw.TxHash
-				endIter()
-			}
-			return nil
-		},
-	})
-
+	header, err := s.rpc.L2CheckPoint.HeaderByNumber(s.ctx, latestVerifiedBlock.ID)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	if err := iter.Iter(); err != nil {
-		return nil, nil, err
-	}
-
-	if proveBlockTxHash == (common.Hash{}) {
-		return nil, nil, fmt.Errorf(
-			"failed to find L1 height of latest verified block's ProveBlock transaction, id: %s",
-			latestVerifiedBlock.ID,
-		)
-	}
-
-	// Get the latest verified block's header, then convert it to ExecutableDataV1.
-	proveBlockTx, _, err := s.rpc.L1.TransactionByHash(s.ctx, proveBlockTxHash)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	evidenceHeader, err := encoding.UnpackEvidenceHeader(proveBlockTx.Data())
-	if err != nil {
-		return nil, nil, err
-	}
-
-	header := encoding.ToGethHeader(evidenceHeader)
 
 	if header.Hash() != latestVerifiedBlock.Hash {
 		return nil, nil, fmt.Errorf(

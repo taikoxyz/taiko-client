@@ -2,6 +2,7 @@ package encoding
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -15,116 +16,82 @@ import (
 
 // ABI arguments marshaling components.
 var (
+	blockMetadataInputComponents = []abi.ArgumentMarshaling{
+		{
+			Name: "txListHash",
+			Type: "bytes32",
+		},
+		{
+			Name: "beneficiary",
+			Type: "address",
+		},
+		{
+			Name: "gasLimit",
+			Type: "uint32",
+		},
+		{
+			Name: "txListByteStart",
+			Type: "uint24",
+		},
+		{
+			Name: "txListByteEnd",
+			Type: "uint24",
+		},
+		{
+			Name: "cacheTxListInfo",
+			Type: "uint8",
+		},
+	}
 	blockMetadataComponents = []abi.ArgumentMarshaling{
 		{
 			Name: "id",
-			Type: "uint256",
+			Type: "uint64",
+		},
+		{
+			Name: "timestamp",
+			Type: "uint64",
 		},
 		{
 			Name: "l1Height",
-			Type: "uint256",
+			Type: "uint64",
+		},
+		{
+			Name: "gasLimit",
+			Type: "uint32",
 		},
 		{
 			Name: "l1Hash",
 			Type: "bytes32",
 		},
 		{
-			Name: "beneficiary",
-			Type: "address",
+			Name: "mixHash",
+			Type: "bytes32",
 		},
 		{
 			Name: "txListHash",
 			Type: "bytes32",
 		},
 		{
-			Name: "mixHash",
-			Type: "bytes32",
+			Name: "txListByteStart",
+			Type: "uint24",
 		},
 		{
-			Name: "extraData",
-			Type: "bytes",
-		},
-		{
-			Name: "gasLimit",
-			Type: "uint64",
-		},
-		{
-			Name: "timestamp",
-			Type: "uint64",
-		},
-		{
-			Name: "commitHeight",
-			Type: "uint64",
-		},
-		{
-			Name: "commitSlot",
-			Type: "uint64",
-		},
-	}
-	blockHeaderComponents = []abi.ArgumentMarshaling{
-		{
-			Name: "parentHash",
-			Type: "bytes32",
-		},
-		{
-			Name: "ommersHash",
-			Type: "bytes32",
+			Name: "txListByteEnd",
+			Type: "uint24",
 		},
 		{
 			Name: "beneficiary",
 			Type: "address",
 		},
+	}
+	zkProofComponents = []abi.ArgumentMarshaling{
 		{
-			Name: "stateRoot",
-			Type: "bytes32",
-		},
-		{
-			Name: "transactionsRoot",
-			Type: "bytes32",
-		},
-		{
-			Name: "receiptsRoot",
-			Type: "bytes32",
-		},
-		{
-			Name: "logsBloom",
-			Type: "bytes32[8]",
-		},
-		{
-			Name: "difficulty",
-			Type: "uint256",
-		},
-		{
-			Name: "height",
-			Type: "uint128",
-		},
-		{
-			Name: "gasLimit",
-			Type: "uint64",
-		},
-		{
-			Name: "gasUsed",
-			Type: "uint64",
-		},
-		{
-			Name: "timestamp",
-			Type: "uint64",
-		},
-		{
-			Name: "extraData",
+			Name: "data",
 			Type: "bytes",
 		},
 		{
-			Name: "mixHash",
-			Type: "bytes32",
-		},
-		{
-			Name: "nonce",
-			Type: "uint64",
-		},
-		{
-			Name: "baseFeePerGas",
-			Type: "uint256",
+			Name: "verifierId",
+			Type: "uint16",
 		},
 	}
 	evidenceComponents = []abi.ArgumentMarshaling{
@@ -134,31 +101,42 @@ var (
 			Components: blockMetadataComponents,
 		},
 		{
-			Name:       "header",
+			Name:       "zkproof",
 			Type:       "tuple",
-			Components: blockHeaderComponents,
+			Components: zkProofComponents,
+		},
+		{
+			Name: "parentHash",
+			Type: "bytes32",
+		},
+		{
+			Name: "blockHash",
+			Type: "bytes32",
+		},
+		{
+			Name: "signalRoot",
+			Type: "bytes32",
+		},
+		{
+			Name: "graffiti",
+			Type: "bytes32",
 		},
 		{
 			Name: "prover",
 			Type: "address",
 		},
-		{
-			Name: "proofs",
-			Type: "bytes[]",
-		},
-		{
-			Name: "circuits",
-			Type: "uint16",
-		},
 	}
 )
 
 var (
+	// BlockMetadataInput
+	blockMetadataInputType, _ = abi.NewType("tuple", "TaikoData.BlockMetadataInput", blockMetadataInputComponents)
+	blockMetadataInputArgs    = abi.Arguments{{Name: "BlockMetadataInput", Type: blockMetadataInputType}}
 	// BlockMetadata
 	blockMetadataType, _ = abi.NewType("tuple", "LibData.BlockMetadata", blockMetadataComponents)
 	blockMetadataArgs    = abi.Arguments{{Name: "BlockMetadata", Type: blockMetadataType}}
 	// Evidence
-	EvidenceType, _ = abi.NewType("tuple", "V1Proving.Evidence", evidenceComponents)
+	EvidenceType, _ = abi.NewType("tuple", "TaikoData.BlockEvidence", evidenceComponents)
 	EvidenceArgs    = abi.Arguments{{Name: "Evidence", Type: EvidenceType}}
 )
 
@@ -178,6 +156,15 @@ func init() {
 	if TaikoL2ABI, err = bindings.TaikoL2ClientMetaData.GetAbi(); err != nil {
 		log.Crit("Get TaikoL2 ABI error", "error", err)
 	}
+}
+
+// EncodeBlockMetadataInput performs the solidity `abi.encode` for the given blockMetadataInput.
+func EncodeBlockMetadataInput(meta *TaikoL1BlockMetadataInput) ([]byte, error) {
+	b, err := blockMetadataInputArgs.Pack(meta)
+	if err != nil {
+		return nil, fmt.Errorf("failed to abi.encode block metadata input, %w", err)
+	}
+	return b, nil
 }
 
 // EncodeBlockMetadata performs the solidity `abi.encode` for the given blockMetadata.
@@ -208,12 +195,12 @@ func EncodeCommitHash(beneficiary common.Address, txListHash [32]byte) []byte {
 }
 
 // EncodeProposeBlockInput encodes the input params for TaikoL1.proposeBlock.
-func EncodeProposeBlockInput(meta *bindings.TaikoDataBlockMetadata, txListBytes []byte) ([][]byte, error) {
-	metaBytes, err := EncodeBlockMetadata(meta)
+func EncodeProposeBlockInput(metadataInput *TaikoL1BlockMetadataInput) ([]byte, error) {
+	metaBytes, err := EncodeBlockMetadataInput(metadataInput)
 	if err != nil {
 		return nil, err
 	}
-	return [][]byte{metaBytes, txListBytes}, nil
+	return metaBytes, nil
 }
 
 // EncodeProveBlockInput encodes the input params for TaikoL1.proveBlock.
@@ -221,23 +208,13 @@ func EncodeProveBlockInput(
 	evidence *TaikoL1Evidence,
 	anchorTx *types.Transaction,
 	anchorReceipt *types.Receipt,
-) ([][]byte, error) {
+) ([]byte, error) {
 	evidenceBytes, err := EncodeEvidence(evidence)
 	if err != nil {
 		return nil, err
 	}
 
-	anchorTxBytes, err := rlp.EncodeToBytes(anchorTx)
-	if err != nil {
-		return nil, err
-	}
-
-	anchorReceiptBytes, err := rlp.EncodeToBytes(anchorReceipt)
-	if err != nil {
-		return nil, err
-	}
-
-	return [][]byte{evidenceBytes, anchorTxBytes, anchorReceiptBytes}, nil
+	return evidenceBytes, nil
 }
 
 // EncodeProveBlockInvalidInput encodes the input params for TaikoL1.proveBlockInvalid.
@@ -282,54 +259,11 @@ func UnpackTxListBytes(txData []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	inputs, ok := args["inputs"].([][]byte)
+	inputs, ok := args["txList"].([]byte)
 
-	if !ok || len(inputs) < 2 {
-		return nil, fmt.Errorf("invalid transaction inputs map length, get: %d", len(inputs))
+	if !ok {
+		return nil, errors.New("failed to get txList bytes")
 	}
 
-	return inputs[1], nil
-}
-
-// UnpackEvidenceHeader unpacks the evidence data of a TaikoL1.proveBlock transaction, and returns
-// the block header inside.
-func UnpackEvidenceHeader(txData []byte) (*BlockHeader, error) {
-	method, err := TaikoL1ABI.MethodById(txData)
-	if err != nil {
-		return nil, err
-	}
-
-	// Only check for safety.
-	if method.Name != "proveBlock" {
-		return nil, fmt.Errorf("invalid method name: %s", method.Name)
-	}
-
-	args := map[string]interface{}{}
-
-	if err := method.Inputs.UnpackIntoMap(args, txData[4:]); err != nil {
-		return nil, err
-	}
-
-	inputs, ok := args["inputs"].([][]byte)
-
-	if !ok || len(inputs) < 3 {
-		return nil, fmt.Errorf("invalid transaction inputs map length, get: %d", len(inputs))
-	}
-
-	return decodeEvidenceHeader(inputs[0])
-}
-
-// decodeEvidenceHeader decodes the encoded evidence bytes, and then returns its inner header.
-func decodeEvidenceHeader(evidenceBytes []byte) (*BlockHeader, error) {
-	unpacked, err := EvidenceArgs.Unpack(evidenceBytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode evidence meta")
-	}
-
-	evidence := new(TaikoL1Evidence)
-	if err := EvidenceArgs.Copy(&evidence, unpacked); err != nil {
-		return nil, err
-	}
-
-	return &evidence.Header, nil
+	return inputs, nil
 }

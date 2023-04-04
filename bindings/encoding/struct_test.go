@@ -8,40 +8,49 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 var (
 	testHeader = &types.Header{
-		ParentHash:  testutils.RandomHash(),
+		ParentHash:  randomHash(),
 		UncleHash:   types.EmptyUncleHash,
-		Coinbase:    common.BytesToAddress(testutils.RandomHash().Bytes()),
-		Root:        testutils.RandomHash(),
-		TxHash:      testutils.RandomHash(),
-		ReceiptHash: testutils.RandomHash(),
-		Bloom:       types.BytesToBloom(testutils.RandomHash().Bytes()),
+		Coinbase:    common.BytesToAddress(randomHash().Bytes()),
+		Root:        randomHash(),
+		TxHash:      randomHash(),
+		ReceiptHash: randomHash(),
+		Bloom:       types.BytesToBloom(randomHash().Bytes()),
 		Difficulty:  new(big.Int).SetUint64(rand.Uint64()),
 		Number:      new(big.Int).SetUint64(rand.Uint64()),
 		GasLimit:    rand.Uint64(),
 		GasUsed:     rand.Uint64(),
 		Time:        uint64(time.Now().Unix()),
-		Extra:       testutils.RandomHash().Bytes(),
-		MixDigest:   testutils.RandomHash(),
+		Extra:       randomHash().Bytes(),
+		MixDigest:   randomHash(),
 		Nonce:       types.EncodeNonce(rand.Uint64()),
 		BaseFee:     new(big.Int).SetUint64(rand.Uint64()),
 	}
+	testMetaInput = TaikoL1BlockMetadataInput{
+		Beneficiary:     common.BytesToAddress(randomHash().Bytes()),
+		GasLimit:        rand.Uint32(),
+		TxListHash:      randomHash(),
+		TxListByteStart: common.Big0,
+		TxListByteEnd:   common.Big0,
+		CacheTxListInfo: 0,
+	}
 	testMeta = bindings.TaikoDataBlockMetadata{
-		Id:          new(big.Int).SetUint64(rand.Uint64()),
-		L1Height:    new(big.Int).SetUint64(rand.Uint64()),
-		L1Hash:      testutils.RandomHash(),
-		Beneficiary: common.BytesToAddress(testutils.RandomHash().Bytes()),
-		GasLimit:    rand.Uint64(),
-		Timestamp:   uint64(time.Now().Unix()),
-		TxListHash:  testutils.RandomHash(),
-		MixHash:     testutils.RandomHash(),
-		ExtraData:   testutils.RandomHash().Bytes(),
+		Id:              rand.Uint64(),
+		L1Height:        rand.Uint64(),
+		L1Hash:          randomHash(),
+		Beneficiary:     common.BytesToAddress(randomHash().Bytes()),
+		GasLimit:        rand.Uint32(),
+		Timestamp:       uint64(time.Now().Unix()),
+		TxListHash:      randomHash(),
+		MixHash:         randomHash(),
+		TxListByteStart: common.Big0,
+		TxListByteEnd:   common.Big256,
 	}
 )
 
@@ -108,4 +117,22 @@ func TestToExecutableDataV1(t *testing.T) {
 	require.Equal(t, testHeader.BaseFee, data.BaseFeePerGas)
 	require.Equal(t, testHeader.Hash(), data.BlockHash)
 	require.Equal(t, testHeader.TxHash, data.TxHash)
+}
+
+// randomHash generates a random blob of data and returns it as a hash.
+func randomHash() common.Hash {
+	var hash common.Hash
+	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
+		panic(err)
+	}
+	return hash
+}
+
+// randomBytes generates a random bytes.
+func randomBytes(size int) (b []byte) {
+	b = make([]byte, size)
+	if _, err := rand.Read(b); err != nil {
+		log.Crit("Generate random bytes error", "error", err)
+	}
+	return
 }

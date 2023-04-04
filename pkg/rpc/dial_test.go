@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/beacon"
 	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 )
@@ -25,10 +25,10 @@ func TestDialEngineClientWithBackoff(t *testing.T) {
 
 	require.Nil(t, err)
 
-	var result beacon.ExecutableDataV1
-	err = client.CallContext(context.Background(), &result, "engine_getPayloadV1", beacon.PayloadID{})
+	var result engine.ExecutableData
+	err = client.CallContext(context.Background(), &result, "engine_getPayloadV1", engine.PayloadID{})
 
-	require.Equal(t, beacon.UnknownPayload.Error(), err.Error())
+	require.Equal(t, engine.UnknownPayload.Error(), err.Error())
 }
 
 func TestDialClientWithBackoff(t *testing.T) {

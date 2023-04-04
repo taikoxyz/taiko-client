@@ -68,3 +68,11 @@ func (v *AnchorTxValidator) GetAndValidateAnchorTxReceipt(
 
 	return receipt, nil
 }
+
+// GetAnchoredSignalRoot gets the anchored signal service state root in the given `TaikoL2.anchor` transaction.
+func (v *AnchorTxValidator) GetAnchoredSignalRoot(
+	ctx context.Context,
+	tx *types.Transaction,
+) (common.Hash, error) {
+	return common.BytesToHash(tx.Data()[len(tx.Data())-32:]), nil
+}

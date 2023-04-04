@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -42,7 +41,6 @@ func (s *ProposerTestSuite) SetupTest() {
 	})))
 
 	s.p = p
-	s.p.AfterCommitHook = s.MineL1Confirmations
 	s.cancel = cancel
 }
 
@@ -105,21 +103,6 @@ func (s *ProposerTestSuite) TestProposeOp() {
 
 func (s *ProposerTestSuite) TestProposeEmptyBlockOp() {
 	s.Nil(s.p.ProposeEmptyBlockOp(context.Background()))
-}
-
-func (s *ProposerTestSuite) TestCommitTxList() {
-	txListBytes := testutils.RandomBytes(1024)
-	gasLimit := uint64(102400)
-
-	meta, tx, err := s.p.CommitTxList(context.Background(), txListBytes, gasLimit, 0)
-	s.Nil(err)
-	s.Equal(meta.GasLimit, gasLimit)
-
-	if s.p.protocolConfigs.CommitConfirmations.Cmp(common.Big0) > 0 {
-		receipt, err := rpc.WaitReceipt(context.Background(), s.p.rpc.L1, tx)
-		s.Nil(err)
-		s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
-	}
 }
 
 func (s *ProposerTestSuite) TestCustomProposeOpHook() {

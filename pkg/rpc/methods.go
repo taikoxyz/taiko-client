@@ -145,23 +145,18 @@ func (c *Client) L2ParentByBlockId(ctx context.Context, blockID *big.Int) (*type
 
 	log.Debug("Get parent block by block ID", "parentBlockId", parentBlockId)
 
-	for parentBlockId.Cmp(common.Big0) > 0 {
-		l1Origin, err := c.L2.L1OriginByID(ctx, parentBlockId)
-		if err != nil {
-			return nil, err
-		}
-
-		log.Debug("Parent block L1 origin", "l1Origin", l1Origin, "parentBlockId", parentBlockId)
-
-		if l1Origin.Throwaway {
-			parentBlockId = new(big.Int).Sub(parentBlockId, common.Big1)
-			continue
-		}
-
-		return c.L2.HeaderByHash(ctx, l1Origin.L2BlockHash)
+	if parentBlockId.Cmp(common.Big0) == 0 {
+		return c.L2.HeaderByNumber(ctx, common.Big0)
 	}
 
-	return c.L2.HeaderByNumber(ctx, common.Big0)
+	l1Origin, err := c.L2.L1OriginByID(ctx, parentBlockId)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debug("Parent block L1 origin", "l1Origin", l1Origin, "parentBlockId", parentBlockId)
+
+	return c.L2.HeaderByHash(ctx, l1Origin.L2BlockHash)
 }
 
 // WaitL1Origin keeps waiting until the L1Origin with given block ID appears on the L2 execution engine.
@@ -264,7 +259,7 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 		if err != nil {
 			return err
 		}
-		progress.HighestBlockID = new(big.Int).SetUint64(stateVars.NextBlockId - 1)
+		progress.HighestBlockID = new(big.Int).SetUint64(stateVars.NumBlocks - 1)
 		return nil
 	})
 
@@ -293,6 +288,21 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 }
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
-func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*bindings.LibUtilsStateVariables, error) {
+func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*bindings.TaikoDataStateVariables, error) {
 	return GetProtocolStateVariables(c.TaikoL1, opts)
+}
+
+// GetStorageRoot returns a contract's storage root at the given height.
+func (c *Client) GetStorageRoot(ctx context.Context, contract common.Address, height *big.Int) (common.Hash, error) {
+	proof, err := c.L1GethClient.GetProof(
+		ctx,
+		contract,
+		[]string{"0x0000000000000000000000000000000000000000000000000000000000000000"},
+		height,
+	)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	return proof.StorageHash, nil
 }

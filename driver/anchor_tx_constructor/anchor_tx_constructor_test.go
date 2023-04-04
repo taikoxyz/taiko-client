@@ -2,7 +2,8 @@ package anchorTxConstructor
 
 import (
 	"context"
-	"math/rand"
+	"math/big"
+	"os"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -15,20 +16,24 @@ import (
 
 type AnchorTxConstructorTestSuite struct {
 	testutils.ClientTestSuite
-	c *AnchorTxConstructor
+	l1Height *big.Int
+	l1Hash   common.Hash
+	c        *AnchorTxConstructor
 }
 
 func (s *AnchorTxConstructorTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
-	protocolConfigs, err := s.RpcClient.TaikoL1.GetConfig(nil)
-	s.Nil(err)
 	c, err := New(
 		s.RpcClient,
-		protocolConfigs.AnchorTxGasLimit.Uint64(),
 		bindings.GoldenTouchAddress,
 		bindings.GoldenTouchPrivKey,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
+	head, err := s.RpcClient.L1.BlockByNumber(context.Background(), nil)
+	s.Nil(err)
+	s.l1Height = head.Number()
+	s.l1Hash = head.Hash()
 	s.c = c
 }
 
@@ -37,24 +42,23 @@ func (s *AnchorTxConstructorTestSuite) TestGasLimit() {
 }
 
 func (s *AnchorTxConstructorTestSuite) TestAssembleAnchorTx() {
-	tx, err := s.c.AssembleAnchorTx(context.Background(), common.Big256, testutils.RandomHash(), common.Big0)
+	tx, err := s.c.AssembleAnchorTx(context.Background(), s.l1Height, s.l1Hash, common.Big0)
 	s.Nil(err)
 	s.NotNil(tx)
 }
 
 func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
-	gasLimit := rand.Uint64()
 	c, err := New(
 		s.RpcClient,
-		gasLimit, bindings.GoldenTouchAddress,
+		bindings.GoldenTouchAddress,
 		bindings.GoldenTouchPrivKey,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 
 	opts, err := c.transactOpts(context.Background(), common.Big0)
 	s.Nil(err)
 	s.Equal(true, opts.NoSend)
-	s.Equal(gasLimit, opts.GasLimit)
 	s.Equal(common.Big0, opts.GasPrice)
 	s.Equal(common.Big0, opts.Nonce)
 	s.Equal(bindings.GoldenTouchAddress, opts.From)

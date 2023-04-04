@@ -12,16 +12,15 @@ var (
 		Required: true,
 		Category: driverCategory,
 	}
-	ThrowawayBlocksBuilderPrivKey = &cli.StringFlag{
-		Name: "l2.throwawayBlockBuilderPrivKey",
-		Usage: "Private key of the L2 throwaway blocks builder," +
-			"who will be the suggested fee recipient of L2 throwaway blocks",
-		Required: true,
-		Category: driverCategory,
-	}
 	JWTSecret = &cli.StringFlag{
 		Name:     "jwtSecret",
 		Usage:    "Path to a JWT secret to use for authenticated RPC endpoints",
+		Required: true,
+		Category: driverCategory,
+	}
+	SignalServiceAddress = &cli.StringFlag{
+		Name:     "l1.signalService",
+		Usage:    "L1 singal service contract address",
 		Required: true,
 		Category: driverCategory,
 	}
@@ -40,7 +39,12 @@ var (
 		Name: "p2p.syncTimeout",
 		Usage: "P2P syncing timeout in seconds, if no sync progress is made within this time span, " +
 			"driver will stop the P2P sync and insert all remaining L2 blocks one by one",
-		Value:    120,
+		Value:    600,
+		Category: driverCategory,
+	}
+	CheckPointSyncUrl = &cli.StringFlag{
+		Name:     "p2p.checkPointSyncUrl",
+		Usage:    "HTTP RPC endpoint of another synced L2 execution engine node",
 		Category: driverCategory,
 	}
 )
@@ -49,7 +53,7 @@ var (
 var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2WSEndpoint,
 	L2AuthEndpoint,
-	ThrowawayBlocksBuilderPrivKey,
+	SignalServiceAddress,
 	JWTSecret,
 	P2PSyncVerifiedBlocks,
 	P2PSyncTimeout,

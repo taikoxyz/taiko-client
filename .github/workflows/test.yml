@@ -17,7 +17,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.19
           cache: true
 
       - name: Lint
@@ -45,11 +45,15 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
+          ref: major_protocol_upgrade_rebase
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
 
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.19
           cache: true
           cache-dependency-path: ${{ env.CLIENT_DIR }}/go.sum
 
@@ -81,7 +85,7 @@ jobs:
 
       - name: Install protocol dependencies
         working-directory: ${{ env.TAIKO_MONO_DIR }}
-        run: cd ./packages/protocol && pnpm install && ./scripts/download_solc.sh
+        run: cd ./packages/protocol && pnpm install && ./script/download_solc.sh && forge install
 
       - name: Build
         working-directory: ${{ env.CLIENT_DIR }}
