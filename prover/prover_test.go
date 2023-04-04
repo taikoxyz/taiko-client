@@ -104,11 +104,6 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 		s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 		s.Nil(s.p.validProofSubmitter.SubmitProof(context.Background(), <-s.p.proveValidProofCh))
 	}
-
-	// Invalid block
-	// TODO: update tests
-	// e = testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
-	// s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 }
 
 func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
