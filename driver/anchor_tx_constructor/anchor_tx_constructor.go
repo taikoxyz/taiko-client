@@ -65,7 +65,12 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 		return nil, err
 	}
 
-	return c.rpc.TaikoL2.Anchor(opts, l1Height, l1Hash, signalRoot)
+	l2Parent, err := c.rpc.L2.BlockByNumber(ctx, new(big.Int).Sub(l2Height, big.NewInt(1)))
+	if err != nil {
+		return nil, err
+	}
+
+	return c.rpc.TaikoL2.Anchor(opts, l1Hash, signalRoot, l1Height.Uint64(), l2Parent.GasUsed())
 }
 
 // transactOpts is a utility method to create some transact options of the anchor transaction in given L2 block with
