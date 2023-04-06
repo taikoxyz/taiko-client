@@ -176,6 +176,12 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 
 	log.Debug("Start fetching L1Origin from L2 execution engine", "blockID", blockID)
 
+	if _, ok := ctx.Deadline(); !ok {
+		ctxWithTimeout, cancel := context.WithTimeout(ctx, 45*time.Second)
+		defer cancel()
+		ctx = ctxWithTimeout
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
