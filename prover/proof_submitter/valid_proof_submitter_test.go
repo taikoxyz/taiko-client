@@ -38,7 +38,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.validProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
 	s.invalidProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
 
-	s.validProofSubmitter = NewValidProofSubmitter(
+	s.validProofSubmitter, err = NewValidProofSubmitter(
 		s.RpcClient,
 		&proofProducer.DummyProofProducer{},
 		s.validProofCh,
@@ -46,6 +46,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		l1ProverPrivKey,
 		&sync.Mutex{},
 	)
+	s.Nil(err)
 
 	// Init calldata syncer
 	testState, err := state.New(context.Background(), s.RpcClient)

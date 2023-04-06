@@ -7,13 +7,14 @@ import (
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/require"
-	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 func TestSignWithK(t *testing.T) {
 	var priv btcec.PrivateKey
-	overflow := priv.Key.SetByteSlice(hexutil.MustDecode(bindings.GoldenTouchPrivKey))
+	overflow := priv.Key.SetByteSlice(
+		hexutil.MustDecode("0x92954368afd3caa1f3ce3ead0069c1af414054aefe1ef9aeacc1bf426222ce38"),
+	)
 	require.False(t, overflow || priv.Key.IsZero())
 
 	signer := FixedKSigner{privKey: &priv.Key}

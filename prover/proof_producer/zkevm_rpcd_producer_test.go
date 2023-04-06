@@ -25,7 +25,7 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 	header := &types.Header{
 		ParentHash:  randHash(),
 		UncleHash:   randHash(),
-		Coinbase:    bindings.GoldenTouchAddress,
+		Coinbase:    common.HexToAddress("0x0000777735367b36bC9B61C50022d9D0700dB4Ec"),
 		Root:        randHash(),
 		TxHash:      randHash(),
 		ReceiptHash: randHash(),

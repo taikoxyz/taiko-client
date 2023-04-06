@@ -140,15 +140,17 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		}
 	}
 
-	// Proof submitters
-	p.validProofSubmitter = proofSubmitter.NewValidProofSubmitter(
+	// Proof submitter
+	if p.validProofSubmitter, err = proofSubmitter.NewValidProofSubmitter(
 		p.rpc,
 		producer,
 		p.proveValidProofCh,
 		p.cfg.TaikoL2Address,
 		p.cfg.L1ProverPrivKey,
 		p.submitProofTxMutex,
-	)
+	); err != nil {
+		return err
+	}
 
 	return nil
 }
