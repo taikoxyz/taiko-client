@@ -25,8 +25,6 @@ func (s *AnchorTxConstructorTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 	c, err := New(
 		s.RpcClient,
-		bindings.GoldenTouchAddress,
-		bindings.GoldenTouchPrivKey,
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
@@ -42,7 +40,7 @@ func (s *AnchorTxConstructorTestSuite) TestGasLimit() {
 }
 
 func (s *AnchorTxConstructorTestSuite) TestAssembleAnchorTx() {
-	tx, err := s.c.AssembleAnchorTx(context.Background(), s.l1Height, s.l1Hash, common.Big0)
+	tx, err := s.c.AssembleAnchorTx(context.Background(), s.l1Height, s.l1Hash, common.Big1)
 	s.Nil(err)
 	s.NotNil(tx)
 }
@@ -50,13 +48,11 @@ func (s *AnchorTxConstructorTestSuite) TestAssembleAnchorTx() {
 func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
 	c, err := New(
 		s.RpcClient,
-		bindings.GoldenTouchAddress,
-		bindings.GoldenTouchPrivKey,
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 
-	opts, err := c.transactOpts(context.Background(), common.Big0)
+	opts, err := c.transactOpts(context.Background(), common.Big1)
 	s.Nil(err)
 	s.Equal(true, opts.NoSend)
 	s.Equal(common.Big0, opts.GasPrice)

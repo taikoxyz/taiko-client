@@ -83,6 +83,10 @@ var (
 			Name: "beneficiary",
 			Type: "address",
 		},
+		{
+			Name: "treasure",
+			Type: "address",
+		},
 	}
 	zkProofComponents = []abi.ArgumentMarshaling{
 		{

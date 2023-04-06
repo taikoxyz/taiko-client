@@ -49,12 +49,7 @@ func NewSyncer(
 		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
 	}
 
-	constructor, err := anchorTxConstructor.New(
-		rpc,
-		bindings.GoldenTouchAddress,
-		bindings.GoldenTouchPrivKey,
-		signalServiceAddress,
-	)
+	constructor, err := anchorTxConstructor.New(rpc, signalServiceAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
 	}
@@ -324,7 +319,7 @@ func (s *Syncer) createExecutionPayloads(
 		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
-			GasLimit:       uint64(event.Meta.GasLimit) + bindings.AnchorGasLimit,
+			GasLimit:       uint64(event.Meta.GasLimit) + s.anchorConstructor.GasLimit(),
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
