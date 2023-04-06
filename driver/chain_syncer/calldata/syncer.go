@@ -269,6 +269,12 @@ func (s *Syncer) insertNewHead(
 		return nil, nil, err
 	}
 
+	// Get L2 baseFee
+	baseFee, err := s.rpc.TaikoL2.GetBasefee(nil, 0, uint64(event.Meta.GasLimit), parent.GasUsed)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get L2 baseFee: %w", err)
+	}
+
 	payload, rpcErr, payloadErr := s.createExecutionPayloads(
 		ctx,
 		event,
@@ -276,6 +282,7 @@ func (s *Syncer) insertNewHead(
 		l1Origin,
 		headBlockID,
 		txListBytes,
+		baseFee,
 	)
 
 	if rpcErr != nil || payloadErr != nil {
@@ -306,6 +313,7 @@ func (s *Syncer) createExecutionPayloads(
 	l1Origin *rawdb.L1Origin,
 	headBlockID *big.Int,
 	txListBytes []byte,
+	baseFeee *big.Int,
 ) (payloadData *engine.ExecutableData, rpcError error, payloadError error) {
 	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parentHash}
 	attributes := &engine.PayloadAttributes{
