@@ -113,6 +113,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotF
 				Header:  &types.Header{},
 				ZkProof: []byte{0xff},
 			},
+			false,
 		),
 	)
 }
@@ -123,12 +124,12 @@ func (s *ProofSubmitterTestSuite) TestValidSubmitProofs() {
 	for _, e := range events {
 		s.Nil(s.validProofSubmitter.RequestProof(context.Background(), e))
 		proofWithHeader := <-s.validProofCh
-		s.Nil(s.validProofSubmitter.SubmitProof(context.Background(), proofWithHeader))
+		s.Nil(s.validProofSubmitter.SubmitProof(context.Background(), proofWithHeader, false))
 	}
 
 	e := testutils.ProposeAndInsertThrowawayBlock(&s.ClientTestSuite, s.proposer, s.calldataSyncer)
 	s.Nil(s.invalidProofSubmitter.RequestProof(context.Background(), e))
-	s.Nil(s.invalidProofSubmitter.SubmitProof(context.Background(), <-s.invalidProofCh))
+	s.Nil(s.invalidProofSubmitter.SubmitProof(context.Background(), <-s.invalidProofCh, false))
 }
 
 func TestProofSubmitterTestSuite(t *testing.T) {

@@ -23,8 +23,12 @@ var (
 
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
-func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
-	if strings.HasPrefix(err.Error(), "L1_CANNOT_BE_FIRST_PROVER") || !strings.HasPrefix(err.Error(), "L1_") {
+func isSubmitProofTxErrorRetryable(err error, blockID *big.Int, isOracle bool) bool {
+	if strings.HasPrefix(err.Error(), "L1_NOT_ORACLE_PROVER") || !strings.HasPrefix(err.Error(), "L1_") {
+		return true
+	}
+
+	if isOracle && strings.HasPrefix(err.Error(), "L1_ID") {
 		return true
 	}
 
@@ -64,6 +68,7 @@ func sendTxWithBackoff(
 	cli *rpc.Client,
 	blockID *big.Int,
 	sendTxFunc func() (*types.Transaction, error),
+	isOracle bool,
 ) error {
 	var isUnretryableError bool
 	if err := backoff.Retry(func() error {
@@ -74,7 +79,7 @@ func sendTxWithBackoff(
 		tx, err := sendTxFunc()
 		if err != nil {
 			err = encoding.TryParsingCustomError(err)
-			if isSubmitProofTxErrorRetryable(err, blockID) {
+			if isSubmitProofTxErrorRetryable(err, blockID, isOracle) {
 				log.Info("Retry sending TaikoL1.proveBlock transaction", "reason", err)
 				return err
 			}

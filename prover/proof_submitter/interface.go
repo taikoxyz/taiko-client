@@ -9,5 +9,5 @@ import (
 
 type ProofSubmitter interface {
 	RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error
-	SubmitProof(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader) error
+	SubmitProof(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader, isOracle bool) error
 }

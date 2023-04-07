@@ -86,6 +86,7 @@ func (s *InvalidProofSubmitter) RequestProof(ctx context.Context, event *binding
 func (s *InvalidProofSubmitter) SubmitProof(
 	ctx context.Context,
 	proofWithHeader *proofProducer.ProofWithHeader,
+	isOracle bool,
 ) (err error) {
 	log.Info(
 		"New invalid block proof",
@@ -178,7 +179,7 @@ func (s *InvalidProofSubmitter) SubmitProof(
 		return s.rpc.TaikoL1.ProveBlockInvalid(txOpts, blockID, input)
 	}
 
-	if err := sendTxWithBackoff(ctx, s.rpc, blockID, sendTx); err != nil {
+	if err := sendTxWithBackoff(ctx, s.rpc, blockID, sendTx, isOracle); err != nil {
 		if errors.Is(err, errUnretryable) {
 			return nil
 		}

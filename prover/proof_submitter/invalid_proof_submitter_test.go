@@ -29,6 +29,7 @@ func (s *ProofSubmitterTestSuite) TestSubmitInvalidBlockProofThrowawayBlockNotFo
 				Header:  &types.Header{},
 				ZkProof: []byte{0xff},
 			},
+			false,
 		),
 	)
 }
