@@ -359,7 +359,7 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 		if isValidProof {
 			// If its the oracle prover, will keep retrying when there are errors.
 			if p.cfg.Dummy {
-				backoff.Retry(func() error {
+				err = backoff.Retry(func() error {
 					if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
 						log.Info("Retry oracle proving", "error", err)
 						return err
