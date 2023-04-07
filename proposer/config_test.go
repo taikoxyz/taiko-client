@@ -61,7 +61,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L2HTTPEndpoint.Name, l2Endpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
-		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes())[2:],
+		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
 		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"-" + flags.ProposeInterval.Name, proposeInterval,
 		"-" + flags.CommitSlot.Name, strconv.Itoa(commitSlot),

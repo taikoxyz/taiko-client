@@ -2,6 +2,7 @@ package proposer
 
 import (
 	"context"
+	"math/big"
 	"os"
 	"testing"
 	"time"
@@ -75,14 +76,25 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	nonce, err := s.p.rpc.L2.PendingNonceAt(context.Background(), s.TestAddr)
 	s.Nil(err)
 
-	tx := types.NewTransaction(
-		nonce,
-		common.BytesToAddress(testutils.RandomBytes(32)),
-		common.Big1,
-		100000,
-		common.Big1,
-		[]byte{},
-	)
+	gaslimit := 21000
+
+	parent, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
+	s.Nil(err)
+
+	baseFee, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint64(gaslimit), parent.GasUsed())
+	s.Nil(err)
+
+	to := common.BytesToAddress(testutils.RandomBytes(32))
+	tx := types.NewTx(&types.DynamicFeeTx{
+		ChainID:   s.RpcClient.L2ChainID,
+		Nonce:     nonce,
+		GasTipCap: common.Big0,
+		GasFeeCap: new(big.Int).SetUint64(baseFee.Uint64() * 2),
+		Gas:       uint64(gaslimit),
+		To:        &to,
+		Value:     common.Big1,
+	})
+
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.p.rpc.L2ChainID), s.TestAddrPrivKey)
 	s.Nil(err)
 	s.Nil(s.p.rpc.L2.SendTransaction(context.Background(), signedTx))

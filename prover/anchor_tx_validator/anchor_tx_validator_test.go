@@ -33,7 +33,7 @@ func (s *AnchorTxValidatorTestSuite) TestValidateAnchorTx() {
 	s.Nil(err)
 
 	// 0x92954368afd3caa1f3ce3ead0069c1af414054aefe1ef9aeacc1bf426222ce38
-	goldenTouchPriKey, err := crypto.HexToECDSA(common.Bytes2Hex(godlenTouchPrivKey.Bytes())[2:])
+	goldenTouchPriKey, err := crypto.HexToECDSA(common.Bytes2Hex(godlenTouchPrivKey.Bytes()))
 	s.Nil(err)
 
 	// invalid To

@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
@@ -251,7 +252,7 @@ func (s *Syncer) insertNewHead(
 		ctx,
 		new(big.Int).SetUint64(event.Meta.L1Height),
 		event.Meta.L1Hash,
-		parent.Number,
+		new(big.Int).Add(parent.Number, common.Big1),
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create TaikoL2.anchor transaction: %w", err)
@@ -265,9 +266,9 @@ func (s *Syncer) insertNewHead(
 	}
 
 	// Get L2 baseFee
-	baseFee, err := s.rpc.TaikoL2.GetBasefee(nil, 0, uint64(event.Meta.GasLimit), parent.GasUsed)
+	baseFee, err := s.rpc.TaikoL2.GetBasefee(nil, uint32(event.Meta.Timestamp-parent.Time), uint64(event.Meta.GasLimit), parent.GasUsed)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get L2 baseFee: %w", err)
+		return nil, nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
 	}
 
 	payload, rpcErr, payloadErr := s.createExecutionPayloads(
@@ -325,7 +326,8 @@ func (s *Syncer) createExecutionPayloads(
 			MixHash:        event.Meta.MixHash,
 			ExtraData:      []byte{},
 		},
-		L1Origin: l1Origin,
+		BaseFeePerGas: baseFeee,
+		L1Origin:      l1Origin,
 	}
 
 	// Step 1, prepare a payload

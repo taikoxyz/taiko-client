@@ -61,7 +61,7 @@ func ProposeAndInsertEmptyBlocks(
 
 	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
 		Beneficiary:     proposer.L2SuggestedFeeRecipient(),
-		GasLimit:        0,
+		GasLimit:        21000,
 		TxListHash:      crypto.Keccak256Hash(encoded),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),

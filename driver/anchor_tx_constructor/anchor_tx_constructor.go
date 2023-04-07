@@ -79,6 +79,14 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 		return nil, err
 	}
 
+	log.Info(
+		"Anchor arguments",
+		"l1Hash", l1Hash,
+		"signalRoot", signalRoot,
+		"l1Height", l1Height,
+		"gasUsed", l2Parent.GasUsed(),
+	)
+
 	return c.rpc.TaikoL2.Anchor(opts, l1Hash, signalRoot, l1Height.Uint64(), l2Parent.GasUsed())
 }
 

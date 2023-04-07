@@ -24,7 +24,7 @@ var (
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
-	if strings.HasPrefix(err.Error(), "L1_CANNOT_BE_FIRST_PROVER") || !strings.HasPrefix(err.Error(), "L1_") {
+	if strings.HasPrefix(err.Error(), "L1_NOT_ORACLE_PROVEN") || !strings.HasPrefix(err.Error(), "L1_") {
 		return true
 	}
 
