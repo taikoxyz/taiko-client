@@ -266,7 +266,12 @@ func (s *Syncer) insertNewHead(
 	}
 
 	// Get L2 baseFee
-	baseFee, err := s.rpc.TaikoL2.GetBasefee(nil, uint32(event.Meta.Timestamp-parent.Time), uint64(event.Meta.GasLimit), parent.GasUsed)
+	baseFee, err := s.rpc.TaikoL2.GetBasefee(
+		nil,
+		uint32(event.Meta.Timestamp-parent.Time),
+		uint64(event.Meta.GasLimit),
+		parent.GasUsed,
+	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
 	}
