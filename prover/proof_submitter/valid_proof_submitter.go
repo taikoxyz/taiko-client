@@ -100,6 +100,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 	log.Info(
 		"New valid block proof",
 		"blockID", proofWithHeader.BlockID,
+		"metaID", proofWithHeader.Meta.Id,
 		"beneficiary", proofWithHeader.Meta.Beneficiary,
 		"hash", proofWithHeader.Header.Hash(),
 		"proof", common.Bytes2Hex(proofWithHeader.ZkProof),
