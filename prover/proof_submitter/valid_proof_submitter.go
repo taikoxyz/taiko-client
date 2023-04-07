@@ -41,16 +41,21 @@ func NewValidProofSubmitter(
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
 	mutex *sync.Mutex,
-) *ValidProofSubmitter {
+) (*ValidProofSubmitter, error) {
+	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc)
+	if err != nil {
+		return nil, err
+	}
+
 	return &ValidProofSubmitter{
 		rpc:               rpc,
 		proofProducer:     proofProducer,
 		reusltCh:          reusltCh,
-		anchorTxValidator: anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc),
+		anchorTxValidator: anchorValidator,
 		proverPrivKey:     proverPrivKey,
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		mutex:             mutex,
-	}
+	}, nil
 }
 
 // RequestProof implements the ProofSubmitter interface.

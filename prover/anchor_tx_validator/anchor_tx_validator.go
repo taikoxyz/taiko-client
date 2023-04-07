@@ -7,7 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -15,14 +14,20 @@ import (
 // AnchorTxValidator is responsible for validating the anchor transaction (TaikoL2.anchor) in
 // each L2 block, which is always the first transaction.
 type AnchorTxValidator struct {
-	taikoL2Address common.Address
-	chainID        *big.Int
-	rpc            *rpc.Client
+	taikoL2Address     common.Address
+	goldenTouchAddress common.Address
+	chainID            *big.Int
+	rpc                *rpc.Client
 }
 
 // New creates a new AnchorTxValidator instance.
-func New(taikoL2Address common.Address, chainID *big.Int, rpc *rpc.Client) *AnchorTxValidator {
-	return &AnchorTxValidator{taikoL2Address, chainID, rpc}
+func New(taikoL2Address common.Address, chainID *big.Int, rpc *rpc.Client) (*AnchorTxValidator, error) {
+	goldenTouchAddress, err := rpc.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AnchorTxValidator{taikoL2Address, goldenTouchAddress, chainID, rpc}, nil
 }
 
 // validateAnchorTx checks whether the given transaction is a valid `TaikoL2.anchor` transaction.
@@ -36,7 +41,7 @@ func (v *AnchorTxValidator) ValidateAnchorTx(ctx context.Context, tx *types.Tran
 		return fmt.Errorf("failed to get TaikoL2.anchor transaction sender: %w", err)
 	}
 
-	if sender != bindings.GoldenTouchAddress {
+	if sender != v.goldenTouchAddress {
 		return fmt.Errorf("invalid TaikoL2.anchor transaction sender: %s", sender)
 	}
 
@@ -74,5 +79,5 @@ func (v *AnchorTxValidator) GetAnchoredSignalRoot(
 	ctx context.Context,
 	tx *types.Transaction,
 ) (common.Hash, error) {
-	return common.BytesToHash(tx.Data()[len(tx.Data())-32:]), nil
+	return common.BytesToHash(tx.Data()[4+32 : 4+32+32]), nil
 }

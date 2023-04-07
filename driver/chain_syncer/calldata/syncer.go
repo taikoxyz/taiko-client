@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
@@ -49,12 +50,7 @@ func NewSyncer(
 		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
 	}
 
-	constructor, err := anchorTxConstructor.New(
-		rpc,
-		bindings.GoldenTouchAddress,
-		bindings.GoldenTouchPrivKey,
-		signalServiceAddress,
-	)
+	constructor, err := anchorTxConstructor.New(rpc, signalServiceAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
 	}
@@ -256,7 +252,7 @@ func (s *Syncer) insertNewHead(
 		ctx,
 		new(big.Int).SetUint64(event.Meta.L1Height),
 		event.Meta.L1Hash,
-		parent.Number,
+		new(big.Int).Add(parent.Number, common.Big1),
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create TaikoL2.anchor transaction: %w", err)
@@ -269,6 +265,17 @@ func (s *Syncer) insertNewHead(
 		return nil, nil, err
 	}
 
+	// Get L2 baseFee
+	baseFee, err := s.rpc.TaikoL2.GetBasefee(
+		nil,
+		uint32(event.Meta.Timestamp-parent.Time),
+		uint64(event.Meta.GasLimit),
+		parent.GasUsed,
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
+	}
+
 	payload, rpcErr, payloadErr := s.createExecutionPayloads(
 		ctx,
 		event,
@@ -276,6 +283,7 @@ func (s *Syncer) insertNewHead(
 		l1Origin,
 		headBlockID,
 		txListBytes,
+		baseFee,
 	)
 
 	if rpcErr != nil || payloadErr != nil {
@@ -306,6 +314,7 @@ func (s *Syncer) createExecutionPayloads(
 	l1Origin *rawdb.L1Origin,
 	headBlockID *big.Int,
 	txListBytes []byte,
+	baseFeee *big.Int,
 ) (payloadData *engine.ExecutableData, rpcError error, payloadError error) {
 	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parentHash}
 	attributes := &engine.PayloadAttributes{
@@ -316,13 +325,14 @@ func (s *Syncer) createExecutionPayloads(
 		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
-			GasLimit:       uint64(event.Meta.GasLimit) + bindings.AnchorGasLimit,
+			GasLimit:       uint64(event.Meta.GasLimit) + s.anchorConstructor.GasLimit(),
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
 			ExtraData:      []byte{},
 		},
-		L1Origin: l1Origin,
+		BaseFeePerGas: baseFeee,
+		L1Origin:      l1Origin,
 	}
 
 	// Step 1, prepare a payload

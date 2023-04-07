@@ -27,8 +27,8 @@ TAIKO_MONO_DIR=$TAIKO_MONO_DIR \
 
 DEPLOYMENT_JSON=$(cat $TAIKO_MONO_DIR/packages/protocol/broadcast/DeployOnL1.s.sol/31337/run-latest.json)
 # TAIKO_L1_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq .transactions | jq 'to_entries[] | select(.value.contractName=="TaikoL1") | .contractAddress' | sed 's/\"//g')
-TAIKO_L1_CONTRACT_ADDRESS="0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0" # TODO: use jq to get TaikoL1 address
-L1_SIGNAL_SERVICE_CONTRACT_ADDRESS="0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1" # TODO: use jq to get L1 signal service address
+TAIKO_L1_CONTRACT_ADDRESS="0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82" # TODO: use jq to get TaikoL1 address
+L1_SIGNAL_SERVICE_CONTRACT_ADDRESS="0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44" # TODO: use jq to get L1 signal service address
 TAIKO_L2_CONTRACT_ADDRESS=0x0000777700000000000000000000000000000001
 
 trap "docker compose -f $TESTNET_CONFIG down -v" EXIT INT KILL ERR

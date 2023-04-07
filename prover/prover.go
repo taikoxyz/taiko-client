@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
@@ -140,15 +141,17 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		}
 	}
 
-	// Proof submitters
-	p.validProofSubmitter = proofSubmitter.NewValidProofSubmitter(
+	// Proof submitter
+	if p.validProofSubmitter, err = proofSubmitter.NewValidProofSubmitter(
 		p.rpc,
 		producer,
 		p.proveValidProofCh,
 		p.cfg.TaikoL2Address,
 		p.cfg.L1ProverPrivKey,
 		p.submitProofTxMutex,
-	)
+	); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -362,24 +365,26 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 
 // NeedNewProof checks whether the L2 block still needs a new proof.
 func (p *Prover) NeedNewProof(id *big.Int) (bool, error) {
-	var parentHash common.Hash
+	var parent *types.Header
 	if id.Cmp(common.Big1) == 0 {
 		header, err := p.rpc.L2.HeaderByNumber(p.ctx, common.Big0)
 		if err != nil {
 			return false, err
 		}
 
-		parentHash = header.Hash()
+		parent = header
 	} else {
 		parentL1Origin, err := p.rpc.WaitL1Origin(p.ctx, new(big.Int).Sub(id, common.Big1))
 		if err != nil {
 			return false, err
 		}
 
-		parentHash = parentL1Origin.L2BlockHash
+		if parent, err = p.rpc.L2.HeaderByHash(p.ctx, parentL1Origin.L2BlockHash); err != nil {
+			return false, err
+		}
 	}
 
-	fc, err := p.rpc.TaikoL1.GetForkChoice(nil, id, parentHash)
+	fc, err := p.rpc.TaikoL1.GetForkChoice(nil, id, parent.Hash(), uint32(parent.GasUsed))
 	if err != nil && !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
 		return false, encoding.TryParsingCustomError(err)
 	}

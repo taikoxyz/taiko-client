@@ -5,8 +5,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/urfave/cli/v2"
 )
@@ -18,6 +18,12 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 	proposeInterval := "10s"
 	commitSlot := 1024
+
+	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	s.Nil(err)
+
+	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	s.Nil(err)
 
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
@@ -38,12 +44,12 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(l2Endpoint, c.L2Endpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
-		s.Equal(bindings.GoldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
-		s.Equal(bindings.GoldenTouchAddress, c.L2SuggestedFeeRecipient)
+		s.Equal(goldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
+		s.Equal(goldenTouchAddress, c.L2SuggestedFeeRecipient)
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
 		s.Equal(uint64(commitSlot), c.CommitSlot)
 		s.Equal(1, len(c.LocalAddresses))
-		s.Equal(bindings.GoldenTouchAddress, c.LocalAddresses[0])
+		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -55,10 +61,10 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L2HTTPEndpoint.Name, l2Endpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
-		"-" + flags.L1ProposerPrivKey.Name, bindings.GoldenTouchPrivKey[2:],
-		"-" + flags.L2SuggestedFeeRecipient.Name, bindings.GoldenTouchAddress.Hex(),
+		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"-" + flags.ProposeInterval.Name, proposeInterval,
 		"-" + flags.CommitSlot.Name, strconv.Itoa(commitSlot),
-		"-" + flags.TxPoolLocals.Name, bindings.GoldenTouchAddress.Hex(),
+		"-" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
 	}))
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
-	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -25,8 +24,6 @@ func (s *AnchorTxConstructorTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 	c, err := New(
 		s.RpcClient,
-		bindings.GoldenTouchAddress,
-		bindings.GoldenTouchPrivKey,
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
@@ -42,26 +39,27 @@ func (s *AnchorTxConstructorTestSuite) TestGasLimit() {
 }
 
 func (s *AnchorTxConstructorTestSuite) TestAssembleAnchorTx() {
-	tx, err := s.c.AssembleAnchorTx(context.Background(), s.l1Height, s.l1Hash, common.Big0)
+	tx, err := s.c.AssembleAnchorTx(context.Background(), s.l1Height, s.l1Hash, common.Big1)
 	s.Nil(err)
 	s.NotNil(tx)
 }
 
 func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
+	godlenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	s.Nil(err)
+
 	c, err := New(
 		s.RpcClient,
-		bindings.GoldenTouchAddress,
-		bindings.GoldenTouchPrivKey,
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 
-	opts, err := c.transactOpts(context.Background(), common.Big0)
+	opts, err := c.transactOpts(context.Background(), common.Big1)
 	s.Nil(err)
 	s.Equal(true, opts.NoSend)
 	s.Equal(common.Big0, opts.GasPrice)
 	s.Equal(common.Big0, opts.Nonce)
-	s.Equal(bindings.GoldenTouchAddress, opts.From)
+	s.Equal(godlenTouchAddress, opts.From)
 }
 
 func (s *AnchorTxConstructorTestSuite) TestSign() {

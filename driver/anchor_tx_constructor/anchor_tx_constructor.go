@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver/signer"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -26,20 +25,30 @@ type AnchorTxConstructor struct {
 }
 
 // New creates a new AnchorConstructor instance.
-func New(
-	rpc *rpc.Client,
-	goldenTouchAddress common.Address,
-	goldenTouchPrivKey string,
-	signalServiceAddress common.Address,
-) (*AnchorTxConstructor, error) {
-	signer, err := signer.NewFixedKSigner(goldenTouchPrivKey)
+func New(rpc *rpc.Client, signalServiceAddress common.Address) (*AnchorTxConstructor, error) {
+	gasLimit, err := rpc.TaikoL2.ANCHORGASCOST(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	goldenTouchAddress, err := rpc.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	goldenTouchPrivKey, err := rpc.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	signer, err := signer.NewFixedKSigner("0x" + common.Bytes2Hex(goldenTouchPrivKey.Bytes()))
 	if err != nil {
 		return nil, fmt.Errorf("invalid golden touch private key %s", goldenTouchPrivKey)
 	}
 
 	return &AnchorTxConstructor{
 		rpc:                  rpc,
-		gasLimit:             bindings.AnchorGasLimit,
+		gasLimit:             gasLimit,
 		goldenTouchAddress:   goldenTouchAddress,
 		signalServiceAddress: signalServiceAddress,
 		signer:               signer,
@@ -65,7 +74,20 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 		return nil, err
 	}
 
-	return c.rpc.TaikoL2.Anchor(opts, l1Height, l1Hash, signalRoot)
+	l2Parent, err := c.rpc.L2.BlockByNumber(ctx, new(big.Int).Sub(l2Height, big.NewInt(1)))
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info(
+		"Anchor arguments",
+		"l1Hash", l1Hash,
+		"signalRoot", signalRoot,
+		"l1Height", l1Height,
+		"gasUsed", l2Parent.GasUsed(),
+	)
+
+	return c.rpc.TaikoL2.Anchor(opts, l1Hash, signalRoot, l1Height.Uint64(), l2Parent.GasUsed())
 }
 
 // transactOpts is a utility method to create some transact options of the anchor transaction in given L2 block with
@@ -74,7 +96,7 @@ func (c *AnchorTxConstructor) transactOpts(ctx context.Context, l2Height *big.In
 	signer := types.LatestSignerForChainID(c.rpc.L2ChainID)
 
 	// Get the nonce of golden touch account at the specified height.
-	nonce, err := c.rpc.L2AccountNonce(ctx, c.goldenTouchAddress, l2Height)
+	nonce, err := c.rpc.L2AccountNonce(ctx, c.goldenTouchAddress, new(big.Int).Sub(l2Height, big.NewInt(1)))
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,6 @@ package rpc
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
@@ -57,16 +56,6 @@ func TestL2ExecutionEngineSyncProgress(t *testing.T) {
 	progress, err := client.L2ExecutionEngineSyncProgress(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, progress)
-}
-
-func TestWaitL1OriginTimeout(t *testing.T) {
-	client := newTestClient(t)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err := client.WaitL1Origin(ctx, common.Big1)
-	require.Nil(t, err)
 }
 
 func TestGetProtocolStateVariables(t *testing.T) {

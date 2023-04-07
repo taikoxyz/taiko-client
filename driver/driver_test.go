@@ -68,7 +68,6 @@ func (s *DriverTestSuite) TestName() {
 }
 
 func (s *DriverTestSuite) TestProcessL1Blocks() {
-	s.T().Skip() // TODO: fix this test
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 

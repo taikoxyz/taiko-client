@@ -253,7 +253,7 @@ func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
 	return p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
 		TxListHash:      crypto.Keccak256Hash([]byte{}),
 		Beneficiary:     p.L2SuggestedFeeRecipient(),
-		GasLimit:        0,
+		GasLimit:        21000,
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
 		CacheTxListInfo: 0,
