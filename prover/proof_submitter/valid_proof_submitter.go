@@ -174,6 +174,9 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return err
 	}
 
+	// TODO(david): sometimes its unmatched, fix this
+	header.Time = proofWithHeader.Meta.Timestamp
+
 	evidence := &encoding.TaikoL1Evidence{
 		Meta:     *proofWithHeader.Meta,
 		Header:   *encoding.FromGethHeader(header),
@@ -181,6 +184,15 @@ func (s *ValidProofSubmitter) SubmitProof(
 		Proofs:   [][]byte{zkProof, anchorTxProof, anchorReceiptProof},
 		Circuits: circuitsIdx,
 	}
+
+	proposedBlock, err := s.rpc.TaikoL1.GetProposedBlock(nil, blockID)
+	if err != nil {
+		return err
+	}
+
+	log.Info("proposedBlock", "proposedBlock", proposedBlock)
+	log.Info("meta", "id", blockID, "meta", proofWithHeader.Meta)
+	log.Info("header", "id", blockID, "header", *encoding.FromGethHeader(header))
 
 	input, err := encoding.EncodeProveBlockInput(evidence, anchorTx, anchorTxReceipt)
 	if err != nil {
