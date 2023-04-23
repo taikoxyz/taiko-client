@@ -26,10 +26,9 @@ TAIKO_MONO_DIR=$TAIKO_MONO_DIR \
     $DIR/nodes/init.sh
 
 DEPLOYMENT_JSON=$(cat $TAIKO_MONO_DIR/packages/protocol/broadcast/DeployOnL1.s.sol/31337/run-latest.json)
-# TAIKO_L1_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq .transactions | jq 'to_entries[] | select(.value.contractName=="TaikoL1") | .contractAddress' | sed 's/\"//g')
-TAIKO_L1_CONTRACT_ADDRESS="0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1" # TODO: use jq to get TaikoL1 address
-L1_SIGNAL_SERVICE_CONTRACT_ADDRESS="0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44" # TODO: use jq to get L1 signal service address
-TAIKO_L2_CONTRACT_ADDRESS=0x0000777700000000000000000000000000000001
+# TAIKO_L1_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq .transactions | jq 'to_entries[] | select(.value.contractName=="TaikoL1") | .value.contractAddress' | sed 's/\"//g')
+TAIKO_L1_CONTRACT_ADDRESS="0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE" # TODO: use jq to get TaikoL1 address
+L1_SIGNAL_SERVICE_CONTRACT_ADDRESS="0x09635F643e140090A9A8Dcd712eD6285858ceBef" # TODO: use jq to get L1 signal service address
 
 trap "docker compose -f $TESTNET_CONFIG down -v" EXIT INT KILL ERR
 
@@ -42,7 +41,7 @@ if [ "$RUN_TESTS" == "true" ]; then
     L2_EXECUTION_ENGINE_WS_ENDPOINT=ws://localhost:28546 \
     L2_EXECUTION_ENGINE_AUTH_ENDPOINT=http://localhost:28551 \
     TAIKO_L1_ADDRESS=$TAIKO_L1_CONTRACT_ADDRESS \
-    TAIKO_L2_ADDRESS=$TAIKO_L2_CONTRACT_ADDRESS \
+    TAIKO_L2_ADDRESS=0x0000777700000000000000000000000000000001 \
     L1_SIGNAL_SERVICE_CONTRACT_ADDRESS=$L1_SIGNAL_SERVICE_CONTRACT_ADDRESS \
     L1_CONTRACT_OWNER_PRIVATE_KEY=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
     L1_PROPOSER_PRIVATE_KEY=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \

@@ -149,14 +149,27 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return err
 	}
 
+	parent, err := s.rpc.L2.BlockByHash(ctx, block.ParentHash())
+	if err != nil {
+		return err
+	}
+
+	blockInfo, err := s.rpc.TaikoL1.GetBlock(nil, blockID)
+	if err != nil {
+		return err
+	}
+
 	evidence := &encoding.TaikoL1Evidence{
-		Meta:       *proofWithHeader.Meta,
-		Zkproof:    encoding.ZkProof{Data: zkProof, VerifierId: circuitsIdx},
-		ParentHash: block.ParentHash(),
-		BlockHash:  block.Hash(),
-		SignalRoot: signalRoot,
-		Graffiti:   [32]byte{},
-		Prover:     s.proverAddress,
+		MetaHash:      blockInfo.MetaHash,
+		ParentHash:    block.ParentHash(),
+		BlockHash:     block.Hash(),
+		SignalRoot:    signalRoot,
+		Graffiti:      [32]byte{},
+		Prover:        s.proverAddress,
+		ParentGasUsed: uint32(parent.GasUsed()),
+		GasUsed:       uint32(block.GasUsed()),
+		VerifierId:    circuitsIdx,
+		Proof:         zkProof,
 	}
 
 	input, err := encoding.EncodeProveBlockInput(evidence, anchorTx, anchorTxReceipt)

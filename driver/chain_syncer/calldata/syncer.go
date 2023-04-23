@@ -167,7 +167,7 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	if event.Meta.Timestamp > uint64(time.Now().Unix()) {
-		log.Warn("Future L2 block, waiting", "L2 block timestamp", event.Meta.Timestamp, "now", time.Now().Unix())
+		log.Warn("Future L2 block, waiting", "L2BlockTimestamp", event.Meta.Timestamp, "now", time.Now().Unix())
 		time.Sleep(time.Until(time.Unix(int64(event.Meta.Timestamp), 0)))
 	}
 

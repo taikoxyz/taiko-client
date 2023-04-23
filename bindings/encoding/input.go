@@ -88,26 +88,10 @@ var (
 			Type: "address",
 		},
 	}
-	zkProofComponents = []abi.ArgumentMarshaling{
-		{
-			Name: "data",
-			Type: "bytes",
-		},
-		{
-			Name: "verifierId",
-			Type: "uint16",
-		},
-	}
 	evidenceComponents = []abi.ArgumentMarshaling{
 		{
-			Name:       "meta",
-			Type:       "tuple",
-			Components: blockMetadataComponents,
-		},
-		{
-			Name:       "zkproof",
-			Type:       "tuple",
-			Components: zkProofComponents,
+			Name: "metaHash",
+			Type: "bytes32",
 		},
 		{
 			Name: "parentHash",
@@ -128,6 +112,22 @@ var (
 		{
 			Name: "prover",
 			Type: "address",
+		},
+		{
+			Name: "parentGasUsed",
+			Type: "uint32",
+		},
+		{
+			Name: "gasUsed",
+			Type: "uint32",
+		},
+		{
+			Name: "verifierId",
+			Type: "uint16",
+		},
+		{
+			Name: "proof",
+			Type: "bytes",
 		},
 	}
 )
