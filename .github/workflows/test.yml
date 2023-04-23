@@ -45,7 +45,7 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
-          ref: major_protocol_upgrade_rebase_get_base_fee
+          ref: update-deploy-l1
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
