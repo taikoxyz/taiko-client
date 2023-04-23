@@ -6,7 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 type BlockHeader struct {
@@ -29,18 +28,16 @@ type BlockHeader struct {
 }
 
 type TaikoL1Evidence struct {
-	Meta       bindings.TaikoDataBlockMetadata
-	Zkproof    ZkProof
-	ParentHash [32]byte
-	BlockHash  [32]byte
-	SignalRoot [32]byte
-	Graffiti   [32]byte
-	Prover     common.Address
-}
-
-type ZkProof struct {
-	Data       []byte
-	VerifierId uint16
+	MetaHash      [32]byte
+	BlockHash     [32]byte
+	ParentHash    [32]byte
+	SignalRoot    [32]byte
+	Graffiti      [32]byte
+	Prover        common.Address
+	ParentGasUsed uint32
+	GasUsed       uint32
+	VerifierId    uint16
+	Proof         []byte
 }
 
 type TaikoL1BlockMetadataInput struct {

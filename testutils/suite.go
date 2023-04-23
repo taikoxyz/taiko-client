@@ -71,11 +71,11 @@ func (s *ClientTestSuite) SetupTest() {
 	opts, err := bind.NewKeyedTransactorWithChainID(l1ProposerPrivKey, rpcCli.L1ChainID)
 	s.Nil(err)
 
-	balance, err := rpcCli.TaikoL1.GetBalance(nil, crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey))
+	balance, err := rpcCli.TaikoL1.GetTaikoTokenBalance(nil, crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey))
 	s.Nil(err)
 
 	if balance.Cmp(common.Big0) == 0 {
-		tx, err := rpcCli.TaikoL1.Deposit(opts, new(big.Int).SetUint64(uint64(math.Pow(2, 32))))
+		tx, err := rpcCli.TaikoL1.DepositTaikoToken(opts, new(big.Int).SetUint64(uint64(math.Pow(2, 32))))
 		s.Nil(err)
 
 		receipt, err := rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
