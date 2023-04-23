@@ -32,7 +32,7 @@ require (
 	github.com/holiman/uint256 v1.2.0 // indirect
 	github.com/huin/goupnp v1.0.3 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
-	github.com/klauspost/cpuid/v2 v2.0.14 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
@@ -42,7 +42,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/prysmaticlabs/fastssz v0.0.0-20220628121656-93dfe28febab // indirect
-	github.com/prysmaticlabs/gohashtree v0.0.1-alpha.0.20220303211031-f753e083138c // indirect
+	github.com/prysmaticlabs/gohashtree v0.0.3-alpha // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
@@ -54,7 +54,7 @@ require (
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
