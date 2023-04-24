@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	anchorGasCost = 150000
+	anchorGasCost = 500000
 )
 
 // AnchorTxConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
