@@ -276,6 +276,12 @@ func (s *Syncer) insertNewHead(
 		return nil, nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
 	}
 
+	// Get withdrawals
+	withdrawals := make(types.Withdrawals, len(event.Meta.DepositsProcessed))
+	for i, d := range event.Meta.DepositsProcessed {
+		withdrawals[i] = &types.Withdrawal{Address: d.Recipient, Amount: d.Amount.Uint64()}
+	}
+
 	payload, rpcErr, payloadErr := s.createExecutionPayloads(
 		ctx,
 		event,
@@ -284,6 +290,7 @@ func (s *Syncer) insertNewHead(
 		headBlockID,
 		txListBytes,
 		baseFee,
+		withdrawals,
 	)
 
 	if rpcErr != nil || payloadErr != nil {
@@ -315,13 +322,14 @@ func (s *Syncer) createExecutionPayloads(
 	headBlockID *big.Int,
 	txListBytes []byte,
 	baseFeee *big.Int,
+	withdrawals types.Withdrawals,
 ) (payloadData *engine.ExecutableData, rpcError error, payloadError error) {
 	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parentHash}
 	attributes := &engine.PayloadAttributes{
 		Timestamp:             event.Meta.Timestamp,
 		Random:                event.Meta.MixHash,
 		SuggestedFeeRecipient: event.Meta.Beneficiary,
-		Withdrawals:           nil,
+		Withdrawals:           withdrawals,
 		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
