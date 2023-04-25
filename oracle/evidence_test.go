@@ -5,6 +5,7 @@ import (
 	"crypto/elliptic"
 	"math/big"
 	"math/rand"
+	"os"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -36,7 +37,7 @@ func TestHashAndSignEvidenceForOracleProof(t *testing.T) {
 		Proof:         nil,
 	}
 
-	privateKey, err := crypto.HexToECDSA("1acb95df9ff6e93035ca3b8afce58273ac880d7b8bcb8a26b0be5a84be3a879d")
+	privateKey, err := crypto.HexToECDSA(os.Getenv("L1_PROVER_PRIVATE_KEY"))
 	require.Nil(t, err)
 
 	publicKey := privateKey.Public()
