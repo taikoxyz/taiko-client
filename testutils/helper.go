@@ -115,6 +115,9 @@ func ProposeAndInsertValidBlock(
 		close(sink)
 	}()
 
+	baseFee, err := s.RpcClient.TaikoL2.GetBasefee(nil, 0, 60000000, l2Head.GasUsed)
+	s.Nil(err)
+
 	nonce, err := s.RpcClient.L2.PendingNonceAt(context.Background(), s.TestAddr)
 	s.Nil(err)
 
@@ -123,7 +126,7 @@ func ProposeAndInsertValidBlock(
 		common.BytesToAddress(RandomBytes(32)),
 		common.Big1,
 		100000,
-		common.Big1,
+		baseFee,
 		[]byte{},
 	)
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RpcClient.L2ChainID), s.TestAddrPrivKey)

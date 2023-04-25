@@ -25,7 +25,7 @@ func (c *EngineClient) ForkchoiceUpdate(
 	defer cancel()
 
 	var result *engine.ForkChoiceResponse
-	if err := c.Client.CallContext(timeoutCtx, &result, "engine_forkchoiceUpdatedV1", fc, attributes); err != nil {
+	if err := c.Client.CallContext(timeoutCtx, &result, "engine_forkchoiceUpdatedV2", fc, attributes); err != nil {
 		return nil, err
 	}
 
@@ -41,7 +41,7 @@ func (c *EngineClient) NewPayload(
 	defer cancel()
 
 	var result *engine.PayloadStatusV1
-	if err := c.Client.CallContext(timeoutCtx, &result, "engine_newPayloadV1", payload); err != nil {
+	if err := c.Client.CallContext(timeoutCtx, &result, "engine_newPayloadV2", payload); err != nil {
 		return nil, err
 	}
 
@@ -56,10 +56,10 @@ func (c *EngineClient) GetPayload(
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	var result *engine.ExecutableData
-	if err := c.Client.CallContext(timeoutCtx, &result, "engine_getPayloadV1", payloadID); err != nil {
+	var result *engine.ExecutionPayloadEnvelope
+	if err := c.Client.CallContext(timeoutCtx, &result, "engine_getPayloadV2", payloadID); err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	return result.ExecutionPayload, nil
 }

@@ -27,11 +27,11 @@ echo ""
 echo "Start generating go contract bindings..."
 echo ""
 
-cat ${TAIKO_MONO_DIR}/packages/protocol/artifacts/contracts/L1/TaikoL1.sol/TaikoL1.json |
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoL1.sol/TaikoL1.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoL1Client --pkg bindings --out $DIR/../bindings/gen_taiko_l1.go
 
-cat ${TAIKO_MONO_DIR}/packages/protocol/artifacts/contracts/L2/TaikoL2.sol/TaikoL2.json |
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoL2.sol/TaikoL2.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoL2Client --pkg bindings --out $DIR/../bindings/gen_taiko_l2.go
 

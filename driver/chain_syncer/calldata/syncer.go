@@ -208,6 +208,8 @@ func (s *Syncer) onBlockProposed(
 		"latestVerifiedBlockHeight", s.state.GetLatestVerifiedBlock().Height,
 		"latestVerifiedBlockHash", s.state.GetLatestVerifiedBlock().Hash,
 		"transactions", len(payloadData.Transactions),
+		"baseFee", payloadData.BaseFeePerGas,
+		"withdrawals", len(payloadData.Withdrawals),
 	)
 
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
@@ -247,12 +249,30 @@ func (s *Syncer) insertNewHead(
 		}
 	}
 
+	// Get L2 baseFee
+	baseFee, err := s.rpc.TaikoL2.GetBasefee(
+		nil,
+		uint32(event.Meta.Timestamp-parent.Time),
+		uint64(event.Meta.GasLimit),
+		parent.GasUsed,
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
+	}
+
+	// Get withdrawals
+	withdrawals := make(types.Withdrawals, len(event.Meta.DepositsProcessed))
+	for i, d := range event.Meta.DepositsProcessed {
+		withdrawals[i] = &types.Withdrawal{Address: d.Recipient, Amount: d.Amount.Uint64()}
+	}
+
 	// Assemble a TaikoL2.anchor transaction
 	anchorTx, err := s.anchorConstructor.AssembleAnchorTx(
 		ctx,
 		new(big.Int).SetUint64(event.Meta.L1Height),
 		event.Meta.L1Hash,
 		new(big.Int).Add(parent.Number, common.Big1),
+		baseFee,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create TaikoL2.anchor transaction: %w", err)
@@ -265,17 +285,6 @@ func (s *Syncer) insertNewHead(
 		return nil, nil, err
 	}
 
-	// Get L2 baseFee
-	baseFee, err := s.rpc.TaikoL2.GetBasefee(
-		nil,
-		uint32(event.Meta.Timestamp-parent.Time),
-		uint64(event.Meta.GasLimit),
-		parent.GasUsed,
-	)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
-	}
-
 	payload, rpcErr, payloadErr := s.createExecutionPayloads(
 		ctx,
 		event,
@@ -284,6 +293,7 @@ func (s *Syncer) insertNewHead(
 		headBlockID,
 		txListBytes,
 		baseFee,
+		withdrawals,
 	)
 
 	if rpcErr != nil || payloadErr != nil {
@@ -315,13 +325,14 @@ func (s *Syncer) createExecutionPayloads(
 	headBlockID *big.Int,
 	txListBytes []byte,
 	baseFeee *big.Int,
+	withdrawals types.Withdrawals,
 ) (payloadData *engine.ExecutableData, rpcError error, payloadError error) {
 	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parentHash}
 	attributes := &engine.PayloadAttributes{
 		Timestamp:             event.Meta.Timestamp,
 		Random:                event.Meta.MixHash,
 		SuggestedFeeRecipient: event.Meta.Beneficiary,
-		Withdrawals:           nil,
+		Withdrawals:           withdrawals,
 		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
