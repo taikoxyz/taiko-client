@@ -45,7 +45,7 @@ func (s *AnchorTxConstructorTestSuite) TestAssembleAnchorTx() {
 }
 
 func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
-	godlenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)
 
 	c, err := New(
@@ -59,7 +59,7 @@ func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
 	s.Equal(true, opts.NoSend)
 	s.Equal(common.Big0, opts.GasPrice)
 	s.Equal(common.Big0, opts.Nonce)
-	s.Equal(godlenTouchAddress, opts.From)
+	s.Equal(goldenTouchAddress, opts.From)
 }
 
 func (s *AnchorTxConstructorTestSuite) TestSign() {
