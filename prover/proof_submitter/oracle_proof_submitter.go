@@ -14,7 +14,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
-	"github.com/taikoxyz/taiko-client/oracle"
+	"github.com/taikoxyz/taiko-client/pkg/oracle"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	anchorTxValidator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
