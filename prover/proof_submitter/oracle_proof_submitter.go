@@ -14,18 +14,18 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
+	"github.com/taikoxyz/taiko-client/oracle"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	anchorTxValidator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
-var _ ProofSubmitter = (*ValidProofSubmitter)(nil)
+var _ ProofSubmitter = (*OracleProofSubmitter)(nil)
 
-// ValidProofSubmitter is responsible requesting zk proofs for the given valid L2
+// OracleProofSubmitter is responsible requesting zk proofs for the given valid L2
 // blocks, and submitting the generated proofs to the TaikoL1 smart contract.
-type ValidProofSubmitter struct {
+type OracleProofSubmitter struct {
 	rpc               *rpc.Client
-	proofProducer     proofProducer.ProofProducer
 	resultCh          chan *proofProducer.ProofWithHeader
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	proverPrivKey     *ecdsa.PrivateKey
@@ -33,23 +33,21 @@ type ValidProofSubmitter struct {
 	mutex             *sync.Mutex
 }
 
-// NewValidProofSubmitter creates a new ValidProofSubmitter instance.
-func NewValidProofSubmitter(
+// NewOracleProofSubmitter creates a new OracleProofSubmitter instance.
+func NewOracleProofSubmitter(
 	rpc *rpc.Client,
-	proofProducer proofProducer.ProofProducer,
 	resultCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
 	mutex *sync.Mutex,
-) (*ValidProofSubmitter, error) {
+) (*OracleProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ValidProofSubmitter{
+	return &OracleProofSubmitter{
 		rpc:               rpc,
-		proofProducer:     proofProducer,
 		resultCh:          resultCh,
 		anchorTxValidator: anchorValidator,
 		proverPrivKey:     proverPrivKey,
@@ -59,7 +57,7 @@ func NewValidProofSubmitter(
 }
 
 // RequestProof implements the ProofSubmitter interface.
-func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
+func (s *OracleProofSubmitter) RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
 	l1Origin, err := s.rpc.WaitL1Origin(ctx, event.Id)
 	if err != nil {
 		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.Id, err)
@@ -71,39 +69,35 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		return err
 	}
 
-	// Request proof.
-	opts := &proofProducer.ProofRequestOptions{
-		Height:             header.Number,
-		ProverAddress:      s.proverAddress,
-		ProposeBlockTxHash: event.Raw.TxHash,
-	}
-
-	if err := s.proofProducer.RequestProof(ctx, opts, event.Id, &event.Meta, header, s.resultCh); err != nil {
-		return err
-	}
-
 	metrics.ProverQueuedProofCounter.Inc(1)
 	metrics.ProverQueuedValidProofCounter.Inc(1)
+
+	// "proof" for Oracle Proof is actually signed in SubmitProof, since
+	// we already have the evidence and to not duplicate RPC calls.
+	// "Proof" and "Degree" fields are not used here.
+	s.resultCh <- &proofProducer.ProofWithHeader{
+		Header:  header,
+		BlockID: event.Id,
+		Meta:    &event.Meta,
+	}
 
 	return nil
 }
 
 // SubmitProof implements the ProofSubmitter interface.
-func (s *ValidProofSubmitter) SubmitProof(
+func (s *OracleProofSubmitter) SubmitProof(
 	ctx context.Context,
 	proofWithHeader *proofProducer.ProofWithHeader,
 ) (err error) {
 	log.Info(
-		"New valid block proof",
+		"New oracle block proof",
 		"blockID", proofWithHeader.BlockID,
 		"beneficiary", proofWithHeader.Meta.Beneficiary,
 		"hash", proofWithHeader.Header.Hash(),
-		"proof", common.Bytes2Hex(proofWithHeader.ZkProof),
 	)
 	var (
 		blockID = proofWithHeader.BlockID
 		header  = proofWithHeader.Header
-		zkProof = proofWithHeader.ZkProof
 	)
 
 	metrics.ProverReceivedProofCounter.Inc(1)
@@ -139,11 +133,6 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
-	circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
-	if err != nil {
-		return err
-	}
-
 	signalRoot, err := s.anchorTxValidator.GetAnchoredSignalRoot(ctx, anchorTx)
 	if err != nil {
 		return err
@@ -159,17 +148,24 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return err
 	}
 
+	// signature should be done with proof set to nil, verifierID set to 0,
+	// and prover set to 0 address.
 	evidence := &encoding.TaikoL1Evidence{
 		MetaHash:      blockInfo.MetaHash,
 		ParentHash:    block.ParentHash(),
 		BlockHash:     block.Hash(),
 		SignalRoot:    signalRoot,
 		Graffiti:      [32]byte{},
-		Prover:        s.proverAddress,
+		Prover:        common.HexToAddress("0x0000000000000000000000000000000000000000"),
 		ParentGasUsed: uint32(parent.GasUsed()),
 		GasUsed:       uint32(block.GasUsed()),
-		VerifierId:    circuitsIdx,
-		Proof:         zkProof,
+		VerifierId:    0,
+		Proof:         nil,
+	}
+
+	_, _, err = oracle.HashSignAndSetEvidenceForOracleProof(evidence, s.proverPrivKey)
+	if err != nil {
+		return fmt.Errorf("failed to sign evidence: %w", err)
 	}
 
 	input, err := encoding.EncodeProveBlockInput(evidence)
@@ -199,7 +195,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 	}
 
 	log.Info(
-		"✅ Valid block proved",
+		"✅ Oracle block proved",
 		"blockID", proofWithHeader.BlockID,
 		"hash", block.Hash(), "height", block.Number(),
 		"transactions", block.Transactions().Len(),

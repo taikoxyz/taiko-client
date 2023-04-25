@@ -123,34 +123,47 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
-	var producer proofProducer.ProofProducer
-	if cfg.Dummy {
-		producer = &proofProducer.DummyProofProducer{
-			RandomDummyProofDelayLowerBound: p.cfg.RandomDummyProofDelayLowerBound,
-			RandomDummyProofDelayUpperBound: p.cfg.RandomDummyProofDelayUpperBound,
-		}
-	} else {
-		if producer, err = proofProducer.NewZkevmRpcdProducer(
-			cfg.ZKEvmRpcdEndpoint,
-			cfg.ZkEvmRpcdParamsPath,
-			cfg.L1HttpEndpoint,
-			cfg.L2HttpEndpoint,
-			true,
+	if cfg.OracleProver {
+		// Proof submitter
+		if p.validProofSubmitter, err = proofSubmitter.NewOracleProofSubmitter(
+			p.rpc,
+			p.proveValidProofCh,
+			p.cfg.TaikoL2Address,
+			p.cfg.L1ProverPrivKey,
+			p.submitProofTxMutex,
 		); err != nil {
 			return err
 		}
-	}
+	} else {
+		var producer proofProducer.ProofProducer
 
-	// Proof submitter
-	if p.validProofSubmitter, err = proofSubmitter.NewValidProofSubmitter(
-		p.rpc,
-		producer,
-		p.proveValidProofCh,
-		p.cfg.TaikoL2Address,
-		p.cfg.L1ProverPrivKey,
-		p.submitProofTxMutex,
-	); err != nil {
-		return err
+		if cfg.Dummy {
+			producer = &proofProducer.DummyProofProducer{
+				RandomDummyProofDelayLowerBound: p.cfg.RandomDummyProofDelayLowerBound,
+				RandomDummyProofDelayUpperBound: p.cfg.RandomDummyProofDelayUpperBound,
+			}
+		} else {
+			if producer, err = proofProducer.NewZkevmRpcdProducer(
+				cfg.ZKEvmRpcdEndpoint,
+				cfg.ZkEvmRpcdParamsPath,
+				cfg.L1HttpEndpoint,
+				cfg.L2HttpEndpoint,
+				true,
+			); err != nil {
+				return err
+			}
+		}
+		// Proof submitter
+		if p.validProofSubmitter, err = proofSubmitter.NewValidProofSubmitter(
+			p.rpc,
+			producer,
+			p.proveValidProofCh,
+			p.cfg.TaikoL2Address,
+			p.cfg.L1ProverPrivKey,
+			p.submitProofTxMutex,
+		); err != nil {
+			return err
+		}
 	}
 
 	return nil

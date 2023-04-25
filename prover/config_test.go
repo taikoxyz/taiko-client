@@ -29,6 +29,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
 		&cli.BoolFlag{Name: flags.Dummy.Name},
 		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
+		&cli.BoolFlag{Name: flags.OracleProver.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
@@ -46,6 +47,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(30*time.Minute, *c.RandomDummyProofDelayLowerBound)
 		s.Equal(time.Hour, *c.RandomDummyProofDelayUpperBound)
 		s.True(c.Dummy)
+		s.True(c.OracleProver)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -62,5 +64,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Dummy.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
+		"-" + flags.OracleProver.Name,
 	}))
 }
