@@ -50,6 +50,7 @@ func TestHashAndSignEvidenceForOracleProof(t *testing.T) {
 	hash := crypto.Keccak256Hash(input)
 
 	sig, _, err := HashSignAndSetEvidenceForOracleProof(evidence, privateKey)
+	require.Nil(t, err)
 
 	pubKey, err := crypto.Ecrecover(hash.Bytes(), sig)
 	require.Nil(t, err)
