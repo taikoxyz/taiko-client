@@ -51,5 +51,4 @@ cd $TAIKO_MONO_DIR/packages/protocol &&
         --fork-url http://localhost:18545 \
         --broadcast \
         --ffi \
-        -vvvv \
-        --via-ir
+        -vvvv
