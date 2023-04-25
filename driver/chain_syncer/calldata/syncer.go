@@ -208,6 +208,8 @@ func (s *Syncer) onBlockProposed(
 		"latestVerifiedBlockHeight", s.state.GetLatestVerifiedBlock().Height,
 		"latestVerifiedBlockHash", s.state.GetLatestVerifiedBlock().Hash,
 		"transactions", len(payloadData.Transactions),
+		"baseFee", payloadData.BaseFeePerGas,
+		"withdrawals", len(payloadData.Withdrawals),
 	)
 
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
@@ -247,24 +249,6 @@ func (s *Syncer) insertNewHead(
 		}
 	}
 
-	// Assemble a TaikoL2.anchor transaction
-	anchorTx, err := s.anchorConstructor.AssembleAnchorTx(
-		ctx,
-		new(big.Int).SetUint64(event.Meta.L1Height),
-		event.Meta.L1Hash,
-		new(big.Int).Add(parent.Number, common.Big1),
-	)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create TaikoL2.anchor transaction: %w", err)
-	}
-
-	txList = append([]*types.Transaction{anchorTx}, txList...)
-
-	if txListBytes, err = rlp.EncodeToBytes(txList); err != nil {
-		log.Warn("Encode txList error", "blockID", event.Id, "error", err)
-		return nil, nil, err
-	}
-
 	// Get L2 baseFee
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
 		nil,
@@ -280,6 +264,25 @@ func (s *Syncer) insertNewHead(
 	withdrawals := make(types.Withdrawals, len(event.Meta.DepositsProcessed))
 	for i, d := range event.Meta.DepositsProcessed {
 		withdrawals[i] = &types.Withdrawal{Address: d.Recipient, Amount: d.Amount.Uint64()}
+	}
+
+	// Assemble a TaikoL2.anchor transaction
+	anchorTx, err := s.anchorConstructor.AssembleAnchorTx(
+		ctx,
+		new(big.Int).SetUint64(event.Meta.L1Height),
+		event.Meta.L1Hash,
+		new(big.Int).Add(parent.Number, common.Big1),
+		baseFee,
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create TaikoL2.anchor transaction: %w", err)
+	}
+
+	txList = append([]*types.Transaction{anchorTx}, txList...)
+
+	if txListBytes, err = rlp.EncodeToBytes(txList); err != nil {
+		log.Warn("Encode txList error", "blockID", event.Id, "error", err)
+		return nil, nil, err
 	}
 
 	payload, rpcErr, payloadErr := s.createExecutionPayloads(

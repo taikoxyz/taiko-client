@@ -39,7 +39,7 @@ func (s *AnchorTxConstructorTestSuite) TestGasLimit() {
 }
 
 func (s *AnchorTxConstructorTestSuite) TestAssembleAnchorTx() {
-	tx, err := s.c.AssembleAnchorTx(context.Background(), s.l1Height, s.l1Hash, common.Big1)
+	tx, err := s.c.AssembleAnchorTx(context.Background(), s.l1Height, s.l1Hash, common.Big1, common.Big256)
 	s.Nil(err)
 	s.NotNil(tx)
 }
@@ -54,12 +54,13 @@ func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
 	)
 	s.Nil(err)
 
-	opts, err := c.transactOpts(context.Background(), common.Big1)
+	opts, err := c.transactOpts(context.Background(), common.Big1, common.Big256)
 	s.Nil(err)
 	s.Equal(true, opts.NoSend)
-	s.Equal(common.Big0, opts.GasPrice)
 	s.Equal(common.Big0, opts.Nonce)
 	s.Equal(godlenTouchAddress, opts.From)
+	s.Equal(common.Big256, opts.GasFeeCap)
+	s.Equal(common.Big0, opts.GasTipCap)
 }
 
 func (s *AnchorTxConstructorTestSuite) TestSign() {

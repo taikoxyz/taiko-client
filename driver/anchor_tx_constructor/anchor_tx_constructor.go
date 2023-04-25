@@ -63,8 +63,9 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 	l1Hash common.Hash,
 	// Height of the L2 block which including the TaikoL2.anchor transaction.
 	l2Height *big.Int,
+	baseFee *big.Int,
 ) (*types.Transaction, error) {
-	opts, err := c.transactOpts(ctx, l2Height)
+	opts, err := c.transactOpts(ctx, l2Height, baseFee)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +93,11 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 
 // transactOpts is a utility method to create some transact options of the anchor transaction in given L2 block with
 // golden touch account's private key.
-func (c *AnchorTxConstructor) transactOpts(ctx context.Context, l2Height *big.Int) (*bind.TransactOpts, error) {
+func (c *AnchorTxConstructor) transactOpts(
+	ctx context.Context,
+	l2Height *big.Int,
+	baseFee *big.Int,
+) (*bind.TransactOpts, error) {
 	signer := types.LatestSignerForChainID(c.rpc.L2ChainID)
 
 	// Get the nonce of golden touch account at the specified height.
@@ -113,11 +118,12 @@ func (c *AnchorTxConstructor) transactOpts(ctx context.Context, l2Height *big.In
 			}
 			return tx.WithSignature(signer, signature)
 		},
-		Nonce:    new(big.Int).SetUint64(nonce),
-		Context:  ctx,
-		GasPrice: common.Big0,
-		GasLimit: c.gasLimit,
-		NoSend:   true,
+		Nonce:     new(big.Int).SetUint64(nonce),
+		Context:   ctx,
+		GasFeeCap: baseFee,
+		GasTipCap: common.Big0,
+		GasLimit:  c.gasLimit,
+		NoSend:    true,
 	}, nil
 }
 
