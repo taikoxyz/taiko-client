@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	anchorGasCost = 500000
+	// NOTE: this value should match the one defined in contracts/L2/LibL2Consts.sol
+	anchorGasCost = 180000
 )
 
 // AnchorTxConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
