@@ -163,24 +163,26 @@ func (s *ValidProofSubmitter) SubmitProof(
 		BlockHash:     block.Hash(),
 		SignalRoot:    signalRoot,
 		Graffiti:      [32]byte{},
-		Prover:        s.proverAddress,
 		ParentGasUsed: uint32(parent.GasUsed()),
 		GasUsed:       uint32(block.GasUsed()),
 		Proof:         zkProof,
 	}
 
 	var circuitsIdx uint16
+	var prover common.Address
 
 	if s.isOracle {
-		evidence.Prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
+		prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
 		circuitsIdx = uint16(proofWithHeader.Degree)
 	} else {
+		prover = s.proverAddress
+
 		circuitsIdx, err = proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
 		if err != nil {
 			return err
 		}
 	}
-
+	evidence.Prover = prover
 	evidence.VerifierId = circuitsIdx
 
 	input, err := encoding.EncodeProveBlockInput(evidence)
