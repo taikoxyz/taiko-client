@@ -14,7 +14,6 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
-	"github.com/taikoxyz/taiko-client/pkg/oracle"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	anchorTxValidator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
@@ -163,7 +162,7 @@ func (s *OracleProofSubmitter) SubmitProof(
 		Proof:         nil,
 	}
 
-	_, _, err = oracle.HashSignAndSetEvidenceForOracleProof(evidence, s.proverPrivKey)
+	_, _, err = hashSignAndSetEvidenceForOracleProof(evidence, s.proverPrivKey)
 	if err != nil {
 		return fmt.Errorf("failed to sign evidence: %w", err)
 	}
