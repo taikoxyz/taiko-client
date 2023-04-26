@@ -173,7 +173,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 
 	if s.isOracle {
 		prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
-		circuitsIdx = uint16(proofWithHeader.Degree)
+		circuitsIdx = uint16(int(zkProof[64])) + 27
 	} else {
 		prover = s.proverAddress
 

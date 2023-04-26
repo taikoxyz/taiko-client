@@ -94,7 +94,7 @@ func (d *OracleProducer) RequestProof(
 		Proof:         nil,
 	}
 
-	proof, v, err := hashAndSignForOracleProof(evidence, d.proverPrivKey)
+	proof, _, err := hashAndSignForOracleProof(evidence, d.proverPrivKey)
 	if err != nil {
 		return fmt.Errorf("failed to sign evidence: %w", err)
 	}
@@ -104,7 +104,6 @@ func (d *OracleProducer) RequestProof(
 		Header:  header,
 		Meta:    meta,
 		ZkProof: proof,
-		Degree:  uint64(v),
 	}
 
 	return nil
