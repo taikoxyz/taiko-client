@@ -31,6 +31,7 @@ type ValidProofSubmitter struct {
 	proverPrivKey     *ecdsa.PrivateKey
 	proverAddress     common.Address
 	mutex             *sync.Mutex
+	isOracle          bool
 }
 
 // NewValidProofSubmitter creates a new ValidProofSubmitter instance.
@@ -41,6 +42,7 @@ func NewValidProofSubmitter(
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
 	mutex *sync.Mutex,
+	isOracle bool,
 ) (*ValidProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc)
 	if err != nil {
@@ -55,6 +57,7 @@ func NewValidProofSubmitter(
 		proverPrivKey:     proverPrivKey,
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		mutex:             mutex,
+		isOracle:          isOracle,
 	}, nil
 }
 
@@ -170,6 +173,11 @@ func (s *ValidProofSubmitter) SubmitProof(
 		GasUsed:       uint32(block.GasUsed()),
 		VerifierId:    circuitsIdx,
 		Proof:         zkProof,
+	}
+
+	if s.isOracle {
+		evidence.Prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
+		evidence.VerifierId = uint16(proofWithHeader.Degree)
 	}
 
 	input, err := encoding.EncodeProveBlockInput(evidence)
