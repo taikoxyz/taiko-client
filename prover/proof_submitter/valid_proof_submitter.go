@@ -142,11 +142,6 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
-	circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
-	if err != nil {
-		return err
-	}
-
 	signalRoot, err := s.anchorTxValidator.GetAnchoredSignalRoot(ctx, anchorTx)
 	if err != nil {
 		return err
@@ -171,14 +166,22 @@ func (s *ValidProofSubmitter) SubmitProof(
 		Prover:        s.proverAddress,
 		ParentGasUsed: uint32(parent.GasUsed()),
 		GasUsed:       uint32(block.GasUsed()),
-		VerifierId:    circuitsIdx,
 		Proof:         zkProof,
 	}
 
+	var circuitsIdx uint16
+
 	if s.isOracle {
 		evidence.Prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
-		evidence.VerifierId = uint16(proofWithHeader.Degree)
+		circuitsIdx = uint16(proofWithHeader.Degree)
+	} else {
+		circuitsIdx, err = proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
+		if err != nil {
+			return err
+		}
 	}
+
+	evidence.VerifierId = circuitsIdx
 
 	input, err := encoding.EncodeProveBlockInput(evidence)
 	if err != nil {
