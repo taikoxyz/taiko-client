@@ -261,7 +261,7 @@ func (s *Syncer) insertNewHead(
 		return nil, nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
 	}
 
-	log.Info(
+	log.Debug(
 		"GetBasefee",
 		"baseFee", baseFee,
 		"timeSinceParent", uint32(event.Meta.Timestamp-parent.Time),
@@ -356,7 +356,7 @@ func (s *Syncer) createExecutionPayloads(
 		L1Origin:      l1Origin,
 	}
 
-	log.Info("PayloadAttributes", "attributes", attributes, "meta", attributes.BlockMetadata)
+	log.Debug("PayloadAttributes", "attributes", attributes, "meta", attributes.BlockMetadata)
 
 	// Step 1, prepare a payload
 	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, attributes)
@@ -376,7 +376,7 @@ func (s *Syncer) createExecutionPayloads(
 		return nil, err, nil
 	}
 
-	log.Info("Payload", "payload", payload)
+	log.Debug("Payload", "payload", payload)
 
 	// Step 3, execute the payload
 	execStatus, err := s.rpc.L2Engine.NewPayload(ctx, payload)
