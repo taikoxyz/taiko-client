@@ -356,6 +356,8 @@ func (s *Syncer) createExecutionPayloads(
 		L1Origin:      l1Origin,
 	}
 
+	log.Info("PayloadAttributes", "attributes", attributes)
+
 	// Step 1, prepare a payload
 	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, attributes)
 	if err != nil {
@@ -373,6 +375,8 @@ func (s *Syncer) createExecutionPayloads(
 	if err != nil {
 		return nil, err, nil
 	}
+
+	log.Info("Payload", "payload", payload)
 
 	// Step 3, execute the payload
 	execStatus, err := s.rpc.L2Engine.NewPayload(ctx, payload)
