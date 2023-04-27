@@ -356,7 +356,7 @@ func (s *Syncer) createExecutionPayloads(
 		L1Origin:      l1Origin,
 	}
 
-	log.Info("PayloadAttributes", "attributes", attributes)
+	log.Info("PayloadAttributes", "attributes", attributes, "meta", attributes.BlockMetadata)
 
 	// Step 1, prepare a payload
 	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, attributes)
