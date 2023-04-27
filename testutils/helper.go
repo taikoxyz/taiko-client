@@ -51,9 +51,6 @@ func ProposeAndInsertEmptyBlocks(
 		close(sink)
 	}()
 
-	// Zero byte txList
-	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
-
 	// RLP encoded empty list
 	var emptyTxs []types.Transaction
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
@@ -69,6 +66,9 @@ func ProposeAndInsertEmptyBlocks(
 	}, encoded, 0))
 
 	ProposeInvalidTxListBytes(s, proposer)
+
+	// Zero byte txList
+	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
 
 	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
 

@@ -261,6 +261,14 @@ func (s *Syncer) insertNewHead(
 		return nil, nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
 	}
 
+	log.Debug(
+		"GetBasefee",
+		"baseFee", baseFee,
+		"timeSinceParent", uint32(event.Meta.Timestamp-parent.Time),
+		"gasLimit", uint64(event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit())),
+		"parentGasUsed", parent.GasUsed,
+	)
+
 	// Get withdrawals
 	withdrawals := make(types.Withdrawals, len(event.Meta.DepositsProcessed))
 	for i, d := range event.Meta.DepositsProcessed {
@@ -348,6 +356,8 @@ func (s *Syncer) createExecutionPayloads(
 		L1Origin:      l1Origin,
 	}
 
+	log.Debug("PayloadAttributes", "attributes", attributes, "meta", attributes.BlockMetadata)
+
 	// Step 1, prepare a payload
 	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, attributes)
 	if err != nil {
@@ -365,6 +375,8 @@ func (s *Syncer) createExecutionPayloads(
 	if err != nil {
 		return nil, err, nil
 	}
+
+	log.Debug("Payload", "payload", payload)
 
 	// Step 3, execute the payload
 	execStatus, err := s.rpc.L2Engine.NewPayload(ctx, payload)
