@@ -26,21 +26,23 @@ var _ ProofSubmitter = (*ValidProofSubmitter)(nil)
 type ValidProofSubmitter struct {
 	rpc               *rpc.Client
 	proofProducer     proofProducer.ProofProducer
-	reusltCh          chan *proofProducer.ProofWithHeader
+	resultCh          chan *proofProducer.ProofWithHeader
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	proverPrivKey     *ecdsa.PrivateKey
 	proverAddress     common.Address
 	mutex             *sync.Mutex
+	isOracle          bool
 }
 
 // NewValidProofSubmitter creates a new ValidProofSubmitter instance.
 func NewValidProofSubmitter(
 	rpc *rpc.Client,
 	proofProducer proofProducer.ProofProducer,
-	reusltCh chan *proofProducer.ProofWithHeader,
+	resultCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
 	mutex *sync.Mutex,
+	isOracle bool,
 ) (*ValidProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc)
 	if err != nil {
@@ -50,11 +52,12 @@ func NewValidProofSubmitter(
 	return &ValidProofSubmitter{
 		rpc:               rpc,
 		proofProducer:     proofProducer,
-		reusltCh:          reusltCh,
+		resultCh:          resultCh,
 		anchorTxValidator: anchorValidator,
 		proverPrivKey:     proverPrivKey,
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		mutex:             mutex,
+		isOracle:          isOracle,
 	}, nil
 }
 
@@ -78,7 +81,7 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		ProposeBlockTxHash: event.Raw.TxHash,
 	}
 
-	if err := s.proofProducer.RequestProof(ctx, opts, event.Id, &event.Meta, header, s.reusltCh); err != nil {
+	if err := s.proofProducer.RequestProof(ctx, opts, event.Id, &event.Meta, header, s.resultCh); err != nil {
 		return err
 	}
 
@@ -134,14 +137,9 @@ func (s *ValidProofSubmitter) SubmitProof(
 	}
 
 	// Get and validate this anchor transaction's receipt.
-	anchorTxReceipt, err := s.anchorTxValidator.GetAndValidateAnchorTxReceipt(ctx, anchorTx)
+	_, err = s.anchorTxValidator.GetAndValidateAnchorTxReceipt(ctx, anchorTx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
-	}
-
-	circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
-	if err != nil {
-		return err
 	}
 
 	signalRoot, err := s.anchorTxValidator.GetAnchoredSignalRoot(ctx, anchorTx)
@@ -165,14 +163,29 @@ func (s *ValidProofSubmitter) SubmitProof(
 		BlockHash:     block.Hash(),
 		SignalRoot:    signalRoot,
 		Graffiti:      [32]byte{},
-		Prover:        s.proverAddress,
 		ParentGasUsed: uint32(parent.GasUsed()),
 		GasUsed:       uint32(block.GasUsed()),
-		VerifierId:    circuitsIdx,
 		Proof:         zkProof,
 	}
 
-	input, err := encoding.EncodeProveBlockInput(evidence, anchorTx, anchorTxReceipt)
+	var circuitsIdx uint16
+	var prover common.Address
+
+	if s.isOracle {
+		prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
+		circuitsIdx = uint16(int(zkProof[64])) + 27
+	} else {
+		prover = s.proverAddress
+
+		circuitsIdx, err = proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
+		if err != nil {
+			return err
+		}
+	}
+	evidence.Prover = prover
+	evidence.VerifierId = circuitsIdx
+
+	input, err := encoding.EncodeProveBlockInput(evidence)
 	if err != nil {
 		return fmt.Errorf("failed to encode TaikoL1.proveBlock inputs: %w", err)
 	}

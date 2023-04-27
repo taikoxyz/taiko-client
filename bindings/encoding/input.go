@@ -210,8 +210,6 @@ func EncodeProposeBlockInput(metadataInput *TaikoL1BlockMetadataInput) ([]byte, 
 // EncodeProveBlockInput encodes the input params for TaikoL1.proveBlock.
 func EncodeProveBlockInput(
 	evidence *TaikoL1Evidence,
-	anchorTx *types.Transaction,
-	anchorReceipt *types.Receipt,
 ) ([]byte, error) {
 	evidenceBytes, err := EncodeEvidence(evidence)
 	if err != nil {

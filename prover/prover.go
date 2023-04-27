@@ -124,7 +124,16 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
 	var producer proofProducer.ProofProducer
-	if cfg.Dummy {
+
+	if cfg.OracleProver {
+		if producer, err = proofProducer.NewOracleProducer(
+			p.rpc,
+			p.cfg.L1ProverPrivKey,
+			p.cfg.TaikoL2Address,
+		); err != nil {
+			return err
+		}
+	} else if cfg.Dummy {
 		producer = &proofProducer.DummyProofProducer{
 			RandomDummyProofDelayLowerBound: p.cfg.RandomDummyProofDelayLowerBound,
 			RandomDummyProofDelayUpperBound: p.cfg.RandomDummyProofDelayUpperBound,
@@ -149,6 +158,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.TaikoL2Address,
 		p.cfg.L1ProverPrivKey,
 		p.submitProofTxMutex,
+		p.cfg.OracleProver,
 	); err != nil {
 		return err
 	}

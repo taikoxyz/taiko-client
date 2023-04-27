@@ -56,15 +56,6 @@ func TestEncodeProveBlockInput(t *testing.T) {
 			VerifierId:    1024,
 			Proof:         randomHash().Big().Bytes(),
 		},
-		types.NewTransaction(
-			0,
-			common.BytesToAddress(randomHash().Bytes()),
-			common.Big0,
-			0,
-			common.Big0,
-			randomHash().Bytes(),
-		),
-		types.NewReceipt(randomHash().Bytes(), false, 1024),
 	)
 
 	require.Nil(t, err)

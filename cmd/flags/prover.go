@@ -53,6 +53,12 @@ var (
 			"`lowerBound-upperBound` (e.g. `30m-1h`), testing purposes only",
 		Category: proverCategory,
 	}
+	OracleProver = &cli.BoolFlag{
+		Name:     "oracleProver",
+		Usage:    "Set whether prover should use oracle prover or not",
+		Category: proverCategory,
+		Value:    false,
+	}
 )
 
 // All prover flags.
@@ -67,4 +73,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxConcurrentProvingJobs,
 	Dummy,
 	RandomDummyProofDelay,
+	OracleProver,
 })
