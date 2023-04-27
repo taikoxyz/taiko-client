@@ -110,7 +110,7 @@ func (d *OracleProducer) RequestProof(
 }
 
 // HashSignAndSetEvidenceForOracleProof hashes and signs the TaikoL1Evidence according to the
-// protoco spec to generate an "oracle proof" via the signature and v value.
+// protocol spec to generate an "oracle proof" via the signature and v value.
 func hashAndSignForOracleProof(
 	evidence *encoding.TaikoL1Evidence,
 	privateKey *ecdsa.PrivateKey,
