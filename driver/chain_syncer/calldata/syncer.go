@@ -273,6 +273,7 @@ func (s *Syncer) insertNewHead(
 		event.Meta.L1Hash,
 		new(big.Int).Add(parent.Number, common.Big1),
 		baseFee,
+		parent.GasUsed,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create TaikoL2.anchor transaction: %w", err)
