@@ -14,7 +14,7 @@ services:
       - "0.0.0.0"
 
   l2_execution_engine:
-    image: gcr.io/evmchain/taiko-geth:sha-56a3e82
+    image: gcr.io/evmchain/taiko-geth:sha-29273a8
     restart: unless-stopped
     pull_policy: always
     volumes:
