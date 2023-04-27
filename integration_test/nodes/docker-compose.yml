@@ -4,6 +4,7 @@ services:
   l1_node:
     image: ghcr.io/foundry-rs/foundry:latest
     restart: unless-stopped
+    pull_policy: always
     ports:
       - 18545:8545
       - 18546:8545
