@@ -16,7 +16,8 @@ import (
 	anchorTxValidator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
 )
 
-// OracleProducer is responsible for generating zk proofs from the given command line binary file.
+// OracleProducer is responsible for generating a fake "zkproof" consisting
+// of a signature of the evidence.
 type OracleProducer struct {
 	rpc               *rpc.Client
 	proverPrivKey     *ecdsa.PrivateKey
@@ -115,9 +116,6 @@ func hashAndSignForOracleProof(
 	evidence *encoding.TaikoL1Evidence,
 	privateKey *ecdsa.PrivateKey,
 ) ([]byte, uint8, error) {
-	evidence.VerifierId = 0
-	evidence.Proof = nil
-
 	inputToSign, err := encoding.EncodeProveBlockInput(evidence)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to encode TaikoL1.proveBlock inputs: %w", err)
