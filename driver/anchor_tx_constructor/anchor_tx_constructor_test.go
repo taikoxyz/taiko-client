@@ -39,7 +39,7 @@ func (s *AnchorTxConstructorTestSuite) TestGasLimit() {
 }
 
 func (s *AnchorTxConstructorTestSuite) TestAssembleAnchorTx() {
-	tx, err := s.c.AssembleAnchorTx(context.Background(), s.l1Height, s.l1Hash, common.Big1, common.Big256)
+	tx, err := s.c.AssembleAnchorTx(context.Background(), s.l1Height, s.l1Hash, common.Big1, common.Big256, 1024)
 	s.Nil(err)
 	s.NotNil(tx)
 }
