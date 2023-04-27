@@ -253,7 +253,7 @@ func (s *Syncer) insertNewHead(
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
 		nil,
 		uint32(event.Meta.Timestamp-parent.Time),
-		uint64(event.Meta.GasLimit),
+		uint64(event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit())),
 		parent.GasUsed,
 	)
 	if err != nil {
