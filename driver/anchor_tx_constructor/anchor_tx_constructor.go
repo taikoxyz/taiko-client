@@ -64,6 +64,7 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 	// Height of the L2 block which including the TaikoL2.anchor transaction.
 	l2Height *big.Int,
 	baseFee *big.Int,
+	parentGasUsed uint64,
 ) (*types.Transaction, error) {
 	opts, err := c.transactOpts(ctx, l2Height, baseFee)
 	if err != nil {
@@ -75,20 +76,15 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 		return nil, err
 	}
 
-	l2Parent, err := c.rpc.L2.BlockByNumber(ctx, new(big.Int).Sub(l2Height, big.NewInt(1)))
-	if err != nil {
-		return nil, err
-	}
-
 	log.Info(
 		"Anchor arguments",
 		"l1Hash", l1Hash,
 		"signalRoot", signalRoot,
 		"l1Height", l1Height,
-		"gasUsed", l2Parent.GasUsed(),
+		"gasUsed", parentGasUsed,
 	)
 
-	return c.rpc.TaikoL2.Anchor(opts, l1Hash, signalRoot, l1Height.Uint64(), l2Parent.GasUsed())
+	return c.rpc.TaikoL2.Anchor(opts, l1Hash, signalRoot, l1Height.Uint64(), parentGasUsed)
 }
 
 // transactOpts is a utility method to create some transact options of the anchor transaction in given L2 block with

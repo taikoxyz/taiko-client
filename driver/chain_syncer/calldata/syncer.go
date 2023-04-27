@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -251,9 +252,9 @@ func (s *Syncer) insertNewHead(
 
 	// Get L2 baseFee
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
-		nil,
+		&bind.CallOpts{Pending: true},
 		uint32(event.Meta.Timestamp-parent.Time),
-		uint64(event.Meta.GasLimit),
+		uint64(event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit())),
 		parent.GasUsed,
 	)
 	if err != nil {
@@ -273,6 +274,7 @@ func (s *Syncer) insertNewHead(
 		event.Meta.L1Hash,
 		new(big.Int).Add(parent.Number, common.Big1),
 		baseFee,
+		parent.GasUsed,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create TaikoL2.anchor transaction: %w", err)
