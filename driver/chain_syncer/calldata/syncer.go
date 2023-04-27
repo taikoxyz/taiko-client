@@ -261,7 +261,13 @@ func (s *Syncer) insertNewHead(
 		return nil, nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
 	}
 
-	log.Info("Basefee", "baseFee", baseFee, "time", uint32(event.Meta.Timestamp-parent.Time), "gasLimit", uint64(event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit())), "parentGasUsed", parent.GasUsed)
+	log.Info(
+		"GetBasefee",
+		"baseFee", baseFee,
+		"timeSinceParent", uint32(event.Meta.Timestamp-parent.Time),
+		"gasLimit", uint64(event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit())),
+		"parentGasUsed", parent.GasUsed,
+	)
 
 	// Get withdrawals
 	withdrawals := make(types.Withdrawals, len(event.Meta.DepositsProcessed))
