@@ -13,7 +13,7 @@ docker compose -f $TESTNET_CONFIG down -v --remove-orphans &>/dev/null
 docker compose -f $TESTNET_CONFIG up -d
 
 if [ "$COMPILE_PROTOCOL" == "true" ]; then
-    cd $TAIKO_MONO_DIR/packages/protocol && yarn run clean && yarn run compile:hardhat && yarn run compile
+    cd $TAIKO_MONO_DIR/packages/protocol && yarn run clean && yarn run compile
     cd -
 fi
 
