@@ -65,12 +65,17 @@ func ProposeAndInsertEmptyBlocks(
 		CacheTxListInfo: 0,
 	}, encoded, 0))
 
+	e1 := <-sink
+
 	ProposeInvalidTxListBytes(s, proposer)
+
+	e2 := <-sink
 
 	// Zero byte txList
 	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
+	e3 := <-sink
 
-	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
+	events = []*bindings.TaikoL1ClientBlockProposed{e1, e2, e3}
 
 	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), events[len(events)-1].Raw.TxHash)
 	s.Nil(err)
