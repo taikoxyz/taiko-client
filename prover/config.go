@@ -27,6 +27,7 @@ type Config struct {
 	StartingBlockID                 *big.Int
 	MaxConcurrentProvingJobs        uint
 	Dummy                           bool
+	Graffiti                        string
 	OracleProver                    bool
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
@@ -88,6 +89,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		StartingBlockID:                 startingBlockID,
 		MaxConcurrentProvingJobs:        c.Uint(flags.MaxConcurrentProvingJobs.Name),
 		Dummy:                           c.Bool(flags.Dummy.Name),
+		Graffiti:                        c.String(flags.Graffiti.Name),
 		OracleProver:                    c.Bool(flags.OracleProver.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,

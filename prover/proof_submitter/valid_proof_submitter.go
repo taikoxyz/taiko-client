@@ -32,6 +32,7 @@ type ValidProofSubmitter struct {
 	proverAddress     common.Address
 	mutex             *sync.Mutex
 	isOracle          bool
+	graffiti          string
 }
 
 // NewValidProofSubmitter creates a new ValidProofSubmitter instance.
@@ -43,6 +44,7 @@ func NewValidProofSubmitter(
 	proverPrivKey *ecdsa.PrivateKey,
 	mutex *sync.Mutex,
 	isOracle bool,
+	graffiti string,
 ) (*ValidProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc)
 	if err != nil {
@@ -58,6 +60,7 @@ func NewValidProofSubmitter(
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		mutex:             mutex,
 		isOracle:          isOracle,
+		graffiti:          graffiti,
 	}, nil
 }
 
