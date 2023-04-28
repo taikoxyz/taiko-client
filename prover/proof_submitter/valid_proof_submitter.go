@@ -74,6 +74,21 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		return err
 	}
 
+	conf, err := s.rpc.TaikoL1.GetConfig(nil)
+	if err != nil {
+		return err
+	}
+
+	if header.Number.Uint64()%conf.RealProofSkipSize.Uint64() != 0 {
+		log.Info(
+			"Skipping valid block proof",
+			"blockID", header.Number.Uint64(),
+			"skipSize", conf.RealProofSkipSize.Uint64(),
+		)
+
+		return nil
+	}
+
 	// Request proof.
 	opts := &proofProducer.ProofRequestOptions{
 		Height:             header.Number,
