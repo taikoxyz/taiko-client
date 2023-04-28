@@ -90,6 +90,7 @@ func (s *ProverTestSuite) TestName() {
 }
 
 func (s *ProverTestSuite) TestOnBlockProposed() {
+	s.p.cfg.OracleProver = true
 	// Valid block
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
