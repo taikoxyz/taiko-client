@@ -375,6 +375,23 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 
 // NeedNewProof checks whether the L2 block still needs a new proof.
 func (p *Prover) NeedNewProof(id *big.Int) (bool, error) {
+	if !p.cfg.OracleProver {
+		conf, err := p.rpc.TaikoL1.GetConfig(nil)
+		if err != nil {
+			return false, err
+		}
+
+		if id.Uint64()%conf.RealProofSkipSize.Uint64() != 0 {
+			log.Info(
+				"Skipping valid block proof",
+				"blockID", id.Uint64(),
+				"skipSize", conf.RealProofSkipSize.Uint64(),
+			)
+
+			return false, nil
+		}
+	}
+
 	var parent *types.Header
 	if id.Cmp(common.Big1) == 0 {
 		header, err := p.rpc.L2.HeaderByNumber(p.ctx, common.Big0)
