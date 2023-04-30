@@ -130,6 +130,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			p.rpc,
 			p.cfg.L1ProverPrivKey,
 			p.cfg.TaikoL2Address,
+			time.Duration(p.protocolConfigs.ProofTimeTarget)*time.Second,
 		); err != nil {
 			return err
 		}

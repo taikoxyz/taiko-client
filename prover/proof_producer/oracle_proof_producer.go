@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -22,6 +23,7 @@ type OracleProducer struct {
 	rpc               *rpc.Client
 	proverPrivKey     *ecdsa.PrivateKey
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
+	proofTimeTarget   time.Duration
 }
 
 // NewOracleProducer creates a new NewOracleProducer instance.
@@ -29,13 +31,14 @@ func NewOracleProducer(
 	rpc *rpc.Client,
 	proverPrivKey *ecdsa.PrivateKey,
 	taikoL2Address common.Address,
+	proofTimeTarget time.Duration,
 ) (*OracleProducer, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc)
 	if err != nil {
 		return nil, err
 	}
 
-	return &OracleProducer{rpc, proverPrivKey, anchorValidator}, nil
+	return &OracleProducer{rpc, proverPrivKey, anchorValidator, proofTimeTarget}, nil
 }
 
 // RequestProof implements the ProofProducer interface.
@@ -100,12 +103,14 @@ func (d *OracleProducer) RequestProof(
 		return fmt.Errorf("failed to sign evidence: %w", err)
 	}
 
-	resultCh <- &ProofWithHeader{
-		BlockID: blockID,
-		Header:  header,
-		Meta:    meta,
-		ZkProof: proof,
-	}
+	time.AfterFunc(d.proofTimeTarget, func() {
+		resultCh <- &ProofWithHeader{
+			BlockID: blockID,
+			Header:  header,
+			Meta:    meta,
+			ZkProof: proof,
+		}
+	})
 
 	return nil
 }
