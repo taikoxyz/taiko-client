@@ -170,9 +170,9 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Comparing proposer TKO balance to block fee")
 
-	// if err := p.checkTaikoTokenBalance(); err != nil {
-	// 	return fmt.Errorf("failed to check Taiko token balance: %w", err)
-	// }
+	if err := p.checkTaikoTokenBalance(); err != nil {
+		return fmt.Errorf("failed to check Taiko token balance: %w", err)
+	}
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
@@ -331,20 +331,20 @@ func getTxOpts(
 	return opts, nil
 }
 
-// func (p *Proposer) checkTaikoTokenBalance() error {
-// 	fee, err := p.rpc.TaikoL1.GetBlockFee(nil)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to get block fee: %w", err)
-// 	}
+func (p *Proposer) checkTaikoTokenBalance() error {
+	fee, err := p.rpc.TaikoL1.GetBlockFee(nil)
+	if err != nil {
+		return fmt.Errorf("failed to get block fee: %w", err)
+	}
 
-// 	balance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(nil, p.l1ProposerAddress)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to get tko balance: %w", err)
-// 	}
+	balance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(nil, p.l1ProposerAddress)
+	if err != nil {
+		return fmt.Errorf("failed to get tko balance: %w", err)
+	}
 
-// 	if balance.Cmp(new(big.Int).SetUint64(fee)) == -1 {
-// 		return fmt.Errorf("proposer does not have enough tko balance to propose")
-// 	}
+	if balance.Cmp(new(big.Int).SetUint64(fee)) == -1 {
+		return fmt.Errorf("proposer does not have enough tko balance to propose")
+	}
 
-// 	return nil
-// }
+	return nil
+}
