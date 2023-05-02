@@ -170,9 +170,9 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Comparing proposer TKO balance to block fee")
 
-	if err := p.checkTaikoTokenBalance(); err != nil {
-		return fmt.Errorf("failed to check Taiko token balance: %w", err)
-	}
+	// if err := p.checkTaikoTokenBalance(); err != nil {
+	// 	return fmt.Errorf("failed to check Taiko token balance: %w", err)
+	// }
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
