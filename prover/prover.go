@@ -503,7 +503,7 @@ func (p *Prover) cancelProofIfValid(ctx context.Context, blockID uint64, parentG
 
 func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 	if cancel, ok := p.currentBlocksBeingProven[blockID]; ok {
-		cancel()
+		defer cancel()
 		delete(p.currentBlocksBeingProven, blockID)
 		log.Info("Cancelled proof for ", "blockID", blockID)
 	}
