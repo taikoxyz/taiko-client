@@ -487,7 +487,12 @@ func (p *Prover) closeSubscription() {
 	p.blockProposedSub.Unsubscribe()
 }
 
-func (p *Prover) cancelProofIfValid(ctx context.Context, blockID uint64, parentGasUsed uint64, parentHash common.Hash) error {
+func (p *Prover) cancelProofIfValid(
+	ctx context.Context,
+	blockID uint64,
+	parentGasUsed uint64,
+	parentHash common.Hash,
+) error {
 	parent, err := p.rpc.L2ParentByBlockId(ctx, new(big.Int).SetUint64(blockID))
 	if err != nil {
 		return err
