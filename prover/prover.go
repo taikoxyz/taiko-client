@@ -130,6 +130,13 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
+	oracleProverAddress, err := p.rpc.TaikoL1.GetOracleProver(nil)
+	if err != nil {
+		return err
+	}
+
+	p.oracleProverAddress = oracleProverAddress
+
 	var producer proofProducer.ProofProducer
 
 	if cfg.OracleProver {
@@ -138,6 +145,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			p.cfg.L1ProverPrivKey,
 			p.cfg.TaikoL2Address,
 			time.Duration(p.protocolConfigs.ProofTimeTarget)*time.Second,
+			oracleProverAddress,
 		); err != nil {
 			return err
 		}
@@ -171,13 +179,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	); err != nil {
 		return err
 	}
-
-	oracleProverAddress, err := p.rpc.TaikoL1.GetOracleProver(nil)
-	if err != nil {
-		return err
-	}
-
-	p.oracleProverAddress = oracleProverAddress
 
 	return nil
 }
