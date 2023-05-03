@@ -125,7 +125,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofCancelled()
 
 	s.ErrorContains(
 		s.validProofSubmitter.RequestProof(
-			ctx, &bindings.TaikoL1ClientBlockProposed{Id: common.Big256}), "context cancelled",
+			ctx, &bindings.TaikoL1ClientBlockProposed{Id: common.Big256}), "context canceled",
 	)
 }
 
