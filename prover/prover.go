@@ -323,9 +323,6 @@ func (p *Prover) onBlockProposed(
 
 	go func() {
 		if err := handleBlockProposedEvent(); err != nil {
-			p.currentBlocksBeingProvenMutex.Lock()
-			delete(p.currentBlocksBeingProven, event.Id.Uint64())
-			p.currentBlocksBeingProvenMutex.Unlock()
 			log.Error("Handle new BlockProposed event error", "error", err)
 		}
 	}()
