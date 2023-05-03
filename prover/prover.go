@@ -335,7 +335,9 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 	go func() {
 		defer func() {
 			<-p.submitProofConcurrencyGuard
-			delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
+			if _, ok := p.currentBlocksBeingProven[proofWithHeader.Meta.Id]; ok {
+				delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
+			}
 		}()
 
 		if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
