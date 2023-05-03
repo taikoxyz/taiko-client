@@ -324,6 +324,7 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 		isVerified, err := p.isBlockVerified(new(big.Int).SetUint64(proofWithHeader.Meta.Id))
 		if err != nil {
 			log.Error("is block verified error", "isValidProof", isValidProof, "blockID", proofWithHeader.Meta.Id, "error", err)
+			return
 		}
 
 		if isVerified {
