@@ -359,13 +359,8 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 
 	log.Info("New verified valid block", "blockID", event.Id, "hash", common.BytesToHash(event.BlockHash[:]))
 
-	parent, err := p.rpc.L2ParentByBlockId(ctx, event.Id)
-	if err != nil {
-		return err
-	}
-
 	// cancel any proofs being generated for this block
-	if err := p.cancelProofIfValid(ctx, event.Id.Uint64(), parent.GasUsed, parent.Hash()); err != nil {
+	if err := p.cancelProof(ctx, event.Id.Uint64()); err != nil {
 		return err
 	}
 
@@ -498,19 +493,22 @@ func (p *Prover) closeSubscription() {
 }
 
 func (p *Prover) cancelProofIfValid(ctx context.Context, blockID uint64, parentGasUsed uint64, parentHash common.Hash) error {
-	if cancel, ok := p.currentBlocksBeingProven[blockID]; ok {
-		parent, err := p.rpc.L2ParentByBlockId(ctx, new(big.Int).SetUint64(blockID))
-		if err != nil {
-			return err
-		}
+	parent, err := p.rpc.L2ParentByBlockId(ctx, new(big.Int).SetUint64(blockID))
+	if err != nil {
+		return err
+	}
 
-		// valid proof, we can cancel the proof
-		if parent.GasUsed == parentGasUsed && parent.Hash() == parentHash {
-			cancel()
-			delete(p.currentBlocksBeingProven, blockID)
-			log.Info("Cancelled proof for ", "blockID", blockID)
-		}
+	if parent.GasUsed == parentGasUsed && parent.Hash() == parentHash {
+		p.cancelProof(ctx, blockID)
 	}
 
 	return nil
+}
+
+func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
+	if cancel, ok := p.currentBlocksBeingProven[blockID]; ok {
+		cancel()
+		delete(p.currentBlocksBeingProven, blockID)
+		log.Info("Cancelled proof for ", "blockID", blockID)
+	}
 }
