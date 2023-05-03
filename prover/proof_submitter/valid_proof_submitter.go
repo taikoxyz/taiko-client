@@ -32,6 +32,7 @@ type ValidProofSubmitter struct {
 	proverAddress     common.Address
 	mutex             *sync.Mutex
 	isOracle          bool
+	graffiti          [32]byte
 }
 
 // NewValidProofSubmitter creates a new ValidProofSubmitter instance.
@@ -43,11 +44,15 @@ func NewValidProofSubmitter(
 	proverPrivKey *ecdsa.PrivateKey,
 	mutex *sync.Mutex,
 	isOracle bool,
+	graffiti string,
 ) (*ValidProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc)
 	if err != nil {
 		return nil, err
 	}
+
+	var bytes [32]byte
+	copy(bytes[:], []byte(graffiti))
 
 	return &ValidProofSubmitter{
 		rpc:               rpc,
@@ -58,6 +63,7 @@ func NewValidProofSubmitter(
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		mutex:             mutex,
 		isOracle:          isOracle,
+		graffiti:          bytes,
 	}, nil
 }
 
@@ -102,6 +108,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		"beneficiary", proofWithHeader.Meta.Beneficiary,
 		"hash", proofWithHeader.Header.Hash(),
 		"proof", common.Bytes2Hex(proofWithHeader.ZkProof),
+		"graffiti", string(s.graffiti[:]),
 	)
 	var (
 		blockID = proofWithHeader.BlockID
@@ -162,7 +169,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		ParentHash:    block.ParentHash(),
 		BlockHash:     block.Hash(),
 		SignalRoot:    signalRoot,
-		Graffiti:      [32]byte{},
+		Graffiti:      s.graffiti,
 		ParentGasUsed: uint32(parent.GasUsed()),
 		GasUsed:       uint32(block.GasUsed()),
 		Proof:         zkProof,
