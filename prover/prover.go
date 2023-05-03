@@ -64,7 +64,8 @@ type Prover struct {
 	submitProofConcurrencyGuard chan struct{}
 	submitProofTxMutex          *sync.Mutex
 
-	currentBlocksBeingProven map[uint64]context.CancelFunc
+	currentBlocksBeingProven      map[uint64]context.CancelFunc
+	currentBlocksBeingProvenMutex *sync.Mutex
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -85,6 +86,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
 	p.currentBlocksBeingProven = make(map[uint64]context.CancelFunc)
+	p.currentBlocksBeingProvenMutex = &sync.Mutex{}
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -307,7 +309,9 @@ func (p *Prover) onBlockProposed(
 		}
 
 		ctx, cancel := context.WithCancel(ctx)
+		p.currentBlocksBeingProvenMutex.Lock()
 		p.currentBlocksBeingProven[event.Id.Uint64()] = cancel
+		p.currentBlocksBeingProvenMutex.Unlock()
 
 		return p.validProofSubmitter.RequestProof(ctx, event)
 	}
@@ -319,8 +323,9 @@ func (p *Prover) onBlockProposed(
 
 	go func() {
 		if err := handleBlockProposedEvent(); err != nil {
+			p.currentBlocksBeingProvenMutex.Lock()
 			delete(p.currentBlocksBeingProven, event.Id.Uint64())
-
+			p.currentBlocksBeingProvenMutex.Unlock()
 			log.Error("Handle new BlockProposed event error", "error", err)
 		}
 	}()
@@ -334,7 +339,9 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 	go func() {
 		defer func() {
 			<-p.submitProofConcurrencyGuard
+			p.currentBlocksBeingProvenMutex.Lock()
 			delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
+			p.currentBlocksBeingProvenMutex.Unlock()
 		}()
 
 		if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
@@ -509,8 +516,11 @@ func (p *Prover) cancelProofIfValid(
 
 // cancelProof cancels local proof generation
 func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
+	p.currentBlocksBeingProvenMutex.Lock()
+	defer p.currentBlocksBeingProvenMutex.Unlock()
+
 	if cancel, ok := p.currentBlocksBeingProven[blockID]; ok {
-		defer cancel()
+		cancel()
 		delete(p.currentBlocksBeingProven, blockID)
 		log.Info("Cancelled proof for ", "blockID", blockID)
 	}
