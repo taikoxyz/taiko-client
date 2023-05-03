@@ -487,6 +487,8 @@ func (p *Prover) closeSubscription() {
 	p.blockProposedSub.Unsubscribe()
 }
 
+// cancelProofIfValid cancels proof only if the parentGasUsed and parentHash in the proof match what
+// is expected
 func (p *Prover) cancelProofIfValid(
 	ctx context.Context,
 	blockID uint64,
@@ -505,6 +507,7 @@ func (p *Prover) cancelProofIfValid(
 	return nil
 }
 
+// cancelProof cancels local proof generation
 func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 	if cancel, ok := p.currentBlocksBeingProven[blockID]; ok {
 		defer cancel()
