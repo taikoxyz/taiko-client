@@ -67,10 +67,10 @@ func SubscribeBlockProposed(
 // SubscribeXchainSynced subscribes the protocol's XchainSynced events.
 func SubscribeXchainSynced(
 	taikoL1 *bindings.TaikoL1Client,
-	ch chan *bindings.TaikoL1ClientXchainSynced,
+	ch chan *bindings.TaikoL1ClientCrossChainSynced,
 ) event.Subscription {
-	return SubscribeEvent("XchainSynced", func(ctx context.Context) (event.Subscription, error) {
-		sub, err := taikoL1.WatchXchainSynced(nil, ch, nil)
+	return SubscribeEvent("CrossChainSynced", func(ctx context.Context) (event.Subscription, error) {
+		sub, err := taikoL1.WatchCrossChainSynced(nil, ch, nil)
 		if err != nil {
 			log.Error("Create TaikoL1.XchainSynced subscription error", "error", err)
 			return nil, err
