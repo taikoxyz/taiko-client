@@ -358,9 +358,7 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 	log.Info("New verified valid block", "blockID", event.Id, "hash", common.BytesToHash(event.BlockHash[:]))
 
 	// cancel any proofs being generated for this block
-	if err := p.cancelProof(ctx, event.Id.Uint64()); err != nil {
-		return err
-	}
+	p.cancelProof(ctx, event.Id.Uint64())
 
 	return nil
 }
