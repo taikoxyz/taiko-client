@@ -327,7 +327,12 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 		}
 
 		if isVerified {
-			log.Info("📋 Block has been verified, not submitting proof", "isValidProof", isValidProof, "blockID", proofWithHeader.Meta.Id)
+			log.Info("📋 Block has been verified, not submitting proof",
+				"isValidProof",
+				isValidProof,
+				"blockID",
+				proofWithHeader.Meta.Id,
+			)
 			return
 		}
 
