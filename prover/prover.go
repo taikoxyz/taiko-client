@@ -61,6 +61,8 @@ type Prover struct {
 	submitProofConcurrencyGuard chan struct{}
 	submitProofTxMutex          *sync.Mutex
 
+	currentBlocksBeingProven map[uint64]context.CancelFunc
+
 	ctx context.Context
 	wg  sync.WaitGroup
 }
@@ -79,6 +81,7 @@ func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
 func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
+	p.currentBlocksBeingProven = make(map[uint64]context.CancelFunc)
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -286,6 +289,9 @@ func (p *Prover) onBlockProposed(
 			return nil
 		}
 
+		ctx, cancel := context.WithCancel(ctx)
+		p.currentBlocksBeingProven[event.Id.Uint64()] = cancel
+
 		return p.validProofSubmitter.RequestProof(ctx, event)
 	}
 
@@ -309,6 +315,19 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 	go func() {
 		defer func() { <-p.submitProofConcurrencyGuard }()
 
+		// check if block has been verified since we started generating the proof.
+		// if it has been, transaction will revert, so we avoid gas fees even though
+		// we generated a proof we won't use.
+		isVerified, err := p.isBlockVerified(new(big.Int).SetUint64(proofWithHeader.Meta.Id))
+		if err != nil {
+			log.Error("is block verified error", "isValidProof", isValidProof, "blockID", proofWithHeader.Meta.Id, "error", err)
+		}
+
+		if isVerified {
+			log.Info("📋 Block has been verified", "blockID", proofWithHeader.Meta.Id)
+			return
+		}
+
 		if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
 			log.Error("Submit proof error", "isValidProof", isValidProof, "error", err)
 		}
@@ -327,6 +346,15 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 	}
 
 	log.Info("New verified valid block", "blockID", event.Id, "hash", common.BytesToHash(event.BlockHash[:]))
+
+	// cancel any proofs being generated for this block
+	if cancel, ok := p.currentBlocksBeingProven[event.Id.Uint64()]; ok {
+		log.Info("Cancelling proof for ", "blockID", event.Id, "hash", common.BytesToHash(event.BlockHash[:]))
+		cancel()
+		delete(p.currentBlocksBeingProven, event.Id.Uint64())
+		log.Info("Cancelled proof for ", "blockID", event.Id, "hash", common.BytesToHash(event.BlockHash[:]))
+	}
+
 	return nil
 }
 
