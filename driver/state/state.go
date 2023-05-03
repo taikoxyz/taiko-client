@@ -38,12 +38,12 @@ type State struct {
 	l2BlockProposedSub event.Subscription // TaikoL1.BlockProposed events
 	l2HeaderSyncedSub  event.Subscription // TaikoL1.HeaderSynced events
 
-	l1HeadCh        chan *types.Header
-	l2HeadCh        chan *types.Header
-	blockProposedCh chan *bindings.TaikoL1ClientBlockProposed
-	blockProvenCh   chan *bindings.TaikoL1ClientBlockProven
-	blockVerifiedCh chan *bindings.TaikoL1ClientBlockVerified
-	xchainSynced    chan *bindings.TaikoL1ClientXchainSynced
+	l1HeadCh         chan *types.Header
+	l2HeadCh         chan *types.Header
+	blockProposedCh  chan *bindings.TaikoL1ClientBlockProposed
+	blockProvenCh    chan *bindings.TaikoL1ClientBlockProven
+	blockVerifiedCh  chan *bindings.TaikoL1ClientBlockVerified
+	crossChainSynced chan *bindings.TaikoL1ClientCrossChainSynced
 
 	// Feeds
 	l1HeadsFeed event.Feed // L1 new heads notification feed
@@ -76,7 +76,7 @@ func New(ctx context.Context, rpc *rpc.Client) (*State, error) {
 		blockProposedCh:  make(chan *bindings.TaikoL1ClientBlockProposed, 10),
 		blockProvenCh:    make(chan *bindings.TaikoL1ClientBlockProven, 10),
 		blockVerifiedCh:  make(chan *bindings.TaikoL1ClientBlockVerified, 10),
-		xchainSynced:     make(chan *bindings.TaikoL1ClientXchainSynced, 10),
+		crossChainSynced: make(chan *bindings.TaikoL1ClientCrossChainSynced, 10),
 		BlockDeadendHash: common.BigToHash(common.Big1),
 	}
 
@@ -132,7 +132,7 @@ func (s *State) init(ctx context.Context) error {
 	log.Info("L2 execution engine head", "height", l2Head.Number, "hash", l2Head.Hash())
 	s.setL2Head(l2Head)
 
-	latestVerifiedBlockHash, err := s.rpc.TaikoL1.GetXchainBlockHash(
+	latestVerifiedBlockHash, err := s.rpc.TaikoL1.GetCrossChainBlockHash(
 		nil,
 		new(big.Int).SetUint64(stateVars.LastVerifiedBlockId),
 	)
@@ -154,7 +154,7 @@ func (s *State) init(ctx context.Context) error {
 func (s *State) startSubscriptions(ctx context.Context) {
 	s.l1HeadSub = rpc.SubscribeChainHead(s.rpc.L1, s.l1HeadCh)
 	s.l2HeadSub = rpc.SubscribeChainHead(s.rpc.L2, s.l2HeadCh)
-	s.l2HeaderSyncedSub = rpc.SubscribeXchainSynced(s.rpc.TaikoL1, s.xchainSynced)
+	s.l2HeaderSyncedSub = rpc.SubscribeXchainSynced(s.rpc.TaikoL1, s.crossChainSynced)
 	s.l2BlockVerifiedSub = rpc.SubscribeBlockVerified(s.rpc.TaikoL1, s.blockVerifiedCh)
 	s.l2BlockProposedSub = rpc.SubscribeBlockProposed(s.rpc.TaikoL1, s.blockProposedCh)
 	s.l2BlockProvenSub = rpc.SubscribeBlockProven(s.rpc.TaikoL1, s.blockProvenCh)
@@ -178,7 +178,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 				} else {
 					log.Info("🗑 Invalid block verified", "blockID", e.Id)
 				}
-			case e := <-s.xchainSynced:
+			case e := <-s.crossChainSynced:
 				// Verify the protocol synced block, check if it exists in
 				// L2 execution engine.
 				if s.GetL2Head().Number.Cmp(e.SrcHeight) >= 0 {
