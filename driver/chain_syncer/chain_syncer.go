@@ -91,7 +91,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		}
 
 		// Make sure the execution engine's chain head is recorded in protocol.
-		l2HeadHash, err := s.rpc.TaikoL1.GetXchainBlockHash(nil, l2Head.Number)
+		l2HeadHash, err := s.rpc.TaikoL1.GetCrossChainBlockHash(nil, l2Head.Number)
 		if err != nil {
 			return err
 		}
@@ -108,7 +108,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 
 			heightOrID.ID = common.Big0
 			heightOrID.Height = common.Big0
-			if l2HeadHash, err = s.rpc.TaikoL1.GetXchainBlockHash(nil, common.Big0); err != nil {
+			if l2HeadHash, err = s.rpc.TaikoL1.GetCrossChainBlockHash(nil, common.Big0); err != nil {
 				return err
 			}
 		}
