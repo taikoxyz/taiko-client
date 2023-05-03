@@ -313,7 +313,10 @@ func (p *Prover) onBlockProposed(
 func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader, isValidProof bool) {
 	p.submitProofConcurrencyGuard <- struct{}{}
 	go func() {
-		defer func() { <-p.submitProofConcurrencyGuard }()
+		defer func() {
+			<-p.submitProofConcurrencyGuard
+			delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
+		}()
 
 		// check if block has been verified since we started generating the proof.
 		// if it has been, transaction will revert, so we avoid gas fees even though
