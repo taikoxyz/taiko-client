@@ -319,9 +319,8 @@ func (p *Prover) onBlockProposed(
 
 	go func() {
 		if err := handleBlockProposedEvent(); err != nil {
-			if _, ok := p.currentBlocksBeingProven[event.Id.Uint64()]; ok {
-				delete(p.currentBlocksBeingProven, event.Id.Uint64())
-			}
+			delete(p.currentBlocksBeingProven, event.Id.Uint64())
+
 			log.Error("Handle new BlockProposed event error", "error", err)
 		}
 	}()
@@ -335,9 +334,8 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 	go func() {
 		defer func() {
 			<-p.submitProofConcurrencyGuard
-			if _, ok := p.currentBlocksBeingProven[proofWithHeader.Meta.Id]; ok {
-				delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
-			}
+			delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
+
 		}()
 
 		if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
