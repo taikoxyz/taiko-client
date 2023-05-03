@@ -35,6 +35,7 @@ type Proposer struct {
 
 	// Private keys and account addresses
 	l1ProposerPrivKey       *ecdsa.PrivateKey
+	l1ProposerAddress       common.Address
 	l2SuggestedFeeRecipient common.Address
 
 	// Proposing configurations
@@ -68,6 +69,7 @@ func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
 // InitFromConfig initializes the proposer instance based on the given configurations.
 func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
+	p.l1ProposerAddress = crypto.PubkeyToAddress(cfg.L1ProposerPrivKey.PublicKey)
 	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
 	p.proposingInterval = cfg.ProposeInterval
 	p.proposeEmptyBlocksInterval = cfg.ProposeEmptyBlocksInterval
@@ -159,6 +161,12 @@ func (p *Proposer) Close() {
 func (p *Proposer) ProposeOp(ctx context.Context) error {
 	if p.CustomProposeOpHook != nil {
 		return p.CustomProposeOpHook()
+	}
+
+	log.Info("Comparing proposer TKO balance to block fee")
+
+	if err := p.checkTaikoTokenBalance(); err != nil {
+		return fmt.Errorf("failed to check Taiko token balance: %w", err)
 	}
 
 	// Wait until L2 execution engine is synced at first.
@@ -321,4 +329,22 @@ func getTxOpts(
 	opts.GasTipCap = gasTipCap
 
 	return opts, nil
+}
+
+func (p *Proposer) checkTaikoTokenBalance() error {
+	fee, err := p.rpc.TaikoL1.GetBlockFee(nil)
+	if err != nil {
+		return fmt.Errorf("failed to get block fee: %w", err)
+	}
+
+	balance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(nil, p.l1ProposerAddress)
+	if err != nil {
+		return fmt.Errorf("failed to get tko balance: %w", err)
+	}
+
+	if balance.Cmp(new(big.Int).SetUint64(fee)) == -1 {
+		return fmt.Errorf("proposer does not have enough tko balance to propose")
+	}
+
+	return nil
 }
