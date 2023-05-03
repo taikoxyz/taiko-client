@@ -168,12 +168,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
 	}
 
-	log.Info("Comparing proposer TKO balance to block fee")
-
-	if err := p.checkTaikoTokenBalance(); err != nil {
-		return fmt.Errorf("failed to check Taiko token balance: %w", err)
-	}
-
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
 	txLists, err := p.rpc.GetPoolContent(
@@ -228,6 +222,12 @@ func (p *Proposer) ProposeTxList(
 	txListBytes []byte,
 	txNum uint,
 ) error {
+	log.Info("Comparing proposer TKO balance to block fee")
+
+	if err := p.checkTaikoTokenBalance(); err != nil {
+		return fmt.Errorf("failed to check Taiko token balance: %w", err)
+	}
+
 	// Propose the transactions list
 	inputs, err := encoding.EncodeProposeBlockInput(meta)
 	if err != nil {
