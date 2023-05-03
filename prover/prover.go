@@ -302,6 +302,7 @@ func (p *Prover) onBlockProposed(
 
 	go func() {
 		if err := handleBlockProposedEvent(); err != nil {
+			delete(p.currentBlocksBeingProven, event.Id.Uint64())
 			log.Error("Handle new BlockProposed event error", "error", err)
 		}
 	}()
