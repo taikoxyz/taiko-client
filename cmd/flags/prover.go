@@ -59,6 +59,12 @@ var (
 		Category: proverCategory,
 		Value:    false,
 	}
+	Graffiti = &cli.StringFlag{
+		Name:     "graffiti",
+		Usage:    "When string is passed, adds additional graffiti info to proof evidence",
+		Category: proverCategory,
+		Value:    "",
+	}
 )
 
 // All prover flags.
@@ -74,4 +80,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	Dummy,
 	RandomDummyProofDelay,
 	OracleProver,
+	Graffiti,
 })

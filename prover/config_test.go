@@ -30,6 +30,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 		&cli.BoolFlag{Name: flags.Dummy.Name},
 		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
 		&cli.BoolFlag{Name: flags.OracleProver.Name},
+		&cli.StringFlag{Name: flags.Graffiti.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
@@ -48,6 +49,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(time.Hour, *c.RandomDummyProofDelayUpperBound)
 		s.True(c.Dummy)
 		s.True(c.OracleProver)
+		s.Equal("", c.Graffiti)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -65,5 +67,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.Dummy.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.OracleProver.Name,
+		"-" + flags.Graffiti.Name, "",
 	}))
 }
