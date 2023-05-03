@@ -66,7 +66,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Dummy.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
-		"-" + flags.OracleProver.Name,
+		"-" + flags.OracleProver.Name, "",
 		"-" + flags.Graffiti.Name,
 	}))
 }

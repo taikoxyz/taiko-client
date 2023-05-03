@@ -61,8 +61,9 @@ var (
 	}
 	Graffiti = &cli.StringFlag{
 		Name:     "graffiti",
-		Usage:    "Set whether prover should add additional tag/info to proof",
+		Usage:    "When string is passed, adds additional graffiti info to proof evidence",
 		Category: proverCategory,
+		Value:    "",
 	}
 )
 

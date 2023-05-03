@@ -32,7 +32,7 @@ type ValidProofSubmitter struct {
 	proverAddress     common.Address
 	mutex             *sync.Mutex
 	isOracle          bool
-	graffiti          string
+	graffiti          [32]byte
 }
 
 // NewValidProofSubmitter creates a new ValidProofSubmitter instance.
@@ -51,6 +51,9 @@ func NewValidProofSubmitter(
 		return nil, err
 	}
 
+	var bytes [32]byte
+	copy(bytes[:], []byte(graffiti))
+
 	return &ValidProofSubmitter{
 		rpc:               rpc,
 		proofProducer:     proofProducer,
@@ -60,7 +63,7 @@ func NewValidProofSubmitter(
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		mutex:             mutex,
 		isOracle:          isOracle,
-		graffiti:          graffiti,
+		graffiti:          bytes,
 	}, nil
 }
 
@@ -165,7 +168,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		ParentHash:    block.ParentHash(),
 		BlockHash:     block.Hash(),
 		SignalRoot:    signalRoot,
-		Graffiti:      [32]byte{},
+		Graffiti:      s.graffiti,
 		ParentGasUsed: uint32(parent.GasUsed()),
 		GasUsed:       uint32(block.GasUsed()),
 		Proof:         zkProof,
