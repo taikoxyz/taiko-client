@@ -57,13 +57,11 @@ var (
 		Name:     "oracleProver",
 		Usage:    "Set whether prover should use oracle prover or not",
 		Category: proverCategory,
-		Value:    false,
 	}
 	OracleProverPrivateKey = &cli.BoolFlag{
 		Name:     "oracleProverPrivateKey",
-		Usage:    "Optional parameter whether prover should use oracle prover or not",
+		Usage:    "Private key of oracle prover",
 		Category: proverCategory,
-		Value:    false,
 	}
 	Graffiti = &cli.StringFlag{
 		Name:     "graffiti",

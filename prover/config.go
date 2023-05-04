@@ -53,7 +53,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 
 		oracleProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(oracleProverPrivKeyStr))
 		if err != nil {
-			return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
+			return nil, fmt.Errorf("invalid oracle private key: %w", err)
 		}
 	}
 
