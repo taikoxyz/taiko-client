@@ -119,5 +119,5 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.OracleProver.Name,
 		"-" + flags.Graffiti.Name, "",
-	}), "oracleProver flag set without oraclePriverPrivateKey set")
+	}), "oracleProver flag set without oracleProverPrivateKey set")
 }

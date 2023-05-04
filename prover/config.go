@@ -46,7 +46,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	var oracleProverPrivKey *ecdsa.PrivateKey
 	if c.IsSet(flags.OracleProver.Name) {
 		if !c.IsSet(flags.OracleProverPrivateKey.Name) {
-			return nil, fmt.Errorf("oracleProver flag set without oraclePriverPrivateKey set")
+			return nil, fmt.Errorf("oracleProver flag set without oracleProverPrivateKey set")
 		}
 
 		oracleProverPrivKeyStr := c.String(flags.OracleProverPrivateKey.Name)
