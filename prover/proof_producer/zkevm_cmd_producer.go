@@ -154,3 +154,7 @@ func (d *ZkevmCmdProducer) outputToCalldata(output *ProverCmdOutput) []byte {
 
 	return calldata[:bufLen]
 }
+
+func (d *ZkevmCmdProducer) Cancel(ctx context.Context, blockID *big.Int) error {
+	return nil
+}

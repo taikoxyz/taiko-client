@@ -149,3 +149,7 @@ func hashAndSignForOracleProof(
 
 	return sig, v, nil
 }
+
+func (d *OracleProducer) Cancel(ctx context.Context, blockID *big.Int) error {
+	return nil
+}

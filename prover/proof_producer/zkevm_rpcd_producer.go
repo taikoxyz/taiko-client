@@ -210,3 +210,7 @@ func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 
 	return output.Result, nil
 }
+
+func (d *ZkevmRpcdProducer) Cancel(ctx context.Context, blockID *big.Int) error {
+	return nil
+}

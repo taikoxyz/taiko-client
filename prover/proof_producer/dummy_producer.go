@@ -61,3 +61,7 @@ func (d *DummyProofProducer) proofDelay() time.Duration {
 
 	return delay
 }
+
+func (d *DummyProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
+	return nil
+}

@@ -24,6 +24,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+type cancelFunc func()
+
 // Prover keep trying to prove new proposed blocks valid/invalid.
 type Prover struct {
 	// Configurations
@@ -64,7 +66,7 @@ type Prover struct {
 	submitProofConcurrencyGuard chan struct{}
 	submitProofTxMutex          *sync.Mutex
 
-	currentBlocksBeingProven      map[uint64]context.CancelFunc
+	currentBlocksBeingProven      map[uint64]cancelFunc
 	currentBlocksBeingProvenMutex *sync.Mutex
 
 	ctx context.Context
@@ -85,7 +87,7 @@ func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
 func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
-	p.currentBlocksBeingProven = make(map[uint64]context.CancelFunc)
+	p.currentBlocksBeingProven = make(map[uint64]cancelFunc)
 	p.currentBlocksBeingProvenMutex = &sync.Mutex{}
 
 	// Clients
@@ -308,9 +310,14 @@ func (p *Prover) onBlockProposed(
 			return nil
 		}
 
-		ctx, cancel := context.WithCancel(ctx)
+		ctx, cancelCtx := context.WithCancel(ctx)
 		p.currentBlocksBeingProvenMutex.Lock()
-		p.currentBlocksBeingProven[event.Id.Uint64()] = cancel
+		p.currentBlocksBeingProven[event.Id.Uint64()] = cancelFunc(func() {
+			defer cancelCtx()
+			if err := p.validProofSubmitter.CancelProof(ctx, event.Id); err != nil {
+				log.Error("error cancelling proof", "error", err, "blockID", event.Id)
+			}
+		})
 		p.currentBlocksBeingProvenMutex.Unlock()
 
 		return p.validProofSubmitter.RequestProof(ctx, event)
