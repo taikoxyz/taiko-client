@@ -62,6 +62,7 @@ func (d *DummyProofProducer) proofDelay() time.Duration {
 	return delay
 }
 
+// Cancel cancels an existing proof generation.
 func (d *DummyProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
 	return nil
 }

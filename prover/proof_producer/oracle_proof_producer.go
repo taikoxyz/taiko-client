@@ -150,6 +150,8 @@ func hashAndSignForOracleProof(
 	return sig, v, nil
 }
 
+// Cancel cancels an existing proof generation.
+// Since Oracle proofs are not "real" proofs, there is nothing to cancel.
 func (d *OracleProducer) Cancel(ctx context.Context, blockID *big.Int) error {
 	return nil
 }
