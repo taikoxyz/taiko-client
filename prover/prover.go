@@ -134,7 +134,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
-	oracleProverAddress, err := p.rpc.TaikoL1.GetOracleProver(nil)
+	oracleName := [32]byte{}
+	copy(oracleName[:], "oracle_prover")
+
+	oracleProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, oracleName, true)
 	if err != nil {
 		return err
 	}
