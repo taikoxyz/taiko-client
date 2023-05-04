@@ -149,7 +149,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if cfg.OracleProver {
 		if producer, err = proofProducer.NewOracleProducer(
 			p.rpc,
-			p.cfg.L1ProverPrivKey,
+			p.cfg.OracleProverPrivateKey,
 			p.cfg.TaikoL2Address,
 			time.Duration(p.protocolConfigs.ProofTimeTarget)*time.Second,
 			oracleProverAddress,
