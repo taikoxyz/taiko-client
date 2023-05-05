@@ -52,8 +52,8 @@ func NewValidProofSubmitter(
 		return nil, err
 	}
 
-	var bytes [32]byte
-	copy(bytes[:], []byte(graffiti))
+	var graffitiBytes [32]byte
+	copy(graffitiBytes[:], []byte(graffiti))
 
 	return &ValidProofSubmitter{
 		rpc:               rpc,
@@ -64,7 +64,7 @@ func NewValidProofSubmitter(
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		mutex:             mutex,
 		isOracle:          isOracle,
-		graffiti:          bytes,
+		graffiti:          graffitiBytes,
 	}, nil
 }
 
@@ -181,7 +181,8 @@ func (s *ValidProofSubmitter) SubmitProof(
 
 	if s.isOracle {
 		prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
-		circuitsIdx = uint16(int(zkProof[64])) + 27
+		circuitsIdx = uint16(int(zkProof[64]))
+		evidence.Proof = zkProof[0:64]
 	} else {
 		prover = s.proverAddress
 
