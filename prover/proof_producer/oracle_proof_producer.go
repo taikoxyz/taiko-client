@@ -119,7 +119,18 @@ func (p *OracleProducer) RequestProof(
 		return fmt.Errorf("failed to sign evidence: %w", err)
 	}
 
-	time.AfterFunc(p.proofTimeTarget, func() {
+	var (
+		delay     time.Duration = 0
+		now                     = time.Now()
+		blockTime               = time.Unix(int64(block.Time()), 0)
+	)
+	if now.Before(blockTime.Add(p.proofTimeTarget)) {
+		delay = blockTime.Add(p.proofTimeTarget).Sub(now)
+	}
+
+	log.Info("Oracle proof submission delay", "delay", delay)
+
+	time.AfterFunc(delay, func() {
 		resultCh <- &ProofWithHeader{
 			BlockID: blockID,
 			Header:  header,
