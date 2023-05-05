@@ -42,6 +42,7 @@ type ProofProducer interface {
 		header *types.Header,
 		resultCh chan *ProofWithHeader,
 	) error
+	Cancel(ctx context.Context, blockID *big.Int) error
 }
 
 func DegreeToCircuitsIdx(degree uint64) (uint16, error) {

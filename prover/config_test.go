@@ -30,6 +30,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 		&cli.BoolFlag{Name: flags.Dummy.Name},
 		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
 		&cli.BoolFlag{Name: flags.OracleProver.Name},
+		&cli.StringFlag{Name: flags.OracleProverPrivateKey.Name},
 		&cli.StringFlag{Name: flags.Graffiti.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
@@ -49,6 +50,10 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(time.Hour, *c.RandomDummyProofDelayUpperBound)
 		s.True(c.Dummy)
 		s.True(c.OracleProver)
+		s.Equal(
+			crypto.PubkeyToAddress(s.p.cfg.OracleProverPrivateKey.PublicKey),
+			crypto.PubkeyToAddress(c.OracleProverPrivateKey.PublicKey),
+		)
 		s.Equal("", c.Graffiti)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
@@ -67,6 +72,52 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.Dummy.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.OracleProver.Name,
+		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Graffiti.Name, "",
 	}))
+}
+
+func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
+	l1WsEndpoint := os.Getenv("L1_NODE_WS_ENDPOINT")
+	l1HttpEndpoint := os.Getenv("L1_NODE_HTTP_ENDPOINT")
+	l2WsEndpoint := os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
+	l2HttpEndpoint := os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
+	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
+
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
+		&cli.StringFlag{Name: flags.L1HTTPEndpoint.Name},
+		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
+		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
+		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
+		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
+		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
+		&cli.BoolFlag{Name: flags.Dummy.Name},
+		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
+		&cli.BoolFlag{Name: flags.OracleProver.Name},
+		&cli.StringFlag{Name: flags.OracleProverPrivateKey.Name},
+		&cli.StringFlag{Name: flags.Graffiti.Name},
+	}
+	app.Action = func(ctx *cli.Context) error {
+		_, err := NewConfigFromCliContext(ctx)
+		s.NotNil(err)
+		return err
+	}
+
+	s.ErrorContains(app.Run([]string{
+		"TestNewConfigFromCliContext",
+		"-" + flags.L1WSEndpoint.Name, l1WsEndpoint,
+		"-" + flags.L1HTTPEndpoint.Name, l1HttpEndpoint,
+		"-" + flags.L2WSEndpoint.Name, l2WsEndpoint,
+		"-" + flags.L2HTTPEndpoint.Name, l2HttpEndpoint,
+		"-" + flags.TaikoL1Address.Name, taikoL1,
+		"-" + flags.TaikoL2Address.Name, taikoL2,
+		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.Dummy.Name,
+		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
+		"-" + flags.OracleProver.Name,
+		"-" + flags.Graffiti.Name, "",
+	}), "oracleProver flag set without oracleProverPrivateKey set")
 }

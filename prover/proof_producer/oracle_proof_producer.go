@@ -3,6 +3,7 @@ package producer
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -15,6 +16,10 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	anchorTxValidator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
+)
+
+var (
+	errProtocolAddressMismatch = errors.New("oracle prover private key does not match protocol setting")
 )
 
 // OracleProducer is responsible for generating a fake "zkproof" consisting
@@ -32,7 +37,13 @@ func NewOracleProducer(
 	proverPrivKey *ecdsa.PrivateKey,
 	taikoL2Address common.Address,
 	proofTimeTarget time.Duration,
+	protocolOracleProverAddress common.Address,
 ) (*OracleProducer, error) {
+	proverAddress := crypto.PubkeyToAddress(proverPrivKey.PublicKey)
+	if proverAddress != protocolOracleProverAddress {
+		return nil, errProtocolAddressMismatch
+	}
+
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc)
 	if err != nil {
 		return nil, err
@@ -137,4 +148,10 @@ func hashAndSignForOracleProof(
 	v := uint8(int(sig[64])) + 27
 
 	return sig, v, nil
+}
+
+// Cancel cancels an existing proof generation.
+// Since Oracle proofs are not "real" proofs, there is nothing to cancel.
+func (d *OracleProducer) Cancel(ctx context.Context, blockID *big.Int) error {
+	return nil
 }

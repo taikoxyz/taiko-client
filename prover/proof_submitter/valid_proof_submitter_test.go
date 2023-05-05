@@ -116,6 +116,20 @@ func (s *ProofSubmitterTestSuite) TestValidSubmitProofs() {
 	}
 }
 
+func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofCancelled() {
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		time.AfterFunc(2*time.Second, func() {
+			cancel()
+		})
+	}()
+
+	s.ErrorContains(
+		s.validProofSubmitter.RequestProof(
+			ctx, &bindings.TaikoL1ClientBlockProposed{Id: common.Big256}), "context canceled",
+	)
+}
+
 func TestProofSubmitterTestSuite(t *testing.T) {
 	suite.Run(t, new(ProofSubmitterTestSuite))
 }

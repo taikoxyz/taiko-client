@@ -57,7 +57,11 @@ var (
 		Name:     "oracleProver",
 		Usage:    "Set whether prover should use oracle prover or not",
 		Category: proverCategory,
-		Value:    false,
+	}
+	OracleProverPrivateKey = &cli.BoolFlag{
+		Name:     "oracleProverPrivateKey",
+		Usage:    "Private key of oracle prover",
+		Category: proverCategory,
 	}
 	Graffiti = &cli.StringFlag{
 		Name:     "graffiti",
@@ -80,5 +84,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	Dummy,
 	RandomDummyProofDelay,
 	OracleProver,
+	OracleProverPrivateKey,
 	Graffiti,
 })

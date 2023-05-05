@@ -24,11 +24,14 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+type cancelFunc func()
+
 // Prover keep trying to prove new proposed blocks valid/invalid.
 type Prover struct {
 	// Configurations
-	cfg           *Config
-	proverAddress common.Address
+	cfg                 *Config
+	proverAddress       common.Address
+	oracleProverAddress common.Address
 
 	// Clients
 	rpc *rpc.Client
@@ -48,6 +51,8 @@ type Prover struct {
 	// Subscriptions
 	blockProposedCh  chan *bindings.TaikoL1ClientBlockProposed
 	blockProposedSub event.Subscription
+	blockProvenCh    chan *bindings.TaikoL1ClientBlockProven
+	blockProvenSub   event.Subscription
 	blockVerifiedCh  chan *bindings.TaikoL1ClientBlockVerified
 	blockVerifiedSub event.Subscription
 	proveNotify      chan struct{}
@@ -60,6 +65,9 @@ type Prover struct {
 	proposeConcurrencyGuard     chan struct{}
 	submitProofConcurrencyGuard chan struct{}
 	submitProofTxMutex          *sync.Mutex
+
+	currentBlocksBeingProven      map[uint64]cancelFunc
+	currentBlocksBeingProvenMutex *sync.Mutex
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -79,6 +87,8 @@ func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
 func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
+	p.currentBlocksBeingProven = make(map[uint64]cancelFunc)
+	p.currentBlocksBeingProvenMutex = &sync.Mutex{}
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -112,6 +122,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	chBufferSize := p.protocolConfigs.MaxNumProposedBlocks.Uint64()
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
+	p.blockProvenCh = make(chan *bindings.TaikoL1ClientBlockProven, chBufferSize)
 	p.proveValidProofCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proveInvalidProofCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
@@ -123,14 +134,25 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
+	oracleName := [32]byte{}
+	copy(oracleName[:], "oracle_prover")
+
+	oracleProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, oracleName, true)
+	if err != nil {
+		return err
+	}
+
+	p.oracleProverAddress = oracleProverAddress
+
 	var producer proofProducer.ProofProducer
 
 	if cfg.OracleProver {
 		if producer, err = proofProducer.NewOracleProducer(
 			p.rpc,
-			p.cfg.L1ProverPrivKey,
+			p.cfg.OracleProverPrivateKey,
 			p.cfg.TaikoL2Address,
 			time.Duration(p.protocolConfigs.ProofTimeTarget)*time.Second,
+			oracleProverAddress,
 		); err != nil {
 			return err
 		}
@@ -219,6 +241,10 @@ func (p *Prover) eventLoop() {
 			if err := p.onBlockVerified(p.ctx, e); err != nil {
 				log.Error("Handle BlockVerified event error", "error", err)
 			}
+		case e := <-p.blockProvenCh:
+			if err := p.onBlockProven(p.ctx, e); err != nil {
+				log.Error("Handle BlockProven event error", "error", err)
+			}
 		case <-forceProvingTicker.C:
 			reqProving()
 		}
@@ -287,6 +313,16 @@ func (p *Prover) onBlockProposed(
 			return nil
 		}
 
+		ctx, cancelCtx := context.WithCancel(ctx)
+		p.currentBlocksBeingProvenMutex.Lock()
+		p.currentBlocksBeingProven[event.Id.Uint64()] = cancelFunc(func() {
+			defer cancelCtx()
+			if err := p.validProofSubmitter.CancelProof(ctx, event.Id); err != nil {
+				log.Error("error cancelling proof", "error", err, "blockID", event.Id)
+			}
+		})
+		p.currentBlocksBeingProvenMutex.Unlock()
+
 		return p.validProofSubmitter.RequestProof(ctx, event)
 	}
 
@@ -297,6 +333,9 @@ func (p *Prover) onBlockProposed(
 
 	go func() {
 		if err := handleBlockProposedEvent(); err != nil {
+			p.currentBlocksBeingProvenMutex.Lock()
+			delete(p.currentBlocksBeingProven, event.Id.Uint64())
+			p.currentBlocksBeingProvenMutex.Unlock()
 			log.Error("Handle new BlockProposed event error", "error", err)
 		}
 	}()
@@ -308,7 +347,12 @@ func (p *Prover) onBlockProposed(
 func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader, isValidProof bool) {
 	p.submitProofConcurrencyGuard <- struct{}{}
 	go func() {
-		defer func() { <-p.submitProofConcurrencyGuard }()
+		defer func() {
+			<-p.submitProofConcurrencyGuard
+			p.currentBlocksBeingProvenMutex.Lock()
+			delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
+			p.currentBlocksBeingProvenMutex.Unlock()
+		}()
 
 		if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
 			log.Error("Submit proof error", "isValidProof", isValidProof, "error", err)
@@ -316,8 +360,8 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 	}()
 }
 
-// onBlockVerified update the latestVerified block in current state.
-// TODO: cancel the corresponding block's proof generation, if requested before.
+// onBlockVerified update the latestVerified block in current state, and cancels
+// the block being proven if it's verified.
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
 	p.latestVerifiedL1Height = event.Raw.BlockNumber
@@ -328,6 +372,27 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 	}
 
 	log.Info("New verified valid block", "blockID", event.Id, "hash", common.BytesToHash(event.BlockHash[:]))
+
+	// cancel any proofs being generated for this block
+	p.cancelProof(ctx, event.Id.Uint64())
+
+	return nil
+}
+
+// onBlockProven cancels proof generation if the proof is being generated by this prover,
+// and the proof is not the oracle proof address.
+func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1ClientBlockProven) error {
+	metrics.ProverReceivedProvenBlockGauge.Update(event.Id.Int64())
+	// if oracle prover, dont cancel proof.
+	if event.Prover == p.oracleProverAddress {
+		return nil
+	}
+
+	// cancel any proofs being generated for this block
+	if err := p.cancelProofIfValid(ctx, event.Id.Uint64(), uint64(event.ParentGasUsed), event.ParentHash); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -430,10 +495,43 @@ func (p *Prover) NeedNewProof(id *big.Int) (bool, error) {
 func (p *Prover) initSubscription() {
 	p.blockProposedSub = rpc.SubscribeBlockProposed(p.rpc.TaikoL1, p.blockProposedCh)
 	p.blockVerifiedSub = rpc.SubscribeBlockVerified(p.rpc.TaikoL1, p.blockVerifiedCh)
+	p.blockProvenSub = rpc.SubscribeBlockProven(p.rpc.TaikoL1, p.blockProvenCh)
 }
 
 // closeSubscription closes all subscriptions.
 func (p *Prover) closeSubscription() {
 	p.blockVerifiedSub.Unsubscribe()
 	p.blockProposedSub.Unsubscribe()
+}
+
+// cancelProofIfValid cancels proof only if the parentGasUsed and parentHash in the proof match what
+// is expected
+func (p *Prover) cancelProofIfValid(
+	ctx context.Context,
+	blockID uint64,
+	parentGasUsed uint64,
+	parentHash common.Hash,
+) error {
+	parent, err := p.rpc.L2ParentByBlockId(ctx, new(big.Int).SetUint64(blockID))
+	if err != nil {
+		return err
+	}
+
+	if parent.GasUsed == parentGasUsed && parent.Hash() == parentHash {
+		p.cancelProof(ctx, blockID)
+	}
+
+	return nil
+}
+
+// cancelProof cancels local proof generation
+func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
+	p.currentBlocksBeingProvenMutex.Lock()
+	defer p.currentBlocksBeingProvenMutex.Unlock()
+
+	if cancel, ok := p.currentBlocksBeingProven[blockID]; ok {
+		cancel()
+		delete(p.currentBlocksBeingProven, blockID)
+		log.Info("Cancelled proof for ", "blockID", blockID)
+	}
 }

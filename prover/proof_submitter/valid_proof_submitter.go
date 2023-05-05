@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
+	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -230,4 +231,11 @@ func (s *ValidProofSubmitter) SubmitProof(
 	metrics.ProverLatestProvenBlockIDGauge.Update(proofWithHeader.BlockID.Int64())
 
 	return nil
+}
+
+// CancelProof cancels an existing proof generation.
+// Right now, it is just a stub that does nothing, because it is not possible to cnacel the proof
+// with the current zkevm software.
+func (s *ValidProofSubmitter) CancelProof(ctx context.Context, blockID *big.Int) error {
+	return s.proofProducer.Cancel(ctx, blockID)
 }
