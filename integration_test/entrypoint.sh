@@ -32,6 +32,7 @@ L1_SIGNAL_SERVICE_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq '.signal_service
 trap "docker compose -f $TESTNET_CONFIG down -v" EXIT INT KILL ERR
 
 RUN_TESTS=${RUN_TESTS:-false}
+PACKAGE=${PACKAGE:-...}
 
 echo "TAIKO_L1_CONTRACT_ADDRESS: $TAIKO_L1_CONTRACT_ADDRESS"
 echo "L1_SIGNAL_SERVICE_CONTRACT_ADDRESS: $L1_SIGNAL_SERVICE_CONTRACT_ADDRESS"
@@ -50,7 +51,7 @@ if [ "$RUN_TESTS" == "true" ]; then
     L2_SUGGESTED_FEE_RECIPIENT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \
     L1_PROVER_PRIVATE_KEY=59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d \
     JWT_SECRET=$DIR/nodes/jwt.hex \
-        go test -v -p=1 ./... -coverprofile=coverage.out -covermode=atomic -timeout=300s
+        go test -v -p=1 ./$PACKAGE -coverprofile=coverage.out -covermode=atomic -timeout=300s
 else
     echo "💻 Local dev net started"
     docker compose -f $TESTNET_CONFIG logs -f l2_execution_engine
