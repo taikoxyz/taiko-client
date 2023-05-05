@@ -53,6 +53,8 @@ func TestHashAndSignOracleProof(t *testing.T) {
 	sig, err := hashAndSignForOracleProof(evidence, privateKey)
 	require.Nil(t, err)
 
+	sig[64] = sig[64] - 27
+
 	pubKey, err := crypto.Ecrecover(hash.Bytes(), sig)
 	require.Nil(t, err)
 	isValid := crypto.VerifySignature(pubKey, hash.Bytes(), sig[:64])
