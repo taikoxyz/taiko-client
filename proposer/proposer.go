@@ -343,7 +343,7 @@ func (p *Proposer) checkTaikoTokenBalance() error {
 	}
 
 	if balance.Cmp(new(big.Int).SetUint64(fee)) == -1 {
-		return fmt.Errorf("proposer does not have enough tko balance to propose")
+		return fmt.Errorf("proposer does not have enough tko balance to propose, balance: %d, fee: %d", balance, fee)
 	}
 
 	return nil
