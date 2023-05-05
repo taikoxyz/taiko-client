@@ -29,6 +29,7 @@ type OracleProducer struct {
 	proverPrivKey     *ecdsa.PrivateKey
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	proofTimeTarget   time.Duration
+	graffiti          [32]byte
 }
 
 // NewOracleProducer creates a new NewOracleProducer instance.
@@ -38,6 +39,7 @@ func NewOracleProducer(
 	taikoL2Address common.Address,
 	proofTimeTarget time.Duration,
 	protocolOracleProverAddress common.Address,
+	graffiti string,
 ) (*OracleProducer, error) {
 	proverAddress := crypto.PubkeyToAddress(proverPrivKey.PublicKey)
 	if proverAddress != protocolOracleProverAddress {
@@ -49,11 +51,14 @@ func NewOracleProducer(
 		return nil, err
 	}
 
-	return &OracleProducer{rpc, proverPrivKey, anchorValidator, proofTimeTarget}, nil
+	var graffitiBytes [32]byte
+	copy(graffitiBytes[:], []byte(graffiti))
+
+	return &OracleProducer{rpc, proverPrivKey, anchorValidator, proofTimeTarget, graffitiBytes}, nil
 }
 
 // RequestProof implements the ProofProducer interface.
-func (d *OracleProducer) RequestProof(
+func (p *OracleProducer) RequestProof(
 	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
@@ -69,27 +74,27 @@ func (d *OracleProducer) RequestProof(
 		"hash", header.Hash(),
 	)
 
-	block, err := d.rpc.L2.BlockByHash(ctx, header.Hash())
+	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to get L2 block with given hash %s: %w", header.Hash(), err)
 	}
 
 	anchorTx := block.Transactions()[0]
-	if err := d.anchorTxValidator.ValidateAnchorTx(ctx, anchorTx); err != nil {
+	if err := p.anchorTxValidator.ValidateAnchorTx(ctx, anchorTx); err != nil {
 		return fmt.Errorf("invalid anchor transaction: %w", err)
 	}
 
-	signalRoot, err := d.anchorTxValidator.GetAnchoredSignalRoot(ctx, anchorTx)
+	signalRoot, err := p.anchorTxValidator.GetAnchoredSignalRoot(ctx, anchorTx)
 	if err != nil {
 		return err
 	}
 
-	parent, err := d.rpc.L2.BlockByHash(ctx, block.ParentHash())
+	parent, err := p.rpc.L2.BlockByHash(ctx, block.ParentHash())
 	if err != nil {
 		return err
 	}
 
-	blockInfo, err := d.rpc.TaikoL1.GetBlock(nil, blockID)
+	blockInfo, err := p.rpc.TaikoL1.GetBlock(nil, blockID)
 	if err != nil {
 		return err
 	}
@@ -101,20 +106,20 @@ func (d *OracleProducer) RequestProof(
 		ParentHash:    block.ParentHash(),
 		BlockHash:     block.Hash(),
 		SignalRoot:    signalRoot,
-		Graffiti:      [32]byte{},
+		Graffiti:      p.graffiti,
 		Prover:        common.HexToAddress("0x0000000000000000000000000000000000000000"),
 		ParentGasUsed: uint32(parent.GasUsed()),
 		GasUsed:       uint32(block.GasUsed()),
 		VerifierId:    0,
-		Proof:         nil,
+		Proof:         []byte{},
 	}
 
-	proof, _, err := hashAndSignForOracleProof(evidence, d.proverPrivKey)
+	proof, err := hashAndSignForOracleProof(evidence, p.proverPrivKey)
 	if err != nil {
 		return fmt.Errorf("failed to sign evidence: %w", err)
 	}
 
-	time.AfterFunc(d.proofTimeTarget, func() {
+	time.AfterFunc(p.proofTimeTarget, func() {
 		resultCh <- &ProofWithHeader{
 			BlockID: blockID,
 			Header:  header,
@@ -131,23 +136,23 @@ func (d *OracleProducer) RequestProof(
 func hashAndSignForOracleProof(
 	evidence *encoding.TaikoL1Evidence,
 	privateKey *ecdsa.PrivateKey,
-) ([]byte, uint8, error) {
+) ([]byte, error) {
 	inputToSign, err := encoding.EncodeProveBlockInput(evidence)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to encode TaikoL1.proveBlock inputs: %w", err)
+		return nil, fmt.Errorf("failed to encode TaikoL1.proveBlock inputs: %w", err)
 	}
 
 	hashed := crypto.Keccak256Hash(inputToSign)
 
 	sig, err := crypto.Sign(hashed.Bytes(), privateKey)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to sign TaikoL1Evidence: %w", err)
+		return nil, fmt.Errorf("failed to sign TaikoL1Evidence: %w", err)
 	}
 
 	// add 27 to be able to be ecrecover in solidity
-	v := uint8(int(sig[64])) + 27
+	sig[64] = uint8(int(sig[64])) + 27
 
-	return sig, v, nil
+	return sig, nil
 }
 
 // Cancel cancels an existing proof generation.

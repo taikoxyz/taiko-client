@@ -153,6 +153,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			p.cfg.TaikoL2Address,
 			time.Duration(p.protocolConfigs.ProofTimeTarget)*time.Second,
 			oracleProverAddress,
+			p.cfg.Graffiti,
 		); err != nil {
 			return err
 		}

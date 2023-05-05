@@ -75,7 +75,7 @@ func sendTxWithBackoff(
 		if err != nil {
 			err = encoding.TryParsingCustomError(err)
 			if isSubmitProofTxErrorRetryable(err, blockID) {
-				log.Info("Retry sending TaikoL1.proveBlock transaction", "reason", err)
+				log.Info("Retry sending TaikoL1.proveBlock transaction", "blockID", blockID, "reason", err)
 				return err
 			}
 
