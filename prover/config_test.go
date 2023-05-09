@@ -238,7 +238,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProverError() {
 	}), "systemProver flag set without systemProverPrivateKey set")
 }
 
-func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProverEAndOracleProverBothSet() {
+func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProverAndOracleProverBothSetError() {
 	l1WsEndpoint := os.Getenv("L1_NODE_WS_ENDPOINT")
 	l1HttpEndpoint := os.Getenv("L1_NODE_HTTP_ENDPOINT")
 	l2WsEndpoint := os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
