@@ -100,8 +100,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProver() {
 		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
 		&cli.BoolFlag{Name: flags.SystemProver.Name},
 		&cli.StringFlag{Name: flags.SystemProverPrivateKey.Name},
-		&cli.BoolFlag{Name: flags.SystemProver.Name},
-		&cli.StringFlag{Name: flags.SystemProverPrivateKey.Name},
 		&cli.StringFlag{Name: flags.Graffiti.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
