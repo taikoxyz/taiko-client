@@ -72,7 +72,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			return nil, fmt.Errorf("systemProver flag set without systemProverPrivateKey set")
 		}
 
-		systemProverPrivKeyStr := c.String(flags.OracleProverPrivateKey.Name)
+		systemProverPrivKeyStr := c.String(flags.SystemProverPrivateKey.Name)
 
 		systemProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(systemProverPrivKeyStr))
 		if err != nil {
