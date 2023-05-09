@@ -23,7 +23,7 @@ COMPILE_PROTOCOL=${COMPILE_PROTOCOL:-false}
 TESTNET_CONFIG=$TESTNET_CONFIG \
 COMPILE_PROTOCOL=$COMPILE_PROTOCOL \
 TAIKO_MONO_DIR=$TAIKO_MONO_DIR \
-    $DIR/nodes/init.sh
+$DIR/nodes/init.sh
 
 DEPLOYMENT_JSON=$(cat $TAIKO_MONO_DIR/packages/protocol/deployments/deploy_l1.json)
 TAIKO_L1_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq '.taiko' | sed 's/\"//g')
