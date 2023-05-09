@@ -28,6 +28,7 @@ type Config struct {
 	MaxConcurrentProvingJobs        uint
 	Dummy                           bool
 	OracleProver                    bool
+	OracleProverPrivateKey          *ecdsa.PrivateKey
 	Graffiti                        string
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
@@ -40,6 +41,20 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(l1ProverPrivKeyStr))
 	if err != nil {
 		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
+	}
+
+	var oracleProverPrivKey *ecdsa.PrivateKey
+	if c.IsSet(flags.OracleProver.Name) {
+		if !c.IsSet(flags.OracleProverPrivateKey.Name) {
+			return nil, fmt.Errorf("oracleProver flag set without oracleProverPrivateKey set")
+		}
+
+		oracleProverPrivKeyStr := c.String(flags.OracleProverPrivateKey.Name)
+
+		oracleProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(oracleProverPrivKeyStr))
+		if err != nil {
+			return nil, fmt.Errorf("invalid oracle private key: %w", err)
+		}
 	}
 
 	var (
@@ -90,6 +105,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		MaxConcurrentProvingJobs:        c.Uint(flags.MaxConcurrentProvingJobs.Name),
 		Dummy:                           c.Bool(flags.Dummy.Name),
 		OracleProver:                    c.Bool(flags.OracleProver.Name),
+		OracleProverPrivateKey:          oracleProverPrivKey,
 		Graffiti:                        c.String(flags.Graffiti.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,

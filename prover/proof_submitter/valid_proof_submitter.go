@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
+	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -51,8 +52,8 @@ func NewValidProofSubmitter(
 		return nil, err
 	}
 
-	var bytes [32]byte
-	copy(bytes[:], []byte(graffiti))
+	var graffitiBytes [32]byte
+	copy(graffitiBytes[:], []byte(graffiti))
 
 	return &ValidProofSubmitter{
 		rpc:               rpc,
@@ -63,7 +64,7 @@ func NewValidProofSubmitter(
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		mutex:             mutex,
 		isOracle:          isOracle,
-		graffiti:          bytes,
+		graffiti:          graffitiBytes,
 	}, nil
 }
 
@@ -180,7 +181,8 @@ func (s *ValidProofSubmitter) SubmitProof(
 
 	if s.isOracle {
 		prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
-		circuitsIdx = uint16(int(zkProof[64])) + 27
+		circuitsIdx = uint16(int(zkProof[64]))
+		evidence.Proof = zkProof[0:64]
 	} else {
 		prover = s.proverAddress
 
@@ -230,4 +232,11 @@ func (s *ValidProofSubmitter) SubmitProof(
 	metrics.ProverLatestProvenBlockIDGauge.Update(proofWithHeader.BlockID.Int64())
 
 	return nil
+}
+
+// CancelProof cancels an existing proof generation.
+// Right now, it is just a stub that does nothing, because it is not possible to cnacel the proof
+// with the current zkevm software.
+func (s *ValidProofSubmitter) CancelProof(ctx context.Context, blockID *big.Int) error {
+	return s.proofProducer.Cancel(ctx, blockID)
 }

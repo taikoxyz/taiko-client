@@ -43,6 +43,7 @@ func (s *ProverTestSuite) SetupTest() {
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L1ProverPrivKey:          l1ProverPrivKey,
+		OracleProverPrivateKey:   l1ProverPrivKey,
 		Dummy:                    true,
 		MaxConcurrentProvingJobs: 1,
 	})))
@@ -91,6 +92,10 @@ func (s *ProverTestSuite) TestName() {
 
 func (s *ProverTestSuite) TestOnBlockProposed() {
 	s.p.cfg.OracleProver = true
+	// Init prover
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+	s.p.cfg.OracleProverPrivateKey = l1ProverPrivKey
 	// Valid block
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))

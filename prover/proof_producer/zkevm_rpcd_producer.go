@@ -210,3 +210,11 @@ func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 
 	return output.Result, nil
 }
+
+// Cancel cancels an existing proof generation.
+// Right now, it is just a stub that does nothing, because it is not possible to cnacel the proof
+// with the current zkevm software.
+func (d *ZkevmRpcdProducer) Cancel(ctx context.Context, blockID *big.Int) error {
+	log.Info("Cancel proof generation for block ", "blockId", blockID)
+	return nil
+}
