@@ -34,7 +34,7 @@ func NewZkevmCmdProducer(
 }
 
 // RequestProof implements the ProofProducer interface.
-func (d *ZkevmCmdProducer) RequestProof(
+func (p *ZkevmCmdProducer) RequestProof(
 	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
@@ -48,7 +48,7 @@ func (d *ZkevmCmdProducer) RequestProof(
 		"beneficiary", meta.Beneficiary,
 		"height", header.Number,
 		"hash", header.Hash(),
-		"cmd", d.CmdPath,
+		"cmd", p.CmdPath,
 	)
 
 	var (
@@ -56,7 +56,7 @@ func (d *ZkevmCmdProducer) RequestProof(
 		err   error
 	)
 	if err := backoff.Retry(func() error {
-		if proof, err = d.ExecProverCmd(opts.Height); err != nil {
+		if proof, err = p.ExecProverCmd(opts.Height); err != nil {
 			log.Error("Execute prover cmd error", "error", err)
 			return err
 		}
@@ -82,9 +82,9 @@ type ProverCmdOutput struct {
 	Proof     []byte   `json:"proof"`
 }
 
-func (d *ZkevmCmdProducer) ExecProverCmd(height *big.Int) ([]byte, error) {
+func (p *ZkevmCmdProducer) ExecProverCmd(height *big.Int) ([]byte, error) {
 	start := time.Now()
-	cmd := exec.Command(d.CmdPath, d.L2Endpoint, height.String())
+	cmd := exec.Command(p.CmdPath, p.L2Endpoint, height.String())
 
 	var stdout, stderr bytes.Buffer
 
@@ -124,10 +124,10 @@ func (d *ZkevmCmdProducer) ExecProverCmd(height *big.Int) ([]byte, error) {
 		return nil, err
 	}
 
-	return d.outputToCalldata(&proverCmdOutput), nil
+	return p.outputToCalldata(&proverCmdOutput), nil
 }
 
-func (d *ZkevmCmdProducer) outputToCalldata(output *ProverCmdOutput) []byte {
+func (p *ZkevmCmdProducer) outputToCalldata(output *ProverCmdOutput) []byte {
 	calldata := []byte{}
 	bufLen := len(output.Instances)*32 + len(output.Proof)
 
@@ -158,7 +158,7 @@ func (d *ZkevmCmdProducer) outputToCalldata(output *ProverCmdOutput) []byte {
 // Cancel cancels an existing proof generation.
 // Right now, it is just a stub that does nothing, because it is not possible to cnacel the proof
 // with the current zkevm software.
-func (d *ZkevmCmdProducer) Cancel(ctx context.Context, blockID *big.Int) error {
+func (p *ZkevmCmdProducer) Cancel(ctx context.Context, blockID *big.Int) error {
 	log.Info("Cancel proof generation for block ", "blockId", blockID)
 	return nil
 }

@@ -205,6 +205,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.L1ProverPrivKey,
 		p.submitProofTxMutex,
 		p.cfg.OracleProver,
+		p.cfg.SystemProver,
 		p.cfg.Graffiti,
 	); err != nil {
 		return err

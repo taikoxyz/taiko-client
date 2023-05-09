@@ -89,7 +89,7 @@ func NewZkevmRpcdProducer(
 }
 
 // RequestProof implements the ProofProducer interface.
-func (d *ZkevmRpcdProducer) RequestProof(
+func (p *ZkevmRpcdProducer) RequestProof(
 	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
@@ -110,10 +110,10 @@ func (d *ZkevmRpcdProducer) RequestProof(
 		degree uint64
 		err    error
 	)
-	if d.CustomProofHook != nil {
-		proof, degree, err = d.CustomProofHook()
+	if p.CustomProofHook != nil {
+		proof, degree, err = p.CustomProofHook()
 	} else {
-		proof, degree, err = d.callProverDaemon(ctx, opts)
+		proof, degree, err = p.callProverDaemon(ctx, opts)
 	}
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func (d *ZkevmRpcdProducer) RequestProof(
 }
 
 // callProverDaemon keeps polling the proverd service to get the requested proof.
-func (d *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofRequestOptions) ([]byte, uint64, error) {
+func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofRequestOptions) ([]byte, uint64, error) {
 	var (
 		proof  []byte
 		degree uint64
@@ -141,9 +141,9 @@ func (d *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 		if ctx.Err() != nil {
 			return nil
 		}
-		output, err := d.requestProof(opts)
+		output, err := p.requestProof(opts)
 		if err != nil {
-			log.Error("Failed to request proof", "height", opts.Height, "err", err, "endpoint", d.RpcdEndpoint)
+			log.Error("Failed to request proof", "height", opts.Height, "err", err, "endpoint", p.RpcdEndpoint)
 			return err
 		}
 
@@ -163,7 +163,7 @@ func (d *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 }
 
 // requestProof sends a RPC request to proverd to try to get the requested proof.
-func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput, error) {
+func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput, error) {
 	reqBody := RequestProofBody{
 		JsonRPC: "2.0",
 		ID:      common.Big1,
@@ -171,10 +171,10 @@ func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 		Params: []*RequestProofBodyParam{{
 			Circuit:            "pi",
 			Block:              opts.Height,
-			L1RPC:              d.L1Endpoint,
-			L2RPC:              d.L2Endpoint,
+			L1RPC:              p.L1Endpoint,
+			L2RPC:              p.L2Endpoint,
 			Retry:              true,
-			Param:              d.Param,
+			Param:              p.Param,
 			VerifyProof:        true,
 			Mock:               false,
 			Aggregate:          false,
@@ -188,7 +188,7 @@ func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 		return nil, err
 	}
 
-	res, err := http.Post(d.RpcdEndpoint, "application/json", bytes.NewBuffer(jsonValue))
+	res, err := http.Post(p.RpcdEndpoint, "application/json", bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func (d *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 // Cancel cancels an existing proof generation.
 // Right now, it is just a stub that does nothing, because it is not possible to cnacel the proof
 // with the current zkevm software.
-func (d *ZkevmRpcdProducer) Cancel(ctx context.Context, blockID *big.Int) error {
+func (p *ZkevmRpcdProducer) Cancel(ctx context.Context, blockID *big.Int) error {
 	log.Info("Cancel proof generation for block ", "blockId", blockID)
 	return nil
 }
