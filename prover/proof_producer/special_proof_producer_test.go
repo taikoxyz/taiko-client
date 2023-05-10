@@ -50,7 +50,7 @@ func TestHashAndSignOracleProof(t *testing.T) {
 
 	hash := crypto.Keccak256Hash(input)
 
-	sig, err := hashAndSignForOracleProof(evidence, privateKey)
+	sig, err := hashAndSignForSpecialProof(evidence, privateKey)
 	require.Nil(t, err)
 
 	sig[64] = sig[64] - 27

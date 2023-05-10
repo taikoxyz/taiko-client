@@ -19,30 +19,33 @@ import (
 )
 
 var (
-	errProtocolAddressMismatch = errors.New("oracle prover private key does not match protocol setting")
+	errProtocolAddressMismatch = errors.New("special prover private key does not match protocol setting")
 )
 
-// OracleProducer is responsible for generating a fake "zkproof" consisting
+// SpecialProofProducer is responsible for generating a fake "zkproof" consisting
 // of a signature of the evidence.
-type OracleProducer struct {
+type SpecialProofProducer struct {
 	rpc               *rpc.Client
 	proverPrivKey     *ecdsa.PrivateKey
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	proofTimeTarget   time.Duration
 	graffiti          [32]byte
+	isSystemProver    bool
 }
 
-// NewOracleProducer creates a new NewOracleProducer instance.
-func NewOracleProducer(
+// NewSpecialProofProducer creates a new NewSpecialProofProducer instance, which can be either
+// an oracle proof producer, or a system proofproducer.
+func NewSpecialProofProducer(
 	rpc *rpc.Client,
 	proverPrivKey *ecdsa.PrivateKey,
 	taikoL2Address common.Address,
 	proofTimeTarget time.Duration,
-	protocolOracleProverAddress common.Address,
+	protocolSpecialProverAddress common.Address,
 	graffiti string,
-) (*OracleProducer, error) {
+	isSystemProver bool,
+) (*SpecialProofProducer, error) {
 	proverAddress := crypto.PubkeyToAddress(proverPrivKey.PublicKey)
-	if proverAddress != protocolOracleProverAddress {
+	if proverAddress != protocolSpecialProverAddress {
 		return nil, errProtocolAddressMismatch
 	}
 
@@ -54,11 +57,11 @@ func NewOracleProducer(
 	var graffitiBytes [32]byte
 	copy(graffitiBytes[:], []byte(graffiti))
 
-	return &OracleProducer{rpc, proverPrivKey, anchorValidator, proofTimeTarget, graffitiBytes}, nil
+	return &SpecialProofProducer{rpc, proverPrivKey, anchorValidator, proofTimeTarget, graffitiBytes, isSystemProver}, nil
 }
 
 // RequestProof implements the ProofProducer interface.
-func (p *OracleProducer) RequestProof(
+func (p *SpecialProofProducer) RequestProof(
 	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
@@ -99,6 +102,16 @@ func (p *OracleProducer) RequestProof(
 		return err
 	}
 
+	// the only difference from a client perspective when generating a special proof,
+	// either an oracle proof or a system proof, is the prover address which should be set to 1
+	// if system prover, and 0 if oracle prover, and the protocol will use that to decide
+	// whether a proof can be overwritten or not.
+	var prover common.Address
+	if p.isSystemProver {
+		prover = common.HexToAddress("0x0000000000000000000000000000000000000001")
+	} else {
+		prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
+	}
 	// signature should be done with proof set to nil, verifierID set to 0,
 	// and prover set to 0 address.
 	evidence := &encoding.TaikoL1Evidence{
@@ -107,14 +120,14 @@ func (p *OracleProducer) RequestProof(
 		BlockHash:     block.Hash(),
 		SignalRoot:    signalRoot,
 		Graffiti:      p.graffiti,
-		Prover:        common.HexToAddress("0x0000000000000000000000000000000000000000"),
+		Prover:        prover,
 		ParentGasUsed: uint32(parent.GasUsed()),
 		GasUsed:       uint32(block.GasUsed()),
 		VerifierId:    0,
 		Proof:         []byte{},
 	}
 
-	proof, err := hashAndSignForOracleProof(evidence, p.proverPrivKey)
+	proof, err := hashAndSignForSpecialProof(evidence, p.proverPrivKey)
 	if err != nil {
 		return fmt.Errorf("failed to sign evidence: %w", err)
 	}
@@ -142,9 +155,9 @@ func (p *OracleProducer) RequestProof(
 	return nil
 }
 
-// HashSignAndSetEvidenceForOracleProof hashes and signs the TaikoL1Evidence according to the
-// protocol spec to generate an "oracle proof" via the signature and v value.
-func hashAndSignForOracleProof(
+// HashSignAndSetEvidenceForSpecialProof hashes and signs the TaikoL1Evidence according to the
+// protocol spec to generate a special proof via the signature and v value.
+func hashAndSignForSpecialProof(
 	evidence *encoding.TaikoL1Evidence,
 	privateKey *ecdsa.PrivateKey,
 ) ([]byte, error) {
@@ -167,7 +180,7 @@ func hashAndSignForOracleProof(
 }
 
 // Cancel cancels an existing proof generation.
-// Since Oracle proofs are not "real" proofs, there is nothing to cancel.
-func (d *OracleProducer) Cancel(ctx context.Context, blockID *big.Int) error {
+// Since oracle and system proofs are not "real" proofs, there is nothing to cancel.
+func (d *SpecialProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
 	return nil
 }

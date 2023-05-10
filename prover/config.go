@@ -28,7 +28,9 @@ type Config struct {
 	MaxConcurrentProvingJobs        uint
 	Dummy                           bool
 	OracleProver                    bool
+	SystemProver                    bool
 	OracleProverPrivateKey          *ecdsa.PrivateKey
+	SystemProverPrivateKey          *ecdsa.PrivateKey
 	Graffiti                        string
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
@@ -43,8 +45,15 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
 	}
 
+	oracleProverSet := c.IsSet(flags.OracleProver.Name)
+	systemProverSet := c.IsSet(flags.SystemProver.Name)
+
+	if oracleProverSet && systemProverSet {
+		return nil, fmt.Errorf("cannot set both oracleProver and systemProver")
+	}
+
 	var oracleProverPrivKey *ecdsa.PrivateKey
-	if c.IsSet(flags.OracleProver.Name) {
+	if oracleProverSet {
 		if !c.IsSet(flags.OracleProverPrivateKey.Name) {
 			return nil, fmt.Errorf("oracleProver flag set without oracleProverPrivateKey set")
 		}
@@ -54,6 +63,20 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		oracleProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(oracleProverPrivKeyStr))
 		if err != nil {
 			return nil, fmt.Errorf("invalid oracle private key: %w", err)
+		}
+	}
+
+	var systemProverPrivKey *ecdsa.PrivateKey
+	if systemProverSet {
+		if !c.IsSet(flags.SystemProverPrivateKey.Name) {
+			return nil, fmt.Errorf("systemProver flag set without systemProverPrivateKey set")
+		}
+
+		systemProverPrivKeyStr := c.String(flags.SystemProverPrivateKey.Name)
+
+		systemProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(systemProverPrivKeyStr))
+		if err != nil {
+			return nil, fmt.Errorf("invalid system private key: %w", err)
 		}
 	}
 
@@ -106,6 +129,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		Dummy:                           c.Bool(flags.Dummy.Name),
 		OracleProver:                    c.Bool(flags.OracleProver.Name),
 		OracleProverPrivateKey:          oracleProverPrivKey,
+		SystemProver:                    c.Bool(flags.SystemProver.Name),
+		SystemProverPrivateKey:          systemProverPrivKey,
 		Graffiti:                        c.String(flags.Graffiti.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
