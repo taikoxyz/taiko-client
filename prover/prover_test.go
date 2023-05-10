@@ -44,6 +44,7 @@ func (s *ProverTestSuite) SetupTest() {
 		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L1ProverPrivKey:          l1ProverPrivKey,
 		OracleProverPrivateKey:   l1ProverPrivKey,
+		SystemProverPrivateKey:   l1ProverPrivKey,
 		Dummy:                    true,
 		MaxConcurrentProvingJobs: 1,
 	})))

@@ -2,6 +2,7 @@ package prover
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"fmt"
 	"math/big"
 	"strings"
@@ -32,6 +33,7 @@ type Prover struct {
 	cfg                 *Config
 	proverAddress       common.Address
 	oracleProverAddress common.Address
+	systemProverAddress common.Address
 
 	// Clients
 	rpc *rpc.Client
@@ -134,26 +136,50 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
-	oracleName := [32]byte{}
-	copy(oracleName[:], "oracle_prover")
+	oracleProverName := [32]byte{}
+	copy(oracleProverName[:], "oracle_prover")
 
-	oracleProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, oracleName, true)
+	oracleProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, oracleProverName, true)
 	if err != nil {
 		return err
 	}
 
 	p.oracleProverAddress = oracleProverAddress
 
+	systemProverName := [32]byte{}
+	copy(systemProverName[:], "system_prover")
+
+	systemProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, systemProverName, true)
+	if err != nil {
+		return err
+	}
+
+	p.systemProverAddress = systemProverAddress
+
 	var producer proofProducer.ProofProducer
 
-	if cfg.OracleProver {
-		if producer, err = proofProducer.NewOracleProducer(
+	isSystemProver := cfg.SystemProver
+	isOracleProver := cfg.OracleProver
+
+	if isSystemProver || isOracleProver {
+		var specialProverAddress common.Address
+		var privateKey *ecdsa.PrivateKey
+		if isSystemProver {
+			specialProverAddress = systemProverAddress
+			privateKey = p.cfg.SystemProverPrivateKey
+		} else {
+			specialProverAddress = oracleProverAddress
+			privateKey = p.cfg.OracleProverPrivateKey
+		}
+
+		if producer, err = proofProducer.NewSpecialProofProducer(
 			p.rpc,
-			p.cfg.OracleProverPrivateKey,
+			privateKey,
 			p.cfg.TaikoL2Address,
 			time.Duration(p.protocolConfigs.ProofTimeTarget)*time.Second,
-			oracleProverAddress,
+			specialProverAddress,
 			p.cfg.Graffiti,
+			isSystemProver,
 		); err != nil {
 			return err
 		}
@@ -183,6 +209,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.L1ProverPrivKey,
 		p.submitProofTxMutex,
 		p.cfg.OracleProver,
+		p.cfg.SystemProver,
 		p.cfg.Graffiti,
 	); err != nil {
 		return err
@@ -385,7 +412,7 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1ClientBlockProven) error {
 	metrics.ProverReceivedProvenBlockGauge.Update(event.Id.Int64())
 	// if oracle prover, dont cancel proof.
-	if event.Prover == p.oracleProverAddress {
+	if event.Prover == p.oracleProverAddress || event.Prover == p.systemProverAddress {
 		return nil
 	}
 

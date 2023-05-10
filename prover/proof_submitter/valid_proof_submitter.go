@@ -32,7 +32,8 @@ type ValidProofSubmitter struct {
 	proverPrivKey     *ecdsa.PrivateKey
 	proverAddress     common.Address
 	mutex             *sync.Mutex
-	isOracle          bool
+	isOracleProver    bool
+	isSystemProver    bool
 	graffiti          [32]byte
 }
 
@@ -44,7 +45,8 @@ func NewValidProofSubmitter(
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
 	mutex *sync.Mutex,
-	isOracle bool,
+	isOracleProver bool,
+	isSystemProver bool,
 	graffiti string,
 ) (*ValidProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc)
@@ -63,7 +65,8 @@ func NewValidProofSubmitter(
 		proverPrivKey:     proverPrivKey,
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		mutex:             mutex,
-		isOracle:          isOracle,
+		isOracleProver:    isOracleProver,
+		isSystemProver:    isSystemProver,
 		graffiti:          graffitiBytes,
 	}, nil
 }
@@ -179,8 +182,12 @@ func (s *ValidProofSubmitter) SubmitProof(
 	var circuitsIdx uint16
 	var prover common.Address
 
-	if s.isOracle {
-		prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
+	if s.isOracleProver || s.isSystemProver {
+		if s.isOracleProver {
+			prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
+		} else {
+			prover = common.HexToAddress("0x0000000000000000000000000000000000000001")
+		}
 		circuitsIdx = uint16(int(zkProof[64]))
 		evidence.Proof = zkProof[0:64]
 	} else {

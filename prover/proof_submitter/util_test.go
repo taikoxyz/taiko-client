@@ -11,7 +11,7 @@ import (
 
 func (s *ProofSubmitterTestSuite) TestIsSubmitProofTxErrorRetryable() {
 	s.True(isSubmitProofTxErrorRetryable(errors.New(testAddr.String()), common.Big0))
-	s.True(isSubmitProofTxErrorRetryable(errors.New("L1_NOT_ORACLE_PROVER"), common.Big0))
+	s.True(isSubmitProofTxErrorRetryable(errors.New("L1_NOT_SPECIAL_PROVER"), common.Big0))
 	s.False(isSubmitProofTxErrorRetryable(errors.New("L1_DUP_PROVERS"), common.Big0))
 	s.False(isSubmitProofTxErrorRetryable(errors.New("L1_"+testAddr.String()), common.Big0))
 }
