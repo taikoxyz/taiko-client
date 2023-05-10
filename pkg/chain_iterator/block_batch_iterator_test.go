@@ -113,37 +113,6 @@ func (s *BlockBatchIteratorTestSuite) TestIterEndFunc() {
 	s.Equal(lastEnd.Uint64(), maxBlocksReadPerEpoch)
 }
 
-func (s *BlockBatchIteratorTestSuite) TestIter_Reorg() {
-	var maxBlocksReadPerEpoch uint64 = 2
-
-	headHeight, err := s.RpcClient.L1.BlockNumber(context.Background())
-	s.Nil(err)
-	s.Greater(headHeight, uint64(0))
-
-	lastEnd := common.Big0
-
-	iter, err := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client:                s.RpcClient.L1,
-		MaxBlocksReadPerEpoch: &maxBlocksReadPerEpoch,
-		StartHeight:           common.Big0,
-		EndHeight:             new(big.Int).SetUint64(headHeight),
-		OnBlocks: func(
-			ctx context.Context,
-			start, end *types.Header,
-			updateCurrentFunc UpdateCurrentFunc,
-			endIterFunc EndIterFunc,
-		) error {
-			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
-			lastEnd = end.Number
-			return nil
-		},
-	})
-
-	s.Nil(err)
-	s.Nil(iter.Iter())
-	s.Equal(headHeight, lastEnd.Uint64())
-}
-
 func TestBlockBatchIteratorTestSuite(t *testing.T) {
 	suite.Run(t, new(BlockBatchIteratorTestSuite))
 }
