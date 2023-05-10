@@ -16,7 +16,7 @@ import (
 
 const (
 	DefaultBlocksReadPerEpoch = 1000
-	ReorgRewindDepth          = 20
+	DefaultReorgRewindDepth   = 20
 )
 
 var (
@@ -55,6 +55,8 @@ type BlockBatchIterator struct {
 	onBlocks           OnBlocksFunc
 	isEnd              bool
 	reverse            bool
+	reorgRewindDepth   uint64
+	onReorg            OnReorgFunc
 }
 
 // BlockBatchIteratorConfig represents the configs of a block batch iterator.
@@ -65,6 +67,8 @@ type BlockBatchIteratorConfig struct {
 	EndHeight             *big.Int
 	OnBlocks              OnBlocksFunc
 	Reverse               bool
+	ReorgRewindDepth      *uint64
+	OnReorg               OnReorgFunc
 }
 
 // NewBlockBatchIterator creates a new block batch iterator instance.
@@ -104,13 +108,27 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 		}
 	}
 
+	var reorgRewindDepth uint64
+	if cfg.ReorgRewindDepth != nil {
+		reorgRewindDepth = *cfg.ReorgRewindDepth
+	} else {
+		reorgRewindDepth = DefaultReorgRewindDepth
+	}
+
 	iterator := &BlockBatchIterator{
-		ctx:         ctx,
-		client:      cfg.Client,
-		chainID:     chainID,
-		startHeight: cfg.StartHeight.Uint64(),
-		onBlocks:    cfg.OnBlocks,
-		reverse:     cfg.Reverse,
+		ctx:              ctx,
+		client:           cfg.Client,
+		chainID:          chainID,
+		startHeight:      cfg.StartHeight.Uint64(),
+		onBlocks:         cfg.OnBlocks,
+		reverse:          cfg.Reverse,
+		reorgRewindDepth: reorgRewindDepth,
+	}
+
+	if cfg.OnReorg != nil {
+		iterator.onReorg = cfg.OnReorg
+	} else {
+		iterator.onReorg = iterator.rewindOnReorgDetected
 	}
 
 	if cfg.Reverse {
@@ -307,10 +325,10 @@ func (i *BlockBatchIterator) ensureCurrentNotReorged() error {
 // to a stable block, or 0 if it's less than `ReorgRewindDepth`.
 func (i *BlockBatchIterator) rewindOnReorgDetected() error {
 	var newCurrentHeight uint64
-	if i.current.Number.Uint64() <= ReorgRewindDepth {
+	if i.current.Number.Uint64() <= i.reorgRewindDepth {
 		newCurrentHeight = 0
 	} else {
-		newCurrentHeight = i.current.Number.Uint64() - ReorgRewindDepth
+		newCurrentHeight = i.current.Number.Uint64() - i.reorgRewindDepth
 	}
 
 	current, err := i.client.HeaderByNumber(i.ctx, new(big.Int).SetUint64(newCurrentHeight))
