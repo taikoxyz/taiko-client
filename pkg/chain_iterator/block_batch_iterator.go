@@ -29,6 +29,7 @@ type OnBlocksFunc func(
 	ctx context.Context,
 	start, end *types.Header,
 	updateCurrentFunc UpdateCurrentFunc,
+	onReorgFunc OnReorgFunc,
 	endIterFunc EndIterFunc,
 ) error
 
@@ -37,6 +38,9 @@ type UpdateCurrentFunc func(*types.Header)
 
 // EndIterFunc ends the current iteration.
 type EndIterFunc func()
+
+// OnReorgFunc handles a reorganization from the source chain.
+type OnReorgFunc func() error
 
 // BlockBatchIterator iterates the blocks in batches between the given start and end heights,
 // with the awareness of reorganization.
@@ -205,7 +209,7 @@ func (i *BlockBatchIterator) iter() (err error) {
 		return err
 	}
 
-	if err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent, i.end); err != nil {
+	if err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent, i.rewindOnReorgDetected, i.end); err != nil {
 		return err
 	}
 
@@ -252,7 +256,7 @@ func (i *BlockBatchIterator) reverseIter() (err error) {
 		return err
 	}
 
-	if err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.end); err != nil {
+	if err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.rewindOnReorgDetected, i.end); err != nil {
 		return err
 	}
 
@@ -282,6 +286,8 @@ func (i *BlockBatchIterator) end() {
 
 // ensureCurrentNotReorged checks if the iterator.current cursor was reorged, if was, will
 // rewind back `ReorgRewindDepth` blocks.
+// reorg is also detected on the iteration of the event later, by checking
+// event.Raw.Removed, which will also call `i.rewindOnReorgDetected` to rewind back
 func (i *BlockBatchIterator) ensureCurrentNotReorged() error {
 	current, err := i.client.HeaderByHash(i.ctx, i.current.Hash())
 	if err != nil && !errors.Is(err, ethereum.NotFound) {
@@ -293,7 +299,13 @@ func (i *BlockBatchIterator) ensureCurrentNotReorged() error {
 		return nil
 	}
 
-	// Reorg detected, rewind back `ReorgRewindDepth` blocks
+	// reorged
+	return i.rewindOnReorgDetected()
+}
+
+// rewindOnReorgDetected rewinds back `ReorgRewindDepth` blocks and sets i.current
+// to a stable block
+func (i *BlockBatchIterator) rewindOnReorgDetected() error {
 	var newCurrentHeight uint64
 	if i.current.Number.Uint64() <= ReorgRewindDepth {
 		newCurrentHeight = 0
@@ -301,6 +313,11 @@ func (i *BlockBatchIterator) ensureCurrentNotReorged() error {
 		newCurrentHeight = i.current.Number.Uint64() - ReorgRewindDepth
 	}
 
-	i.current, err = i.client.HeaderByNumber(i.ctx, new(big.Int).SetUint64(newCurrentHeight))
-	return err
+	current, err := i.client.HeaderByNumber(i.ctx, new(big.Int).SetUint64(newCurrentHeight))
+	if err != nil {
+		return err
+	}
+
+	i.current = current
+	return nil
 }

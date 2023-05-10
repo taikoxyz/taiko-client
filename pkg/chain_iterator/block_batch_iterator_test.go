@@ -33,6 +33,7 @@ func (s *BlockBatchIteratorTestSuite) TestIter() {
 			ctx context.Context,
 			start, end *types.Header,
 			updateCurrentFunc UpdateCurrentFunc,
+			onReorgFunc OnReorgFunc,
 			endIterFunc EndIterFunc,
 		) error {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
@@ -68,6 +69,7 @@ func (s *BlockBatchIteratorTestSuite) TestIterReverse() {
 			ctx context.Context,
 			start, end *types.Header,
 			updateCurrentFunc UpdateCurrentFunc,
+			onReorgFunc OnReorgFunc,
 			endIterFunc EndIterFunc,
 		) error {
 			s.Equal(lastStart.Uint64(), end.Number.Uint64())
@@ -99,6 +101,7 @@ func (s *BlockBatchIteratorTestSuite) TestIterEndFunc() {
 			ctx context.Context,
 			start, end *types.Header,
 			updateCurrentFunc UpdateCurrentFunc,
+			onReorgFunc OnReorgFunc,
 			endIterFunc EndIterFunc,
 		) error {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())

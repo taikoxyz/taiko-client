@@ -101,6 +101,7 @@ func assembleBlockProvenIteratorCallback(
 		ctx context.Context,
 		start, end *types.Header,
 		updateCurrentFunc chainIterator.UpdateCurrentFunc,
+		onReorgFunc chainIterator.OnReorgFunc,
 		endFunc chainIterator.EndIterFunc,
 	) error {
 		endHeight := end.Number.Uint64()
@@ -116,9 +117,8 @@ func assembleBlockProvenIteratorCallback(
 		for iter.Next() {
 			event := iter.Event
 
-			// Skip if reorged.
 			if event.Raw.Removed {
-				continue
+				return onReorgFunc()
 			}
 
 			if err := callback(ctx, event, eventIter.end); err != nil {
