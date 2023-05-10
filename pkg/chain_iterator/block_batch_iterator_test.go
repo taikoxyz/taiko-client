@@ -159,7 +159,7 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncounteredWithRemovedEvent(
 	s.Nil(err)
 	s.Nil(iter.Iter())
 	s.Equal(headHeight, lastEnd.Uint64())
-	s.Greater(reorgedBlocks, (headHeight/2 - 1))
+	s.Equal(reorgedBlocks, (headHeight/2 - 1))
 }
 
 func TestBlockBatchIteratorTestSuite(t *testing.T) {
