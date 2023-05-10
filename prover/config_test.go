@@ -229,5 +229,5 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProverAndOracleProve
 		"-" + flags.OracleProver.Name,
 		"-" + flags.SystemProver.Name,
 		"-" + flags.Graffiti.Name, "",
-	}), "cannot set both oracleProver and systemProvert")
+	}), "cannot set both oracleProver and systemProver")
 }
