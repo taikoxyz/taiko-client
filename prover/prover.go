@@ -2,6 +2,7 @@ package prover
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"fmt"
 	"math/big"
 	"strings"
@@ -162,15 +163,18 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	if isSystemProver || isOracleProver {
 		var specialProverAddress common.Address
+		var privateKey *ecdsa.PrivateKey
 		if isSystemProver {
 			specialProverAddress = systemProverAddress
+			privateKey = p.cfg.SystemProverPrivateKey
 		} else {
 			specialProverAddress = oracleProverAddress
+			privateKey = p.cfg.OracleProverPrivateKey
 		}
 
 		if producer, err = proofProducer.NewSpecialProofProducer(
 			p.rpc,
-			p.cfg.OracleProverPrivateKey,
+			privateKey,
 			p.cfg.TaikoL2Address,
 			time.Duration(p.protocolConfigs.ProofTimeTarget)*time.Second,
 			specialProverAddress,
