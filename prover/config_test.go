@@ -10,6 +10,23 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var testFlags = []cli.Flag{
+	&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
+	&cli.StringFlag{Name: flags.L1HTTPEndpoint.Name},
+	&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
+	&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
+	&cli.StringFlag{Name: flags.TaikoL1Address.Name},
+	&cli.StringFlag{Name: flags.TaikoL2Address.Name},
+	&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
+	&cli.BoolFlag{Name: flags.Dummy.Name},
+	&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
+	&cli.BoolFlag{Name: flags.OracleProver.Name},
+	&cli.StringFlag{Name: flags.OracleProverPrivateKey.Name},
+	&cli.BoolFlag{Name: flags.SystemProver.Name},
+	&cli.StringFlag{Name: flags.SystemProverPrivateKey.Name},
+	&cli.StringFlag{Name: flags.Graffiti.Name},
+}
+
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 	l1WsEndpoint := os.Getenv("L1_NODE_WS_ENDPOINT")
 	l1HttpEndpoint := os.Getenv("L1_NODE_HTTP_ENDPOINT")
@@ -19,22 +36,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 
 	app := cli.NewApp()
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L1HTTPEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
-		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
-		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
-		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
-		&cli.BoolFlag{Name: flags.Dummy.Name},
-		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
-		&cli.BoolFlag{Name: flags.OracleProver.Name},
-		&cli.StringFlag{Name: flags.OracleProverPrivateKey.Name},
-		&cli.BoolFlag{Name: flags.SystemProver.Name},
-		&cli.StringFlag{Name: flags.SystemProverPrivateKey.Name},
-		&cli.StringFlag{Name: flags.Graffiti.Name},
-	}
+	app.Flags = testFlags
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
@@ -88,20 +90,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProver() {
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 
 	app := cli.NewApp()
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L1HTTPEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
-		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
-		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
-		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
-		&cli.BoolFlag{Name: flags.Dummy.Name},
-		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
-		&cli.BoolFlag{Name: flags.SystemProver.Name},
-		&cli.StringFlag{Name: flags.SystemProverPrivateKey.Name},
-		&cli.StringFlag{Name: flags.Graffiti.Name},
-	}
+	app.Flags = testFlags
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
@@ -155,20 +144,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 
 	app := cli.NewApp()
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L1HTTPEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
-		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
-		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
-		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
-		&cli.BoolFlag{Name: flags.Dummy.Name},
-		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
-		&cli.BoolFlag{Name: flags.OracleProver.Name},
-		&cli.StringFlag{Name: flags.OracleProverPrivateKey.Name},
-		&cli.StringFlag{Name: flags.Graffiti.Name},
-	}
+	app.Flags = testFlags
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
 		s.NotNil(err)
@@ -200,20 +176,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProverError() {
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 
 	app := cli.NewApp()
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L1HTTPEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
-		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
-		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
-		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
-		&cli.BoolFlag{Name: flags.Dummy.Name},
-		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
-		&cli.BoolFlag{Name: flags.SystemProver.Name},
-		&cli.StringFlag{Name: flags.SystemProverPrivateKey.Name},
-		&cli.StringFlag{Name: flags.Graffiti.Name},
-	}
+	app.Flags = testFlags
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
 		s.NotNil(err)
@@ -245,21 +208,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProverAndOracleProve
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 
 	app := cli.NewApp()
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L1HTTPEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
-		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
-		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
-		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
-		&cli.BoolFlag{Name: flags.Dummy.Name},
-		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
-		&cli.BoolFlag{Name: flags.OracleProver.Name},
-		&cli.BoolFlag{Name: flags.SystemProver.Name},
-		&cli.StringFlag{Name: flags.SystemProverPrivateKey.Name},
-		&cli.StringFlag{Name: flags.Graffiti.Name},
-	}
+	app.Flags = testFlags
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
 		s.NotNil(err)
