@@ -146,7 +146,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.oracleProverAddress = oracleProverAddress
 
 	systemProverName := [32]byte{}
-	copy(systemProverName[:], "oracle_prover")
+	copy(systemProverName[:], "system_prover")
 
 	systemProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, systemProverName, true)
 	if err != nil {
