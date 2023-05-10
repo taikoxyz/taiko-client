@@ -304,7 +304,7 @@ func (i *BlockBatchIterator) ensureCurrentNotReorged() error {
 }
 
 // rewindOnReorgDetected rewinds back `ReorgRewindDepth` blocks and sets i.current
-// to a stable block
+// to a stable block, or 0 if it's less than `ReorgRewindDepth`.
 func (i *BlockBatchIterator) rewindOnReorgDetected() error {
 	var newCurrentHeight uint64
 	if i.current.Number.Uint64() <= ReorgRewindDepth {
