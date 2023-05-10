@@ -470,7 +470,7 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 
 // NeedNewProof checks whether the L2 block still needs a new proof.
 func (p *Prover) NeedNewProof(id *big.Int) (bool, error) {
-	if !p.cfg.OracleProver {
+	if !p.cfg.OracleProver && !p.cfg.SystemProver {
 		conf, err := p.rpc.TaikoL1.GetConfig(nil)
 		if err != nil {
 			return false, err
