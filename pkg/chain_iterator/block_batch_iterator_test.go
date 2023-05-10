@@ -136,6 +136,7 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncounteredWithRemovedEvent(
 		ReorgRewindDepth:      &reorgRewindDepth,
 		OnReorg: func() error {
 			reorgedBlocks++
+			lastEnd = new(big.Int).Sub(lastEnd, new(big.Int).SetUint64(reorgRewindDepth))
 			return nil
 		},
 		OnBlocks: func(
