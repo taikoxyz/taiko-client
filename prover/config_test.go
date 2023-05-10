@@ -118,7 +118,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProver() {
 		s.Equal(30*time.Minute, *c.RandomDummyProofDelayLowerBound)
 		s.Equal(time.Hour, *c.RandomDummyProofDelayUpperBound)
 		s.True(c.Dummy)
-		s.True(c.OracleProver)
+		s.True(c.SystemProver)
 		s.Equal(
 			crypto.PubkeyToAddress(s.p.cfg.SystemProverPrivateKey.PublicKey),
 			crypto.PubkeyToAddress(c.SystemProverPrivateKey.PublicKey),
