@@ -125,6 +125,9 @@ func assembleBlockProposedIteratorCallback(
 				continue
 			}
 
+			// check if we have already seen this blockID, if it has,
+			// it means layer1 has reorged, and we should rewind chain
+
 			if err := callback(ctx, event, eventIter.end); err != nil {
 				return err
 			}
