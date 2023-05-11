@@ -163,7 +163,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return p.CustomProposeOpHook()
 	}
 
-	log.Info("Comparing proposer TKO balance to block fee")
+	log.Info("Comparing proposer TKO balance to block fee", "proposer", p.l1ProposerAddress.Hex())
 
 	if err := p.checkTaikoTokenBalance(); err != nil {
 		return fmt.Errorf("failed to check Taiko token balance: %w", err)

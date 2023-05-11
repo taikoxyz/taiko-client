@@ -18,12 +18,6 @@ var (
 		Required: true,
 		Category: driverCategory,
 	}
-	SignalServiceAddress = &cli.StringFlag{
-		Name:     "l1.signalService",
-		Usage:    "L1 singal service contract address",
-		Required: true,
-		Category: driverCategory,
-	}
 )
 
 // Optional flags used by driver.
@@ -53,7 +47,6 @@ var (
 var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2WSEndpoint,
 	L2AuthEndpoint,
-	SignalServiceAddress,
 	JWTSecret,
 	P2PSyncVerifiedBlocks,
 	P2PSyncTimeout,
