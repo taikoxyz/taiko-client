@@ -294,7 +294,12 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*bindings.Taiko
 }
 
 // GetStorageRoot returns a contract's storage root at the given height.
-func (c *Client) GetStorageRoot(ctx context.Context, gethclient *gethclient.Client, contract common.Address, height *big.Int) (common.Hash, error) {
+func (c *Client) GetStorageRoot(
+	ctx context.Context,
+	gethclient *gethclient.Client,
+	contract common.Address,
+	height *big.Int,
+) (common.Hash, error) {
 	proof, err := gethclient.GetProof(
 		ctx,
 		contract,
