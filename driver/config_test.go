@@ -15,7 +15,6 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 	l2EngineEndpoint := os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
-	l1SignalService := os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")
 
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
@@ -35,7 +34,6 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(l2EngineEndpoint, c.L2EngineEndpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
-		s.Equal(l1SignalService, c.SignalServiceAddress.String())
 		s.Equal(120*time.Second, c.P2PSyncTimeout)
 		s.NotEmpty(c.JwtSecret)
 		s.Nil(new(Driver).InitFromCli(context.Background(), ctx))

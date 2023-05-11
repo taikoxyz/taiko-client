@@ -60,12 +60,12 @@ func NewValidProofSubmitter(
 	var signalServiceNameBytes [32]byte
 	copy(signalServiceNameBytes[:], []byte("signal_service"))
 
-	l1SignalService, err := rpc.TaikoL1.Resolve(nil, rpc.L1ChainID, signalServiceNameBytes, false)
+	l1SignalService, err := rpc.TaikoL1.Resolve0(nil, signalServiceNameBytes, false)
 	if err != nil {
 		return nil, err
 	}
 
-	l2SignalService, err := rpc.TaikoL1.Resolve(nil, rpc.L2ChainID, signalServiceNameBytes, false)
+	l2SignalService, err := rpc.TaikoL1.Resolve0(nil, signalServiceNameBytes, false)
 	if err != nil {
 		return nil, err
 	}
