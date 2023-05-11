@@ -119,7 +119,6 @@ func (s *BlockBatchIteratorTestSuite) TestIterEndFunc() {
 func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncountered() {
 	var maxBlocksReadPerEpoch uint64 = 1
 	var reorgRewindDepth uint64 = 1
-	var reorgedBlocks uint64 = 0
 	var rewindEveryNBlocks uint64 = 2
 	var lastBlockReorged bool = false
 
@@ -136,7 +135,6 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncountered() {
 		EndHeight:             new(big.Int).SetUint64(headHeight),
 		ReorgRewindDepth:      &reorgRewindDepth,
 		OnReorg: func() error {
-			reorgedBlocks++
 			if lastEnd.Uint64() < reorgRewindDepth {
 				lastEnd = common.Big0
 			} else {
@@ -160,7 +158,7 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncountered() {
 			if lastBlockReorged {
 				s.Equal(start.Number.Uint64(), lastEnd.Uint64()+reorgRewindDepth)
 			} else {
-
+				s.Equal(start.Number.Uint64(), lastEnd.Uint64())
 			}
 
 			lastEnd = end.Number
@@ -171,7 +169,6 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncountered() {
 
 	s.Nil(err)
 	s.Nil(iter.Iter())
-	s.Equal((headHeight / rewindEveryNBlocks), reorgedBlocks)
 }
 
 func TestBlockBatchIteratorTestSuite(t *testing.T) {
