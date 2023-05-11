@@ -24,7 +24,6 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		&cli.StringFlag{Name: flags.L2AuthEndpoint.Name},
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
-		&cli.StringFlag{Name: flags.SignalServiceAddress.Name},
 		&cli.StringFlag{Name: flags.JWTSecret.Name},
 		&cli.UintFlag{Name: flags.P2PSyncTimeout.Name},
 	}
@@ -51,7 +50,6 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L2AuthEndpoint.Name, l2EngineEndpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
-		"-" + flags.SignalServiceAddress.Name, l1SignalService,
 		"-" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
 		"-" + flags.P2PSyncTimeout.Name, "120",
 	}))

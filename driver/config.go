@@ -49,7 +49,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L2CheckPoint:          l2CheckPoint,
 		TaikoL1Address:        common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:        common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-		SignalServiceAddress:  common.HexToAddress(c.String(flags.SignalServiceAddress.Name)),
 		JwtSecret:             string(jwtSecret),
 		P2PSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
 		P2PSyncTimeout:        time.Duration(int64(time.Second) * int64(c.Uint(flags.P2PSyncTimeout.Name))),

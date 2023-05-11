@@ -31,6 +31,9 @@ type ValidProofSubmitter struct {
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	proverPrivKey     *ecdsa.PrivateKey
 	proverAddress     common.Address
+	taikoL2Address    common.Address
+	l1SignalService   common.Address
+	l2SignalService   common.Address
 	mutex             *sync.Mutex
 	isOracleProver    bool
 	isSystemProver    bool
@@ -54,6 +57,19 @@ func NewValidProofSubmitter(
 		return nil, err
 	}
 
+	var signalServiceNameBytes [32]byte
+	copy(signalServiceNameBytes[:], []byte("signal_service"))
+
+	l1SignalService, err := rpc.TaikoL1.Resolve(nil, rpc.L1ChainID, signalServiceNameBytes, false)
+	if err != nil {
+		return nil, err
+	}
+
+	l2SignalService, err := rpc.TaikoL1.Resolve(nil, rpc.L2ChainID, signalServiceNameBytes, false)
+	if err != nil {
+		return nil, err
+	}
+
 	var graffitiBytes [32]byte
 	copy(graffitiBytes[:], []byte(graffiti))
 
@@ -64,6 +80,9 @@ func NewValidProofSubmitter(
 		anchorTxValidator: anchorValidator,
 		proverPrivKey:     proverPrivKey,
 		proverAddress:     crypto.PubkeyToAddress(proverPrivKey.PublicKey),
+		l1SignalService:   l1SignalService,
+		l2SignalService:   l2SignalService,
+		taikoL2Address:    taikoL2Address,
 		mutex:             mutex,
 		isOracleProver:    isOracleProver,
 		isSystemProver:    isSystemProver,
@@ -79,19 +98,48 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 	}
 
 	// Get the header of the block to prove from L2 execution engine.
-	header, err := s.rpc.L2.HeaderByHash(ctx, l1Origin.L2BlockHash)
+	block, err := s.rpc.L2.BlockByHash(ctx, l1Origin.L2BlockHash)
+	if err != nil {
+		return err
+	}
+
+	parent, err := s.rpc.L2.BlockByHash(ctx, block.ParentHash())
+	if err != nil {
+		return err
+	}
+
+	blockInfo, err := s.rpc.TaikoL1.GetBlock(nil, event.Id)
+	if err != nil {
+		return err
+	}
+
+	if block.Transactions().Len() == 0 {
+		return errors.New("no transaction in block")
+	}
+
+	signalRoot, err := s.anchorTxValidator.GetAnchoredSignalRoot(ctx, block.Transactions()[0])
 	if err != nil {
 		return err
 	}
 
 	// Request proof.
 	opts := &proofProducer.ProofRequestOptions{
-		Height:             header.Number,
+		Height:             block.Number(),
 		ProverAddress:      s.proverAddress,
 		ProposeBlockTxHash: event.Raw.TxHash,
+		L1SignalService:    s.l1SignalService,
+		L2SignalService:    s.l2SignalService,
+		TaikoL2:            s.taikoL2Address,
+		MetaHash:           blockInfo.MetaHash,
+		BlockHash:          block.Hash(),
+		ParentHash:         block.ParentHash(),
+		SignalRoot:         signalRoot,
+		Graffiti:           common.Bytes2Hex(s.graffiti[:]),
+		GasUsed:            block.GasUsed(),
+		ParentGasUsed:      parent.GasUsed(),
 	}
 
-	if err := s.proofProducer.RequestProof(ctx, opts, event.Id, &event.Meta, header, s.resultCh); err != nil {
+	if err := s.proofProducer.RequestProof(ctx, opts, event.Id, &event.Meta, block.Header(), s.resultCh); err != nil {
 		return err
 	}
 

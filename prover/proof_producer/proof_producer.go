@@ -23,6 +23,16 @@ type ProofRequestOptions struct {
 	Height             *big.Int // the block number
 	ProverAddress      common.Address
 	ProposeBlockTxHash common.Hash
+	L1SignalService    common.Address
+	L2SignalService    common.Address
+	TaikoL2            common.Address
+	MetaHash           common.Hash
+	BlockHash          common.Hash
+	ParentHash         common.Hash
+	SignalRoot         common.Hash
+	Graffiti           string
+	GasUsed            uint64
+	ParentGasUsed      uint64
 }
 
 type ProofWithHeader struct {
