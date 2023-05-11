@@ -87,7 +87,7 @@ func (p *SpecialProofProducer) RequestProof(
 		return fmt.Errorf("invalid anchor transaction: %w", err)
 	}
 
-	signalRoot, err := p.rpc.GetStorageRoot(ctx, p.rpc.L2GethClient, opts.L1SignalService, block.Number())
+	signalRoot, err := p.rpc.GetStorageRoot(ctx, p.rpc.L2GethClient, opts.L2SignalService, block.Number())
 	if err != nil {
 		return fmt.Errorf("error getting storageroot: %w", err)
 	}
