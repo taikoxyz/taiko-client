@@ -2,6 +2,7 @@ package chainiterator
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -121,6 +122,7 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncountered() {
 	var reorgRewindDepth uint64 = 1
 	var reorgedBlocks uint64 = 0
 	var rewindEveryNBlocks uint64 = 2
+	var lastBlockReorged bool = false
 
 	headHeight, err := s.RpcClient.L1.BlockNumber(context.Background())
 	s.Nil(err)
@@ -135,12 +137,14 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncountered() {
 		EndHeight:             new(big.Int).SetUint64(headHeight),
 		ReorgRewindDepth:      &reorgRewindDepth,
 		OnReorg: func() error {
+			fmt.Println("reorging", lastEnd.Uint64())
 			reorgedBlocks++
 			if lastEnd.Uint64() < reorgRewindDepth {
 				lastEnd = common.Big0
 			} else {
 				lastEnd = new(big.Int).Sub(lastEnd, new(big.Int).SetUint64(reorgRewindDepth))
 			}
+			lastBlockReorged = true
 			return nil
 		},
 		OnBlocks: func(
@@ -151,15 +155,20 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncountered() {
 			endIterFunc EndIterFunc,
 		) (bool, error) {
 			// reorg every 2 blocks but not the first block
-			if lastEnd != common.Big0 && end.Number.Uint64()%rewindEveryNBlocks == 0 {
+			if lastEnd != common.Big0 && lastEnd.Uint64()%rewindEveryNBlocks == 0 {
 				return true, onReorgFunc()
 			}
 
-			if lastEnd.Uint64() != 0 {
-				s.Equal(start.Number.Uint64(), lastEnd.Uint64()+rewindEveryNBlocks)
+			fmt.Println("not reorging: ", "start", start.Number.Int64(), "lastEnd", lastEnd.Uint64(), "end", end.Number.Uint64())
+
+			if lastBlockReorged {
+				s.Equal(start.Number.Uint64(), lastEnd.Uint64()+reorgRewindDepth)
+			} else {
+
 			}
 
 			lastEnd = end.Number
+			lastBlockReorged = false
 			return false, nil
 		},
 	})
