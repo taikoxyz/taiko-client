@@ -65,7 +65,7 @@ func NewValidProofSubmitter(
 		return nil, err
 	}
 
-	l2SignalService, err := rpc.TaikoL1.Resolve0(nil, signalServiceNameBytes, false)
+	l2SignalService, err := rpc.TaikoL2.Resolve0(nil, signalServiceNameBytes, false)
 	if err != nil {
 		return nil, err
 	}
