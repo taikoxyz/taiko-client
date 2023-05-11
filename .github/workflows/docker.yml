@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [main,integrate-new-zkevm-chian]
+    branches: [main]
     tags:
       - "v*"
 
