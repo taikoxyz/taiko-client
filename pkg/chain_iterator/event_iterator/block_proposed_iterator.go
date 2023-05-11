@@ -107,14 +107,14 @@ func assembleBlockProposedIteratorCallback(
 		updateCurrentFunc chainIterator.UpdateCurrentFunc,
 		onReorgFunc chainIterator.OnReorgFunc,
 		endFunc chainIterator.EndIterFunc,
-	) error {
+	) (bool, error) {
 		endHeight := end.Number.Uint64()
 		iter, err := taikoL1Client.FilterBlockProposed(
 			&bind.FilterOpts{Start: start.Number.Uint64(), End: &endHeight, Context: ctx},
 			filterQuery,
 		)
 		if err != nil {
-			return err
+			return false, err
 		}
 		defer iter.Close()
 
@@ -122,26 +122,26 @@ func assembleBlockProposedIteratorCallback(
 			event := iter.Event
 
 			if event.Raw.Removed {
-				return onReorgFunc()
+				return true, onReorgFunc()
 			}
 
 			if err := callback(ctx, event, eventIter.end); err != nil {
-				return err
+				return false, err
 			}
 
 			if eventIter.isEnd {
 				endFunc()
-				return nil
+				return false, nil
 			}
 
 			current, err := client.HeaderByHash(ctx, event.Raw.BlockHash)
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			updateCurrentFunc(current)
 		}
 
-		return nil
+		return false, nil
 	}
 }

@@ -24,14 +24,14 @@ var (
 )
 
 // OnBlocksFunc represents the callback function which will be called when a batch of blocks in chain are
-// iterated.
+// iterated. It returns true if it reorged, and false if not.
 type OnBlocksFunc func(
 	ctx context.Context,
 	start, end *types.Header,
 	updateCurrentFunc UpdateCurrentFunc,
 	onReorgFunc OnReorgFunc,
 	endIterFunc EndIterFunc,
-) error
+) (bool, error)
 
 // UpdateCurrentFunc updates the iterator.current cursor in the iterator.
 type UpdateCurrentFunc func(*types.Header)
@@ -227,8 +227,14 @@ func (i *BlockBatchIterator) iter() (err error) {
 		return err
 	}
 
-	if err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent, i.onReorg, i.end); err != nil {
+	reorged, err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent, i.onReorg, i.end)
+	if err != nil {
 		return err
+	}
+
+	// if we reorged, we want to skip checking if we are at the end, and also skip updating i.current
+	if reorged {
+		return nil
 	}
 
 	if i.isEnd {
@@ -274,8 +280,13 @@ func (i *BlockBatchIterator) reverseIter() (err error) {
 		return err
 	}
 
-	if err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.onReorg, i.end); err != nil {
+	reorged, err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.onReorg, i.end)
+	if err != nil {
 		return err
+	}
+
+	if reorged {
+		return nil
 	}
 
 	i.current = startHeader

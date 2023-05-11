@@ -35,10 +35,10 @@ func (s *BlockBatchIteratorTestSuite) TestIter() {
 			updateCurrentFunc UpdateCurrentFunc,
 			onReorgFunc OnReorgFunc,
 			endIterFunc EndIterFunc,
-		) error {
+		) (bool, error) {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
 			lastEnd = end.Number
-			return nil
+			return false, nil
 		},
 	})
 
@@ -71,10 +71,10 @@ func (s *BlockBatchIteratorTestSuite) TestIterReverse() {
 			updateCurrentFunc UpdateCurrentFunc,
 			onReorgFunc OnReorgFunc,
 			endIterFunc EndIterFunc,
-		) error {
+		) (bool, error) {
 			s.Equal(lastStart.Uint64(), end.Number.Uint64())
 			lastStart = start.Number
-			return nil
+			return false, nil
 		},
 	})
 
@@ -103,11 +103,11 @@ func (s *BlockBatchIteratorTestSuite) TestIterEndFunc() {
 			updateCurrentFunc UpdateCurrentFunc,
 			onReorgFunc OnReorgFunc,
 			endIterFunc EndIterFunc,
-		) error {
+		) (bool, error) {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
 			lastEnd = end.Number
 			endIterFunc()
-			return nil
+			return false, nil
 		},
 	})
 
@@ -149,10 +149,10 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncountered() {
 			updateCurrentFunc UpdateCurrentFunc,
 			onReorgFunc OnReorgFunc,
 			endIterFunc EndIterFunc,
-		) error {
+		) (bool, error) {
 			// reorg every 2 blocks but not the first block
 			if lastEnd != common.Big0 && end.Number.Uint64()%rewindEveryNBlocks == 0 {
-				return onReorgFunc()
+				return true, onReorgFunc()
 			}
 
 			if lastEnd.Uint64() != 0 {
@@ -160,7 +160,7 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncountered() {
 			}
 
 			lastEnd = end.Number
-			return nil
+			return false, nil
 		},
 	})
 
