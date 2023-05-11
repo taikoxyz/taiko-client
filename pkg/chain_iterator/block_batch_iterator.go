@@ -227,7 +227,7 @@ func (i *BlockBatchIterator) iter() (err error) {
 		return err
 	}
 
-	if err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent, i.rewindOnReorgDetected, i.end); err != nil {
+	if err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent, i.onReorg, i.end); err != nil {
 		return err
 	}
 
@@ -274,7 +274,7 @@ func (i *BlockBatchIterator) reverseIter() (err error) {
 		return err
 	}
 
-	if err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.rewindOnReorgDetected, i.end); err != nil {
+	if err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.onReorg, i.end); err != nil {
 		return err
 	}
 

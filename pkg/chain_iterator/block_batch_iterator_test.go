@@ -116,11 +116,11 @@ func (s *BlockBatchIteratorTestSuite) TestIterEndFunc() {
 	s.Equal(lastEnd.Uint64(), maxBlocksReadPerEpoch)
 }
 
-func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncounteredWithRemovedEvent() {
-	var maxBlocksReadPerEpoch uint64 = 2
+func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncountered() {
+	var maxBlocksReadPerEpoch uint64 = 1
 	var reorgRewindDepth uint64 = 1
-
-	var reorgedBlocks = 0
+	var reorgedBlocks uint64 = 0
+	var rewindEveryNBlocks uint64 = 2
 
 	headHeight, err := s.RpcClient.L1.BlockNumber(context.Background())
 	s.Nil(err)
@@ -136,7 +136,11 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncounteredWithRemovedEvent(
 		ReorgRewindDepth:      &reorgRewindDepth,
 		OnReorg: func() error {
 			reorgedBlocks++
-			lastEnd = new(big.Int).Sub(lastEnd, new(big.Int).SetUint64(reorgRewindDepth))
+			if lastEnd.Uint64() < reorgRewindDepth {
+				lastEnd = common.Big0
+			} else {
+				lastEnd = new(big.Int).Sub(lastEnd, new(big.Int).SetUint64(reorgRewindDepth))
+			}
 			return nil
 		},
 		OnBlocks: func(
@@ -146,12 +150,15 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncounteredWithRemovedEvent(
 			onReorgFunc OnReorgFunc,
 			endIterFunc EndIterFunc,
 		) error {
-			// reorg every 2 blocks
-			if end.Number.Uint64()%2 == 0 {
+			// reorg every 2 blocks but not the first block
+			if lastEnd != common.Big0 && end.Number.Uint64()%rewindEveryNBlocks == 0 {
 				return onReorgFunc()
 			}
 
-			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
+			if lastEnd.Uint64() != 0 {
+				s.Equal(start.Number.Uint64(), lastEnd.Uint64()+rewindEveryNBlocks)
+			}
+
 			lastEnd = end.Number
 			return nil
 		},
@@ -159,8 +166,7 @@ func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncounteredWithRemovedEvent(
 
 	s.Nil(err)
 	s.Nil(iter.Iter())
-	s.Equal(headHeight, lastEnd.Uint64())
-	s.Equal(reorgedBlocks, (headHeight/2 - 1))
+	s.Equal((headHeight / rewindEveryNBlocks), reorgedBlocks)
 }
 
 func TestBlockBatchIteratorTestSuite(t *testing.T) {
