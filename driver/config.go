@@ -19,7 +19,6 @@ type Config struct {
 	L2CheckPoint          string
 	TaikoL1Address        common.Address
 	TaikoL2Address        common.Address
-	SignalServiceAddress  common.Address
 	JwtSecret             string
 	P2PSyncVerifiedBlocks bool
 	P2PSyncTimeout        time.Duration
