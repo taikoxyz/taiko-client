@@ -160,7 +160,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		"beneficiary", proofWithHeader.Meta.Beneficiary,
 		"hash", proofWithHeader.Header.Hash(),
 		"proof", common.Bytes2Hex(proofWithHeader.ZkProof),
-		"graffiti", string(s.graffiti[:]),
+		"graffiti", common.Bytes2Hex(s.graffiti[:]),
 	)
 	var (
 		blockID = proofWithHeader.BlockID
