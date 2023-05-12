@@ -29,7 +29,10 @@ func (s *State) SetL1Current(h *types.Header) {
 
 // ResetL1Current resets the l1Current cursor to the L1 height which emitted a
 // BlockProven event with given blockID / blockHash.
-func (s *State) ResetL1Current(ctx context.Context, heightOrID *HeightOrID) (*bindings.TaikoL1ClientBlockProposed, *big.Int, error) {
+func (s *State) ResetL1Current(
+	ctx context.Context,
+	heightOrID *HeightOrID,
+) (*bindings.TaikoL1ClientBlockProposed, *big.Int, error) {
 	if !heightOrID.NotEmpty() {
 		return nil, nil, fmt.Errorf("empty input %v", heightOrID)
 	}
