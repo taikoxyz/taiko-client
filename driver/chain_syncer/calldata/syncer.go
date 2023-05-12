@@ -246,6 +246,11 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	var blockId *big.Int = s.lastInsertedBlockID
 
 	for lastKnownGoodBlockId == nil {
+		if blockId.Cmp(big.NewInt(0)) == 0 {
+			lastKnownGoodBlockId = new(big.Int).SetUint64(0)
+			break
+		}
+
 		block, err := s.rpc.L2.BlockByNumber(ctx, blockId)
 		if err != nil && !errors.Is(err, ethereum.NotFound) {
 			return err
