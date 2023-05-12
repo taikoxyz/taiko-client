@@ -87,9 +87,13 @@ func (p *SpecialProofProducer) RequestProof(
 		return fmt.Errorf("invalid anchor transaction: %w", err)
 	}
 
-	signalRoot, err := p.anchorTxValidator.GetAnchoredSignalRoot(ctx, anchorTx)
+	signalRoot, err := p.rpc.GetStorageRoot(ctx, p.rpc.L2GethClient, opts.L2SignalService, block.Number())
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting storageroot: %w", err)
+	}
+
+	if err := p.anchorTxValidator.ValidateAnchorTx(ctx, anchorTx); err != nil {
+		return fmt.Errorf("invalid anchor transaction: %w", err)
 	}
 
 	parent, err := p.rpc.L2.BlockByHash(ctx, block.ParentHash())
