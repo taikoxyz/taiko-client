@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"golang.org/x/sync/errgroup"
@@ -293,8 +294,13 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*bindings.Taiko
 }
 
 // GetStorageRoot returns a contract's storage root at the given height.
-func (c *Client) GetStorageRoot(ctx context.Context, contract common.Address, height *big.Int) (common.Hash, error) {
-	proof, err := c.L1GethClient.GetProof(
+func (c *Client) GetStorageRoot(
+	ctx context.Context,
+	gethclient *gethclient.Client,
+	contract common.Address,
+	height *big.Int,
+) (common.Hash, error) {
+	proof, err := gethclient.GetProof(
 		ctx,
 		contract,
 		[]string{"0x0000000000000000000000000000000000000000000000000000000000000000"},
