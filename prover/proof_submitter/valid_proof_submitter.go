@@ -117,9 +117,9 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		return errors.New("no transaction in block")
 	}
 
-	signalRoot, err := s.anchorTxValidator.GetAnchoredSignalRoot(ctx, block.Transactions()[0])
+	signalRoot, err := s.rpc.GetStorageRoot(ctx, s.rpc.L2GethClient, s.l2SignalService, block.Number())
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting storageroot: %w", err)
 	}
 
 	// Request proof.
