@@ -28,7 +28,7 @@ func (s *State) SetL1Current(h *types.Header) {
 }
 
 // ResetL1Current resets the l1Current cursor to the L1 height which emitted a
-// BlockProven event with given blockID / blockHash.
+// BlockProposed event with given blockID / blockHash.
 func (s *State) ResetL1Current(
 	ctx context.Context,
 	heightOrID *HeightOrID,
