@@ -244,14 +244,16 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	// rewind chain by 1 until we find a block that is still in the chain
 	var lastKnownGoodBlockId *big.Int
 	var blockId *big.Int = s.lastInsertedBlockID
+	var block *types.Block
+	var err error
 
-	for lastKnownGoodBlockId == nil {
+	for {
 		if blockId.Cmp(big.NewInt(0)) == 0 {
 			lastKnownGoodBlockId = new(big.Int).SetUint64(0)
 			break
 		}
 
-		block, err := s.rpc.L2.BlockByNumber(ctx, blockId)
+		block, err = s.rpc.L2.BlockByNumber(ctx, blockId)
 		if err != nil && !errors.Is(err, ethereum.NotFound) {
 			return err
 		}
@@ -259,10 +261,17 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 		if block != nil {
 			// block exists, we can rewind to this block
 			lastKnownGoodBlockId = blockId
+			break
 		} else {
 			// otherwise, sub 1 from blockId and try again
 			blockId = new(big.Int).Sub(s.lastInsertedBlockID, big.NewInt(1))
 		}
+	}
+
+	// shouuldnt be able to reach this error because of the 0 check above
+	// but just in case
+	if lastKnownGoodBlockId == nil {
+		return fmt.Errorf("failed to find last known good block ID after reorg")
 	}
 
 	log.Info(
@@ -275,35 +284,41 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 		return fmt.Errorf("error getting l2 parent by block id: %w", err)
 	}
 
+	// reset l1 current to when the last known good block was inserted, and return the event.
+	blockProposedEvent, _, err := s.state.ResetL1Current(ctx, &state.HeightOrID{Height: block.Number()})
+	if err != nil {
+		return fmt.Errorf("faile to reset l1 current: %w", err)
+	}
+
 	tx, err := s.rpc.L1.TransactionInBlock(
 		ctx,
-		event.Raw.BlockHash,
-		event.Raw.TxIndex,
+		block.Hash(),
+		blockProposedEvent.Raw.TxIndex,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to fetch original TaikoL1.proposeBlock transaction: %w", err)
 	}
 
-	txListBytes, hint, _, err := s.txListValidator.ValidateTxList(event.Id, tx.Data())
+	txListBytes, hint, _, err := s.txListValidator.ValidateTxList(block.Number(), tx.Data())
 	if err != nil {
 		return fmt.Errorf("failed to validate transactions list: %w", err)
 	}
 
 	if hint != txListValidator.HintOK {
-		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", event.Id)
+		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", block.NumberU64())
 		txListBytes = []byte{}
 	}
 
 	l1Origin := &rawdb.L1Origin{
-		BlockID:       event.Id,
+		BlockID:       block.Number(),
 		L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
-		L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
-		L1BlockHash:   event.Raw.BlockHash,
+		L1BlockHeight: new(big.Int).SetUint64(blockProposedEvent.Raw.BlockNumber),
+		L1BlockHash:   blockProposedEvent.Raw.BlockHash,
 	}
 
 	payloadData, rpcError, payloadError := s.insertNewHead(
 		ctx,
-		event,
+		blockProposedEvent,
 		parent,
 		s.state.GetHeadBlockID(),
 		txListBytes,
@@ -336,7 +351,7 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	)
 
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
-	s.lastInsertedBlockID = event.Id
+	s.lastInsertedBlockID = block.Number()
 
 	if s.progressTracker.Triggered() {
 		s.progressTracker.ClearMeta()
