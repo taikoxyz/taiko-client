@@ -42,17 +42,25 @@ type RequestProofBody struct {
 
 // RequestProofBody represents the JSON body of RequestProofBody's `param` field.
 type RequestProofBodyParam struct {
-	Circuit            string   `json:"circuit"`
-	Block              *big.Int `json:"block"`
-	L1RPC              string   `json:"l1_rpc"`
-	L2RPC              string   `json:"l2_rpc"`
-	ProposeBlockTxHash string   `json:"propose_tx_hash"`
-	Retry              bool     `json:"retry"`
-	Param              string   `json:"param"`
-	VerifyProof        bool     `json:"verify_proof"`
-	Mock               bool     `json:"mock"`
-	Aggregate          bool     `json:"aggregate"`
-	Prover             string   `json:"prover"`
+	Circuit         string   `json:"circuit"`
+	Block           *big.Int `json:"block"`
+	L2RPC           string   `json:"l2_rpc"`
+	Retry           bool     `json:"retry"`
+	Param           string   `json:"param"`
+	VerifyProof     bool     `json:"verify_proof"`
+	Mock            bool     `json:"mock"`
+	Aggregate       bool     `json:"aggregate"`
+	Prover          string   `json:"prover"`
+	L1SignalService string   `json:"l1_signal_service"`
+	L2SignalService string   `json:"l2_signal_service"`
+	TaikoL2         string   `json:"l2_contract"`
+	MetaHash        string   `json:"meta_hash"`
+	BlockHash       string   `json:"block_hash"`
+	ParentHash      string   `json:"parent_hash"`
+	SignalRoot      string   `json:"signal_root"`
+	Graffiti        string   `json:"graffiti"`
+	GasUsed         uint64   `json:"gas_used"`
+	ParentGasUsed   uint64   `json:"parent_gas_used"`
 }
 
 // RequestProofBodyResponse represents the JSON body of the response of the proof requests.
@@ -60,6 +68,10 @@ type RequestProofBodyResponse struct {
 	JsonRPC string      `json:"jsonrpc"`
 	ID      *big.Int    `json:"id"`
 	Result  *RpcdOutput `json:"result"`
+	Error   *struct {
+		Code    *big.Int `json:"code"`
+		Message string   `json:"message"`
+	} `json:"error,omitempty"`
 }
 
 // RpcdOutput represents the JSON body of RequestProofBodyResponse's `result` field.
@@ -169,17 +181,25 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 		ID:      common.Big1,
 		Method:  "proof",
 		Params: []*RequestProofBodyParam{{
-			Circuit:            "pi",
-			Block:              opts.Height,
-			L1RPC:              p.L1Endpoint,
-			L2RPC:              p.L2Endpoint,
-			Retry:              true,
-			Param:              p.Param,
-			VerifyProof:        true,
-			Mock:               false,
-			Aggregate:          false,
-			Prover:             opts.ProverAddress.Hex()[2:],
-			ProposeBlockTxHash: opts.ProposeBlockTxHash.Hex()[2:],
+			Circuit:         "pi",
+			Block:           opts.Height,
+			L2RPC:           p.L2Endpoint,
+			Retry:           true,
+			Param:           p.Param,
+			VerifyProof:     true,
+			Mock:            false,
+			Aggregate:       false,
+			Prover:          opts.ProverAddress.Hex()[2:],
+			L1SignalService: opts.L1SignalService.Hex()[2:],
+			L2SignalService: opts.L2SignalService.Hex()[2:],
+			TaikoL2:         opts.TaikoL2.Hex()[2:],
+			MetaHash:        opts.MetaHash.Hex()[2:],
+			BlockHash:       opts.BlockHash.Hex()[2:],
+			ParentHash:      opts.ParentHash.Hex()[2:],
+			SignalRoot:      opts.SignalRoot.Hex()[2:],
+			Graffiti:        opts.Graffiti,
+			GasUsed:         opts.GasUsed,
+			ParentGasUsed:   opts.ParentGasUsed,
 		}},
 	}
 
@@ -206,6 +226,10 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 	var output RequestProofBodyResponse
 	if err := json.Unmarshal(resBytes, &output); err != nil {
 		return nil, err
+	}
+
+	if output.Error != nil {
+		return nil, errors.New(output.Error.Message)
 	}
 
 	return output.Result, nil
