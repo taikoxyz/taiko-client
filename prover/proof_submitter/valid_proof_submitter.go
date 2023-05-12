@@ -201,29 +201,14 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
-	signalRoot, err := s.anchorTxValidator.GetAnchoredSignalRoot(ctx, anchorTx)
-	if err != nil {
-		return err
-	}
-
-	parent, err := s.rpc.L2.BlockByHash(ctx, block.ParentHash())
-	if err != nil {
-		return err
-	}
-
-	blockInfo, err := s.rpc.TaikoL1.GetBlock(nil, blockID)
-	if err != nil {
-		return err
-	}
-
 	evidence := &encoding.TaikoL1Evidence{
-		MetaHash:      blockInfo.MetaHash,
-		ParentHash:    block.ParentHash(),
-		BlockHash:     block.Hash(),
-		SignalRoot:    signalRoot,
+		MetaHash:      proofWithHeader.Opts.MetaHash,
+		ParentHash:    proofWithHeader.Opts.ParentHash,
+		BlockHash:     proofWithHeader.Opts.BlockHash,
+		SignalRoot:    proofWithHeader.Opts.SignalRoot,
 		Graffiti:      s.graffiti,
-		ParentGasUsed: uint32(parent.GasUsed()),
-		GasUsed:       uint32(block.GasUsed()),
+		ParentGasUsed: uint32(proofWithHeader.Opts.ParentGasUsed),
+		GasUsed:       uint32(proofWithHeader.Opts.GasUsed),
 		Proof:         zkProof,
 	}
 
