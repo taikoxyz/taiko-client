@@ -72,6 +72,7 @@ func (p *ZkevmCmdProducer) RequestProof(
 		Meta:    meta,
 		ZkProof: proof,
 		Degree:  CircuitsDegree10Txs,
+		Opts:    opts,
 	}
 
 	return nil

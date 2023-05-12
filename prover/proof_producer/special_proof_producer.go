@@ -153,6 +153,7 @@ func (p *SpecialProofProducer) RequestProof(
 			Header:  header,
 			Meta:    meta,
 			ZkProof: proof,
+			Opts:    opts,
 		}
 	})
 

@@ -41,6 +41,7 @@ type ProofWithHeader struct {
 	Header  *types.Header
 	ZkProof []byte
 	Degree  uint64
+	Opts    *ProofRequestOptions
 }
 
 type ProofProducer interface {
