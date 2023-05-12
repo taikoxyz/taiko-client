@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
@@ -114,7 +115,13 @@ func (s *Syncer) onBlockProposed(
 		"L1Height", event.Raw.BlockNumber,
 		"L1Hash", event.Raw.BlockHash,
 		"BlockID", event.Id,
+		"Removed", event.Raw.Removed,
 	)
+
+	// handle reorg
+	if event.Raw.Removed {
+		return s.handleReorg(ctx, event)
+	}
 
 	// Fetch the L2 parent block.
 	var (
@@ -203,6 +210,116 @@ func (s *Syncer) onBlockProposed(
 
 	log.Info(
 		"🔗 New L2 block inserted",
+		"blockID", event.Id,
+		"height", payloadData.Number,
+		"hash", payloadData.BlockHash,
+		"latestVerifiedBlockHeight", s.state.GetLatestVerifiedBlock().Height,
+		"latestVerifiedBlockHash", s.state.GetLatestVerifiedBlock().Hash,
+		"transactions", len(payloadData.Transactions),
+		"baseFee", payloadData.BaseFeePerGas,
+		"withdrawals", len(payloadData.Withdrawals),
+	)
+
+	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
+	s.lastInsertedBlockID = event.Id
+
+	if s.progressTracker.Triggered() {
+		s.progressTracker.ClearMeta()
+	}
+
+	return nil
+}
+
+// handleReorg detects reorg and rewinds the chain by 1 until we find a block that is still in the chain,
+// then inserts that chain as the new head.
+func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
+	log.Info(
+		"Reorg detected",
+		"L1Height", event.Raw.BlockNumber,
+		"L1Hash", event.Raw.BlockHash,
+		"BlockID", event.Id,
+		"Removed", event.Raw.Removed,
+	)
+
+	// rewind chain by 1 until we find a block that is still in the chain
+	var lastKnownGoodBlockId *big.Int
+	var blockId *big.Int = s.lastInsertedBlockID
+
+	for lastKnownGoodBlockId == nil {
+		block, err := s.rpc.L2.BlockByNumber(ctx, blockId)
+		if err != nil && !errors.Is(err, ethereum.NotFound) {
+			return err
+		}
+
+		if block != nil {
+			// block exists, we can rewind to this block
+			lastKnownGoodBlockId = blockId
+		} else {
+			// otherwise, sub 1 from blockId and try again
+			blockId = new(big.Int).Sub(s.lastInsertedBlockID, big.NewInt(1))
+		}
+	}
+
+	log.Info(
+		"🔗 Last known good block ID before reorg found",
+		"blockID", event.Id,
+	)
+
+	parent, err := s.rpc.L2ParentByBlockId(ctx, lastKnownGoodBlockId)
+	if err != nil {
+		return fmt.Errorf("error getting l2 parent by block id: %w", err)
+	}
+
+	tx, err := s.rpc.L1.TransactionInBlock(
+		ctx,
+		event.Raw.BlockHash,
+		event.Raw.TxIndex,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to fetch original TaikoL1.proposeBlock transaction: %w", err)
+	}
+
+	txListBytes, hint, _, err := s.txListValidator.ValidateTxList(event.Id, tx.Data())
+	if err != nil {
+		return fmt.Errorf("failed to validate transactions list: %w", err)
+	}
+
+	if hint != txListValidator.HintOK {
+		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", event.Id)
+		txListBytes = []byte{}
+	}
+
+	l1Origin := &rawdb.L1Origin{
+		BlockID:       event.Id,
+		L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
+		L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
+		L1BlockHash:   event.Raw.BlockHash,
+	}
+
+	payloadData, rpcError, payloadError := s.insertNewHead(
+		ctx,
+		event,
+		parent,
+		s.state.GetHeadBlockID(),
+		txListBytes,
+		l1Origin,
+	)
+
+	if rpcError != nil {
+		return fmt.Errorf("failed to insert new head to L2 execution engine: %w", rpcError)
+	}
+
+	if payloadError != nil {
+		log.Warn(
+			"Ignore invalid block context", "blockID", event.Id, "payloadError", payloadError, "payloadData", payloadData,
+		)
+		return nil
+	}
+
+	log.Debug("Payload data", "hash", payloadData.BlockHash, "txs", len(payloadData.Transactions))
+
+	log.Info(
+		"🔗 Rewound chain and inserted last known good block as new head",
 		"blockID", event.Id,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
