@@ -141,11 +141,11 @@ func (p *SpecialProofProducer) RequestProof(
 		now                     = time.Now()
 		blockTime               = time.Unix(int64(block.Time()), 0)
 	)
-	if now.Before(blockTime.Add(p.proofTimeTarget)) {
+	if !p.isSystemProver && now.Before(blockTime.Add(p.proofTimeTarget)) {
 		delay = blockTime.Add(p.proofTimeTarget).Sub(now)
 	}
 
-	log.Info("Oracle proof submission delay", "delay", delay)
+	log.Info("Proof submission delay", "delay", delay, "isSystemProver", p.isSystemProver)
 
 	time.AfterFunc(delay, func() {
 		resultCh <- &ProofWithHeader{
