@@ -268,7 +268,7 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 		}
 	}
 
-	// shouuldnt be able to reach this error because of the 0 check above
+	// shouldn't be able to reach this error because of the 0 check above
 	// but just in case
 	if lastKnownGoodBlockId == nil {
 		return fmt.Errorf("failed to find last known good block ID after reorg")
