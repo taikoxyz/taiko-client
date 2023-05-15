@@ -259,7 +259,7 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	var block *types.Block
 	var err error
 
-	stateVars, err := s.rpc.GetProtocolStateVariables()
+	stateVars, err := s.rpc.GetProtocolStateVariables(nil)
 	if err != nil {
 		return fmt.Errorf("failed to get state variables: %w", err)
 	}
