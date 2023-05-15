@@ -287,7 +287,7 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	// reset l1 current to when the last known good block was inserted, and return the event.
 	blockProposedEvent, _, err := s.state.ResetL1Current(ctx, &state.HeightOrID{Height: block.Number()})
 	if err != nil {
-		return fmt.Errorf("faile to reset l1 current: %w", err)
+		return fmt.Errorf("failed to reset l1 current: %w", err)
 	}
 
 	tx, err := s.rpc.L1.TransactionInBlock(
