@@ -74,7 +74,7 @@ func (p *SpecialProofProducer) RequestProof(
 	resultCh chan *ProofWithHeader,
 ) error {
 	log.Info(
-		"Request oracle proof",
+		"Request special proof",
 		"blockID", blockID,
 		"beneficiary", meta.Beneficiary,
 		"height", header.Number,
@@ -140,26 +140,13 @@ func (p *SpecialProofProducer) RequestProof(
 		return fmt.Errorf("failed to sign evidence: %w", err)
 	}
 
-	var (
-		delay     time.Duration = 0
-		now                     = time.Now()
-		blockTime               = time.Unix(int64(block.Time()), 0)
-	)
-	if !p.isSystemProver && now.Before(blockTime.Add(p.proofTimeTarget)) {
-		delay = blockTime.Add(p.proofTimeTarget).Sub(now)
+	resultCh <- &ProofWithHeader{
+		BlockID: blockID,
+		Header:  header,
+		Meta:    meta,
+		ZkProof: proof,
+		Opts:    opts,
 	}
-
-	log.Info("Proof submission delay", "delay", delay, "isSystemProver", p.isSystemProver)
-
-	time.AfterFunc(delay, func() {
-		resultCh <- &ProofWithHeader{
-			BlockID: blockID,
-			Header:  header,
-			Meta:    meta,
-			ZkProof: proof,
-			Opts:    opts,
-		}
-	})
 
 	return nil
 }

@@ -405,7 +405,7 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 // and the proof is not the oracle proof address.
 func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1ClientBlockProven) error {
 	metrics.ProverReceivedProvenBlockGauge.Update(event.Id.Int64())
-	// if oracle prover, dont cancel proof.
+	// if this proof is submitted by an oracle prover or a system prover, dont cancel proof.
 	if event.Prover == p.oracleProverAddress ||
 		event.Prover == p.systemProverAddress ||
 		event.Prover == common.HexToAddress("0x0000000000000000000000000000000000000000") ||
