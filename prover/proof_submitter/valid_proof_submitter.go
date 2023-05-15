@@ -42,7 +42,7 @@ type ValidProofSubmitter struct {
 
 // NewValidProofSubmitter creates a new ValidProofSubmitter instance.
 func NewValidProofSubmitter(
-	rpc *rpc.Client,
+	rpcClient *rpc.Client,
 	proofProducer proofProducer.ProofProducer,
 	resultCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
@@ -52,29 +52,23 @@ func NewValidProofSubmitter(
 	isSystemProver bool,
 	graffiti string,
 ) (*ValidProofSubmitter, error) {
-	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc)
+	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
 	if err != nil {
 		return nil, err
 	}
 
-	var signalServiceNameBytes [32]byte
-	copy(signalServiceNameBytes[:], []byte("signal_service"))
-
-	l1SignalService, err := rpc.TaikoL1.Resolve0(nil, signalServiceNameBytes, false)
+	l1SignalService, err := rpcClient.TaikoL1.Resolve0(nil, rpc.StringToBytes32("signal_service"), false)
 	if err != nil {
 		return nil, err
 	}
 
-	l2SignalService, err := rpc.TaikoL2.Resolve0(nil, signalServiceNameBytes, false)
+	l2SignalService, err := rpcClient.TaikoL2.Resolve0(nil, rpc.StringToBytes32("signal_service"), false)
 	if err != nil {
 		return nil, err
 	}
-
-	var graffitiBytes [32]byte
-	copy(graffitiBytes[:], []byte(graffiti))
 
 	return &ValidProofSubmitter{
-		rpc:               rpc,
+		rpc:               rpcClient,
 		proofProducer:     proofProducer,
 		resultCh:          resultCh,
 		anchorTxValidator: anchorValidator,
@@ -86,7 +80,7 @@ func NewValidProofSubmitter(
 		mutex:             mutex,
 		isOracleProver:    isOracleProver,
 		isSystemProver:    isSystemProver,
-		graffiti:          graffitiBytes,
+		graffiti:          rpc.StringToBytes32(graffiti),
 	}, nil
 }
 
@@ -201,29 +195,14 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
-	signalRoot, err := s.anchorTxValidator.GetAnchoredSignalRoot(ctx, anchorTx)
-	if err != nil {
-		return err
-	}
-
-	parent, err := s.rpc.L2.BlockByHash(ctx, block.ParentHash())
-	if err != nil {
-		return err
-	}
-
-	blockInfo, err := s.rpc.TaikoL1.GetBlock(nil, blockID)
-	if err != nil {
-		return err
-	}
-
 	evidence := &encoding.TaikoL1Evidence{
-		MetaHash:      blockInfo.MetaHash,
-		ParentHash:    block.ParentHash(),
-		BlockHash:     block.Hash(),
-		SignalRoot:    signalRoot,
+		MetaHash:      proofWithHeader.Opts.MetaHash,
+		ParentHash:    proofWithHeader.Opts.ParentHash,
+		BlockHash:     proofWithHeader.Opts.BlockHash,
+		SignalRoot:    proofWithHeader.Opts.SignalRoot,
 		Graffiti:      s.graffiti,
-		ParentGasUsed: uint32(parent.GasUsed()),
-		GasUsed:       uint32(block.GasUsed()),
+		ParentGasUsed: uint32(proofWithHeader.Opts.ParentGasUsed),
+		GasUsed:       uint32(proofWithHeader.Opts.GasUsed),
 		Proof:         zkProof,
 	}
 

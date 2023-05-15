@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"math/rand"
 	"sync"
@@ -335,6 +336,14 @@ func (p *Proposer) checkTaikoTokenBalance() error {
 	fee, err := p.rpc.TaikoL1.GetBlockFee(nil)
 	if err != nil {
 		return fmt.Errorf("failed to get block fee: %w", err)
+	}
+
+	log.Info("GetBlockFee", "fee", fee)
+
+	if fee > math.MaxInt64 {
+		metrics.ProposerBlockFeeGauge.Update(math.MaxInt64)
+	} else {
+		metrics.ProposerBlockFeeGauge.Update(int64(fee))
 	}
 
 	balance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(nil, p.l1ProposerAddress)

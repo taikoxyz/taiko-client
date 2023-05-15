@@ -77,10 +77,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
 	}
 
-	var signalServiceNameBytes [32]byte
-	copy(signalServiceNameBytes[:], []byte("signal_service"))
-
-	signalServiceAddress, err := d.rpc.TaikoL1.Resolve0(nil, signalServiceNameBytes, false)
+	signalServiceAddress, err := d.rpc.TaikoL1.Resolve0(nil, rpc.StringToBytes32("signal_service"), false)
 	if err != nil {
 		return err
 	}

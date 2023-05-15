@@ -36,7 +36,7 @@ type SpecialProofProducer struct {
 // NewSpecialProofProducer creates a new NewSpecialProofProducer instance, which can be either
 // an oracle proof producer, or a system proofproducer.
 func NewSpecialProofProducer(
-	rpc *rpc.Client,
+	rpcClient *rpc.Client,
 	proverPrivKey *ecdsa.PrivateKey,
 	taikoL2Address common.Address,
 	proofTimeTarget time.Duration,
@@ -49,15 +49,19 @@ func NewSpecialProofProducer(
 		return nil, errProtocolAddressMismatch
 	}
 
-	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc)
+	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
 	if err != nil {
 		return nil, err
 	}
 
-	var graffitiBytes [32]byte
-	copy(graffitiBytes[:], []byte(graffiti))
-
-	return &SpecialProofProducer{rpc, proverPrivKey, anchorValidator, proofTimeTarget, graffitiBytes, isSystemProver}, nil
+	return &SpecialProofProducer{
+		rpcClient,
+		proverPrivKey,
+		anchorValidator,
+		proofTimeTarget,
+		rpc.StringToBytes32(graffiti),
+		isSystemProver,
+	}, nil
 }
 
 // RequestProof implements the ProofProducer interface.
@@ -70,7 +74,7 @@ func (p *SpecialProofProducer) RequestProof(
 	resultCh chan *ProofWithHeader,
 ) error {
 	log.Info(
-		"Request oracle proof",
+		"Request special proof",
 		"blockID", blockID,
 		"beneficiary", meta.Beneficiary,
 		"height", header.Number,
@@ -136,25 +140,13 @@ func (p *SpecialProofProducer) RequestProof(
 		return fmt.Errorf("failed to sign evidence: %w", err)
 	}
 
-	var (
-		delay     time.Duration = 0
-		now                     = time.Now()
-		blockTime               = time.Unix(int64(block.Time()), 0)
-	)
-	if now.Before(blockTime.Add(p.proofTimeTarget)) {
-		delay = blockTime.Add(p.proofTimeTarget).Sub(now)
+	resultCh <- &ProofWithHeader{
+		BlockID: blockID,
+		Header:  header,
+		Meta:    meta,
+		ZkProof: proof,
+		Opts:    opts,
 	}
-
-	log.Info("Oracle proof submission delay", "delay", delay)
-
-	time.AfterFunc(delay, func() {
-		resultCh <- &ProofWithHeader{
-			BlockID: blockID,
-			Header:  header,
-			Meta:    meta,
-			ZkProof: proof,
-		}
-	})
 
 	return nil
 }

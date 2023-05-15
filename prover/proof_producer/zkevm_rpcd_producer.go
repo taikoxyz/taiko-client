@@ -137,6 +137,7 @@ func (p *ZkevmRpcdProducer) RequestProof(
 		Meta:    meta,
 		ZkProof: proof,
 		Degree:  degree,
+		Opts:    opts,
 	}
 
 	return nil

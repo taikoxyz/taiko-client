@@ -136,20 +136,14 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
-	oracleProverName := [32]byte{}
-	copy(oracleProverName[:], "oracle_prover")
-
-	oracleProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, oracleProverName, true)
+	oracleProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, rpc.StringToBytes32("oracle_prover"), true)
 	if err != nil {
 		return err
 	}
 
 	p.oracleProverAddress = oracleProverAddress
 
-	systemProverName := [32]byte{}
-	copy(systemProverName[:], "system_prover")
-
-	systemProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, systemProverName, true)
+	systemProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, rpc.StringToBytes32("system_prover"), true)
 	if err != nil {
 		return err
 	}
@@ -411,7 +405,7 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 // and the proof is not the oracle proof address.
 func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1ClientBlockProven) error {
 	metrics.ProverReceivedProvenBlockGauge.Update(event.Id.Int64())
-	// if oracle prover, dont cancel proof.
+	// if this proof is submitted by an oracle prover or a system prover, dont cancel proof.
 	if event.Prover == p.oracleProverAddress ||
 		event.Prover == p.systemProverAddress ||
 		event.Prover == common.HexToAddress("0x0000000000000000000000000000000000000000") ||
