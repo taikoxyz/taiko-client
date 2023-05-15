@@ -231,7 +231,7 @@ func (s *Syncer) onBlockProposed(
 }
 
 // handleReorg detects reorg and rewinds the chain by 1 until we find a block that is still in the chain,
-// then inserts that chain as the new head.
+// then inserts that block as the new head.
 func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
 	log.Info(
 		"Reorg detected",
