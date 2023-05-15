@@ -45,6 +45,7 @@ type Proposer struct {
 	proposingTimer             *time.Timer
 	commitSlot                 uint64
 	locals                     []common.Address
+	minBlockGasLimit           *uint64
 
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -95,6 +96,17 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		return fmt.Errorf("failed to get protocol configs: %w", err)
 	}
 	p.protocolConfigs = &protocolConfigs
+
+	if cfg.MinBlockGasLimit != 0 {
+		if cfg.MinBlockGasLimit > p.protocolConfigs.BlockMaxGasLimit.Uint64() {
+			return fmt.Errorf(
+				"minimal block gas limit too large, set: %d, limit: %d",
+				cfg.MinBlockGasLimit,
+				p.protocolConfigs.BlockMaxGasLimit,
+			)
+		}
+		p.minBlockGasLimit = &cfg.MinBlockGasLimit
+	}
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
@@ -229,6 +241,10 @@ func (p *Proposer) ProposeTxList(
 	txListBytes []byte,
 	txNum uint,
 ) error {
+	if p.minBlockGasLimit != nil && meta.GasLimit < uint32(*p.minBlockGasLimit) {
+		meta.GasLimit = uint32(*p.minBlockGasLimit)
+	}
+
 	// Propose the transactions list
 	inputs, err := encoding.EncodeProposeBlockInput(meta)
 	if err != nil {

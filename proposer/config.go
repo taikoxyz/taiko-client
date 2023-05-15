@@ -24,6 +24,7 @@ type Config struct {
 	CommitSlot                 uint64
 	LocalAddresses             []common.Address
 	ProposeEmptyBlocksInterval *time.Duration
+	MinBlockGasLimit           uint64
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -81,5 +82,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		CommitSlot:                 c.Uint64(flags.CommitSlot.Name),
 		LocalAddresses:             localAddresses,
 		ProposeEmptyBlocksInterval: proposeEmptyBlocksInterval,
+		MinBlockGasLimit:           c.Uint64(flags.MinBlockGasLimit.Name),
 	}, nil
 }
