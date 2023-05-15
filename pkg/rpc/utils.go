@@ -113,3 +113,11 @@ func GetReceiptsByBlock(ctx context.Context, cli *rpc.Client, block *types.Block
 func SetHead(ctx context.Context, rpc *rpc.Client, headNum *big.Int) error {
 	return gethclient.New(rpc).SetHead(ctx, headNum)
 }
+
+// StringToBytes32 converts the given string to [32]byte.
+func StringToBytes32(str string) [32]byte {
+	var b [32]byte
+	copy(b[:], []byte(str))
+
+	return b
+}
