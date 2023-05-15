@@ -26,6 +26,14 @@ import (
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 )
 
+// ParentBlockInfo is an abstraction between *types.Header and our code, to allow passing in
+// a zero hash and other zero-value fields.
+type ParentBlockInfo struct {
+	Hash    common.Hash
+	Number  *big.Int
+	GasUsed uint64
+}
+
 // Syncer responsible for letting the L2 execution engine catching up with protocol's latest
 // pending block through deriving L1 calldata.
 type Syncer struct {
@@ -188,7 +196,11 @@ func (s *Syncer) onBlockProposed(
 	payloadData, rpcError, payloadError := s.insertNewHead(
 		ctx,
 		event,
-		parent,
+		&ParentBlockInfo{
+			Hash:    parent.Hash(),
+			Number:  parent.Number,
+			GasUsed: parent.GasUsed,
+		},
 		s.state.GetHeadBlockID(),
 		txListBytes,
 		l1Origin,
@@ -247,6 +259,11 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	var block *types.Block
 	var err error
 
+	stateVars, err := s.rpc.GetProtocolStateVariables()
+	if err != nil {
+		return fmt.Errorf("failed to get state variables: %w", err)
+	}
+
 	for {
 		if blockId.Cmp(big.NewInt(0)) == 0 {
 			lastKnownGoodBlockId = new(big.Int).SetUint64(0)
@@ -258,7 +275,7 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 			return err
 		}
 
-		if block != nil {
+		if block != nil && blockId.Uint64() < stateVars.NumBlocks {
 			// block exists, we can rewind to this block
 			lastKnownGoodBlockId = blockId
 			break
@@ -276,12 +293,28 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 
 	log.Info(
 		"🔗 Last known good block ID before reorg found",
-		"blockID", event.Id,
+		"blockID", lastKnownGoodBlockId,
 	)
 
-	parent, err := s.rpc.L2ParentByBlockId(ctx, lastKnownGoodBlockId)
-	if err != nil {
-		return fmt.Errorf("error getting l2 parent by block id: %w", err)
+	var parentBlockInfo *ParentBlockInfo
+
+	if lastKnownGoodBlockId.Cmp(common.Big0) == 0 {
+		parentBlockInfo = &ParentBlockInfo{
+			Hash:    common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
+			Number:  big.NewInt(0),
+			GasUsed: 0,
+		}
+	} else {
+		parent, err := s.rpc.L2ParentByBlockId(ctx, lastKnownGoodBlockId)
+		if err != nil {
+			return fmt.Errorf("error getting l2 parent by block id: %w", err)
+		}
+
+		parentBlockInfo = &ParentBlockInfo{
+			Hash:    parent.Hash(),
+			Number:  parent.Number,
+			GasUsed: parent.GasUsed,
+		}
 	}
 
 	// reset l1 current to when the last known good block was inserted, and return the event.
@@ -319,7 +352,7 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	payloadData, rpcError, payloadError := s.insertNewHead(
 		ctx,
 		blockProposedEvent,
-		parent,
+		parentBlockInfo,
 		s.state.GetHeadBlockID(),
 		txListBytes,
 		l1Origin,
@@ -365,15 +398,15 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 func (s *Syncer) insertNewHead(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
-	parent *types.Header,
+	parentBlockInfo *ParentBlockInfo,
 	headBlockID *big.Int,
 	txListBytes []byte,
 	l1Origin *rawdb.L1Origin,
 ) (*engine.ExecutableData, error, error) {
 	log.Debug(
 		"Try to insert a new L2 head block",
-		"parentNumber", parent.Number,
-		"parentHash", parent.Hash(),
+		"parentNumber", parentBlockInfo.Number,
+		"parentHash", parentBlockInfo.Hash,
 		"headBlockID", headBlockID,
 		"l1Origin", l1Origin,
 	)
@@ -387,17 +420,17 @@ func (s *Syncer) insertNewHead(
 		}
 	}
 
-	parentTimestamp, err := s.rpc.TaikoL2.ParentTimestamp(&bind.CallOpts{BlockNumber: parent.Number})
+	parentTimestamp, err := s.rpc.TaikoL2.ParentTimestamp(&bind.CallOpts{BlockNumber: parentBlockInfo.Number})
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Get L2 baseFee
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
-		&bind.CallOpts{BlockNumber: parent.Number},
+		&bind.CallOpts{BlockNumber: parentBlockInfo.Number},
 		uint32(event.Meta.Timestamp-parentTimestamp),
 		uint64(event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit())),
-		parent.GasUsed,
+		parentBlockInfo.GasUsed,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
@@ -408,7 +441,7 @@ func (s *Syncer) insertNewHead(
 		"baseFee", baseFee,
 		"timeSinceParent", uint32(event.Meta.Timestamp-parentTimestamp),
 		"gasLimit", uint64(event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit())),
-		"parentGasUsed", parent.GasUsed,
+		"parentGasUsed", parentBlockInfo.GasUsed,
 	)
 
 	// Get withdrawals
@@ -422,9 +455,9 @@ func (s *Syncer) insertNewHead(
 		ctx,
 		new(big.Int).SetUint64(event.Meta.L1Height),
 		event.Meta.L1Hash,
-		new(big.Int).Add(parent.Number, common.Big1),
+		new(big.Int).Add(parentBlockInfo.Number, common.Big1),
 		baseFee,
-		parent.GasUsed,
+		parentBlockInfo.GasUsed,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create TaikoL2.anchor transaction: %w", err)
@@ -440,7 +473,7 @@ func (s *Syncer) insertNewHead(
 	payload, rpcErr, payloadErr := s.createExecutionPayloads(
 		ctx,
 		event,
-		parent.Hash(),
+		parentBlockInfo.Hash,
 		l1Origin,
 		headBlockID,
 		txListBytes,
@@ -452,7 +485,7 @@ func (s *Syncer) insertNewHead(
 		return nil, rpcErr, payloadErr
 	}
 
-	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parent.Hash()}
+	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parentBlockInfo.Hash}
 
 	// Update the fork choice
 	fc.HeadBlockHash = payload.BlockHash

@@ -69,7 +69,11 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 				Timestamp:   uint64(time.Now().Unix()),
 			},
 		},
-		parent,
+		&ParentBlockInfo{
+			Hash:    parent.Hash(),
+			Number:  parent.Number,
+			GasUsed: parent.GasUsed,
+		},
 		common.Big2,
 		[]byte{},
 		&rawdb.L1Origin{
