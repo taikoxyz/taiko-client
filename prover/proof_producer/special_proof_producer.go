@@ -36,7 +36,7 @@ type SpecialProofProducer struct {
 // NewSpecialProofProducer creates a new NewSpecialProofProducer instance, which can be either
 // an oracle proof producer, or a system proofproducer.
 func NewSpecialProofProducer(
-	rpc *rpc.Client,
+	rpcClient *rpc.Client,
 	proverPrivKey *ecdsa.PrivateKey,
 	taikoL2Address common.Address,
 	proofTimeTarget time.Duration,
@@ -49,15 +49,19 @@ func NewSpecialProofProducer(
 		return nil, errProtocolAddressMismatch
 	}
 
-	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpc.L2ChainID, rpc)
+	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
 	if err != nil {
 		return nil, err
 	}
 
-	var graffitiBytes [32]byte
-	copy(graffitiBytes[:], []byte(graffiti))
-
-	return &SpecialProofProducer{rpc, proverPrivKey, anchorValidator, proofTimeTarget, graffitiBytes, isSystemProver}, nil
+	return &SpecialProofProducer{
+		rpcClient,
+		proverPrivKey,
+		anchorValidator,
+		proofTimeTarget,
+		rpc.StringToBytes32(graffiti),
+		isSystemProver,
+	}, nil
 }
 
 // RequestProof implements the ProofProducer interface.
