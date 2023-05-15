@@ -45,6 +45,11 @@ var (
 		Usage:    "Time interval to propose empty blocks",
 		Category: proposerCategory,
 	}
+	MinBlockGasLimit = &cli.Uint64Flag{
+		Name:     "minimalBlockGasLimit",
+		Usage:    "Minimal block gasLimit when proposing a block",
+		Category: proposerCategory,
+	}
 )
 
 // All proposer flags.
@@ -56,4 +61,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	CommitSlot,
 	TxPoolLocals,
 	ProposeEmptyBlocksInterval,
+	MinBlockGasLimit,
 })
