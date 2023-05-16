@@ -256,10 +256,16 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	// rewind chain by 1 until we find a block that is still in the chain
 	var (
 		lastKnownGoodBlockId *big.Int
-		blockId              *big.Int = s.lastInsertedBlockID
+		blockId              *big.Int
 		block                *types.Block
 		err                  error
 	)
+
+	l2Head, err := s.rpc.L2.BlockByNumber(ctx, nil)
+	if err != nil {
+		return err
+	}
+	blockId = l2Head.Number()
 
 	stateVars, err := s.rpc.GetProtocolStateVariables(nil)
 	if err != nil {
