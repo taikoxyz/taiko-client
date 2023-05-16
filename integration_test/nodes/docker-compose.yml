@@ -14,7 +14,7 @@ services:
       - "0.0.0.0"
 
   l2_execution_engine:
-    image: gcr.io/evmchain/taiko-geth:sha-f8be24a # TODO: change back to taiko tag
+    image: gcr.io/evmchain/taiko-geth:taiko
     restart: unless-stopped
     pull_policy: always
     volumes:
