@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
@@ -114,7 +115,13 @@ func (s *Syncer) onBlockProposed(
 		"L1Height", event.Raw.BlockNumber,
 		"L1Hash", event.Raw.BlockHash,
 		"BlockID", event.Id,
+		"Removed", event.Raw.Removed,
 	)
+
+	// handle reorg
+	if event.Raw.Removed {
+		return s.handleReorg(ctx, event)
+	}
 
 	// Fetch the L2 parent block.
 	var (
@@ -215,6 +222,108 @@ func (s *Syncer) onBlockProposed(
 
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
 	s.lastInsertedBlockID = event.Id
+
+	if s.progressTracker.Triggered() {
+		s.progressTracker.ClearMeta()
+	}
+
+	return nil
+}
+
+// handleReorg detects reorg and rewinds the chain by 1 until we find a block that is still in the chain,
+// then inserts that block as the new head.
+func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
+	log.Info(
+		"Reorg detected",
+		"L1Height", event.Raw.BlockNumber,
+		"L1Hash", event.Raw.BlockHash,
+		"BlockID", event.Id,
+		"Removed", event.Raw.Removed,
+	)
+
+	// rewind chain by 1 until we find a block that is still in the chain
+	var (
+		lastKnownGoodBlockID *big.Int
+		blockID              *big.Int = s.lastInsertedBlockID
+		block                *types.Block
+		err                  error
+	)
+
+	// if `lastInsertedBlockID` has not been set, we use current L2 chain head as blockID instead
+	if blockID == nil {
+		l2Head, err := s.rpc.L2.BlockByNumber(ctx, nil)
+		if err != nil {
+			return err
+		}
+		blockID = l2Head.Number()
+	}
+
+	stateVars, err := s.rpc.GetProtocolStateVariables(nil)
+	if err != nil {
+		return fmt.Errorf("failed to get state variables: %w", err)
+	}
+
+	for {
+		if blockID.Cmp(common.Big0) == 0 {
+			if block, err = s.rpc.L2.BlockByNumber(ctx, common.Big0); err != nil {
+				return err
+			}
+			lastKnownGoodBlockID = common.Big0
+			break
+		}
+
+		if block, err = s.rpc.L2.BlockByNumber(ctx, blockID); err != nil && !errors.Is(err, ethereum.NotFound) {
+			return err
+		}
+
+		if block != nil && blockID.Uint64() < stateVars.NumBlocks {
+			// block exists, we can rewind to this block
+			lastKnownGoodBlockID = blockID
+			break
+		} else {
+			// otherwise, sub 1 from blockId and try again
+			blockID = new(big.Int).Sub(blockID, common.Big1)
+		}
+	}
+
+	// shouldn't be able to reach this error because of the 0 check above
+	// but just in case
+	if lastKnownGoodBlockID == nil {
+		return fmt.Errorf("failed to find last known good block ID after reorg")
+	}
+
+	log.Info(
+		"🔗 Last known good block ID before reorg found",
+		"blockID", lastKnownGoodBlockID,
+	)
+
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, &engine.ForkchoiceStateV1{HeadBlockHash: block.Hash()}, nil)
+	if err != nil {
+		return err
+	}
+	if fcRes.PayloadStatus.Status != engine.VALID {
+		return fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
+	}
+
+	// reset l1 current to when the last known good block was inserted, and return the event.
+	if _, _, err := s.state.ResetL1Current(ctx, &state.HeightOrID{ID: lastKnownGoodBlockID}); err != nil {
+		return fmt.Errorf("failed to reset L1 current: %w", err)
+	}
+
+	log.Info(
+		"🔗 Rewound chain and inserted last known good block as new head",
+		"blockID", event.Id,
+		"height", block.Number(),
+		"hash", block.Hash(),
+		"latestVerifiedBlockHeight", s.state.GetLatestVerifiedBlock().Height,
+		"latestVerifiedBlockHash", s.state.GetLatestVerifiedBlock().Hash,
+		"transactions", len(block.Transactions()),
+		"baseFee", block.BaseFee(),
+		"withdrawals", len(block.Withdrawals()),
+	)
+
+	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
+	s.lastInsertedBlockID = block.Number()
 
 	if s.progressTracker.Triggered() {
 		s.progressTracker.ClearMeta()

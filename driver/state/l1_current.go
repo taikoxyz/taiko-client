@@ -28,34 +28,36 @@ func (s *State) SetL1Current(h *types.Header) {
 }
 
 // ResetL1Current resets the l1Current cursor to the L1 height which emitted a
-// BlockProven event with given blockID / blockHash.
-func (s *State) ResetL1Current(ctx context.Context, heightOrID *HeightOrID) (*big.Int, error) {
+// BlockProposed event with given blockID / blockHash.
+func (s *State) ResetL1Current(
+	ctx context.Context,
+	heightOrID *HeightOrID,
+) (*bindings.TaikoL1ClientBlockProposed, *big.Int, error) {
 	if !heightOrID.NotEmpty() {
-		return nil, fmt.Errorf("empty input %v", heightOrID)
+		return nil, nil, fmt.Errorf("empty input %v", heightOrID)
 	}
 
 	log.Info("Reset L1 current cursor", "heightOrID", heightOrID)
 
 	var (
-		l1CurrentHeight *big.Int
-		err             error
+		err error
 	)
 
 	if (heightOrID.ID != nil && heightOrID.ID.Cmp(common.Big0) == 0) ||
 		(heightOrID.Height != nil && heightOrID.Height.Cmp(common.Big0) == 0) {
 		l1Current, err := s.rpc.L1.HeaderByNumber(ctx, s.GenesisL1Height)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		s.SetL1Current(l1Current)
-		return common.Big0, nil
+		return nil, common.Big0, nil
 	}
 
 	// Need to find the block ID at first, before filtering the BlockProposed events.
 	if heightOrID.ID == nil {
 		header, err := s.rpc.L2.HeaderByNumber(context.Background(), heightOrID.Height)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		targetHash := header.Hash()
 
@@ -85,18 +87,19 @@ func (s *State) ResetL1Current(ctx context.Context, heightOrID *HeightOrID) (*bi
 		)
 
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		if err := iter.Iter(); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		if heightOrID.ID == nil {
-			return nil, fmt.Errorf("BlockProven event not found, hash: %s", targetHash)
+			return nil, nil, fmt.Errorf("BlockProven event not found, hash: %s", targetHash)
 		}
 	}
 
+	var event *bindings.TaikoL1ClientBlockProposed
 	iter, err := eventIterator.NewBlockProposedIterator(
 		ctx,
 		&eventIterator.BlockProposedIteratorConfig{
@@ -111,7 +114,7 @@ func (s *State) ResetL1Current(ctx context.Context, heightOrID *HeightOrID) (*bi
 				e *bindings.TaikoL1ClientBlockProposed,
 				end eventIterator.EndBlockProposedEventIterFunc,
 			) error {
-				l1CurrentHeight = new(big.Int).SetUint64(e.Raw.BlockNumber)
+				event = e
 				end()
 				return nil
 			},
@@ -119,24 +122,24 @@ func (s *State) ResetL1Current(ctx context.Context, heightOrID *HeightOrID) (*bi
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err := iter.Iter(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	if l1CurrentHeight == nil {
-		return nil, fmt.Errorf("BlockProposed event not found, blockID: %s", heightOrID.ID)
+	if event == nil {
+		return nil, nil, fmt.Errorf("BlockProposed event not found, blockID: %s", heightOrID.ID)
 	}
 
-	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, l1CurrentHeight)
+	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Raw.BlockNumber))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	s.SetL1Current(l1Current)
 
 	log.Info("Reset L1 current cursor", "height", s.GetL1Current().Number)
 
-	return heightOrID.ID, nil
+	return event, heightOrID.ID, nil
 }
