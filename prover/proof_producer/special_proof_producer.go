@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -28,7 +27,6 @@ type SpecialProofProducer struct {
 	rpc               *rpc.Client
 	proverPrivKey     *ecdsa.PrivateKey
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
-	proofTimeTarget   time.Duration
 	graffiti          [32]byte
 	isSystemProver    bool
 }
@@ -39,7 +37,6 @@ func NewSpecialProofProducer(
 	rpcClient *rpc.Client,
 	proverPrivKey *ecdsa.PrivateKey,
 	taikoL2Address common.Address,
-	proofTimeTarget time.Duration,
 	protocolSpecialProverAddress common.Address,
 	graffiti string,
 	isSystemProver bool,
@@ -58,7 +55,6 @@ func NewSpecialProofProducer(
 		rpcClient,
 		proverPrivKey,
 		anchorValidator,
-		proofTimeTarget,
 		rpc.StringToBytes32(graffiti),
 		isSystemProver,
 	}, nil
