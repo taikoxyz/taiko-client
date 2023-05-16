@@ -170,7 +170,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			p.rpc,
 			privateKey,
 			p.cfg.TaikoL2Address,
-			time.Duration(p.protocolConfigs.ProofTimeTarget)*time.Second,
 			specialProverAddress,
 			p.cfg.Graffiti,
 			isSystemProver,
