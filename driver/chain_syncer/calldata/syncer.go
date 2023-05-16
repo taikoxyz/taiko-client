@@ -243,17 +243,20 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 
 	// rewind chain by 1 until we find a block that is still in the chain
 	var (
-		lastKnownGoodBlockId *big.Int
-		blockId              *big.Int
+		lastKnownGoodBlockID *big.Int
+		blockID              *big.Int = s.lastInsertedBlockID
 		block                *types.Block
 		err                  error
 	)
 
-	l2Head, err := s.rpc.L2.BlockByNumber(ctx, nil)
-	if err != nil {
-		return err
+	// if `lastInsertedBlockID` has not been set, we use current L2 chain head as blockID instead
+	if blockID == nil {
+		l2Head, err := s.rpc.L2.BlockByNumber(ctx, nil)
+		if err != nil {
+			return err
+		}
+		blockID = l2Head.Number()
 	}
-	blockId = l2Head.Number()
 
 	stateVars, err := s.rpc.GetProtocolStateVariables(nil)
 	if err != nil {
@@ -261,37 +264,37 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	}
 
 	for {
-		if blockId.Cmp(common.Big0) == 0 {
+		if blockID.Cmp(common.Big0) == 0 {
 			if block, err = s.rpc.L2.BlockByNumber(ctx, common.Big0); err != nil {
 				return err
 			}
-			lastKnownGoodBlockId = common.Big0
+			lastKnownGoodBlockID = common.Big0
 			break
 		}
 
-		if block, err = s.rpc.L2.BlockByNumber(ctx, blockId); err != nil && !errors.Is(err, ethereum.NotFound) {
+		if block, err = s.rpc.L2.BlockByNumber(ctx, blockID); err != nil && !errors.Is(err, ethereum.NotFound) {
 			return err
 		}
 
-		if block != nil && blockId.Uint64() < stateVars.NumBlocks {
+		if block != nil && blockID.Uint64() < stateVars.NumBlocks {
 			// block exists, we can rewind to this block
-			lastKnownGoodBlockId = blockId
+			lastKnownGoodBlockID = blockID
 			break
 		} else {
 			// otherwise, sub 1 from blockId and try again
-			blockId = new(big.Int).Sub(blockId, common.Big1)
+			blockID = new(big.Int).Sub(blockID, common.Big1)
 		}
 	}
 
 	// shouldn't be able to reach this error because of the 0 check above
 	// but just in case
-	if lastKnownGoodBlockId == nil {
+	if lastKnownGoodBlockID == nil {
 		return fmt.Errorf("failed to find last known good block ID after reorg")
 	}
 
 	log.Info(
 		"🔗 Last known good block ID before reorg found",
-		"blockID", lastKnownGoodBlockId,
+		"blockID", lastKnownGoodBlockID,
 	)
 
 	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, &engine.ForkchoiceStateV1{HeadBlockHash: block.Hash()}, nil)
@@ -303,7 +306,7 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	}
 
 	// reset l1 current to when the last known good block was inserted, and return the event.
-	if _, _, err := s.state.ResetL1Current(ctx, &state.HeightOrID{ID: lastKnownGoodBlockId}); err != nil {
+	if _, _, err := s.state.ResetL1Current(ctx, &state.HeightOrID{ID: lastKnownGoodBlockID}); err != nil {
 		return fmt.Errorf("failed to reset L1 current: %w", err)
 	}
 
