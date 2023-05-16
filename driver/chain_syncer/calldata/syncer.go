@@ -267,7 +267,7 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	}
 
 	for {
-		if blockId == nil && blockId.Cmp(common.Big0) == 0 {
+		if blockId == nil || blockId.Cmp(common.Big0) == 0 {
 			if block, err = s.rpc.L2.BlockByNumber(ctx, common.Big0); err != nil {
 				return err
 			}
