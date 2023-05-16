@@ -254,10 +254,12 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	)
 
 	// rewind chain by 1 until we find a block that is still in the chain
-	var lastKnownGoodBlockId *big.Int
-	var blockId *big.Int = s.lastInsertedBlockID
-	var block *types.Block
-	var err error
+	var (
+		lastKnownGoodBlockId *big.Int
+		blockId              *big.Int = s.lastInsertedBlockID
+		block                *types.Block
+		err                  error
+	)
 
 	stateVars, err := s.rpc.GetProtocolStateVariables(nil)
 	if err != nil {
@@ -265,13 +267,15 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 	}
 
 	for {
-		if blockId.Cmp(big.NewInt(0)) == 0 {
-			lastKnownGoodBlockId = new(big.Int).SetUint64(0)
+		if blockId == nil && blockId.Cmp(common.Big0) == 0 {
+			if block, err = s.rpc.L2.BlockByNumber(ctx, common.Big0); err != nil {
+				return err
+			}
+			lastKnownGoodBlockId = common.Big0
 			break
 		}
 
-		block, err = s.rpc.L2.BlockByNumber(ctx, blockId)
-		if err != nil && !errors.Is(err, ethereum.NotFound) {
+		if block, err = s.rpc.L2.BlockByNumber(ctx, blockId); err != nil && !errors.Is(err, ethereum.NotFound) {
 			return err
 		}
 
@@ -281,7 +285,7 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 			break
 		} else {
 			// otherwise, sub 1 from blockId and try again
-			blockId = new(big.Int).Sub(s.lastInsertedBlockID, big.NewInt(1))
+			blockId = new(big.Int).Sub(blockId, common.Big1)
 		}
 	}
 
@@ -296,91 +300,29 @@ func (s *Syncer) handleReorg(ctx context.Context, event *bindings.TaikoL1ClientB
 		"blockID", lastKnownGoodBlockId,
 	)
 
-	var parentBlockInfo *ParentBlockInfo
-
-	if lastKnownGoodBlockId.Cmp(common.Big0) == 0 {
-		parentBlockInfo = &ParentBlockInfo{
-			Hash:    common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
-			Number:  big.NewInt(0),
-			GasUsed: 0,
-		}
-	} else {
-		parent, err := s.rpc.L2ParentByBlockId(ctx, lastKnownGoodBlockId)
-		if err != nil {
-			return fmt.Errorf("error getting l2 parent by block id: %w", err)
-		}
-
-		parentBlockInfo = &ParentBlockInfo{
-			Hash:    parent.Hash(),
-			Number:  parent.Number,
-			GasUsed: parent.GasUsed,
-		}
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, &engine.ForkchoiceStateV1{HeadBlockHash: block.Hash()}, nil)
+	if err != nil {
+		return err
+	}
+	if fcRes.PayloadStatus.Status != engine.VALID {
+		return fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
 	}
 
 	// reset l1 current to when the last known good block was inserted, and return the event.
-	blockProposedEvent, _, err := s.state.ResetL1Current(ctx, &state.HeightOrID{Height: block.Number()})
-	if err != nil {
-		return fmt.Errorf("failed to reset l1 current: %w", err)
+	if _, _, err := s.state.ResetL1Current(ctx, &state.HeightOrID{ID: lastKnownGoodBlockId}); err != nil {
+		return fmt.Errorf("failed to reset L1 current: %w", err)
 	}
-
-	tx, err := s.rpc.L1.TransactionInBlock(
-		ctx,
-		block.Hash(),
-		blockProposedEvent.Raw.TxIndex,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to fetch original TaikoL1.proposeBlock transaction: %w", err)
-	}
-
-	txListBytes, hint, _, err := s.txListValidator.ValidateTxList(block.Number(), tx.Data())
-	if err != nil {
-		return fmt.Errorf("failed to validate transactions list: %w", err)
-	}
-
-	if hint != txListValidator.HintOK {
-		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", block.NumberU64())
-		txListBytes = []byte{}
-	}
-
-	l1Origin := &rawdb.L1Origin{
-		BlockID:       block.Number(),
-		L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
-		L1BlockHeight: new(big.Int).SetUint64(blockProposedEvent.Raw.BlockNumber),
-		L1BlockHash:   blockProposedEvent.Raw.BlockHash,
-	}
-
-	payloadData, rpcError, payloadError := s.insertNewHead(
-		ctx,
-		blockProposedEvent,
-		parentBlockInfo,
-		s.state.GetHeadBlockID(),
-		txListBytes,
-		l1Origin,
-	)
-
-	if rpcError != nil {
-		return fmt.Errorf("failed to insert new head to L2 execution engine: %w", rpcError)
-	}
-
-	if payloadError != nil {
-		log.Warn(
-			"Ignore invalid block context", "blockID", event.Id, "payloadError", payloadError, "payloadData", payloadData,
-		)
-		return nil
-	}
-
-	log.Debug("Payload data", "hash", payloadData.BlockHash, "txs", len(payloadData.Transactions))
 
 	log.Info(
 		"🔗 Rewound chain and inserted last known good block as new head",
 		"blockID", event.Id,
-		"height", payloadData.Number,
-		"hash", payloadData.BlockHash,
+		"height", block.Number(),
+		"hash", block.Hash(),
 		"latestVerifiedBlockHeight", s.state.GetLatestVerifiedBlock().Height,
 		"latestVerifiedBlockHash", s.state.GetLatestVerifiedBlock().Hash,
-		"transactions", len(payloadData.Transactions),
-		"baseFee", payloadData.BaseFeePerGas,
-		"withdrawals", len(payloadData.Withdrawals),
+		"transactions", len(block.Transactions()),
+		"baseFee", block.BaseFee(),
+		"withdrawals", len(block.Withdrawals()),
 	)
 
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
