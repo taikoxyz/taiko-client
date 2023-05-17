@@ -367,17 +367,32 @@ func (p *Prover) onBlockProposed(
 // submitProofOp performs a (valid block / invalid block) proof submission operation.
 func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader, isValidProof bool) {
 	p.submitProofConcurrencyGuard <- struct{}{}
-	go func() {
-		defer func() {
-			<-p.submitProofConcurrencyGuard
-			p.currentBlocksBeingProvenMutex.Lock()
-			delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
-			p.currentBlocksBeingProvenMutex.Unlock()
-		}()
 
-		if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
-			log.Error("Submit proof error", "isValidProof", isValidProof, "error", err)
+	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
+	if err != nil {
+		log.Error("error retrieving protocol state variables", "error", err)
+	}
+
+	go func() {
+
+		if (stateVars.ProofTimeTarget - proofWithHeader.Header.Time) < 0 {
+			defer func() {
+				<-p.submitProofConcurrencyGuard
+				p.currentBlocksBeingProvenMutex.Lock()
+				delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
+				p.currentBlocksBeingProvenMutex.Unlock()
+			}()
+
+			if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
+				log.Error("Submit proof error", "isValidProof", isValidProof, "error", err)
+			}
+		} else {
+			defer func() {
+				<-p.submitProofConcurrencyGuard
+			}()
+			log.Info("targetProofTime has not elapsed yet, wait and retry.")
 		}
+
 	}()
 }
 
