@@ -4,13 +4,16 @@ import (
 	"context"
 	"math/big"
 	"math/rand"
+	"os"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -51,7 +54,17 @@ func ProposeAndInsertEmptyBlocks(
 		close(sink)
 	}()
 
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	opts, err := bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, s.RpcClient.L1ChainID)
+	s.Nil(err)
+	opts.Value = new(big.Int).SetUint64(1 * params.Ether)
+
 	// RLP encoded empty list
+	_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts)
+	s.Nil(err)
+
 	var emptyTxs []types.Transaction
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
@@ -65,12 +78,21 @@ func ProposeAndInsertEmptyBlocks(
 		CacheTxListInfo: 0,
 	}, encoded, 0))
 
+	_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts)
+	s.Nil(err)
+
 	ProposeInvalidTxListBytes(s, proposer)
 
 	// Zero byte txList
+	_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts)
+	s.Nil(err)
 	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
 
 	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
+
+	for _, e := range events {
+		s.NotEmpty(e.Meta.DepositsRoot)
+	}
 
 	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), events[len(events)-1].Raw.TxHash)
 	s.Nil(err)
