@@ -387,7 +387,6 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 			if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
 				log.Error("Submit proof error", "isValidProof", isValidProof, "error", err)
 			}
-
 		} else {
 			// clears the concurrencyguard channel, doesn't delete block being proven
 			defer func() {
@@ -396,7 +395,6 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 
 			log.Info("targetProofTime has not elapsed yet, wait and retry.")
 		}
-
 	}()
 }
 
