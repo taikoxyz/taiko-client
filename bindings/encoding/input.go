@@ -84,7 +84,7 @@ var (
 			Type: "address",
 		},
 		{
-			Name: "treasure",
+			Name: "treasury",
 			Type: "address",
 		},
 	}
