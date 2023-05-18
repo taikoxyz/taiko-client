@@ -374,8 +374,8 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 	}
 
 	go func() {
-
-		if (stateVars.ProofTimeTarget - proofWithHeader.Header.Time) < 0 {
+		// if blockTime+proofTimeTarget - currentTime <= 0, i.e. currentTime >= blockTime + proofTimeTarget, submit proof.
+		if ((stateVars.ProofTimeTarget + proofWithHeader.Header.Time) - uint64(time.Now().Unix())) <= 0 {
 			defer func() {
 				<-p.submitProofConcurrencyGuard
 				p.currentBlocksBeingProvenMutex.Lock()
@@ -386,10 +386,13 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 			if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
 				log.Error("Submit proof error", "isValidProof", isValidProof, "error", err)
 			}
+
 		} else {
+			// clears the concurrencyguard channel, doesn't delete block being proven
 			defer func() {
 				<-p.submitProofConcurrencyGuard
 			}()
+
 			log.Info("targetProofTime has not elapsed yet, wait and retry.")
 		}
 
