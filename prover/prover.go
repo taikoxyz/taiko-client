@@ -374,7 +374,8 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 	}
 
 	go func() {
-		// if blockTime+proofTimeTarget - currentTime <= 0, i.e. currentTime >= blockTime + proofTimeTarget, submit proof.
+		// if (blockTime + proofTimeTarget) - currentTime <= 0, i.e. proofTimeTarget has elapsed from
+		// block being proven's timestamp, submit proof.
 		if ((stateVars.ProofTimeTarget + proofWithHeader.Header.Time) - uint64(time.Now().Unix())) <= 0 {
 			defer func() {
 				<-p.submitProofConcurrencyGuard
