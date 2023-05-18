@@ -371,6 +371,7 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
 	if err != nil {
 		log.Error("error retrieving protocol state variables", "error", err)
+		return
 	}
 
 	go func() {
