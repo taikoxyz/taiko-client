@@ -106,8 +106,14 @@ func NewZkevmRpcdProducer(
 func (p *ZkevmRpcdProducer) CalcDelay(
 	header *types.Header,
 ) time.Duration {
+	// if > 0, delay has not yet elapsed; proof should be delayed.
+	// if <= 0, delay has already elapsed; proof does not need delay.
 	delay := ((p.ProofTimeTarget + header.Time) - uint64(time.Now().Unix()))
-	return time.Duration(delay)
+	if delay > 0 {
+		return time.Duration(delay)
+	} else {
+		return time.Duration(0)
+	}
 }
 
 // RequestProof implements the ProofProducer interface.
