@@ -17,6 +17,12 @@ type DummyProofProducer struct {
 	RandomDummyProofDelayUpperBound *time.Duration
 }
 
+func (d *DummyProofProducer) CalcDelay(
+	header *types.Header,
+) time.Duration {
+	return time.Duration(0)
+}
+
 // RequestProof implements the ProofProducer interface.
 func (d *DummyProofProducer) RequestProof(
 	ctx context.Context,

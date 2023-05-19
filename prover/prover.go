@@ -155,6 +155,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	isSystemProver := cfg.SystemProver
 	isOracleProver := cfg.OracleProver
 
+	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
+	if err != nil {
+		log.Error("error retrieving protocol state variables", "error", err)
+		return
+	}
+
 	if isSystemProver || isOracleProver {
 		var specialProverAddress common.Address
 		var privateKey *ecdsa.PrivateKey
@@ -188,6 +194,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			cfg.L1HttpEndpoint,
 			cfg.L2HttpEndpoint,
 			true,
+			stateVars.ProofTimeTarget,
 		); err != nil {
 			return err
 		}
@@ -367,34 +374,16 @@ func (p *Prover) onBlockProposed(
 // submitProofOp performs a (valid block / invalid block) proof submission operation.
 func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader, isValidProof bool) {
 	p.submitProofConcurrencyGuard <- struct{}{}
-
-	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
-	if err != nil {
-		log.Error("error retrieving protocol state variables", "error", err)
-		return
-	}
-
 	go func() {
-		// if (blockTime + proofTimeTarget) - currentTime <= 0, i.e. proofTimeTarget has elapsed from
-		// block being proven's timestamp, submit proof.
-		if ((stateVars.ProofTimeTarget + proofWithHeader.Header.Time) - uint64(time.Now().Unix())) <= 0 {
-			defer func() {
-				<-p.submitProofConcurrencyGuard
-				p.currentBlocksBeingProvenMutex.Lock()
-				delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
-				p.currentBlocksBeingProvenMutex.Unlock()
-			}()
+		defer func() {
+			<-p.submitProofConcurrencyGuard
+			p.currentBlocksBeingProvenMutex.Lock()
+			delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
+			p.currentBlocksBeingProvenMutex.Unlock()
+		}()
 
-			if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
-				log.Error("Submit proof error", "isValidProof", isValidProof, "error", err)
-			}
-		} else {
-			// clears the concurrencyguard channel, doesn't delete block being proven
-			defer func() {
-				<-p.submitProofConcurrencyGuard
-			}()
-
-			log.Info("targetProofTime has not elapsed yet, wait and retry.")
+		if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
+			log.Error("Submit proof error", "isValidProof", isValidProof, "error", err)
 		}
 	}()
 }
