@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -58,6 +59,12 @@ func NewSpecialProofProducer(
 		rpc.StringToBytes32(graffiti),
 		isSystemProver,
 	}, nil
+}
+
+func (p *SpecialProofProducer) CalcDelay(
+	header *types.Header,
+) time.Duration {
+	return time.Duration(0)
 }
 
 // RequestProof implements the ProofProducer interface.
