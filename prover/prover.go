@@ -155,6 +155,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	isSystemProver := cfg.SystemProver
 	isOracleProver := cfg.OracleProver
 
+	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
+	if err != nil {
+		log.Error("error retrieving protocol state variables", "error", err)
+		return
+	}
+
 	if isSystemProver || isOracleProver {
 		var specialProverAddress common.Address
 		var privateKey *ecdsa.PrivateKey
@@ -188,6 +194,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			cfg.L1HttpEndpoint,
 			cfg.L2HttpEndpoint,
 			true,
+			stateVars.ProofTimeTarget,
 		); err != nil {
 			return err
 		}

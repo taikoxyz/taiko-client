@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewZkevmRpcdProducer(t *testing.T) {
-	dummpyZkevmRpcdProducer, err := NewZkevmRpcdProducer("http://localhost:18545", "", "", "", false)
+	dummpyZkevmRpcdProducer, err := NewZkevmRpcdProducer("http://localhost:18545", "", "", "", false, 0)
 	require.Nil(t, err)
 
 	dummpyZkevmRpcdProducer.CustomProofHook = func() ([]byte, uint64, error) {
