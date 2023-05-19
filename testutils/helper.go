@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -54,17 +53,7 @@ func ProposeAndInsertEmptyBlocks(
 		close(sink)
 	}()
 
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
-
-	opts, err := bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, s.RpcClient.L1ChainID)
-	s.Nil(err)
-	opts.Value = new(big.Int).SetUint64(1 * params.Ether)
-
 	// RLP encoded empty list
-	_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts)
-	s.Nil(err)
-
 	var emptyTxs []types.Transaction
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
@@ -78,14 +67,11 @@ func ProposeAndInsertEmptyBlocks(
 		CacheTxListInfo: 0,
 	}, encoded, 0))
 
-	_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts)
-	s.Nil(err)
-
+	DepositEtherToL2(s)
 	ProposeInvalidTxListBytes(s, proposer)
 
 	// Zero byte txList
-	_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts)
-	s.Nil(err)
+	DepositEtherToL2(s)
 	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
 
 	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
@@ -186,6 +172,23 @@ func ProposeAndInsertValidBlock(
 	s.Greater(newL2Head.Number.Uint64(), l2Head.Number.Uint64())
 
 	return event
+}
+
+func DepositEtherToL2(s *ClientTestSuite) {
+	config, err := s.RpcClient.TaikoL1.GetConfig(nil)
+	s.Nil(err)
+
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	opts, err := bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, s.RpcClient.L1ChainID)
+	s.Nil(err)
+	opts.Value = config.MinEthDepositAmount
+
+	for i := 0; i < int(config.MinEthDepositsPerBlock); i++ {
+		_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts)
+		s.Nil(err)
+	}
 }
 
 // RandomHash generates a random blob of data and returns it as a hash.

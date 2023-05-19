@@ -153,7 +153,7 @@ func (s *CalldataSyncerTestSuite) TestWithdrawRootCalculation() {
 		header, err := s.s.rpc.L2.HeaderByNumber(context.Background(), e.Id)
 		s.Nil(err)
 		s.NotEmpty(e.Meta.DepositsRoot)
-		s.Equal(common.BytesToHash(e.Meta.DepositsRoot[:]), header.WithdrawalsHash)
+		s.Equal(common.BytesToHash(e.Meta.DepositsRoot[:]), *header.WithdrawalsHash)
 	}
 }
 
