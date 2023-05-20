@@ -2,6 +2,7 @@ package calldata
 
 import (
 	"context"
+	"math/big"
 	"math/rand"
 	"os"
 	"testing"
@@ -147,32 +148,34 @@ func (s *CalldataSyncerTestSuite) TestHandleReorgToNoneGenesis() {
 }
 
 func (s *CalldataSyncerTestSuite) TestWithdrawRootCalculation() {
-	events := testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
-
 	depositReceiptPrivKey, err := crypto.ToECDSA(
 		common.Hex2Bytes("2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"),
 	)
 	s.Nil(err)
 
-	testutils.DepositEtherToL2(&s.ClientTestSuite, depositReceiptPrivKey)
-
 	depositReceipt := crypto.PubkeyToAddress(depositReceiptPrivKey.PublicKey)
 	balance, err := s.RpcClient.L2.BalanceAt(context.Background(), depositReceipt, nil)
 	s.Nil(err)
 
-	for _, e := range events {
+	testutils.DepositEtherToL2(&s.ClientTestSuite, depositReceiptPrivKey)
+
+	for _, e := range testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s) {
 		header, err := s.s.rpc.L2.HeaderByNumber(context.Background(), e.Id)
 		s.Nil(err)
 		s.NotEmpty(e.Meta.DepositsRoot)
 		s.Equal(common.BytesToHash(e.Meta.DepositsRoot[:]), *header.WithdrawalsHash)
-		// for _, deposit := range e.Meta.DepositsProcessed {
-		// 	balance = new(big.Int).Add(balance, deposit.Amount)
-		// }
+
+		for _, deposit := range e.Meta.DepositsProcessed {
+			if depositReceipt == deposit.Recipient {
+				balance = new(big.Int).Add(balance, deposit.Amount)
+			}
+		}
 	}
 
 	balanceAfter, err := s.RpcClient.L2.BalanceAt(context.Background(), depositReceipt, nil)
 	s.Nil(err)
-	s.Greater(balanceAfter, balance)
+
+	s.Zero(balanceAfter.Cmp(balance))
 }
 
 func TestCalldataSyncerTestSuite(t *testing.T) {
