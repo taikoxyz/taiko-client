@@ -146,6 +146,17 @@ func (s *CalldataSyncerTestSuite) TestHandleReorgToNoneGenesis() {
 	s.Greater(s.s.lastInsertedBlockID.Uint64(), uint64(1))
 }
 
+func (s *CalldataSyncerTestSuite) TestWithdrawRootCalculation() {
+	events := testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
+
+	for _, e := range events {
+		header, err := s.s.rpc.L2.HeaderByNumber(context.Background(), e.Id)
+		s.Nil(err)
+		s.NotEmpty(e.Meta.DepositsRoot)
+		s.Equal(common.BytesToHash(e.Meta.DepositsRoot[:]), *header.WithdrawalsHash)
+	}
+}
+
 func TestCalldataSyncerTestSuite(t *testing.T) {
 	suite.Run(t, new(CalldataSyncerTestSuite))
 }
