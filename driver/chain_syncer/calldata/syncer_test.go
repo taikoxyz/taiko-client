@@ -149,8 +149,12 @@ func (s *CalldataSyncerTestSuite) TestHandleReorgToNoneGenesis() {
 func (s *CalldataSyncerTestSuite) TestWithdrawRootCalculation() {
 	events := testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
 
-	depositReceiptPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	depositReceiptPrivKey, err := crypto.ToECDSA(
+		common.Hex2Bytes("2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"),
+	)
 	s.Nil(err)
+
+	testutils.DepositEtherToL2(&s.ClientTestSuite, depositReceiptPrivKey)
 
 	depositReceipt := crypto.PubkeyToAddress(depositReceiptPrivKey.PublicKey)
 	balance, err := s.RpcClient.L2.BalanceAt(context.Background(), depositReceipt, nil)
