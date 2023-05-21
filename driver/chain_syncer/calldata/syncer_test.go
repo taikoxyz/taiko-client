@@ -178,6 +178,50 @@ func (s *CalldataSyncerTestSuite) TestWithdrawRootCalculation() {
 	s.Zero(balanceAfter.Cmp(balance))
 }
 
+func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
+	treasury := common.HexToAddress(os.Getenv("TREASURY"))
+	s.NotZero(treasury.Big().Uint64())
+
+	balance, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
+	s.Nil(err)
+
+	headBefore, err := s.RpcClient.L2.BlockNumber(context.Background())
+	s.Nil(err)
+
+	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
+
+	headAfter, err := s.RpcClient.L2.BlockNumber(context.Background())
+	s.Nil(err)
+
+	balanceAfter, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
+	s.Nil(err)
+
+	s.Greater(headAfter, headBefore)
+	s.True(balanceAfter.Cmp(balance) > 0)
+
+	for i := headBefore + 1; i <= headAfter; i++ {
+		block, err := s.RpcClient.L2.BlockByNumber(context.Background(), new(big.Int).SetUint64(i))
+		s.Nil(err)
+		s.GreaterOrEqual(block.Transactions().Len(), 1)
+		s.Greater(block.BaseFee().Uint64(), uint64(0))
+
+		for _, tx := range block.Transactions() {
+			// if i == 0 {
+			// 	continue
+			// }
+
+			receipt, err := s.RpcClient.L2.TransactionReceipt(context.Background(), tx.Hash())
+			s.Nil(err)
+
+			fee := new(big.Int).Mul(block.BaseFee(), new(big.Int).SetUint64(receipt.GasUsed))
+
+			balance = new(big.Int).Add(balance, fee)
+		}
+	}
+
+	s.Zero(balanceAfter.Cmp(balance))
+}
+
 func TestCalldataSyncerTestSuite(t *testing.T) {
 	suite.Run(t, new(CalldataSyncerTestSuite))
 }
