@@ -12,10 +12,10 @@ import (
 )
 
 func TestNewZkevmRpcdProducer(t *testing.T) {
-	dummpyZkevmRpcdProducer, err := NewZkevmRpcdProducer("http://localhost:18545", "", "", "", false, 0)
+	dummyZkevmRpcdProducer, err := NewZkevmRpcdProducer("http://localhost:18545", "", "", "", false, 0)
 	require.Nil(t, err)
 
-	dummpyZkevmRpcdProducer.CustomProofHook = func() ([]byte, uint64, error) {
+	dummyZkevmRpcdProducer.CustomProofHook = func() ([]byte, uint64, error) {
 		return []byte{0}, CircuitsDegree10Txs, nil
 	}
 
@@ -38,7 +38,7 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, dummpyZkevmRpcdProducer.RequestProof(
+	require.Nil(t, dummyZkevmRpcdProducer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,

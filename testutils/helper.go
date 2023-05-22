@@ -2,9 +2,9 @@ package testutils
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"math/big"
 	"math/rand"
-	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -67,11 +67,9 @@ func ProposeAndInsertEmptyBlocks(
 		CacheTxListInfo: 0,
 	}, encoded, 0))
 
-	DepositEtherToL2(s)
 	ProposeInvalidTxListBytes(s, proposer)
 
 	// Zero byte txList
-	DepositEtherToL2(s)
 	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
 
 	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
@@ -174,14 +172,11 @@ func ProposeAndInsertValidBlock(
 	return event
 }
 
-func DepositEtherToL2(s *ClientTestSuite) {
+func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey) {
 	config, err := s.RpcClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
 
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
-
-	opts, err := bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, s.RpcClient.L1ChainID)
+	opts, err := bind.NewKeyedTransactorWithChainID(depositerPrivKey, s.RpcClient.L1ChainID)
 	s.Nil(err)
 	opts.Value = config.MinEthDepositAmount
 
