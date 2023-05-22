@@ -2,7 +2,6 @@ package calldata
 
 import (
 	"context"
-	"math/big"
 	"math/rand"
 	"os"
 	"testing"
@@ -145,107 +144,6 @@ func (s *CalldataSyncerTestSuite) TestHandleReorgToNoneGenesis() {
 	s.Nil(err)
 	s.Greater(l2Head3.NumberU64(), l2Head2.NumberU64())
 	s.Greater(s.s.lastInsertedBlockID.Uint64(), uint64(1))
-}
-
-func (s *CalldataSyncerTestSuite) TestWithdrawRootCalculation() {
-	depositReceiptPrivKey, err := crypto.ToECDSA(
-		common.Hex2Bytes("2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"),
-	)
-	s.Nil(err)
-
-	depositReceipt := crypto.PubkeyToAddress(depositReceiptPrivKey.PublicKey)
-	balance, err := s.RpcClient.L2.BalanceAt(context.Background(), depositReceipt, nil)
-	s.Nil(err)
-
-	testutils.DepositEtherToL2(&s.ClientTestSuite, depositReceiptPrivKey)
-
-	for _, e := range testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s) {
-		header, err := s.s.rpc.L2.HeaderByNumber(context.Background(), e.Id)
-		s.Nil(err)
-		s.NotEmpty(e.Meta.DepositsRoot)
-		s.Equal(common.BytesToHash(e.Meta.DepositsRoot[:]), *header.WithdrawalsHash)
-
-		for _, deposit := range e.Meta.DepositsProcessed {
-			if depositReceipt == deposit.Recipient {
-				balance = new(big.Int).Add(balance, deposit.Amount)
-			}
-		}
-	}
-
-	balanceAfter, err := s.RpcClient.L2.BalanceAt(context.Background(), depositReceipt, nil)
-	s.Nil(err)
-
-	s.Zero(balanceAfter.Cmp(balance))
-}
-
-func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
-	treasury := common.HexToAddress(os.Getenv("TREASURY"))
-	s.NotZero(treasury.Big().Uint64())
-
-	balance, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
-	s.Nil(err)
-
-	headBefore, err := s.RpcClient.L2.BlockNumber(context.Background())
-	s.Nil(err)
-
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
-
-	headAfter, err := s.RpcClient.L2.BlockNumber(context.Background())
-	s.Nil(err)
-
-	balanceAfter, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
-	s.Nil(err)
-
-	s.Greater(headAfter, headBefore)
-	s.Zero(balanceAfter.Cmp(balance))
-}
-
-func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
-	treasury := common.HexToAddress(os.Getenv("TREASURY"))
-	s.NotZero(treasury.Big().Uint64())
-
-	balance, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
-	s.Nil(err)
-
-	headBefore, err := s.RpcClient.L2.BlockNumber(context.Background())
-	s.Nil(err)
-
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.s)
-
-	headAfter, err := s.RpcClient.L2.BlockNumber(context.Background())
-	s.Nil(err)
-
-	balanceAfter, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
-	s.Nil(err)
-
-	s.Greater(headAfter, headBefore)
-	s.True(balanceAfter.Cmp(balance) > 0)
-
-	var hasNoneAnchorTxs bool
-	for i := headBefore + 1; i <= headAfter; i++ {
-		block, err := s.RpcClient.L2.BlockByNumber(context.Background(), new(big.Int).SetUint64(i))
-		s.Nil(err)
-		s.GreaterOrEqual(block.Transactions().Len(), 1)
-		s.Greater(block.BaseFee().Uint64(), uint64(0))
-
-		for j, tx := range block.Transactions() {
-			if j == 0 {
-				continue
-			}
-
-			hasNoneAnchorTxs = true
-			receipt, err := s.RpcClient.L2.TransactionReceipt(context.Background(), tx.Hash())
-			s.Nil(err)
-
-			fee := new(big.Int).Mul(block.BaseFee(), new(big.Int).SetUint64(receipt.GasUsed))
-
-			balance = new(big.Int).Add(balance, fee)
-		}
-	}
-
-	s.True(hasNoneAnchorTxs)
-	s.Zero(balanceAfter.Cmp(balance))
 }
 
 func TestCalldataSyncerTestSuite(t *testing.T) {

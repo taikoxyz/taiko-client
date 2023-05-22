@@ -15,7 +15,6 @@ type InvalidTxListReason uint8
 // All invalid transactions list reasons.
 const (
 	HintNone InvalidTxListReason = iota
-	HintTxGasLimitTooSmall
 	HintOK
 )
 
@@ -23,7 +22,6 @@ type TxListValidator struct {
 	blockMaxGasLimit        uint64
 	maxTransactionsPerBlock uint64
 	maxBytesPerTxList       uint64
-	minTxGasLimit           uint64
 	chainID                 *big.Int
 }
 
@@ -32,14 +30,12 @@ func NewTxListValidator(
 	blockMaxGasLimit uint64,
 	maxTransactionsPerBlock uint64,
 	maxBytesPerTxList uint64,
-	minTxGasLimit uint64,
 	chainID *big.Int,
 ) *TxListValidator {
 	return &TxListValidator{
 		blockMaxGasLimit:        blockMaxGasLimit,
 		maxTransactionsPerBlock: maxTransactionsPerBlock,
 		maxBytesPerTxList:       maxBytesPerTxList,
-		minTxGasLimit:           minTxGasLimit,
 		chainID:                 chainID,
 	}
 }
@@ -93,13 +89,6 @@ func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (h
 	if sumGasLimit > v.blockMaxGasLimit {
 		log.Info("Accumulate gas limit too large", "blockID", blockID, "sumGasLimit", sumGasLimit)
 		return HintNone, 0
-	}
-
-	for i, tx := range txs {
-		if tx.Gas() < v.minTxGasLimit {
-			log.Info("Transaction gas limit too small", "gasLimit", tx.Gas())
-			return HintTxGasLimitTooSmall, i
-		}
 	}
 
 	log.Info("Transaction list is valid", "blockID", blockID)

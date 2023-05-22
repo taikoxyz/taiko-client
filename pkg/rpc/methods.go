@@ -26,6 +26,7 @@ var (
 	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
 	// if the previous check failed.
 	syncProgressRecheckDelay = 12 * time.Second
+	minTxGasLimit            = 21000
 )
 
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
@@ -196,10 +197,9 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 // upper limit.
 func (c *Client) GetPoolContent(
 	ctx context.Context,
-	maxTransactionsPerBlock *big.Int,
-	blockMaxGasLimit *big.Int,
-	maxBytesPerTxList *big.Int,
-	minTxGasLimit *big.Int,
+	maxTransactionsPerBlock uint64,
+	blockMaxGasLimit uint64,
+	maxBytesPerTxList uint64,
 	locals []common.Address,
 ) ([]types.Transactions, error) {
 	var localsArg []string
@@ -212,10 +212,10 @@ func (c *Client) GetPoolContent(
 		ctx,
 		&result,
 		"taiko_txPoolContent",
-		maxTransactionsPerBlock.Uint64(),
-		blockMaxGasLimit.Uint64(),
-		maxBytesPerTxList.Uint64(),
-		minTxGasLimit.Uint64(),
+		maxTransactionsPerBlock,
+		blockMaxGasLimit,
+		maxBytesPerTxList,
+		minTxGasLimit,
 		localsArg,
 	)
 
