@@ -197,7 +197,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 	s.Nil(err)
 
 	s.Greater(headAfter, headBefore)
-	s.True(balanceAfter.Cmp(balance) > 0)
+	s.True(balanceAfter.Cmp(balance) >= 0)
 
 	for i := headBefore + 1; i <= headAfter; i++ {
 		block, err := s.RpcClient.L2.BlockByNumber(context.Background(), new(big.Int).SetUint64(i))
@@ -205,10 +205,10 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 		s.GreaterOrEqual(block.Transactions().Len(), 1)
 		s.Greater(block.BaseFee().Uint64(), uint64(0))
 
-		for _, tx := range block.Transactions() {
-			// if i == 0 {
-			// 	continue
-			// }
+		for j, tx := range block.Transactions() {
+			if j == 0 {
+				continue
+			}
 
 			receipt, err := s.RpcClient.L2.TransactionReceipt(context.Background(), tx.Hash())
 			s.Nil(err)

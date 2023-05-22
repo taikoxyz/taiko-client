@@ -52,7 +52,7 @@ if [ "$RUN_TESTS" == "true" ]; then
     L1_PROVER_PRIVATE_KEY=59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d \
     TREASURY=0x1000777700000000000000000000000000000001 \
     JWT_SECRET=$DIR/nodes/jwt.hex \
-        go test -v -p=1 ./driver/... -coverprofile=coverage.out -covermode=atomic -timeout=300s
+        go test -v -p=1 ./$PACKAGE -coverprofile=coverage.out -covermode=atomic -timeout=300s
 else
     echo "💻 Local dev net started"
     docker compose -f $TESTNET_CONFIG logs -f l2_execution_engine
