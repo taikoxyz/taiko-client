@@ -42,7 +42,7 @@ var (
 			Type: "uint8",
 		},
 	}
-	// TODO: add `TaikoData.EthDeposit[] depositsProcessed` field to `blockMetadataComponents`
+	// TODO(Roger): add `TaikoData.EthDeposit[] depositsProcessed` field to `blockMetadataComponents`
 	// depositProcessedComponents = []abi.ArgumentMarshaling{
 	// 	{
 	// 		Name: "recipient",
