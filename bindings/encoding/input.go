@@ -42,16 +42,17 @@ var (
 			Type: "uint8",
 		},
 	}
-	depositProcessedComponents = []abi.ArgumentMarshaling{
-		{
-			Name: "recipient",
-			Type: "address",
-		},
-		{
-			Name: "amount",
-			Type: "uint96",
-		},
-	}
+	// TODO: add `TaikoData.EthDeposit[] depositsProcessed` field to `blockMetadataComponents`
+	// depositProcessedComponents = []abi.ArgumentMarshaling{
+	// 	{
+	// 		Name: "recipient",
+	// 		Type: "address",
+	// 	},
+	// 	{
+	// 		Name: "amount",
+	// 		Type: "uint96",
+	// 	},
+	// }
 	blockMetadataComponents = []abi.ArgumentMarshaling{
 		{
 			Name: "id",
