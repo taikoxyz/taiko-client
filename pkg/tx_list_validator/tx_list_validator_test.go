@@ -18,7 +18,6 @@ var (
 	maxBlocksGasLimit = uint64(50)
 	maxBlockNumTxs    = uint64(11)
 	maxTxlistBytes    = uint64(10000)
-	minTxGasLimit     = uint64(1)
 	chainID           = genesis.Config.ChainID
 	testKey, _        = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	testAddr          = crypto.PubkeyToAddress(testKey.PublicKey)
@@ -36,7 +35,6 @@ func TestValidateTxList(t *testing.T) {
 		maxBlocksGasLimit,
 		maxBlockNumTxs,
 		maxTxlistBytes,
-		minTxGasLimit,
 		chainID,
 	)
 
@@ -51,7 +49,6 @@ func TestIsTxListValid(t *testing.T) {
 		maxBlocksGasLimit,
 		maxBlockNumTxs,
 		maxTxlistBytes,
-		minTxGasLimit,
 		chainID,
 	)
 	tests := []struct {

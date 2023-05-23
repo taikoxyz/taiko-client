@@ -113,10 +113,9 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	p.submitProofTxMutex = &sync.Mutex{}
 	p.txListValidator = txListValidator.NewTxListValidator(
-		p.protocolConfigs.BlockMaxGasLimit.Uint64(),
-		p.protocolConfigs.MaxTransactionsPerBlock.Uint64(),
-		p.protocolConfigs.MaxBytesPerTxList.Uint64(),
-		p.protocolConfigs.MinTxGasLimit.Uint64(),
+		p.protocolConfigs.BlockMaxGasLimit,
+		p.protocolConfigs.MaxTransactionsPerBlock,
+		p.protocolConfigs.MaxBytesPerTxList,
 		p.rpc.L2ChainID,
 	)
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)

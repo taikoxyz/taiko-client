@@ -98,7 +98,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.protocolConfigs = &protocolConfigs
 
 	if cfg.MinBlockGasLimit != 0 {
-		if cfg.MinBlockGasLimit > p.protocolConfigs.BlockMaxGasLimit.Uint64() {
+		if cfg.MinBlockGasLimit > p.protocolConfigs.BlockMaxGasLimit {
 			return fmt.Errorf(
 				"minimal block gas limit too large, set: %d, limit: %d",
 				cfg.MinBlockGasLimit,
@@ -194,7 +194,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		p.protocolConfigs.MaxTransactionsPerBlock,
 		p.protocolConfigs.BlockMaxGasLimit,
 		p.protocolConfigs.MaxBytesPerTxList,
-		p.protocolConfigs.MinTxGasLimit,
 		p.locals,
 	)
 	if err != nil {

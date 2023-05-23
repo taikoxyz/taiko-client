@@ -26,7 +26,7 @@ func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
 
 	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
 		Beneficiary:     proposer.L2SuggestedFeeRecipient(),
-		GasLimit:        uint32(rand.Int63n(configs.BlockMaxGasLimit.Int64())),
+		GasLimit:        uint32(rand.Int63n(int64(configs.BlockMaxGasLimit))),
 		TxListHash:      crypto.Keccak256Hash(invalidTxListBytes),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(invalidTxListBytes))),
@@ -73,10 +73,6 @@ func ProposeAndInsertEmptyBlocks(
 	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
 
 	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
-
-	for _, e := range events {
-		s.NotEmpty(e.Meta.DepositsRoot)
-	}
 
 	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), events[len(events)-1].Raw.TxHash)
 	s.Nil(err)

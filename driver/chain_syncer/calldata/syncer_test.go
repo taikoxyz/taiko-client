@@ -147,37 +147,6 @@ func (s *CalldataSyncerTestSuite) TestHandleReorgToNoneGenesis() {
 	s.Greater(s.s.lastInsertedBlockID.Uint64(), uint64(1))
 }
 
-func (s *CalldataSyncerTestSuite) TestWithdrawRootCalculation() {
-	depositReceiptPrivKey, err := crypto.ToECDSA(
-		common.Hex2Bytes("2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"),
-	)
-	s.Nil(err)
-
-	depositReceipt := crypto.PubkeyToAddress(depositReceiptPrivKey.PublicKey)
-	balance, err := s.RpcClient.L2.BalanceAt(context.Background(), depositReceipt, nil)
-	s.Nil(err)
-
-	testutils.DepositEtherToL2(&s.ClientTestSuite, depositReceiptPrivKey)
-
-	for _, e := range testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s) {
-		header, err := s.s.rpc.L2.HeaderByNumber(context.Background(), e.Id)
-		s.Nil(err)
-		s.NotEmpty(e.Meta.DepositsRoot)
-		s.Equal(common.BytesToHash(e.Meta.DepositsRoot[:]), *header.WithdrawalsHash)
-
-		for _, deposit := range e.Meta.DepositsProcessed {
-			if depositReceipt == deposit.Recipient {
-				balance = new(big.Int).Add(balance, deposit.Amount)
-			}
-		}
-	}
-
-	balanceAfter, err := s.RpcClient.L2.BalanceAt(context.Background(), depositReceipt, nil)
-	s.Nil(err)
-
-	s.Zero(balanceAfter.Cmp(balance))
-}
-
 func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())

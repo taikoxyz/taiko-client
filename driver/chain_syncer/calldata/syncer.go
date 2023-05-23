@@ -64,10 +64,9 @@ func NewSyncer(
 		progressTracker:   progressTracker,
 		anchorConstructor: constructor,
 		txListValidator: txListValidator.NewTxListValidator(
-			configs.BlockMaxGasLimit.Uint64(),
-			configs.MaxTransactionsPerBlock.Uint64(),
-			configs.MaxBytesPerTxList.Uint64(),
-			configs.MinTxGasLimit.Uint64(),
+			configs.BlockMaxGasLimit,
+			configs.MaxTransactionsPerBlock,
+			configs.MaxBytesPerTxList,
 			rpc.L2ChainID,
 		),
 	}, nil
