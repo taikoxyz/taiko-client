@@ -98,6 +98,20 @@ var (
 			Name: "treasury",
 			Type: "address",
 		},
+		{
+			Name: "depositsProcessed",
+			Type: "tuple[]",
+			Components: []abi.ArgumentMarshaling{
+				{
+					Name: "recipient",
+					Type: "address",
+				},
+				{
+					Name: "amount",
+					Type: "uint96",
+				},
+			},
+		},
 	}
 	evidenceComponents = []abi.ArgumentMarshaling{
 		{
