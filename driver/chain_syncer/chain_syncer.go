@@ -119,7 +119,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		}
 
 		// Reset the L1Current cursor.
-		blockID, err := s.state.ResetL1Current(s.ctx, heightOrID)
+		_, blockID, err := s.state.ResetL1Current(s.ctx, heightOrID)
 		if err != nil {
 			return err
 		}

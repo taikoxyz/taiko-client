@@ -30,6 +30,7 @@ type ZkevmRpcdProducer struct {
 	L2Endpoint      string                         // a L2 execution engine's RPC endpoint
 	Retry           bool                           // retry proof computation if error
 	CustomProofHook func() ([]byte, uint64, error) // only for testing purposes
+	ProofTimeTarget uint64                         // used for calculating proof delay
 }
 
 // RequestProofBody represents the JSON body for requesting the proof.
@@ -90,14 +91,29 @@ func NewZkevmRpcdProducer(
 	l1Endpoint string,
 	l2Endpoint string,
 	retry bool,
+	proofTimeTarget uint64,
 ) (*ZkevmRpcdProducer, error) {
 	return &ZkevmRpcdProducer{
-		RpcdEndpoint: rpcdEndpoint,
-		Param:        param,
-		L1Endpoint:   l1Endpoint,
-		L2Endpoint:   l2Endpoint,
-		Retry:        retry,
+		RpcdEndpoint:    rpcdEndpoint,
+		Param:           param,
+		L1Endpoint:      l1Endpoint,
+		L2Endpoint:      l2Endpoint,
+		Retry:           retry,
+		ProofTimeTarget: proofTimeTarget,
 	}, nil
+}
+
+func (p *ZkevmRpcdProducer) CalcDelay(
+	header *types.Header,
+) time.Duration {
+	// if > 0, delay has not yet elapsed; proof should be delayed.
+	// if <= 0, delay has already elapsed; proof does not need delay.
+	delay := ((p.ProofTimeTarget + header.Time) - uint64(time.Now().Unix()))
+	if delay > 0 {
+		return time.Duration(delay)
+	} else {
+		return time.Duration(0)
+	}
 }
 
 // RequestProof implements the ProofProducer interface.
@@ -131,14 +147,16 @@ func (p *ZkevmRpcdProducer) RequestProof(
 		return err
 	}
 
-	resultCh <- &ProofWithHeader{
-		BlockID: blockID,
-		Header:  header,
-		Meta:    meta,
-		ZkProof: proof,
-		Degree:  degree,
-		Opts:    opts,
-	}
+	time.AfterFunc(p.CalcDelay(header), func() {
+		resultCh <- &ProofWithHeader{
+			BlockID: blockID,
+			Header:  header,
+			Meta:    meta,
+			ZkProof: proof,
+			Degree:  degree,
+			Opts:    opts,
+		}
+	})
 
 	return nil
 }

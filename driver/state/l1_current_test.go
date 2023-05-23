@@ -19,15 +19,15 @@ func (s *DriverStateTestSuite) TestSetL1Current() {
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentEmptyHeight() {
-	l1Current, err := s.s.ResetL1Current(context.Background(), &HeightOrID{ID: common.Big0})
+	_, l1Current, err := s.s.ResetL1Current(context.Background(), &HeightOrID{ID: common.Big0})
 	s.Nil(err)
 	s.Zero(l1Current.Uint64())
 
-	_, err = s.s.ResetL1Current(context.Background(), &HeightOrID{Height: common.Big0})
+	_, _, err = s.s.ResetL1Current(context.Background(), &HeightOrID{Height: common.Big0})
 	s.Nil(err)
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentEmptyID() {
-	_, err := s.s.ResetL1Current(context.Background(), &HeightOrID{Height: common.Big1})
+	_, _, err := s.s.ResetL1Current(context.Background(), &HeightOrID{Height: common.Big1})
 	s.NotNil(err)
 }

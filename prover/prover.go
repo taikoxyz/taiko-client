@@ -113,10 +113,9 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	p.submitProofTxMutex = &sync.Mutex{}
 	p.txListValidator = txListValidator.NewTxListValidator(
-		p.protocolConfigs.BlockMaxGasLimit.Uint64(),
-		p.protocolConfigs.MaxTransactionsPerBlock.Uint64(),
-		p.protocolConfigs.MaxBytesPerTxList.Uint64(),
-		p.protocolConfigs.MinTxGasLimit.Uint64(),
+		p.protocolConfigs.BlockMaxGasLimit,
+		p.protocolConfigs.MaxTransactionsPerBlock,
+		p.protocolConfigs.MaxBytesPerTxList,
 		p.rpc.L2ChainID,
 	)
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
@@ -155,6 +154,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	isSystemProver := cfg.SystemProver
 	isOracleProver := cfg.OracleProver
 
+	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
+	if err != nil {
+		log.Error("error retrieving protocol state variables", "error", err)
+		return
+	}
+
 	if isSystemProver || isOracleProver {
 		var specialProverAddress common.Address
 		var privateKey *ecdsa.PrivateKey
@@ -170,7 +175,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			p.rpc,
 			privateKey,
 			p.cfg.TaikoL2Address,
-			time.Duration(p.protocolConfigs.ProofTimeTarget)*time.Second,
 			specialProverAddress,
 			p.cfg.Graffiti,
 			isSystemProver,
@@ -189,6 +193,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			cfg.L1HttpEndpoint,
 			cfg.L2HttpEndpoint,
 			true,
+			stateVars.ProofTimeTarget,
 		); err != nil {
 			return err
 		}

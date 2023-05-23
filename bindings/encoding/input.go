@@ -42,6 +42,17 @@ var (
 			Type: "uint8",
 		},
 	}
+	// TODO(Roger): add `TaikoData.EthDeposit[] depositsProcessed` field to `blockMetadataComponents`
+	// depositProcessedComponents = []abi.ArgumentMarshaling{
+	// 	{
+	// 		Name: "recipient",
+	// 		Type: "address",
+	// 	},
+	// 	{
+	// 		Name: "amount",
+	// 		Type: "uint96",
+	// 	},
+	// }
 	blockMetadataComponents = []abi.ArgumentMarshaling{
 		{
 			Name: "id",
@@ -54,10 +65,6 @@ var (
 		{
 			Name: "l1Height",
 			Type: "uint64",
-		},
-		{
-			Name: "gasLimit",
-			Type: "uint32",
 		},
 		{
 			Name: "l1Hash",
@@ -80,11 +87,15 @@ var (
 			Type: "uint24",
 		},
 		{
+			Name: "gasLimit",
+			Type: "uint32",
+		},
+		{
 			Name: "beneficiary",
 			Type: "address",
 		},
 		{
-			Name: "treasure",
+			Name: "treasury",
 			Type: "address",
 		},
 	}

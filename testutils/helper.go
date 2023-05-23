@@ -2,10 +2,12 @@ package testutils
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"math/big"
 	"math/rand"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -24,7 +26,7 @@ func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
 
 	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
 		Beneficiary:     proposer.L2SuggestedFeeRecipient(),
-		GasLimit:        uint32(rand.Int63n(configs.BlockMaxGasLimit.Int64())),
+		GasLimit:        uint32(rand.Int63n(int64(configs.BlockMaxGasLimit))),
 		TxListHash:      crypto.Keccak256Hash(invalidTxListBytes),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(invalidTxListBytes))),
@@ -164,6 +166,20 @@ func ProposeAndInsertValidBlock(
 	s.Greater(newL2Head.Number.Uint64(), l2Head.Number.Uint64())
 
 	return event
+}
+
+func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey) {
+	config, err := s.RpcClient.TaikoL1.GetConfig(nil)
+	s.Nil(err)
+
+	opts, err := bind.NewKeyedTransactorWithChainID(depositerPrivKey, s.RpcClient.L1ChainID)
+	s.Nil(err)
+	opts.Value = config.MinEthDepositAmount
+
+	for i := 0; i < int(config.MinEthDepositsPerBlock); i++ {
+		_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts)
+		s.Nil(err)
+	}
 }
 
 // RandomHash generates a random blob of data and returns it as a hash.
