@@ -41,16 +41,18 @@ var (
 		CacheTxListInfo: 0,
 	}
 	testMeta = bindings.TaikoDataBlockMetadata{
-		Id:              rand.Uint64(),
-		L1Height:        rand.Uint64(),
-		L1Hash:          randomHash(),
-		Beneficiary:     common.BytesToAddress(randomHash().Bytes()),
-		GasLimit:        rand.Uint32(),
-		Timestamp:       uint64(time.Now().Unix()),
-		TxListHash:      randomHash(),
-		MixHash:         randomHash(),
-		TxListByteStart: common.Big0,
-		TxListByteEnd:   common.Big256,
+		Id:                rand.Uint64(),
+		Timestamp:         uint64(time.Now().Unix()),
+		L1Height:          rand.Uint64(),
+		L1Hash:            randomHash(),
+		MixHash:           randomHash(),
+		TxListHash:        randomHash(),
+		TxListByteStart:   common.Big0,
+		TxListByteEnd:     common.Big256,
+		GasLimit:          rand.Uint32(),
+		Beneficiary:       common.BytesToAddress(randomHash().Bytes()),
+		Treasury:          common.BytesToAddress(randomHash().Bytes()),
+		DepositsProcessed: []bindings.TaikoDataEthDeposit{},
 	}
 )
 

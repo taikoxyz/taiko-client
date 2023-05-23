@@ -84,6 +84,23 @@ func TestEncodeProveBlockInvalidInput(t *testing.T) {
 	require.NotNil(t, encoded)
 }
 
+func TestEncodeBlockMetadata(t *testing.T) {
+	// Encode block metadata using EncodeBlockMetadata function
+	encoded, err := EncodeBlockMetadata(
+		&testMeta)
+
+	require.Nil(t, err)
+	require.NotNil(t, encoded)
+
+	// Encode block metadata using solidity abi encode function, do comparison
+	solidityEncoded, err2 := blockMetadataArgs.Pack(&testMeta)
+
+	require.Nil(t, err2)
+	require.NotNil(t, solidityEncoded)
+
+	require.Equal(t, solidityEncoded, encoded)
+}
+
 func TestUnpackTxListBytes(t *testing.T) {
 	_, err := UnpackTxListBytes(randomBytes(1024))
 	require.NotNil(t, err)
