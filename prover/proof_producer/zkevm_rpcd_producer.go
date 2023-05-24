@@ -31,7 +31,7 @@ type ZkevmRpcdProducer struct {
 	Retry           bool                           // retry proof computation if error
 	CustomProofHook func() ([]byte, uint64, error) // only for testing purposes
 	ProofTimeTarget uint64                         // used for calculating proof delay
-	ProtocolConfig  bindings.TaikoDataConfig       // protocol configurations
+	ProtocolConfig  *bindings.TaikoDataConfig      // protocol configurations
 }
 
 // RequestProofBody represents the JSON body for requesting the proof.
@@ -96,7 +96,7 @@ func NewZkevmRpcdProducer(
 	l2Endpoint string,
 	retry bool,
 	proofTimeTarget uint64,
-	protocolConfig bindings.TaikoDataConfig,
+	protocolConfig *bindings.TaikoDataConfig,
 ) (*ZkevmRpcdProducer, error) {
 	return &ZkevmRpcdProducer{
 		RpcdEndpoint:    rpcdEndpoint,
