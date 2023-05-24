@@ -194,6 +194,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			cfg.L2HttpEndpoint,
 			true,
 			stateVars.ProofTimeTarget,
+			p.protocolConfigs,
 		); err != nil {
 			return err
 		}

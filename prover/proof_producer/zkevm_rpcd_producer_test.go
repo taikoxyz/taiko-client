@@ -12,7 +12,15 @@ import (
 )
 
 func TestNewZkevmRpcdProducer(t *testing.T) {
-	dummyZkevmRpcdProducer, err := NewZkevmRpcdProducer("http://localhost:18545", "", "", "", false, 0)
+	dummyZkevmRpcdProducer, err := NewZkevmRpcdProducer(
+		"http://localhost:18545",
+		"",
+		"",
+		"",
+		false,
+		0,
+		&bindings.TaikoDataConfig{},
+	)
 	require.Nil(t, err)
 
 	dummyZkevmRpcdProducer.CustomProofHook = func() ([]byte, uint64, error) {
