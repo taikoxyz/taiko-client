@@ -12,13 +12,15 @@ import (
 )
 
 func TestNewZkevmRpcdProducer(t *testing.T) {
+	var proofTimeTarget uint64 = 3
+
 	dummyZkevmRpcdProducer, err := NewZkevmRpcdProducer(
 		"http://localhost:18545",
 		"",
 		"",
 		"",
 		false,
-		0,
+		proofTimeTarget,
 		&bindings.TaikoDataConfig{},
 	)
 	require.Nil(t, err)
@@ -46,6 +48,8 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
+
+	timeBefore := time.Now()
 	require.Nil(t, dummyZkevmRpcdProducer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
@@ -56,6 +60,7 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 	))
 
 	res := <-resCh
+	require.True(t, time.Now().After(timeBefore.Add(time.Duration(proofTimeTarget)*time.Second)))
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
 	require.NotEmpty(t, res.ZkProof)

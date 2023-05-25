@@ -61,7 +61,7 @@ func NewSpecialProofProducer(
 	}, nil
 }
 
-func (p *SpecialProofProducer) CalcDelay(
+func (p *SpecialProofProducer) CalcProofTimeTargetDelay(
 	header *types.Header,
 ) time.Duration {
 	return time.Duration(0)
