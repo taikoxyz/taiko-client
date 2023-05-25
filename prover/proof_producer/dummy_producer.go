@@ -17,7 +17,7 @@ type DummyProofProducer struct {
 	RandomDummyProofDelayUpperBound *time.Duration
 }
 
-func (d *DummyProofProducer) CalcDelay(
+func (d *DummyProofProducer) CalcProofTimeTargetDelay(
 	header *types.Header,
 ) time.Duration {
 	return time.Duration(0)

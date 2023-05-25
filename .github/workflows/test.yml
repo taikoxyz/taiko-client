@@ -45,6 +45,7 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
+          ref: alpha-3
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
