@@ -49,6 +49,7 @@ cd $TAIKO_MONO_DIR/packages/protocol &&
     TAIKO_TOKEN_PREMINT_AMOUNT=18446744073709551614 \
     L2_GENESIS_HASH=$L2_GENESIS_HASH \
     L2_CHAIN_ID=167001 \
+    ADJUSTMENT_QUOTIENT=32000 \
     forge script script/DeployOnL1.s.sol:DeployOnL1 \
         --fork-url http://localhost:18545 \
         --broadcast \
