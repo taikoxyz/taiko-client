@@ -20,6 +20,7 @@ import (
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
+	"github.com/taikoxyz/taiko-client/prover/bid"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/urfave/cli/v2"
@@ -34,6 +35,7 @@ type Prover struct {
 	proverAddress       common.Address
 	oracleProverAddress common.Address
 	systemProverAddress common.Address
+	bidStrategy         bid.BidStrategy
 
 	// Clients
 	rpc *rpc.Client

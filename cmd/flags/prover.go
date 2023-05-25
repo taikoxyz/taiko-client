@@ -79,6 +79,16 @@ var (
 		Category: proverCategory,
 		Value:    "",
 	}
+	BidStrategy = &cli.StringFlag{
+		Name:     "bidStrategy",
+		Usage:    "Which strategy to use for bidding on proposed blocks",
+		Category: proverCategory,
+	}
+	MinimumBidAmount = &cli.StringFlag{
+		Name:     "minimumAmount",
+		Usage:    "Minimum amount in wei per gas you are willing to bid",
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -98,4 +108,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	OracleProverPrivateKey,
 	SystemProverPrivateKey,
 	Graffiti,
+	BidStrategy,
+	MinimumBidAmount,
 })

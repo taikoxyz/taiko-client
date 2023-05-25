@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/prover/bid"
 	"github.com/urfave/cli/v2"
 )
 
@@ -32,6 +33,8 @@ type Config struct {
 	OracleProverPrivateKey          *ecdsa.PrivateKey
 	SystemProverPrivateKey          *ecdsa.PrivateKey
 	Graffiti                        string
+	BidStrategy                     bid.BidStrategyOption
+	MinimumAmount                   *big.Int
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
 }
@@ -43,6 +46,16 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(l1ProverPrivKeyStr))
 	if err != nil {
 		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
+	}
+
+	if !c.IsSet(flags.BidStrategy.Name) {
+		return nil, fmt.Errorf("bidStrategy flag is required")
+	}
+
+	bidStrategy := bid.BidStrategyOption(c.String(flags.BidStrategy.Name))
+
+	if !bid.IsValidBidStrategy(bidStrategy) {
+		return nil, fmt.Errorf("unsupported bid strategy")
 	}
 
 	oracleProverSet := c.IsSet(flags.OracleProver.Name)
