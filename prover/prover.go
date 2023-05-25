@@ -374,12 +374,6 @@ func (p *Prover) onBlockProposed(
 			auctionOverOrOutbidPerBidStrategy := make(chan struct{})
 			errChan := make(chan error)
 
-			transactOpts, err := getBidForBlocksTxOpts(ctx, p.rpc.L1, p.rpc.L1ChainID, p.cfg.L1ProverPrivKey)
-			tx, err := p.rpc.TaikoL1.BidForBlock(transactOpts, event.Id, bidAmount)
-			if err != nil {
-				return fmt.Errorf("unable to determine next bid amount for blockID: %v", event.Id)
-			}
-
 			bidCtx, bidCtxCancel := context.WithCancel(ctx)
 			defer bidCtxCancel()
 
@@ -446,6 +440,12 @@ func (p *Prover) onBlockProposed(
 					}
 				}
 			}()
+
+			transactOpts, err := getBidForBlocksTxOpts(ctx, p.rpc.L1, p.rpc.L1ChainID, p.cfg.L1ProverPrivKey)
+			tx, err := p.rpc.TaikoL1.BidForBlock(transactOpts, event.Id, bidAmount)
+			if err != nil {
+				return fmt.Errorf("unable to determine next bid amount for blockID: %v", event.Id)
+			}
 
 			_, err = rpc.WaitReceipt(ctx, p.rpc.L1, tx)
 			if err != nil {
