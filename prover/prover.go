@@ -374,6 +374,15 @@ func (p *Prover) onBlockProposed(
 			auctionOverOrOutbidPerBidStrategy := make(chan struct{})
 			errChan := make(chan error)
 
+			transactOpts, err := getBidForBlocksTxOpts(ctx, p.rpc.L1, p.rpc.L1ChainID, p.cfg.L1ProverPrivKey)
+			tx, err := p.rpc.TaikoL1.BidForBlock(transactOpts, event.Id, bidAmount)
+			if err != nil {
+				return fmt.Errorf("unable to determine next bid amount for blockID: %v", event.Id)
+			}
+
+			bidCtx, bidCtxCancel := context.WithCancel(ctx)
+			defer bidCtxCancel()
+
 			// TODO: we should approve the TaikoToken contract for max amount,
 			// and check approval as well, since it will transfer out from us.
 			go func() {
@@ -387,7 +396,7 @@ func (p *Prover) onBlockProposed(
 
 				for {
 					select {
-					case <-ctx.Done():
+					case <-bidCtx.Done():
 						log.Info("context finished")
 						return
 					case err := <-sub.Err():
@@ -438,12 +447,6 @@ func (p *Prover) onBlockProposed(
 				}
 			}()
 
-			transactOpts, err := getBidForBlocksTxOpts(ctx, p.rpc.L1, p.rpc.L1ChainID, p.cfg.L1ProverPrivKey)
-			tx, err := p.rpc.TaikoL1.BidForBlock(transactOpts, event.Id, bidAmount)
-			if err != nil {
-				return fmt.Errorf("unable to determine next bid amount for blockID: %v", event.Id)
-			}
-
 			_, err = rpc.WaitReceipt(ctx, p.rpc.L1, tx)
 			if err != nil {
 				return fmt.Errorf(
@@ -451,6 +454,18 @@ func (p *Prover) onBlockProposed(
 					event.Id,
 					tx.Hash().Hex(),
 				)
+			}
+
+			for range time.Tick(3 * time.Second) {
+				isOpen, err := p.rpc.TaikoL1.IsBiddingOpenForBlock(nil, event.Id)
+				if err != nil {
+					return fmt.Errorf("error getting is bidding open for block: %w", err)
+				}
+				if !isOpen {
+					bidCtxCancel()
+					auctionOverOrOutbidPerBidStrategy <- struct{}{}
+					break
+				}
 			}
 
 			for {
