@@ -456,20 +456,19 @@ func (p *Prover) onBlockProposed(
 				)
 			}
 
-			for range time.Tick(3 * time.Second) {
-				isOpen, err := p.rpc.TaikoL1.IsBiddingOpenForBlock(nil, event.Id)
-				if err != nil {
-					return fmt.Errorf("error getting is bidding open for block: %w", err)
-				}
-				if !isOpen {
-					bidCtxCancel()
-					auctionOverOrOutbidPerBidStrategy <- struct{}{}
-					break
-				}
-			}
+			ticker := time.NewTicker(3 * time.Second)
 
 			for {
 				select {
+				case <-ticker.C:
+					isOpen, err := p.rpc.TaikoL1.IsBiddingOpenForBlock(nil, event.Id)
+					if err != nil {
+						return fmt.Errorf("error getting is bidding open for block: %w", err)
+					}
+					if !isOpen {
+						bidCtxCancel()
+						auctionOverOrOutbidPerBidStrategy <- struct{}{}
+					}
 				case <-auctionOverOrOutbidPerBidStrategy:
 					bid, err := p.rpc.TaikoL1.GetBidForBlock(nil, event.Id)
 					if err != nil {
