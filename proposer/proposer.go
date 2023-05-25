@@ -355,10 +355,10 @@ func (p *Proposer) checkTaikoTokenBalance() error {
 
 	log.Info("GetBlockFee", "fee", fee)
 
-	if fee > math.MaxInt64 {
+	if fee.Int64() > math.MaxInt64 {
 		metrics.ProposerBlockFeeGauge.Update(math.MaxInt64)
 	} else {
-		metrics.ProposerBlockFeeGauge.Update(int64(fee))
+		metrics.ProposerBlockFeeGauge.Update(fee.Int64())
 	}
 
 	balance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(nil, p.l1ProposerAddress)
@@ -366,7 +366,7 @@ func (p *Proposer) checkTaikoTokenBalance() error {
 		return fmt.Errorf("failed to get tko balance: %w", err)
 	}
 
-	if balance.Cmp(new(big.Int).SetUint64(fee)) == -1 {
+	if balance.Cmp(fee) == -1 {
 		return fmt.Errorf("proposer does not have enough tko balance to propose, balance: %d, fee: %d", balance, fee)
 	}
 

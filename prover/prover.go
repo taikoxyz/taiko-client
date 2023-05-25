@@ -9,9 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -156,12 +158,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	isSystemProver := cfg.SystemProver
 	isOracleProver := cfg.OracleProver
 
-	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
-	if err != nil {
-		log.Error("error retrieving protocol state variables", "error", err)
-		return
-	}
-
 	if isSystemProver || isOracleProver {
 		var specialProverAddress common.Address
 		var privateKey *ecdsa.PrivateKey
@@ -195,7 +191,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			cfg.L1HttpEndpoint,
 			cfg.L2HttpEndpoint,
 			true,
-			stateVars.ProofTimeTarget,
 			p.protocolConfigs,
 		); err != nil {
 			return err
@@ -216,6 +211,18 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	); err != nil {
 		return err
 	}
+
+	var bidStrategy bid.BidStrategy
+	if cfg.BidStrategyOption == bid.BidStrategyMinimumAmount {
+		bidStrategy = bid.NewMinimumAmountBidStrategy(bid.NewMinimumAmountBidStrategyOpts{
+			MinimumAmount: cfg.MinimumAmount,
+			RPC:           p.rpc,
+		})
+	} else if cfg.BidStrategyOption == bid.BidStrategyAlways {
+		bidStrategy = bid.NewAlwaysBidStrategy()
+	}
+
+	p.bidStrategy = bidStrategy
 
 	return nil
 }
@@ -341,6 +348,128 @@ func (p *Prover) onBlockProposed(
 
 		if !needNewProof {
 			return nil
+		}
+
+		if !p.cfg.OracleProver && !p.cfg.SystemProver {
+			currentBid, err := p.rpc.TaikoL1.GetBidForBlock(nil, event.Id)
+			if err != nil {
+				return fmt.Errorf("error getting bid for block: %v", err)
+			}
+
+			shouldBid, err := p.bidStrategy.ShouldBid(ctx, currentBid.MinFeePerGasAcceptedInWei)
+			if err != nil {
+				return fmt.Errorf("failed to determine if prover should bid: %w", err)
+			}
+
+			if !shouldBid {
+				log.Info("Determined should not bid on blockID", event.Id)
+				return nil
+			}
+
+			bidAmount, err := p.bidStrategy.NextBidAmount(ctx, currentBid.MinFeePerGasAcceptedInWei)
+			if err != nil {
+				return fmt.Errorf("unable to determine next bid amount for blockID: %v", event.Id)
+			}
+
+			auctionOverOrOutbidPerBidStrategy := make(chan struct{})
+			errChan := make(chan error)
+
+			// TODO: we should approve the TaikoToken contract for max amount,
+			// and check approval as well, since it will transfer out from us.
+			go func() {
+				sink := make(chan *bindings.TaikoL1ClientBid, 0)
+				sub := rpc.SubscribeBid(p.rpc.TaikoL1, sink)
+				defer func() {
+					sub.Unsubscribe()
+					close(auctionOverOrOutbidPerBidStrategy)
+					close(errChan)
+				}()
+
+				for {
+					select {
+					case <-ctx.Done():
+						log.Info("context finished")
+						return
+					case err := <-sub.Err():
+						errChan <- err
+						return
+					case bidEvent := <-sink:
+						log.Info("new bid for block ID", bidEvent.Id.Int64())
+
+						if bidEvent.Bidder == p.proverAddress {
+							log.Info("ignoring bid, it was made by this prover")
+							continue
+						}
+
+						shouldBid, err := p.bidStrategy.ShouldBid(ctx, bidEvent.MinFeePerGasAcceptedInWei)
+						if err != nil {
+							errChan <- fmt.Errorf("error encounted determining whether prover should bid: %w", err)
+							return
+						}
+
+						if !shouldBid {
+							log.Info("Determined should not bid on blockID", event.Id)
+							auctionOverOrOutbidPerBidStrategy <- struct{}{}
+							return
+						}
+
+						bidAmount, err := p.bidStrategy.NextBidAmount(ctx, bidEvent.MinFeePerGasAcceptedInWei)
+						if err != nil {
+							errChan <- fmt.Errorf("unable to determine next bid amount for blockID: %v", event.Id)
+							return
+						}
+
+						transactOpts, err := getBidForBlocksTxOpts(ctx, p.rpc.L1, p.rpc.L1ChainID, p.cfg.L1ProverPrivKey)
+						tx, err := p.rpc.TaikoL1.BidForBlock(transactOpts, event.Id, bidAmount)
+						if err != nil {
+							errChan <- fmt.Errorf("unable to determine next bid amount for blockID: %v", event.Id)
+							return
+						}
+						_, err = rpc.WaitReceipt(ctx, p.rpc.L1, tx)
+						if err != nil {
+							errChan <- fmt.Errorf(
+								"error waiting for receipt for bid. blockId: %v, txHash: %v",
+								event.Id,
+								tx.Hash().Hex(),
+							)
+							return
+						}
+					}
+				}
+			}()
+
+			transactOpts, err := getBidForBlocksTxOpts(ctx, p.rpc.L1, p.rpc.L1ChainID, p.cfg.L1ProverPrivKey)
+			tx, err := p.rpc.TaikoL1.BidForBlock(transactOpts, event.Id, bidAmount)
+			if err != nil {
+				return fmt.Errorf("unable to determine next bid amount for blockID: %v", event.Id)
+			}
+
+			_, err = rpc.WaitReceipt(ctx, p.rpc.L1, tx)
+			if err != nil {
+				return fmt.Errorf(
+					"error waiting for receipt for bid. blockId: %v, txHash: %v",
+					event.Id,
+					tx.Hash().Hex(),
+				)
+			}
+
+			for {
+				select {
+				case <-auctionOverOrOutbidPerBidStrategy:
+					bid, err := p.rpc.TaikoL1.GetBidForBlock(nil, event.Id)
+					if err != nil {
+						return fmt.Errorf("error getting bid for block: %v", err)
+					}
+
+					if bid.Bidder.Hex() == p.proverAddress.Hex() {
+						log.Info("successfully won bid for block id", event.Id)
+						break
+					}
+
+				case err := <-errChan:
+					return fmt.Errorf("error encountered while monitoring bids: %v", err)
+				}
+			}
 		}
 
 		ctx, cancelCtx := context.WithCancel(ctx)
@@ -567,4 +696,28 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 		delete(p.currentBlocksBeingProven, blockID)
 		log.Info("Cancelled proof for ", "blockID", blockID)
 	}
+}
+
+func getBidForBlocksTxOpts(
+	ctx context.Context,
+	cli *ethclient.Client,
+	chainID *big.Int,
+	proverPrivKey *ecdsa.PrivateKey,
+) (*bind.TransactOpts, error) {
+	opts, err := bind.NewKeyedTransactorWithChainID(proverPrivKey, chainID)
+	if err != nil {
+		return nil, err
+	}
+	gasTipCap, err := cli.SuggestGasTipCap(ctx)
+	if err != nil {
+		if rpc.IsMaxPriorityFeePerGasNotFoundError(err) {
+			gasTipCap = rpc.FallbackGasTipCap
+		} else {
+			return nil, err
+		}
+	}
+
+	opts.GasTipCap = gasTipCap
+
+	return opts, nil
 }

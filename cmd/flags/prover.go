@@ -85,7 +85,7 @@ var (
 		Category: proverCategory,
 	}
 	MinimumBidAmount = &cli.StringFlag{
-		Name:     "minimumAmount",
+		Name:     "minimumAmountInWei",
 		Usage:    "Minimum amount in wei per gas you are willing to bid",
 		Category: proverCategory,
 	}

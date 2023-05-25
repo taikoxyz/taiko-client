@@ -18,7 +18,6 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 		"",
 		"",
 		false,
-		0,
 		&bindings.TaikoDataConfig{},
 	)
 	require.Nil(t, err)

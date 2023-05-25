@@ -64,6 +64,24 @@ func SubscribeBlockProposed(
 	})
 }
 
+// SubscribeBid subscribes the protocol's Bid events.
+func SubscribeBid(
+	taikoL1 *bindings.TaikoL1Client,
+	ch chan *bindings.TaikoL1ClientBid,
+) event.Subscription {
+	return SubscribeEvent("Bid", func(ctx context.Context) (event.Subscription, error) {
+		sub, err := taikoL1.WatchBid(nil, ch, nil)
+		if err != nil {
+			log.Error("Create TaikoL1.BlockBid subscription error", "error", err)
+			return nil, err
+		}
+
+		defer sub.Unsubscribe()
+
+		return waitSubErr(ctx, sub)
+	})
+}
+
 // SubscribeXchainSynced subscribes the protocol's XchainSynced events.
 func SubscribeXchainSynced(
 	taikoL1 *bindings.TaikoL1Client,

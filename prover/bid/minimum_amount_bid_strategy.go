@@ -3,7 +3,8 @@ package bid
 import (
 	"context"
 	"math/big"
-	"net/rpc"
+
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // MinimumAmountBidStrategy is a bid strategy that has a minimum amount you are willing to accept
@@ -28,9 +29,16 @@ func NewMinimumAmountBidStrategy(opts NewMinimumAmountBidStrategyOpts) *MinimumA
 }
 
 func (b *MinimumAmountBidStrategy) ShouldBid(ctx context.Context, currentBid *big.Int) (bool, error) {
-	return true, nil
+	if currentBid.Cmp(b.minimumAmount) == 1 {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (b *MinimumAmountBidStrategy) NextBidAmount(ctx context.Context, currentBid *big.Int) (*big.Int, error) {
+	if currentBid.Cmp(b.minimumAmount) == 1 {
+
+	}
 	return big.NewInt(4000), nil
 }

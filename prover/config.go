@@ -33,7 +33,7 @@ type Config struct {
 	OracleProverPrivateKey          *ecdsa.PrivateKey
 	SystemProverPrivateKey          *ecdsa.PrivateKey
 	Graffiti                        string
-	BidStrategy                     bid.BidStrategyOption
+	BidStrategyOption               bid.BidStrategyOption
 	MinimumAmount                   *big.Int
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
@@ -52,10 +52,23 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, fmt.Errorf("bidStrategy flag is required")
 	}
 
-	bidStrategy := bid.BidStrategyOption(c.String(flags.BidStrategy.Name))
+	bidStrategyOption := bid.BidStrategyOption(c.String(flags.BidStrategy.Name))
 
-	if !bid.IsValidBidStrategy(bidStrategy) {
+	if !bid.IsValidBidStrategy(bidStrategyOption) {
 		return nil, fmt.Errorf("unsupported bid strategy")
+	}
+
+	var minimumAmount *big.Int
+	var ok bool
+
+	if bidStrategyOption == bid.BidStrategyMinimumAmount {
+		if !c.IsSet(flags.MinimumBidAmount.Name) {
+			return nil, fmt.Errorf("minimumAmount flag is required with minimumAmount bid strategy")
+		}
+		minimumAmount, ok = new(big.Int).SetString(c.String(flags.MinimumBidAmount.Name), 10)
+		if !ok {
+			return nil, fmt.Errorf("could not convert minimumAmount to big int")
+		}
 	}
 
 	oracleProverSet := c.IsSet(flags.OracleProver.Name)
@@ -147,5 +160,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		Graffiti:                        c.String(flags.Graffiti.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
+		BidStrategyOption:               bidStrategyOption,
+		MinimumAmount:                   minimumAmount,
 	}, nil
 }
