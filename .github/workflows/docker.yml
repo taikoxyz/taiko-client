@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [main,update-bindigns-alpha-3]
+    branches: [main]
     tags:
       - "v*"
 
