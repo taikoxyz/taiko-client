@@ -59,20 +59,6 @@ var (
 		Treasury:          common.BytesToAddress(randomHash().Bytes()),
 		DepositsProcessed: []bindings.TaikoDataEthDeposit{},
 	}
-	testKnownMeta = bindings.TaikoDataBlockMetadata{
-		Id:                uint64(1),
-		L1Height:          uint64(1),
-		L1Hash:            abcd,
-		Beneficiary:       common.HexToAddress("0x10020FCb72e27650651B05eD2CEcA493bC807Ba4"),
-		Treasury:          common.HexToAddress("0x50081b12838240B1bA02b3177153Bca678a86078"),
-		TxListHash:        abcd,
-		TxListByteStart:   big.NewInt(0),
-		TxListByteEnd:     big.NewInt(1000),
-		GasLimit:          1,
-		MixHash:           abcd,
-		Timestamp:         uint64(1),
-		DepositsProcessed: []bindings.TaikoDataEthDeposit{},
-	}
 )
 
 func TestFromGethHeader(t *testing.T) {

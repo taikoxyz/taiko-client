@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
+	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 func TestEncodeEvidence(t *testing.T) {
@@ -85,9 +86,28 @@ func TestEncodeProveBlockInvalidInput(t *testing.T) {
 }
 
 func TestEncodeBlockMetadata(t *testing.T) {
+	// since strings are right padded in solidity https://github.com/ethereum/solidity/issues/1340
+	var (
+		arr  = common.RightPadBytes([]byte("abcd"), 32)
+		abcd [32]byte
+	)
+	copy(abcd[:], arr)
+
 	// Encode block metadata using EncodeBlockMetadata function
-	encoded, err := EncodeBlockMetadata(
-		&testKnownMeta)
+	encoded, err := EncodeBlockMetadata(&bindings.TaikoDataBlockMetadata{
+		Id:                uint64(1),
+		L1Height:          uint64(1),
+		L1Hash:            abcd,
+		Beneficiary:       common.HexToAddress("0x10020FCb72e27650651B05eD2CEcA493bC807Ba4"),
+		Treasury:          common.HexToAddress("0x50081b12838240B1bA02b3177153Bca678a86078"),
+		TxListHash:        abcd,
+		TxListByteStart:   big.NewInt(0),
+		TxListByteEnd:     big.NewInt(1000),
+		GasLimit:          1,
+		MixHash:           abcd,
+		Timestamp:         uint64(1),
+		DepositsProcessed: []bindings.TaikoDataEthDeposit{},
+	})
 
 	require.Nil(t, err)
 	require.NotNil(t, encoded)
