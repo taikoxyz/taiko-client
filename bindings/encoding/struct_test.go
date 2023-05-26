@@ -13,11 +13,6 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
-// since strings are right padded in solidity https://github.com/ethereum/solidity/issues/1340
-var arr = common.RightPadBytes([]byte("abcd"), 32)
-var abcd [32]byte
-var _ = copy(abcd[:], arr)
-
 var (
 	testHeader = &types.Header{
 		ParentHash:  randomHash(),
