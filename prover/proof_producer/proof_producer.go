@@ -55,7 +55,7 @@ type ProofProducer interface {
 		resultCh chan *ProofWithHeader,
 	) error
 	Cancel(ctx context.Context, blockID *big.Int) error
-	CalcDelay(header *types.Header) time.Duration
+	CalcProofTimeTargetDelay(header *types.Header) time.Duration
 }
 
 func DegreeToCircuitsIdx(degree uint64) (uint16, error) {
