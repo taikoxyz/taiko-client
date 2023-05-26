@@ -1,7 +1,6 @@
 package encoding
 
 import (
-	"encoding/hex"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -92,9 +91,6 @@ func TestEncodeBlockMetadata(t *testing.T) {
 
 	require.Nil(t, err)
 	require.NotNil(t, encoded)
-
-	t.Log(hex.EncodeToString(testKnownMeta.L1Hash[:]))
-	// t.Log(encoded)
 
 	kgv, err := hexutil.Decode("0x0000000000000000000000000000000000000000000000000" +
 		"000000000000020000000000000000000000000000000000000000000000000000000000000000" +
