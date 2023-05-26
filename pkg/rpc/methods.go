@@ -69,7 +69,9 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 		}
 	}
 
-	return fmt.Errorf("genesis block not found in TaikoL1")
+	log.Warn("Genesis block not found in TaikoL1")
+
+	return nil
 }
 
 // WaitTillL2Synced keeps waiting until the L2 execution engine is fully synced.
