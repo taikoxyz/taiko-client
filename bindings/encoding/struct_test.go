@@ -13,6 +13,11 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
+// since strings are right padded in solidity https://github.com/ethereum/solidity/issues/1340
+var arr = common.RightPadBytes([]byte("abcd"), 32)
+var abcd [32]byte
+var _ = copy(abcd[:], arr)
+
 var (
 	testHeader = &types.Header{
 		ParentHash:  randomHash(),
@@ -57,14 +62,14 @@ var (
 	testKnownMeta = bindings.TaikoDataBlockMetadata{
 		Id:                uint64(1),
 		L1Height:          uint64(1),
-		L1Hash:            common.BytesToHash([]byte("abcd")),
+		L1Hash:            abcd,
 		Beneficiary:       common.HexToAddress("0x10020FCb72e27650651B05eD2CEcA493bC807Ba4"),
 		Treasury:          common.HexToAddress("0x50081b12838240B1bA02b3177153Bca678a86078"),
-		TxListHash:        common.BytesToHash([]byte("abcd")),
+		TxListHash:        abcd,
 		TxListByteStart:   big.NewInt(0),
 		TxListByteEnd:     big.NewInt(1000),
 		GasLimit:          1,
-		MixHash:           common.BytesToHash([]byte("abcd")),
+		MixHash:           abcd,
 		Timestamp:         uint64(1),
 		DepositsProcessed: []bindings.TaikoDataEthDeposit{},
 	}
