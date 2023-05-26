@@ -87,24 +87,21 @@ func TestEncodeProveBlockInvalidInput(t *testing.T) {
 
 func TestEncodeBlockMetadata(t *testing.T) {
 	// since strings are right padded in solidity https://github.com/ethereum/solidity/issues/1340
-	var (
-		arr  = common.RightPadBytes([]byte("abcd"), 32)
-		abcd [32]byte
-	)
-	copy(abcd[:], arr)
+	var abcdBytes [32]byte
+	copy(abcdBytes[:], common.RightPadBytes([]byte("abcd"), 32))
 
 	// Encode block metadata using EncodeBlockMetadata function
 	encoded, err := EncodeBlockMetadata(&bindings.TaikoDataBlockMetadata{
 		Id:                uint64(1),
 		L1Height:          uint64(1),
-		L1Hash:            abcd,
+		L1Hash:            abcdBytes,
 		Beneficiary:       common.HexToAddress("0x10020FCb72e27650651B05eD2CEcA493bC807Ba4"),
 		Treasury:          common.HexToAddress("0x50081b12838240B1bA02b3177153Bca678a86078"),
-		TxListHash:        abcd,
+		TxListHash:        abcdBytes,
 		TxListByteStart:   big.NewInt(0),
 		TxListByteEnd:     big.NewInt(1000),
 		GasLimit:          1,
-		MixHash:           abcd,
+		MixHash:           abcdBytes,
 		Timestamp:         uint64(1),
 		DepositsProcessed: []bindings.TaikoDataEthDeposit{},
 	})
@@ -124,8 +121,8 @@ func TestEncodeBlockMetadata(t *testing.T) {
 		"2e27650651b05ed2ceca493bc807ba400000000000000000000000050081b12838240b1ba02b31" +
 		"77153bca678a860780000000000000000000000000000000000000000000000000000000000000" +
 		"1800000000000000000000000000000000000000000000000000000000000000000")
-	require.Nil(t, err)
 
+	require.Nil(t, err)
 	require.Equal(t, kgv, encoded)
 }
 
