@@ -50,7 +50,7 @@ if [ "$RUN_TESTS" == "true" ]; then
     L1_PROPOSER_PRIVATE_KEY=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
     L2_SUGGESTED_FEE_RECIPIENT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \
     L1_PROVER_PRIVATE_KEY=59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d \
-    TREASURY=0x1000777700000000000000000000000000000001 \
+    TREASURY=0xdf09A0afD09a63fb04ab3573922437e1e637dE8b \
     JWT_SECRET=$DIR/nodes/jwt.hex \
         go test -v -p=1 ./$PACKAGE -coverprofile=coverage.out -covermode=atomic -timeout=300s
 else
