@@ -33,7 +33,7 @@ var (
 		Name: "p2p.syncTimeout",
 		Usage: "P2P syncing timeout in seconds, if no sync progress is made within this time span, " +
 			"driver will stop the P2P sync and insert all remaining L2 blocks one by one",
-		Value:    600,
+		Value:    1800,
 		Category: driverCategory,
 	}
 	CheckPointSyncUrl = &cli.StringFlag{
@@ -50,4 +50,5 @@ var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	JWTSecret,
 	P2PSyncVerifiedBlocks,
 	P2PSyncTimeout,
+	CheckPointSyncUrl,
 })
