@@ -5,17 +5,14 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -211,6 +208,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.OracleProver,
 		p.cfg.SystemProver,
 		p.cfg.Graffiti,
+		p.cfg.ExpectedReward,
 	); err != nil {
 		return err
 	}
@@ -332,13 +330,22 @@ func (p *Prover) onBlockProposed(
 			return nil
 		}
 
-		needNewProof, err := p.NeedNewProof(event.Id)
-		if err != nil {
-			return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
-		}
+		// Check whether the block's proof is still needed.
+		if !p.cfg.OracleProver && !p.cfg.SystemProver {
+			needNewProof, err := rpc.NeedNewProof(
+				p.ctx,
+				p.rpc,
+				event.Id,
+				p.proverAddress,
+				p.protocolConfigs.RealProofSkipSize,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
+			}
 
-		if !needNewProof {
-			return nil
+			if !needNewProof {
+				return nil
+			}
 		}
 
 		ctx, cancelCtx := context.WithCancel(ctx)
@@ -469,57 +476,6 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 	}
 
 	return id.Uint64() <= stateVars.LastVerifiedBlockId, nil
-}
-
-// NeedNewProof checks whether the L2 block still needs a new proof.
-func (p *Prover) NeedNewProof(id *big.Int) (bool, error) {
-	if !p.cfg.OracleProver && !p.cfg.SystemProver {
-		conf, err := p.rpc.TaikoL1.GetConfig(nil)
-		if err != nil {
-			return false, err
-		}
-
-		if id.Uint64()%conf.RealProofSkipSize.Uint64() != 0 {
-			log.Info(
-				"Skipping valid block proof",
-				"blockID", id.Uint64(),
-				"skipSize", conf.RealProofSkipSize.Uint64(),
-			)
-
-			return false, nil
-		}
-	}
-
-	var parent *types.Header
-	if id.Cmp(common.Big1) == 0 {
-		header, err := p.rpc.L2.HeaderByNumber(p.ctx, common.Big0)
-		if err != nil {
-			return false, err
-		}
-
-		parent = header
-	} else {
-		parentL1Origin, err := p.rpc.WaitL1Origin(p.ctx, new(big.Int).Sub(id, common.Big1))
-		if err != nil {
-			return false, err
-		}
-
-		if parent, err = p.rpc.L2.HeaderByHash(p.ctx, parentL1Origin.L2BlockHash); err != nil {
-			return false, err
-		}
-	}
-
-	fc, err := p.rpc.TaikoL1.GetForkChoice(nil, id, parent.Hash(), uint32(parent.GasUsed))
-	if err != nil && !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
-		return false, encoding.TryParsingCustomError(err)
-	}
-
-	if p.proverAddress == fc.Prover {
-		log.Info("📬 Block's proof has already been submitted by current prover", "blockID", id)
-		return false, nil
-	}
-
-	return true, nil
 }
 
 // initSubscription initializes all subscriptions in current prover instance.

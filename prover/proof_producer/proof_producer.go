@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -55,7 +54,6 @@ type ProofProducer interface {
 		resultCh chan *ProofWithHeader,
 	) error
 	Cancel(ctx context.Context, blockID *big.Int) error
-	CalcProofTimeTargetDelay(header *types.Header) time.Duration
 }
 
 func DegreeToCircuitsIdx(degree uint64) (uint16, error) {
