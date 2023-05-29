@@ -28,8 +28,7 @@ var (
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
 	if strings.HasPrefix(err.Error(), "L1_NOT_SPECIAL_PROVER") ||
-		!strings.HasPrefix(err.Error(), "L1_") ||
-		errors.Is(err, errNeedWaiting) {
+		!strings.HasPrefix(err.Error(), "L1_") {
 		return true
 	}
 
@@ -112,11 +111,13 @@ func sendTxWithBackoff(
 
 				log.Info(
 					"Target delay",
+					"blockID", blockID,
 					"delay", targetDelay,
 					"expectedReward", expectedReward,
 					"blockFee", stateVar.BlockFee,
 					"proofTimeTarget", stateVar.ProofTimeTarget,
 					"startAt", startAt,
+					"timeToWait", time.Until(startAt.Add(time.Duration(targetDelay)*time.Second)),
 				)
 
 				if time.Now().Before(startAt.Add(time.Duration(targetDelay) * time.Second)) {
