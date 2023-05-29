@@ -102,7 +102,7 @@ func TestFromToGethHeaderLegacyTx(t *testing.T) {
 }
 
 func TestToExecutableDataV1(t *testing.T) {
-	data := ToExecutableDataV1(testHeader)
+	data := ToExecutableData(testHeader)
 	require.Equal(t, testHeader.ParentHash, data.ParentHash)
 	require.Equal(t, testHeader.Coinbase, data.FeeRecipient)
 	require.Equal(t, testHeader.Root, data.StateRoot)

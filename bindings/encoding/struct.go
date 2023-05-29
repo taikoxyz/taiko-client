@@ -101,23 +101,24 @@ func ToGethHeader(header *BlockHeader) *types.Header {
 	}
 }
 
-// ToExecutableDataV1 converts a GETH *types.Header to *beacon.ExecutableDataV1.
-func ToExecutableDataV1(header *types.Header) *engine.ExecutableData {
+// ToExecutableData converts a GETH *types.Header to *engine.ExecutableData.
+func ToExecutableData(header *types.Header) *engine.ExecutableData {
 	return &engine.ExecutableData{
-		ParentHash:    header.ParentHash,
-		FeeRecipient:  header.Coinbase,
-		StateRoot:     header.Root,
-		ReceiptsRoot:  header.ReceiptHash,
-		LogsBloom:     header.Bloom.Bytes(),
-		Random:        header.MixDigest,
-		Number:        header.Number.Uint64(),
-		GasLimit:      header.GasLimit,
-		GasUsed:       header.GasUsed,
-		Timestamp:     header.Time,
-		ExtraData:     header.Extra,
-		BaseFeePerGas: header.BaseFee,
-		BlockHash:     header.Hash(),
-		TxHash:        header.TxHash,
+		ParentHash:      header.ParentHash,
+		FeeRecipient:    header.Coinbase,
+		StateRoot:       header.Root,
+		ReceiptsRoot:    header.ReceiptHash,
+		LogsBloom:       header.Bloom.Bytes(),
+		Random:          header.MixDigest,
+		Number:          header.Number.Uint64(),
+		GasLimit:        header.GasLimit,
+		GasUsed:         header.GasUsed,
+		Timestamp:       header.Time,
+		ExtraData:       header.Extra,
+		BaseFeePerGas:   header.BaseFee,
+		BlockHash:       header.Hash(),
+		TxHash:          header.TxHash,
+		WithdrawalsHash: *header.WithdrawalsHash,
 	}
 }
 
