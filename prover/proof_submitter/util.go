@@ -73,8 +73,9 @@ func sendTxWithBackoff(
 ) error {
 	var (
 		isUnretryableError bool
-		startAt            time.Time = time.Now()
+		proposedTime       = time.Unix(int64(proposedAt), 0)
 	)
+
 	if err := backoff.Retry(func() error {
 		if ctx.Err() != nil {
 			return nil
@@ -116,11 +117,11 @@ func sendTxWithBackoff(
 					"expectedReward", expectedReward,
 					"blockFee", stateVar.BlockFee,
 					"proofTimeTarget", stateVar.ProofTimeTarget,
-					"startAt", startAt,
-					"timeToWait", time.Until(startAt.Add(time.Duration(targetDelay)*time.Second)),
+					"proposedTime", proposedTime,
+					"timeToWait", time.Until(proposedTime.Add(time.Duration(targetDelay)*time.Second)),
 				)
 
-				if time.Now().Before(startAt.Add(time.Duration(targetDelay) * time.Second)) {
+				if time.Now().Before(proposedTime.Add(time.Duration(targetDelay) * time.Second)) {
 					return errNeedWaiting
 				}
 			}

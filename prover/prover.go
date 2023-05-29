@@ -513,6 +513,5 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 	if cancel, ok := p.currentBlocksBeingProven[blockID]; ok {
 		cancel()
 		delete(p.currentBlocksBeingProven, blockID)
-		log.Info("Cancelled proof for ", "blockID", blockID)
 	}
 }
