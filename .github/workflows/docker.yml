@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [main,improve-prover-wait-time-calculation]
+    branches: [main]
     tags:
       - "v*"
 
