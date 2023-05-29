@@ -8,6 +8,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+var (
+	OracleProverAddress = common.HexToAddress("0x0000000000000000000000000000000000000000")
+	SystemProverAddress = common.HexToAddress("0x0000000000000000000000000000000000000001")
+)
+
 type BlockHeader struct {
 	ParentHash       [32]byte
 	OmmersHash       [32]byte

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -61,12 +60,6 @@ func NewSpecialProofProducer(
 	}, nil
 }
 
-func (p *SpecialProofProducer) CalcProofTimeTargetDelay(
-	header *types.Header,
-) time.Duration {
-	return time.Duration(0)
-}
-
 // RequestProof implements the ProofProducer interface.
 func (p *SpecialProofProducer) RequestProof(
 	ctx context.Context,
@@ -119,9 +112,9 @@ func (p *SpecialProofProducer) RequestProof(
 	// whether a proof can be overwritten or not.
 	var prover common.Address
 	if p.isSystemProver {
-		prover = common.HexToAddress("0x0000000000000000000000000000000000000001")
+		prover = encoding.SystemProverAddress
 	} else {
-		prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
+		prover = encoding.OracleProverAddress
 	}
 	// signature should be done with proof set to nil, verifierID set to 0,
 	// and prover set to 0 address.

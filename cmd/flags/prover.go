@@ -79,6 +79,12 @@ var (
 		Category: proverCategory,
 		Value:    "",
 	}
+	ExpectedReward = &cli.Uint64Flag{
+		Name:     "expectedReward",
+		Usage:    "The expected prover reward for each block",
+		Category: proverCategory,
+		Value:    100_000_000,
+	}
 )
 
 // All prover flags.
@@ -98,4 +104,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	OracleProverPrivateKey,
 	SystemProverPrivateKey,
 	Graffiti,
+	ExpectedReward,
 })

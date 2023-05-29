@@ -95,34 +95,16 @@ func NewZkevmRpcdProducer(
 	l1Endpoint string,
 	l2Endpoint string,
 	retry bool,
-	proofTimeTarget uint64,
 	protocolConfig *bindings.TaikoDataConfig,
 ) (*ZkevmRpcdProducer, error) {
 	return &ZkevmRpcdProducer{
-		RpcdEndpoint:    rpcdEndpoint,
-		Param:           param,
-		L1Endpoint:      l1Endpoint,
-		L2Endpoint:      l2Endpoint,
-		Retry:           retry,
-		ProofTimeTarget: proofTimeTarget,
-		ProtocolConfig:  protocolConfig,
+		RpcdEndpoint:   rpcdEndpoint,
+		Param:          param,
+		L1Endpoint:     l1Endpoint,
+		L2Endpoint:     l2Endpoint,
+		Retry:          retry,
+		ProtocolConfig: protocolConfig,
 	}, nil
-}
-
-func (p *ZkevmRpcdProducer) CalcProofTimeTargetDelay(
-	header *types.Header,
-) time.Duration {
-	// if > 0, delay has not yet elapsed; proof should be delayed.
-	// if <= 0, delay has already elapsed; proof does not need delay.
-	delay := ((p.ProofTimeTarget + header.Time) - uint64(time.Now().Unix()))
-
-	log.Debug("Proof submission delay", "delay", delay)
-
-	if delay > 0 {
-		return time.Duration(delay * uint64(time.Second))
-	} else {
-		return time.Duration(0)
-	}
 }
 
 // RequestProof implements the ProofProducer interface.
@@ -156,16 +138,14 @@ func (p *ZkevmRpcdProducer) RequestProof(
 		return err
 	}
 
-	time.AfterFunc(p.CalcProofTimeTargetDelay(header), func() {
-		resultCh <- &ProofWithHeader{
-			BlockID: blockID,
-			Header:  header,
-			Meta:    meta,
-			ZkProof: proof,
-			Degree:  degree,
-			Opts:    opts,
-		}
-	})
+	resultCh <- &ProofWithHeader{
+		BlockID: blockID,
+		Header:  header,
+		Meta:    meta,
+		ZkProof: proof,
+		Degree:  degree,
+		Opts:    opts,
+	}
 
 	return nil
 }

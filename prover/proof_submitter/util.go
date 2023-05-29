@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
@@ -19,13 +21,15 @@ import (
 
 var (
 	errUnretryable = errors.New("unretryable")
+	errNeedWaiting = errors.New("need waiting before the proof submission")
 )
 
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
 	if strings.HasPrefix(err.Error(), "L1_NOT_SPECIAL_PROVER") ||
-		!strings.HasPrefix(err.Error(), "L1_") {
+		!strings.HasPrefix(err.Error(), "L1_") ||
+		errors.Is(err, errNeedWaiting) {
 		return true
 	}
 
@@ -64,12 +68,47 @@ func sendTxWithBackoff(
 	ctx context.Context,
 	cli *rpc.Client,
 	blockID *big.Int,
+	proposedAt uint64,
+	expectedReward uint64,
 	sendTxFunc func() (*types.Transaction, error),
 ) error {
 	var isUnretryableError bool
 	if err := backoff.Retry(func() error {
 		if ctx.Err() != nil {
 			return nil
+		}
+
+		// Check the expected reward.
+		if expectedReward != 0 {
+			// Check if this proof is still needed at first.
+			needNewProof, err := rpc.NeedNewProof(ctx, cli, blockID, common.Address{}, nil)
+			if err != nil {
+				log.Warn(
+					"Failed to check if the generated proof is needed",
+					"blockID", blockID, "error", err,
+				)
+				return err
+			}
+
+			if needNewProof {
+				proofTime := uint64(time.Now().Unix()) - (proposedAt)
+				reward, err := cli.TaikoL1.GetProofReward(nil, proofTime)
+				if err != nil {
+					log.Warn("Failed to get proof reward", "blockID", blockID, "proofTime", proofTime, "error", err)
+					return err
+				}
+
+				log.Info(
+					"Current proof reward",
+					"currentReward", reward,
+					"expectedReward", expectedReward,
+					"needWaiting", reward < expectedReward,
+				)
+
+				if reward < expectedReward {
+					return errNeedWaiting
+				}
+			}
 		}
 
 		tx, err := sendTxFunc()
@@ -90,7 +129,7 @@ func sendTxWithBackoff(
 		}
 
 		return nil
-	}, backoff.NewExponentialBackOff()); err != nil {
+	}, backoff.NewConstantBackOff(12*time.Second)); err != nil {
 		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
 	}
 

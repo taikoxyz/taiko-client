@@ -34,6 +34,7 @@ type Config struct {
 	Graffiti                        string
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
+	ExpectedReward                  uint64
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -134,5 +135,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		Graffiti:                        c.String(flags.Graffiti.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
+		ExpectedReward:                  c.Uint64(flags.ExpectedReward.Name),
 	}, nil
 }

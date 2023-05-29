@@ -38,6 +38,7 @@ type ValidProofSubmitter struct {
 	isOracleProver    bool
 	isSystemProver    bool
 	graffiti          [32]byte
+	expectedReward    uint64
 }
 
 // NewValidProofSubmitter creates a new ValidProofSubmitter instance.
@@ -51,6 +52,7 @@ func NewValidProofSubmitter(
 	isOracleProver bool,
 	isSystemProver bool,
 	graffiti string,
+	expectedReward uint64,
 ) (*ValidProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
 	if err != nil {
@@ -67,6 +69,11 @@ func NewValidProofSubmitter(
 		return nil, err
 	}
 
+	// OracleProver and SystemProver do not care about the expected proof reward.
+	if isOracleProver || isSystemProver {
+		expectedReward = 0
+	}
+
 	return &ValidProofSubmitter{
 		rpc:               rpcClient,
 		proofProducer:     proofProducer,
@@ -81,6 +88,7 @@ func NewValidProofSubmitter(
 		isOracleProver:    isOracleProver,
 		isSystemProver:    isSystemProver,
 		graffiti:          rpc.StringToBytes32(graffiti),
+		expectedReward:    expectedReward,
 	}, nil
 }
 
@@ -210,10 +218,10 @@ func (s *ValidProofSubmitter) SubmitProof(
 	var prover common.Address
 
 	if s.isOracleProver || s.isSystemProver {
-		if s.isOracleProver {
-			prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
+		if s.isSystemProver {
+			prover = encoding.SystemProverAddress
 		} else {
-			prover = common.HexToAddress("0x0000000000000000000000000000000000000001")
+			prover = encoding.OracleProverAddress
 		}
 		circuitsIdx = uint16(int(zkProof[64]))
 		evidence.Proof = zkProof[0:64]
@@ -246,7 +254,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return s.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
 	}
 
-	if err := sendTxWithBackoff(ctx, s.rpc, blockID, sendTx); err != nil {
+	if err := sendTxWithBackoff(ctx, s.rpc, blockID, block.Header().Time, s.expectedReward, sendTx); err != nil {
 		if errors.Is(err, errUnretryable) {
 			return nil
 		}

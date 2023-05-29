@@ -27,13 +27,13 @@ func (s *ProofSubmitterTestSuite) TestGetProveBlocksTxOpts() {
 }
 
 func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
-	err := sendTxWithBackoff(context.Background(), s.RpcClient, common.Big1, func() (*types.Transaction, error) {
+	err := sendTxWithBackoff(context.Background(), s.RpcClient, common.Big1, 0, 0, func() (*types.Transaction, error) {
 		return nil, errors.New("L1_TEST")
 	})
 
 	s.NotNil(err)
 
-	err = sendTxWithBackoff(context.Background(), s.RpcClient, common.Big1, func() (*types.Transaction, error) {
+	err = sendTxWithBackoff(context.Background(), s.RpcClient, common.Big1, 0, 0, func() (*types.Transaction, error) {
 		height, err := s.RpcClient.L1.BlockNumber(context.Background())
 		s.Nil(err)
 
