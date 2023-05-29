@@ -104,5 +104,5 @@ func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *engine
 
 	log.Info("Latest verified block header retrieved", "hash", header.Hash())
 
-	return latestVerifiedBlock.ID, encoding.ToExecutableDataV1(header), nil
+	return latestVerifiedBlock.ID, encoding.ToExecutableData(header), nil
 }
