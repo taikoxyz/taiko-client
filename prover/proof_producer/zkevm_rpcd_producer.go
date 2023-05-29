@@ -95,17 +95,15 @@ func NewZkevmRpcdProducer(
 	l1Endpoint string,
 	l2Endpoint string,
 	retry bool,
-	proofTimeTarget uint64,
 	protocolConfig *bindings.TaikoDataConfig,
 ) (*ZkevmRpcdProducer, error) {
 	return &ZkevmRpcdProducer{
-		RpcdEndpoint:    rpcdEndpoint,
-		Param:           param,
-		L1Endpoint:      l1Endpoint,
-		L2Endpoint:      l2Endpoint,
-		Retry:           retry,
-		ProofTimeTarget: proofTimeTarget,
-		ProtocolConfig:  protocolConfig,
+		RpcdEndpoint:   rpcdEndpoint,
+		Param:          param,
+		L1Endpoint:     l1Endpoint,
+		L2Endpoint:     l2Endpoint,
+		Retry:          retry,
+		ProtocolConfig: protocolConfig,
 	}, nil
 }
 
