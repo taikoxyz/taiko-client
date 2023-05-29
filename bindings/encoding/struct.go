@@ -101,9 +101,9 @@ func ToGethHeader(header *BlockHeader) *types.Header {
 	}
 }
 
-// ToExecutableDataV1 converts a GETH *types.Header to *beacon.ExecutableDataV1.
-func ToExecutableDataV1(header *types.Header) *engine.ExecutableData {
-	return &engine.ExecutableData{
+// ToExecutableData converts a GETH *types.Header to *engine.ExecutableData.
+func ToExecutableData(header *types.Header) *engine.ExecutableData {
+	executableData := &engine.ExecutableData{
 		ParentHash:    header.ParentHash,
 		FeeRecipient:  header.Coinbase,
 		StateRoot:     header.Root,
@@ -119,6 +119,12 @@ func ToExecutableDataV1(header *types.Header) *engine.ExecutableData {
 		BlockHash:     header.Hash(),
 		TxHash:        header.TxHash,
 	}
+
+	if header.WithdrawalsHash != nil {
+		executableData.WithdrawalsHash = *header.WithdrawalsHash
+	}
+
+	return executableData
 }
 
 // BloomToBytes converts a types.Bloom to [8][32]byte slice.

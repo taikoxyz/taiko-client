@@ -101,8 +101,8 @@ func TestFromToGethHeaderLegacyTx(t *testing.T) {
 	require.Equal(t, testHeader, gethHeader)
 }
 
-func TestToExecutableDataV1(t *testing.T) {
-	data := ToExecutableDataV1(testHeader)
+func TestToExecutableData(t *testing.T) {
+	data := ToExecutableData(testHeader)
 	require.Equal(t, testHeader.ParentHash, data.ParentHash)
 	require.Equal(t, testHeader.Coinbase, data.FeeRecipient)
 	require.Equal(t, testHeader.Root, data.StateRoot)
