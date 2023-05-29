@@ -72,7 +72,10 @@ func sendTxWithBackoff(
 	expectedReward uint64,
 	sendTxFunc func() (*types.Transaction, error),
 ) error {
-	var isUnretryableError bool
+	var (
+		isUnretryableError bool
+		startAt            time.Time = time.Now()
+	)
 	if err := backoff.Retry(func() error {
 		if ctx.Err() != nil {
 			return nil
@@ -91,21 +94,32 @@ func sendTxWithBackoff(
 			}
 
 			if needNewProof {
-				proofTime := uint64(time.Now().Unix()) - (proposedAt)
-				reward, err := cli.TaikoL1.GetProofReward(nil, proofTime)
+				stateVar, err := cli.TaikoL1.GetStateVariables(nil)
 				if err != nil {
-					log.Warn("Failed to get proof reward", "blockID", blockID, "proofTime", proofTime, "error", err)
+					log.Warn("Failed to get protocol state variables", "blockID", blockID, "error", err)
 					return err
 				}
 
+				targetDelay := stateVar.ProofTimeTarget * 4
+				if stateVar.BlockFee != 0 {
+					targetDelay = expectedReward / stateVar.BlockFee * stateVar.ProofTimeTarget
+					if targetDelay < stateVar.ProofTimeTarget/4 {
+						targetDelay = stateVar.ProofTimeTarget / 4
+					} else if targetDelay > stateVar.ProofTimeTarget*4 {
+						targetDelay = stateVar.ProofTimeTarget * 4
+					}
+				}
+
 				log.Info(
-					"Current proof reward",
-					"currentReward", reward,
+					"Target delay",
+					"delay", targetDelay,
 					"expectedReward", expectedReward,
-					"needWaiting", reward < expectedReward,
+					"blockFee", stateVar.BlockFee,
+					"proofTimeTarget", stateVar.ProofTimeTarget,
+					"startAt", startAt,
 				)
 
-				if reward < expectedReward {
+				if time.Now().Before(startAt.Add(time.Duration(targetDelay) * time.Second)) {
 					return errNeedWaiting
 				}
 			}
