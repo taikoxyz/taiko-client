@@ -98,6 +98,20 @@ var (
 			Name: "treasury",
 			Type: "address",
 		},
+		{
+			Name: "depositsProcessed",
+			Type: "tuple[]",
+			Components: []abi.ArgumentMarshaling{
+				{
+					Name: "recipient",
+					Type: "address",
+				},
+				{
+					Name: "amount",
+					Type: "uint96",
+				},
+			},
+		},
 	}
 	evidenceComponents = []abi.ArgumentMarshaling{
 		{
@@ -148,7 +162,7 @@ var (
 	blockMetadataInputType, _ = abi.NewType("tuple", "TaikoData.BlockMetadataInput", blockMetadataInputComponents)
 	blockMetadataInputArgs    = abi.Arguments{{Name: "BlockMetadataInput", Type: blockMetadataInputType}}
 	// BlockMetadata
-	blockMetadataType, _ = abi.NewType("tuple", "LibData.BlockMetadata", blockMetadataComponents)
+	blockMetadataType, _ = abi.NewType("tuple", "TaikoData.BlockMetadata", blockMetadataComponents)
 	blockMetadataArgs    = abi.Arguments{{Name: "BlockMetadata", Type: blockMetadataType}}
 	// Evidence
 	EvidenceType, _ = abi.NewType("tuple", "TaikoData.BlockEvidence", evidenceComponents)
