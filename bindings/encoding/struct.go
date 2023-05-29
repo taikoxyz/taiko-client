@@ -103,23 +103,28 @@ func ToGethHeader(header *BlockHeader) *types.Header {
 
 // ToExecutableData converts a GETH *types.Header to *engine.ExecutableData.
 func ToExecutableData(header *types.Header) *engine.ExecutableData {
-	return &engine.ExecutableData{
-		ParentHash:      header.ParentHash,
-		FeeRecipient:    header.Coinbase,
-		StateRoot:       header.Root,
-		ReceiptsRoot:    header.ReceiptHash,
-		LogsBloom:       header.Bloom.Bytes(),
-		Random:          header.MixDigest,
-		Number:          header.Number.Uint64(),
-		GasLimit:        header.GasLimit,
-		GasUsed:         header.GasUsed,
-		Timestamp:       header.Time,
-		ExtraData:       header.Extra,
-		BaseFeePerGas:   header.BaseFee,
-		BlockHash:       header.Hash(),
-		TxHash:          header.TxHash,
-		WithdrawalsHash: *header.WithdrawalsHash,
+	executableData := &engine.ExecutableData{
+		ParentHash:    header.ParentHash,
+		FeeRecipient:  header.Coinbase,
+		StateRoot:     header.Root,
+		ReceiptsRoot:  header.ReceiptHash,
+		LogsBloom:     header.Bloom.Bytes(),
+		Random:        header.MixDigest,
+		Number:        header.Number.Uint64(),
+		GasLimit:      header.GasLimit,
+		GasUsed:       header.GasUsed,
+		Timestamp:     header.Time,
+		ExtraData:     header.Extra,
+		BaseFeePerGas: header.BaseFee,
+		BlockHash:     header.Hash(),
+		TxHash:        header.TxHash,
 	}
+
+	if header.WithdrawalsHash != nil {
+		executableData.WithdrawalsHash = *header.WithdrawalsHash
+	}
+
+	return executableData
 }
 
 // BloomToBytes converts a types.Bloom to [8][32]byte slice.
