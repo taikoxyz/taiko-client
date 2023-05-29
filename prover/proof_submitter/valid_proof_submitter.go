@@ -218,10 +218,10 @@ func (s *ValidProofSubmitter) SubmitProof(
 	var prover common.Address
 
 	if s.isOracleProver || s.isSystemProver {
-		if s.isOracleProver {
-			prover = common.HexToAddress("0x0000000000000000000000000000000000000000")
+		if s.isSystemProver {
+			prover = encoding.SystemProverAddress
 		} else {
-			prover = common.HexToAddress("0x0000000000000000000000000000000000000001")
+			prover = encoding.OracleProverAddress
 		}
 		circuitsIdx = uint16(int(zkProof[64]))
 		evidence.Proof = zkProof[0:64]

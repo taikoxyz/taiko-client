@@ -149,8 +149,16 @@ func NeedNewProof(
 	}
 
 	fc, err := cli.TaikoL1.GetForkChoice(nil, id, parent.Hash(), uint32(parent.GasUsed))
-	if err != nil && !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
-		return false, encoding.TryParsingCustomError(err)
+	if err != nil {
+		if !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
+			return false, encoding.TryParsingCustomError(err)
+		}
+
+		return true, nil
+	}
+
+	if fc.Prover == encoding.OracleProverAddress || fc.Prover == encoding.SystemProverAddress {
+		return true, nil
 	}
 
 	if proverAddress == fc.Prover {
@@ -158,7 +166,14 @@ func NeedNewProof(
 		return false, nil
 	}
 
-	return true, nil
+	log.Info(
+		"📬 Block's proof has already been submitted by another prover",
+		"blockID", id,
+		"prover", fc.Prover,
+		"provenAt", fc.ProvenAt,
+	)
+
+	return false, nil
 }
 
 // SetHead makes a `debug_setHead` RPC call to set the chain's head, should only be used

@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -418,11 +419,11 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 // and the proof is not the oracle proof address.
 func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1ClientBlockProven) error {
 	metrics.ProverReceivedProvenBlockGauge.Update(event.Id.Int64())
-	// if this proof is submitted by an oracle prover or a system prover, dont cancel proof.
+	// if this proof is submitted by an oracle prover or a system prover, don't cancel proof.
 	if event.Prover == p.oracleProverAddress ||
 		event.Prover == p.systemProverAddress ||
-		event.Prover == common.HexToAddress("0x0000000000000000000000000000000000000000") ||
-		event.Prover == common.HexToAddress("0x0000000000000000000000000000000000000001") {
+		event.Prover == encoding.SystemProverAddress ||
+		event.Prover == encoding.OracleProverAddress {
 		return nil
 	}
 
