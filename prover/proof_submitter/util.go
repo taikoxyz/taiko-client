@@ -28,8 +28,7 @@ var (
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
 	if strings.HasPrefix(err.Error(), "L1_NOT_SPECIAL_PROVER") ||
-		!strings.HasPrefix(err.Error(), "L1_") ||
-		errors.Is(err, errNeedWaiting) {
+		!strings.HasPrefix(err.Error(), "L1_") {
 		return true
 	}
 
@@ -72,7 +71,11 @@ func sendTxWithBackoff(
 	expectedReward uint64,
 	sendTxFunc func() (*types.Transaction, error),
 ) error {
-	var isUnretryableError bool
+	var (
+		isUnretryableError bool
+		proposedTime       = time.Unix(int64(proposedAt), 0)
+	)
+
 	if err := backoff.Retry(func() error {
 		if ctx.Err() != nil {
 			return nil
@@ -91,21 +94,34 @@ func sendTxWithBackoff(
 			}
 
 			if needNewProof {
-				proofTime := uint64(time.Now().Unix()) - (proposedAt)
-				reward, err := cli.TaikoL1.GetProofReward(nil, proofTime)
+				stateVar, err := cli.TaikoL1.GetStateVariables(nil)
 				if err != nil {
-					log.Warn("Failed to get proof reward", "blockID", blockID, "proofTime", proofTime, "error", err)
+					log.Warn("Failed to get protocol state variables", "blockID", blockID, "error", err)
 					return err
 				}
 
+				targetDelay := stateVar.ProofTimeTarget * 4
+				if stateVar.BlockFee != 0 {
+					targetDelay = expectedReward / stateVar.BlockFee * stateVar.ProofTimeTarget
+					if targetDelay < stateVar.ProofTimeTarget/4 {
+						targetDelay = stateVar.ProofTimeTarget / 4
+					} else if targetDelay > stateVar.ProofTimeTarget*4 {
+						targetDelay = stateVar.ProofTimeTarget * 4
+					}
+				}
+
 				log.Info(
-					"Current proof reward",
-					"currentReward", reward,
+					"Target delay",
+					"blockID", blockID,
+					"delay", targetDelay,
 					"expectedReward", expectedReward,
-					"needWaiting", reward < expectedReward,
+					"blockFee", stateVar.BlockFee,
+					"proofTimeTarget", stateVar.ProofTimeTarget,
+					"proposedTime", proposedTime,
+					"timeToWait", time.Until(proposedTime.Add(time.Duration(targetDelay)*time.Second)),
 				)
 
-				if reward < expectedReward {
+				if time.Now().Before(proposedTime.Add(time.Duration(targetDelay) * time.Second)) {
 					return errNeedWaiting
 				}
 			}

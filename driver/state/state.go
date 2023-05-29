@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -167,17 +168,11 @@ func (s *State) startSubscriptions(ctx context.Context) {
 			case e := <-s.blockProposedCh:
 				s.setHeadBlockID(e.Id)
 			case e := <-s.blockProvenCh:
-				if e.BlockHash != s.BlockDeadendHash {
-					log.Info("✅ Valid block proven", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
-				} else {
-					log.Info("❎ Invalid block proven", "blockID", e.Id, "prover", e.Prover)
+				if e.Prover != encoding.SystemProverAddress && e.Prover != encoding.OracleProverAddress {
+					log.Info("✅ Block proven", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
 				}
 			case e := <-s.blockVerifiedCh:
-				if e.BlockHash != s.BlockDeadendHash {
-					log.Info("📈 Valid block verified", "blockID", e.Id, "hash", common.Hash(e.BlockHash))
-				} else {
-					log.Info("🗑 Invalid block verified", "blockID", e.Id)
-				}
+				log.Info("📈 Block verified", "blockID", e.Id, "hash", common.Hash(e.BlockHash))
 			case e := <-s.crossChainSynced:
 				// Verify the protocol synced block, check if it exists in
 				// L2 execution engine.
