@@ -373,5 +373,13 @@ func (c *Client) CheckL1Reorg(ctx context.Context, blockID *big.Int) (bool, *typ
 		break
 	}
 
+	log.Debug(
+		"Check L1 reorg",
+		"reorged", reorged,
+		"l1CurrentToResetNumber", l1CurrentToReset.Number,
+		"l1CurrentToResetHash", l1CurrentToReset.Hash(),
+		"blockIDToReset", blockIDToReset,
+	)
+
 	return reorged, l1CurrentToReset, blockIDToReset, nil
 }

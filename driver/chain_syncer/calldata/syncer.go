@@ -117,14 +117,6 @@ func (s *Syncer) onBlockProposed(
 			return fmt.Errorf("failed to check whether L1 chain has been reorged: %w", err)
 		}
 
-		log.Debug(
-			"Check L1 reorg",
-			"reorged", reorged,
-			"l1CurrentToResetNumber", l1CurrentToReset.Number,
-			"l1CurrentToResetHash", l1CurrentToReset.Hash(),
-			"lastInsertedBlockIDToReset", lastInsertedBlockIDToReset,
-		)
-
 		if reorged {
 			log.Info(
 				"Reset L1Current cursor due to L1 reorg",
