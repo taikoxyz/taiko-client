@@ -101,43 +101,38 @@ func assembleBlockProvenIteratorCallback(
 		ctx context.Context,
 		start, end *types.Header,
 		updateCurrentFunc chainIterator.UpdateCurrentFunc,
-		onReorgFunc chainIterator.OnReorgFunc,
 		endFunc chainIterator.EndIterFunc,
-	) (bool, error) {
+	) error {
 		endHeight := end.Number.Uint64()
 		iter, err := taikoL1Client.FilterBlockProven(
 			&bind.FilterOpts{Start: start.Number.Uint64(), End: &endHeight, Context: ctx},
 			filterQuery,
 		)
 		if err != nil {
-			return false, err
+			return err
 		}
 		defer iter.Close()
 
 		for iter.Next() {
 			event := iter.Event
 
-			if event.Raw.Removed {
-				return true, onReorgFunc()
-			}
-
 			if err := callback(ctx, event, eventIter.end); err != nil {
-				return false, err
+				return err
 			}
 
 			if eventIter.isEnd {
 				endFunc()
-				return false, nil
+				return nil
 			}
 
 			current, err := client.HeaderByHash(ctx, event.Raw.BlockHash)
 			if err != nil {
-				return false, err
+				return err
 			}
 
 			updateCurrentFunc(current)
 		}
 
-		return false, nil
+		return nil
 	}
 }

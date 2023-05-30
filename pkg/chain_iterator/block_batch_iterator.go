@@ -29,9 +29,8 @@ type OnBlocksFunc func(
 	ctx context.Context,
 	start, end *types.Header,
 	updateCurrentFunc UpdateCurrentFunc,
-	onReorgFunc OnReorgFunc,
 	endIterFunc EndIterFunc,
-) (bool, error)
+) error
 
 // UpdateCurrentFunc updates the iterator.current cursor in the iterator.
 type UpdateCurrentFunc func(*types.Header)
@@ -56,7 +55,6 @@ type BlockBatchIterator struct {
 	isEnd              bool
 	reverse            bool
 	reorgRewindDepth   uint64
-	onReorg            OnReorgFunc
 }
 
 // BlockBatchIteratorConfig represents the configs of a block batch iterator.
@@ -123,12 +121,6 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 		onBlocks:         cfg.OnBlocks,
 		reverse:          cfg.Reverse,
 		reorgRewindDepth: reorgRewindDepth,
-	}
-
-	if cfg.OnReorg != nil {
-		iterator.onReorg = cfg.OnReorg
-	} else {
-		iterator.onReorg = iterator.rewindOnReorgDetected
 	}
 
 	if cfg.Reverse {
@@ -227,15 +219,14 @@ func (i *BlockBatchIterator) iter() (err error) {
 		return err
 	}
 
-	reorged, err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent, i.onReorg, i.end)
-	if err != nil {
+	if err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent, i.end); err != nil {
 		return err
 	}
 
 	// if we reorged, we want to skip checking if we are at the end, and also skip updating i.current
-	if reorged {
-		return nil
-	}
+	// if reorged {
+	// 	return nil
+	// }
 
 	if i.isEnd {
 		return io.EOF
@@ -280,14 +271,13 @@ func (i *BlockBatchIterator) reverseIter() (err error) {
 		return err
 	}
 
-	reorged, err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.onReorg, i.end)
-	if err != nil {
+	if err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.end); err != nil {
 		return err
 	}
 
-	if reorged {
-		return nil
-	}
+	// if reorged {
+	// 	return nil
+	// }
 
 	i.current = startHeader
 

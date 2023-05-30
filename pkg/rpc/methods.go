@@ -129,6 +129,8 @@ func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, erro
 		}
 	}
 
+	log.Info("Latest L2 known L1 header", "height", header.Number, "hash", header.Hash())
+
 	return header, nil
 }
 
