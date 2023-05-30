@@ -342,6 +342,12 @@ func (p *Prover) onBlockProposed(
 			}
 		}
 
+		// Check if the current prover has seen this block ID before, if so, there was probably
+		// a L1 reorg, we need to cancel that reorged block's proof generation task.
+		if p.currentBlocksBeingProven[event.Meta.Id] != nil {
+			p.cancelProof(ctx, event.Meta.Id)
+		}
+
 		ctx, cancelCtx := context.WithCancel(ctx)
 		p.currentBlocksBeingProvenMutex.Lock()
 		p.currentBlocksBeingProven[event.Id.Uint64()] = cancelFunc(func() {
