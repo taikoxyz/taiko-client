@@ -254,7 +254,15 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return s.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
 	}
 
-	if err := sendTxWithBackoff(ctx, s.rpc, blockID, block.Header().Time, s.expectedReward, sendTx); err != nil {
+	if err := sendTxWithBackoff(
+		ctx,
+		s.rpc,
+		blockID,
+		block.Header().Time,
+		s.expectedReward,
+		proofWithHeader.Meta,
+		sendTx,
+	); err != nil {
 		if errors.Is(err, errUnretryable) {
 			return nil
 		}

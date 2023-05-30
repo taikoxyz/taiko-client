@@ -27,28 +27,38 @@ func (s *ProofSubmitterTestSuite) TestGetProveBlocksTxOpts() {
 }
 
 func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
-	err := sendTxWithBackoff(context.Background(), s.RpcClient, common.Big1, 0, 0, func() (*types.Transaction, error) {
-		return nil, errors.New("L1_TEST")
-	})
+	s.NotNil(sendTxWithBackoff(
+		context.Background(),
+		s.RpcClient,
+		common.Big1,
+		0,
+		0,
+		nil,
+		func() (*types.Transaction, error) {
+			return nil, errors.New("L1_TEST")
+		}))
 
-	s.NotNil(err)
-
-	err = sendTxWithBackoff(context.Background(), s.RpcClient, common.Big1, 0, 0, func() (*types.Transaction, error) {
-		height, err := s.RpcClient.L1.BlockNumber(context.Background())
-		s.Nil(err)
-
-		var block *types.Block
-		for {
-			block, err = s.RpcClient.L1.BlockByNumber(context.Background(), new(big.Int).SetUint64(height))
+	s.Nil(sendTxWithBackoff(
+		context.Background(),
+		s.RpcClient,
+		common.Big1,
+		0,
+		0,
+		nil,
+		func() (*types.Transaction, error) {
+			height, err := s.RpcClient.L1.BlockNumber(context.Background())
 			s.Nil(err)
-			if block.Transactions().Len() != 0 {
-				break
+
+			var block *types.Block
+			for {
+				block, err = s.RpcClient.L1.BlockByNumber(context.Background(), new(big.Int).SetUint64(height))
+				s.Nil(err)
+				if block.Transactions().Len() != 0 {
+					break
+				}
+				height -= 1
 			}
-			height -= 1
-		}
 
-		return block.Transactions()[0], nil
-	})
-
-	s.Nil(err)
+			return block.Transactions()[0], nil
+		}))
 }
