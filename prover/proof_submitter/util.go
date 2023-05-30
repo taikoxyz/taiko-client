@@ -149,6 +149,7 @@ func sendTxWithBackoff(
 					return errNeedWaiting
 				}
 			} else {
+				log.Info("Proof was submitted another prover, skip the current proof submission", "blockID", blockID)
 				return nil
 			}
 		}
