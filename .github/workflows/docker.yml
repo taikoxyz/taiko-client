@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [main,remove-event-removed-checks]
+    branches: [main]
     tags:
       - "v*"
 
