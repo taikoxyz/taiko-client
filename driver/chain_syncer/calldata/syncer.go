@@ -107,29 +107,39 @@ func (s *Syncer) onBlockProposed(
 		return nil
 	}
 
-	// Check whteher we need to reorg the L2 chain at first.
-	reorged, l1CurrentToReset, lastInsertedBlockIDToReset, err := s.rpc.CheckL1Reorg(
-		ctx,
-		new(big.Int).Sub(event.Id, common.Big1),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to check whether L1 chain was reorged: %w", err)
-	}
-
-	if reorged {
-		log.Info(
-			"Reset L1Current cursor due to reorg",
-			"l1CurrentHeightOld", s.state.GetL1Current().Number,
-			"l1CurrentHashOld", s.state.GetL1Current().Hash(),
-			"l1CurrentHeightNew", l1CurrentToReset.Number,
-			"l1CurrentHashNew", l1CurrentToReset.Hash(),
-			"lastInsertedBlockIDOld", s.lastInsertedBlockID,
-			"lastInsertedBlockIDNew", lastInsertedBlockIDToReset,
+	if !s.progressTracker.Triggered() {
+		// Check whteher we need to reorg the L2 chain at first.
+		reorged, l1CurrentToReset, lastInsertedBlockIDToReset, err := s.rpc.CheckL1Reorg(
+			ctx,
+			new(big.Int).Sub(event.Id, common.Big1),
 		)
-		s.state.SetL1Current(l1CurrentToReset)
-		s.lastInsertedBlockID = lastInsertedBlockIDToReset
+		if err != nil {
+			return fmt.Errorf("failed to check whether L1 chain has been reorged: %w", err)
+		}
 
-		return fmt.Errorf("reorg detected, reset l1Current cursor to %d", l1CurrentToReset.Number)
+		log.Debug(
+			"Check L1 reorg",
+			"reorged", reorged,
+			"l1CurrentToResetNumber", l1CurrentToReset.Number,
+			"l1CurrentToResetHash", l1CurrentToReset.Hash(),
+			"lastInsertedBlockIDToReset", lastInsertedBlockIDToReset,
+		)
+
+		if reorged {
+			log.Info(
+				"Reset L1Current cursor due to L1 reorg",
+				"l1CurrentHeightOld", s.state.GetL1Current().Number,
+				"l1CurrentHashOld", s.state.GetL1Current().Hash(),
+				"l1CurrentHeightNew", l1CurrentToReset.Number,
+				"l1CurrentHashNew", l1CurrentToReset.Hash(),
+				"lastInsertedBlockIDOld", s.lastInsertedBlockID,
+				"lastInsertedBlockIDNew", lastInsertedBlockIDToReset,
+			)
+			s.state.SetL1Current(l1CurrentToReset)
+			s.lastInsertedBlockID = lastInsertedBlockIDToReset
+
+			return fmt.Errorf("reorg detected, reset l1Current cursor to %d", l1CurrentToReset.Number)
+		}
 	}
 
 	// Ignore those already inserted blocks.
@@ -146,7 +156,10 @@ func (s *Syncer) onBlockProposed(
 	)
 
 	// Fetch the L2 parent block.
-	var parent *types.Header
+	var (
+		parent *types.Header
+		err    error
+	)
 	if s.progressTracker.Triggered() {
 		// Already synced through beacon sync, just skip this event.
 		if event.Id.Cmp(s.progressTracker.LastSyncedVerifiedBlockID()) <= 0 {
