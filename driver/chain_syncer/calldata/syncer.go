@@ -103,6 +103,10 @@ func (s *Syncer) onBlockProposed(
 	event *bindings.TaikoL1ClientBlockProposed,
 	endIter eventIterator.EndBlockProposedEventIterFunc,
 ) error {
+	if event.Id.Cmp(common.Big0) == 0 {
+		return nil
+	}
+
 	// Check whteher we need to reorg the L2 chain at first.
 	reorged, l1CurrentToReset, lastInsertedBlockIDToReset, err := s.rpc.CheckL1Reorg(
 		ctx,
@@ -129,7 +133,7 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	// Ignore those already inserted blocks.
-	if event.Id.Cmp(common.Big0) == 0 || (s.lastInsertedBlockID != nil && event.Id.Cmp(s.lastInsertedBlockID) <= 0) {
+	if s.lastInsertedBlockID != nil && event.Id.Cmp(s.lastInsertedBlockID) <= 0 {
 		return nil
 	}
 
