@@ -16,7 +16,6 @@ import (
 
 const (
 	DefaultBlocksReadPerEpoch = 1000
-	DefaultReorgRewindDepth   = 20
 )
 
 var (
@@ -37,9 +36,6 @@ type UpdateCurrentFunc func(*types.Header)
 
 // EndIterFunc ends the current iteration.
 type EndIterFunc func()
-
-// OnReorgFunc handles a reorganization from the source chain.
-type OnReorgFunc func() error
 
 // BlockBatchIterator iterates the blocks in batches between the given start and end heights,
 // with the awareness of reorganization.
@@ -66,7 +62,6 @@ type BlockBatchIteratorConfig struct {
 	OnBlocks              OnBlocksFunc
 	Reverse               bool
 	ReorgRewindDepth      *uint64
-	OnReorg               OnReorgFunc
 }
 
 // NewBlockBatchIterator creates a new block batch iterator instance.
@@ -106,21 +101,13 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 		}
 	}
 
-	var reorgRewindDepth uint64
-	if cfg.ReorgRewindDepth != nil {
-		reorgRewindDepth = *cfg.ReorgRewindDepth
-	} else {
-		reorgRewindDepth = DefaultReorgRewindDepth
-	}
-
 	iterator := &BlockBatchIterator{
-		ctx:              ctx,
-		client:           cfg.Client,
-		chainID:          chainID,
-		startHeight:      cfg.StartHeight.Uint64(),
-		onBlocks:         cfg.OnBlocks,
-		reverse:          cfg.Reverse,
-		reorgRewindDepth: reorgRewindDepth,
+		ctx:         ctx,
+		client:      cfg.Client,
+		chainID:     chainID,
+		startHeight: cfg.StartHeight.Uint64(),
+		onBlocks:    cfg.OnBlocks,
+		reverse:     cfg.Reverse,
 	}
 
 	if cfg.Reverse {
@@ -223,11 +210,6 @@ func (i *BlockBatchIterator) iter() (err error) {
 		return err
 	}
 
-	// if we reorged, we want to skip checking if we are at the end, and also skip updating i.current
-	// if reorged {
-	// 	return nil
-	// }
-
 	if i.isEnd {
 		return io.EOF
 	}
@@ -274,10 +256,6 @@ func (i *BlockBatchIterator) reverseIter() (err error) {
 	if err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.end); err != nil {
 		return err
 	}
-
-	// if reorged {
-	// 	return nil
-	// }
 
 	i.current = startHeader
 
