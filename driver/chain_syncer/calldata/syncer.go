@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
@@ -105,76 +104,28 @@ func (s *Syncer) onBlockProposed(
 	endIter eventIterator.EndBlockProposedEventIterFunc,
 ) error {
 	// Check whteher we need to reorg the L2 chain at first.
-	if event.Id.Cmp(common.Big0) > 1 {
-		var (
-			blockID                    = event.Id
-			needL1CurrentReset         bool
-			l1CurrentToReset           *types.Header
-			lastInsertedBlockIDToReset *big.Int
+	reorged, l1CurrentToReset, lastInsertedBlockIDToReset, err := s.rpc.CheckL1Reorg(
+		ctx,
+		new(big.Int).Sub(event.Id, common.Big1),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to check whether L1 chain was reorged: %w", err)
+	}
+
+	if reorged {
+		log.Info(
+			"Reset L1Current cursor due to reorg",
+			"l1CurrentHeightOld", s.state.GetL1Current().Number,
+			"l1CurrentHashOld", s.state.GetL1Current().Hash(),
+			"l1CurrentHeightNew", l1CurrentToReset.Number,
+			"l1CurrentHashNew", l1CurrentToReset.Hash(),
+			"lastInsertedBlockIDOld", s.lastInsertedBlockID,
+			"lastInsertedBlockIDNew", lastInsertedBlockIDToReset,
 		)
-		for {
-			if blockID.Cmp(common.Big0) == 0 {
-				stateVars, err := s.rpc.TaikoL1.GetStateVariables(nil)
-				if err != nil {
-					return err
-				}
+		s.state.SetL1Current(l1CurrentToReset)
+		s.lastInsertedBlockID = lastInsertedBlockIDToReset
 
-				if l1CurrentToReset, err = s.rpc.L1.HeaderByNumber(
-					ctx,
-					new(big.Int).SetUint64(stateVars.GenesisHeight),
-				); err != nil {
-					return err
-				}
-
-				break
-			}
-
-			l1Origin, err := s.rpc.L2.L1OriginByID(ctx, blockID)
-			if err != nil {
-				return err
-			}
-
-			l1Header, err := s.rpc.L1.HeaderByNumber(ctx, l1Origin.L1BlockHeight)
-			if err != nil {
-				if errors.Is(err, ethereum.NotFound) {
-					continue
-				}
-				return fmt.Errorf("failed to fetch L1 header (%d): %w", l1Origin.L1BlockHeight, err)
-			}
-
-			if l1Header.Hash() != l1Origin.L1BlockHash {
-				log.Info(
-					"Reorg detected",
-					"blockID", blockID,
-					"l1Height", l1Origin.L1BlockHeight,
-					"l1HashOld", l1Origin.L1BlockHash,
-					"l1HashNew", l1Header.Hash(),
-				)
-				needL1CurrentReset = true
-				blockID = new(big.Int).Sub(blockID, common.Big1)
-				continue
-			}
-
-			l1CurrentToReset = l1Header
-			lastInsertedBlockIDToReset = l1Origin.BlockID
-			break
-		}
-
-		if needL1CurrentReset {
-			log.Info(
-				"Reset L1Current cursor due to reorg",
-				"l1CurrentHeightOld", s.state.GetL1Current().Number,
-				"l1CurrentHashOld", s.state.GetL1Current().Hash(),
-				"l1CurrentHeightNew", l1CurrentToReset.Number,
-				"l1CurrentHashNew", l1CurrentToReset.Hash(),
-				"lastInsertedBlockIDOld", s.lastInsertedBlockID,
-				"lastInsertedBlockIDNew", lastInsertedBlockIDToReset,
-			)
-			s.state.SetL1Current(l1CurrentToReset)
-			s.lastInsertedBlockID = lastInsertedBlockIDToReset
-
-			return fmt.Errorf("reorg detected, reset l1Current cursor to %d", l1CurrentToReset.Number)
-		}
+		return fmt.Errorf("reorg detected, reset l1Current cursor to %d", l1CurrentToReset.Number)
 	}
 
 	// Ignore those already inserted blocks.
@@ -191,10 +142,7 @@ func (s *Syncer) onBlockProposed(
 	)
 
 	// Fetch the L2 parent block.
-	var (
-		parent *types.Header
-		err    error
-	)
+	var parent *types.Header
 	if s.progressTracker.Triggered() {
 		// Already synced through beacon sync, just skip this event.
 		if event.Id.Cmp(s.progressTracker.LastSyncedVerifiedBlockID()) <= 0 {
