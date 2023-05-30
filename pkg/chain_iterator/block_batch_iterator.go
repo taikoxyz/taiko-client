@@ -16,7 +16,6 @@ import (
 
 const (
 	DefaultBlocksReadPerEpoch = 1000
-	DefaultReorgRewindDepth   = 20
 )
 
 var (
@@ -29,18 +28,14 @@ type OnBlocksFunc func(
 	ctx context.Context,
 	start, end *types.Header,
 	updateCurrentFunc UpdateCurrentFunc,
-	onReorgFunc OnReorgFunc,
 	endIterFunc EndIterFunc,
-) (bool, error)
+) error
 
 // UpdateCurrentFunc updates the iterator.current cursor in the iterator.
 type UpdateCurrentFunc func(*types.Header)
 
 // EndIterFunc ends the current iteration.
 type EndIterFunc func()
-
-// OnReorgFunc handles a reorganization from the source chain.
-type OnReorgFunc func() error
 
 // BlockBatchIterator iterates the blocks in batches between the given start and end heights,
 // with the awareness of reorganization.
@@ -56,7 +51,6 @@ type BlockBatchIterator struct {
 	isEnd              bool
 	reverse            bool
 	reorgRewindDepth   uint64
-	onReorg            OnReorgFunc
 }
 
 // BlockBatchIteratorConfig represents the configs of a block batch iterator.
@@ -68,7 +62,6 @@ type BlockBatchIteratorConfig struct {
 	OnBlocks              OnBlocksFunc
 	Reverse               bool
 	ReorgRewindDepth      *uint64
-	OnReorg               OnReorgFunc
 }
 
 // NewBlockBatchIterator creates a new block batch iterator instance.
@@ -108,27 +101,13 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 		}
 	}
 
-	var reorgRewindDepth uint64
-	if cfg.ReorgRewindDepth != nil {
-		reorgRewindDepth = *cfg.ReorgRewindDepth
-	} else {
-		reorgRewindDepth = DefaultReorgRewindDepth
-	}
-
 	iterator := &BlockBatchIterator{
-		ctx:              ctx,
-		client:           cfg.Client,
-		chainID:          chainID,
-		startHeight:      cfg.StartHeight.Uint64(),
-		onBlocks:         cfg.OnBlocks,
-		reverse:          cfg.Reverse,
-		reorgRewindDepth: reorgRewindDepth,
-	}
-
-	if cfg.OnReorg != nil {
-		iterator.onReorg = cfg.OnReorg
-	} else {
-		iterator.onReorg = iterator.rewindOnReorgDetected
+		ctx:         ctx,
+		client:      cfg.Client,
+		chainID:     chainID,
+		startHeight: cfg.StartHeight.Uint64(),
+		onBlocks:    cfg.OnBlocks,
+		reverse:     cfg.Reverse,
 	}
 
 	if cfg.Reverse {
@@ -227,14 +206,8 @@ func (i *BlockBatchIterator) iter() (err error) {
 		return err
 	}
 
-	reorged, err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent, i.onReorg, i.end)
-	if err != nil {
+	if err := i.onBlocks(i.ctx, i.current, endHeader, i.updateCurrent, i.end); err != nil {
 		return err
-	}
-
-	// if we reorged, we want to skip checking if we are at the end, and also skip updating i.current
-	if reorged {
-		return nil
 	}
 
 	if i.isEnd {
@@ -280,13 +253,8 @@ func (i *BlockBatchIterator) reverseIter() (err error) {
 		return err
 	}
 
-	reorged, err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.onReorg, i.end)
-	if err != nil {
+	if err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.end); err != nil {
 		return err
-	}
-
-	if reorged {
-		return nil
 	}
 
 	i.current = startHeader

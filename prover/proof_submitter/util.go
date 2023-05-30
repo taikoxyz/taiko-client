@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -27,8 +28,7 @@ var (
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
-	if strings.HasPrefix(err.Error(), "L1_NOT_SPECIAL_PROVER") ||
-		!strings.HasPrefix(err.Error(), "L1_") {
+	if !strings.HasPrefix(err.Error(), "L1_") {
 		return true
 	}
 
@@ -69,6 +69,7 @@ func sendTxWithBackoff(
 	blockID *big.Int,
 	proposedAt uint64,
 	expectedReward uint64,
+	meta *bindings.TaikoDataBlockMetadata,
 	sendTxFunc func() (*types.Transaction, error),
 ) error {
 	var (
@@ -78,6 +79,29 @@ func sendTxWithBackoff(
 
 	if err := backoff.Retry(func() error {
 		if ctx.Err() != nil {
+			return nil
+		}
+
+		// Check if the corresponding L1 block is still in the canonical chain.
+		l1Header, err := cli.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(meta.L1Height))
+		if err != nil {
+			log.Warn(
+				"Failed to fetch L1 block",
+				"blockID", blockID,
+				"l1Height", meta.L1Height,
+				"l1Hash", common.BytesToHash(meta.L1Hash[:]),
+				"error", err,
+			)
+			return err
+		}
+		if l1Header.Hash() != meta.L1Hash {
+			log.Warn(
+				"Reorg detected, skip the current proof submission",
+				"blockID", blockID,
+				"l1Height", meta.L1Height,
+				"l1HashOld", common.BytesToHash(meta.L1Hash[:]),
+				"l1HashNew", l1Header.Hash(),
+			)
 			return nil
 		}
 
@@ -124,6 +148,9 @@ func sendTxWithBackoff(
 				if time.Now().Before(proposedTime.Add(time.Duration(targetDelay) * time.Second)) {
 					return errNeedWaiting
 				}
+			} else {
+				log.Info("Proof was submitted another prover, skip the current proof submission", "blockID", blockID)
+				return nil
 			}
 		}
 

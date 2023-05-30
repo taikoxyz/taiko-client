@@ -10,7 +10,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -101,50 +100,6 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 	)
 	s.Nil(rpcErr)
 	s.Nil(payloadErr)
-}
-
-func (s *CalldataSyncerTestSuite) TestHandleReorgToGenesis() {
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
-
-	l2Head1, err := s.s.rpc.L2.BlockByNumber(context.Background(), nil)
-	s.Nil(err)
-	s.Greater(l2Head1.NumberU64(), uint64(0))
-	s.NotZero(s.s.lastInsertedBlockID.Uint64())
-	s.s.lastInsertedBlockID = common.Big0 // let the chain reorg to genesis
-
-	s.Nil(s.s.handleReorg(context.Background(), &bindings.TaikoL1ClientBlockProposed{
-		Id:  l2Head1.Number(),
-		Raw: types.Log{Removed: true},
-	}))
-
-	l2Head2, err := s.s.rpc.L2.BlockByNumber(context.Background(), nil)
-	s.Nil(err)
-	s.Equal(uint64(0), l2Head2.NumberU64())
-}
-
-func (s *CalldataSyncerTestSuite) TestHandleReorgToNoneGenesis() {
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
-
-	l2Head1, err := s.s.rpc.L2.BlockByNumber(context.Background(), nil)
-	s.Nil(err)
-	s.Greater(l2Head1.NumberU64(), uint64(0))
-	s.NotZero(s.s.lastInsertedBlockID.Uint64())
-	s.s.lastInsertedBlockID = common.Big1 // let the chain reorg to height 1
-
-	s.Nil(s.s.handleReorg(context.Background(), &bindings.TaikoL1ClientBlockProposed{
-		Id:  l2Head1.Number(),
-		Raw: types.Log{Removed: true},
-	}))
-
-	l2Head2, err := s.s.rpc.L2.BlockByNumber(context.Background(), nil)
-	s.Nil(err)
-	s.Equal(uint64(1), l2Head2.NumberU64())
-
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
-	l2Head3, err := s.s.rpc.L2.BlockByNumber(context.Background(), nil)
-	s.Nil(err)
-	s.Greater(l2Head3.NumberU64(), l2Head2.NumberU64())
-	s.Greater(s.s.lastInsertedBlockID.Uint64(), uint64(1))
 }
 
 func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {

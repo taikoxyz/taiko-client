@@ -304,6 +304,30 @@ func (p *Prover) onBlockProposed(
 		end()
 		return nil
 	}
+
+	// Check whteher the L1 chain has been reorged.
+	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1Reorg(
+		ctx,
+		new(big.Int).Sub(event.Id, common.Big1),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to check whether L1 chain was reorged: %w", err)
+	}
+
+	if reorged {
+		log.Info(
+			"Reset L1Current cursor due to reorg",
+			"l1CurrentHeightOld", p.l1Current,
+			"l1CurrentHeightNew", l1CurrentToReset.Number,
+			"lastHandledBlockIDOld", p.lastHandledBlockID,
+			"lastHandledBlockIDNew", lastHandledBlockIDToReset,
+		)
+		p.l1Current = l1CurrentToReset.Number.Uint64()
+		p.lastHandledBlockID = lastHandledBlockIDToReset.Uint64()
+
+		return fmt.Errorf("reorg detected, reset l1Current cursor to %d", l1CurrentToReset.Number)
+	}
+
 	if event.Id.Uint64() <= p.lastHandledBlockID {
 		return nil
 	}
@@ -340,6 +364,12 @@ func (p *Prover) onBlockProposed(
 			if !needNewProof {
 				return nil
 			}
+		}
+
+		// Check if the current prover has seen this block ID before, there was probably
+		// a L1 reorg, we need to cancel that reorged block's proof generation task at first.
+		if p.currentBlocksBeingProven[event.Meta.Id] != nil {
+			p.cancelProof(ctx, event.Meta.Id)
 		}
 
 		ctx, cancelCtx := context.WithCancel(ctx)

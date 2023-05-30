@@ -129,6 +129,8 @@ func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, erro
 		}
 	}
 
+	log.Info("Latest L2 known L1 header", "height", header.Number, "hash", header.Hash())
+
 	return header, nil
 }
 
@@ -313,4 +315,71 @@ func (c *Client) GetStorageRoot(
 	}
 
 	return proof.StorageHash, nil
+}
+
+// CheckL1Reorg checks whether the L1 chain has been reorged, if so, returns the l1Current cursor and L2 blockID
+// that need to reset to.
+func (c *Client) CheckL1Reorg(ctx context.Context, blockID *big.Int) (bool, *types.Header, *big.Int, error) {
+	var (
+		reorged          bool
+		l1CurrentToReset *types.Header
+		blockIDToReset   *big.Int
+	)
+	for {
+		if blockID.Cmp(common.Big0) == 0 {
+			stateVars, err := c.TaikoL1.GetStateVariables(nil)
+			if err != nil {
+				return false, nil, nil, err
+			}
+
+			if l1CurrentToReset, err = c.L1.HeaderByNumber(
+				ctx,
+				new(big.Int).SetUint64(stateVars.GenesisHeight),
+			); err != nil {
+				return false, nil, nil, err
+			}
+
+			break
+		}
+
+		l1Origin, err := c.L2.L1OriginByID(ctx, blockID)
+		if err != nil {
+			return false, nil, nil, err
+		}
+
+		l1Header, err := c.L1.HeaderByNumber(ctx, l1Origin.L1BlockHeight)
+		if err != nil {
+			if errors.Is(err, ethereum.NotFound) {
+				continue
+			}
+			return false, nil, nil, fmt.Errorf("failed to fetch L1 header (%d): %w", l1Origin.L1BlockHeight, err)
+		}
+
+		if l1Header.Hash() != l1Origin.L1BlockHash {
+			log.Info(
+				"Reorg detected",
+				"blockID", blockID,
+				"l1Height", l1Origin.L1BlockHeight,
+				"l1HashOld", l1Origin.L1BlockHash,
+				"l1HashNew", l1Header.Hash(),
+			)
+			reorged = true
+			blockID = new(big.Int).Sub(blockID, common.Big1)
+			continue
+		}
+
+		l1CurrentToReset = l1Header
+		blockIDToReset = l1Origin.BlockID
+		break
+	}
+
+	log.Debug(
+		"Check L1 reorg",
+		"reorged", reorged,
+		"l1CurrentToResetNumber", l1CurrentToReset.Number,
+		"l1CurrentToResetHash", l1CurrentToReset.Hash(),
+		"blockIDToReset", blockIDToReset,
+	)
+
+	return reorged, l1CurrentToReset, blockIDToReset, nil
 }

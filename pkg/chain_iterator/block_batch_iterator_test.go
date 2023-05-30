@@ -33,12 +33,11 @@ func (s *BlockBatchIteratorTestSuite) TestIter() {
 			ctx context.Context,
 			start, end *types.Header,
 			updateCurrentFunc UpdateCurrentFunc,
-			onReorgFunc OnReorgFunc,
 			endIterFunc EndIterFunc,
-		) (bool, error) {
+		) error {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
 			lastEnd = end.Number
-			return false, nil
+			return nil
 		},
 	})
 
@@ -69,12 +68,11 @@ func (s *BlockBatchIteratorTestSuite) TestIterReverse() {
 			ctx context.Context,
 			start, end *types.Header,
 			updateCurrentFunc UpdateCurrentFunc,
-			onReorgFunc OnReorgFunc,
 			endIterFunc EndIterFunc,
-		) (bool, error) {
+		) error {
 			s.Equal(lastStart.Uint64(), end.Number.Uint64())
 			lastStart = start.Number
-			return false, nil
+			return nil
 		},
 	})
 
@@ -101,74 +99,18 @@ func (s *BlockBatchIteratorTestSuite) TestIterEndFunc() {
 			ctx context.Context,
 			start, end *types.Header,
 			updateCurrentFunc UpdateCurrentFunc,
-			onReorgFunc OnReorgFunc,
 			endIterFunc EndIterFunc,
-		) (bool, error) {
+		) error {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
 			lastEnd = end.Number
 			endIterFunc()
-			return false, nil
+			return nil
 		},
 	})
 
 	s.Nil(err)
 	s.Nil(iter.Iter())
 	s.Equal(lastEnd.Uint64(), maxBlocksReadPerEpoch)
-}
-
-func (s *BlockBatchIteratorTestSuite) TestIter_ReorgEncountered() {
-	var maxBlocksReadPerEpoch uint64 = 1
-	var reorgRewindDepth uint64 = 1
-	var rewindEveryNBlocks uint64 = 2
-	var lastBlockReorged bool = false
-
-	headHeight, err := s.RpcClient.L1.BlockNumber(context.Background())
-	s.Nil(err)
-	s.Greater(headHeight, uint64(0))
-
-	lastEnd := common.Big0
-
-	iter, err := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client:                s.RpcClient.L1,
-		MaxBlocksReadPerEpoch: &maxBlocksReadPerEpoch,
-		StartHeight:           common.Big0,
-		EndHeight:             new(big.Int).SetUint64(headHeight),
-		ReorgRewindDepth:      &reorgRewindDepth,
-		OnReorg: func() error {
-			if lastEnd.Uint64() < reorgRewindDepth {
-				lastEnd = common.Big0
-			} else {
-				lastEnd = new(big.Int).Sub(lastEnd, new(big.Int).SetUint64(reorgRewindDepth))
-			}
-			lastBlockReorged = true
-			return nil
-		},
-		OnBlocks: func(
-			ctx context.Context,
-			start, end *types.Header,
-			updateCurrentFunc UpdateCurrentFunc,
-			onReorgFunc OnReorgFunc,
-			endIterFunc EndIterFunc,
-		) (bool, error) {
-			// reorg every 2 blocks but not the first block
-			if lastEnd != common.Big0 && lastEnd.Uint64()%rewindEveryNBlocks == 0 {
-				return true, onReorgFunc()
-			}
-
-			if lastBlockReorged {
-				s.Equal(start.Number.Uint64(), lastEnd.Uint64()+reorgRewindDepth)
-			} else {
-				s.Equal(start.Number.Uint64(), lastEnd.Uint64())
-			}
-
-			lastEnd = end.Number
-			lastBlockReorged = false
-			return false, nil
-		},
-	})
-
-	s.Nil(err)
-	s.Nil(iter.Iter())
 }
 
 func TestBlockBatchIteratorTestSuite(t *testing.T) {
