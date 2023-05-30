@@ -342,8 +342,8 @@ func (p *Prover) onBlockProposed(
 			}
 		}
 
-		// Check if the current prover has seen this block ID before, if so, there was probably
-		// a L1 reorg, we need to cancel that reorged block's proof generation task.
+		// Check if the current prover has seen this block ID before, there was probably
+		// a L1 reorg, we need to cancel that reorged block's proof generation task at first.
 		if p.currentBlocksBeingProven[event.Meta.Id] != nil {
 			p.cancelProof(ctx, event.Meta.Id)
 		}
