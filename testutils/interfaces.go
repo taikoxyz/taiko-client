@@ -23,5 +23,6 @@ type Proposer interface {
 		meta *encoding.TaikoL1BlockMetadataInput,
 		txListBytes []byte,
 		txNum uint,
+		nonce *uint64,
 	) error
 }

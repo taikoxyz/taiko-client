@@ -31,7 +31,7 @@ func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(invalidTxListBytes))),
 		CacheTxListInfo: 0,
-	}, invalidTxListBytes, 1))
+	}, invalidTxListBytes, 1, nil))
 }
 
 func ProposeAndInsertEmptyBlocks(
@@ -65,7 +65,7 @@ func ProposeAndInsertEmptyBlocks(
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
 		CacheTxListInfo: 0,
-	}, encoded, 0))
+	}, encoded, 0, nil))
 
 	ProposeInvalidTxListBytes(s, proposer)
 
