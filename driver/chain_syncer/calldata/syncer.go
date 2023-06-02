@@ -308,7 +308,7 @@ func (s *Syncer) insertNewHead(
 	// Get withdrawals
 	withdrawals := make(types.Withdrawals, len(event.Meta.DepositsProcessed))
 	for i, d := range event.Meta.DepositsProcessed {
-		withdrawals[i] = &types.Withdrawal{Address: d.Recipient, Amount: d.Amount.Uint64()}
+		withdrawals[i] = &types.Withdrawal{Address: d.Recipient, Amount: d.Amount.Uint64(), Index: d.Id}
 	}
 
 	// Assemble a TaikoL2.anchor transaction
