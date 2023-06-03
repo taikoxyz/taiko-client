@@ -36,6 +36,7 @@ type Syncer struct {
 	txListValidator   *txListValidator.TxListValidator         // Transactions list validator
 	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
+	reorgDetectedFlag   bool
 }
 
 // NewSyncer creates a new syncer instance.
@@ -74,20 +75,26 @@ func NewSyncer(
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
 // L1 block heights, and then tries inserting them into L2 execution engine's block chain.
 func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
-	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
-		Client:               s.rpc.L1,
-		TaikoL1:              s.rpc.TaikoL1,
-		StartHeight:          s.state.GetL1Current().Number,
-		EndHeight:            l1End.Number,
-		FilterQuery:          nil,
-		OnBlockProposedEvent: s.onBlockProposed,
-	})
-	if err != nil {
-		return err
-	}
+	firstTry := true
+	for firstTry || s.reorgDetectedFlag {
+		s.reorgDetectedFlag = false
+		firstTry = false
 
-	if err := iter.Iter(); err != nil {
-		return err
+		iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
+			Client:               s.rpc.L1,
+			TaikoL1:              s.rpc.TaikoL1,
+			StartHeight:          s.state.GetL1Current().Number,
+			EndHeight:            l1End.Number,
+			FilterQuery:          nil,
+			OnBlockProposedEvent: s.onBlockProposed,
+		})
+		if err != nil {
+			return err
+		}
+
+		if err := iter.Iter(); err != nil {
+			return err
+		}
 	}
 
 	s.state.SetL1Current(l1End)
@@ -129,8 +136,10 @@ func (s *Syncer) onBlockProposed(
 			)
 			s.state.SetL1Current(l1CurrentToReset)
 			s.lastInsertedBlockID = lastInsertedBlockIDToReset
+			s.reorgDetectedFlag = true
+			endIter()
 
-			return fmt.Errorf("reorg detected, reset l1Current cursor to %d", l1CurrentToReset.Number)
+			return nil
 		}
 	}
 

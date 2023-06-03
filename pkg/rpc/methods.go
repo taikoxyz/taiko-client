@@ -339,6 +339,7 @@ func (c *Client) CheckL1Reorg(ctx context.Context, blockID *big.Int) (bool, *typ
 				return false, nil, nil, err
 			}
 
+			blockIDToReset = blockID
 			break
 		}
 
