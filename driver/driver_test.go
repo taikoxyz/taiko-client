@@ -110,6 +110,59 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	}
 }
 
+func (s *DriverTestSuite) TestCheckL1Reorg() {
+	var testnetL1SnapshotID string
+	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
+	s.NotEmpty(testnetL1SnapshotID)
+
+	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+
+	// Propose two L2 blocks
+	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+
+	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+	l2Head2, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
+	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
+
+	reorged, _, _, err := s.RpcClient.CheckL1Reorg(context.Background(), l2Head2.Number)
+	s.Nil(err)
+	s.False(reorged)
+
+	// Reorg back to l2Head1
+	var revertRes bool
+	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
+	s.True(revertRes)
+
+	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
+	s.Equal(l1Head3.Hash(), l1Head1.Hash())
+
+	// Propose two blocks in another fork
+	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+
+	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+
+	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head4))
+
+	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+
+	parent, err := s.d.rpc.L2.HeaderByHash(context.Background(), l2Head3.ParentHash)
+	s.Nil(err)
+	s.Equal(l2Head3.Number.Uint64(), l2Head2.Number.Uint64())
+	s.Equal(parent.ParentHash, l2Head1.Hash())
+}
+
 func (s *DriverTestSuite) TestDoSyncNoNewL2Blocks() {
 	s.Nil(s.d.doSync())
 }

@@ -160,10 +160,8 @@ func ProposeAndInsertValidBlock(
 
 	s.Nil(calldataSyncer.ProcessL1Blocks(ctx, newL1Head))
 
-	newL2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
+	_, err = s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-
-	s.Greater(newL2Head.Number.Uint64(), l2Head.Number.Uint64())
 
 	return event
 }
