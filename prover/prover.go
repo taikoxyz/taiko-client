@@ -44,6 +44,7 @@ type Prover struct {
 	latestVerifiedL1Height uint64
 	lastHandledBlockID     uint64
 	l1Current              uint64
+	reorgDetectedFlag      bool
 
 	// Proof submitters
 	validProofSubmitter proofSubmitter.ProofSubmitter
@@ -280,17 +281,27 @@ func (p *Prover) Close() {
 // proveOp performs a proving operation, find current unproven blocks, then
 // request generating proofs for them.
 func (p *Prover) proveOp() error {
-	iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
-		Client:               p.rpc.L1,
-		TaikoL1:              p.rpc.TaikoL1,
-		StartHeight:          new(big.Int).SetUint64(p.l1Current),
-		OnBlockProposedEvent: p.onBlockProposed,
-	})
-	if err != nil {
-		return err
+	firstTry := false
+	for firstTry || p.reorgDetectedFlag {
+		p.reorgDetectedFlag = false
+		firstTry = false
+
+		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
+			Client:               p.rpc.L1,
+			TaikoL1:              p.rpc.TaikoL1,
+			StartHeight:          new(big.Int).SetUint64(p.l1Current),
+			OnBlockProposedEvent: p.onBlockProposed,
+		})
+		if err != nil {
+			return err
+		}
+
+		if err := iter.Iter(); err != nil {
+			return err
+		}
 	}
 
-	return iter.Iter()
+	return nil
 }
 
 // onBlockProposed tries to prove that the newly proposed block is valid/invalid.
@@ -324,8 +335,9 @@ func (p *Prover) onBlockProposed(
 		)
 		p.l1Current = l1CurrentToReset.Number.Uint64()
 		p.lastHandledBlockID = lastHandledBlockIDToReset.Uint64()
+		p.reorgDetectedFlag = true
 
-		return fmt.Errorf("reorg detected, reset l1Current cursor to %d", l1CurrentToReset.Number)
+		return nil
 	}
 
 	if event.Id.Uint64() <= p.lastHandledBlockID {
