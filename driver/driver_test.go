@@ -152,7 +152,7 @@ func (s *DriverTestSuite) TestCheckL1Reorg() {
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head4)
+	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head4))
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
