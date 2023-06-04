@@ -281,7 +281,7 @@ func (p *Prover) Close() {
 // proveOp performs a proving operation, find current unproven blocks, then
 // request generating proofs for them.
 func (p *Prover) proveOp() error {
-	firstTry := false
+	firstTry := true
 	for firstTry || p.reorgDetectedFlag {
 		p.reorgDetectedFlag = false
 		firstTry = false
