@@ -25,6 +25,7 @@ type Config struct {
 	LocalAddresses             []common.Address
 	ProposeEmptyBlocksInterval *time.Duration
 	MinBlockGasLimit           uint64
+	MaxProposedTxListsPerEpoch uint64
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -83,5 +84,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		LocalAddresses:             localAddresses,
 		ProposeEmptyBlocksInterval: proposeEmptyBlocksInterval,
 		MinBlockGasLimit:           c.Uint64(flags.MinBlockGasLimit.Name),
+		MaxProposedTxListsPerEpoch: c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
 	}, nil
 }

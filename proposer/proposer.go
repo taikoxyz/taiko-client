@@ -47,6 +47,7 @@ type Proposer struct {
 	commitSlot                 uint64
 	locals                     []common.Address
 	minBlockGasLimit           *uint64
+	maxProposedTxListsPerEpoch uint64
 
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -79,6 +80,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.wg = sync.WaitGroup{}
 	p.locals = cfg.LocalAddresses
 	p.commitSlot = cfg.CommitSlot
+	p.maxProposedTxListsPerEpoch = cfg.MaxProposedTxListsPerEpoch
 	p.ctx = ctx
 
 	// RPC clients
@@ -226,6 +228,10 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	for i, txs := range txLists {
 		func(i int, txs types.Transactions) {
 			g.Go(func() error {
+				if i >= int(p.maxProposedTxListsPerEpoch) {
+					return nil
+				}
+
 				txListBytes, err := rlp.EncodeToBytes(txs)
 				if err != nil {
 					return fmt.Errorf("failed to encode transactions: %w", err)
