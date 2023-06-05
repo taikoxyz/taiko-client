@@ -271,7 +271,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 	}
 
 	log.Info(
-		"✅ Valid block proved",
+		"💰 Your block proof was accepted",
 		"blockID", proofWithHeader.BlockID,
 		"hash", block.Hash(), "height", block.Number(),
 		"transactions", block.Transactions().Len(),
