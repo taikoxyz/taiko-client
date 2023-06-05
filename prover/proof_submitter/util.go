@@ -22,7 +22,6 @@ import (
 
 var (
 	errUnretryable = errors.New("unretryable")
-	errNeedWaiting = errors.New("need waiting before the proof submission")
 )
 
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
@@ -124,30 +123,13 @@ func sendTxWithBackoff(
 					return err
 				}
 
-				targetDelay := stateVar.ProofTimeTarget * 4
-				if stateVar.BlockFee != 0 {
-					targetDelay = expectedReward / stateVar.BlockFee * stateVar.ProofTimeTarget
-					if targetDelay < stateVar.ProofTimeTarget/4 {
-						targetDelay = stateVar.ProofTimeTarget / 4
-					} else if targetDelay > stateVar.ProofTimeTarget*4 {
-						targetDelay = stateVar.ProofTimeTarget * 4
-					}
-				}
-
 				log.Info(
-					"Target delay",
 					"blockID", blockID,
-					"delay", targetDelay,
 					"expectedReward", expectedReward,
 					"blockFee", stateVar.BlockFee,
-					"proofTimeTarget", stateVar.ProofTimeTarget,
 					"proposedTime", proposedTime,
-					"timeToWait", time.Until(proposedTime.Add(time.Duration(targetDelay)*time.Second)),
 				)
 
-				if time.Now().Before(proposedTime.Add(time.Duration(targetDelay) * time.Second)) {
-					return errNeedWaiting
-				}
 			} else {
 				log.Info("Proof was submitted another prover, skip the current proof submission", "blockID", blockID)
 				return nil

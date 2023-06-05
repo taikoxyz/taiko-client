@@ -3,7 +3,6 @@ package prover
 import (
 	"context"
 	"os"
-	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
@@ -19,7 +18,6 @@ var testFlags = []cli.Flag{
 	&cli.StringFlag{Name: flags.TaikoL2Address.Name},
 	&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
 	&cli.BoolFlag{Name: flags.Dummy.Name},
-	&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
 	&cli.BoolFlag{Name: flags.OracleProver.Name},
 	&cli.StringFlag{Name: flags.OracleProverPrivateKey.Name},
 	&cli.BoolFlag{Name: flags.SystemProver.Name},
@@ -50,8 +48,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 			crypto.PubkeyToAddress(s.p.cfg.L1ProverPrivKey.PublicKey),
 			crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey),
 		)
-		s.Equal(30*time.Minute, *c.RandomDummyProofDelayLowerBound)
-		s.Equal(time.Hour, *c.RandomDummyProofDelayUpperBound)
 		s.True(c.Dummy)
 		s.True(c.OracleProver)
 		s.Equal(
@@ -74,7 +70,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Dummy.Name,
-		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.OracleProver.Name,
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Graffiti.Name, "",
@@ -104,8 +99,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProver() {
 			crypto.PubkeyToAddress(s.p.cfg.L1ProverPrivKey.PublicKey),
 			crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey),
 		)
-		s.Equal(30*time.Minute, *c.RandomDummyProofDelayLowerBound)
-		s.Equal(time.Hour, *c.RandomDummyProofDelayUpperBound)
 		s.True(c.Dummy)
 		s.True(c.SystemProver)
 		s.Equal(
@@ -128,7 +121,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProver() {
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Dummy.Name,
-		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.SystemProver.Name,
 		"-" + flags.SystemProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Graffiti.Name, "",
@@ -161,7 +153,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Dummy.Name,
-		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.OracleProver.Name,
 		"-" + flags.Graffiti.Name, "",
 	}), "oracleProver flag set without oracleProverPrivateKey set")
@@ -193,7 +184,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProverError() {
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Dummy.Name,
-		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.SystemProver.Name,
 		"-" + flags.Graffiti.Name, "",
 	}), "systemProver flag set without systemProverPrivateKey set")
@@ -225,7 +215,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProverAndOracleProve
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Dummy.Name,
-		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.OracleProver.Name,
 		"-" + flags.SystemProver.Name,
 		"-" + flags.Graffiti.Name, "",

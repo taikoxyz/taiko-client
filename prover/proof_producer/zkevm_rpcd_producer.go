@@ -30,7 +30,6 @@ type ZkevmRpcdProducer struct {
 	L2Endpoint      string                         // a L2 execution engine's RPC endpoint
 	Retry           bool                           // retry proof computation if error
 	CustomProofHook func() ([]byte, uint64, error) // only for testing purposes
-	ProofTimeTarget uint64                         // used for calculating proof delay
 	ProtocolConfig  *bindings.TaikoDataConfig      // protocol configurations
 }
 

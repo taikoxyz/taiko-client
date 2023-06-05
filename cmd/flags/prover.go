@@ -47,12 +47,6 @@ var (
 		Value:    false,
 		Category: proverCategory,
 	}
-	RandomDummyProofDelay = &cli.StringFlag{
-		Name: "randomDummyProofDelay",
-		Usage: "Set the random dummy proof delay between the bounds using the format: " +
-			"`lowerBound-upperBound` (e.g. `30m-1h`), testing purposes only",
-		Category: proverCategory,
-	}
 	OracleProver = &cli.BoolFlag{
 		Name:     "oracleProver",
 		Usage:    "Set whether prover should use oracle prover or not",
@@ -98,7 +92,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	StartingBlockID,
 	MaxConcurrentProvingJobs,
 	Dummy,
-	RandomDummyProofDelay,
 	OracleProver,
 	SystemProver,
 	OracleProverPrivateKey,
