@@ -50,6 +50,11 @@ var (
 		Usage:    "Minimal block gasLimit when proposing a block",
 		Category: proposerCategory,
 	}
+	MaxProposedTxListsPerEpoch = &cli.Uint64Flag{
+		Name:     "maxProposedTxListsPerEpoch",
+		Value:    1,
+		Category: proposerCategory,
+	}
 )
 
 // All proposer flags.
@@ -62,4 +67,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	TxPoolLocals,
 	ProposeEmptyBlocksInterval,
 	MinBlockGasLimit,
+	MaxProposedTxListsPerEpoch,
 })
