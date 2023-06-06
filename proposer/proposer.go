@@ -179,12 +179,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return p.CustomProposeOpHook()
 	}
 
-	log.Info("Comparing proposer TKO balance to block fee", "proposer", p.l1ProposerAddress.Hex())
-
-	if err := p.checkTaikoTokenBalance(); err != nil {
-		return fmt.Errorf("failed to check Taiko token balance: %w", err)
-	}
-
 	// Wait until L2 execution engine is synced at first.
 	if err := p.rpc.WaitTillL2Synced(ctx); err != nil {
 		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
@@ -232,15 +226,24 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 					return nil
 				}
 
+				gasLimit := uint32(sumTxsGasLimit(txs))
+
+				log.Info("Comparing proposer TKO balance to block fee", "proposer", p.l1ProposerAddress.Hex())
+
+				if err := p.checkTaikoTokenBalance(gasLimit); err != nil {
+					return fmt.Errorf("failed to check Taiko token balance: %w", err)
+				}
+
 				txListBytes, err := rlp.EncodeToBytes(txs)
 				if err != nil {
 					return fmt.Errorf("failed to encode transactions: %w", err)
 				}
 
 				txNonce := nonce + uint64(i)
+
 				if err := p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
 					Beneficiary:     p.l2SuggestedFeeRecipient,
-					GasLimit:        uint32(sumTxsGasLimit(txs)),
+					GasLimit:        gasLimit,
 					TxListHash:      crypto.Keccak256Hash(txListBytes),
 					TxListByteStart: common.Big0,
 					TxListByteEnd:   new(big.Int).SetUint64(uint64(len(txListBytes))),
@@ -385,8 +388,8 @@ func getTxOpts(
 	return opts, nil
 }
 
-func (p *Proposer) checkTaikoTokenBalance() error {
-	fee, err := p.rpc.TaikoL1.GetBlockFee(nil)
+func (p *Proposer) checkTaikoTokenBalance(gasLimit uint32) error {
+	fee, err := p.rpc.TaikoL1.GetBlockFee(nil, gasLimit)
 	if err != nil {
 		return fmt.Errorf("failed to get block fee: %w", err)
 	}

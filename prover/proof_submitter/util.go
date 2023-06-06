@@ -73,7 +73,6 @@ func sendTxWithBackoff(
 ) error {
 	var (
 		isUnretryableError bool
-		proposedTime       = time.Unix(int64(proposedAt), 0)
 	)
 
 	if err := backoff.Retry(func() error {
@@ -116,21 +115,7 @@ func sendTxWithBackoff(
 				return err
 			}
 
-			if needNewProof {
-				stateVar, err := cli.TaikoL1.GetStateVariables(nil)
-				if err != nil {
-					log.Warn("Failed to get protocol state variables", "blockID", blockID, "error", err)
-					return err
-				}
-
-				log.Info(
-					"blockID", blockID,
-					"expectedReward", expectedReward,
-					"blockFee", stateVar.BlockFee,
-					"proposedTime", proposedTime,
-				)
-
-			} else {
+			if !needNewProof {
 				log.Info("Proof was submitted another prover, skip the current proof submission", "blockID", blockID)
 				return nil
 			}
