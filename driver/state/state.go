@@ -172,7 +172,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 					log.Info("✅ Block proven", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
 				}
 			case e := <-s.blockVerifiedCh:
-				log.Info("📈 Block verified", "blockID", e.Id, "hash", common.Hash(e.BlockHash))
+				log.Info("📈 Block verified", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "reward", e.Reward)
 			case e := <-s.crossChainSynced:
 				// Verify the protocol synced block, check if it exists in
 				// L2 execution engine.

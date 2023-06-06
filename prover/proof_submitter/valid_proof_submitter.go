@@ -270,13 +270,6 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return err
 	}
 
-	log.Info(
-		"💰 Your block proof was accepted",
-		"blockID", proofWithHeader.BlockID,
-		"hash", block.Hash(), "height", block.Number(),
-		"transactions", block.Transactions().Len(),
-	)
-
 	metrics.ProverSentProofCounter.Inc(1)
 	metrics.ProverSentValidProofCounter.Inc(1)
 	metrics.ProverLatestProvenBlockIDGauge.Update(proofWithHeader.BlockID.Int64())

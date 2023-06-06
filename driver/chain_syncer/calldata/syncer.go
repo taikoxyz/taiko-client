@@ -153,6 +153,7 @@ func (s *Syncer) onBlockProposed(
 		"L1Height", event.Raw.BlockNumber,
 		"L1Hash", event.Raw.BlockHash,
 		"BlockID", event.Id,
+		"BlockFee", event.BlockFee,
 		"Removed", event.Raw.Removed,
 	)
 
