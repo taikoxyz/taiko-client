@@ -116,7 +116,7 @@ func (d *Driver) Close() {
 // eventLoop starts the main loop of a L2 execution engine's driver.
 func (d *Driver) eventLoop() {
 	defer d.wg.Done()
-	exponentialBackoff := backoff.NewExponentialBackOff()
+	constatnBackoff := backoff.NewConstantBackOff(12 * time.Second)
 
 	// reqSync requests performing a synchronising operation, won't block
 	// if we are already synchronising.
@@ -129,7 +129,7 @@ func (d *Driver) eventLoop() {
 
 	// doSyncWithBackoff performs a synchronising operation with a backoff strategy.
 	doSyncWithBackoff := func() {
-		if err := backoff.Retry(d.doSync, exponentialBackoff); err != nil {
+		if err := backoff.Retry(d.doSync, constatnBackoff); err != nil {
 			log.Error("Sync L2 execution engine's block chain error", "error", err)
 		}
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum"
@@ -163,7 +164,7 @@ func (i *BlockBatchIterator) Iter() error {
 		return nil
 	}
 
-	if err := backoff.Retry(iterOp, backoff.NewExponentialBackOff()); err != nil {
+	if err := backoff.Retry(iterOp, backoff.NewConstantBackOff(12*time.Second)); err != nil {
 		return err
 	}
 

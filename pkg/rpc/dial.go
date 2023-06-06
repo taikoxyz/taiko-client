@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/prysmaticlabs/prysm/v4/network"
 	"github.com/prysmaticlabs/prysm/v4/network/authorization"
@@ -19,9 +21,10 @@ func DialClientWithBackoff(ctx context.Context, url string) (*ethclient.Client, 
 	if err := backoff.Retry(
 		func() (err error) {
 			client, err = ethclient.DialContext(ctx, url)
+			log.Error("Dial ethclient error", "url", url, "error", err)
 			return err
 		},
-		backoff.NewExponentialBackOff(),
+		backoff.NewConstantBackOff(12*time.Second),
 	); err != nil {
 		return nil, err
 	}
@@ -37,13 +40,14 @@ func DialEngineClientWithBackoff(ctx context.Context, url string, jwtSecret stri
 		func() (err error) {
 			client, err := DialEngineClient(ctx, url, jwtSecret)
 			if err != nil {
+				log.Error("Dial engine client error", "url", url, "error", err)
 				return err
 			}
 
 			engineClient = &EngineClient{client}
 			return nil
 		},
-		backoff.NewExponentialBackOff(),
+		backoff.NewConstantBackOff(12*time.Second),
 	); err != nil {
 		return nil, err
 	}
