@@ -21,7 +21,9 @@ func DialClientWithBackoff(ctx context.Context, url string) (*ethclient.Client, 
 	if err := backoff.Retry(
 		func() (err error) {
 			client, err = ethclient.DialContext(ctx, url)
-			log.Error("Dial ethclient error", "url", url, "error", err)
+			if err != nil {
+				log.Error("Dial ethclient error", "url", url, "error", err)
+			}
 			return err
 		},
 		backoff.NewConstantBackOff(12*time.Second),
