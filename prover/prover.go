@@ -343,7 +343,14 @@ func (p *Prover) onBlockProposed(
 	if event.Id.Uint64() <= p.lastHandledBlockID {
 		return nil
 	}
-	log.Info("Proposed block", "blockID", event.Id)
+	log.Info(
+		"Proposed block",
+		"L1Height", event.Raw.BlockNumber,
+		"L1Hash", event.Raw.BlockHash,
+		"BlockID", event.Id,
+		"BlockFee", event.BlockFee,
+		"Removed", event.Raw.Removed,
+	)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
 
 	handleBlockProposedEvent := func() error {
@@ -442,7 +449,12 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 		return nil
 	}
 
-	log.Info("New verified valid block", "blockID", event.Id, "hash", common.BytesToHash(event.BlockHash[:]))
+	log.Info(
+		"New verified valid block",
+		"blockID", event.Id,
+		"hash", common.BytesToHash(event.BlockHash[:]),
+		"reward", event.Reward,
+	)
 
 	// cancel any proofs being generated for this block
 	p.cancelProof(ctx, event.Id.Uint64())
