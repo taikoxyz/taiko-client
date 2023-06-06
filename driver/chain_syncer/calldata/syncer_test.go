@@ -75,7 +75,7 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 	s.Nil(err)
 	l1Head, err := s.s.rpc.L1.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
-	_, rpcErr, payloadErr := s.s.insertNewHead(
+	_, err = s.s.insertNewHead(
 		context.Background(),
 		&bindings.TaikoL1ClientBlockProposed{
 			Id: common.Big1,
@@ -99,8 +99,7 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 			L1BlockHash:   testutils.RandomHash(),
 		},
 	)
-	s.Nil(rpcErr)
-	s.Nil(payloadErr)
+	s.Nil(err)
 }
 
 func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
