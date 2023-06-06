@@ -167,9 +167,8 @@ func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 			return err
 		}
 
-		log.Info("Request proof", "height", opts.Height, "output", output)
-
 		if output == nil {
+			log.Info("Proof generating", "height", opts.Height, "time", time.Since(start))
 			return errProofGenerating
 		}
 		proof = common.Hex2Bytes(output.Circuit.Proof[2:])
