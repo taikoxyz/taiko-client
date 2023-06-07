@@ -316,13 +316,17 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
+	if _, err := p.rpc.WaitL1Origin(ctx, event.Id); err != nil {
+		return err
+	}
+
 	// Check whteher the L1 chain has been reorged.
 	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1Reorg(
 		ctx,
 		new(big.Int).Sub(event.Id, common.Big1),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to check whether L1 chain was reorged: %w", err)
+		return fmt.Errorf("failed to check whether L1 chain was reorged (eventID %d): %w", event.Id, err)
 	}
 
 	if reorged {
@@ -489,7 +493,7 @@ func (p *Prover) Name() string {
 
 // initL1Current initializes prover's L1Current cursor.
 func (p *Prover) initL1Current(startingBlockID *big.Int) error {
-	if err := p.rpc.WaitTillL2Synced(p.ctx); err != nil {
+	if err := p.rpc.WaitTillL2ExecutionEngineSynced(p.ctx); err != nil {
 		return err
 	}
 
