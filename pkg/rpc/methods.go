@@ -26,7 +26,7 @@ var (
 	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
 	// if the previous check failed.
 	syncProgressRecheckDelay    = 12 * time.Second
-	waitL1OriginPollingInterval = 6 * time.Second
+	waitL1OriginPollingInterval = 3 * time.Second
 	defaultWaitL1OriginTimeout  = 3 * time.Minute
 	minTxGasLimit               = 21000
 )
