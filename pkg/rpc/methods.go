@@ -74,8 +74,8 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	return nil
 }
 
-// WaitTillL2Synced keeps waiting until the L2 execution engine is fully synced.
-func (c *Client) WaitTillL2Synced(ctx context.Context) error {
+// WaitTillL2ExecutionEngineSynced keeps waiting until the L2 execution engine is fully synced.
+func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 	return backoff.Retry(
 		func() error {
 			if ctx.Err() != nil {
@@ -345,6 +345,12 @@ func (c *Client) CheckL1Reorg(ctx context.Context, blockID *big.Int) (bool, *typ
 
 		l1Origin, err := c.L2.L1OriginByID(ctx, blockID)
 		if err != nil {
+			// If the L2 EE is just synced through P2P, there is a chance that the EE do not have
+			// the chain head L1Origin information recorded.
+			if errors.Is(err, ethereum.NotFound) {
+				log.Info("L1Origin not found", "blockID", blockID)
+				return false, nil, nil, nil
+			}
 			return false, nil, nil, err
 		}
 
