@@ -59,8 +59,7 @@ type Prover struct {
 	proveNotify      chan struct{}
 
 	// Proof related
-	proveValidProofCh   chan *proofProducer.ProofWithHeader
-	proveInvalidProofCh chan *proofProducer.ProofWithHeader
+	proofGenerationCh chan *proofProducer.ProofWithHeader
 
 	// Concurrency guards
 	proposeConcurrencyGuard     chan struct{}
@@ -123,8 +122,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	p.blockProvenCh = make(chan *bindings.TaikoL1ClientBlockProven, chBufferSize)
-	p.proveValidProofCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
-	p.proveInvalidProofCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
+	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
@@ -196,7 +194,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if p.validProofSubmitter, err = proofSubmitter.NewValidProofSubmitter(
 		p.rpc,
 		producer,
-		p.proveValidProofCh,
+		p.proofGenerationCh,
 		p.cfg.TaikoL2Address,
 		p.cfg.L1ProverPrivKey,
 		p.submitProofTxMutex,
@@ -248,10 +246,8 @@ func (p *Prover) eventLoop() {
 		select {
 		case <-p.ctx.Done():
 			return
-		case proofWithHeader := <-p.proveValidProofCh:
-			p.submitProofOp(p.ctx, proofWithHeader, true)
-		case proofWithHeader := <-p.proveInvalidProofCh:
-			p.submitProofOp(p.ctx, proofWithHeader, false)
+		case proofWithHeader := <-p.proofGenerationCh:
+			p.submitProofOp(p.ctx, proofWithHeader)
 		case <-p.proveNotify:
 			if err := p.proveOp(); err != nil {
 				log.Error("Prove new blocks error", "error", err)
@@ -311,7 +307,7 @@ func (p *Prover) onBlockProposed(
 	end eventIterator.EndBlockProposedEventIterFunc,
 ) error {
 	// If there is newly generated proofs, we need to submit them as soon as possible.
-	if len(p.proveValidProofCh) > 0 || len(p.proveInvalidProofCh) > 0 {
+	if len(p.proofGenerationCh) > 0 {
 		end()
 		return nil
 	}
@@ -425,8 +421,8 @@ func (p *Prover) onBlockProposed(
 	return nil
 }
 
-// submitProofOp performs a (valid block / invalid block) proof submission operation.
-func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader, isValidProof bool) {
+// submitProofOp performs a proof submission operation.
+func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader) {
 	p.submitProofConcurrencyGuard <- struct{}{}
 	go func() {
 		defer func() {
@@ -437,7 +433,7 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 		}()
 
 		if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
-			log.Error("Submit proof error", "isValidProof", isValidProof, "error", err)
+			log.Error("Submit proof error", "error", err)
 		}
 	}()
 }
@@ -448,13 +444,8 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
 	p.latestVerifiedL1Height = event.Raw.BlockNumber
 
-	if event.BlockHash == (common.Hash{}) {
-		log.Info("New verified invalid block", "blockID", event.Id)
-		return nil
-	}
-
 	log.Info(
-		"New verified valid block",
+		"New verified block",
 		"blockID", event.Id,
 		"hash", common.BytesToHash(event.BlockHash[:]),
 		"reward", event.Reward,
