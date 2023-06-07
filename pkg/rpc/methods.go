@@ -26,7 +26,7 @@ var (
 	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
 	// if the previous check failed.
 	syncProgressRecheckDelay    = 12 * time.Second
-	waitL1OriginPollingInterval = 6 * time.Second
+	waitL1OriginPollingInterval = 3 * time.Second
 	defaultWaitL1OriginTimeout  = 3 * time.Minute
 	minTxGasLimit               = 21000
 )
@@ -187,25 +187,25 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 	}
 
 	log.Debug("Start fetching L1Origin from L2 execution engine", "blockID", blockID)
-
-	for {
-		select {
-		case <-ctxWithTimeout.Done():
+	for ; true; <-ticker.C {
+		if ctxWithTimeout.Err() != nil {
 			return nil, ctx.Err()
-		case <-ticker.C:
-			l1Origin, err = c.L2.L1OriginByID(ctxWithTimeout, blockID)
-			if err != nil {
-				log.Warn("Failed to fetch L1Origin from L2 execution engine", "blockID", blockID, "error", err)
-				continue
-			}
-
-			if l1Origin == nil {
-				continue
-			}
-
-			return l1Origin, nil
 		}
+
+		l1Origin, err = c.L2.L1OriginByID(ctxWithTimeout, blockID)
+		if err != nil {
+			log.Warn("L1Origin from L2 execution engine not found, keep retrying", "blockID", blockID, "error", err)
+			continue
+		}
+
+		if l1Origin == nil {
+			continue
+		}
+
+		return l1Origin, nil
 	}
+
+	return nil, fmt.Errorf("failed to fetch L1Origin from L2 execution engine, blockID: %d", blockID)
 }
 
 // GetPoolContent fetches the transactions list from L2 execution engine's transactions pool with given
