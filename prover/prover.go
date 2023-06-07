@@ -316,7 +316,7 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
-	if err := p.rpc.WaitTillL2ExecutionEngineSynced(p.ctx); err != nil {
+	if _, err := p.rpc.WaitL1Origin(ctx, event.Id); err != nil {
 		return err
 	}
 

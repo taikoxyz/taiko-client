@@ -25,8 +25,10 @@ var (
 	errSyncing = errors.New("syncing")
 	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
 	// if the previous check failed.
-	syncProgressRecheckDelay = 12 * time.Second
-	minTxGasLimit            = 21000
+	syncProgressRecheckDelay    = 12 * time.Second
+	waitL1OriginPollingInterval = 6 * time.Second
+	defaultWaitL1OriginTimeout  = 3 * time.Minute
+	minTxGasLimit               = 21000
 )
 
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
@@ -172,17 +174,26 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 		err      error
 	)
 
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(waitL1OriginPollingInterval)
 	defer ticker.Stop()
+
+	var (
+		ctxWithTimeout = ctx
+		cancel         context.CancelFunc
+	)
+	if _, ok := ctx.Deadline(); !ok {
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, defaultWaitL1OriginTimeout)
+		defer cancel()
+	}
 
 	log.Debug("Start fetching L1Origin from L2 execution engine", "blockID", blockID)
 
 	for {
 		select {
-		case <-ctx.Done():
+		case <-ctxWithTimeout.Done():
 			return nil, ctx.Err()
 		case <-ticker.C:
-			l1Origin, err = c.L2.L1OriginByID(ctx, blockID)
+			l1Origin, err = c.L2.L1OriginByID(ctxWithTimeout, blockID)
 			if err != nil {
 				log.Warn("Failed to fetch L1Origin from L2 execution engine", "blockID", blockID, "error", err)
 				continue
