@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
@@ -502,8 +503,20 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 		startingBlockID = new(big.Int).SetUint64(stateVars.LastVerifiedBlockId)
 	}
 
+	log.Info("Init L1Current cursor", "startingBlockID", startingBlockID)
+
 	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
 	if err != nil {
+		if err.Error() == ethereum.NotFound.Error() {
+			log.Warn("Failed to find L1Origin for blockID: %d, use latest L1 head instead", startingBlockID)
+			l1Head, err := p.rpc.L1.BlockNumber(p.ctx)
+			if err != nil {
+				return err
+			}
+
+			p.l1Current = l1Head
+			return nil
+		}
 		return err
 	}
 
