@@ -127,7 +127,7 @@ func sendTxWithBackoff(
 
 				targetDelay := stateVar.ProofTimeTarget * 4
 				if stateVar.BlockFee != 0 {
-					targetDelay = expectedReward / stateVar.BlockFee * stateVar.ProofTimeTarget
+					targetDelay = uint64(float64(expectedReward) / float64(stateVar.BlockFee) * float64(stateVar.ProofTimeTarget))
 					if targetDelay < stateVar.ProofTimeTarget/4 {
 						targetDelay = stateVar.ProofTimeTarget / 4
 					} else if targetDelay > stateVar.ProofTimeTarget*4 {
