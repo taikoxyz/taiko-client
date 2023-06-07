@@ -90,31 +90,18 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 			return err
 		}
 
-		// Make sure the execution engine's chain head is recorded in protocol.
-		l2HeadHash, err := s.rpc.TaikoL1.GetCrossChainBlockHash(nil, l2Head.Number)
-		if err != nil {
-			return err
-		}
+		log.Info(
+			"L2 head information",
+			"number", l2Head.Number,
+			"hash", l2Head.Hash(),
+			"LastSyncedVerifiedBlockID", s.progressTracker.LastSyncedVerifiedBlockID(),
+			"lastSyncedVerifiedBlockHash", s.progressTracker.LastSyncedVerifiedBlockHash(),
+		)
 
 		heightOrID := &state.HeightOrID{Height: l2Head.Number}
-		// If there is a verified block hash mismatch, log the error and then try to re-sync from genesis one by one.
-		if l2Head.Hash() != l2HeadHash {
-			log.Error(
-				"L2 block hash mismatch, re-sync from genesis",
-				"height", l2Head.Number,
-				"hash in protocol", common.Hash(l2HeadHash),
-				"hash in execution engine", l2Head.Hash(),
-			)
-
-			heightOrID.ID = common.Big0
-			heightOrID.Height = common.Big0
-			if l2HeadHash, err = s.rpc.TaikoL1.GetCrossChainBlockHash(nil, common.Big0); err != nil {
-				return err
-			}
-		}
 
 		// If the L2 execution engine has synced to latest verified block.
-		if l2HeadHash == s.progressTracker.LastSyncedVerifiedBlockHash() {
+		if l2Head.Hash() == s.progressTracker.LastSyncedVerifiedBlockHash() {
 			heightOrID.ID = s.progressTracker.LastSyncedVerifiedBlockID()
 		}
 
@@ -125,7 +112,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		}
 
 		// Reset to the latest L2 execution engine's chain status.
-		s.progressTracker.UpdateMeta(blockID, heightOrID.Height, l2HeadHash)
+		s.progressTracker.UpdateMeta(blockID, heightOrID.Height, l2Head.Hash())
 	}
 
 	// Insert the proposed block one by one.
