@@ -288,7 +288,7 @@ func (i *BlockBatchIterator) end() {
 // event.Raw.Removed, which will also call `i.rewindOnReorgDetected` to rewind back
 func (i *BlockBatchIterator) ensureCurrentNotReorged() error {
 	current, err := i.client.HeaderByHash(i.ctx, i.current.Hash())
-	if err != nil && !errors.Is(err, ethereum.NotFound) {
+	if err != nil && !(err.Error() == ethereum.NotFound.Error()) {
 		return err
 	}
 

@@ -358,7 +358,7 @@ func (c *Client) CheckL1Reorg(ctx context.Context, blockID *big.Int) (bool, *typ
 		if err != nil {
 			// If the L2 EE is just synced through P2P, there is a chance that the EE do not have
 			// the chain head L1Origin information recorded.
-			if errors.Is(err, ethereum.NotFound) {
+			if err.Error() == ethereum.NotFound.Error() {
 				log.Info("L1Origin not found", "blockID", blockID)
 				return false, nil, nil, nil
 			}
@@ -367,7 +367,7 @@ func (c *Client) CheckL1Reorg(ctx context.Context, blockID *big.Int) (bool, *typ
 
 		l1Header, err := c.L1.HeaderByNumber(ctx, l1Origin.L1BlockHeight)
 		if err != nil {
-			if errors.Is(err, ethereum.NotFound) {
+			if err.Error() == ethereum.NotFound.Error() {
 				continue
 			}
 			return false, nil, nil, fmt.Errorf("failed to fetch L1 header (%d): %w", l1Origin.L1BlockHeight, err)
