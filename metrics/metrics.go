@@ -21,6 +21,7 @@ var (
 	DriverL1CurrentHeightGauge  = metrics.NewRegisteredGauge("driver/l1Current/height", nil)
 	DriverL2HeadIDGauge         = metrics.NewRegisteredGauge("driver/l2Head/id", nil)
 	DriverL2VerifiedHeightGauge = metrics.NewRegisteredGauge("driver/l2Verified/id", nil)
+	DriverProofRewardGauge      = metrics.NewRegisteredGauge("driver/proofReward", nil)
 
 	// Proposer
 	ProposerProposeEpochCounter    = metrics.NewRegisteredCounter("proposer/epoch", nil)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math"
 	"math/big"
 	"sync/atomic"
 
@@ -173,6 +174,11 @@ func (s *State) startSubscriptions(ctx context.Context) {
 				}
 			case e := <-s.blockVerifiedCh:
 				log.Info("📈 Block verified", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "reward", e.Reward)
+				if e.Reward > math.MaxInt64 {
+					metrics.DriverProofRewardGauge.Update(math.MaxInt64)
+				} else {
+					metrics.DriverProofRewardGauge.Update(int64(e.Reward))
+				}
 			case e := <-s.crossChainSynced:
 				// Verify the protocol synced block, check if it exists in
 				// L2 execution engine.
