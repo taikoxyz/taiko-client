@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"math"
 	"math/big"
 	"sync"
 	"time"
@@ -386,6 +387,17 @@ func (p *Prover) onBlockProposed(
 			}
 		}
 
+		if p.cfg.SystemProver {
+			needNewSystemProof, err := rpc.NeedNewSystemProof(ctx, p.rpc, event.Id, p.protocolConfigs.RealProofSkipSize)
+			if err != nil {
+				return fmt.Errorf("failed to check whether the L2 block needs a new system proof: %w", err)
+			}
+
+			if !needNewSystemProof {
+				return nil
+			}
+		}
+
 		// Check if the current prover has seen this block ID before, there was probably
 		// a L1 reorg, we need to cancel that reorged block's proof generation task at first.
 		if p.currentBlocksBeingProven[event.Meta.Id] != nil {
@@ -443,6 +455,12 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 // the block being proven if it's verified.
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
+	if event.Reward > math.MaxInt64 {
+		metrics.ProverProofRewardGauge.Update(math.MaxInt64)
+	} else {
+		metrics.ProverProofRewardGauge.Update(int64(event.Reward))
+	}
+
 	p.latestVerifiedL1Height = event.Raw.BlockNumber
 
 	log.Info(
