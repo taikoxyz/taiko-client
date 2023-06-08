@@ -145,6 +145,13 @@ func (s *ProverTestSuite) TestStartSubscription() {
 	s.NotPanics(s.p.closeSubscription)
 }
 
+func (s *ProverTestSuite) TestCheckChainVerification() {
+	s.Nil(s.p.checkChainVerification(0))
+	s.p.latestVerifiedL1Height = 1024
+	s.p.cfg.SystemProver = true
+	s.Nil(s.p.checkChainVerification(1024))
+}
+
 func (s *ProverTestSuite) TestStartClose() {
 	s.Nil(s.p.Start())
 	s.cancel()
