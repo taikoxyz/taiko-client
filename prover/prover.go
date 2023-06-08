@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -235,11 +236,20 @@ func (p *Prover) eventLoop() {
 		}
 	}
 
+	lastLatestVerifiedL1Height := p.latestVerifiedL1Height
+
 	// If there is too many (TaikoData.Config.maxNumBlocks) pending blocks in TaikoL1 contract, there will be no new
 	// BlockProposed temporarily, so except the BlockProposed subscription, we need another trigger to start
 	// fetching the proposed blocks.
 	forceProvingTicker := time.NewTicker(15 * time.Second)
 	defer forceProvingTicker.Stop()
+
+	// If there is no new block verification in `proofCooldownPeriod * 2` seconeds, and the current prover is
+	// a special prover, we will go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
+	verificationCheckTicker := time.NewTicker(
+		time.Duration(p.protocolConfigs.ProofCooldownPeriod.Uint64()*2) * time.Second,
+	)
+	defer verificationCheckTicker.Stop()
 
 	// Call reqProving() right away to catch up with the latest state.
 	reqProving()
@@ -248,6 +258,11 @@ func (p *Prover) eventLoop() {
 		select {
 		case <-p.ctx.Done():
 			return
+		case <-verificationCheckTicker.C:
+			backoff.Retry(
+				func() error { return p.checkChainVerification(lastLatestVerifiedL1Height) },
+				backoff.NewExponentialBackOff(),
+			)
 		case proofWithHeader := <-p.proofGenerationCh:
 			p.submitProofOp(p.ctx, proofWithHeader)
 		case <-p.proveNotify:
@@ -556,7 +571,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
 	if err != nil {
 		if err.Error() == ethereum.NotFound.Error() {
-			log.Warn("Failed to find L1Origin for blockID: %d, use latest L1 head instead", startingBlockID)
+			log.Warn("Failed to find L1Origin for blockID, use latest L1 head instead", "blockID", startingBlockID)
 			l1Head, err := p.rpc.L1.BlockNumber(p.ctx)
 			if err != nil {
 				return err
@@ -593,6 +608,33 @@ func (p *Prover) initSubscription() {
 func (p *Prover) closeSubscription() {
 	p.blockVerifiedSub.Unsubscribe()
 	p.blockProposedSub.Unsubscribe()
+}
+
+// checkChainVerification checks if there is no new block verification in protocol, if so,
+// it will let current sepecial prover to go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
+func (p *Prover) checkChainVerification(lastLatestVerifiedL1Height uint64) error {
+	if (!p.cfg.SystemProver && !p.cfg.OracleProver) || lastLatestVerifiedL1Height != p.latestVerifiedL1Height {
+		return nil
+	}
+
+	log.Warn(
+		"No new block verification in `proofCooldownPeriod * 2` seconeds",
+		"latestVerifiedL1Height", p.latestVerifiedL1Height,
+		"proofCooldownPeriod", p.protocolConfigs.ProofCooldownPeriod,
+	)
+
+	stateVar, err := p.rpc.TaikoL1.GetStateVariables(nil)
+	if err != nil {
+		log.Error("Failed to get protocol state variables", "error", err)
+		return err
+	}
+
+	if err := p.initL1Current(new(big.Int).SetUint64(stateVar.LastVerifiedBlockId)); err != nil {
+		return err
+	}
+	p.lastHandledBlockID = stateVar.LastVerifiedBlockId
+
+	return nil
 }
 
 // cancelProofIfValid cancels proof only if the parentGasUsed and parentHash in the proof match what
