@@ -455,10 +455,19 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 // the block being proven if it's verified.
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
+
+	isNormalProof := p.protocolConfigs.RealProofSkipSize == nil ||
+		(p.protocolConfigs.RealProofSkipSize != nil && event.Id.Uint64()%p.protocolConfigs.RealProofSkipSize.Uint64() == 0)
 	if event.Reward > math.MaxInt64 {
-		metrics.ProverProofRewardGauge.Update(math.MaxInt64)
+		metrics.ProverAllProofRewardGauge.Update(math.MaxInt64)
+		if isNormalProof {
+			metrics.ProverNormalProofRewardGauge.Update(math.MaxInt64)
+		}
 	} else {
-		metrics.ProverProofRewardGauge.Update(int64(event.Reward))
+		metrics.ProverAllProofRewardGauge.Update(int64(event.Reward))
+		if isNormalProof {
+			metrics.ProverNormalProofRewardGauge.Update(int64(event.Reward))
+		}
 	}
 
 	p.latestVerifiedL1Height = event.Raw.BlockNumber

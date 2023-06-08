@@ -2,7 +2,7 @@ package version
 
 // Version info.
 var (
-	Version = "0.9.0"
+	Version = "0.10.0"
 	Meta    = "dev"
 )
 
