@@ -42,6 +42,7 @@ var (
 	ProverSentInvalidProofCounter     = metrics.NewRegisteredCounter("prover/proof/invalid/sent", nil)
 	ProverReceivedProposedBlockGauge  = metrics.NewRegisteredGauge("prover/proposed/received", nil)
 	ProverReceivedProvenBlockGauge    = metrics.NewRegisteredGauge("prover/proven/received", nil)
+	ProverProofRewardGauge            = metrics.NewRegisteredGauge("prover/proofReward", nil)
 )
 
 // Serve starts the metrics server on the given address, will be closed when the given
