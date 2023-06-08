@@ -456,8 +456,8 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
 
-	isNormalProof := p.protocolConfigs.RealProofSkipSize != nil &&
-		event.Id.Uint64()%p.protocolConfigs.RealProofSkipSize.Uint64() == 0
+	isNormalProof := p.protocolConfigs.RealProofSkipSize == nil ||
+		(p.protocolConfigs.RealProofSkipSize != nil && event.Id.Uint64()%p.protocolConfigs.RealProofSkipSize.Uint64() == 0)
 	if event.Reward > math.MaxInt64 {
 		metrics.ProverAllProofRewardGauge.Update(math.MaxInt64)
 		if isNormalProof {
