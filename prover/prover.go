@@ -259,10 +259,12 @@ func (p *Prover) eventLoop() {
 		case <-p.ctx.Done():
 			return
 		case <-verificationCheckTicker.C:
-			backoff.Retry(
+			if err := backoff.Retry(
 				func() error { return p.checkChainVerification(lastLatestVerifiedL1Height) },
 				backoff.NewExponentialBackOff(),
-			)
+			); err != nil {
+				log.Error("Check chain verification error", "error", err)
+			}
 		case proofWithHeader := <-p.proofGenerationCh:
 			p.submitProofOp(p.ctx, proofWithHeader)
 		case <-p.proveNotify:
