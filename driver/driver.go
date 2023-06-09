@@ -255,7 +255,6 @@ func (d *Driver) checkTransitionConfig() {
 				"transitionconfig", tc)
 		}
 	}
-
 }
 
 // Name returns the application name.
