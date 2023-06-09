@@ -226,6 +226,11 @@ func (d *Driver) reportProtocolStatus() {
 }
 
 func (d *Driver) checkTransitionConfig() {
+	if d.ctx.Err() != nil {
+		log.Warn("Driver context error", "error", d.ctx.Err())
+		return
+	}
+
 	ticker := time.NewTicker(60 * time.Second)
 	defer func() {
 		ticker.Stop()
