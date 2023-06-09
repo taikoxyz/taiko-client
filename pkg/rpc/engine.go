@@ -63,3 +63,18 @@ func (c *EngineClient) GetPayload(
 
 	return result.ExecutionPayload, nil
 }
+
+func (c *EngineClient) ExchangeTransitionConfiguration(
+	ctx context.Context,
+	cfg *engine.TransitionConfigurationV1,
+) (*engine.TransitionConfigurationV1, error) {
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	var result *engine.TransitionConfigurationV1
+	if err := c.Client.CallContext(timeoutCtx, &result, "engine_exchangeTransitionConfigurationV1", cfg); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
