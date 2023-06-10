@@ -9,10 +9,10 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/holiman/uint256"
 	chainSyncer "github.com/taikoxyz/taiko-client/driver/chain_syncer"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -242,15 +242,13 @@ func (d *Driver) checkTransitionConfig() {
 		case <-d.ctx.Done():
 			return
 		case <-ticker.C:
-			i := new(big.Int)
-			i.SetString("115792089237316195423570985008687907853269984665640564039457584007913129638912", 10)
-			ttd := new(uint256.Int)
-			ttd.SetFromBig(i)
+			tmp := new(big.Int)
+			tmp.SetString("115792089237316195423570985008687907853269984665640564039457584007913129638912", 10)
+			ttd := (*hexutil.Big)(tmp)
 			tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
-				// TerminalTotalDifficulty: 115792089237316195423570985008687907853269984665640564039457584007913129638912,
-				// not sure how to convert uint256 to *hexutil.Big
-				TerminalBlockHash:   common.Hash{},
-				TerminalBlockNumber: 0,
+				TerminalTotalDifficulty: ttd,
+				TerminalBlockHash:       common.Hash{},
+				TerminalBlockNumber:     0,
 			})
 			if err != nil {
 				log.Error("Failed to exchange Transition Configuration", "error", err)
