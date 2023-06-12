@@ -251,7 +251,7 @@ func (d *Driver) checkTransitionConfig() {
 				log.Error("Failed to exchange Transition Configuration", "error", err)
 				continue
 			}
-			log.Info("exchanged transition config",
+			log.Info("Exchanged transition config",
 				"transitionconfig", tc)
 		}
 	}
