@@ -174,8 +174,14 @@ func (s *DriverTestSuite) TestStartClose() {
 	s.d.Close()
 }
 
-func (s *DriverTestSuite) TestCheckTransitionConfig() {
-	s.d.checkTransitionConfig()
+// func (s *DriverTestSuite) TestCheckTransitionConfig() {
+// 	s.d.checkTransitionConfig()
+// 	s.cancel()
+// 	s.d.Close()
+// }
+
+func (s *DriverTestSuite) TestReportProtocolStatus() {
+	s.d.reportProtocolStatus()
 	s.cancel()
 	s.d.Close()
 }

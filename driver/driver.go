@@ -236,10 +236,6 @@ func (d *Driver) checkTransitionConfig() {
 		d.wg.Done()
 	}()
 
-	// tmp := new(big.Int)
-	// tmp.SetString("115792089237316195423570985008687907853269984665640564039457584007913129638912", 10)
-	// ttd := (*hexutil.Big)(tmp)
-
 	for {
 		select {
 		case <-d.ctx.Done():
