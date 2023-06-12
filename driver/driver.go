@@ -2,7 +2,6 @@ package driver
 
 import (
 	"context"
-	"math/big"
 	"sync"
 	"time"
 
@@ -237,9 +236,9 @@ func (d *Driver) checkTransitionConfig() {
 		d.wg.Done()
 	}()
 
-	tmp := new(big.Int)
-	tmp.SetString("115792089237316195423570985008687907853269984665640564039457584007913129638912", 10)
-	ttd := (*hexutil.Big)(tmp)
+	// tmp := new(big.Int)
+	// tmp.SetString("115792089237316195423570985008687907853269984665640564039457584007913129638912", 10)
+	// ttd := (*hexutil.Big)(tmp)
 
 	for {
 		select {
@@ -248,7 +247,7 @@ func (d *Driver) checkTransitionConfig() {
 		case <-ticker.C:
 
 			tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
-				TerminalTotalDifficulty: ttd,
+				TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
 				TerminalBlockHash:       common.Hash{},
 				TerminalBlockNumber:     0,
 			})
