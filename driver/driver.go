@@ -104,7 +104,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 
 // Start starts the driver instance.
 func (d *Driver) Start() error {
-	d.wg.Add(2)
+	d.wg.Add(3)
 	go d.eventLoop()
 	go d.reportProtocolStatus()
 	go d.checkTransitionConfig()
@@ -237,14 +237,16 @@ func (d *Driver) checkTransitionConfig() {
 		d.wg.Done()
 	}()
 
+	tmp := new(big.Int)
+	tmp.SetString("115792089237316195423570985008687907853269984665640564039457584007913129638912", 10)
+	ttd := (*hexutil.Big)(tmp)
+
 	for {
 		select {
 		case <-d.ctx.Done():
 			return
 		case <-ticker.C:
-			tmp := new(big.Int)
-			tmp.SetString("115792089237316195423570985008687907853269984665640564039457584007913129638912", 10)
-			ttd := (*hexutil.Big)(tmp)
+
 			tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
 				TerminalTotalDifficulty: ttd,
 				TerminalBlockHash:       common.Hash{},
