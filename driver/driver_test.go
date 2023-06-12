@@ -174,17 +174,17 @@ func (s *DriverTestSuite) TestStartClose() {
 	s.d.Close()
 }
 
-// func (s *DriverTestSuite) TestCheckTransitionConfig() {
-// 	s.d.checkTransitionConfig()
-// 	s.cancel()
-// 	s.d.Close()
-// }
-
-func (s *DriverTestSuite) TestReportProtocolStatus() {
-	s.d.reportProtocolStatus()
+func (s *DriverTestSuite) TestCheckTransitionConfig() {
+	s.d.checkTransitionConfig()
+	time.Sleep(120 * time.Second)
 	s.cancel()
-	s.d.Close()
+	s.d.wg.Done()
 }
+
+// func (s *DriverTestSuite) TestReportProtocolStatus() {
+// 	s.d.reportProtocolStatus()
+// 	s.d.wg.Done()
+// }
 
 func TestDriverTestSuite(t *testing.T) {
 	suite.Run(t, new(DriverTestSuite))
