@@ -179,6 +179,7 @@ func (s *DriverTestSuite) TestCheckTransitionConfig() {
 		<-time.After(121 * time.Second)
 		s.cancel()
 	}()
+	s.d.wg.Add(1)
 	s.d.checkTransitionConfig()
 }
 
