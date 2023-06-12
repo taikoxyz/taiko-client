@@ -168,19 +168,19 @@ func (s *DriverTestSuite) TestDoSyncNoNewL2Blocks() {
 	s.Nil(s.d.doSync())
 }
 
+func (s *DriverTestSuite) TestCheckTransitionConfig() {
+	go func() {
+		time.After(61 * time.Second)
+		s.d.ctx.Done()
+	}()
+	s.d.wg.Add(1)
+	s.d.checkTransitionConfig()
+}
+
 func (s *DriverTestSuite) TestStartClose() {
 	s.Nil(s.d.Start())
 	s.cancel()
 	s.d.Close()
-}
-
-func (s *DriverTestSuite) TestCheckTransitionConfig() {
-	go func() {
-		time.After(61 * time.Second)
-		s.cancel()
-	}()
-	s.d.wg.Add(1)
-	s.d.checkTransitionConfig()
 }
 
 func TestDriverTestSuite(t *testing.T) {
