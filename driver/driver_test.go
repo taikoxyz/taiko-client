@@ -174,6 +174,12 @@ func (s *DriverTestSuite) TestStartClose() {
 	s.d.Close()
 }
 
+func (s *DriverTestSuite) TestCheckTransitionConfig() {
+	s.d.checkTransitionConfig()
+	s.cancel()
+	s.d.Close()
+}
+
 func TestDriverTestSuite(t *testing.T) {
 	suite.Run(t, new(DriverTestSuite))
 }
