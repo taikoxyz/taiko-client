@@ -6,21 +6,9 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
 )
-
-func TestWaitConfirmations(t *testing.T) {
-	client := newTestClient(t)
-
-	l1Head, err := client.L1.BlockNumber(context.Background())
-	require.Nil(t, err)
-
-	require.Nil(t, client.L1RawRPC.CallContext(context.Background(), nil, "hardhat_mine", hexutil.EncodeUint64(4)))
-
-	require.Nil(t, WaitConfirmations(context.Background(), client.L1, 4, l1Head))
-}
 
 func TestWaitReceiptTimeout(t *testing.T) {
 	client := newTestClient(t)

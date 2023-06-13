@@ -18,6 +18,10 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
+var (
+	waitReceiptPollingInterval = 3 * time.Second
+)
+
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
 func GetProtocolStateVariables(
 	taikoL1Client *bindings.TaikoL1Client,
@@ -30,36 +34,10 @@ func GetProtocolStateVariables(
 	return &stateVars, nil
 }
 
-// WaitConfirmations won't return before N blocks confirmations have been seen
-// on destination chain.
-func WaitConfirmations(ctx context.Context, client *ethclient.Client, confirmations uint64, begin uint64) error {
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticker.C:
-			latest, err := client.BlockNumber(ctx)
-			if err != nil {
-				log.Error("Fetch latest block number error: %w", err)
-				continue
-			}
-
-			if latest < begin+confirmations {
-				continue
-			}
-
-			return nil
-		}
-	}
-}
-
 // WaitReceipt keeps waiting until the given transaction has an execution
 // receipt to know whether it was reverted or not.
 func WaitReceipt(ctx context.Context, client *ethclient.Client, tx *types.Transaction) (*types.Receipt, error) {
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(waitReceiptPollingInterval)
 	defer ticker.Stop()
 
 	for {
