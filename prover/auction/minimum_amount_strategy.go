@@ -36,9 +36,15 @@ func NewMinimumBidFeePerGasStrategy(opts NewMinimumBidFeePerGasStrategyOpts) *Mi
 }
 
 func (s *MinimumBidFeePerGasStrategy) ShouldBid(ctx context.Context, currentBid bindings.TaikoDataBid) (bool, error) {
-	return false, nil
+	if currentBid.FeePerGas < s.minimumBidFeePerGas.Uint64() {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (s *MinimumBidFeePerGasStrategy) NextBid(ctx context.Context, proverAddress common.Address, currentBid bindings.TaikoDataBid) (bindings.TaikoDataBid, error) {
-	return bindings.TaikoDataBid{}, nil
+	return bindings.TaikoDataBid{
+		Deposit: s.deposit.Uint64(),
+	}, nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -89,6 +90,59 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 		return fmt.Errorf("crafted a bid that is not better than existing bid: %w", err)
 	}
 
+	requiredDepositAmount, err := b.getRequiredDepositAmount(ctx, bid)
+	if err != nil {
+		return fmt.Errorf("error getting required deposit amount: %w", err)
+	}
+
+	if requiredDepositAmount.Cmp(big.NewInt(0)) > 0 {
+		if err := b.deposit(ctx, new(big.Int).SetUint64(bid.Deposit)); err != nil {
+			return fmt.Errorf("error depositing taiko token: %w", err)
+		}
+	}
+
+	if err := b.submitBid(ctx, batchID, bid); err != nil {
+		return fmt.Errorf("error submitting bid: %w", err)
+	}
+
+	metrics.ProverAuctionableBatchBidGauge.Update(int64(batchID.Uint64()))
+
+	return nil
+}
+
+func (b *Bidder) getRequiredDepositAmount(ctx context.Context, bid bindings.TaikoDataBid) (*big.Int, error) {
+	balance, err := b.rpc.TaikoL1.GetTaikoTokenBalance(nil, b.proverAddress)
+	if err != nil {
+		return big.NewInt(0), fmt.Errorf("error getting taiko token balance: %w", err)
+	}
+
+	deposit := new(big.Int).SetUint64(bid.Deposit)
+
+	if balance.Cmp(deposit) >= 0 {
+		return big.NewInt(0), nil
+	} else {
+		return new(big.Int).Sub(deposit, balance), nil
+	}
+}
+
+func (b *Bidder) deposit(ctx context.Context, amount *big.Int) error {
+	opts, err := getTxOpts(ctx, b.rpc.L1, b.privateKey, b.rpc.L1ChainID)
+	if err != nil {
+		return err
+	}
+
+	tx, err := b.rpc.TaikoL1.DepositTaikoToken(opts, amount)
+
+	if _, err := rpc.WaitReceipt(ctx, b.rpc.L1, tx); err != nil {
+		return err
+	}
+
+	log.Info("📝 Deposited Taiko Token", "txHash", tx.Hash())
+
+	return nil
+}
+
+func (b *Bidder) submitBid(ctx context.Context, batchID *big.Int, bid bindings.TaikoDataBid) error {
 	opts, err := getTxOpts(ctx, b.rpc.L1, b.privateKey, b.rpc.L1ChainID)
 	if err != nil {
 		return err
@@ -104,13 +158,15 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 	)
 
 	tx, err := b.rpc.TaikoL1.BidForBatch(opts, batchID.Uint64(), bid)
+	if err != nil {
+		return fmt.Errorf("error submitting bid for batch: %w", err)
+	}
 
 	if _, err := rpc.WaitReceipt(ctx, b.rpc.L1, tx); err != nil {
 		return err
 	}
 
 	log.Info("📝 Bid for batch tx succeeded", "txHash", tx.Hash(), "batchID", batchID)
-	metrics.ProverAuctionableBatchBidGauge.Update(int64(batchID.Uint64()))
 
 	return nil
 }
