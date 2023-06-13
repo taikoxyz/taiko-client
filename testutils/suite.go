@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"os"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -60,6 +61,7 @@ func (s *ClientTestSuite) SetupTest() {
 		TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L2EngineEndpoint: os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		JwtSecret:        string(jwtSecret),
+		RetryInterval:    backoff.DefaultMaxInterval,
 	})
 	s.Nil(err)
 
