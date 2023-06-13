@@ -22,7 +22,11 @@ func (s *AlwaysBidStrategy) ShouldBid(ctx context.Context, currentBid bindings.T
 	return true, nil
 }
 
-func (s *AlwaysBidStrategy) NextBid(ctx context.Context, proverAddress common.Address, currentBid bindings.TaikoDataBid) (bindings.TaikoDataBid, error) {
+func (s *AlwaysBidStrategy) NextBid(
+	ctx context.Context,
+	proverAddress common.Address,
+	currentBid bindings.TaikoDataBid,
+) (bindings.TaikoDataBid, error) {
 	// re-use existing bid deposit
 	deposit := currentBid.Deposit
 	// but do the minimum next bid, which should be 10 percent lower than the existing one

@@ -43,7 +43,11 @@ func (s *MinimumBidFeePerGasStrategy) ShouldBid(ctx context.Context, currentBid 
 	return true, nil
 }
 
-func (s *MinimumBidFeePerGasStrategy) NextBid(ctx context.Context, proverAddress common.Address, currentBid bindings.TaikoDataBid) (bindings.TaikoDataBid, error) {
+func (s *MinimumBidFeePerGasStrategy) NextBid(
+	ctx context.Context,
+	proverAddress common.Address,
+	currentBid bindings.TaikoDataBid,
+) (bindings.TaikoDataBid, error) {
 	return bindings.TaikoDataBid{
 		Deposit: s.deposit.Uint64(),
 	}, nil

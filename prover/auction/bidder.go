@@ -23,13 +23,18 @@ type Bidder struct {
 	proverAddress common.Address
 }
 
-func NewBidder(strategy Strategy, rpc *rpc.Client, privateKey *ecdsa.PrivateKey, proverAddress common.Address) (*Bidder, error) {
+func NewBidder(
+	strategy Strategy,
+	rpc *rpc.Client,
+	privateKey *ecdsa.PrivateKey,
+	proverAddress common.Address,
+) *Bidder {
 	return &Bidder{
 		strategy:      strategy,
 		rpc:           rpc,
 		privateKey:    privateKey,
 		proverAddress: proverAddress,
-	}, nil
+	}
 }
 
 func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
@@ -68,7 +73,7 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 
 	shouldBid, err := b.strategy.ShouldBid(ctx, currentBid)
 	if err != nil {
-		return fmt.Errorf("error determing if should bid on current auction: %w", err)
+		return fmt.Errorf("error determining if should bid on current auction: %w", err)
 	}
 
 	if !shouldBid {
@@ -83,7 +88,7 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 
 	isBetter, err := b.rpc.TaikoL1.IsBidBetter(nil, bid, currentBid)
 	if err != nil {
-		return fmt.Errorf("error determing if bid is better than existing bid: %w", err)
+		return fmt.Errorf("error determining if bid is better than existing bid: %w", err)
 	}
 
 	if !isBetter {
@@ -132,6 +137,9 @@ func (b *Bidder) deposit(ctx context.Context, amount *big.Int) error {
 	}
 
 	tx, err := b.rpc.TaikoL1.DepositTaikoToken(opts, amount)
+	if err != nil {
+		return err
+	}
 
 	if _, err := rpc.WaitReceipt(ctx, b.rpc.L1, tx); err != nil {
 		return err

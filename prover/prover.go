@@ -227,7 +227,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		bidStrategy = auction.NewAlwaysBidStrategy()
 	}
 
-	bidder, err := auction.NewBidder(bidStrategy, p.rpc, cfg.L1ProverPrivKey, p.proverAddress)
+	bidder := auction.NewBidder(bidStrategy, p.rpc, cfg.L1ProverPrivKey, p.proverAddress)
 
 	p.bidder = bidder
 
@@ -719,7 +719,8 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 	}
 }
 
-// crawlForAuctionableBatches iteraites from the lastProposedBatchId + config.ActionMaxAheadOfProposals amount of batches
+// crawlForAuctionableBatches iteraites from the lastProposedBatchId
+// + config.ActionMaxAheadOfProposals amount of batches
 // to see if any are auctionable, and if so, adds them to the channel to attempt to be bid on.
 func (p *Prover) crawlForAuctionableBatches(ctx context.Context) {
 	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
