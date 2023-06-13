@@ -38,7 +38,7 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		0,
 		0,
 		meta,
-		func() (*types.Transaction, error) {
+		func(nonce *big.Int, gasTipCap *big.Int) (*types.Transaction, error) {
 			return nil, errors.New("L1_TEST")
 		}))
 
@@ -49,7 +49,7 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		0,
 		0,
 		meta,
-		func() (*types.Transaction, error) {
+		func(nonce *big.Int, gasTipCap *big.Int) (*types.Transaction, error) {
 			height, err := s.RpcClient.L1.BlockNumber(context.Background())
 			s.Nil(err)
 

@@ -247,9 +247,17 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return err
 	}
 
-	sendTx := func() (*types.Transaction, error) {
+	sendTx := func(nonce *big.Int, gasTipCap *big.Int) (*types.Transaction, error) {
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
+
+		if nonce != nil {
+			txOpts.Nonce = nonce
+		}
+
+		if gasTipCap != nil {
+			txOpts.GasTipCap = gasTipCap
+		}
 
 		return s.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
 	}

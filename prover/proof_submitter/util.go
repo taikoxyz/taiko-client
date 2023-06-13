@@ -70,10 +70,12 @@ func sendTxWithBackoff(
 	proposedAt uint64,
 	expectedReward uint64,
 	meta *bindings.TaikoDataBlockMetadata,
-	sendTxFunc func() (*types.Transaction, error),
+	sendTxFunc func(nonce *big.Int, gasTipCap *big.Int) (*types.Transaction, error),
 ) error {
 	var (
 		isUnretryableError bool
+		txNonce            *big.Int
+		gasTipCap          *big.Int
 		proposedTime       = time.Unix(int64(proposedAt), 0)
 	)
 
@@ -155,7 +157,7 @@ func sendTxWithBackoff(
 			}
 		}
 
-		tx, err := sendTxFunc()
+		tx, err := sendTxFunc(txNonce, gasTipCap)
 		if err != nil {
 			err = encoding.TryParsingCustomError(err)
 			if isSubmitProofTxErrorRetryable(err, blockID) {
@@ -169,6 +171,10 @@ func sendTxWithBackoff(
 
 		if _, err := rpc.WaitReceipt(ctx, cli.L1, tx); err != nil {
 			log.Warn("Failed to wait till transaction executed", "blockID", blockID, "txHash", tx.Hash(), "error", err)
+			if err == context.DeadlineExceeded {
+				txNonce = new(big.Int).SetUint64(tx.Nonce())
+				gasTipCap = new(big.Int).Mul(tx.GasTipCap(), common.Big2)
+			}
 			return err
 		}
 
