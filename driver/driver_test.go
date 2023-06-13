@@ -46,17 +46,17 @@ func (s *DriverTestSuite) SetupTest() {
 	}))
 	s.d = d
 
+	d2 := new(Driver)
 	ctx2, cancel2 := context.WithCancel(context.Background())
 	s.cancel2 = cancel2
-	d2 := new(Driver)
-	InitFromConfig(ctx2, d2, &Config{
+	s.Nil(InitFromConfig(ctx2, d2, &Config{
 		L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		L2EngineEndpoint: os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		JwtSecret:        string(jwtSecret),
-	})
+	}))
 	s.d2 = d2
 	// Init proposer
 	p := new(proposer.Proposer)
