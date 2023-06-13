@@ -26,6 +26,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+const (
+	backOffMaxRetrys     = 10
+	backOffRetryInterval = 12 * time.Second
+)
+
 type cancelFunc func()
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
@@ -332,7 +337,7 @@ func (p *Prover) onBlockProposed(
 	}
 
 	if _, err := p.rpc.WaitL1Origin(ctx, event.Id); err != nil {
-		return err
+		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.Id, err)
 	}
 
 	// Check whteher the L1 chain has been reorged.
@@ -365,7 +370,7 @@ func (p *Prover) onBlockProposed(
 
 	currentL1OriginHeader, err := p.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get L1 header, height %d: %w", event.Meta.L1Height, err)
 	}
 
 	if currentL1OriginHeader.Hash() != event.Meta.L1Hash {
@@ -399,7 +404,7 @@ func (p *Prover) onBlockProposed(
 		// Check whether the block has been verified.
 		isVerified, err := p.isBlockVerified(event.Id)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to check if the current L2 block is verified: %w", err)
 		}
 
 		if isVerified {
@@ -447,7 +452,7 @@ func (p *Prover) onBlockProposed(
 		p.currentBlocksBeingProven[event.Id.Uint64()] = cancelFunc(func() {
 			defer cancelCtx()
 			if err := p.validProofSubmitter.CancelProof(ctx, event.Id); err != nil {
-				log.Error("error cancelling proof", "error", err, "blockID", event.Id)
+				log.Error("failed to cancel proof", "error", err, "blockID", event.Id)
 			}
 		})
 		p.currentBlocksBeingProvenMutex.Unlock()
@@ -461,7 +466,10 @@ func (p *Prover) onBlockProposed(
 	p.lastHandledBlockID = event.Id.Uint64()
 
 	go func() {
-		if err := handleBlockProposedEvent(); err != nil {
+		if err := backoff.Retry(
+			func() error { return handleBlockProposedEvent() },
+			backoff.WithMaxRetries(backoff.NewConstantBackOff(backOffRetryInterval), backOffMaxRetrys),
+		); err != nil {
 			p.currentBlocksBeingProvenMutex.Lock()
 			delete(p.currentBlocksBeingProven, event.Id.Uint64())
 			p.currentBlocksBeingProvenMutex.Unlock()
@@ -483,7 +491,10 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 			p.currentBlocksBeingProvenMutex.Unlock()
 		}()
 
-		if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
+		if err := backoff.Retry(
+			func() error { return p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader) },
+			backoff.WithMaxRetries(backoff.NewConstantBackOff(backOffRetryInterval), backOffMaxRetrys),
+		); err != nil {
 			log.Error("Submit proof error", "error", err)
 		}
 	}()
