@@ -102,12 +102,12 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 	// Get the header of the block to prove from L2 execution engine.
 	block, err := s.rpc.L2.BlockByHash(ctx, l1Origin.L2BlockHash)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get the current L2 block by hash (%s): %w", l1Origin.L2BlockHash, err)
 	}
 
 	parent, err := s.rpc.L2.BlockByHash(ctx, block.ParentHash())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get the L2 parent block by hash (%s): %w", block.ParentHash(), err)
 	}
 
 	blockInfo, err := s.rpc.TaikoL1.GetBlock(nil, event.Id)
@@ -142,7 +142,7 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 	}
 
 	if err := s.proofProducer.RequestProof(ctx, opts, event.Id, &event.Meta, block.Header(), s.resultCh); err != nil {
-		return err
+		return fmt.Errorf("failed to request proof (id: %d): %w", event.Id, err)
 	}
 
 	metrics.ProverQueuedProofCounter.Inc(1)
