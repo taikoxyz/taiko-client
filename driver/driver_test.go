@@ -172,6 +172,7 @@ func (s *DriverTestSuite) TestCheckTransitionConfig() {
 	go func() {
 		time.After(120 * time.Second)
 		s.cancel()
+		s.d.Close()
 	}()
 	s.d.wg.Add(1)
 	s.d.checkTransitionConfig()
