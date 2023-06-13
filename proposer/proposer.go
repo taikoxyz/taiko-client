@@ -27,7 +27,8 @@ import (
 )
 
 var (
-	errNoNewTxs = errors.New("no new transactions")
+	errNoNewTxs        = errors.New("no new transactions")
+	waitReceiptTimeout = 1 * time.Minute
 )
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
@@ -304,7 +305,10 @@ func (p *Proposer) ProposeTxList(
 		return encoding.TryParsingCustomError(err)
 	}
 
-	if _, err := rpc.WaitReceipt(ctx, p.rpc.L1, proposeTx); err != nil {
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, waitReceiptTimeout)
+	defer cancel()
+
+	if _, err := rpc.WaitReceipt(ctxWithTimeout, p.rpc.L1, proposeTx); err != nil {
 		return err
 	}
 
