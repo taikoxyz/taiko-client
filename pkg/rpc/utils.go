@@ -117,18 +117,7 @@ func NeedNewProof(
 	cli *Client,
 	id *big.Int,
 	proverAddress common.Address,
-	realProofSkipSize *big.Int,
 ) (bool, error) {
-	if realProofSkipSize != nil && id.Uint64()%realProofSkipSize.Uint64() != 0 {
-		log.Info(
-			"Skipping valid block proof",
-			"blockID", id.Uint64(),
-			"skipSize", realProofSkipSize.Uint64(),
-		)
-
-		return false, nil
-	}
-
 	var parent *types.Header
 	if id.Cmp(common.Big1) == 0 {
 		header, err := cli.L2.HeaderByNumber(ctx, common.Big0)

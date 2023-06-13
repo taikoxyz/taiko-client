@@ -94,6 +94,23 @@ func NewValidProofSubmitter(
 
 // RequestProof implements the ProofSubmitter interface.
 func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
+	isBlockProvable, auction, err := s.rpc.TaikoL1.IsBlockProvableBy(nil, event.Id, s.proverAddress)
+	if err != nil {
+		return fmt.Errorf("failed to fetch isBlockProvableBy, blockID: %d, err: %w", event.Id, err)
+	}
+
+	if !isBlockProvable {
+		return errors.New(
+			fmt.Sprintf(`block is not provable by this prover, 
+				blockID: %d, 
+				prover: %v,
+				auctionWinningProver: %v`,
+				event.Id,
+				s.proverAddress,
+				auction.Bid.Prover.Hex(),
+			))
+	}
+
 	l1Origin, err := s.rpc.WaitL1Origin(ctx, event.Id)
 	if err != nil {
 		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.Id, err)

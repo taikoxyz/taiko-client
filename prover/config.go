@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/prover/auction"
 	"github.com/urfave/cli/v2"
 )
 
@@ -31,6 +32,8 @@ type Config struct {
 	SystemProverPrivateKey   *ecdsa.PrivateKey
 	Graffiti                 string
 	ExpectedReward           uint64
+	BidStrategyOption        auction.Option
+	MinimumAmount            *big.Int
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -40,6 +43,25 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(l1ProverPrivKeyStr))
 	if err != nil {
 		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
+	}
+
+	bidStrategyOption := auction.Option(c.String(flags.BidStrategy.Name))
+
+	if !auction.IsValidStrategy(bidStrategyOption) {
+		return nil, fmt.Errorf("unsupported bid strategy")
+	}
+
+	var minimumAmount *big.Int
+	var ok bool
+
+	if bidStrategyOption == auction.StrategyMinimumAmount {
+		if !c.IsSet(flags.MinimumBidAmount.Name) {
+			return nil, fmt.Errorf("minimumAmount flag is required with minimumAmount bid strategy")
+		}
+		minimumAmount, ok = new(big.Int).SetString(c.String(flags.MinimumBidAmount.Name), 10)
+		if !ok {
+			return nil, fmt.Errorf("could not convert minimumAmount to big int")
+		}
 	}
 
 	oracleProverSet := c.IsSet(flags.OracleProver.Name)
@@ -101,5 +123,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		SystemProverPrivateKey:   systemProverPrivKey,
 		Graffiti:                 c.String(flags.Graffiti.Name),
 		ExpectedReward:           c.Uint64(flags.ExpectedReward.Name),
+		BidStrategyOption:        bidStrategyOption,
+		MinimumAmount:            minimumAmount,
 	}, nil
 }

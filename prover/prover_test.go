@@ -2,6 +2,7 @@ package prover
 
 import (
 	"context"
+	"math/big"
 	"os"
 	"testing"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/proposer"
+	"github.com/taikoxyz/taiko-client/prover/auction"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
@@ -47,6 +49,8 @@ func (s *ProverTestSuite) SetupTest() {
 		SystemProverPrivateKey:   l1ProverPrivKey,
 		Dummy:                    true,
 		MaxConcurrentProvingJobs: 1,
+		BidStrategyOption:        auction.StrategyMinimumAmount,
+		MinimumAmount:            new(big.Int).SetUint64(10000000000),
 	})))
 	s.p = p
 	s.cancel = cancel

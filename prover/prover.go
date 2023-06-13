@@ -18,6 +18,7 @@ import (
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
+	"github.com/taikoxyz/taiko-client/prover/auction"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/urfave/cli/v2"
@@ -32,6 +33,7 @@ type Prover struct {
 	proverAddress       common.Address
 	oracleProverAddress common.Address
 	systemProverAddress common.Address
+	bidder              *auction.Bidder
 
 	// Clients
 	rpc *rpc.Client
@@ -67,6 +69,9 @@ type Prover struct {
 	submitProofConcurrencyGuard chan struct{}
 	submitProofTxMutex          *sync.Mutex
 
+	// Auction
+	auctionableBatchCh chan *big.Int
+
 	currentBlocksBeingProven      map[uint64]cancelFunc
 	currentBlocksBeingProvenMutex *sync.Mutex
 
@@ -90,6 +95,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.ctx = ctx
 	p.currentBlocksBeingProven = make(map[uint64]cancelFunc)
 	p.currentBlocksBeingProvenMutex = &sync.Mutex{}
+	p.auctionableBatchCh = make(chan *big.Int)
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -205,13 +211,28 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		return err
 	}
 
+	var bidStrategy auction.Strategy
+	if cfg.BidStrategyOption == auction.StrategyMinimumAmount {
+		bidStrategy = auction.NewMinimumAmountStrategy(auction.NewMinimumAmountStrategyOpts{
+			MinimumAmount: cfg.MinimumAmount,
+			RPC:           p.rpc,
+		})
+	} else if cfg.BidStrategyOption == auction.StrategyAlwaysBid {
+		bidStrategy = auction.NewAlwaysBidStrategy()
+	}
+
+	bidder, err := auction.NewBidder(bidStrategy, p.rpc, cfg.L1ProverPrivKey, p.proverAddress)
+
+	p.bidder = bidder
+
 	return nil
 }
 
 // Start starts the main loop of the L2 block prover.
 func (p *Prover) Start() error {
-	p.wg.Add(1)
-	p.initSubscription()
+	p.wg.Add(2)
+	p.initSubscriptions()
+	go p.crawlForAuctionableBatches()
 	go p.eventLoop()
 
 	return nil
@@ -265,6 +286,8 @@ func (p *Prover) eventLoop() {
 			}
 		case <-forceProvingTicker.C:
 			reqProving()
+		case batchId := <-p.auctionableBatchCh:
+			p.bidOp(p.ctx, batchId)
 		}
 	}
 }
@@ -364,13 +387,27 @@ func (p *Prover) onBlockProposed(
 				p.rpc,
 				event.Id,
 				p.proverAddress,
-				p.protocolConfigs.RealProofSkipSize,
 			)
 			if err != nil {
 				return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
 			}
 
 			if !needNewProof {
+				return nil
+			}
+
+			isBlockProvable, auction, err := p.rpc.TaikoL1.IsBlockProvableBy(nil, event.Id, p.proverAddress)
+			if err != nil {
+				return fmt.Errorf("failed to fetch isBlockProvableBy, blockID: %d, err: %w", event.Id, err)
+			}
+
+			if !isBlockProvable {
+				log.Info("block proposed is not provable by this prover",
+					"blockID ", event.Id,
+					"prover", p.proverAddress.Hex(),
+					"winningProver", auction.Bid.Prover.Hex(),
+				)
+
 				return nil
 			}
 		}
@@ -511,8 +548,8 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 	return id.Uint64() <= stateVars.LastVerifiedBlockId, nil
 }
 
-// initSubscription initializes all subscriptions in current prover instance.
-func (p *Prover) initSubscription() {
+// initSubscriptions initializes all subscriptions in current prover instance.
+func (p *Prover) initSubscriptions() {
 	p.blockProposedSub = rpc.SubscribeBlockProposed(p.rpc.TaikoL1, p.blockProposedCh)
 	p.blockVerifiedSub = rpc.SubscribeBlockVerified(p.rpc.TaikoL1, p.blockVerifiedCh)
 	p.blockProvenSub = rpc.SubscribeBlockProven(p.rpc.TaikoL1, p.blockProvenCh)
@@ -553,4 +590,43 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 		cancel()
 		delete(p.currentBlocksBeingProven, blockID)
 	}
+}
+
+func (p *Prover) crawlForAuctionableBatches(ctx context.Context) {
+	defer func() {
+		p.wg.Done()
+	}()
+
+	ticker := time.NewTicker(60 * time.Second)
+	// TODO: proper batches amount tocheck in the future
+	batches := 10
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			stateVars, err := p.rpc.GetProtocolStateVariables(nil)
+			if err != nil {
+				log.Error("error getting state variables: err", err)
+				continue
+			}
+
+			lastVerifiedBlockID := stateVars.LastVerifiedBlockId
+
+			j := 0
+
+			for i := lastVerifiedBlockID; j < batches; i += uint64(p.protocolConfigs.AuctionBatchSize) {
+				// TODO/WIP: check if batch is auctionable for blockId, and then start bid
+
+				batchId := big.NewInt(0)
+				log.Info("auctionable batch detected", batchId)
+
+				p.auctionableBatchCh <- batchId
+			}
+		}
+	}
+}
+
+func (p *Prover) bidOp(ctx context.Context, batchId *big.Int) {
+
 }

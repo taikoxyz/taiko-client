@@ -79,6 +79,16 @@ var (
 		Category: proverCategory,
 		Value:    100_000_000,
 	}
+	BidStrategy = &cli.StringFlag{
+		Name:     "bidStrategy",
+		Usage:    "Which strategy to use for bidding on proposed blocks",
+		Category: proverCategory,
+	}
+	MinimumBidAmount = &cli.StringFlag{
+		Name:     "minimumAmountInWei",
+		Usage:    "Minimum amount in wei per gas you are willing to bid if bidStategy is minimumAmount",
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -98,4 +108,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	SystemProverPrivateKey,
 	Graffiti,
 	ExpectedReward,
+	BidStrategy,
+	MinimumBidAmount,
 })

@@ -106,7 +106,7 @@ func sendTxWithBackoff(
 		// Check the expected reward.
 		if expectedReward != 0 {
 			// Check if this proof is still needed at first.
-			needNewProof, err := rpc.NeedNewProof(ctx, cli, blockID, common.Address{}, nil)
+			needNewProof, err := rpc.NeedNewProof(ctx, cli, blockID, common.Address{})
 			if err != nil {
 				log.Warn(
 					"Failed to check if the generated proof is needed",
