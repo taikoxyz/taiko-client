@@ -92,6 +92,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		L2Endpoint:     cfg.L2Endpoint,
 		TaikoL1Address: cfg.TaikoL1Address,
 		TaikoL2Address: cfg.TaikoL2Address,
+		RetryInterval:  cfg.BackOffRetryInterval,
 	}); err != nil {
 		return fmt.Errorf("initialize rpc clients error: %w", err)
 	}

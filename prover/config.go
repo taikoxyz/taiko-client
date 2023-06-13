@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -32,6 +33,8 @@ type Config struct {
 	SystemProverPrivateKey   *ecdsa.PrivateKey
 	Graffiti                 string
 	ExpectedReward           uint64
+	BackOffMaxRetrys         uint64
+	BackOffRetryInterval     time.Duration
 	BidConfig
 }
 
@@ -134,6 +137,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		SystemProverPrivateKey:   systemProverPrivKey,
 		Graffiti:                 c.String(flags.Graffiti.Name),
 		ExpectedReward:           c.Uint64(flags.ExpectedReward.Name),
+		BackOffMaxRetrys:         c.Uint64(flags.BackOffMaxRetrys.Name),
+		BackOffRetryInterval:     time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
 		BidConfig: BidConfig{
 			BidStrategyOption:   bidStrategyOption,
 			MinimumBidFeePerGas: minimumFeePerGas,

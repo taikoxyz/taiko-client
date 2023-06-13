@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -44,11 +45,12 @@ type ClientConfig struct {
 	TaikoL2Address   common.Address
 	L2EngineEndpoint string
 	JwtSecret        string
+	RetryInterval    time.Duration
 }
 
 // NewClient initializes all RPC clients used by Taiko client softwares.
 func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
-	l1RPC, err := DialClientWithBackoff(ctx, cfg.L1Endpoint)
+	l1RPC, err := DialClientWithBackoff(ctx, cfg.L1Endpoint, cfg.RetryInterval)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +60,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	l2RPC, err := DialClientWithBackoff(ctx, cfg.L2Endpoint)
+	l2RPC, err := DialClientWithBackoff(ctx, cfg.L2Endpoint, cfg.RetryInterval)
 	if err != nil {
 		return nil, err
 	}
@@ -92,14 +94,19 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	// won't be initialized.
 	var l2AuthRPC *EngineClient
 	if len(cfg.L2EngineEndpoint) != 0 && len(cfg.JwtSecret) != 0 {
-		if l2AuthRPC, err = DialEngineClientWithBackoff(ctx, cfg.L2EngineEndpoint, cfg.JwtSecret); err != nil {
+		if l2AuthRPC, err = DialEngineClientWithBackoff(
+			ctx,
+			cfg.L2EngineEndpoint,
+			cfg.JwtSecret,
+			cfg.RetryInterval,
+		); err != nil {
 			return nil, err
 		}
 	}
 
 	var l2CheckPoint *ethclient.Client
 	if len(cfg.L2CheckPoint) != 0 {
-		if l2CheckPoint, err = DialClientWithBackoff(ctx, cfg.L2CheckPoint); err != nil {
+		if l2CheckPoint, err = DialClientWithBackoff(ctx, cfg.L2CheckPoint, cfg.RetryInterval); err != nil {
 			return nil, err
 		}
 	}
