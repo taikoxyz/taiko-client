@@ -20,6 +20,7 @@ import (
 
 var (
 	waitReceiptPollingInterval = 3 * time.Second
+	defaultWaitReceiptTimeout  = 1 * time.Second
 )
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
@@ -40,9 +41,18 @@ func WaitReceipt(ctx context.Context, client *ethclient.Client, tx *types.Transa
 	ticker := time.NewTicker(waitReceiptPollingInterval)
 	defer ticker.Stop()
 
+	var (
+		ctxWithTimeout = ctx
+		cancel         context.CancelFunc
+	)
+	if _, ok := ctx.Deadline(); !ok {
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, defaultWaitReceiptTimeout)
+		defer cancel()
+	}
+
 	for {
 		select {
-		case <-ctx.Done():
+		case <-ctxWithTimeout.Done():
 			return nil, ctx.Err()
 		case <-ticker.C:
 			receipt, err := client.TransactionReceipt(ctx, tx.Hash())
