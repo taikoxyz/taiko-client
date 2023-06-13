@@ -31,5 +31,9 @@ func IsValidStrategy(option Option) bool {
 
 type Strategy interface {
 	ShouldBid(ctx context.Context, currentBid bindings.TaikoDataBid) (bool, error)
-	NextBid(ctx context.Context, proverAddress common.Address, currentBid bindings.TaikoDataBid) (bindings.TaikoDataBid, error)
+	NextBid(
+		ctx context.Context,
+		proverAddress common.Address,
+		currentBid bindings.TaikoDataBid,
+	) (bindings.TaikoDataBid, error)
 }
