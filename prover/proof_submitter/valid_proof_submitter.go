@@ -104,15 +104,14 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 	}
 
 	if !isBlockProvable {
-		return errors.New(
-			fmt.Sprintf(`block is not provable by this prover, 
+		return fmt.Errorf(`block is not provable by this prover, 
 				blockID: %d, 
 				prover: %v,
 				auctionWinningProver: %v`,
-				event.Id,
-				s.proverAddress,
-				auction.Bid.Prover.Hex(),
-			))
+			event.Id,
+			s.proverAddress,
+			auction.Bid.Prover.Hex(),
+		)
 	}
 
 	l1Origin, err := s.rpc.WaitL1Origin(ctx, event.Id)
