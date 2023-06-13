@@ -20,7 +20,7 @@ import (
 
 var (
 	waitReceiptPollingInterval = 3 * time.Second
-	defaultWaitReceiptTimeout  = 1 * time.Second
+	defaultWaitReceiptTimeout  = 1 * time.Minute
 )
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
