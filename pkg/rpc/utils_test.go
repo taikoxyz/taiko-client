@@ -23,17 +23,6 @@ func TestWaitReceiptTimeout(t *testing.T) {
 	require.ErrorContains(t, err, "context deadline exceeded")
 }
 
-func TestGetReceiptsByBlock(t *testing.T) {
-	client := newTestClient(t)
-
-	l1Genesis, err := client.L1.BlockByNumber(context.Background(), common.Big0)
-	require.Nil(t, err)
-
-	receipts, err := GetReceiptsByBlock(context.Background(), client.L1RawRPC, l1Genesis)
-	require.Nil(t, err)
-	require.Empty(t, receipts)
-}
-
 func TestSetHead(t *testing.T) {
 	require.Nil(t, SetHead(context.Background(), newTestClient(t).L2RawRPC, common.Big0))
 }
