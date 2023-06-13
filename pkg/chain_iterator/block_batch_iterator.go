@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum"
@@ -163,7 +164,7 @@ func (i *BlockBatchIterator) Iter() error {
 		return nil
 	}
 
-	if err := backoff.Retry(iterOp, backoff.NewExponentialBackOff()); err != nil {
+	if err := backoff.Retry(iterOp, backoff.NewConstantBackOff(12*time.Second)); err != nil {
 		return err
 	}
 
@@ -287,7 +288,7 @@ func (i *BlockBatchIterator) end() {
 // event.Raw.Removed, which will also call `i.rewindOnReorgDetected` to rewind back
 func (i *BlockBatchIterator) ensureCurrentNotReorged() error {
 	current, err := i.client.HeaderByHash(i.ctx, i.current.Hash())
-	if err != nil && !errors.Is(err, ethereum.NotFound) {
+	if err != nil && !(err.Error() == ethereum.NotFound.Error()) {
 		return err
 	}
 

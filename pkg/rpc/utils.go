@@ -18,6 +18,11 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
+var (
+	waitReceiptPollingInterval = 3 * time.Second
+	defaultWaitReceiptTimeout  = 1 * time.Minute
+)
+
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
 func GetProtocolStateVariables(
 	taikoL1Client *bindings.TaikoL1Client,
@@ -30,44 +35,27 @@ func GetProtocolStateVariables(
 	return &stateVars, nil
 }
 
-// WaitConfirmations won't return before N blocks confirmations have been seen
-// on destination chain.
-func WaitConfirmations(ctx context.Context, client *ethclient.Client, confirmations uint64, begin uint64) error {
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticker.C:
-			latest, err := client.BlockNumber(ctx)
-			if err != nil {
-				log.Error("Fetch latest block number error: %w", err)
-				continue
-			}
-
-			if latest < begin+confirmations {
-				continue
-			}
-
-			return nil
-		}
-	}
-}
-
 // WaitReceipt keeps waiting until the given transaction has an execution
 // receipt to know whether it was reverted or not.
 func WaitReceipt(ctx context.Context, client *ethclient.Client, tx *types.Transaction) (*types.Receipt, error) {
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(waitReceiptPollingInterval)
 	defer ticker.Stop()
+
+	var (
+		ctxWithTimeout = ctx
+		cancel         context.CancelFunc
+	)
+	if _, ok := ctx.Deadline(); !ok {
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, defaultWaitReceiptTimeout)
+		defer cancel()
+	}
 
 	for {
 		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
+		case <-ctxWithTimeout.Done():
+			return nil, ctxWithTimeout.Err()
 		case <-ticker.C:
-			receipt, err := client.TransactionReceipt(ctx, tx.Hash())
+			receipt, err := client.TransactionReceipt(ctxWithTimeout, tx.Hash())
 			if err != nil {
 				continue
 			}
@@ -81,34 +69,61 @@ func WaitReceipt(ctx context.Context, client *ethclient.Client, tx *types.Transa
 	}
 }
 
-// GetReceiptsByBlock fetches all transaction receipts in a block.
-func GetReceiptsByBlock(ctx context.Context, cli *rpc.Client, block *types.Block) (types.Receipts, error) {
-	reqs := make([]rpc.BatchElem, block.Transactions().Len())
-	receipts := make([]*types.Receipt, block.Transactions().Len())
+// NeedNewSystemProof checks whether the L2 block still needs a new system proof.
+func NeedNewSystemProof(ctx context.Context, cli *Client, id *big.Int, realProofSkipSize *big.Int) (bool, error) {
+	if realProofSkipSize == nil || realProofSkipSize.Uint64() <= 1 {
+		return false, nil
+	}
+	if id.Uint64()%realProofSkipSize.Uint64() == 0 {
+		log.Info(
+			"Skipping system block proof",
+			"blockID", id.Uint64(),
+			"skipSize", realProofSkipSize.Uint64(),
+		)
 
-	for i, tx := range block.Transactions() {
-		reqs[i] = rpc.BatchElem{
-			Method: "eth_getTransactionReceipt",
-			Args:   []interface{}{tx.Hash()},
-			Result: &receipts[i],
+		return false, nil
+	}
+
+	var parent *types.Header
+	if id.Cmp(common.Big1) == 0 {
+		header, err := cli.L2.HeaderByNumber(ctx, common.Big0)
+		if err != nil {
+			return false, err
+		}
+
+		parent = header
+	} else {
+		parentL1Origin, err := cli.WaitL1Origin(ctx, new(big.Int).Sub(id, common.Big1))
+		if err != nil {
+			return false, err
+		}
+
+		if parent, err = cli.L2.HeaderByHash(ctx, parentL1Origin.L2BlockHash); err != nil {
+			return false, err
 		}
 	}
 
-	if err := cli.BatchCallContext(ctx, reqs); err != nil {
-		return nil, err
-	}
-
-	for i := range reqs {
-		if reqs[i].Error != nil {
-			return nil, reqs[i].Error
+	fc, err := cli.TaikoL1.GetForkChoice(nil, id, parent.Hash(), uint32(parent.GasUsed))
+	if err != nil {
+		if !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
+			return false, encoding.TryParsingCustomError(err)
 		}
 
-		if receipts[i] == nil {
-			return nil, fmt.Errorf("got null receipt of transaction %s", block.Transactions()[i].Hash())
-		}
+		return true, nil
 	}
 
-	return receipts, nil
+	if fc.Prover == encoding.SystemProverAddress {
+		log.Info(
+			"📬 Block's system proof has already been submitted by another system prover",
+			"blockID", id,
+			"prover", fc.Prover,
+			"provenAt", fc.ProvenAt,
+		)
+
+		return false, nil
+	}
+
+	return true, nil
 }
 
 // NeedNewProof checks whether the L2 block still needs a new proof.

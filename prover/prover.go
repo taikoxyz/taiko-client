@@ -4,10 +4,13 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"math"
 	"math/big"
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
@@ -22,6 +25,11 @@ import (
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/urfave/cli/v2"
+)
+
+const (
+	backOffMaxRetrys     = 10
+	backOffRetryInterval = 12 * time.Second
 )
 
 type cancelFunc func()
@@ -61,8 +69,7 @@ type Prover struct {
 	proveNotify      chan struct{}
 
 	// Proof related
-	proveValidProofCh   chan *proofProducer.ProofWithHeader
-	proveInvalidProofCh chan *proofProducer.ProofWithHeader
+	proofGenerationCh chan *proofProducer.ProofWithHeader
 
 	// Concurrency guards
 	proposeConcurrencyGuard     chan struct{}
@@ -129,8 +136,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	p.blockProvenCh = make(chan *bindings.TaikoL1ClientBlockProven, chBufferSize)
-	p.proveValidProofCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
-	p.proveInvalidProofCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
+	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
@@ -199,7 +205,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if p.validProofSubmitter, err = proofSubmitter.NewValidProofSubmitter(
 		p.rpc,
 		producer,
-		p.proveValidProofCh,
+		p.proofGenerationCh,
 		p.cfg.TaikoL2Address,
 		p.cfg.L1ProverPrivKey,
 		p.submitProofTxMutex,
@@ -253,11 +259,20 @@ func (p *Prover) eventLoop() {
 		}
 	}
 
+	lastLatestVerifiedL1Height := p.latestVerifiedL1Height
+
 	// If there is too many (TaikoData.Config.maxNumBlocks) pending blocks in TaikoL1 contract, there will be no new
 	// BlockProposed temporarily, so except the BlockProposed subscription, we need another trigger to start
 	// fetching the proposed blocks.
 	forceProvingTicker := time.NewTicker(15 * time.Second)
 	defer forceProvingTicker.Stop()
+
+	// If there is no new block verification in `proofCooldownPeriod * 2` seconeds, and the current prover is
+	// a special prover, we will go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
+	verificationCheckTicker := time.NewTicker(
+		time.Duration(p.protocolConfigs.ProofCooldownPeriod.Uint64()*2) * time.Second,
+	)
+	defer verificationCheckTicker.Stop()
 
 	// Call reqProving() right away to catch up with the latest state.
 	reqProving()
@@ -266,10 +281,15 @@ func (p *Prover) eventLoop() {
 		select {
 		case <-p.ctx.Done():
 			return
-		case proofWithHeader := <-p.proveValidProofCh:
-			p.submitProofOp(p.ctx, proofWithHeader, true)
-		case proofWithHeader := <-p.proveInvalidProofCh:
-			p.submitProofOp(p.ctx, proofWithHeader, false)
+		case <-verificationCheckTicker.C:
+			if err := backoff.Retry(
+				func() error { return p.checkChainVerification(lastLatestVerifiedL1Height) },
+				backoff.NewExponentialBackOff(),
+			); err != nil {
+				log.Error("Check chain verification error", "error", err)
+			}
+		case proofWithHeader := <-p.proofGenerationCh:
+			p.submitProofOp(p.ctx, proofWithHeader)
 		case <-p.proveNotify:
 			if err := p.proveOp(); err != nil {
 				log.Error("Prove new blocks error", "error", err)
@@ -331,9 +351,13 @@ func (p *Prover) onBlockProposed(
 	end eventIterator.EndBlockProposedEventIterFunc,
 ) error {
 	// If there is newly generated proofs, we need to submit them as soon as possible.
-	if len(p.proveValidProofCh) > 0 || len(p.proveInvalidProofCh) > 0 {
+	if len(p.proofGenerationCh) > 0 {
 		end()
 		return nil
+	}
+
+	if _, err := p.rpc.WaitL1Origin(ctx, event.Id); err != nil {
+		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.Id, err)
 	}
 
 	// Check whteher the L1 chain has been reorged.
@@ -342,7 +366,7 @@ func (p *Prover) onBlockProposed(
 		new(big.Int).Sub(event.Id, common.Big1),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to check whether L1 chain was reorged: %w", err)
+		return fmt.Errorf("failed to check whether L1 chain was reorged (eventID %d): %w", event.Id, err)
 	}
 
 	if reorged {
@@ -363,7 +387,35 @@ func (p *Prover) onBlockProposed(
 	if event.Id.Uint64() <= p.lastHandledBlockID {
 		return nil
 	}
-	log.Info("Proposed block", "blockID", event.Id)
+
+	currentL1OriginHeader, err := p.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
+	if err != nil {
+		return fmt.Errorf("failed to get L1 header, height %d: %w", event.Meta.L1Height, err)
+	}
+
+	if currentL1OriginHeader.Hash() != event.Meta.L1Hash {
+		log.Warn(
+			"L1 block hash mismatch due to L1 reorg",
+			"height", event.Meta.L1Height,
+			"currentL1OriginHeader", currentL1OriginHeader.Hash(),
+			"L1HashInEvent", event.Meta.L1Hash,
+		)
+
+		return fmt.Errorf(
+			"L1 block hash mismatch due to L1 reorg: %s != %s",
+			currentL1OriginHeader.Hash(),
+			event.Meta.L1Hash,
+		)
+	}
+
+	log.Info(
+		"Proposed block",
+		"L1Height", event.Raw.BlockNumber,
+		"L1Hash", event.Raw.BlockHash,
+		"BlockID", event.Id,
+		"BlockFee", event.BlockFee,
+		"Removed", event.Raw.Removed,
+	)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
 
 	handleBlockProposedEvent := func() error {
@@ -372,7 +424,7 @@ func (p *Prover) onBlockProposed(
 		// Check whether the block has been verified.
 		isVerified, err := p.isBlockVerified(event.Id)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to check if the current L2 block is verified: %w", err)
 		}
 
 		if isVerified {
@@ -412,6 +464,17 @@ func (p *Prover) onBlockProposed(
 			}
 		}
 
+		if p.cfg.SystemProver {
+			needNewSystemProof, err := rpc.NeedNewSystemProof(ctx, p.rpc, event.Id, p.protocolConfigs.RealProofSkipSize)
+			if err != nil {
+				return fmt.Errorf("failed to check whether the L2 block needs a new system proof: %w", err)
+			}
+
+			if !needNewSystemProof {
+				return nil
+			}
+		}
+
 		// Check if the current prover has seen this block ID before, there was probably
 		// a L1 reorg, we need to cancel that reorged block's proof generation task at first.
 		if p.currentBlocksBeingProven[event.Meta.Id] != nil {
@@ -423,7 +486,7 @@ func (p *Prover) onBlockProposed(
 		p.currentBlocksBeingProven[event.Id.Uint64()] = cancelFunc(func() {
 			defer cancelCtx()
 			if err := p.validProofSubmitter.CancelProof(ctx, event.Id); err != nil {
-				log.Error("error cancelling proof", "error", err, "blockID", event.Id)
+				log.Error("failed to cancel proof", "error", err, "blockID", event.Id)
 			}
 		})
 		p.currentBlocksBeingProvenMutex.Unlock()
@@ -437,7 +500,10 @@ func (p *Prover) onBlockProposed(
 	p.lastHandledBlockID = event.Id.Uint64()
 
 	go func() {
-		if err := handleBlockProposedEvent(); err != nil {
+		if err := backoff.Retry(
+			func() error { return handleBlockProposedEvent() },
+			backoff.WithMaxRetries(backoff.NewConstantBackOff(backOffRetryInterval), backOffMaxRetrys),
+		); err != nil {
 			p.currentBlocksBeingProvenMutex.Lock()
 			delete(p.currentBlocksBeingProven, event.Id.Uint64())
 			p.currentBlocksBeingProvenMutex.Unlock()
@@ -448,8 +514,8 @@ func (p *Prover) onBlockProposed(
 	return nil
 }
 
-// submitProofOp performs a (valid block / invalid block) proof submission operation.
-func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader, isValidProof bool) {
+// submitProofOp performs a proof submission operation.
+func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader) {
 	p.submitProofConcurrencyGuard <- struct{}{}
 	go func() {
 		defer func() {
@@ -459,8 +525,11 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 			p.currentBlocksBeingProvenMutex.Unlock()
 		}()
 
-		if err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
-			log.Error("Submit proof error", "isValidProof", isValidProof, "error", err)
+		if err := backoff.Retry(
+			func() error { return p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader) },
+			backoff.WithMaxRetries(backoff.NewConstantBackOff(backOffRetryInterval), backOffMaxRetrys),
+		); err != nil {
+			log.Error("Submit proof error", "error", err)
 		}
 	}()
 }
@@ -469,14 +538,29 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 // the block being proven if it's verified.
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
-	p.latestVerifiedL1Height = event.Raw.BlockNumber
 
-	if event.BlockHash == (common.Hash{}) {
-		log.Info("New verified invalid block", "blockID", event.Id)
-		return nil
+	isNormalProof := p.protocolConfigs.RealProofSkipSize == nil ||
+		(p.protocolConfigs.RealProofSkipSize != nil && event.Id.Uint64()%p.protocolConfigs.RealProofSkipSize.Uint64() == 0)
+	if event.Reward > math.MaxInt64 {
+		metrics.ProverAllProofRewardGauge.Update(math.MaxInt64)
+		if isNormalProof {
+			metrics.ProverNormalProofRewardGauge.Update(math.MaxInt64)
+		}
+	} else {
+		metrics.ProverAllProofRewardGauge.Update(int64(event.Reward))
+		if isNormalProof {
+			metrics.ProverNormalProofRewardGauge.Update(int64(event.Reward))
+		}
 	}
 
-	log.Info("New verified valid block", "blockID", event.Id, "hash", common.BytesToHash(event.BlockHash[:]))
+	p.latestVerifiedL1Height = event.Raw.BlockNumber
+
+	log.Info(
+		"New verified block",
+		"blockID", event.Id,
+		"hash", common.BytesToHash(event.BlockHash[:]),
+		"reward", event.Reward,
+	)
 
 	// cancel any proofs being generated for this block
 	p.cancelProof(ctx, event.Id.Uint64())
@@ -511,7 +595,7 @@ func (p *Prover) Name() string {
 
 // initL1Current initializes prover's L1Current cursor.
 func (p *Prover) initL1Current(startingBlockID *big.Int) error {
-	if err := p.rpc.WaitTillL2Synced(p.ctx); err != nil {
+	if err := p.rpc.WaitTillL2ExecutionEngineSynced(p.ctx); err != nil {
 		return err
 	}
 
@@ -529,8 +613,20 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 		startingBlockID = new(big.Int).SetUint64(stateVars.LastVerifiedBlockId)
 	}
 
+	log.Info("Init L1Current cursor", "startingBlockID", startingBlockID)
+
 	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
 	if err != nil {
+		if err.Error() == ethereum.NotFound.Error() {
+			log.Warn("Failed to find L1Origin for blockID, use latest L1 head instead", "blockID", startingBlockID)
+			l1Head, err := p.rpc.L1.BlockNumber(p.ctx)
+			if err != nil {
+				return err
+			}
+
+			p.l1Current = l1Head
+			return nil
+		}
 		return err
 	}
 
@@ -559,6 +655,33 @@ func (p *Prover) initSubscriptions() {
 func (p *Prover) closeSubscription() {
 	p.blockVerifiedSub.Unsubscribe()
 	p.blockProposedSub.Unsubscribe()
+}
+
+// checkChainVerification checks if there is no new block verification in protocol, if so,
+// it will let current sepecial prover to go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
+func (p *Prover) checkChainVerification(lastLatestVerifiedL1Height uint64) error {
+	if (!p.cfg.SystemProver && !p.cfg.OracleProver) || lastLatestVerifiedL1Height != p.latestVerifiedL1Height {
+		return nil
+	}
+
+	log.Warn(
+		"No new block verification in `proofCooldownPeriod * 2` seconeds",
+		"latestVerifiedL1Height", p.latestVerifiedL1Height,
+		"proofCooldownPeriod", p.protocolConfigs.ProofCooldownPeriod,
+	)
+
+	stateVar, err := p.rpc.TaikoL1.GetStateVariables(nil)
+	if err != nil {
+		log.Error("Failed to get protocol state variables", "error", err)
+		return err
+	}
+
+	if err := p.initL1Current(new(big.Int).SetUint64(stateVar.LastVerifiedBlockId)); err != nil {
+		return err
+	}
+	p.lastHandledBlockID = stateVar.LastVerifiedBlockId
+
+	return nil
 }
 
 // cancelProofIfValid cancels proof only if the parentGasUsed and parentHash in the proof match what

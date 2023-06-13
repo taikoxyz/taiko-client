@@ -110,7 +110,8 @@ func sendTxWithBackoff(
 			if err != nil {
 				log.Warn(
 					"Failed to check if the generated proof is needed",
-					"blockID", blockID, "error", err,
+					"blockID", blockID,
+					"error", err,
 				)
 				return err
 			}
@@ -137,6 +138,12 @@ func sendTxWithBackoff(
 			log.Warn("Failed to wait till transaction executed", "blockID", blockID, "txHash", tx.Hash(), "error", err)
 			return err
 		}
+
+		log.Info(
+			"💰 Your block proof was accepted",
+			"blockID", blockID,
+			"proposedAt", proposedAt,
+		)
 
 		return nil
 	}, backoff.NewConstantBackOff(12*time.Second)); err != nil {
