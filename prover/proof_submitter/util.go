@@ -71,6 +71,7 @@ func sendTxWithBackoff(
 	expectedReward uint64,
 	meta *bindings.TaikoDataBlockMetadata,
 	sendTxFunc func() (*types.Transaction, error),
+	retryInterval time.Duration,
 ) error {
 	var (
 		isUnretryableError bool
@@ -179,7 +180,7 @@ func sendTxWithBackoff(
 		)
 
 		return nil
-	}, backoff.NewConstantBackOff(12*time.Second)); err != nil {
+	}, backoff.NewConstantBackOff(retryInterval)); err != nil {
 		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
 	}
 

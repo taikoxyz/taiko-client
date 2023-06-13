@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -38,9 +39,9 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		0,
 		0,
 		meta,
-		func() (*types.Transaction, error) {
-			return nil, errors.New("L1_TEST")
-		}))
+		func() (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
+		12*time.Second,
+	))
 
 	s.Nil(sendTxWithBackoff(
 		context.Background(),
@@ -64,5 +65,7 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 			}
 
 			return block.Transactions()[0], nil
-		}))
+		},
+		12*time.Second,
+	))
 }

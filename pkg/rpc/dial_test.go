@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
@@ -21,6 +22,7 @@ func TestDialEngineClientWithBackoff(t *testing.T) {
 		context.Background(),
 		os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		string(jwtSecret),
+		12*time.Second,
 	)
 
 	require.Nil(t, err)
@@ -32,7 +34,11 @@ func TestDialEngineClientWithBackoff(t *testing.T) {
 }
 
 func TestDialClientWithBackoff(t *testing.T) {
-	client, err := DialClientWithBackoff(context.Background(), os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"))
+	client, err := DialClientWithBackoff(
+		context.Background(),
+		os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		12*time.Second,
+	)
 	require.Nil(t, err)
 
 	genesis, err := client.HeaderByNumber(context.Background(), common.Big0)
