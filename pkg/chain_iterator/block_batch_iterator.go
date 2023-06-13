@@ -17,6 +17,7 @@ import (
 
 const (
 	DefaultBlocksReadPerEpoch = 1000
+	DefaultRetryInterval      = 12 * time.Second
 )
 
 var (
@@ -52,6 +53,7 @@ type BlockBatchIterator struct {
 	isEnd              bool
 	reverse            bool
 	reorgRewindDepth   uint64
+	retryInterval      time.Duration
 }
 
 // BlockBatchIteratorConfig represents the configs of a block batch iterator.
@@ -63,6 +65,7 @@ type BlockBatchIteratorConfig struct {
 	OnBlocks              OnBlocksFunc
 	Reverse               bool
 	ReorgRewindDepth      *uint64
+	RetryInterval         *time.Duration
 }
 
 // NewBlockBatchIterator creates a new block batch iterator instance.
@@ -123,6 +126,12 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 		iterator.blocksReadPerEpoch = DefaultBlocksReadPerEpoch
 	}
 
+	if cfg.RetryInterval == nil {
+		iterator.retryInterval = DefaultRetryInterval
+	} else {
+		iterator.retryInterval = *cfg.RetryInterval
+	}
+
 	if cfg.EndHeight != nil {
 		endHeightUint64 := cfg.EndHeight.Uint64()
 		iterator.endHeight = &endHeightUint64
@@ -164,7 +173,7 @@ func (i *BlockBatchIterator) Iter() error {
 		return nil
 	}
 
-	if err := backoff.Retry(iterOp, backoff.NewConstantBackOff(12*time.Second)); err != nil {
+	if err := backoff.Retry(iterOp, backoff.NewConstantBackOff(i.retryInterval)); err != nil {
 		return err
 	}
 

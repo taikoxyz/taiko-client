@@ -35,6 +35,8 @@ type Config struct {
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
 	ExpectedReward                  uint64
+	BackOffMaxRetrys                uint64
+	BackOffRetryInterval            time.Duration
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -136,5 +138,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
 		ExpectedReward:                  c.Uint64(flags.ExpectedReward.Name),
+		BackOffMaxRetrys:                c.Uint64(flags.BackOffMaxRetrys.Name),
+		BackOffRetryInterval:            time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
 	}, nil
 }

@@ -27,6 +27,7 @@ type Config struct {
 	MinBlockGasLimit           uint64
 	MaxProposedTxListsPerEpoch uint64
 	ProposeBlockTxGasLimit     *uint64
+	BackOffRetryInterval       time.Duration
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -93,5 +94,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		MinBlockGasLimit:           c.Uint64(flags.MinBlockGasLimit.Name),
 		MaxProposedTxListsPerEpoch: c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
 		ProposeBlockTxGasLimit:     proposeBlockTxGasLimit,
+		BackOffRetryInterval:       time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
 	}, nil
 }

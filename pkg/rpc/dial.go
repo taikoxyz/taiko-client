@@ -16,7 +16,7 @@ import (
 
 // DialClientWithBackoff connects a ethereum RPC client at the given URL with
 // a backoff strategy.
-func DialClientWithBackoff(ctx context.Context, url string) (*ethclient.Client, error) {
+func DialClientWithBackoff(ctx context.Context, url string, retryInterval time.Duration) (*ethclient.Client, error) {
 	var client *ethclient.Client
 	if err := backoff.Retry(
 		func() (err error) {
@@ -26,7 +26,7 @@ func DialClientWithBackoff(ctx context.Context, url string) (*ethclient.Client, 
 			}
 			return err
 		},
-		backoff.NewConstantBackOff(12*time.Second),
+		backoff.NewConstantBackOff(retryInterval),
 	); err != nil {
 		return nil, err
 	}
@@ -36,7 +36,12 @@ func DialClientWithBackoff(ctx context.Context, url string) (*ethclient.Client, 
 
 // DialEngineClientWithBackoff connects an ethereum engine RPC client at the
 // given URL with a backoff strategy.
-func DialEngineClientWithBackoff(ctx context.Context, url string, jwtSecret string) (*EngineClient, error) {
+func DialEngineClientWithBackoff(
+	ctx context.Context,
+	url string,
+	jwtSecret string,
+	retryInterval time.Duration,
+) (*EngineClient, error) {
 	var engineClient *EngineClient
 	if err := backoff.Retry(
 		func() (err error) {
@@ -49,7 +54,7 @@ func DialEngineClientWithBackoff(ctx context.Context, url string, jwtSecret stri
 			engineClient = &EngineClient{client}
 			return nil
 		},
-		backoff.NewConstantBackOff(12*time.Second),
+		backoff.NewConstantBackOff(retryInterval),
 	); err != nil {
 		return nil, err
 	}

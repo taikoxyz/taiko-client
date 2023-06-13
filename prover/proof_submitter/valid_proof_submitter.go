@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -39,6 +40,7 @@ type ValidProofSubmitter struct {
 	isSystemProver    bool
 	graffiti          [32]byte
 	expectedReward    uint64
+	retryInterval     time.Duration
 }
 
 // NewValidProofSubmitter creates a new ValidProofSubmitter instance.
@@ -53,6 +55,7 @@ func NewValidProofSubmitter(
 	isSystemProver bool,
 	graffiti string,
 	expectedReward uint64,
+	retryInterval time.Duration,
 ) (*ValidProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
 	if err != nil {
@@ -89,6 +92,7 @@ func NewValidProofSubmitter(
 		isSystemProver:    isSystemProver,
 		graffiti:          rpc.StringToBytes32(graffiti),
 		expectedReward:    expectedReward,
+		retryInterval:     retryInterval,
 	}, nil
 }
 
@@ -262,6 +266,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		s.expectedReward,
 		proofWithHeader.Meta,
 		sendTx,
+		s.retryInterval,
 	); err != nil {
 		if errors.Is(err, errUnretryable) {
 			return nil

@@ -26,11 +26,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const (
-	backOffMaxRetrys     = 10
-	backOffRetryInterval = 12 * time.Second
-)
-
 type cancelFunc func()
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
@@ -104,6 +99,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		L2Endpoint:     cfg.L2WsEndpoint,
 		TaikoL1Address: cfg.TaikoL1Address,
 		TaikoL2Address: cfg.TaikoL2Address,
+		RetryInterval:  cfg.BackOffRetryInterval,
 	}); err != nil {
 		return err
 	}
@@ -210,6 +206,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.SystemProver,
 		p.cfg.Graffiti,
 		p.cfg.ExpectedReward,
+		p.cfg.BackOffRetryInterval,
 	); err != nil {
 		return err
 	}
@@ -266,7 +263,7 @@ func (p *Prover) eventLoop() {
 		case <-verificationCheckTicker.C:
 			if err := backoff.Retry(
 				func() error { return p.checkChainVerification(lastLatestVerifiedL1Height) },
-				backoff.NewExponentialBackOff(),
+				backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval),
 			); err != nil {
 				log.Error("Check chain verification error", "error", err)
 			}
@@ -468,7 +465,7 @@ func (p *Prover) onBlockProposed(
 	go func() {
 		if err := backoff.Retry(
 			func() error { return handleBlockProposedEvent() },
-			backoff.WithMaxRetries(backoff.NewConstantBackOff(backOffRetryInterval), backOffMaxRetrys),
+			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
 		); err != nil {
 			p.currentBlocksBeingProvenMutex.Lock()
 			delete(p.currentBlocksBeingProven, event.Id.Uint64())
@@ -493,7 +490,7 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 
 		if err := backoff.Retry(
 			func() error { return p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader) },
-			backoff.WithMaxRetries(backoff.NewConstantBackOff(backOffRetryInterval), backOffMaxRetrys),
+			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
 		); err != nil {
 			log.Error("Submit proof error", "error", err)
 		}
