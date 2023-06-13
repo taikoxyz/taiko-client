@@ -53,9 +53,9 @@ func WaitReceipt(ctx context.Context, client *ethclient.Client, tx *types.Transa
 	for {
 		select {
 		case <-ctxWithTimeout.Done():
-			return nil, ctx.Err()
+			return nil, ctxWithTimeout.Err()
 		case <-ticker.C:
-			receipt, err := client.TransactionReceipt(ctx, tx.Hash())
+			receipt, err := client.TransactionReceipt(ctxWithTimeout, tx.Hash())
 			if err != nil {
 				continue
 			}
