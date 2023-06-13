@@ -115,6 +115,7 @@ func (d *Driver) Start() error {
 func (d *Driver) Close() {
 	d.state.Close()
 	d.wg.Wait()
+	log.Info("close.Done()")
 }
 
 // eventLoop starts the main loop of a L2 execution engine's driver.
@@ -184,6 +185,7 @@ func (d *Driver) reportProtocolStatus() {
 	defer func() {
 		ticker.Stop()
 		d.wg.Done()
+		log.Info("protocolStatus.Done()")
 	}()
 
 	var maxNumBlocks uint64
@@ -234,6 +236,7 @@ func (d *Driver) checkTransitionConfig() {
 	defer func() {
 		ticker.Stop()
 		d.wg.Done()
+		log.Info("transition.Done()")
 	}()
 
 	for {
