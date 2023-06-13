@@ -32,8 +32,14 @@ type Config struct {
 	SystemProverPrivateKey   *ecdsa.PrivateKey
 	Graffiti                 string
 	ExpectedReward           uint64
-	BidStrategyOption        auction.Option
-	MinimumAmount            *big.Int
+	BidConfig
+}
+
+// Config contains the configurations to initialize a bidder for a Taiko block batch auction
+type BidConfig struct {
+	BidStrategyOption   auction.Option
+	MinimumBidFeePerGas *big.Int
+	BidDeposit          *big.Int
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -51,17 +57,22 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, fmt.Errorf("unsupported bid strategy")
 	}
 
-	var minimumAmount *big.Int
+	var minimumFeePerGas *big.Int
 	var ok bool
 
-	if bidStrategyOption == auction.StrategyMinimumAmount {
-		if !c.IsSet(flags.MinimumBidAmount.Name) {
-			return nil, fmt.Errorf("minimumAmount flag is required with minimumAmount bid strategy")
+	if bidStrategyOption == auction.StrategyMinimumBidFeePerGas {
+		if !c.IsSet(flags.MinimumBidFeePerGas.Name) {
+			return nil, fmt.Errorf("MinimumBidFeePerGas flag is required with MinimumBidFeePerGas bid strategy")
 		}
-		minimumAmount, ok = new(big.Int).SetString(c.String(flags.MinimumBidAmount.Name), 10)
+		minimumFeePerGas, ok = new(big.Int).SetString(c.String(flags.MinimumBidFeePerGas.Name), 10)
 		if !ok {
-			return nil, fmt.Errorf("could not convert minimumAmount to big int")
+			return nil, fmt.Errorf("could not convert MinimumBidFeePerGas to big int")
 		}
+	}
+
+	bidDeposit, ok := new(big.Int).SetString(c.String(flags.BidDeposit.Name), 10)
+	if !ok {
+		return nil, fmt.Errorf("could not convert bid deposit to big int")
 	}
 
 	oracleProverSet := c.IsSet(flags.OracleProver.Name)
@@ -123,7 +134,10 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		SystemProverPrivateKey:   systemProverPrivKey,
 		Graffiti:                 c.String(flags.Graffiti.Name),
 		ExpectedReward:           c.Uint64(flags.ExpectedReward.Name),
-		BidStrategyOption:        bidStrategyOption,
-		MinimumAmount:            minimumAmount,
+		BidConfig: BidConfig{
+			BidStrategyOption:   bidStrategyOption,
+			MinimumBidFeePerGas: minimumFeePerGas,
+			BidDeposit:          bidDeposit,
+		},
 	}, nil
 }

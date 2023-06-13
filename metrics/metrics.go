@@ -40,6 +40,8 @@ var (
 	ProverSentProofCounter            = metrics.NewRegisteredCounter("prover/proof/all/sent", nil)
 	ProverSentValidProofCounter       = metrics.NewRegisteredCounter("prover/proof/valid/sent", nil)
 	ProverSentInvalidProofCounter     = metrics.NewRegisteredCounter("prover/proof/invalid/sent", nil)
+	ProverAuctionableBatchFoundGauge  = metrics.NewRegisteredGauge("prover/auction/auctionableBatch/found", nil)
+	ProverAuctionableBatchBidGauge    = metrics.NewRegisteredGauge("prover/auction/auctionableBatch/bid", nil)
 	ProverReceivedProposedBlockGauge  = metrics.NewRegisteredGauge("prover/proposed/received", nil)
 	ProverReceivedProvenBlockGauge    = metrics.NewRegisteredGauge("prover/proven/received", nil)
 	ProverAllProofRewardGauge         = metrics.NewRegisteredGauge("prover/allProofReward", nil)

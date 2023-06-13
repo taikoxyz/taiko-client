@@ -70,20 +70,7 @@ func WaitReceipt(ctx context.Context, client *ethclient.Client, tx *types.Transa
 }
 
 // NeedNewSystemProof checks whether the L2 block still needs a new system proof.
-func NeedNewSystemProof(ctx context.Context, cli *Client, id *big.Int, realProofSkipSize *big.Int) (bool, error) {
-	if realProofSkipSize == nil || realProofSkipSize.Uint64() <= 1 {
-		return false, nil
-	}
-	if id.Uint64()%realProofSkipSize.Uint64() == 0 {
-		log.Info(
-			"Skipping system block proof",
-			"blockID", id.Uint64(),
-			"skipSize", realProofSkipSize.Uint64(),
-		)
-
-		return false, nil
-	}
-
+func NeedNewSystemProof(ctx context.Context, cli *Client, id *big.Int) (bool, error) {
 	var parent *types.Header
 	if id.Cmp(common.Big1) == 0 {
 		header, err := cli.L2.HeaderByNumber(ctx, common.Big0)

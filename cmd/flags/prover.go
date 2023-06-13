@@ -84,9 +84,14 @@ var (
 		Usage:    "Which strategy to use for bidding on proposed blocks",
 		Category: proverCategory,
 	}
-	MinimumBidAmount = &cli.StringFlag{
-		Name:     "minimumAmountInWei",
-		Usage:    "Minimum amount in wei per gas you are willing to bid if bidStategy is minimumAmount",
+	MinimumBidFeePerGas = &cli.StringFlag{
+		Name:     "bidMinFeePerGas",
+		Usage:    "Minimum amount in wei per gas you are willing to bid if bidStategy is MinimumBidFeePerGas",
+		Category: proverCategory,
+	}
+	BidDeposit = &cli.StringFlag{
+		Name:     "bidDeposit",
+		Usage:    "Deposit to use for bids",
 		Category: proverCategory,
 	}
 )
@@ -109,5 +114,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	Graffiti,
 	ExpectedReward,
 	BidStrategy,
-	MinimumBidAmount,
+	MinimumBidFeePerGas,
+	BidDeposit,
 })

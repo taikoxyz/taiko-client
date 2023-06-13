@@ -23,5 +23,12 @@ func (s *AlwaysBidStrategy) ShouldBid(ctx context.Context, currentBid bindings.T
 }
 
 func (s *AlwaysBidStrategy) NextBid(ctx context.Context, proverAddress common.Address, currentBid bindings.TaikoDataBid) (bindings.TaikoDataBid, error) {
-	return bindings.TaikoDataBid{}, nil
+	// re-use existing bid deposit
+	deposit := currentBid.Deposit
+	// but do the minimum next bid, which should be 10 percent lower than the existing one
+	feePerGas := currentBid.FeePerGas - (currentBid.FeePerGas / 10)
+	return bindings.TaikoDataBid{
+		Deposit:   deposit,
+		FeePerGas: feePerGas,
+	}, nil
 }

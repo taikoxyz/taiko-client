@@ -9,33 +9,36 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-var _ Strategy = &MinimumAmountStrategy{}
+var _ Strategy = &MinimumBidFeePerGasStrategy{}
 
-// MinimumAmountStrategy is a bid strategy that has a minimum amount you are willing to accept
+// MinimumBidFeePerGasStrategy is a bid strategy that has a minimum amount you are willing to accept
 // per wei. Once the bidding reaches that number, you will no longer bid on that block. It
 // disregards profitability, and simply compares the minimum accepted fee you have said,
 // and the current bid.
-type MinimumAmountStrategy struct {
-	minimumAmount *big.Int
-	rpc           *rpc.Client
+type MinimumBidFeePerGasStrategy struct {
+	deposit             *big.Int
+	minimumBidFeePerGas *big.Int
+	rpc                 *rpc.Client
 }
 
-type NewMinimumAmountStrategyOpts struct {
-	MinimumAmount *big.Int
-	RPC           *rpc.Client
+type NewMinimumBidFeePerGasStrategyOpts struct {
+	MinimumBidFeePerGas *big.Int
+	RPC                 *rpc.Client
+	Deposit             *big.Int
 }
 
-func NewMinimumAmountStrategy(opts NewMinimumAmountStrategyOpts) *MinimumAmountStrategy {
-	return &MinimumAmountStrategy{
-		minimumAmount: opts.MinimumAmount,
-		rpc:           opts.RPC,
+func NewMinimumBidFeePerGasStrategy(opts NewMinimumBidFeePerGasStrategyOpts) *MinimumBidFeePerGasStrategy {
+	return &MinimumBidFeePerGasStrategy{
+		minimumBidFeePerGas: opts.MinimumBidFeePerGas,
+		rpc:                 opts.RPC,
+		deposit:             opts.Deposit,
 	}
 }
 
-func (s *MinimumAmountStrategy) ShouldBid(ctx context.Context, currentBid bindings.TaikoDataBid) (bool, error) {
+func (s *MinimumBidFeePerGasStrategy) ShouldBid(ctx context.Context, currentBid bindings.TaikoDataBid) (bool, error) {
 	return false, nil
 }
 
-func (s *MinimumAmountStrategy) NextBid(ctx context.Context, proverAddress common.Address, currentBid bindings.TaikoDataBid) (bindings.TaikoDataBid, error) {
+func (s *MinimumBidFeePerGasStrategy) NextBid(ctx context.Context, proverAddress common.Address, currentBid bindings.TaikoDataBid) (bindings.TaikoDataBid, error) {
 	return bindings.TaikoDataBid{}, nil
 }

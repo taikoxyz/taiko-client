@@ -49,8 +49,11 @@ func (s *ProverTestSuite) SetupTest() {
 		SystemProverPrivateKey:   l1ProverPrivKey,
 		Dummy:                    true,
 		MaxConcurrentProvingJobs: 1,
-		BidStrategyOption:        auction.StrategyMinimumAmount,
-		MinimumAmount:            new(big.Int).SetUint64(10000000000),
+		BidConfig: BidConfig{
+			BidStrategyOption:   auction.StrategyMinimumBidFeePerGas,
+			MinimumBidFeePerGas: new(big.Int).SetUint64(1),
+			BidDeposit:          new(big.Int).SetUint64(1),
+		},
 	})))
 	s.p = p
 	s.cancel = cancel
@@ -144,9 +147,9 @@ func (s *ProverTestSuite) TestSubmitProofOp() {
 	})
 }
 
-func (s *ProverTestSuite) TestStartSubscription() {
-	s.NotPanics(s.p.initSubscription)
-	s.NotPanics(s.p.closeSubscription)
+func (s *ProverTestSuite) TestStartSubscriptions() {
+	s.NotPanics(s.p.initSubscriptions)
+	s.NotPanics(s.p.closeSubscriptions)
 }
 
 func (s *ProverTestSuite) TestCheckChainVerification() {

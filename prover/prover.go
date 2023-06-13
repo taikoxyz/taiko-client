@@ -218,10 +218,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	var bidStrategy auction.Strategy
-	if cfg.BidStrategyOption == auction.StrategyMinimumAmount {
-		bidStrategy = auction.NewMinimumAmountStrategy(auction.NewMinimumAmountStrategyOpts{
-			MinimumAmount: cfg.MinimumAmount,
-			RPC:           p.rpc,
+	if cfg.BidStrategyOption == auction.StrategyMinimumBidFeePerGas {
+		bidStrategy = auction.NewMinimumBidFeePerGasStrategy(auction.NewMinimumBidFeePerGasStrategyOpts{
+			MinimumBidFeePerGas: cfg.MinimumBidFeePerGas,
+			RPC:                 p.rpc,
 		})
 	} else if cfg.BidStrategyOption == auction.StrategyAlwaysBid {
 		bidStrategy = auction.NewAlwaysBidStrategy()
@@ -236,9 +236,9 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 // Start starts the main loop of the L2 block prover.
 func (p *Prover) Start() error {
-	p.wg.Add(2)
+	p.wg.Add(1)
 	p.initSubscriptions()
-	go p.crawlForAuctionableBatches()
+	go p.crawlForAuctionableBatches(p.ctx)
 	go p.eventLoop()
 
 	return nil
@@ -307,14 +307,16 @@ func (p *Prover) eventLoop() {
 		case <-forceProvingTicker.C:
 			reqProving()
 		case batchId := <-p.auctionableBatchCh:
-			p.bidOp(p.ctx, batchId)
+			if err := p.bidOp(p.ctx, batchId); err != nil {
+				log.Error("Big operation error", "error", err)
+			}
 		}
 	}
 }
 
 // Close closes the prover instance.
 func (p *Prover) Close() {
-	p.closeSubscription()
+	p.closeSubscriptions()
 	p.wg.Wait()
 }
 
@@ -465,7 +467,7 @@ func (p *Prover) onBlockProposed(
 		}
 
 		if p.cfg.SystemProver {
-			needNewSystemProof, err := rpc.NeedNewSystemProof(ctx, p.rpc, event.Id, p.protocolConfigs.RealProofSkipSize)
+			needNewSystemProof, err := rpc.NeedNewSystemProof(ctx, p.rpc, event.Id)
 			if err != nil {
 				return fmt.Errorf("failed to check whether the L2 block needs a new system proof: %w", err)
 			}
@@ -539,18 +541,10 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
 
-	isNormalProof := p.protocolConfigs.RealProofSkipSize == nil ||
-		(p.protocolConfigs.RealProofSkipSize != nil && event.Id.Uint64()%p.protocolConfigs.RealProofSkipSize.Uint64() == 0)
 	if event.Reward > math.MaxInt64 {
 		metrics.ProverAllProofRewardGauge.Update(math.MaxInt64)
-		if isNormalProof {
-			metrics.ProverNormalProofRewardGauge.Update(math.MaxInt64)
-		}
 	} else {
 		metrics.ProverAllProofRewardGauge.Update(int64(event.Reward))
-		if isNormalProof {
-			metrics.ProverNormalProofRewardGauge.Update(int64(event.Reward))
-		}
 	}
 
 	p.latestVerifiedL1Height = event.Raw.BlockNumber
@@ -564,6 +558,9 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 
 	// cancel any proofs being generated for this block
 	p.cancelProof(ctx, event.Id.Uint64())
+
+	// see if there is a new auctionable batch, since we can check
+	// lastVerifiedId
 
 	return nil
 }
@@ -652,9 +649,10 @@ func (p *Prover) initSubscriptions() {
 }
 
 // closeSubscription closes all subscriptions.
-func (p *Prover) closeSubscription() {
+func (p *Prover) closeSubscriptions() {
 	p.blockVerifiedSub.Unsubscribe()
 	p.blockProposedSub.Unsubscribe()
+	p.blockProvenSub.Unsubscribe()
 }
 
 // checkChainVerification checks if there is no new block verification in protocol, if so,
@@ -715,41 +713,48 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 	}
 }
 
+// crawlForAuctionableBatches iteraites from the lastProposedBatchId + config.ActionMaxAheadOfProposals amount of batches
+// to see if any are auctionable, and if so, adds them to the channel to attempt to be bid on.
 func (p *Prover) crawlForAuctionableBatches(ctx context.Context) {
-	defer func() {
-		p.wg.Done()
-	}()
+	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
+	if err != nil {
+		log.Error("error getting state variables: err", err)
+		return
+	}
 
-	ticker := time.NewTicker(60 * time.Second)
-	// TODO: proper batches amount tocheck in the future
-	batches := 10
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			stateVars, err := p.rpc.GetProtocolStateVariables(nil)
-			if err != nil {
-				log.Error("error getting state variables: err", err)
-				continue
-			}
+	lastProposedBatchId, err := p.rpc.TaikoL1.BatchForBlock(nil, new(big.Int).SetUint64(stateVars.NumBlocks))
+	if err != nil {
+		log.Error("error getting batch for block", err)
+		return
+	}
 
-			lastVerifiedBlockID := stateVars.LastVerifiedBlockId
+	maxBatchesAhead := p.protocolConfigs.AuctonMaxAheadOfProposals
 
-			j := 0
+	beginningBatchId := lastProposedBatchId.Uint64()
 
-			for i := lastVerifiedBlockID; j < batches; i += uint64(p.protocolConfigs.AuctionBatchSize) {
-				// TODO/WIP: check if batch is auctionable for blockId, and then start bid
-
-				batchId := big.NewInt(0)
-				log.Info("auctionable batch detected", batchId)
-
-				p.auctionableBatchCh <- batchId
-			}
+	for batchID := beginningBatchId; batchID < uint64(maxBatchesAhead); batchID++ {
+		isBatchAuctionable, err := p.rpc.TaikoL1.IsBatchAuctionable(nil, new(big.Int).SetUint64(batchID))
+		if err != nil {
+			log.Error("error checking whether batchId %d is auctionable: %w", batchID, err)
+			continue
 		}
+
+		// batch is not auctionable, continue to next one
+		if !isBatchAuctionable {
+			continue
+		}
+
+		p.auctionableBatchCh <- new(big.Int).SetUint64(batchID)
 	}
 }
 
-func (p *Prover) bidOp(ctx context.Context, batchId *big.Int) {
+func (p *Prover) bidOp(ctx context.Context, batchID *big.Int) error {
+	log.Info(
+		"New auctionable batch found",
+		"batchID", batchID.Uint64(),
+	)
 
+	metrics.ProverAuctionableBatchFoundGauge.Update(int64(batchID.Uint64()))
+
+	return p.bidder.SubmitBid(ctx, batchID)
 }

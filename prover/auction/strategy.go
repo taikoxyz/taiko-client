@@ -10,13 +10,13 @@ import (
 type Option string
 
 const (
-	StrategyMinimumAmount  Option = "minimum-amount"
-	StrategyAlwaysBid      Option = "always-bid"
-	StrategyStayProfitable Option = "stay-profitable"
+	StrategyMinimumBidFeePerGas Option = "minimum-amount"
+	StrategyAlwaysBid           Option = "always-bid"
+	StrategyStayProfitable      Option = "stay-profitable"
 )
 
 var (
-	Strategies = []Option{StrategyMinimumAmount, StrategyAlwaysBid, StrategyStayProfitable}
+	Strategies = []Option{StrategyMinimumBidFeePerGas, StrategyAlwaysBid, StrategyStayProfitable}
 )
 
 func IsValidStrategy(option Option) bool {
