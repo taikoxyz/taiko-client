@@ -48,6 +48,11 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 
 	currentBid := auctions.Auctions[0].Bid
 
+	if currentBid.Prover == b.proverAddress {
+		log.Info("not bidding for batch, already current winner, batchId: %d", batchID.Uint64())
+		return nil
+	}
+
 	log.Info("Current bid for batch ID",
 		batchID,
 		"currentBidDeposit",

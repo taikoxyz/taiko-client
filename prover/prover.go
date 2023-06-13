@@ -66,6 +66,8 @@ type Prover struct {
 	blockProvenSub   event.Subscription
 	blockVerifiedCh  chan *bindings.TaikoL1ClientBlockVerified
 	blockVerifiedSub event.Subscription
+	batchBidCh       chan *bindings.TaikoL1ClientBatchBid
+	batchBidSub      event.Subscription
 	proveNotify      chan struct{}
 
 	// Proof related
@@ -136,6 +138,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	p.blockProvenCh = make(chan *bindings.TaikoL1ClientBlockProven, chBufferSize)
+	p.batchBidCh = make(chan *bindings.TaikoL1ClientBatchBid, chBufferSize)
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
@@ -306,9 +309,13 @@ func (p *Prover) eventLoop() {
 			}
 		case <-forceProvingTicker.C:
 			reqProving()
-		case batchId := <-p.auctionableBatchCh:
-			if err := p.bidOp(p.ctx, batchId); err != nil {
-				log.Error("Big operation error", "error", err)
+		case bid := <-p.batchBidCh:
+			if err := p.bidOp(p.ctx, new(big.Int).SetUint64(bid.BatchId)); err != nil {
+				log.Error("Handle batchbid event operation error", "error", err)
+			}
+		case batchID := <-p.auctionableBatchCh:
+			if err := p.bidOp(p.ctx, batchID); err != nil {
+				log.Error("Auction batch bid operation error", "error", err)
 			}
 		}
 	}
@@ -646,6 +653,7 @@ func (p *Prover) initSubscriptions() {
 	p.blockProposedSub = rpc.SubscribeBlockProposed(p.rpc.TaikoL1, p.blockProposedCh)
 	p.blockVerifiedSub = rpc.SubscribeBlockVerified(p.rpc.TaikoL1, p.blockVerifiedCh)
 	p.blockProvenSub = rpc.SubscribeBlockProven(p.rpc.TaikoL1, p.blockProvenCh)
+	p.batchBidSub = rpc.SubscribeBatchBid(p.rpc.TaikoL1, p.batchBidCh)
 }
 
 // closeSubscription closes all subscriptions.
@@ -653,6 +661,7 @@ func (p *Prover) closeSubscriptions() {
 	p.blockVerifiedSub.Unsubscribe()
 	p.blockProposedSub.Unsubscribe()
 	p.blockProvenSub.Unsubscribe()
+	p.batchBidSub.Unsubscribe()
 }
 
 // checkChainVerification checks if there is no new block verification in protocol, if so,
@@ -749,11 +758,6 @@ func (p *Prover) crawlForAuctionableBatches(ctx context.Context) {
 }
 
 func (p *Prover) bidOp(ctx context.Context, batchID *big.Int) error {
-	log.Info(
-		"New auctionable batch found",
-		"batchID", batchID.Uint64(),
-	)
-
 	metrics.ProverAuctionableBatchFoundGauge.Update(int64(batchID.Uint64()))
 
 	return p.bidder.SubmitBid(ctx, batchID)

@@ -44,6 +44,13 @@ func TestSubscribeBlockProven(t *testing.T) {
 	)
 }
 
+func TestSubscribeBatchBid(t *testing.T) {
+	require.NotNil(t, SubscribeBatchBid(
+		newTestClient(t).TaikoL1,
+		make(chan *bindings.TaikoL1ClientBatchBid, 1024)),
+	)
+}
+
 func TestSubscribeChainHead(t *testing.T) {
 	require.NotNil(t, SubscribeChainHead(
 		newTestClient(t).L1,

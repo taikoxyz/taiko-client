@@ -118,6 +118,24 @@ func SubscribeChainHead(
 	})
 }
 
+// SubscribeBatchBid subscribes to the protocol's BatchBid events.
+func SubscribeBatchBid(
+	taikoL1 *bindings.TaikoL1Client,
+	ch chan *bindings.TaikoL1ClientBatchBid,
+) event.Subscription {
+	return SubscribeEvent("BatchBid", func(ctx context.Context) (event.Subscription, error) {
+		sub, err := taikoL1.WatchBatchBid(nil, ch, nil)
+		if err != nil {
+			log.Error("Create TaikoL1.BatchBid subscription error", "error", err)
+			return nil, err
+		}
+
+		defer sub.Unsubscribe()
+
+		return waitSubErr(ctx, sub)
+	})
+}
+
 // waitSubErr keeps waiting until the given subscription failed.
 func waitSubErr(ctx context.Context, sub event.Subscription) (event.Subscription, error) {
 	for {
