@@ -45,7 +45,7 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
-          ref: fix_auction_bug
+          ref: auction_deploy
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1

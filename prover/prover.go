@@ -735,7 +735,7 @@ func (p *Prover) crawlForAuctionableBatches(ctx context.Context) {
 		return
 	}
 
-	maxBatchesAhead := p.protocolConfigs.AuctonMaxAheadOfProposals
+	maxBatchesAhead := p.protocolConfigs.AuctionMaxAheadOfProposals
 
 	beginningBatchId := lastProposedBatchId.Uint64()
 
