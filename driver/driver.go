@@ -117,7 +117,6 @@ func (d *Driver) Start() error {
 func (d *Driver) Close() {
 	d.state.Close()
 	d.wg.Wait()
-	log.Info("close.Done()")
 }
 
 // eventLoop starts the main loop of a L2 execution engine's driver.
@@ -146,7 +145,6 @@ func (d *Driver) eventLoop() {
 	for {
 		select {
 		case <-d.ctx.Done():
-			log.Info("eventLoop context exited")
 			return
 		case <-d.syncNotify:
 			doSyncWithBackoff()
@@ -187,7 +185,6 @@ func (d *Driver) reportProtocolStatus() {
 	defer func() {
 		ticker.Stop()
 		d.wg.Done()
-		log.Info("protocolStatus.Done()")
 	}()
 
 	var maxNumBlocks uint64
@@ -210,7 +207,6 @@ func (d *Driver) reportProtocolStatus() {
 	for {
 		select {
 		case <-d.ctx.Done():
-			log.Info("protocol context exited")
 			return
 		case <-ticker.C:
 			vars, err := d.rpc.GetProtocolStateVariables(nil)
@@ -232,23 +228,17 @@ func (d *Driver) reportProtocolStatus() {
 func (d *Driver) checkTransitionConfig() {
 	exchangeTransitionConfigInterval := 60 * time.Second
 	ticker := time.NewTicker(exchangeTransitionConfigInterval)
-	// if d.ctx.Err() != nil {
-	// 	log.Warn("Driver context error", "error", d.ctx.Err())
-	// 	return
-	// }
+
 	defer func() {
 		ticker.Stop()
 		d.wg.Done()
-		log.Info("transition.Done()")
 	}()
 
 	for {
 		select {
 		case <-d.ctx.Done():
-			log.Info("transition context exited")
 			return
 		case <-ticker.C:
-			log.Info("exchanging transition config")
 			tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
 				TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
 				TerminalBlockHash:       common.Hash{},
