@@ -146,6 +146,7 @@ func (d *Driver) eventLoop() {
 	for {
 		select {
 		case <-d.ctx.Done():
+			log.Info("eventLoop context exited")
 			return
 		case <-d.syncNotify:
 			doSyncWithBackoff()
@@ -229,12 +230,12 @@ func (d *Driver) reportProtocolStatus() {
 }
 
 func (d *Driver) checkTransitionConfig() {
-	if d.ctx.Err() != nil {
-		log.Warn("Driver context error", "error", d.ctx.Err())
-		return
-	}
-
-	ticker := time.NewTicker(60 * time.Second)
+	exchangeTransitionConfigInterval := 60 * time.Second
+	ticker := time.NewTicker(exchangeTransitionConfigInterval)
+	// if d.ctx.Err() != nil {
+	// 	log.Warn("Driver context error", "error", d.ctx.Err())
+	// 	return
+	// }
 	defer func() {
 		ticker.Stop()
 		d.wg.Done()
@@ -247,7 +248,7 @@ func (d *Driver) checkTransitionConfig() {
 			log.Info("transition context exited")
 			return
 		case <-ticker.C:
-
+			log.Info("exchanging transition config")
 			tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
 				TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
 				TerminalBlockHash:       common.Hash{},
