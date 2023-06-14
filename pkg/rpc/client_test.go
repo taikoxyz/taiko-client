@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 )
@@ -17,6 +18,7 @@ func newTestClient(t *testing.T) *Client {
 		TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L2EngineEndpoint: os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		JwtSecret:        os.Getenv("JWT_SECRET"),
+		RetryInterval:    backoff.DefaultMaxInterval,
 	})
 
 	require.Nil(t, err)
