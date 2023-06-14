@@ -209,6 +209,7 @@ func (d *Driver) reportProtocolStatus() {
 	for {
 		select {
 		case <-d.ctx.Done():
+			log.Info("protocol context exited")
 			return
 		case <-ticker.C:
 			vars, err := d.rpc.GetProtocolStateVariables(nil)
@@ -243,6 +244,7 @@ func (d *Driver) checkTransitionConfig() {
 	for {
 		select {
 		case <-d.ctx.Done():
+			log.Info("transition context exited")
 			return
 		case <-ticker.C:
 
