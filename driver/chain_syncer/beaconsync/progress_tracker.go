@@ -78,12 +78,14 @@ func (t *SyncProgressTracker) track(ctx context.Context) {
 		return
 	}
 
-	log.Info(
-		"L2 execution engine sync progress",
-		"progress", progress,
-		"lastProgressedTime", t.lastProgressedTime,
-		"timeout", t.timeout,
-	)
+	if progress != nil {
+		log.Info(
+			"L2 execution engine sync progress",
+			"progress", progress,
+			"lastProgressedTime", t.lastProgressedTime,
+			"timeout", t.timeout,
+		)
+	}
 
 	if progress == nil {
 		headHeight, err := t.client.BlockNumber(ctx)
