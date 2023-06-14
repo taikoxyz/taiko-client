@@ -170,7 +170,7 @@ func (s *DriverTestSuite) TestDoSyncNoNewL2Blocks() {
 
 func (s *DriverTestSuite) TestCheckTransitionConfig() {
 	go func() {
-		time.After(120 * time.Second)
+		<-time.After(120 * time.Second)
 		s.cancel()
 		s.d.Close()
 	}()

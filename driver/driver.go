@@ -228,7 +228,6 @@ func (d *Driver) reportProtocolStatus() {
 func (d *Driver) checkTransitionConfig() {
 	exchangeTransitionConfigInterval := 60 * time.Second
 	ticker := time.NewTicker(exchangeTransitionConfigInterval)
-
 	defer func() {
 		ticker.Stop()
 		d.wg.Done()
