@@ -124,7 +124,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	return s.calldataSyncer.ProcessL1Blocks(s.ctx, l1End)
 }
 
-// needNewBeaconSyncTriggered checks wthether the current L2 execution engine needs to trigger
+// needNewBeaconSyncTriggered checks whether the current L2 execution engine needs to trigger
 // another new beacon sync.
 func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (bool, error) {
 	synced, err := s.BeaconSyncer().Synced()
