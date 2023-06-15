@@ -63,3 +63,16 @@ func (c *EngineClient) GetPayload(
 
 	return result.ExecutionPayload, nil
 }
+
+// ExchangeTransitionConfiguration exchanges transition configs with the L2 execution engine.
+func (c *EngineClient) ExchangeTransitionConfiguration(
+	ctx context.Context,
+	cfg *engine.TransitionConfigurationV1,
+) (*engine.TransitionConfigurationV1, error) {
+	var result *engine.TransitionConfigurationV1
+	if err := c.Client.CallContext(ctx, &result, "engine_exchangeTransitionConfigurationV1", cfg); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

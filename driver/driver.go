@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/beacon/engine"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
@@ -16,7 +19,9 @@ import (
 )
 
 const (
-	protocolStatusReportInterval = 30 * time.Second
+	protocolStatusReportInterval     = 30 * time.Second
+	exchangeTransitionConfigTimeout  = 30 * time.Second
+	exchangeTransitionConfigInterval = 1 * time.Minute
 )
 
 // Driver keeps the L2 execution engine's local block chain in sync with the TaikoL1
@@ -102,9 +107,10 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 
 // Start starts the driver instance.
 func (d *Driver) Start() error {
-	d.wg.Add(2)
+	d.wg.Add(3)
 	go d.eventLoop()
 	go d.reportProtocolStatus()
+	go d.exchangeTransitionConfigLoop()
 
 	return nil
 }
@@ -217,6 +223,43 @@ func (d *Driver) reportProtocolStatus() {
 				"pendingBlocks", vars.NumBlocks-vars.LastVerifiedBlockId-1,
 				"availableSlots", vars.LastVerifiedBlockId+maxNumBlocks-vars.NumBlocks,
 			)
+		}
+	}
+}
+
+// exchangeTransitionConfigLoop keeps exchanging transition configs with the
+// L2 execution engine.
+func (d *Driver) exchangeTransitionConfigLoop() {
+	ticker := time.NewTicker(exchangeTransitionConfigInterval)
+	defer func() {
+		ticker.Stop()
+		d.wg.Done()
+	}()
+
+	for {
+		select {
+		case <-d.ctx.Done():
+			return
+		case <-ticker.C:
+			func() {
+				ctx, cancel := context.WithTimeout(d.ctx, exchangeTransitionConfigTimeout)
+				defer cancel()
+
+				tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(ctx, &engine.TransitionConfigurationV1{
+					TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
+					TerminalBlockHash:       common.Hash{},
+					TerminalBlockNumber:     0,
+				})
+				if err != nil {
+					log.Error("Failed to exchange Transition Configuration", "error", err)
+					return
+				}
+
+				log.Debug(
+					"Exchanged transition config",
+					"transitionConfig", tc,
+				)
+			}()
 		}
 	}
 }
