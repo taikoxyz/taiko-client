@@ -21,9 +21,20 @@ type BidderTestSuite struct {
 func (s *BidderTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	// Init prover
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
+
+	proverAddress := crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey)
+
+	l1TaikoTokenOwnerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("TAIKO_TOKEN_OWNER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	testutils.TransferTaikoToken(
+		&s.ClientTestSuite,
+		common.HexToAddress(os.Getenv("L1_TAIKO_TOKEN_ADDRESS")),
+		proverAddress,
+		big.NewInt(1000000000000000),
+		l1TaikoTokenOwnerPrivKey)
 
 	// Clients
 	rpcClient, err := rpc.NewClient(context.Background(), &rpc.ClientConfig{
@@ -36,7 +47,7 @@ func (s *BidderTestSuite) SetupTest() {
 
 	s.Nil(err)
 
-	b := NewBidder(NewAlwaysBidStrategy(), rpcClient, l1ProverPrivKey, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
+	b := NewBidder(NewAlwaysBidStrategy(), rpcClient, l1ProverPrivKey, proverAddress)
 	s.b = b
 }
 

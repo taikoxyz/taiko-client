@@ -182,6 +182,24 @@ func BidForBatchAndWaitUntilAuctionOver(s *ClientTestSuite, bidFunc func(ctx con
 	}
 }
 
+func TransferTaikoToken(
+	s *ClientTestSuite,
+	taikoTokenAddress common.Address,
+	to common.Address,
+	amount *big.Int,
+	privKey *ecdsa.PrivateKey,
+) {
+	taikoToken, err := bindings.NewTaikoToken(taikoTokenAddress, s.RpcClient.L1)
+	s.Nil(err)
+
+	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.RpcClient.L1ChainID)
+	s.Nil(err)
+
+	_, err = taikoToken.Transfer(opts, to, amount)
+
+	s.Nil(err)
+}
+
 func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey) {
 	config, err := s.RpcClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
