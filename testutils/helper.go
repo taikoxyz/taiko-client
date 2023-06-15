@@ -166,6 +166,22 @@ func ProposeAndInsertValidBlock(
 	return event
 }
 
+func BidForBatchAndWaitUntilAuctionOver(s *ClientTestSuite, bidFunc func(ctx context.Context, batchId *big.Int) error) {
+	batchId, err := s.RpcClient.TaikoL1.BatchForBlock(nil, big.NewInt(1))
+	s.Nil(err)
+	s.Nil(bidFunc(context.Background(), batchId))
+
+	// wait for batch to not be auctionable anymore
+	for {
+		time.Sleep(2 * time.Second)
+		isAuctionable, err := s.RpcClient.TaikoL1.IsBatchAuctionable(nil, batchId)
+		s.Nil(err)
+		if !isAuctionable {
+			break
+		}
+	}
+}
+
 func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey) {
 	config, err := s.RpcClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)

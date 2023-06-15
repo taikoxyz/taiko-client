@@ -48,7 +48,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		false,
 		false,
 		"test",
-		0,
 		12*time.Second,
 	)
 	s.Nil(err)

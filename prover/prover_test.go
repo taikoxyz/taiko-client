@@ -50,9 +50,8 @@ func (s *ProverTestSuite) SetupTest() {
 		Dummy:                    true,
 		MaxConcurrentProvingJobs: 1,
 		BidConfig: BidConfig{
-			BidStrategyOption:   auction.StrategyMinimumBidFeePerGas,
-			MinimumBidFeePerGas: new(big.Int).SetUint64(1),
-			BidDeposit:          new(big.Int).SetUint64(1),
+			BidStrategyOption: auction.StrategyAlwaysBid,
+			BidDeposit:        new(big.Int).SetUint64(1),
 		},
 	})))
 	s.p = p
@@ -105,9 +104,13 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 	s.p.cfg.OracleProverPrivateKey = l1ProverPrivKey
+
+	testutils.BidForBatchAndWaitUntilAuctionOver(&s.ClientTestSuite, s.p.bidOp)
+
 	// Valid block
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
+
 	s.Nil(s.p.validProofSubmitter.SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	// Empty blocks
