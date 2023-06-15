@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/beacon/engine"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,5 +30,12 @@ func TestL2EngineBorbidden(t *testing.T) {
 		context.Background(),
 		&engine.PayloadID{},
 	)
+	require.ErrorContains(t, err, "Unauthorized")
+
+	_, err = c.L2Engine.ExchangeTransitionConfiguration(context.Background(), &engine.TransitionConfigurationV1{
+		TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
+		TerminalBlockHash:       common.Hash{},
+		TerminalBlockNumber:     0,
+	})
 	require.ErrorContains(t, err, "Unauthorized")
 }
