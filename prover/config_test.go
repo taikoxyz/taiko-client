@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/prover/auction"
 	"github.com/urfave/cli/v2"
 )
 
@@ -23,6 +24,9 @@ var testFlags = []cli.Flag{
 	&cli.BoolFlag{Name: flags.SystemProver.Name},
 	&cli.StringFlag{Name: flags.SystemProverPrivateKey.Name},
 	&cli.StringFlag{Name: flags.Graffiti.Name},
+	&cli.StringFlag{Name: flags.BidDeposit.Name},
+	&cli.StringFlag{Name: flags.MinimumBidFeePerGas.Name},
+	&cli.StringFlag{Name: flags.BidStrategy.Name},
 }
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
@@ -73,6 +77,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.OracleProver.Name,
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Graffiti.Name, "",
+		"-" + flags.BidStrategy.Name, string(auction.StrategyAlwaysBid),
+		"-" + flags.BidDeposit.Name, "1",
 	}))
 }
 
@@ -123,6 +129,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProver() {
 		"-" + flags.Dummy.Name,
 		"-" + flags.SystemProver.Name,
 		"-" + flags.SystemProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.BidStrategy.Name, string(auction.StrategyAlwaysBid),
+		"-" + flags.BidDeposit.Name, "1",
 		"-" + flags.Graffiti.Name, "",
 	}))
 }
@@ -155,6 +163,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"-" + flags.Dummy.Name,
 		"-" + flags.OracleProver.Name,
 		"-" + flags.Graffiti.Name, "",
+		"-" + flags.BidStrategy.Name, string(auction.StrategyAlwaysBid),
+		"-" + flags.BidDeposit.Name, "1",
 	}), "oracleProver flag set without oracleProverPrivateKey set")
 }
 
@@ -186,6 +196,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProverError() {
 		"-" + flags.Dummy.Name,
 		"-" + flags.SystemProver.Name,
 		"-" + flags.Graffiti.Name, "",
+		"-" + flags.BidStrategy.Name, string(auction.StrategyAlwaysBid),
+		"-" + flags.BidDeposit.Name, "1",
 	}), "systemProver flag set without systemProverPrivateKey set")
 }
 
@@ -218,5 +230,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_SystemProverAndOracleProve
 		"-" + flags.OracleProver.Name,
 		"-" + flags.SystemProver.Name,
 		"-" + flags.Graffiti.Name, "",
+		"-" + flags.BidStrategy.Name, string(auction.StrategyAlwaysBid),
+		"-" + flags.BidDeposit.Name, "1",
 	}), "cannot set both oracleProver and systemProver")
 }

@@ -32,7 +32,6 @@ type Config struct {
 	OracleProverPrivateKey   *ecdsa.PrivateKey
 	SystemProverPrivateKey   *ecdsa.PrivateKey
 	Graffiti                 string
-	ExpectedReward           uint64
 	BackOffMaxRetrys         uint64
 	BackOffRetryInterval     time.Duration
 	BidConfig
@@ -136,7 +135,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		SystemProver:             c.Bool(flags.SystemProver.Name),
 		SystemProverPrivateKey:   systemProverPrivKey,
 		Graffiti:                 c.String(flags.Graffiti.Name),
-		ExpectedReward:           c.Uint64(flags.ExpectedReward.Name),
 		BackOffMaxRetrys:         c.Uint64(flags.BackOffMaxRetrys.Name),
 		BackOffRetryInterval:     time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
 		BidConfig: BidConfig{

@@ -211,7 +211,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.OracleProver,
 		p.cfg.SystemProver,
 		p.cfg.Graffiti,
-		p.cfg.ExpectedReward,
 		p.cfg.BackOffRetryInterval,
 	); err != nil {
 		return err
