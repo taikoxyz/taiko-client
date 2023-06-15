@@ -44,7 +44,7 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 	}
 
 	if !isBatchAuctionable {
-		return fmt.Errorf("trying to submit bid for unauctionable batchID: %w", err)
+		return fmt.Errorf("trying to submit bid for unauctionable batchID: %v", batchID.Uint64())
 	}
 
 	auctions, err := b.rpc.TaikoL1.GetAuctions(nil, batchID, new(big.Int).SetInt64(1))
@@ -55,12 +55,12 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 	currentBid := auctions.Auctions[0].Bid
 
 	if currentBid.Prover == b.proverAddress {
-		log.Info("not bidding for batch, already current winner, batchId: %d", batchID.Uint64())
+		log.Info("not bidding for batch, already current winner", "batchId", batchID.Uint64())
 		return nil
 	}
 
-	log.Info("Current bid for batch ID",
-		batchID,
+	log.Info("Current bid for batch ID ",
+		batchID.Uint64(),
 		"currentBidDeposit",
 		currentBid.Deposit,
 		"currentBidAmount",
@@ -69,6 +69,8 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 		currentBid.BlockMaxGasLimit,
 		"prover",
 		currentBid.Prover,
+		"proofWindow",
+		currentBid.ProofWindow,
 	)
 
 	shouldBid, err := b.strategy.ShouldBid(ctx, currentBid)
@@ -77,8 +79,11 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 	}
 
 	if !shouldBid {
-		log.Info("Bid strategy determined to not bid on current auction for batch ID",
-			batchID)
+		log.Info("Bid strategy determined to not bid on current auction", "batchID",
+			batchID.Uint64())
+	} else {
+		log.Info("Bid strategy determined to bid on current auction", "batchID",
+			batchID.Uint64())
 	}
 
 	bid, err := b.strategy.NextBid(ctx, b.proverAddress, currentBid)
@@ -86,19 +91,35 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 		return fmt.Errorf("error crafting next bid: %w", err)
 	}
 
-	isBetter, err := b.rpc.TaikoL1.IsBidBetter(nil, bid, currentBid)
-	if err != nil {
-		return fmt.Errorf("error determining if bid is better than existing bid: %w", err)
-	}
+	log.Info("Next bid",
+		"batchID",
+		batchID.Uint64(),
+		"currentBidDeposit",
+		bid.Deposit,
+		"currentBidAmount",
+		bid.FeePerGas,
+		"proofWindow",
+		bid.ProofWindow,
+	)
 
-	if !isBetter {
-		return fmt.Errorf("crafted a bid that is not better than existing bid: %w", err)
+	// if there is an eixsting bid, we need to see if ours is better
+	if currentBid.FeePerGas != 0 {
+		isBetter, err := b.rpc.TaikoL1.IsBidBetter(nil, bid, currentBid)
+		if err != nil {
+			return fmt.Errorf("error determining if bid is better than existing bid: %w", err)
+		}
+
+		if !isBetter {
+			return fmt.Errorf("crafted a bid that is not better than existing bid: %w", err)
+		}
 	}
 
 	requiredDepositAmount, err := b.getRequiredDepositAmount(ctx, bid)
 	if err != nil {
 		return fmt.Errorf("error getting required deposit amount: %w", err)
 	}
+
+	log.Info("required deposit amount", "batchID", batchID.Uint64(), "amount", requiredDepositAmount.String())
 
 	if requiredDepositAmount.Cmp(big.NewInt(0)) > 0 {
 		if err := b.deposit(ctx, new(big.Int).SetUint64(bid.Deposit)); err != nil {
@@ -136,6 +157,8 @@ func (b *Bidder) deposit(ctx context.Context, amount *big.Int) error {
 		return err
 	}
 
+	log.Info("depositing taiko tokens", "amount", amount.String())
+
 	tx, err := b.rpc.TaikoL1.DepositTaikoToken(opts, amount)
 	if err != nil {
 		return err
@@ -158,11 +181,13 @@ func (b *Bidder) submitBid(ctx context.Context, batchID *big.Int, bid bindings.T
 
 	log.Info("Sending bid for batch",
 		"batchID",
-		batchID,
+		batchID.Uint64(),
 		"bidFeePerGas",
 		bid.FeePerGas,
 		"deposit",
 		bid.Deposit,
+		"proofWindow",
+		bid.ProofWindow,
 	)
 
 	tx, err := b.rpc.TaikoL1.BidForBatch(opts, batchID.Uint64(), bid)
