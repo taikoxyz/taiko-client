@@ -19,7 +19,9 @@ import (
 )
 
 const (
-	protocolStatusReportInterval = 30 * time.Second
+	protocolStatusReportInterval     = 30 * time.Second
+	exchangeTransitionConfigTimeout  = 30 * time.Second
+	exchangeTransitionConfigInterval = 1 * time.Minute
 )
 
 // Driver keeps the L2 execution engine's local block chain in sync with the TaikoL1
@@ -108,7 +110,7 @@ func (d *Driver) Start() error {
 	d.wg.Add(3)
 	go d.eventLoop()
 	go d.reportProtocolStatus()
-	go d.checkTransitionConfig()
+	go d.exchangeTransitionConfigLoop()
 
 	return nil
 }
@@ -225,8 +227,9 @@ func (d *Driver) reportProtocolStatus() {
 	}
 }
 
-func (d *Driver) checkTransitionConfig() {
-	exchangeTransitionConfigInterval := 60 * time.Second
+// exchangeTransitionConfigLoop keeps exchanging transition configs with the
+// L2 execution engine.
+func (d *Driver) exchangeTransitionConfigLoop() {
 	ticker := time.NewTicker(exchangeTransitionConfigInterval)
 	defer func() {
 		ticker.Stop()
@@ -238,17 +241,25 @@ func (d *Driver) checkTransitionConfig() {
 		case <-d.ctx.Done():
 			return
 		case <-ticker.C:
-			tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
-				TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
-				TerminalBlockHash:       common.Hash{},
-				TerminalBlockNumber:     0,
-			})
-			if err != nil {
-				log.Error("Failed to exchange Transition Configuration", "error", err)
-				continue
-			}
-			log.Info("Exchanged transition config",
-				"transitionconfig", tc)
+			func() {
+				ctx, cancel := context.WithTimeout(d.ctx, exchangeTransitionConfigTimeout)
+				defer cancel()
+
+				tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(ctx, &engine.TransitionConfigurationV1{
+					TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
+					TerminalBlockHash:       common.Hash{},
+					TerminalBlockNumber:     0,
+				})
+				if err != nil {
+					log.Error("Failed to exchange Transition Configuration", "error", err)
+					return
+				}
+
+				log.Debug(
+					"Exchanged transition config",
+					"transitionConfig", tc,
+				)
+			}()
 		}
 	}
 }
