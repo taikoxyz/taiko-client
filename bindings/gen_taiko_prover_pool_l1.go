@@ -31,7 +31,7 @@ var (
 
 // TaikoL1ProverPoolMetaData contains all meta data concerning the TaikoL1ProverPool contract.
 var TaikoL1ProverPoolMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"RESOLVER_DENIED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_INVALID_ADDR\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"}],\"name\":\"RESOLVER_ZERO_ADDR\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"addressManager\",\"type\":\"address\"}],\"name\":\"AddressManagerChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"feeMultiplier\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"capacity\",\"type\":\"uint64\"}],\"name\":\"ProverEntered\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"name\":\"ProverExited\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"MAX_MULTIPLIER\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_MULTIPLIER\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_TKO_AMOUNT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"newCapacity\",\"type\":\"uint32\"}],\"name\":\"adjustCapacity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"newFeeMultiplier\",\"type\":\"uint8\"}],\"name\":\"adjustFeeMultiplier\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"}],\"name\":\"blockIdToProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"feeMultiplier\",\"type\":\"uint256\"},{\"internalType\":\"uint32\",\"name\":\"capacity\",\"type\":\"uint32\"}],\"name\":\"enterProverPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"exit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"}],\"name\":\"getProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"},{\"internalType\":\"uint16\",\"name\":\"_maxPoolSize\",\"type\":\"uint16\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxPoolSize\",\"outputs\":[{\"internalType\":\"uint16\",\"name\":\"\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"randomNumber\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"}],\"name\":\"pickRandomProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"provers\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"proverAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"stakedTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rewards\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"healthScore\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"lastBlockTsToBeProven\",\"type\":\"uint256\"},{\"internalType\":\"uint32\",\"name\":\"capacity\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"numAssignedBlocks\",\"type\":\"uint32\"},{\"internalType\":\"uint8\",\"name\":\"feeMultiplier\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proversInPool\",\"outputs\":[{\"internalType\":\"uint16\",\"name\":\"\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddressManager\",\"type\":\"address\"}],\"name\":\"setAddressManager\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"name\":\"slash\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"stakeMoreTokens\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"topProvers\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"}],\"name\":\"withdrawRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[],\"name\":\"RESOLVER_DENIED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_INVALID_ADDR\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"}],\"name\":\"RESOLVER_ZERO_ADDR\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"addressManager\",\"type\":\"address\"}],\"name\":\"AddressManagerChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"oldCapacity\",\"type\":\"uint32\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"newCapacity\",\"type\":\"uint32\"}],\"name\":\"ProverAdjustedCapacity\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"oldFeeMultiplier\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newFeeMultiplier\",\"type\":\"uint256\"}],\"name\":\"ProverAdjustedFeeMultiplier\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"feeMultiplier\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"capacity\",\"type\":\"uint64\"}],\"name\":\"ProverEntered\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"name\":\"ProverExited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ProverSlashed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalStaked\",\"type\":\"uint256\"}],\"name\":\"ProverStakedMoreTokens\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ProverWithdrawAwards\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"MAX_MULTIPLIER\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_MULTIPLIER\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_TKO_AMOUNT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"newCapacity\",\"type\":\"uint32\"}],\"name\":\"adjustCapacity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"newFeeMultiplier\",\"type\":\"uint8\"}],\"name\":\"adjustFeeMultiplier\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"}],\"name\":\"blockIdToProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"feeMultiplier\",\"type\":\"uint256\"},{\"internalType\":\"uint32\",\"name\":\"capacity\",\"type\":\"uint32\"}],\"name\":\"enterProverPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"exit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"}],\"name\":\"getProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"},{\"internalType\":\"uint16\",\"name\":\"_maxPoolSize\",\"type\":\"uint16\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxPoolSize\",\"outputs\":[{\"internalType\":\"uint16\",\"name\":\"\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"randomNumber\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"}],\"name\":\"pickRandomProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"provers\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"proverAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"stakedTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rewards\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"healthScore\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"lastBlockTsToBeProven\",\"type\":\"uint256\"},{\"internalType\":\"uint32\",\"name\":\"capacity\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"numAssignedBlocks\",\"type\":\"uint32\"},{\"internalType\":\"uint8\",\"name\":\"feeMultiplier\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proversInPool\",\"outputs\":[{\"internalType\":\"uint16\",\"name\":\"\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddressManager\",\"type\":\"address\"}],\"name\":\"setAddressManager\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"name\":\"slash\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"stakeMoreTokens\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"topProvers\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"}],\"name\":\"withdrawRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // TaikoL1ProverPoolABI is the input ABI used to generate the binding from.
@@ -1300,6 +1300,278 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseOwnershipTransferred(l
 	return event, nil
 }
 
+// TaikoL1ProverPoolProverAdjustedCapacityIterator is returned from FilterProverAdjustedCapacity and is used to iterate over the raw logs and unpacked data for ProverAdjustedCapacity events raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolProverAdjustedCapacityIterator struct {
+	Event *TaikoL1ProverPoolProverAdjustedCapacity // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ProverPoolProverAdjustedCapacityIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ProverPoolProverAdjustedCapacity)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ProverPoolProverAdjustedCapacity)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ProverPoolProverAdjustedCapacityIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ProverPoolProverAdjustedCapacityIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ProverPoolProverAdjustedCapacity represents a ProverAdjustedCapacity event raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolProverAdjustedCapacity struct {
+	Prover      common.Address
+	OldCapacity uint32
+	NewCapacity uint32
+	Raw         types.Log // Blockchain specific contextual infos
+}
+
+// FilterProverAdjustedCapacity is a free log retrieval operation binding the contract event 0xa426d28c428ee95eedf18d1c934f2069b32d38457a5f7f87127aeb8ea0729fb2.
+//
+// Solidity: event ProverAdjustedCapacity(address prover, uint32 oldCapacity, uint32 newCapacity)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterProverAdjustedCapacity(opts *bind.FilterOpts) (*TaikoL1ProverPoolProverAdjustedCapacityIterator, error) {
+
+	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "ProverAdjustedCapacity")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ProverPoolProverAdjustedCapacityIterator{contract: _TaikoL1ProverPool.contract, event: "ProverAdjustedCapacity", logs: logs, sub: sub}, nil
+}
+
+// WatchProverAdjustedCapacity is a free log subscription operation binding the contract event 0xa426d28c428ee95eedf18d1c934f2069b32d38457a5f7f87127aeb8ea0729fb2.
+//
+// Solidity: event ProverAdjustedCapacity(address prover, uint32 oldCapacity, uint32 newCapacity)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverAdjustedCapacity(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolProverAdjustedCapacity) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "ProverAdjustedCapacity")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ProverPoolProverAdjustedCapacity)
+				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverAdjustedCapacity", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseProverAdjustedCapacity is a log parse operation binding the contract event 0xa426d28c428ee95eedf18d1c934f2069b32d38457a5f7f87127aeb8ea0729fb2.
+//
+// Solidity: event ProverAdjustedCapacity(address prover, uint32 oldCapacity, uint32 newCapacity)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverAdjustedCapacity(log types.Log) (*TaikoL1ProverPoolProverAdjustedCapacity, error) {
+	event := new(TaikoL1ProverPoolProverAdjustedCapacity)
+	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverAdjustedCapacity", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator is returned from FilterProverAdjustedFeeMultiplier and is used to iterate over the raw logs and unpacked data for ProverAdjustedFeeMultiplier events raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator struct {
+	Event *TaikoL1ProverPoolProverAdjustedFeeMultiplier // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ProverPoolProverAdjustedFeeMultiplier)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ProverPoolProverAdjustedFeeMultiplier)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ProverPoolProverAdjustedFeeMultiplier represents a ProverAdjustedFeeMultiplier event raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolProverAdjustedFeeMultiplier struct {
+	Prover           common.Address
+	OldFeeMultiplier *big.Int
+	NewFeeMultiplier *big.Int
+	Raw              types.Log // Blockchain specific contextual infos
+}
+
+// FilterProverAdjustedFeeMultiplier is a free log retrieval operation binding the contract event 0xe2ab56ce94312a84cb6aa7b090126fd821c5fad200bf22a7c55f675ec668db9e.
+//
+// Solidity: event ProverAdjustedFeeMultiplier(address prover, uint256 oldFeeMultiplier, uint256 newFeeMultiplier)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterProverAdjustedFeeMultiplier(opts *bind.FilterOpts) (*TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator, error) {
+
+	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "ProverAdjustedFeeMultiplier")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator{contract: _TaikoL1ProverPool.contract, event: "ProverAdjustedFeeMultiplier", logs: logs, sub: sub}, nil
+}
+
+// WatchProverAdjustedFeeMultiplier is a free log subscription operation binding the contract event 0xe2ab56ce94312a84cb6aa7b090126fd821c5fad200bf22a7c55f675ec668db9e.
+//
+// Solidity: event ProverAdjustedFeeMultiplier(address prover, uint256 oldFeeMultiplier, uint256 newFeeMultiplier)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverAdjustedFeeMultiplier(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolProverAdjustedFeeMultiplier) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "ProverAdjustedFeeMultiplier")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ProverPoolProverAdjustedFeeMultiplier)
+				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverAdjustedFeeMultiplier", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseProverAdjustedFeeMultiplier is a log parse operation binding the contract event 0xe2ab56ce94312a84cb6aa7b090126fd821c5fad200bf22a7c55f675ec668db9e.
+//
+// Solidity: event ProverAdjustedFeeMultiplier(address prover, uint256 oldFeeMultiplier, uint256 newFeeMultiplier)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverAdjustedFeeMultiplier(log types.Log) (*TaikoL1ProverPoolProverAdjustedFeeMultiplier, error) {
+	event := new(TaikoL1ProverPoolProverAdjustedFeeMultiplier)
+	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverAdjustedFeeMultiplier", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // TaikoL1ProverPoolProverEnteredIterator is returned from FilterProverEntered and is used to iterate over the raw logs and unpacked data for ProverEntered events raised by the TaikoL1ProverPool contract.
 type TaikoL1ProverPoolProverEnteredIterator struct {
 	Event *TaikoL1ProverPoolProverEntered // Event containing the contract specifics and raw log
@@ -1565,6 +1837,412 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverExited(opts *bin
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverExited(log types.Log) (*TaikoL1ProverPoolProverExited, error) {
 	event := new(TaikoL1ProverPoolProverExited)
 	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverExited", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ProverPoolProverSlashedIterator is returned from FilterProverSlashed and is used to iterate over the raw logs and unpacked data for ProverSlashed events raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolProverSlashedIterator struct {
+	Event *TaikoL1ProverPoolProverSlashed // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ProverPoolProverSlashedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ProverPoolProverSlashed)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ProverPoolProverSlashed)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ProverPoolProverSlashedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ProverPoolProverSlashedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ProverPoolProverSlashed represents a ProverSlashed event raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolProverSlashed struct {
+	Prover common.Address
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterProverSlashed is a free log retrieval operation binding the contract event 0x664b84a0f5b173c1d62371e87f48268f943748c0fe5805d64ebfab28af48e17b.
+//
+// Solidity: event ProverSlashed(address prover, uint256 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterProverSlashed(opts *bind.FilterOpts) (*TaikoL1ProverPoolProverSlashedIterator, error) {
+
+	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "ProverSlashed")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ProverPoolProverSlashedIterator{contract: _TaikoL1ProverPool.contract, event: "ProverSlashed", logs: logs, sub: sub}, nil
+}
+
+// WatchProverSlashed is a free log subscription operation binding the contract event 0x664b84a0f5b173c1d62371e87f48268f943748c0fe5805d64ebfab28af48e17b.
+//
+// Solidity: event ProverSlashed(address prover, uint256 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverSlashed(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolProverSlashed) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "ProverSlashed")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ProverPoolProverSlashed)
+				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverSlashed", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseProverSlashed is a log parse operation binding the contract event 0x664b84a0f5b173c1d62371e87f48268f943748c0fe5805d64ebfab28af48e17b.
+//
+// Solidity: event ProverSlashed(address prover, uint256 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverSlashed(log types.Log) (*TaikoL1ProverPoolProverSlashed, error) {
+	event := new(TaikoL1ProverPoolProverSlashed)
+	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverSlashed", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ProverPoolProverStakedMoreTokensIterator is returned from FilterProverStakedMoreTokens and is used to iterate over the raw logs and unpacked data for ProverStakedMoreTokens events raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolProverStakedMoreTokensIterator struct {
+	Event *TaikoL1ProverPoolProverStakedMoreTokens // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ProverPoolProverStakedMoreTokensIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ProverPoolProverStakedMoreTokens)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ProverPoolProverStakedMoreTokens)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ProverPoolProverStakedMoreTokensIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ProverPoolProverStakedMoreTokensIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ProverPoolProverStakedMoreTokens represents a ProverStakedMoreTokens event raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolProverStakedMoreTokens struct {
+	Prover      common.Address
+	Amount      *big.Int
+	TotalStaked *big.Int
+	Raw         types.Log // Blockchain specific contextual infos
+}
+
+// FilterProverStakedMoreTokens is a free log retrieval operation binding the contract event 0xede799219aee9e2d2e6ce762bb15b4cdfb387b1618280f67b3404dc12463c382.
+//
+// Solidity: event ProverStakedMoreTokens(address prover, uint256 amount, uint256 totalStaked)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterProverStakedMoreTokens(opts *bind.FilterOpts) (*TaikoL1ProverPoolProverStakedMoreTokensIterator, error) {
+
+	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "ProverStakedMoreTokens")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ProverPoolProverStakedMoreTokensIterator{contract: _TaikoL1ProverPool.contract, event: "ProverStakedMoreTokens", logs: logs, sub: sub}, nil
+}
+
+// WatchProverStakedMoreTokens is a free log subscription operation binding the contract event 0xede799219aee9e2d2e6ce762bb15b4cdfb387b1618280f67b3404dc12463c382.
+//
+// Solidity: event ProverStakedMoreTokens(address prover, uint256 amount, uint256 totalStaked)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverStakedMoreTokens(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolProverStakedMoreTokens) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "ProverStakedMoreTokens")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ProverPoolProverStakedMoreTokens)
+				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverStakedMoreTokens", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseProverStakedMoreTokens is a log parse operation binding the contract event 0xede799219aee9e2d2e6ce762bb15b4cdfb387b1618280f67b3404dc12463c382.
+//
+// Solidity: event ProverStakedMoreTokens(address prover, uint256 amount, uint256 totalStaked)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverStakedMoreTokens(log types.Log) (*TaikoL1ProverPoolProverStakedMoreTokens, error) {
+	event := new(TaikoL1ProverPoolProverStakedMoreTokens)
+	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverStakedMoreTokens", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ProverPoolProverWithdrawAwardsIterator is returned from FilterProverWithdrawAwards and is used to iterate over the raw logs and unpacked data for ProverWithdrawAwards events raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolProverWithdrawAwardsIterator struct {
+	Event *TaikoL1ProverPoolProverWithdrawAwards // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ProverPoolProverWithdrawAwardsIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ProverPoolProverWithdrawAwards)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ProverPoolProverWithdrawAwards)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ProverPoolProverWithdrawAwardsIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ProverPoolProverWithdrawAwardsIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ProverPoolProverWithdrawAwards represents a ProverWithdrawAwards event raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolProverWithdrawAwards struct {
+	Prover common.Address
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterProverWithdrawAwards is a free log retrieval operation binding the contract event 0x78e57d846371816e02bd37310e6cc83bb7a979a78e86a5f47214fa6f90518be4.
+//
+// Solidity: event ProverWithdrawAwards(address prover, uint256 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterProverWithdrawAwards(opts *bind.FilterOpts) (*TaikoL1ProverPoolProverWithdrawAwardsIterator, error) {
+
+	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "ProverWithdrawAwards")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ProverPoolProverWithdrawAwardsIterator{contract: _TaikoL1ProverPool.contract, event: "ProverWithdrawAwards", logs: logs, sub: sub}, nil
+}
+
+// WatchProverWithdrawAwards is a free log subscription operation binding the contract event 0x78e57d846371816e02bd37310e6cc83bb7a979a78e86a5f47214fa6f90518be4.
+//
+// Solidity: event ProverWithdrawAwards(address prover, uint256 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverWithdrawAwards(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolProverWithdrawAwards) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "ProverWithdrawAwards")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ProverPoolProverWithdrawAwards)
+				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverWithdrawAwards", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseProverWithdrawAwards is a log parse operation binding the contract event 0x78e57d846371816e02bd37310e6cc83bb7a979a78e86a5f47214fa6f90518be4.
+//
+// Solidity: event ProverWithdrawAwards(address prover, uint256 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverWithdrawAwards(log types.Log) (*TaikoL1ProverPoolProverWithdrawAwards, error) {
+	event := new(TaikoL1ProverPoolProverWithdrawAwards)
+	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverWithdrawAwards", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
