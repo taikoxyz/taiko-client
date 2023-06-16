@@ -22,7 +22,6 @@ import (
 
 var (
 	errUnretryable = errors.New("unretryable")
-	errNeedWaiting = errors.New("need waiting before the proof submission")
 )
 
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction

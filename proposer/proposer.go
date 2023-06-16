@@ -391,7 +391,9 @@ func getTxOpts(
 	return opts, nil
 }
 
-func (p *Proposer) checkTaikoTokenBalance() error {
+// CheckTaikoTokenBalance checks if the current proposer has enough balance to pay
+// the current block fee.
+func (p *Proposer) CheckTaikoTokenBalance() error {
 	fee, err := p.rpc.TaikoL1.GetBlockFee(nil)
 	if err != nil {
 		return fmt.Errorf("failed to get block fee: %w", err)
