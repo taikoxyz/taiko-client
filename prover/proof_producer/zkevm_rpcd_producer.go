@@ -45,28 +45,34 @@ type RequestProofBody struct {
 
 // RequestProofBody represents the JSON body of RequestProofBody's `param` field.
 type RequestProofBodyParam struct {
-	Circuit                 string   `json:"circuit"`
-	Block                   *big.Int `json:"block"`
-	L2RPC                   string   `json:"l2_rpc"`
-	Retry                   bool     `json:"retry"`
-	Param                   string   `json:"param"`
-	VerifyProof             bool     `json:"verify_proof"`
-	Mock                    bool     `json:"mock"`
-	Aggregate               bool     `json:"aggregate"`
-	Prover                  string   `json:"prover"`
-	L1SignalService         string   `json:"l1_signal_service"`
-	L2SignalService         string   `json:"l2_signal_service"`
-	TaikoL2                 string   `json:"l2_contract"`
-	MetaHash                string   `json:"meta_hash"`
-	BlockHash               string   `json:"block_hash"`
-	ParentHash              string   `json:"parent_hash"`
-	SignalRoot              string   `json:"signal_root"`
-	Graffiti                string   `json:"graffiti"`
-	GasUsed                 uint64   `json:"gas_used"`
-	ParentGasUsed           uint64   `json:"parent_gas_used"`
-	BlockMaxGasLimit        uint64   `json:"block_max_gas_limit"`
-	MaxTransactionsPerBlock uint64   `json:"max_transactions_per_block"`
-	MaxBytesPerTxList       uint64   `json:"max_bytes_per_tx_list"`
+	Circuit          string            `json:"circuit"`
+	Block            *big.Int          `json:"block"`
+	L2RPC            string            `json:"rpc"`
+	Retry            bool              `json:"retry"`
+	Param            string            `json:"param"`
+	VerifyProof      bool              `json:"verify_proof"`
+	Mock             bool              `json:"mock"`
+	MockFeedback     bool              `json:"mock_feedback"`
+	Aggregate        bool              `json:"aggregate"`
+	ProtocolInstance *ProtocolInstance `json:"protocol_instance"`
+}
+
+// RequestProofBody represents the JSON body of RequestProofBody.Param's `protocol_instance` field.
+type ProtocolInstance struct {
+	L1SignalService         string `json:"l1_signal_service"`
+	L2SignalService         string `json:"l2_signal_service"`
+	TaikoL2                 string `json:"l2_contract"`
+	MetaHash                string `json:"meta_hash"`
+	BlockHash               string `json:"block_hash"`
+	ParentHash              string `json:"parent_hash"`
+	SignalRoot              string `json:"signal_root"`
+	Graffiti                string `json:"graffiti"`
+	Prover                  string `json:"prover"`
+	GasUsed                 uint64 `json:"gas_used"`
+	ParentGasUsed           uint64 `json:"parent_gas_used"`
+	BlockMaxGasLimit        uint64 `json:"block_max_gas_limit"`
+	MaxTransactionsPerBlock uint64 `json:"max_transactions_per_block"`
+	MaxBytesPerTxList       uint64 `json:"max_bytes_per_tx_list"`
 }
 
 // RequestProofBodyResponse represents the JSON body of the response of the proof requests.
@@ -172,7 +178,16 @@ func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 			log.Info("Proof generating", "height", opts.Height, "time", time.Since(start))
 			return errProofGenerating
 		}
-		proof = common.Hex2Bytes(output.Circuit.Proof[2:])
+
+		log.Debug("Proof generation output", "output", output)
+
+		var proofOutput string
+		for _, instance := range output.Circuit.Instances {
+			proofOutput += instance[2:]
+		}
+		proofOutput += output.Circuit.Proof[2:]
+
+		proof = common.Hex2Bytes(proofOutput)
 		degree = output.Circuit.Degree
 		log.Info("Proof generated", "height", opts.Height, "degree", degree, "time", time.Since(start))
 		return nil
@@ -189,28 +204,31 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 		ID:      common.Big1,
 		Method:  "proof",
 		Params: []*RequestProofBodyParam{{
-			Circuit:                 "pi",
-			Block:                   opts.Height,
-			L2RPC:                   p.L2Endpoint,
-			Retry:                   true,
-			Param:                   p.Param,
-			VerifyProof:             true,
-			Mock:                    false,
-			Aggregate:               false,
-			Prover:                  opts.ProverAddress.Hex()[2:],
-			L1SignalService:         opts.L1SignalService.Hex()[2:],
-			L2SignalService:         opts.L2SignalService.Hex()[2:],
-			TaikoL2:                 opts.TaikoL2.Hex()[2:],
-			MetaHash:                opts.MetaHash.Hex()[2:],
-			BlockHash:               opts.BlockHash.Hex()[2:],
-			ParentHash:              opts.ParentHash.Hex()[2:],
-			SignalRoot:              opts.SignalRoot.Hex()[2:],
-			Graffiti:                opts.Graffiti,
-			GasUsed:                 opts.GasUsed,
-			ParentGasUsed:           opts.ParentGasUsed,
-			BlockMaxGasLimit:        p.ProtocolConfig.BlockMaxGasLimit,
-			MaxTransactionsPerBlock: p.ProtocolConfig.MaxTransactionsPerBlock,
-			MaxBytesPerTxList:       p.ProtocolConfig.MaxBytesPerTxList,
+			Circuit:      "super",
+			Block:        opts.Height,
+			L2RPC:        p.L2Endpoint,
+			Retry:        true,
+			Param:        p.Param,
+			VerifyProof:  true,
+			Mock:         false,
+			MockFeedback: false,
+			Aggregate:    false,
+			ProtocolInstance: &ProtocolInstance{
+				Prover:                  opts.ProverAddress.Hex()[2:],
+				L1SignalService:         opts.L1SignalService.Hex()[2:],
+				L2SignalService:         opts.L2SignalService.Hex()[2:],
+				TaikoL2:                 opts.TaikoL2.Hex()[2:],
+				MetaHash:                opts.MetaHash.Hex()[2:],
+				BlockHash:               opts.BlockHash.Hex()[2:],
+				ParentHash:              opts.ParentHash.Hex()[2:],
+				SignalRoot:              opts.SignalRoot.Hex()[2:],
+				Graffiti:                opts.Graffiti,
+				GasUsed:                 opts.GasUsed,
+				ParentGasUsed:           opts.ParentGasUsed,
+				BlockMaxGasLimit:        p.ProtocolConfig.BlockMaxGasLimit,
+				MaxTransactionsPerBlock: p.ProtocolConfig.MaxTransactionsPerBlock,
+				MaxBytesPerTxList:       p.ProtocolConfig.MaxBytesPerTxList,
+			},
 		}},
 	}
 
