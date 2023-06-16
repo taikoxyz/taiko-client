@@ -117,7 +117,7 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	s.Nil(err)
 	s.p.cfg.OracleProverPrivateKey = l1ProverPrivKey
 
-	testutils.BidForBatchAndWaitUntilAuctionOver(&s.ClientTestSuite, s.p.bidOp)
+	testutils.BidForBatchAndWaitUntilAuctionOver(&s.ClientTestSuite, s.p.bidOp, s.p.proverAddress)
 
 	// Valid block
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())

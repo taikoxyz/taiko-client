@@ -166,8 +166,13 @@ func ProposeAndInsertValidBlock(
 	return event
 }
 
-func BidForBatchAndWaitUntilAuctionOver(s *ClientTestSuite, bidFunc func(ctx context.Context, batchId *big.Int) error) {
-	batchId, err := s.RpcClient.TaikoL1.BatchForBlock(nil, big.NewInt(1))
+func BidForBatchAndWaitUntilAuctionOver(
+	s *ClientTestSuite,
+	bidFunc func(ctx context.Context, batchId *big.Int) error,
+	proverAddress common.Address) {
+	// TODO: pass in block ID, dont just use 1
+	blockID := big.NewInt(1)
+	batchId, err := s.RpcClient.TaikoL1.BatchForBlock(nil, blockID)
 	s.Nil(err)
 	s.Nil(bidFunc(context.Background(), batchId))
 
@@ -175,11 +180,11 @@ func BidForBatchAndWaitUntilAuctionOver(s *ClientTestSuite, bidFunc func(ctx con
 	for {
 		// TODO: just sleep for protocolConfig.AuctionWindow + currentAuction.StartedAt
 		time.Sleep(5 * time.Second)
-		isAuctionable, err := s.RpcClient.TaikoL1.IsBatchAuctionable(nil, batchId)
-		log.Info("checking if batch is auctionable", "isAuctionable", isAuctionable)
+		isBlockProvableBy, err := s.RpcClient.TaikoL1.IsBlockProvableBy(nil, blockID, proverAddress)
+		log.Info("checking if batch is ready to be proven", "byProver", proverAddress.Hex(), "proveable", isBlockProvableBy.Provable, "startedAt", isBlockProvableBy.Auction.StartedAt, "prover", isBlockProvableBy.Auction.Bid.Prover, "batchId", isBlockProvableBy.Auction.BatchId)
 		s.Nil(err)
-		if !isAuctionable {
-			log.Info("waiting for batch to be auctionable over")
+		if isBlockProvableBy.Provable {
+			log.Info("waiting for batch to be ready to be proven")
 			break
 		}
 	}
