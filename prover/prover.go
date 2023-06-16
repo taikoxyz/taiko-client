@@ -34,7 +34,6 @@ type Prover struct {
 	cfg                 *Config
 	proverAddress       common.Address
 	oracleProverAddress common.Address
-	systemProverAddress common.Address
 
 	// Clients
 	rpc *rpc.Client
@@ -95,11 +94,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
-		L1Endpoint:     cfg.L1WsEndpoint,
-		L2Endpoint:     cfg.L2WsEndpoint,
-		TaikoL1Address: cfg.TaikoL1Address,
-		TaikoL2Address: cfg.TaikoL2Address,
-		RetryInterval:  cfg.BackOffRetryInterval,
+		L1Endpoint:               cfg.L1WsEndpoint,
+		L2Endpoint:               cfg.L2WsEndpoint,
+		TaikoL1Address:           cfg.TaikoL1Address,
+		TaikoL2Address:           cfg.TaikoL2Address,
+		TaikoProverPoolL1Address: cfg.TaikoProverPoolL1Address,
+		RetryInterval:            cfg.BackOffRetryInterval,
 	}); err != nil {
 		return err
 	}
@@ -143,28 +143,16 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	p.oracleProverAddress = oracleProverAddress
 
-	systemProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, rpc.StringToBytes32("system_prover"), true)
-	if err != nil {
-		return err
-	}
-
-	p.systemProverAddress = systemProverAddress
-
 	var producer proofProducer.ProofProducer
 
-	isSystemProver := cfg.SystemProver
 	isOracleProver := cfg.OracleProver
 
-	if isSystemProver || isOracleProver {
+	if isOracleProver {
 		var specialProverAddress common.Address
 		var privateKey *ecdsa.PrivateKey
-		if isSystemProver {
-			specialProverAddress = systemProverAddress
-			privateKey = p.cfg.SystemProverPrivateKey
-		} else {
-			specialProverAddress = oracleProverAddress
-			privateKey = p.cfg.OracleProverPrivateKey
-		}
+
+		specialProverAddress = oracleProverAddress
+		privateKey = p.cfg.OracleProverPrivateKey
 
 		if producer, err = proofProducer.NewSpecialProofProducer(
 			p.rpc,
@@ -172,7 +160,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			p.cfg.TaikoL2Address,
 			specialProverAddress,
 			p.cfg.Graffiti,
-			isSystemProver,
 		); err != nil {
 			return err
 		}
@@ -203,7 +190,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.L1ProverPrivKey,
 		p.submitProofTxMutex,
 		p.cfg.OracleProver,
-		p.cfg.SystemProver,
 		p.cfg.Graffiti,
 		p.cfg.ExpectedReward,
 		p.cfg.BackOffRetryInterval,
@@ -410,13 +396,12 @@ func (p *Prover) onBlockProposed(
 		}
 
 		// Check whether the block's proof is still needed.
-		if !p.cfg.OracleProver && !p.cfg.SystemProver {
+		if !p.cfg.OracleProver {
 			needNewProof, err := rpc.NeedNewProof(
 				p.ctx,
 				p.rpc,
 				event.Id,
 				p.proverAddress,
-				p.protocolConfigs.RealProofSkipSize,
 			)
 			if err != nil {
 				return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
@@ -427,21 +412,21 @@ func (p *Prover) onBlockProposed(
 			}
 		}
 
-		if p.cfg.SystemProver {
-			needNewSystemProof, err := rpc.NeedNewSystemProof(ctx, p.rpc, event.Id, p.protocolConfigs.RealProofSkipSize)
-			if err != nil {
-				return fmt.Errorf("failed to check whether the L2 block needs a new system proof: %w", err)
-			}
-
-			if !needNewSystemProof {
-				return nil
-			}
-		}
-
 		// Check if the current prover has seen this block ID before, there was probably
 		// a L1 reorg, we need to cancel that reorged block's proof generation task at first.
 		if p.currentBlocksBeingProven[event.Meta.Id] != nil {
 			p.cancelProof(ctx, event.Meta.Id)
+		}
+
+		// check whether this prover has been chosen through PoS mechanism to prove the block
+		chosenProver, err := p.rpc.TaikoProverPoolL1.GetProver(nil, event.Id)
+		if err != nil {
+			return err
+		}
+
+		if chosenProver != p.proverAddress {
+			log.Info("proposed block not proveable", "blockID", event.Id, "prover", chosenProver.Hex())
+			return nil
 		}
 
 		ctx, cancelCtx := context.WithCancel(ctx)
@@ -502,18 +487,10 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
 
-	isNormalProof := p.protocolConfigs.RealProofSkipSize == nil ||
-		(p.protocolConfigs.RealProofSkipSize != nil && event.Id.Uint64()%p.protocolConfigs.RealProofSkipSize.Uint64() == 0)
 	if event.Reward > math.MaxInt64 {
 		metrics.ProverAllProofRewardGauge.Update(math.MaxInt64)
-		if isNormalProof {
-			metrics.ProverNormalProofRewardGauge.Update(math.MaxInt64)
-		}
 	} else {
 		metrics.ProverAllProofRewardGauge.Update(int64(event.Reward))
-		if isNormalProof {
-			metrics.ProverNormalProofRewardGauge.Update(int64(event.Reward))
-		}
 	}
 
 	p.latestVerifiedL1Height = event.Raw.BlockNumber
@@ -537,8 +514,6 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 	metrics.ProverReceivedProvenBlockGauge.Update(event.Id.Int64())
 	// if this proof is submitted by an oracle prover or a system prover, don't cancel proof.
 	if event.Prover == p.oracleProverAddress ||
-		event.Prover == p.systemProverAddress ||
-		event.Prover == encoding.SystemProverAddress ||
 		event.Prover == encoding.OracleProverAddress {
 		return nil
 	}
@@ -623,7 +598,7 @@ func (p *Prover) closeSubscription() {
 // checkChainVerification checks if there is no new block verification in protocol, if so,
 // it will let current sepecial prover to go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
 func (p *Prover) checkChainVerification(lastLatestVerifiedL1Height uint64) error {
-	if (!p.cfg.SystemProver && !p.cfg.OracleProver) || lastLatestVerifiedL1Height != p.latestVerifiedL1Height {
+	if (!p.cfg.OracleProver) || lastLatestVerifiedL1Height != p.latestVerifiedL1Height {
 		return nil
 	}
 

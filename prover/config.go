@@ -20,6 +20,7 @@ type Config struct {
 	L2WsEndpoint                    string
 	L2HttpEndpoint                  string
 	TaikoL1Address                  common.Address
+	TaikoProverPoolL1Address        common.Address
 	TaikoL2Address                  common.Address
 	L1ProverPrivKey                 *ecdsa.PrivateKey
 	ZKEvmRpcdEndpoint               string
@@ -28,9 +29,7 @@ type Config struct {
 	MaxConcurrentProvingJobs        uint
 	Dummy                           bool
 	OracleProver                    bool
-	SystemProver                    bool
 	OracleProverPrivateKey          *ecdsa.PrivateKey
-	SystemProverPrivateKey          *ecdsa.PrivateKey
 	Graffiti                        string
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
@@ -49,11 +48,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	oracleProverSet := c.IsSet(flags.OracleProver.Name)
-	systemProverSet := c.IsSet(flags.SystemProver.Name)
-
-	if oracleProverSet && systemProverSet {
-		return nil, fmt.Errorf("cannot set both oracleProver and systemProver")
-	}
 
 	var oracleProverPrivKey *ecdsa.PrivateKey
 	if oracleProverSet {
@@ -66,20 +60,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		oracleProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(oracleProverPrivKeyStr))
 		if err != nil {
 			return nil, fmt.Errorf("invalid oracle private key: %w", err)
-		}
-	}
-
-	var systemProverPrivKey *ecdsa.PrivateKey
-	if systemProverSet {
-		if !c.IsSet(flags.SystemProverPrivateKey.Name) {
-			return nil, fmt.Errorf("systemProver flag set without systemProverPrivateKey set")
-		}
-
-		systemProverPrivKeyStr := c.String(flags.SystemProverPrivateKey.Name)
-
-		systemProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(systemProverPrivKeyStr))
-		if err != nil {
-			return nil, fmt.Errorf("invalid system private key: %w", err)
 		}
 	}
 
@@ -124,6 +104,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L2HttpEndpoint:                  c.String(flags.L2HTTPEndpoint.Name),
 		TaikoL1Address:                  common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                  common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
+		TaikoProverPoolL1Address:        common.HexToAddress(c.String(flags.TaikoProverPoolL1Address.Name)),
 		L1ProverPrivKey:                 l1ProverPrivKey,
 		ZKEvmRpcdEndpoint:               c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath:             c.String(flags.ZkEvmRpcdParamsPath.Name),
@@ -132,8 +113,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		Dummy:                           c.Bool(flags.Dummy.Name),
 		OracleProver:                    c.Bool(flags.OracleProver.Name),
 		OracleProverPrivateKey:          oracleProverPrivKey,
-		SystemProver:                    c.Bool(flags.SystemProver.Name),
-		SystemProverPrivateKey:          systemProverPrivKey,
 		Graffiti:                        c.String(flags.Graffiti.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,

@@ -27,8 +27,9 @@ type Client struct {
 	// Geth Engine API clients
 	L2Engine *EngineClient
 	// Protocol contracts clients
-	TaikoL1 *bindings.TaikoL1Client
-	TaikoL2 *bindings.TaikoL2Client
+	TaikoL1           *bindings.TaikoL1Client
+	TaikoL2           *bindings.TaikoL2Client
+	TaikoProverPoolL1 *bindings.TaikoL1ProverPool
 	// Chain IDs
 	L1ChainID *big.Int
 	L2ChainID *big.Int
@@ -38,14 +39,15 @@ type Client struct {
 // RPC client. If not providing L2EngineEndpoint or JwtSecret, then the L2Engine client
 // won't be initialized.
 type ClientConfig struct {
-	L1Endpoint       string
-	L2Endpoint       string
-	L2CheckPoint     string
-	TaikoL1Address   common.Address
-	TaikoL2Address   common.Address
-	L2EngineEndpoint string
-	JwtSecret        string
-	RetryInterval    time.Duration
+	L1Endpoint               string
+	L2Endpoint               string
+	L2CheckPoint             string
+	TaikoL1Address           common.Address
+	TaikoProverPoolL1Address common.Address
+	TaikoL2Address           common.Address
+	L2EngineEndpoint         string
+	JwtSecret                string
+	RetryInterval            time.Duration
 }
 
 // NewClient initializes all RPC clients used by Taiko client softwares.
@@ -56,6 +58,11 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	}
 
 	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1RPC)
+	if err != nil {
+		return nil, err
+	}
+
+	taikoProverPoolL1, err := bindings.NewTaikoL1ProverPool(cfg.TaikoProverPoolL1Address, l1RPC)
 	if err != nil {
 		return nil, err
 	}
@@ -112,18 +119,19 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	}
 
 	client := &Client{
-		L1:           l1RPC,
-		L2:           l2RPC,
-		L2CheckPoint: l2CheckPoint,
-		L1RawRPC:     l1RawRPC,
-		L2RawRPC:     l2RawRPC,
-		L1GethClient: gethclient.New(l1RawRPC),
-		L2GethClient: gethclient.New(l2RawRPC),
-		L2Engine:     l2AuthRPC,
-		TaikoL1:      taikoL1,
-		TaikoL2:      taikoL2,
-		L1ChainID:    l1ChainID,
-		L2ChainID:    l2ChainID,
+		L1:                l1RPC,
+		L2:                l2RPC,
+		L2CheckPoint:      l2CheckPoint,
+		L1RawRPC:          l1RawRPC,
+		L2RawRPC:          l2RawRPC,
+		L1GethClient:      gethclient.New(l1RawRPC),
+		L2GethClient:      gethclient.New(l2RawRPC),
+		L2Engine:          l2AuthRPC,
+		TaikoL1:           taikoL1,
+		TaikoL2:           taikoL2,
+		TaikoProverPoolL1: taikoProverPoolL1,
+		L1ChainID:         l1ChainID,
+		L2ChainID:         l2ChainID,
 	}
 
 	if err := client.ensureGenesisMatched(ctx); err != nil {

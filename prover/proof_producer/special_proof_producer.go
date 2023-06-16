@@ -28,7 +28,6 @@ type SpecialProofProducer struct {
 	proverPrivKey     *ecdsa.PrivateKey
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	graffiti          [32]byte
-	isSystemProver    bool
 }
 
 // NewSpecialProofProducer creates a new NewSpecialProofProducer instance, which can be either
@@ -39,7 +38,6 @@ func NewSpecialProofProducer(
 	taikoL2Address common.Address,
 	protocolSpecialProverAddress common.Address,
 	graffiti string,
-	isSystemProver bool,
 ) (*SpecialProofProducer, error) {
 	proverAddress := crypto.PubkeyToAddress(proverPrivKey.PublicKey)
 	if proverAddress != protocolSpecialProverAddress {
@@ -56,7 +54,6 @@ func NewSpecialProofProducer(
 		proverPrivKey,
 		anchorValidator,
 		rpc.StringToBytes32(graffiti),
-		isSystemProver,
 	}, nil
 }
 
@@ -106,16 +103,6 @@ func (p *SpecialProofProducer) RequestProof(
 		return err
 	}
 
-	// the only difference from a client perspective when generating a special proof,
-	// either an oracle proof or a system proof, is the prover address which should be set to 1
-	// if system prover, and 0 if oracle prover, and the protocol will use that to decide
-	// whether a proof can be overwritten or not.
-	var prover common.Address
-	if p.isSystemProver {
-		prover = encoding.SystemProverAddress
-	} else {
-		prover = encoding.OracleProverAddress
-	}
 	// signature should be done with proof set to nil, verifierID set to 0,
 	// and prover set to 0 address.
 	evidence := &encoding.TaikoL1Evidence{
@@ -124,7 +111,7 @@ func (p *SpecialProofProducer) RequestProof(
 		BlockHash:     block.Hash(),
 		SignalRoot:    signalRoot,
 		Graffiti:      p.graffiti,
-		Prover:        prover,
+		Prover:        encoding.OracleProverAddress,
 		ParentGasUsed: uint32(parent.GasUsed()),
 		GasUsed:       uint32(block.GasUsed()),
 		VerifierId:    0,

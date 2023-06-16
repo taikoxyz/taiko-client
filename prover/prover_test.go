@@ -42,9 +42,9 @@ func (s *ProverTestSuite) SetupTest() {
 		L2HttpEndpoint:           os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoProverPoolL1Address: common.HexToAddress(os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")),
 		L1ProverPrivKey:          l1ProverPrivKey,
 		OracleProverPrivateKey:   l1ProverPrivKey,
-		SystemProverPrivateKey:   l1ProverPrivKey,
 		Dummy:                    true,
 		MaxConcurrentProvingJobs: 1,
 	})))
@@ -148,7 +148,6 @@ func (s *ProverTestSuite) TestStartSubscription() {
 func (s *ProverTestSuite) TestCheckChainVerification() {
 	s.Nil(s.p.checkChainVerification(0))
 	s.p.latestVerifiedL1Height = 1024
-	s.p.cfg.SystemProver = true
 	s.Nil(s.p.checkChainVerification(1024))
 }
 

@@ -75,7 +75,6 @@ func sendTxWithBackoff(
 ) error {
 	var (
 		isUnretryableError bool
-		proposedTime       = time.Unix(int64(proposedAt), 0)
 	)
 
 	if err := backoff.Retry(func() error {
@@ -109,7 +108,7 @@ func sendTxWithBackoff(
 		// Check the expected reward.
 		if expectedReward != 0 {
 			// Check if this proof is still needed at first.
-			needNewProof, err := rpc.NeedNewProof(ctx, cli, blockID, common.Address{}, nil)
+			needNewProof, err := rpc.NeedNewProof(ctx, cli, blockID, common.Address{})
 			if err != nil {
 				log.Warn(
 					"Failed to check if the generated proof is needed",
@@ -119,38 +118,7 @@ func sendTxWithBackoff(
 				return err
 			}
 
-			if needNewProof {
-				stateVar, err := cli.TaikoL1.GetStateVariables(nil)
-				if err != nil {
-					log.Warn("Failed to get protocol state variables", "blockID", blockID, "error", err)
-					return err
-				}
-
-				targetDelay := stateVar.ProofTimeTarget * 4
-				if stateVar.BlockFee != 0 {
-					targetDelay = uint64(float64(expectedReward) / float64(stateVar.BlockFee) * float64(stateVar.ProofTimeTarget))
-					if targetDelay < stateVar.ProofTimeTarget/4 {
-						targetDelay = stateVar.ProofTimeTarget / 4
-					} else if targetDelay > stateVar.ProofTimeTarget*4 {
-						targetDelay = stateVar.ProofTimeTarget * 4
-					}
-				}
-
-				log.Info(
-					"Target delay",
-					"blockID", blockID,
-					"delay", targetDelay,
-					"expectedReward", expectedReward,
-					"blockFee", stateVar.BlockFee,
-					"proofTimeTarget", stateVar.ProofTimeTarget,
-					"proposedTime", proposedTime,
-					"timeToWait", time.Until(proposedTime.Add(time.Duration(targetDelay)*time.Second)),
-				)
-
-				if time.Now().Before(proposedTime.Add(time.Duration(targetDelay) * time.Second)) {
-					return errNeedWaiting
-				}
-			} else {
+			if !needNewProof {
 				log.Info("Proof was submitted another prover, skip the current proof submission", "blockID", blockID)
 				return nil
 			}

@@ -396,7 +396,7 @@ func getTxOpts(
 }
 
 func (p *Proposer) checkTaikoTokenBalance() error {
-	fee, err := p.rpc.TaikoL1.GetBlockFee(nil)
+	fee, err := p.rpc.TaikoL1.GetBlockFee(nil, uint32(p.protocolConfigs.BlockMaxGasLimit))
 	if err != nil {
 		return fmt.Errorf("failed to get block fee: %w", err)
 	}
