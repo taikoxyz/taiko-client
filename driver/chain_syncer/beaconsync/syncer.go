@@ -52,6 +52,19 @@ func (s *Syncer) TriggerBeaconSync() error {
 			)
 		}
 
+		// Keep the heartbeat with L2 execution engine.
+		fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &engine.ForkchoiceStateV1{
+			HeadBlockHash:      s.progressTracker.LastSyncedVerifiedBlockHash(),
+			SafeBlockHash:      s.progressTracker.LastSyncedVerifiedBlockHash(),
+			FinalizedBlockHash: s.progressTracker.LastSyncedVerifiedBlockHash(),
+		}, nil)
+		if err != nil {
+			return err
+		}
+		if fcRes.PayloadStatus.Status != engine.SYNCING {
+			return fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
+		}
+
 		return nil
 	}
 
@@ -76,7 +89,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 		return err
 	}
 	if fcRes.PayloadStatus.Status != engine.SYNCING {
-		return fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", status.Status)
+		return fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
 	}
 
 	// Update sync status.
