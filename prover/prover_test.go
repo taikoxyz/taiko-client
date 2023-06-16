@@ -35,6 +35,19 @@ func (s *ProverTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
+	proverAddress := crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey)
+
+	l1TaikoTokenOwnerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("TAIKO_TOKEN_OWNER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	testutils.TransferTaikoToken(
+		&s.ClientTestSuite,
+		common.HexToAddress(os.Getenv("L1_TAIKO_TOKEN_ADDRESS")),
+		proverAddress,
+		big.NewInt(1000000000000000),
+		l1TaikoTokenOwnerPrivKey,
+	)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
 	s.Nil(InitFromConfig(ctx, p, (&Config{
@@ -46,7 +59,6 @@ func (s *ProverTestSuite) SetupTest() {
 		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L1ProverPrivKey:          l1ProverPrivKey,
 		OracleProverPrivateKey:   l1ProverPrivKey,
-		SystemProverPrivateKey:   l1ProverPrivKey,
 		Dummy:                    true,
 		MaxConcurrentProvingJobs: 1,
 		BidConfig: BidConfig{
@@ -158,7 +170,6 @@ func (s *ProverTestSuite) TestStartSubscriptions() {
 func (s *ProverTestSuite) TestCheckChainVerification() {
 	s.Nil(s.p.checkChainVerification(0))
 	s.p.latestVerifiedL1Height = 1024
-	s.p.cfg.SystemProver = true
 	s.Nil(s.p.checkChainVerification(1024))
 }
 

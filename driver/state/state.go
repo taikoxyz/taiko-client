@@ -168,7 +168,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 			case e := <-s.blockProposedCh:
 				s.setHeadBlockID(e.Id)
 			case e := <-s.blockProvenCh:
-				if e.Prover != encoding.SystemProverAddress && e.Prover != encoding.OracleProverAddress {
+				if e.Prover != encoding.OracleProverAddress {
 					log.Info("✅ Block proven", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
 				}
 			case e := <-s.blockVerifiedCh:

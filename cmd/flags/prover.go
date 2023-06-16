@@ -52,19 +52,9 @@ var (
 		Usage:    "Set whether prover should use oracle prover or not",
 		Category: proverCategory,
 	}
-	SystemProver = &cli.BoolFlag{
-		Name:     "systemProver",
-		Usage:    "Set whether prover should use system prover or not",
-		Category: proverCategory,
-	}
 	OracleProverPrivateKey = &cli.StringFlag{
 		Name:     "oracleProverPrivateKey",
 		Usage:    "Private key of oracle prover",
-		Category: proverCategory,
-	}
-	SystemProverPrivateKey = &cli.StringFlag{
-		Name:     "systemProverPrivateKey",
-		Usage:    "Private key of system prover",
 		Category: proverCategory,
 	}
 	Graffiti = &cli.StringFlag{
@@ -102,9 +92,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxConcurrentProvingJobs,
 	Dummy,
 	OracleProver,
-	SystemProver,
 	OracleProverPrivateKey,
-	SystemProverPrivateKey,
 	Graffiti,
 	BidStrategy,
 	MinimumBidFeePerGas,

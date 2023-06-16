@@ -37,7 +37,6 @@ type ValidProofSubmitter struct {
 	l2SignalService   common.Address
 	mutex             *sync.Mutex
 	isOracleProver    bool
-	isSystemProver    bool
 	graffiti          [32]byte
 	retryInterval     time.Duration
 }
@@ -51,7 +50,6 @@ func NewValidProofSubmitter(
 	proverPrivKey *ecdsa.PrivateKey,
 	mutex *sync.Mutex,
 	isOracleProver bool,
-	isSystemProver bool,
 	graffiti string,
 	retryInterval time.Duration,
 ) (*ValidProofSubmitter, error) {
@@ -82,7 +80,6 @@ func NewValidProofSubmitter(
 		taikoL2Address:    taikoL2Address,
 		mutex:             mutex,
 		isOracleProver:    isOracleProver,
-		isSystemProver:    isSystemProver,
 		graffiti:          rpc.StringToBytes32(graffiti),
 		retryInterval:     retryInterval,
 	}, nil
@@ -96,14 +93,21 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 	}
 
 	if !proveInfo.Provable {
-		return fmt.Errorf(`block is not provable by this prover, 
+		if proveInfo.Auction.Bid.Prover != s.proverAddress {
+			return fmt.Errorf(`block is not provable by this prover, 
 				blockID: %d, 
 				prover: %v,
 				auctionWinningProver: %v`,
-			event.Id,
-			s.proverAddress,
-			proveInfo.Auction.Bid.Prover.Hex(),
-		)
+				event.Id,
+				s.proverAddress,
+				proveInfo.Auction.Bid.Prover.Hex(),
+			)
+		}
+
+		// TODO: also check case proofWindow + auction.startedAt has not elapsed,
+		// handle that error separately, or just wait.
+
+		return fmt.Errorf(`block is not provable, blockID: %d`, event.Id)
 	}
 
 	l1Origin, err := s.rpc.WaitL1Origin(ctx, event.Id)
@@ -229,12 +233,9 @@ func (s *ValidProofSubmitter) SubmitProof(
 	var circuitsIdx uint16
 	var prover common.Address
 
-	if s.isOracleProver || s.isSystemProver {
-		if s.isSystemProver {
-			prover = encoding.SystemProverAddress
-		} else {
-			prover = encoding.OracleProverAddress
-		}
+	if s.isOracleProver {
+		prover = encoding.OracleProverAddress
+
 		circuitsIdx = uint16(int(zkProof[64]))
 		evidence.Proof = zkProof[0:64]
 	} else {

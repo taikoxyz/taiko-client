@@ -2,7 +2,6 @@ package prover
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"fmt"
 	"math"
 	"math/big"
@@ -35,7 +34,6 @@ type Prover struct {
 	cfg                 *Config
 	proverAddress       common.Address
 	oracleProverAddress common.Address
-	systemProverAddress common.Address
 	bidder              *auction.Bidder
 
 	// Clients
@@ -152,36 +150,17 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	p.oracleProverAddress = oracleProverAddress
 
-	systemProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, rpc.StringToBytes32("system_prover"), true)
-	if err != nil {
-		return err
-	}
-
-	p.systemProverAddress = systemProverAddress
-
 	var producer proofProducer.ProofProducer
 
-	isSystemProver := cfg.SystemProver
 	isOracleProver := cfg.OracleProver
 
-	if isSystemProver || isOracleProver {
-		var specialProverAddress common.Address
-		var privateKey *ecdsa.PrivateKey
-		if isSystemProver {
-			specialProverAddress = systemProverAddress
-			privateKey = p.cfg.SystemProverPrivateKey
-		} else {
-			specialProverAddress = oracleProverAddress
-			privateKey = p.cfg.OracleProverPrivateKey
-		}
-
+	if isOracleProver {
 		if producer, err = proofProducer.NewSpecialProofProducer(
 			p.rpc,
-			privateKey,
+			p.cfg.OracleProverPrivateKey,
 			p.cfg.TaikoL2Address,
-			specialProverAddress,
+			oracleProverAddress,
 			p.cfg.Graffiti,
-			isSystemProver,
 		); err != nil {
 			return err
 		}
@@ -209,7 +188,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.L1ProverPrivKey,
 		p.submitProofTxMutex,
 		p.cfg.OracleProver,
-		p.cfg.SystemProver,
 		p.cfg.Graffiti,
 		p.cfg.BackOffRetryInterval,
 	); err != nil {
@@ -438,7 +416,7 @@ func (p *Prover) onBlockProposed(
 		}
 
 		// Check whether the block's proof is still needed.
-		if !p.cfg.OracleProver && !p.cfg.SystemProver {
+		if !p.cfg.OracleProver {
 			needNewProof, err := rpc.NeedNewProof(
 				p.ctx,
 				p.rpc,
@@ -465,17 +443,6 @@ func (p *Prover) onBlockProposed(
 					"winningProver", proveInfo.Auction.Bid.Prover.Hex(),
 				)
 
-				return nil
-			}
-		}
-
-		if p.cfg.SystemProver {
-			needNewSystemProof, err := rpc.NeedNewSystemProof(ctx, p.rpc, event.Id)
-			if err != nil {
-				return fmt.Errorf("failed to check whether the L2 block needs a new system proof: %w", err)
-			}
-
-			if !needNewSystemProof {
 				return nil
 			}
 		}
@@ -574,8 +541,6 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 	metrics.ProverReceivedProvenBlockGauge.Update(event.Id.Int64())
 	// if this proof is submitted by an oracle prover or a system prover, don't cancel proof.
 	if event.Prover == p.oracleProverAddress ||
-		event.Prover == p.systemProverAddress ||
-		event.Prover == encoding.SystemProverAddress ||
 		event.Prover == encoding.OracleProverAddress {
 		return nil
 	}
@@ -663,7 +628,7 @@ func (p *Prover) closeSubscriptions() {
 // checkChainVerification checks if there is no new block verification in protocol, if so,
 // it will let current sepecial prover to go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
 func (p *Prover) checkChainVerification(lastLatestVerifiedL1Height uint64) error {
-	if (!p.cfg.SystemProver && !p.cfg.OracleProver) || lastLatestVerifiedL1Height != p.latestVerifiedL1Height {
+	if (!p.cfg.OracleProver) || lastLatestVerifiedL1Height != p.latestVerifiedL1Height {
 		return nil
 	}
 
@@ -755,6 +720,7 @@ func (p *Prover) crawlForAuctionableBatches(ctx context.Context) {
 }
 
 func (p *Prover) bidOp(ctx context.Context, batchID *big.Int) error {
+	log.Info("bid operation received", "batchID", batchID.Int64())
 	metrics.ProverAuctionableBatchFoundGauge.Update(int64(batchID.Uint64()))
 
 	return p.bidder.SubmitBid(ctx, batchID)

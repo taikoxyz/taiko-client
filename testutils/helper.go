@@ -173,10 +173,13 @@ func BidForBatchAndWaitUntilAuctionOver(s *ClientTestSuite, bidFunc func(ctx con
 
 	// wait for batch to not be auctionable anymore
 	for {
-		time.Sleep(2 * time.Second)
+		// TODO: just sleep for protocolConfig.AuctionWindow + currentAuction.StartedAt
+		time.Sleep(5 * time.Second)
 		isAuctionable, err := s.RpcClient.TaikoL1.IsBatchAuctionable(nil, batchId)
+		log.Info("checking if batch is auctionable", "isAuctionable", isAuctionable)
 		s.Nil(err)
 		if !isAuctionable {
+			log.Info("waiting for batch to be auctionable over")
 			break
 		}
 	}
