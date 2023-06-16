@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"math"
-	"math/big"
 	"os"
 
 	"github.com/cenkalti/backoff/v4"
@@ -77,7 +76,7 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 
 	if balance.Cmp(common.Big0) == 0 {
-		tx, err := rpcCli.TaikoL1.DepositTaikoToken(opts, new(big.Int).SetUint64(uint64(math.Pow(2, 32))))
+		tx, err := rpcCli.TaikoL1.DepositTaikoToken(opts, uint64(math.Pow(2, 32)))
 		s.Nil(err)
 
 		receipt, err := rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)

@@ -12,15 +12,17 @@ import (
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 type Bidder struct {
-	strategy      Strategy
-	rpc           *rpc.Client
-	privateKey    *ecdsa.PrivateKey
-	proverAddress common.Address
+	strategy       Strategy
+	rpc            *rpc.Client
+	privateKey     *ecdsa.PrivateKey
+	proverAddress  common.Address
+	protocolConfig *bindings.TaikoDataConfig
 }
 
 func NewBidder(
@@ -28,12 +30,14 @@ func NewBidder(
 	rpc *rpc.Client,
 	privateKey *ecdsa.PrivateKey,
 	proverAddress common.Address,
+	protocolConfig *bindings.TaikoDataConfig,
 ) *Bidder {
 	return &Bidder{
-		strategy:      strategy,
-		rpc:           rpc,
-		privateKey:    privateKey,
-		proverAddress: proverAddress,
+		strategy:       strategy,
+		rpc:            rpc,
+		privateKey:     privateKey,
+		proverAddress:  proverAddress,
+		protocolConfig: protocolConfig,
 	}
 }
 
@@ -65,8 +69,6 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 		currentBid.Deposit,
 		"currentBidAmount",
 		currentBid.FeePerGas,
-		"blockMaxGasLimit",
-		currentBid.BlockMaxGasLimit,
 		"prover",
 		currentBid.Prover,
 		"proofWindow",
@@ -91,6 +93,9 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 		return fmt.Errorf("error crafting next bid: %w", err)
 	}
 
+	stateVars, _ := b.rpc.TaikoL1.State(nil)
+	log.Info("state vars", "avgProofTime", stateVars.AvgProofWindow)
+
 	log.Info("Next bid",
 		"batchID",
 		batchID.Uint64(),
@@ -103,7 +108,7 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 	)
 
 	// if there is an eixsting bid, we need to see if ours is better
-	if currentBid.FeePerGas != 0 {
+	if currentBid.Prover != common.HexToAddress("0x0000000000000000000000000000000000000000") {
 		isBetter, err := b.rpc.TaikoL1.IsBidBetter(nil, bid, currentBid)
 		if err != nil {
 			return fmt.Errorf("error determining if bid is better than existing bid: %w", err)
@@ -122,13 +127,13 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 	log.Info("required deposit amount", "batchID", batchID.Uint64(), "amount", requiredDepositAmount.String())
 
 	if requiredDepositAmount.Cmp(big.NewInt(0)) > 0 {
-		if err := b.deposit(ctx, new(big.Int).SetUint64(bid.Deposit)); err != nil {
+		if err := b.deposit(ctx, requiredDepositAmount); err != nil {
 			return fmt.Errorf("error depositing taiko token: %w", err)
 		}
 	}
 
 	if err := b.submitBid(ctx, batchID, bid); err != nil {
-		return fmt.Errorf("error submitting bid: %w", err)
+		return fmt.Errorf("error submitting bid: %w", encoding.TryParsingCustomError(err))
 	}
 
 	metrics.ProverAuctionableBatchBidGauge.Update(int64(batchID.Uint64()))
@@ -136,6 +141,8 @@ func (b *Bidder) SubmitBid(ctx context.Context, batchID *big.Int) error {
 	return nil
 }
 
+// getRequiredDepositAmount calculates the difference between the prover's current state taikoTokenBalance,
+// and what will be required for the bid.
 func (b *Bidder) getRequiredDepositAmount(ctx context.Context, bid bindings.TaikoDataBid) (*big.Int, error) {
 	balance, err := b.rpc.TaikoL1.GetTaikoTokenBalance(nil, b.proverAddress)
 	if err != nil {
@@ -144,10 +151,13 @@ func (b *Bidder) getRequiredDepositAmount(ctx context.Context, bid bindings.Taik
 
 	deposit := new(big.Int).SetUint64(bid.Deposit)
 
-	if balance.Cmp(deposit) >= 0 {
+	// deposit is per block, so to calculate total deposit, we multiply the per-block deposit by the batch size.
+	totalDeposit := new(big.Int).Mul(deposit, new(big.Int).SetUint64(uint64(b.protocolConfig.AuctionBatchSize)))
+
+	if balance.Cmp(totalDeposit) >= 0 {
 		return big.NewInt(0), nil
 	} else {
-		return new(big.Int).Sub(deposit, balance), nil
+		return new(big.Int).Sub(totalDeposit, balance), nil
 	}
 }
 
@@ -159,7 +169,7 @@ func (b *Bidder) deposit(ctx context.Context, amount *big.Int) error {
 
 	log.Info("depositing taiko tokens", "amount", amount.String())
 
-	tx, err := b.rpc.TaikoL1.DepositTaikoToken(opts, amount)
+	tx, err := b.rpc.TaikoL1.DepositTaikoToken(opts, amount.Uint64())
 	if err != nil {
 		return err
 	}

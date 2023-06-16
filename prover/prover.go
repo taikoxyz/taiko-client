@@ -226,7 +226,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		bidStrategy = auction.NewAlwaysBidStrategy()
 	}
 
-	bidder := auction.NewBidder(bidStrategy, p.rpc, cfg.L1ProverPrivKey, p.proverAddress)
+	bidder := auction.NewBidder(bidStrategy, p.rpc, cfg.L1ProverPrivKey, p.proverAddress, &protocolConfigs)
 
 	p.bidder = bidder
 
@@ -453,16 +453,16 @@ func (p *Prover) onBlockProposed(
 				return nil
 			}
 
-			isBlockProvable, auction, err := p.rpc.TaikoL1.IsBlockProvableBy(nil, event.Id, p.proverAddress)
+			proveInfo, err := p.rpc.TaikoL1.IsBlockProvableBy(nil, event.Id, p.proverAddress)
 			if err != nil {
 				return fmt.Errorf("failed to fetch isBlockProvableBy, blockID: %d, err: %w", event.Id, err)
 			}
 
-			if !isBlockProvable {
+			if !proveInfo.Provable {
 				log.Info("block proposed is not provable by this prover",
 					"blockID ", event.Id,
 					"prover", p.proverAddress.Hex(),
-					"winningProver", auction.Bid.Prover.Hex(),
+					"winningProver", proveInfo.Auction.Bid.Prover.Hex(),
 				)
 
 				return nil

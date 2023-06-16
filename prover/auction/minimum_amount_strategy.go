@@ -36,7 +36,7 @@ func NewMinimumBidFeePerGasStrategy(opts NewMinimumBidFeePerGasStrategyOpts) *Mi
 }
 
 func (s *MinimumBidFeePerGasStrategy) ShouldBid(ctx context.Context, currentBid bindings.TaikoDataBid) (bool, error) {
-	if currentBid.FeePerGas < s.minimumBidFeePerGas.Uint64() {
+	if currentBid.FeePerGas.Cmp(s.minimumBidFeePerGas) <= 0 {
 		return false, nil
 	}
 
