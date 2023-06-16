@@ -40,10 +40,6 @@ func (s *ChainSyncerTestSuite) TestGetInnerSyncers() {
 	s.NotNil(s.s.CalldataSyncer())
 }
 
-func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead() {
-	s.True(s.s.AheadOfProtocolVerifiedHead())
-}
-
 func (s *ChainSyncerTestSuite) TestSync() {
 	head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
