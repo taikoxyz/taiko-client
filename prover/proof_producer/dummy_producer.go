@@ -40,7 +40,7 @@ func (d *DummyProofProducer) RequestProof(
 			Meta:    meta,
 			Header:  header,
 			ZkProof: []byte{0xff},
-			Degree:  CircuitsDegree10Txs,
+			Degree:  CircuitsIdx,
 			Opts:    opts,
 		}
 	})
