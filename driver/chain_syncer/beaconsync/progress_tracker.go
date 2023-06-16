@@ -78,12 +78,14 @@ func (t *SyncProgressTracker) track(ctx context.Context) {
 		return
 	}
 
-	log.Info(
-		"L2 execution engine sync progress",
-		"progress", progress,
-		"lastProgressedTime", t.lastProgressedTime,
-		"timeout", t.timeout,
-	)
+	if progress != nil {
+		log.Info(
+			"L2 execution engine sync progress",
+			"progress", progress,
+			"lastProgressedTime", t.lastProgressedTime,
+			"timeout", t.timeout,
+		)
+	}
 
 	if progress == nil {
 		headHeight, err := t.client.BlockNumber(ctx)
@@ -103,7 +105,10 @@ func (t *SyncProgressTracker) track(ctx context.Context) {
 			return
 		}
 
-		log.Warn("L2 execution engine has not started P2P syncing yet")
+		log.Debug(
+			"L2 execution engine has not started P2P syncing yet",
+			"timeout", t.timeout,
+		)
 	}
 
 	defer func() { t.lastSyncProgress = progress }()
