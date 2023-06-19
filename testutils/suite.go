@@ -77,7 +77,11 @@ func (s *ClientTestSuite) SetupTest() {
 	proposerOpts, err := bind.NewKeyedTransactorWithChainID(l1ProposerPrivKey, rpcCli.L1ChainID)
 	s.Nil(err)
 
-	_, err = s.RpcClient.TaikoTokenL1.Approve(proposerOpts, taikoL1Address, new(big.Int).SetUint64(uint64(math.Pow(2, 32))))
+	_, err = s.RpcClient.TaikoTokenL1.Approve(
+		proposerOpts,
+		taikoL1Address,
+		new(big.Int).SetUint64(uint64(math.Pow(2, 32))),
+	)
 	s.Nil(err)
 
 	// register prover as a staker/eligible prover

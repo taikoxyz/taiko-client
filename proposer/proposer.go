@@ -432,7 +432,7 @@ func (p *Proposer) checkTaikoTokenBalance() error {
 
 	if allowance.Cmp(new(big.Int).SetUint64(fee)) == -1 {
 		return fmt.Errorf(
-			"proposer has not given allowance to taikoL1address required for block fee, requiredAllowance: %v, currentAllowance: %v",
+			"requiredAllowance: %v, currentAllowance: %v",
 			fee,
 			allowance.String(),
 		)
