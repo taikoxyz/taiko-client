@@ -166,16 +166,16 @@ func ProposeAndInsertValidBlock(
 	return event
 }
 
-func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey) {
+func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey, recipient common.Address) {
 	config, err := s.RpcClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
 
 	opts, err := bind.NewKeyedTransactorWithChainID(depositerPrivKey, s.RpcClient.L1ChainID)
 	s.Nil(err)
-	opts.Value = config.MinEthDepositAmount
+	opts.Value = config.EthDepositMinAmount
 
-	for i := 0; i < int(config.MinEthDepositsPerBlock); i++ {
-		_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts)
+	for i := 0; i < int(config.EthDepositMinCountPerBlock); i++ {
+		_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts, recipient)
 		s.Nil(err)
 	}
 }

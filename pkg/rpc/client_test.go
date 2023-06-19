@@ -17,6 +17,7 @@ func newTestClient(t *testing.T) *Client {
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		TaikoProverPoolL1Address: common.HexToAddress(os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")),
+		TaikoTokenL1Address:      common.HexToAddress(os.Getenv("TAIKO_TOKEN_L1_ADDRESS")),
 		L2EngineEndpoint:         os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		JwtSecret:                os.Getenv("JWT_SECRET"),
 		RetryInterval:            backoff.DefaultMaxInterval,

@@ -16,6 +16,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	l2Endpoint := os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
+	taikoTokenL1 := os.Getenv("TAIKO_TOKEN_L1_ADDRESS")
 	proposeInterval := "10s"
 	commitSlot := 1024
 
@@ -31,6 +32,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
+		&cli.StringFlag{Name: flags.L1TaikoTokenAddress.Name},
 		&cli.StringFlag{Name: flags.L1ProposerPrivKey.Name},
 		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
 		&cli.StringFlag{Name: flags.ProposeInterval.Name},
@@ -44,6 +46,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(l2Endpoint, c.L2Endpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
+		s.Equal(taikoTokenL1, c.TaikoTokenL1Address.String())
 		s.Equal(goldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
 		s.Equal(goldenTouchAddress, c.L2SuggestedFeeRecipient)
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
@@ -61,6 +64,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L2HTTPEndpoint.Name, l2Endpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
+		"-" + flags.L1TaikoTokenAddress.Name, taikoTokenL1,
 		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
 		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"-" + flags.ProposeInterval.Name, proposeInterval,

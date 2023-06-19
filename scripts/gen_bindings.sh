@@ -35,9 +35,13 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoL2.sol/TaikoL2.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoL2Client --pkg bindings --out $DIR/../bindings/gen_taiko_l2.go
 
-cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoProverPool.sol/TaikoProverPool.json |
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/StakingProverPool.sol/StakingProverPool.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoL1ProverPool --pkg bindings --out $DIR/../bindings/gen_taiko_prover_pool_l1.go
+
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoToken.sol/TaikoToken.json |
+	jq .abi |
+	${ABIGEN_BIN} --abi - --type TaikoToken --pkg bindings --out $DIR/../bindings/gen_taiko_token_l1.go
 
 git -C ${TAIKO_MONO_DIR} log --format="%H" -n 1 >./bindings/.githead
 

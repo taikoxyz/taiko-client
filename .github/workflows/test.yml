@@ -45,7 +45,7 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
-          ref: PoS_initial_impl
+          ref: staking_tokenomicis_1
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1

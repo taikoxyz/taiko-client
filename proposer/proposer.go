@@ -41,6 +41,9 @@ type Proposer struct {
 	l1ProposerAddress       common.Address
 	l2SuggestedFeeRecipient common.Address
 
+	// Contract addresses
+	taikoL1Address common.Address
+
 	// Proposing configurations
 	proposingInterval          *time.Duration
 	proposeEmptyBlocksInterval *time.Duration
@@ -77,6 +80,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
 	p.l1ProposerAddress = crypto.PubkeyToAddress(cfg.L1ProposerPrivKey.PublicKey)
 	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
+	p.taikoL1Address = cfg.TaikoL1Address
 	p.proposingInterval = cfg.ProposeInterval
 	p.proposeEmptyBlocksInterval = cfg.ProposeEmptyBlocksInterval
 	p.proposeBlockTxGasLimit = cfg.ProposeBlockTxGasLimit
@@ -88,11 +92,12 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 
 	// RPC clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
-		L1Endpoint:     cfg.L1Endpoint,
-		L2Endpoint:     cfg.L2Endpoint,
-		TaikoL1Address: cfg.TaikoL1Address,
-		TaikoL2Address: cfg.TaikoL2Address,
-		RetryInterval:  cfg.BackOffRetryInterval,
+		L1Endpoint:          cfg.L1Endpoint,
+		L2Endpoint:          cfg.L2Endpoint,
+		TaikoL1Address:      cfg.TaikoL1Address,
+		TaikoL2Address:      cfg.TaikoL2Address,
+		TaikoTokenL1Address: cfg.TaikoTokenL1Address,
+		RetryInterval:       cfg.BackOffRetryInterval,
 	}); err != nil {
 		return fmt.Errorf("initialize rpc clients error: %w", err)
 	}
@@ -395,6 +400,8 @@ func getTxOpts(
 	return opts, nil
 }
 
+// checkTaikoTokenBalance ensures you have at least the block fee in your balance, and approved, before
+// attempting to propose block, as it will use transferFrom.
 func (p *Proposer) checkTaikoTokenBalance() error {
 	fee, err := p.rpc.TaikoL1.GetBlockFee(nil, uint32(p.protocolConfigs.BlockMaxGasLimit))
 	if err != nil {
@@ -409,13 +416,26 @@ func (p *Proposer) checkTaikoTokenBalance() error {
 		metrics.ProposerBlockFeeGauge.Update(int64(fee))
 	}
 
-	balance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(nil, p.l1ProposerAddress)
+	balance, err := p.rpc.TaikoTokenL1.BalanceOf(nil, p.l1ProposerAddress)
 	if err != nil {
 		return fmt.Errorf("failed to get tko balance: %w", err)
 	}
 
 	if balance.Cmp(new(big.Int).SetUint64(fee)) == -1 {
 		return fmt.Errorf("proposer does not have enough tko balance to propose, balance: %d, fee: %d", balance, fee)
+	}
+
+	allowance, err := p.rpc.TaikoTokenL1.Allowance(nil, p.l1ProposerAddress, p.taikoL1Address)
+	if err != nil {
+		return fmt.Errorf("failed to get allowance: %w", err)
+	}
+
+	if allowance.Cmp(new(big.Int).SetUint64(fee)) == -1 {
+		return fmt.Errorf(
+			"proposer has not given allowance to taikoL1address required for block fee, requiredAllowance: %v, currentAllowance: %v",
+			fee,
+			allowance.String(),
+		)
 	}
 
 	return nil

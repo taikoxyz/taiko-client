@@ -30,6 +30,7 @@ type Client struct {
 	TaikoL1           *bindings.TaikoL1Client
 	TaikoL2           *bindings.TaikoL2Client
 	TaikoProverPoolL1 *bindings.TaikoL1ProverPool
+	TaikoTokenL1      *bindings.TaikoToken
 	// Chain IDs
 	L1ChainID *big.Int
 	L2ChainID *big.Int
@@ -45,6 +46,7 @@ type ClientConfig struct {
 	TaikoL1Address           common.Address
 	TaikoProverPoolL1Address common.Address
 	TaikoL2Address           common.Address
+	TaikoTokenL1Address      common.Address
 	L2EngineEndpoint         string
 	JwtSecret                string
 	RetryInterval            time.Duration
@@ -62,9 +64,20 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	taikoProverPoolL1, err := bindings.NewTaikoL1ProverPool(cfg.TaikoProverPoolL1Address, l1RPC)
-	if err != nil {
-		return nil, err
+	var taikoProverPoolL1 *bindings.TaikoL1ProverPool
+	if cfg.TaikoProverPoolL1Address.Hex() != "" {
+		taikoProverPoolL1, err = bindings.NewTaikoL1ProverPool(cfg.TaikoProverPoolL1Address, l1RPC)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var taikoTokenL1 *bindings.TaikoToken
+	if cfg.TaikoTokenL1Address.Hex() != "" {
+		taikoTokenL1, err = bindings.NewTaikoToken(cfg.TaikoTokenL1Address, l1RPC)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	l2RPC, err := DialClientWithBackoff(ctx, cfg.L2Endpoint, cfg.RetryInterval)
@@ -130,6 +143,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		TaikoL1:           taikoL1,
 		TaikoL2:           taikoL2,
 		TaikoProverPoolL1: taikoProverPoolL1,
+		TaikoTokenL1:      taikoTokenL1,
 		L1ChainID:         l1ChainID,
 		L2ChainID:         l2ChainID,
 	}
