@@ -93,6 +93,11 @@ type RpcdOutput struct {
 		Proof     string   `json:"proof"`
 		Degree    uint64   `json:"k"`
 	} `json:"circuit"`
+	Aggregation struct {
+		Instances []string `json:"instance"`
+		Proof     string   `json:"proof"`
+		Degree    uint64   `json:"k"`
+	} `json:"aggregation"`
 }
 
 // NewZkevmRpcdProducer creates a new `ZkevmRpcdProducer` instance.
@@ -182,13 +187,13 @@ func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 		log.Debug("Proof generation output", "output", output)
 
 		var proofOutput string
-		for _, instance := range output.Circuit.Instances {
+		for _, instance := range output.Aggregation.Instances {
 			proofOutput += instance[2:]
 		}
-		proofOutput += output.Circuit.Proof[2:]
+		proofOutput += output.Aggregation.Proof[2:]
 
 		proof = common.Hex2Bytes(proofOutput)
-		degree = output.Circuit.Degree
+		degree = output.Aggregation.Degree
 		log.Info("Proof generated", "height", opts.Height, "degree", degree, "time", time.Since(start))
 		return nil
 	}, backoff.NewConstantBackOff(proofPollingInterval)); err != nil {
@@ -212,7 +217,7 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 			VerifyProof:  true,
 			Mock:         false,
 			MockFeedback: false,
-			Aggregate:    false,
+			Aggregate:    true,
 			ProtocolInstance: &ProtocolInstance{
 				Prover:                  opts.ProverAddress.Hex()[2:],
 				L1SignalService:         opts.L1SignalService.Hex()[2:],
