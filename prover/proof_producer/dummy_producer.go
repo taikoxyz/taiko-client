@@ -1,6 +1,7 @@
 package producer
 
 import (
+	"bytes"
 	"context"
 	"math/big"
 	"math/rand"
@@ -39,7 +40,7 @@ func (d *DummyProofProducer) RequestProof(
 			BlockID: blockID,
 			Meta:    meta,
 			Header:  header,
-			ZkProof: []byte{0xff},
+			ZkProof: bytes.Repeat([]byte{0xff}, 100),
 			Degree:  CircuitsIdx,
 			Opts:    opts,
 		}
