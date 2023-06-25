@@ -451,7 +451,7 @@ func (s *Syncer) createExecutionPayloads(
 	return payload, nil
 }
 
-// checkLastVerifiedBlockMismatch checks if there is a mismatch bewteen protocol's last verified block hash and
+// checkLastVerifiedBlockMismatch checks if there is a mismatch between protocol's last verified block hash and
 // the corresponding L2 EE block hash.
 func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, error) {
 	lastVerifiedBlockInfo := s.state.GetLatestVerifiedBlock()
