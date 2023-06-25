@@ -31,7 +31,7 @@ func TestSubscribeBlockProposed(t *testing.T) {
 }
 
 func TestSubscribeSubscribeXchainSynced(t *testing.T) {
-	require.NotNil(t, SubscribeXchainSynced(
+	require.NotNil(t, SubscribeCrossChainSynced(
 		newTestClient(t).TaikoL1,
 		make(chan *bindings.TaikoL1ClientCrossChainSynced, 1024)),
 	)

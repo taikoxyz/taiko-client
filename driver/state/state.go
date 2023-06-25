@@ -155,7 +155,7 @@ func (s *State) init(ctx context.Context) error {
 func (s *State) startSubscriptions(ctx context.Context) {
 	s.l1HeadSub = rpc.SubscribeChainHead(s.rpc.L1, s.l1HeadCh)
 	s.l2HeadSub = rpc.SubscribeChainHead(s.rpc.L2, s.l2HeadCh)
-	s.l2HeaderSyncedSub = rpc.SubscribeXchainSynced(s.rpc.TaikoL1, s.crossChainSynced)
+	s.l2HeaderSyncedSub = rpc.SubscribeCrossChainSynced(s.rpc.TaikoL1, s.crossChainSynced)
 	s.l2BlockVerifiedSub = rpc.SubscribeBlockVerified(s.rpc.TaikoL1, s.blockVerifiedCh)
 	s.l2BlockProposedSub = rpc.SubscribeBlockProposed(s.rpc.TaikoL1, s.blockProposedCh)
 	s.l2BlockProvenSub = rpc.SubscribeBlockProven(s.rpc.TaikoL1, s.blockProvenCh)
@@ -173,21 +173,20 @@ func (s *State) startSubscriptions(ctx context.Context) {
 				}
 			case e := <-s.blockVerifiedCh:
 				log.Info("📈 Block verified", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "reward", e.Reward)
-			case e := <-s.crossChainSynced:
-				// Verify the protocol synced block, check if it exists in
+				// Verify the protocol verified block, check if it exists in
 				// L2 execution engine.
-				if s.GetL2Head().Number.Cmp(e.SrcHeight) >= 0 {
-					if err := s.VerifyL2Block(ctx, e.SrcHeight, e.BlockHash); err != nil {
+				if s.GetL2Head().Number.Cmp(e.Id) >= 0 {
+					if err := s.VerifyL2Block(ctx, e.Id, e.BlockHash); err != nil {
 						log.Error("Check new verified L2 block error", "error", err)
 						continue
 					}
 				}
+			case e := <-s.crossChainSynced:
 				id, err := s.getSyncedHeaderID(e.Raw.BlockNumber, e.BlockHash)
 				if err != nil {
 					log.Error("Get synced header block ID error", "error", err)
 					continue
 				}
-				s.setLatestVerifiedBlockHash(id, e.SrcHeight, e.BlockHash)
 			case newHead := <-s.l1HeadCh:
 				s.setL1Head(newHead)
 				s.l1HeadsFeed.Send(newHead)
@@ -277,14 +276,21 @@ func (s *State) VerifyL2Block(ctx context.Context, height *big.Int, hash common.
 		return err
 	}
 
-	if header.Hash() != hash {
-		// TODO(david): do not exit but re-sync from genesis?
-		log.Crit(
-			"Verified block hash mismatch",
-			"protocolBlockHash", hash,
-			"block number in L2 execution engine", header.Number,
-			"block hash in L2 execution engine", header.Hash(),
-		)
+	if header.Hash() == hash {
+		return nil
+	}
+
+	// Verified block hash mismatch, try to resync from geneis.
+	log.Error(
+		"Verified block hash mismatch",
+		"height", height,
+		"protocolBlockHash", hash,
+		"l2EEBlockNumber", header.Number,
+		"l2EEBlockHash", header.Hash(),
+	)
+
+	if _, _, err := s.ResetL1Current(ctx, &HeightOrID{ID: common.Big0}); err != nil {
+		return fmt.Errorf("failed to reset L1 current: %w", err)
 	}
 	return nil
 }
