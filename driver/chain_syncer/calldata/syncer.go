@@ -123,7 +123,7 @@ func (s *Syncer) onBlockProposed(
 			lastInsertedBlockIDToReset *big.Int
 			err                        error
 		)
-		reorged, err = s.checkLastVerifiedBlockL1Reorged(ctx)
+		reorged, err = s.checkLastVerifiedBlockMismatch(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to check if last verified block in L2 EE has been reorged: %w", err)
 		}
@@ -451,7 +451,9 @@ func (s *Syncer) createExecutionPayloads(
 	return payload, nil
 }
 
-func (s *Syncer) checkLastVerifiedBlockL1Reorged(ctx context.Context) (bool, error) {
+// checkLastVerifiedBlockMismatch checks if there is a mismatch bewteen protocol's last verified block hash and
+// the corresponding L2 EE block hash.
+func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, error) {
 	lastVerifiedBlockInfo := s.state.GetLatestVerifiedBlock()
 	l2Header, err := s.rpc.L2.HeaderByNumber(ctx, lastVerifiedBlockInfo.Height)
 	if err != nil {
