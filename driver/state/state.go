@@ -187,6 +187,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 					log.Error("Get synced header block ID error", "error", err)
 					continue
 				}
+				s.setLatestVerifiedBlockHash(id, e.SrcHeight, e.BlockHash)
 			case newHead := <-s.l1HeadCh:
 				s.setL1Head(newHead)
 				s.l1HeadsFeed.Send(newHead)
