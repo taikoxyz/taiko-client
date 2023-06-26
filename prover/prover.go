@@ -26,6 +26,10 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var (
+	zeroAddress = common.HexToAddress("0x0000000000000000000000000000000000000000")
+)
+
 type cancelFunc func()
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
@@ -422,7 +426,8 @@ func (p *Prover) onBlockProposed(
 			return err
 		}
 
-		if block.AssignedProver != p.proverAddress {
+		// zero address means anyone can prove
+		if block.AssignedProver != p.proverAddress && block.AssignedProver != zeroAddress {
 			log.Info("proposed block not proveable", "blockID", event.Id, "prover", block.AssignedProver.Hex())
 			return nil
 		}
