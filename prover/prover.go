@@ -115,14 +115,14 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	p.submitProofTxMutex = &sync.Mutex{}
 	p.txListValidator = txListValidator.NewTxListValidator(
-		p.protocolConfigs.BlockMaxGasLimit,
-		p.protocolConfigs.MaxTransactionsPerBlock,
-		p.protocolConfigs.MaxBytesPerTxList,
+		uint64(p.protocolConfigs.BlockMaxGasLimit),
+		p.protocolConfigs.BlockMaxTransactions,
+		p.protocolConfigs.BlockMaxTxListBytes,
 		p.rpc.L2ChainID,
 	)
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 
-	chBufferSize := p.protocolConfigs.MaxNumProposedBlocks.Uint64()
+	chBufferSize := p.protocolConfigs.BlockMaxProposals.Uint64()
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	p.blockProvenCh = make(chan *bindings.TaikoL1ClientBlockProven, chBufferSize)
@@ -235,7 +235,7 @@ func (p *Prover) eventLoop() {
 	// If there is no new block verification in `proofCooldownPeriod * 2` seconeds, and the current prover is
 	// a special prover, we will go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
 	verificationCheckTicker := time.NewTicker(
-		time.Duration(p.protocolConfigs.ProofCooldownPeriod.Uint64()*2) * time.Second,
+		time.Duration(p.protocolConfigs.ProofRegularCooldown.Uint64()*2) * time.Second,
 	)
 	defer verificationCheckTicker.Stop()
 
@@ -376,7 +376,6 @@ func (p *Prover) onBlockProposed(
 		"L1Height", event.Raw.BlockNumber,
 		"L1Hash", event.Raw.BlockHash,
 		"BlockID", event.Id,
-		"BlockFee", event.BlockFee,
 		"Removed", event.Raw.Removed,
 	)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
@@ -418,14 +417,13 @@ func (p *Prover) onBlockProposed(
 			p.cancelProof(ctx, event.Meta.Id)
 		}
 
-		// check whether this prover has been chosen through PoS mechanism to prove the block
-		chosenProver, err := p.rpc.TaikoProverPoolL1.GetProver(nil, event.Id)
+		block, err := p.rpc.TaikoL1.GetBlock(nil, event.Id)
 		if err != nil {
 			return err
 		}
 
-		if chosenProver != p.proverAddress {
-			log.Info("proposed block not proveable", "blockID", event.Id, "prover", chosenProver.Hex())
+		if block.AssignedProver != p.proverAddress {
+			log.Info("proposed block not proveable", "blockID", event.Id, "prover", block.AssignedProver.Hex())
 			return nil
 		}
 
@@ -605,7 +603,7 @@ func (p *Prover) checkChainVerification(lastLatestVerifiedL1Height uint64) error
 	log.Warn(
 		"No new block verification in `proofCooldownPeriod * 2` seconeds",
 		"latestVerifiedL1Height", p.latestVerifiedL1Height,
-		"proofCooldownPeriod", p.protocolConfigs.ProofCooldownPeriod,
+		"proofCooldownPeriod", p.protocolConfigs.ProofRegularCooldown,
 	)
 
 	stateVar, err := p.rpc.TaikoL1.GetStateVariables(nil)

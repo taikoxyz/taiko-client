@@ -110,7 +110,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.protocolConfigs = &protocolConfigs
 
 	if cfg.MinBlockGasLimit != 0 {
-		if cfg.MinBlockGasLimit > p.protocolConfigs.BlockMaxGasLimit {
+		if uint32(cfg.MinBlockGasLimit) > p.protocolConfigs.BlockMaxGasLimit {
 			return fmt.Errorf(
 				"minimal block gas limit too large, set: %d, limit: %d",
 				cfg.MinBlockGasLimit,
@@ -203,9 +203,9 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	txLists, err := p.rpc.GetPoolContent(
 		ctx,
-		p.protocolConfigs.MaxTransactionsPerBlock,
+		p.protocolConfigs.BlockMaxTransactions,
 		p.protocolConfigs.BlockMaxGasLimit,
-		p.protocolConfigs.MaxBytesPerTxList,
+		p.protocolConfigs.BlockMaxTxListBytes,
 		p.locals,
 	)
 	if err != nil {

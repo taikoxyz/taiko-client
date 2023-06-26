@@ -3,6 +3,7 @@ package testutils
 import (
 	"context"
 	"crypto/ecdsa"
+	"fmt"
 	"math"
 	"math/big"
 	"os"
@@ -92,26 +93,43 @@ func (s *ClientTestSuite) SetupTest() {
 	proverOpts, err := bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
 	s.Nil(err)
 
-	minTkoAmount, err := s.RpcClient.TaikoProverPoolL1.MINTKOAMOUNT(nil)
+	balance, err := s.RpcClient.TaikoTokenL1.BalanceOf(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
 	s.Nil(err)
 
-	amt := new(big.Int).Add(minTkoAmount, big.NewInt(1))
+	fmt.Println("prover balance", "balance", balance.String())
 
-	// proposer has tKO, need to transfer to prover
-	_, err = s.RpcClient.TaikoTokenL1.Transfer(proposerOpts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), amt)
+	proverInfo, err := s.RpcClient.TaikoProverPoolL1.GetStaker(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
 	s.Nil(err)
 
-	prover, err := s.RpcClient.TaikoProverPoolL1.Provers(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
-	s.Nil(err)
+	log.Info("proverInfo", "proverId", proverInfo.Staker.ProverId, "capacity", proverInfo.Staker.MaxCapacity)
 
-	if prover.ProverAddress != crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey) {
-		minFeeMultiplier, err := s.RpcClient.TaikoProverPoolL1.MINMULTIPLIER(nil)
+	if proverInfo.Staker.ProverId == 0 {
+
+		minStakePerCapacity, err := s.RpcClient.TaikoProverPoolL1.MINSTAKEPERCAPACITY(nil)
 		s.Nil(err)
-		_, err = s.RpcClient.TaikoProverPoolL1.EnterProverPool(
+
+		capacity, err := s.RpcClient.TaikoProverPoolL1.MAXCAPACITYLOWERBOUND(nil)
+		s.Nil(err)
+		amt := new(big.Int).Mul(big.NewInt(int64(minStakePerCapacity)), big.NewInt(int64(capacity)))
+
+		oneTko, err := s.RpcClient.TaikoProverPoolL1.ONETKO(nil)
+		s.Nil(err)
+
+		amtTko := new(big.Int).Mul(amt, new(big.Int).SetInt64(int64(oneTko)))
+
+		log.Info("amt to stake", "amt", amtTko)
+
+		// proposer has tKO, need to transfer to prover
+		_, err = s.RpcClient.TaikoTokenL1.Transfer(proposerOpts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), amtTko)
+		s.Nil(err)
+
+		rewardPerGas := 1
+		s.Nil(err)
+		_, err = s.RpcClient.TaikoProverPoolL1.Stake(
 			proverOpts,
-			amt,
-			new(big.Int).SetUint64(uint64(minFeeMultiplier)),
-			32,
+			uint32(amt.Uint64()),
+			uint16(rewardPerGas),
+			uint16(capacity),
 		)
 		s.Nil(err)
 	}

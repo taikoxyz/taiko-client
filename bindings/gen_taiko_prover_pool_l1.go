@@ -29,9 +29,24 @@ var (
 	_ = abi.ConvertType
 )
 
+// ProverPoolProver is an auto generated low-level Go binding around an user-defined struct.
+type ProverPoolProver struct {
+	StakedAmount    uint32
+	RewardPerGas    uint16
+	CurrentCapacity uint16
+}
+
+// ProverPoolStaker is an auto generated low-level Go binding around an user-defined struct.
+type ProverPoolStaker struct {
+	ExitRequestedAt uint64
+	ExitAmount      uint32
+	MaxCapacity     uint16
+	ProverId        uint8
+}
+
 // TaikoL1ProverPoolMetaData contains all meta data concerning the TaikoL1ProverPool contract.
 var TaikoL1ProverPoolMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"RESOLVER_DENIED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_INVALID_ADDR\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"}],\"name\":\"RESOLVER_ZERO_ADDR\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"addressManager\",\"type\":\"address\"}],\"name\":\"AddressManagerChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"oldCapacity\",\"type\":\"uint32\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"newCapacity\",\"type\":\"uint32\"}],\"name\":\"ProverAdjustedCapacity\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"oldFeeMultiplier\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newFeeMultiplier\",\"type\":\"uint256\"}],\"name\":\"ProverAdjustedFeeMultiplier\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"feeMultiplier\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"capacity\",\"type\":\"uint64\"}],\"name\":\"ProverEntered\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"name\":\"ProverExited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ProverSlashed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalStaked\",\"type\":\"uint256\"}],\"name\":\"ProverStakedMoreTokens\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ProverWithdrawAwards\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"MAX_MULTIPLIER\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_MULTIPLIER\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_TKO_AMOUNT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"newCapacity\",\"type\":\"uint32\"}],\"name\":\"adjustCapacity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"newFeeMultiplier\",\"type\":\"uint8\"}],\"name\":\"adjustFeeMultiplier\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"}],\"name\":\"blockIdToProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"feeMultiplier\",\"type\":\"uint256\"},{\"internalType\":\"uint32\",\"name\":\"capacity\",\"type\":\"uint32\"}],\"name\":\"enterProverPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"exit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"}],\"name\":\"getProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"},{\"internalType\":\"uint16\",\"name\":\"_maxPoolSize\",\"type\":\"uint16\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxPoolSize\",\"outputs\":[{\"internalType\":\"uint16\",\"name\":\"\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"randomNumber\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"}],\"name\":\"pickRandomProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"provers\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"proverAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"stakedTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rewards\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"healthScore\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"lastBlockTsToBeProven\",\"type\":\"uint256\"},{\"internalType\":\"uint32\",\"name\":\"capacity\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"numAssignedBlocks\",\"type\":\"uint32\"},{\"internalType\":\"uint8\",\"name\":\"feeMultiplier\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proversInPool\",\"outputs\":[{\"internalType\":\"uint16\",\"name\":\"\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddressManager\",\"type\":\"address\"}],\"name\":\"setAddressManager\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"name\":\"slashProver\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"stakeMoreTokens\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"topProvers\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"}],\"name\":\"withdrawRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[],\"name\":\"INVALID_PARAMS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NO_MATURE_EXIT\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"PROVER_NOT_GOOD_ENOUGH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_DENIED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_INVALID_ADDR\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"}],\"name\":\"RESOLVER_ZERO_ADDR\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"UNAUTHORIZED\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"addressManager\",\"type\":\"address\"}],\"name\":\"AddressManagerChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"amount\",\"type\":\"uint32\"}],\"name\":\"Exited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"amount\",\"type\":\"uint32\"}],\"name\":\"Slashed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"amount\",\"type\":\"uint32\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"currentCapacity\",\"type\":\"uint16\"}],\"name\":\"Staked\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"amount\",\"type\":\"uint32\"}],\"name\":\"Withdrawn\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"EXIT_PERIOD\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_CAPACITY_LOWER_BOUND\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_NUM_PROVERS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_STAKE_PER_CAPACITY\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"ONE_TKO\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"SLASH_POINTS\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"feePerGas\",\"type\":\"uint32\"}],\"name\":\"assignProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"internalType\":\"uint32\",\"name\":\"rewardPerGas\",\"type\":\"uint32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"exit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getCapacity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"capacity\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getProvers\",\"outputs\":[{\"components\":[{\"internalType\":\"uint32\",\"name\":\"stakedAmount\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"currentCapacity\",\"type\":\"uint16\"}],\"internalType\":\"structProverPool.Prover[]\",\"name\":\"_provers\",\"type\":\"tuple[]\"},{\"internalType\":\"address[]\",\"name\":\"_stakers\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getStaker\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"exitRequestedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"exitAmount\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"maxCapacity\",\"type\":\"uint16\"},{\"internalType\":\"uint8\",\"name\":\"proverId\",\"type\":\"uint8\"}],\"internalType\":\"structProverPool.Staker\",\"name\":\"staker\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint32\",\"name\":\"stakedAmount\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"currentCapacity\",\"type\":\"uint16\"}],\"internalType\":\"structProverPool.Prover\",\"name\":\"prover\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"feePerGas\",\"type\":\"uint32\"}],\"name\":\"getWeights\",\"outputs\":[{\"internalType\":\"uint256[32]\",\"name\":\"weights\",\"type\":\"uint256[32]\"},{\"internalType\":\"uint256\",\"name\":\"totalWeight\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"idToProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"releaseProver\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddressManager\",\"type\":\"address\"}],\"name\":\"setAddressManager\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"slashProver\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"amount\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"maxCapacity\",\"type\":\"uint16\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"stakers\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"exitRequestedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"exitAmount\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"maxCapacity\",\"type\":\"uint16\"},{\"internalType\":\"uint8\",\"name\":\"proverId\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // TaikoL1ProverPoolABI is the input ABI used to generate the binding from.
@@ -180,74 +195,74 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorRaw) Transact(opts *bind.Tr
 	return _TaikoL1ProverPool.Contract.contract.Transact(opts, method, params...)
 }
 
-// MAXMULTIPLIER is a free data retrieval call binding the contract method 0x5d6a618d.
+// EXITPERIOD is a free data retrieval call binding the contract method 0xc04b5f65.
 //
-// Solidity: function MAX_MULTIPLIER() view returns(uint8)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) MAXMULTIPLIER(opts *bind.CallOpts) (uint8, error) {
+// Solidity: function EXIT_PERIOD() view returns(uint64)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) EXITPERIOD(opts *bind.CallOpts) (uint64, error) {
 	var out []interface{}
-	err := _TaikoL1ProverPool.contract.Call(opts, &out, "MAX_MULTIPLIER")
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "EXIT_PERIOD")
 
 	if err != nil {
-		return *new(uint8), err
+		return *new(uint64), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(uint8)).(*uint8)
+	out0 := *abi.ConvertType(out[0], new(uint64)).(*uint64)
 
 	return out0, err
 
 }
 
-// MAXMULTIPLIER is a free data retrieval call binding the contract method 0x5d6a618d.
+// EXITPERIOD is a free data retrieval call binding the contract method 0xc04b5f65.
 //
-// Solidity: function MAX_MULTIPLIER() view returns(uint8)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) MAXMULTIPLIER() (uint8, error) {
-	return _TaikoL1ProverPool.Contract.MAXMULTIPLIER(&_TaikoL1ProverPool.CallOpts)
+// Solidity: function EXIT_PERIOD() view returns(uint64)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) EXITPERIOD() (uint64, error) {
+	return _TaikoL1ProverPool.Contract.EXITPERIOD(&_TaikoL1ProverPool.CallOpts)
 }
 
-// MAXMULTIPLIER is a free data retrieval call binding the contract method 0x5d6a618d.
+// EXITPERIOD is a free data retrieval call binding the contract method 0xc04b5f65.
 //
-// Solidity: function MAX_MULTIPLIER() view returns(uint8)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) MAXMULTIPLIER() (uint8, error) {
-	return _TaikoL1ProverPool.Contract.MAXMULTIPLIER(&_TaikoL1ProverPool.CallOpts)
+// Solidity: function EXIT_PERIOD() view returns(uint64)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) EXITPERIOD() (uint64, error) {
+	return _TaikoL1ProverPool.Contract.EXITPERIOD(&_TaikoL1ProverPool.CallOpts)
 }
 
-// MINMULTIPLIER is a free data retrieval call binding the contract method 0xed03e78c.
+// MAXCAPACITYLOWERBOUND is a free data retrieval call binding the contract method 0x35acc933.
 //
-// Solidity: function MIN_MULTIPLIER() view returns(uint8)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) MINMULTIPLIER(opts *bind.CallOpts) (uint8, error) {
+// Solidity: function MAX_CAPACITY_LOWER_BOUND() view returns(uint32)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) MAXCAPACITYLOWERBOUND(opts *bind.CallOpts) (uint32, error) {
 	var out []interface{}
-	err := _TaikoL1ProverPool.contract.Call(opts, &out, "MIN_MULTIPLIER")
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "MAX_CAPACITY_LOWER_BOUND")
 
 	if err != nil {
-		return *new(uint8), err
+		return *new(uint32), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(uint8)).(*uint8)
+	out0 := *abi.ConvertType(out[0], new(uint32)).(*uint32)
 
 	return out0, err
 
 }
 
-// MINMULTIPLIER is a free data retrieval call binding the contract method 0xed03e78c.
+// MAXCAPACITYLOWERBOUND is a free data retrieval call binding the contract method 0x35acc933.
 //
-// Solidity: function MIN_MULTIPLIER() view returns(uint8)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) MINMULTIPLIER() (uint8, error) {
-	return _TaikoL1ProverPool.Contract.MINMULTIPLIER(&_TaikoL1ProverPool.CallOpts)
+// Solidity: function MAX_CAPACITY_LOWER_BOUND() view returns(uint32)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) MAXCAPACITYLOWERBOUND() (uint32, error) {
+	return _TaikoL1ProverPool.Contract.MAXCAPACITYLOWERBOUND(&_TaikoL1ProverPool.CallOpts)
 }
 
-// MINMULTIPLIER is a free data retrieval call binding the contract method 0xed03e78c.
+// MAXCAPACITYLOWERBOUND is a free data retrieval call binding the contract method 0x35acc933.
 //
-// Solidity: function MIN_MULTIPLIER() view returns(uint8)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) MINMULTIPLIER() (uint8, error) {
-	return _TaikoL1ProverPool.Contract.MINMULTIPLIER(&_TaikoL1ProverPool.CallOpts)
+// Solidity: function MAX_CAPACITY_LOWER_BOUND() view returns(uint32)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) MAXCAPACITYLOWERBOUND() (uint32, error) {
+	return _TaikoL1ProverPool.Contract.MAXCAPACITYLOWERBOUND(&_TaikoL1ProverPool.CallOpts)
 }
 
-// MINTKOAMOUNT is a free data retrieval call binding the contract method 0x005eb8f8.
+// MAXNUMPROVERS is a free data retrieval call binding the contract method 0x62c0fd98.
 //
-// Solidity: function MIN_TKO_AMOUNT() view returns(uint256)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) MINTKOAMOUNT(opts *bind.CallOpts) (*big.Int, error) {
+// Solidity: function MAX_NUM_PROVERS() view returns(uint256)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) MAXNUMPROVERS(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _TaikoL1ProverPool.contract.Call(opts, &out, "MIN_TKO_AMOUNT")
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "MAX_NUM_PROVERS")
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -259,18 +274,111 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) MINTKOAMOUNT(opts *bind.CallO
 
 }
 
-// MINTKOAMOUNT is a free data retrieval call binding the contract method 0x005eb8f8.
+// MAXNUMPROVERS is a free data retrieval call binding the contract method 0x62c0fd98.
 //
-// Solidity: function MIN_TKO_AMOUNT() view returns(uint256)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) MINTKOAMOUNT() (*big.Int, error) {
-	return _TaikoL1ProverPool.Contract.MINTKOAMOUNT(&_TaikoL1ProverPool.CallOpts)
+// Solidity: function MAX_NUM_PROVERS() view returns(uint256)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) MAXNUMPROVERS() (*big.Int, error) {
+	return _TaikoL1ProverPool.Contract.MAXNUMPROVERS(&_TaikoL1ProverPool.CallOpts)
 }
 
-// MINTKOAMOUNT is a free data retrieval call binding the contract method 0x005eb8f8.
+// MAXNUMPROVERS is a free data retrieval call binding the contract method 0x62c0fd98.
 //
-// Solidity: function MIN_TKO_AMOUNT() view returns(uint256)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) MINTKOAMOUNT() (*big.Int, error) {
-	return _TaikoL1ProverPool.Contract.MINTKOAMOUNT(&_TaikoL1ProverPool.CallOpts)
+// Solidity: function MAX_NUM_PROVERS() view returns(uint256)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) MAXNUMPROVERS() (*big.Int, error) {
+	return _TaikoL1ProverPool.Contract.MAXNUMPROVERS(&_TaikoL1ProverPool.CallOpts)
+}
+
+// MINSTAKEPERCAPACITY is a free data retrieval call binding the contract method 0x7d62c057.
+//
+// Solidity: function MIN_STAKE_PER_CAPACITY() view returns(uint32)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) MINSTAKEPERCAPACITY(opts *bind.CallOpts) (uint32, error) {
+	var out []interface{}
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "MIN_STAKE_PER_CAPACITY")
+
+	if err != nil {
+		return *new(uint32), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint32)).(*uint32)
+
+	return out0, err
+
+}
+
+// MINSTAKEPERCAPACITY is a free data retrieval call binding the contract method 0x7d62c057.
+//
+// Solidity: function MIN_STAKE_PER_CAPACITY() view returns(uint32)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) MINSTAKEPERCAPACITY() (uint32, error) {
+	return _TaikoL1ProverPool.Contract.MINSTAKEPERCAPACITY(&_TaikoL1ProverPool.CallOpts)
+}
+
+// MINSTAKEPERCAPACITY is a free data retrieval call binding the contract method 0x7d62c057.
+//
+// Solidity: function MIN_STAKE_PER_CAPACITY() view returns(uint32)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) MINSTAKEPERCAPACITY() (uint32, error) {
+	return _TaikoL1ProverPool.Contract.MINSTAKEPERCAPACITY(&_TaikoL1ProverPool.CallOpts)
+}
+
+// ONETKO is a free data retrieval call binding the contract method 0xe22fcaaa.
+//
+// Solidity: function ONE_TKO() view returns(uint64)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) ONETKO(opts *bind.CallOpts) (uint64, error) {
+	var out []interface{}
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "ONE_TKO")
+
+	if err != nil {
+		return *new(uint64), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint64)).(*uint64)
+
+	return out0, err
+
+}
+
+// ONETKO is a free data retrieval call binding the contract method 0xe22fcaaa.
+//
+// Solidity: function ONE_TKO() view returns(uint64)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) ONETKO() (uint64, error) {
+	return _TaikoL1ProverPool.Contract.ONETKO(&_TaikoL1ProverPool.CallOpts)
+}
+
+// ONETKO is a free data retrieval call binding the contract method 0xe22fcaaa.
+//
+// Solidity: function ONE_TKO() view returns(uint64)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) ONETKO() (uint64, error) {
+	return _TaikoL1ProverPool.Contract.ONETKO(&_TaikoL1ProverPool.CallOpts)
+}
+
+// SLASHPOINTS is a free data retrieval call binding the contract method 0xdd9fb65c.
+//
+// Solidity: function SLASH_POINTS() view returns(uint32)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) SLASHPOINTS(opts *bind.CallOpts) (uint32, error) {
+	var out []interface{}
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "SLASH_POINTS")
+
+	if err != nil {
+		return *new(uint32), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint32)).(*uint32)
+
+	return out0, err
+
+}
+
+// SLASHPOINTS is a free data retrieval call binding the contract method 0xdd9fb65c.
+//
+// Solidity: function SLASH_POINTS() view returns(uint32)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) SLASHPOINTS() (uint32, error) {
+	return _TaikoL1ProverPool.Contract.SLASHPOINTS(&_TaikoL1ProverPool.CallOpts)
+}
+
+// SLASHPOINTS is a free data retrieval call binding the contract method 0xdd9fb65c.
+//
+// Solidity: function SLASH_POINTS() view returns(uint32)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) SLASHPOINTS() (uint32, error) {
+	return _TaikoL1ProverPool.Contract.SLASHPOINTS(&_TaikoL1ProverPool.CallOpts)
 }
 
 // AddressManager is a free data retrieval call binding the contract method 0x3ab76e9f.
@@ -304,12 +412,178 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) AddressManager() (comm
 	return _TaikoL1ProverPool.Contract.AddressManager(&_TaikoL1ProverPool.CallOpts)
 }
 
-// BlockIdToProver is a free data retrieval call binding the contract method 0xf33ed81e.
+// GetCapacity is a free data retrieval call binding the contract method 0xc40000d4.
 //
-// Solidity: function blockIdToProver(uint256 blockId) view returns(address prover)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) BlockIdToProver(opts *bind.CallOpts, blockId *big.Int) (common.Address, error) {
+// Solidity: function getCapacity() view returns(uint256 capacity)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) GetCapacity(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _TaikoL1ProverPool.contract.Call(opts, &out, "blockIdToProver", blockId)
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "getCapacity")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetCapacity is a free data retrieval call binding the contract method 0xc40000d4.
+//
+// Solidity: function getCapacity() view returns(uint256 capacity)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) GetCapacity() (*big.Int, error) {
+	return _TaikoL1ProverPool.Contract.GetCapacity(&_TaikoL1ProverPool.CallOpts)
+}
+
+// GetCapacity is a free data retrieval call binding the contract method 0xc40000d4.
+//
+// Solidity: function getCapacity() view returns(uint256 capacity)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) GetCapacity() (*big.Int, error) {
+	return _TaikoL1ProverPool.Contract.GetCapacity(&_TaikoL1ProverPool.CallOpts)
+}
+
+// GetProvers is a free data retrieval call binding the contract method 0xc0bfd036.
+//
+// Solidity: function getProvers() view returns((uint32,uint16,uint16)[] _provers, address[] _stakers)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) GetProvers(opts *bind.CallOpts) (struct {
+	Provers []ProverPoolProver
+	Stakers []common.Address
+}, error) {
+	var out []interface{}
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "getProvers")
+
+	outstruct := new(struct {
+		Provers []ProverPoolProver
+		Stakers []common.Address
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.Provers = *abi.ConvertType(out[0], new([]ProverPoolProver)).(*[]ProverPoolProver)
+	outstruct.Stakers = *abi.ConvertType(out[1], new([]common.Address)).(*[]common.Address)
+
+	return *outstruct, err
+
+}
+
+// GetProvers is a free data retrieval call binding the contract method 0xc0bfd036.
+//
+// Solidity: function getProvers() view returns((uint32,uint16,uint16)[] _provers, address[] _stakers)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) GetProvers() (struct {
+	Provers []ProverPoolProver
+	Stakers []common.Address
+}, error) {
+	return _TaikoL1ProverPool.Contract.GetProvers(&_TaikoL1ProverPool.CallOpts)
+}
+
+// GetProvers is a free data retrieval call binding the contract method 0xc0bfd036.
+//
+// Solidity: function getProvers() view returns((uint32,uint16,uint16)[] _provers, address[] _stakers)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) GetProvers() (struct {
+	Provers []ProverPoolProver
+	Stakers []common.Address
+}, error) {
+	return _TaikoL1ProverPool.Contract.GetProvers(&_TaikoL1ProverPool.CallOpts)
+}
+
+// GetStaker is a free data retrieval call binding the contract method 0xa23c44b1.
+//
+// Solidity: function getStaker(address addr) view returns((uint64,uint32,uint16,uint8) staker, (uint32,uint16,uint16) prover)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) GetStaker(opts *bind.CallOpts, addr common.Address) (struct {
+	Staker ProverPoolStaker
+	Prover ProverPoolProver
+}, error) {
+	var out []interface{}
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "getStaker", addr)
+
+	outstruct := new(struct {
+		Staker ProverPoolStaker
+		Prover ProverPoolProver
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.Staker = *abi.ConvertType(out[0], new(ProverPoolStaker)).(*ProverPoolStaker)
+	outstruct.Prover = *abi.ConvertType(out[1], new(ProverPoolProver)).(*ProverPoolProver)
+
+	return *outstruct, err
+
+}
+
+// GetStaker is a free data retrieval call binding the contract method 0xa23c44b1.
+//
+// Solidity: function getStaker(address addr) view returns((uint64,uint32,uint16,uint8) staker, (uint32,uint16,uint16) prover)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) GetStaker(addr common.Address) (struct {
+	Staker ProverPoolStaker
+	Prover ProverPoolProver
+}, error) {
+	return _TaikoL1ProverPool.Contract.GetStaker(&_TaikoL1ProverPool.CallOpts, addr)
+}
+
+// GetStaker is a free data retrieval call binding the contract method 0xa23c44b1.
+//
+// Solidity: function getStaker(address addr) view returns((uint64,uint32,uint16,uint8) staker, (uint32,uint16,uint16) prover)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) GetStaker(addr common.Address) (struct {
+	Staker ProverPoolStaker
+	Prover ProverPoolProver
+}, error) {
+	return _TaikoL1ProverPool.Contract.GetStaker(&_TaikoL1ProverPool.CallOpts, addr)
+}
+
+// GetWeights is a free data retrieval call binding the contract method 0xc2082974.
+//
+// Solidity: function getWeights(uint32 feePerGas) view returns(uint256[32] weights, uint256 totalWeight)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) GetWeights(opts *bind.CallOpts, feePerGas uint32) (struct {
+	Weights     [32]*big.Int
+	TotalWeight *big.Int
+}, error) {
+	var out []interface{}
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "getWeights", feePerGas)
+
+	outstruct := new(struct {
+		Weights     [32]*big.Int
+		TotalWeight *big.Int
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.Weights = *abi.ConvertType(out[0], new([32]*big.Int)).(*[32]*big.Int)
+	outstruct.TotalWeight = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+
+	return *outstruct, err
+
+}
+
+// GetWeights is a free data retrieval call binding the contract method 0xc2082974.
+//
+// Solidity: function getWeights(uint32 feePerGas) view returns(uint256[32] weights, uint256 totalWeight)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) GetWeights(feePerGas uint32) (struct {
+	Weights     [32]*big.Int
+	TotalWeight *big.Int
+}, error) {
+	return _TaikoL1ProverPool.Contract.GetWeights(&_TaikoL1ProverPool.CallOpts, feePerGas)
+}
+
+// GetWeights is a free data retrieval call binding the contract method 0xc2082974.
+//
+// Solidity: function getWeights(uint32 feePerGas) view returns(uint256[32] weights, uint256 totalWeight)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) GetWeights(feePerGas uint32) (struct {
+	Weights     [32]*big.Int
+	TotalWeight *big.Int
+}, error) {
+	return _TaikoL1ProverPool.Contract.GetWeights(&_TaikoL1ProverPool.CallOpts, feePerGas)
+}
+
+// IdToProver is a free data retrieval call binding the contract method 0x2f88a7fe.
+//
+// Solidity: function idToProver(uint256 id) view returns(address prover)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) IdToProver(opts *bind.CallOpts, id *big.Int) (common.Address, error) {
+	var out []interface{}
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "idToProver", id)
 
 	if err != nil {
 		return *new(common.Address), err
@@ -321,80 +595,18 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) BlockIdToProver(opts *bind.Ca
 
 }
 
-// BlockIdToProver is a free data retrieval call binding the contract method 0xf33ed81e.
+// IdToProver is a free data retrieval call binding the contract method 0x2f88a7fe.
 //
-// Solidity: function blockIdToProver(uint256 blockId) view returns(address prover)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) BlockIdToProver(blockId *big.Int) (common.Address, error) {
-	return _TaikoL1ProverPool.Contract.BlockIdToProver(&_TaikoL1ProverPool.CallOpts, blockId)
+// Solidity: function idToProver(uint256 id) view returns(address prover)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) IdToProver(id *big.Int) (common.Address, error) {
+	return _TaikoL1ProverPool.Contract.IdToProver(&_TaikoL1ProverPool.CallOpts, id)
 }
 
-// BlockIdToProver is a free data retrieval call binding the contract method 0xf33ed81e.
+// IdToProver is a free data retrieval call binding the contract method 0x2f88a7fe.
 //
-// Solidity: function blockIdToProver(uint256 blockId) view returns(address prover)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) BlockIdToProver(blockId *big.Int) (common.Address, error) {
-	return _TaikoL1ProverPool.Contract.BlockIdToProver(&_TaikoL1ProverPool.CallOpts, blockId)
-}
-
-// GetProver is a free data retrieval call binding the contract method 0xe02f1931.
-//
-// Solidity: function getProver(uint256 blockId) view returns(address)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) GetProver(opts *bind.CallOpts, blockId *big.Int) (common.Address, error) {
-	var out []interface{}
-	err := _TaikoL1ProverPool.contract.Call(opts, &out, "getProver", blockId)
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// GetProver is a free data retrieval call binding the contract method 0xe02f1931.
-//
-// Solidity: function getProver(uint256 blockId) view returns(address)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) GetProver(blockId *big.Int) (common.Address, error) {
-	return _TaikoL1ProverPool.Contract.GetProver(&_TaikoL1ProverPool.CallOpts, blockId)
-}
-
-// GetProver is a free data retrieval call binding the contract method 0xe02f1931.
-//
-// Solidity: function getProver(uint256 blockId) view returns(address)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) GetProver(blockId *big.Int) (common.Address, error) {
-	return _TaikoL1ProverPool.Contract.GetProver(&_TaikoL1ProverPool.CallOpts, blockId)
-}
-
-// MaxPoolSize is a free data retrieval call binding the contract method 0xc5579dc0.
-//
-// Solidity: function maxPoolSize() view returns(uint16)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) MaxPoolSize(opts *bind.CallOpts) (uint16, error) {
-	var out []interface{}
-	err := _TaikoL1ProverPool.contract.Call(opts, &out, "maxPoolSize")
-
-	if err != nil {
-		return *new(uint16), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(uint16)).(*uint16)
-
-	return out0, err
-
-}
-
-// MaxPoolSize is a free data retrieval call binding the contract method 0xc5579dc0.
-//
-// Solidity: function maxPoolSize() view returns(uint16)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) MaxPoolSize() (uint16, error) {
-	return _TaikoL1ProverPool.Contract.MaxPoolSize(&_TaikoL1ProverPool.CallOpts)
-}
-
-// MaxPoolSize is a free data retrieval call binding the contract method 0xc5579dc0.
-//
-// Solidity: function maxPoolSize() view returns(uint16)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) MaxPoolSize() (uint16, error) {
-	return _TaikoL1ProverPool.Contract.MaxPoolSize(&_TaikoL1ProverPool.CallOpts)
+// Solidity: function idToProver(uint256 id) view returns(address prover)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) IdToProver(id *big.Int) (common.Address, error) {
+	return _TaikoL1ProverPool.Contract.IdToProver(&_TaikoL1ProverPool.CallOpts, id)
 }
 
 // Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
@@ -426,112 +638,6 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Owner() (common.Address, err
 // Solidity: function owner() view returns(address)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) Owner() (common.Address, error) {
 	return _TaikoL1ProverPool.Contract.Owner(&_TaikoL1ProverPool.CallOpts)
-}
-
-// Provers is a free data retrieval call binding the contract method 0x1dec844b.
-//
-// Solidity: function provers(address ) view returns(address proverAddress, uint256 stakedTokens, uint256 rewards, uint256 healthScore, uint256 lastBlockTsToBeProven, uint32 capacity, uint32 numAssignedBlocks, uint8 feeMultiplier)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) Provers(opts *bind.CallOpts, arg0 common.Address) (struct {
-	ProverAddress         common.Address
-	StakedTokens          *big.Int
-	Rewards               *big.Int
-	HealthScore           *big.Int
-	LastBlockTsToBeProven *big.Int
-	Capacity              uint32
-	NumAssignedBlocks     uint32
-	FeeMultiplier         uint8
-}, error) {
-	var out []interface{}
-	err := _TaikoL1ProverPool.contract.Call(opts, &out, "provers", arg0)
-
-	outstruct := new(struct {
-		ProverAddress         common.Address
-		StakedTokens          *big.Int
-		Rewards               *big.Int
-		HealthScore           *big.Int
-		LastBlockTsToBeProven *big.Int
-		Capacity              uint32
-		NumAssignedBlocks     uint32
-		FeeMultiplier         uint8
-	})
-	if err != nil {
-		return *outstruct, err
-	}
-
-	outstruct.ProverAddress = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-	outstruct.StakedTokens = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-	outstruct.Rewards = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
-	outstruct.HealthScore = *abi.ConvertType(out[3], new(*big.Int)).(**big.Int)
-	outstruct.LastBlockTsToBeProven = *abi.ConvertType(out[4], new(*big.Int)).(**big.Int)
-	outstruct.Capacity = *abi.ConvertType(out[5], new(uint32)).(*uint32)
-	outstruct.NumAssignedBlocks = *abi.ConvertType(out[6], new(uint32)).(*uint32)
-	outstruct.FeeMultiplier = *abi.ConvertType(out[7], new(uint8)).(*uint8)
-
-	return *outstruct, err
-
-}
-
-// Provers is a free data retrieval call binding the contract method 0x1dec844b.
-//
-// Solidity: function provers(address ) view returns(address proverAddress, uint256 stakedTokens, uint256 rewards, uint256 healthScore, uint256 lastBlockTsToBeProven, uint32 capacity, uint32 numAssignedBlocks, uint8 feeMultiplier)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Provers(arg0 common.Address) (struct {
-	ProverAddress         common.Address
-	StakedTokens          *big.Int
-	Rewards               *big.Int
-	HealthScore           *big.Int
-	LastBlockTsToBeProven *big.Int
-	Capacity              uint32
-	NumAssignedBlocks     uint32
-	FeeMultiplier         uint8
-}, error) {
-	return _TaikoL1ProverPool.Contract.Provers(&_TaikoL1ProverPool.CallOpts, arg0)
-}
-
-// Provers is a free data retrieval call binding the contract method 0x1dec844b.
-//
-// Solidity: function provers(address ) view returns(address proverAddress, uint256 stakedTokens, uint256 rewards, uint256 healthScore, uint256 lastBlockTsToBeProven, uint32 capacity, uint32 numAssignedBlocks, uint8 feeMultiplier)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) Provers(arg0 common.Address) (struct {
-	ProverAddress         common.Address
-	StakedTokens          *big.Int
-	Rewards               *big.Int
-	HealthScore           *big.Int
-	LastBlockTsToBeProven *big.Int
-	Capacity              uint32
-	NumAssignedBlocks     uint32
-	FeeMultiplier         uint8
-}, error) {
-	return _TaikoL1ProverPool.Contract.Provers(&_TaikoL1ProverPool.CallOpts, arg0)
-}
-
-// ProversInPool is a free data retrieval call binding the contract method 0xb0aa5fcc.
-//
-// Solidity: function proversInPool() view returns(uint16)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) ProversInPool(opts *bind.CallOpts) (uint16, error) {
-	var out []interface{}
-	err := _TaikoL1ProverPool.contract.Call(opts, &out, "proversInPool")
-
-	if err != nil {
-		return *new(uint16), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(uint16)).(*uint16)
-
-	return out0, err
-
-}
-
-// ProversInPool is a free data retrieval call binding the contract method 0xb0aa5fcc.
-//
-// Solidity: function proversInPool() view returns(uint16)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) ProversInPool() (uint16, error) {
-	return _TaikoL1ProverPool.Contract.ProversInPool(&_TaikoL1ProverPool.CallOpts)
-}
-
-// ProversInPool is a free data retrieval call binding the contract method 0xb0aa5fcc.
-//
-// Solidity: function proversInPool() view returns(uint16)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) ProversInPool() (uint16, error) {
-	return _TaikoL1ProverPool.Contract.ProversInPool(&_TaikoL1ProverPool.CallOpts)
 }
 
 // Resolve is a free data retrieval call binding the contract method 0x6c6563f6.
@@ -596,98 +702,80 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) Resolve0(name [32]byte
 	return _TaikoL1ProverPool.Contract.Resolve0(&_TaikoL1ProverPool.CallOpts, name, allowZeroAddress)
 }
 
-// TopProvers is a free data retrieval call binding the contract method 0xd70e4ea6.
+// Stakers is a free data retrieval call binding the contract method 0x9168ae72.
 //
-// Solidity: function topProvers(uint256 ) view returns(address)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) TopProvers(opts *bind.CallOpts, arg0 *big.Int) (common.Address, error) {
+// Solidity: function stakers(address staker) view returns(uint64 exitRequestedAt, uint32 exitAmount, uint16 maxCapacity, uint8 proverId)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) Stakers(opts *bind.CallOpts, staker common.Address) (struct {
+	ExitRequestedAt uint64
+	ExitAmount      uint32
+	MaxCapacity     uint16
+	ProverId        uint8
+}, error) {
 	var out []interface{}
-	err := _TaikoL1ProverPool.contract.Call(opts, &out, "topProvers", arg0)
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "stakers", staker)
 
+	outstruct := new(struct {
+		ExitRequestedAt uint64
+		ExitAmount      uint32
+		MaxCapacity     uint16
+		ProverId        uint8
+	})
 	if err != nil {
-		return *new(common.Address), err
+		return *outstruct, err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+	outstruct.ExitRequestedAt = *abi.ConvertType(out[0], new(uint64)).(*uint64)
+	outstruct.ExitAmount = *abi.ConvertType(out[1], new(uint32)).(*uint32)
+	outstruct.MaxCapacity = *abi.ConvertType(out[2], new(uint16)).(*uint16)
+	outstruct.ProverId = *abi.ConvertType(out[3], new(uint8)).(*uint8)
 
-	return out0, err
+	return *outstruct, err
 
 }
 
-// TopProvers is a free data retrieval call binding the contract method 0xd70e4ea6.
+// Stakers is a free data retrieval call binding the contract method 0x9168ae72.
 //
-// Solidity: function topProvers(uint256 ) view returns(address)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) TopProvers(arg0 *big.Int) (common.Address, error) {
-	return _TaikoL1ProverPool.Contract.TopProvers(&_TaikoL1ProverPool.CallOpts, arg0)
+// Solidity: function stakers(address staker) view returns(uint64 exitRequestedAt, uint32 exitAmount, uint16 maxCapacity, uint8 proverId)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Stakers(staker common.Address) (struct {
+	ExitRequestedAt uint64
+	ExitAmount      uint32
+	MaxCapacity     uint16
+	ProverId        uint8
+}, error) {
+	return _TaikoL1ProverPool.Contract.Stakers(&_TaikoL1ProverPool.CallOpts, staker)
 }
 
-// TopProvers is a free data retrieval call binding the contract method 0xd70e4ea6.
+// Stakers is a free data retrieval call binding the contract method 0x9168ae72.
 //
-// Solidity: function topProvers(uint256 ) view returns(address)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) TopProvers(arg0 *big.Int) (common.Address, error) {
-	return _TaikoL1ProverPool.Contract.TopProvers(&_TaikoL1ProverPool.CallOpts, arg0)
+// Solidity: function stakers(address staker) view returns(uint64 exitRequestedAt, uint32 exitAmount, uint16 maxCapacity, uint8 proverId)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) Stakers(staker common.Address) (struct {
+	ExitRequestedAt uint64
+	ExitAmount      uint32
+	MaxCapacity     uint16
+	ProverId        uint8
+}, error) {
+	return _TaikoL1ProverPool.Contract.Stakers(&_TaikoL1ProverPool.CallOpts, staker)
 }
 
-// AdjustCapacity is a paid mutator transaction binding the contract method 0x426759e3.
+// AssignProver is a paid mutator transaction binding the contract method 0xbd849fe9.
 //
-// Solidity: function adjustCapacity(uint32 newCapacity) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) AdjustCapacity(opts *bind.TransactOpts, newCapacity uint32) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.contract.Transact(opts, "adjustCapacity", newCapacity)
+// Solidity: function assignProver(uint64 blockId, uint32 feePerGas) returns(address prover, uint32 rewardPerGas)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) AssignProver(opts *bind.TransactOpts, blockId uint64, feePerGas uint32) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.contract.Transact(opts, "assignProver", blockId, feePerGas)
 }
 
-// AdjustCapacity is a paid mutator transaction binding the contract method 0x426759e3.
+// AssignProver is a paid mutator transaction binding the contract method 0xbd849fe9.
 //
-// Solidity: function adjustCapacity(uint32 newCapacity) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) AdjustCapacity(newCapacity uint32) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.AdjustCapacity(&_TaikoL1ProverPool.TransactOpts, newCapacity)
+// Solidity: function assignProver(uint64 blockId, uint32 feePerGas) returns(address prover, uint32 rewardPerGas)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) AssignProver(blockId uint64, feePerGas uint32) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.AssignProver(&_TaikoL1ProverPool.TransactOpts, blockId, feePerGas)
 }
 
-// AdjustCapacity is a paid mutator transaction binding the contract method 0x426759e3.
+// AssignProver is a paid mutator transaction binding the contract method 0xbd849fe9.
 //
-// Solidity: function adjustCapacity(uint32 newCapacity) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) AdjustCapacity(newCapacity uint32) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.AdjustCapacity(&_TaikoL1ProverPool.TransactOpts, newCapacity)
-}
-
-// AdjustFeeMultiplier is a paid mutator transaction binding the contract method 0x4e07a0ce.
-//
-// Solidity: function adjustFeeMultiplier(uint8 newFeeMultiplier) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) AdjustFeeMultiplier(opts *bind.TransactOpts, newFeeMultiplier uint8) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.contract.Transact(opts, "adjustFeeMultiplier", newFeeMultiplier)
-}
-
-// AdjustFeeMultiplier is a paid mutator transaction binding the contract method 0x4e07a0ce.
-//
-// Solidity: function adjustFeeMultiplier(uint8 newFeeMultiplier) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) AdjustFeeMultiplier(newFeeMultiplier uint8) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.AdjustFeeMultiplier(&_TaikoL1ProverPool.TransactOpts, newFeeMultiplier)
-}
-
-// AdjustFeeMultiplier is a paid mutator transaction binding the contract method 0x4e07a0ce.
-//
-// Solidity: function adjustFeeMultiplier(uint8 newFeeMultiplier) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) AdjustFeeMultiplier(newFeeMultiplier uint8) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.AdjustFeeMultiplier(&_TaikoL1ProverPool.TransactOpts, newFeeMultiplier)
-}
-
-// EnterProverPool is a paid mutator transaction binding the contract method 0xd12037ff.
-//
-// Solidity: function enterProverPool(uint256 amount, uint256 feeMultiplier, uint32 capacity) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) EnterProverPool(opts *bind.TransactOpts, amount *big.Int, feeMultiplier *big.Int, capacity uint32) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.contract.Transact(opts, "enterProverPool", amount, feeMultiplier, capacity)
-}
-
-// EnterProverPool is a paid mutator transaction binding the contract method 0xd12037ff.
-//
-// Solidity: function enterProverPool(uint256 amount, uint256 feeMultiplier, uint32 capacity) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) EnterProverPool(amount *big.Int, feeMultiplier *big.Int, capacity uint32) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.EnterProverPool(&_TaikoL1ProverPool.TransactOpts, amount, feeMultiplier, capacity)
-}
-
-// EnterProverPool is a paid mutator transaction binding the contract method 0xd12037ff.
-//
-// Solidity: function enterProverPool(uint256 amount, uint256 feeMultiplier, uint32 capacity) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) EnterProverPool(amount *big.Int, feeMultiplier *big.Int, capacity uint32) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.EnterProverPool(&_TaikoL1ProverPool.TransactOpts, amount, feeMultiplier, capacity)
+// Solidity: function assignProver(uint64 blockId, uint32 feePerGas) returns(address prover, uint32 rewardPerGas)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) AssignProver(blockId uint64, feePerGas uint32) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.AssignProver(&_TaikoL1ProverPool.TransactOpts, blockId, feePerGas)
 }
 
 // Exit is a paid mutator transaction binding the contract method 0xe9fad8ee.
@@ -711,46 +799,46 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) Exit() (*types.Tra
 	return _TaikoL1ProverPool.Contract.Exit(&_TaikoL1ProverPool.TransactOpts)
 }
 
-// Init is a paid mutator transaction binding the contract method 0xd2fd155e.
+// Init is a paid mutator transaction binding the contract method 0x19ab453c.
 //
-// Solidity: function init(address _addressManager, uint16 _maxPoolSize) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) Init(opts *bind.TransactOpts, _addressManager common.Address, _maxPoolSize uint16) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.contract.Transact(opts, "init", _addressManager, _maxPoolSize)
+// Solidity: function init(address _addressManager) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) Init(opts *bind.TransactOpts, _addressManager common.Address) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.contract.Transact(opts, "init", _addressManager)
 }
 
-// Init is a paid mutator transaction binding the contract method 0xd2fd155e.
+// Init is a paid mutator transaction binding the contract method 0x19ab453c.
 //
-// Solidity: function init(address _addressManager, uint16 _maxPoolSize) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Init(_addressManager common.Address, _maxPoolSize uint16) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.Init(&_TaikoL1ProverPool.TransactOpts, _addressManager, _maxPoolSize)
+// Solidity: function init(address _addressManager) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Init(_addressManager common.Address) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.Init(&_TaikoL1ProverPool.TransactOpts, _addressManager)
 }
 
-// Init is a paid mutator transaction binding the contract method 0xd2fd155e.
+// Init is a paid mutator transaction binding the contract method 0x19ab453c.
 //
-// Solidity: function init(address _addressManager, uint16 _maxPoolSize) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) Init(_addressManager common.Address, _maxPoolSize uint16) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.Init(&_TaikoL1ProverPool.TransactOpts, _addressManager, _maxPoolSize)
+// Solidity: function init(address _addressManager) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) Init(_addressManager common.Address) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.Init(&_TaikoL1ProverPool.TransactOpts, _addressManager)
 }
 
-// PickRandomProver is a paid mutator transaction binding the contract method 0xc9117290.
+// ReleaseProver is a paid mutator transaction binding the contract method 0xcba0414f.
 //
-// Solidity: function pickRandomProver(uint256 randomNumber, uint256 blockId) returns(address)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) PickRandomProver(opts *bind.TransactOpts, randomNumber *big.Int, blockId *big.Int) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.contract.Transact(opts, "pickRandomProver", randomNumber, blockId)
+// Solidity: function releaseProver(address addr) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) ReleaseProver(opts *bind.TransactOpts, addr common.Address) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.contract.Transact(opts, "releaseProver", addr)
 }
 
-// PickRandomProver is a paid mutator transaction binding the contract method 0xc9117290.
+// ReleaseProver is a paid mutator transaction binding the contract method 0xcba0414f.
 //
-// Solidity: function pickRandomProver(uint256 randomNumber, uint256 blockId) returns(address)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) PickRandomProver(randomNumber *big.Int, blockId *big.Int) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.PickRandomProver(&_TaikoL1ProverPool.TransactOpts, randomNumber, blockId)
+// Solidity: function releaseProver(address addr) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) ReleaseProver(addr common.Address) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.ReleaseProver(&_TaikoL1ProverPool.TransactOpts, addr)
 }
 
-// PickRandomProver is a paid mutator transaction binding the contract method 0xc9117290.
+// ReleaseProver is a paid mutator transaction binding the contract method 0xcba0414f.
 //
-// Solidity: function pickRandomProver(uint256 randomNumber, uint256 blockId) returns(address)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) PickRandomProver(randomNumber *big.Int, blockId *big.Int) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.PickRandomProver(&_TaikoL1ProverPool.TransactOpts, randomNumber, blockId)
+// Solidity: function releaseProver(address addr) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) ReleaseProver(addr common.Address) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.ReleaseProver(&_TaikoL1ProverPool.TransactOpts, addr)
 }
 
 // RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
@@ -797,44 +885,44 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) SetAddressManager(
 
 // SlashProver is a paid mutator transaction binding the contract method 0xcd362a5b.
 //
-// Solidity: function slashProver(address prover) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) SlashProver(opts *bind.TransactOpts, prover common.Address) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.contract.Transact(opts, "slashProver", prover)
+// Solidity: function slashProver(address addr) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) SlashProver(opts *bind.TransactOpts, addr common.Address) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.contract.Transact(opts, "slashProver", addr)
 }
 
 // SlashProver is a paid mutator transaction binding the contract method 0xcd362a5b.
 //
-// Solidity: function slashProver(address prover) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) SlashProver(prover common.Address) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.SlashProver(&_TaikoL1ProverPool.TransactOpts, prover)
+// Solidity: function slashProver(address addr) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) SlashProver(addr common.Address) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.SlashProver(&_TaikoL1ProverPool.TransactOpts, addr)
 }
 
 // SlashProver is a paid mutator transaction binding the contract method 0xcd362a5b.
 //
-// Solidity: function slashProver(address prover) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) SlashProver(prover common.Address) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.SlashProver(&_TaikoL1ProverPool.TransactOpts, prover)
+// Solidity: function slashProver(address addr) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) SlashProver(addr common.Address) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.SlashProver(&_TaikoL1ProverPool.TransactOpts, addr)
 }
 
-// StakeMoreTokens is a paid mutator transaction binding the contract method 0x9e8008d1.
+// Stake is a paid mutator transaction binding the contract method 0x3ca316f1.
 //
-// Solidity: function stakeMoreTokens(uint256 amount) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) StakeMoreTokens(opts *bind.TransactOpts, amount *big.Int) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.contract.Transact(opts, "stakeMoreTokens", amount)
+// Solidity: function stake(uint32 amount, uint16 rewardPerGas, uint16 maxCapacity) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) Stake(opts *bind.TransactOpts, amount uint32, rewardPerGas uint16, maxCapacity uint16) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.contract.Transact(opts, "stake", amount, rewardPerGas, maxCapacity)
 }
 
-// StakeMoreTokens is a paid mutator transaction binding the contract method 0x9e8008d1.
+// Stake is a paid mutator transaction binding the contract method 0x3ca316f1.
 //
-// Solidity: function stakeMoreTokens(uint256 amount) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) StakeMoreTokens(amount *big.Int) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.StakeMoreTokens(&_TaikoL1ProverPool.TransactOpts, amount)
+// Solidity: function stake(uint32 amount, uint16 rewardPerGas, uint16 maxCapacity) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Stake(amount uint32, rewardPerGas uint16, maxCapacity uint16) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.Stake(&_TaikoL1ProverPool.TransactOpts, amount, rewardPerGas, maxCapacity)
 }
 
-// StakeMoreTokens is a paid mutator transaction binding the contract method 0x9e8008d1.
+// Stake is a paid mutator transaction binding the contract method 0x3ca316f1.
 //
-// Solidity: function stakeMoreTokens(uint256 amount) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) StakeMoreTokens(amount *big.Int) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.StakeMoreTokens(&_TaikoL1ProverPool.TransactOpts, amount)
+// Solidity: function stake(uint32 amount, uint16 rewardPerGas, uint16 maxCapacity) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) Stake(amount uint32, rewardPerGas uint16, maxCapacity uint16) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.Stake(&_TaikoL1ProverPool.TransactOpts, amount, rewardPerGas, maxCapacity)
 }
 
 // TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
@@ -858,25 +946,25 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) TransferOwnership(
 	return _TaikoL1ProverPool.Contract.TransferOwnership(&_TaikoL1ProverPool.TransactOpts, newOwner)
 }
 
-// WithdrawRewards is a paid mutator transaction binding the contract method 0x45c69831.
+// Withdraw is a paid mutator transaction binding the contract method 0x3ccfd60b.
 //
-// Solidity: function withdrawRewards(uint64 amount) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) WithdrawRewards(opts *bind.TransactOpts, amount uint64) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.contract.Transact(opts, "withdrawRewards", amount)
+// Solidity: function withdraw() returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) Withdraw(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.contract.Transact(opts, "withdraw")
 }
 
-// WithdrawRewards is a paid mutator transaction binding the contract method 0x45c69831.
+// Withdraw is a paid mutator transaction binding the contract method 0x3ccfd60b.
 //
-// Solidity: function withdrawRewards(uint64 amount) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) WithdrawRewards(amount uint64) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.WithdrawRewards(&_TaikoL1ProverPool.TransactOpts, amount)
+// Solidity: function withdraw() returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Withdraw() (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.Withdraw(&_TaikoL1ProverPool.TransactOpts)
 }
 
-// WithdrawRewards is a paid mutator transaction binding the contract method 0x45c69831.
+// Withdraw is a paid mutator transaction binding the contract method 0x3ccfd60b.
 //
-// Solidity: function withdrawRewards(uint64 amount) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) WithdrawRewards(amount uint64) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.WithdrawRewards(&_TaikoL1ProverPool.TransactOpts, amount)
+// Solidity: function withdraw() returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) Withdraw() (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.Withdraw(&_TaikoL1ProverPool.TransactOpts)
 }
 
 // TaikoL1ProverPoolAddressManagerChangedIterator is returned from FilterAddressManagerChanged and is used to iterate over the raw logs and unpacked data for AddressManagerChanged events raised by the TaikoL1ProverPool contract.
@@ -1007,6 +1095,151 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchAddressManagerChanged(
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseAddressManagerChanged(log types.Log) (*TaikoL1ProverPoolAddressManagerChanged, error) {
 	event := new(TaikoL1ProverPoolAddressManagerChanged)
 	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "AddressManagerChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ProverPoolExitedIterator is returned from FilterExited and is used to iterate over the raw logs and unpacked data for Exited events raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolExitedIterator struct {
+	Event *TaikoL1ProverPoolExited // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ProverPoolExitedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ProverPoolExited)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ProverPoolExited)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ProverPoolExitedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ProverPoolExitedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ProverPoolExited represents a Exited event raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolExited struct {
+	Addr   common.Address
+	Amount uint32
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterExited is a free log retrieval operation binding the contract event 0xfa715c30456da257872290458c962d9495b3a623e7df06cacb5b8dd68668554d.
+//
+// Solidity: event Exited(address indexed addr, uint32 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterExited(opts *bind.FilterOpts, addr []common.Address) (*TaikoL1ProverPoolExitedIterator, error) {
+
+	var addrRule []interface{}
+	for _, addrItem := range addr {
+		addrRule = append(addrRule, addrItem)
+	}
+
+	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "Exited", addrRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ProverPoolExitedIterator{contract: _TaikoL1ProverPool.contract, event: "Exited", logs: logs, sub: sub}, nil
+}
+
+// WatchExited is a free log subscription operation binding the contract event 0xfa715c30456da257872290458c962d9495b3a623e7df06cacb5b8dd68668554d.
+//
+// Solidity: event Exited(address indexed addr, uint32 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchExited(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolExited, addr []common.Address) (event.Subscription, error) {
+
+	var addrRule []interface{}
+	for _, addrItem := range addr {
+		addrRule = append(addrRule, addrItem)
+	}
+
+	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "Exited", addrRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ProverPoolExited)
+				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "Exited", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseExited is a log parse operation binding the contract event 0xfa715c30456da257872290458c962d9495b3a623e7df06cacb5b8dd68668554d.
+//
+// Solidity: event Exited(address indexed addr, uint32 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseExited(log types.Log) (*TaikoL1ProverPoolExited, error) {
+	event := new(TaikoL1ProverPoolExited)
+	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "Exited", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1300,9 +1533,9 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseOwnershipTransferred(l
 	return event, nil
 }
 
-// TaikoL1ProverPoolProverAdjustedCapacityIterator is returned from FilterProverAdjustedCapacity and is used to iterate over the raw logs and unpacked data for ProverAdjustedCapacity events raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverAdjustedCapacityIterator struct {
-	Event *TaikoL1ProverPoolProverAdjustedCapacity // Event containing the contract specifics and raw log
+// TaikoL1ProverPoolSlashedIterator is returned from FilterSlashed and is used to iterate over the raw logs and unpacked data for Slashed events raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolSlashedIterator struct {
+	Event *TaikoL1ProverPoolSlashed // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1316,7 +1549,7 @@ type TaikoL1ProverPoolProverAdjustedCapacityIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ProverPoolProverAdjustedCapacityIterator) Next() bool {
+func (it *TaikoL1ProverPoolSlashedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1325,7 +1558,7 @@ func (it *TaikoL1ProverPoolProverAdjustedCapacityIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(TaikoL1ProverPoolProverAdjustedCapacity)
+			it.Event = new(TaikoL1ProverPoolSlashed)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1340,7 +1573,7 @@ func (it *TaikoL1ProverPoolProverAdjustedCapacityIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(TaikoL1ProverPoolProverAdjustedCapacity)
+		it.Event = new(TaikoL1ProverPoolSlashed)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1356,450 +1589,52 @@ func (it *TaikoL1ProverPoolProverAdjustedCapacityIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ProverPoolProverAdjustedCapacityIterator) Error() error {
+func (it *TaikoL1ProverPoolSlashedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *TaikoL1ProverPoolProverAdjustedCapacityIterator) Close() error {
+func (it *TaikoL1ProverPoolSlashedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// TaikoL1ProverPoolProverAdjustedCapacity represents a ProverAdjustedCapacity event raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverAdjustedCapacity struct {
-	Prover      common.Address
-	OldCapacity uint32
-	NewCapacity uint32
-	Raw         types.Log // Blockchain specific contextual infos
-}
-
-// FilterProverAdjustedCapacity is a free log retrieval operation binding the contract event 0xa426d28c428ee95eedf18d1c934f2069b32d38457a5f7f87127aeb8ea0729fb2.
-//
-// Solidity: event ProverAdjustedCapacity(address prover, uint32 oldCapacity, uint32 newCapacity)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterProverAdjustedCapacity(opts *bind.FilterOpts) (*TaikoL1ProverPoolProverAdjustedCapacityIterator, error) {
-
-	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "ProverAdjustedCapacity")
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ProverPoolProverAdjustedCapacityIterator{contract: _TaikoL1ProverPool.contract, event: "ProverAdjustedCapacity", logs: logs, sub: sub}, nil
-}
-
-// WatchProverAdjustedCapacity is a free log subscription operation binding the contract event 0xa426d28c428ee95eedf18d1c934f2069b32d38457a5f7f87127aeb8ea0729fb2.
-//
-// Solidity: event ProverAdjustedCapacity(address prover, uint32 oldCapacity, uint32 newCapacity)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverAdjustedCapacity(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolProverAdjustedCapacity) (event.Subscription, error) {
-
-	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "ProverAdjustedCapacity")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ProverPoolProverAdjustedCapacity)
-				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverAdjustedCapacity", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseProverAdjustedCapacity is a log parse operation binding the contract event 0xa426d28c428ee95eedf18d1c934f2069b32d38457a5f7f87127aeb8ea0729fb2.
-//
-// Solidity: event ProverAdjustedCapacity(address prover, uint32 oldCapacity, uint32 newCapacity)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverAdjustedCapacity(log types.Log) (*TaikoL1ProverPoolProverAdjustedCapacity, error) {
-	event := new(TaikoL1ProverPoolProverAdjustedCapacity)
-	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverAdjustedCapacity", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator is returned from FilterProverAdjustedFeeMultiplier and is used to iterate over the raw logs and unpacked data for ProverAdjustedFeeMultiplier events raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator struct {
-	Event *TaikoL1ProverPoolProverAdjustedFeeMultiplier // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ProverPoolProverAdjustedFeeMultiplier)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ProverPoolProverAdjustedFeeMultiplier)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ProverPoolProverAdjustedFeeMultiplier represents a ProverAdjustedFeeMultiplier event raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverAdjustedFeeMultiplier struct {
-	Prover           common.Address
-	OldFeeMultiplier *big.Int
-	NewFeeMultiplier *big.Int
-	Raw              types.Log // Blockchain specific contextual infos
-}
-
-// FilterProverAdjustedFeeMultiplier is a free log retrieval operation binding the contract event 0xe2ab56ce94312a84cb6aa7b090126fd821c5fad200bf22a7c55f675ec668db9e.
-//
-// Solidity: event ProverAdjustedFeeMultiplier(address prover, uint256 oldFeeMultiplier, uint256 newFeeMultiplier)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterProverAdjustedFeeMultiplier(opts *bind.FilterOpts) (*TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator, error) {
-
-	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "ProverAdjustedFeeMultiplier")
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ProverPoolProverAdjustedFeeMultiplierIterator{contract: _TaikoL1ProverPool.contract, event: "ProverAdjustedFeeMultiplier", logs: logs, sub: sub}, nil
-}
-
-// WatchProverAdjustedFeeMultiplier is a free log subscription operation binding the contract event 0xe2ab56ce94312a84cb6aa7b090126fd821c5fad200bf22a7c55f675ec668db9e.
-//
-// Solidity: event ProverAdjustedFeeMultiplier(address prover, uint256 oldFeeMultiplier, uint256 newFeeMultiplier)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverAdjustedFeeMultiplier(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolProverAdjustedFeeMultiplier) (event.Subscription, error) {
-
-	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "ProverAdjustedFeeMultiplier")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ProverPoolProverAdjustedFeeMultiplier)
-				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverAdjustedFeeMultiplier", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseProverAdjustedFeeMultiplier is a log parse operation binding the contract event 0xe2ab56ce94312a84cb6aa7b090126fd821c5fad200bf22a7c55f675ec668db9e.
-//
-// Solidity: event ProverAdjustedFeeMultiplier(address prover, uint256 oldFeeMultiplier, uint256 newFeeMultiplier)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverAdjustedFeeMultiplier(log types.Log) (*TaikoL1ProverPoolProverAdjustedFeeMultiplier, error) {
-	event := new(TaikoL1ProverPoolProverAdjustedFeeMultiplier)
-	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverAdjustedFeeMultiplier", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ProverPoolProverEnteredIterator is returned from FilterProverEntered and is used to iterate over the raw logs and unpacked data for ProverEntered events raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverEnteredIterator struct {
-	Event *TaikoL1ProverPoolProverEntered // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ProverPoolProverEnteredIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ProverPoolProverEntered)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ProverPoolProverEntered)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ProverPoolProverEnteredIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ProverPoolProverEnteredIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ProverPoolProverEntered represents a ProverEntered event raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverEntered struct {
-	Prover        common.Address
-	Amount        *big.Int
-	FeeMultiplier *big.Int
-	Capacity      uint64
-	Raw           types.Log // Blockchain specific contextual infos
-}
-
-// FilterProverEntered is a free log retrieval operation binding the contract event 0x1b14a9db786d0b879f833a7bd117d424ee00758960ef3c2e812b2abf0a51f892.
-//
-// Solidity: event ProverEntered(address prover, uint256 amount, uint256 feeMultiplier, uint64 capacity)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterProverEntered(opts *bind.FilterOpts) (*TaikoL1ProverPoolProverEnteredIterator, error) {
-
-	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "ProverEntered")
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ProverPoolProverEnteredIterator{contract: _TaikoL1ProverPool.contract, event: "ProverEntered", logs: logs, sub: sub}, nil
-}
-
-// WatchProverEntered is a free log subscription operation binding the contract event 0x1b14a9db786d0b879f833a7bd117d424ee00758960ef3c2e812b2abf0a51f892.
-//
-// Solidity: event ProverEntered(address prover, uint256 amount, uint256 feeMultiplier, uint64 capacity)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverEntered(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolProverEntered) (event.Subscription, error) {
-
-	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "ProverEntered")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ProverPoolProverEntered)
-				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverEntered", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseProverEntered is a log parse operation binding the contract event 0x1b14a9db786d0b879f833a7bd117d424ee00758960ef3c2e812b2abf0a51f892.
-//
-// Solidity: event ProverEntered(address prover, uint256 amount, uint256 feeMultiplier, uint64 capacity)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverEntered(log types.Log) (*TaikoL1ProverPoolProverEntered, error) {
-	event := new(TaikoL1ProverPoolProverEntered)
-	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverEntered", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ProverPoolProverExitedIterator is returned from FilterProverExited and is used to iterate over the raw logs and unpacked data for ProverExited events raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverExitedIterator struct {
-	Event *TaikoL1ProverPoolProverExited // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ProverPoolProverExitedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ProverPoolProverExited)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ProverPoolProverExited)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ProverPoolProverExitedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ProverPoolProverExitedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ProverPoolProverExited represents a ProverExited event raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverExited struct {
-	Prover common.Address
+// TaikoL1ProverPoolSlashed represents a Slashed event raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolSlashed struct {
+	Addr   common.Address
+	Amount uint32
 	Raw    types.Log // Blockchain specific contextual infos
 }
 
-// FilterProverExited is a free log retrieval operation binding the contract event 0x2815fc337451500d2c4aa22628a7584582edde5bf78b2ba9caa6efbd6cce4a8e.
+// FilterSlashed is a free log retrieval operation binding the contract event 0xf2ca0cd8f45e853110fce6e92f38f84a31350c1168dce2735a782f9d6424e648.
 //
-// Solidity: event ProverExited(address prover)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterProverExited(opts *bind.FilterOpts) (*TaikoL1ProverPoolProverExitedIterator, error) {
+// Solidity: event Slashed(address indexed addr, uint32 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterSlashed(opts *bind.FilterOpts, addr []common.Address) (*TaikoL1ProverPoolSlashedIterator, error) {
 
-	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "ProverExited")
+	var addrRule []interface{}
+	for _, addrItem := range addr {
+		addrRule = append(addrRule, addrItem)
+	}
+
+	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "Slashed", addrRule)
 	if err != nil {
 		return nil, err
 	}
-	return &TaikoL1ProverPoolProverExitedIterator{contract: _TaikoL1ProverPool.contract, event: "ProverExited", logs: logs, sub: sub}, nil
+	return &TaikoL1ProverPoolSlashedIterator{contract: _TaikoL1ProverPool.contract, event: "Slashed", logs: logs, sub: sub}, nil
 }
 
-// WatchProverExited is a free log subscription operation binding the contract event 0x2815fc337451500d2c4aa22628a7584582edde5bf78b2ba9caa6efbd6cce4a8e.
+// WatchSlashed is a free log subscription operation binding the contract event 0xf2ca0cd8f45e853110fce6e92f38f84a31350c1168dce2735a782f9d6424e648.
 //
-// Solidity: event ProverExited(address prover)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverExited(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolProverExited) (event.Subscription, error) {
+// Solidity: event Slashed(address indexed addr, uint32 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchSlashed(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolSlashed, addr []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "ProverExited")
+	var addrRule []interface{}
+	for _, addrItem := range addr {
+		addrRule = append(addrRule, addrItem)
+	}
+
+	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "Slashed", addrRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1809,8 +1644,8 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverExited(opts *bin
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ProverPoolProverExited)
-				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverExited", log); err != nil {
+				event := new(TaikoL1ProverPoolSlashed)
+				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "Slashed", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1831,21 +1666,21 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverExited(opts *bin
 	}), nil
 }
 
-// ParseProverExited is a log parse operation binding the contract event 0x2815fc337451500d2c4aa22628a7584582edde5bf78b2ba9caa6efbd6cce4a8e.
+// ParseSlashed is a log parse operation binding the contract event 0xf2ca0cd8f45e853110fce6e92f38f84a31350c1168dce2735a782f9d6424e648.
 //
-// Solidity: event ProverExited(address prover)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverExited(log types.Log) (*TaikoL1ProverPoolProverExited, error) {
-	event := new(TaikoL1ProverPoolProverExited)
-	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverExited", log); err != nil {
+// Solidity: event Slashed(address indexed addr, uint32 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseSlashed(log types.Log) (*TaikoL1ProverPoolSlashed, error) {
+	event := new(TaikoL1ProverPoolSlashed)
+	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "Slashed", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
 	return event, nil
 }
 
-// TaikoL1ProverPoolProverSlashedIterator is returned from FilterProverSlashed and is used to iterate over the raw logs and unpacked data for ProverSlashed events raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverSlashedIterator struct {
-	Event *TaikoL1ProverPoolProverSlashed // Event containing the contract specifics and raw log
+// TaikoL1ProverPoolStakedIterator is returned from FilterStaked and is used to iterate over the raw logs and unpacked data for Staked events raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolStakedIterator struct {
+	Event *TaikoL1ProverPoolStaked // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1859,7 +1694,7 @@ type TaikoL1ProverPoolProverSlashedIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ProverPoolProverSlashedIterator) Next() bool {
+func (it *TaikoL1ProverPoolStakedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1868,7 +1703,7 @@ func (it *TaikoL1ProverPoolProverSlashedIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(TaikoL1ProverPoolProverSlashed)
+			it.Event = new(TaikoL1ProverPoolStaked)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1883,7 +1718,7 @@ func (it *TaikoL1ProverPoolProverSlashedIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(TaikoL1ProverPoolProverSlashed)
+		it.Event = new(TaikoL1ProverPoolStaked)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1899,42 +1734,199 @@ func (it *TaikoL1ProverPoolProverSlashedIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ProverPoolProverSlashedIterator) Error() error {
+func (it *TaikoL1ProverPoolStakedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *TaikoL1ProverPoolProverSlashedIterator) Close() error {
+func (it *TaikoL1ProverPoolStakedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// TaikoL1ProverPoolProverSlashed represents a ProverSlashed event raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverSlashed struct {
-	Prover common.Address
-	Amount *big.Int
+// TaikoL1ProverPoolStaked represents a Staked event raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolStaked struct {
+	Addr            common.Address
+	Amount          uint32
+	RewardPerGas    uint16
+	CurrentCapacity uint16
+	Raw             types.Log // Blockchain specific contextual infos
+}
+
+// FilterStaked is a free log retrieval operation binding the contract event 0xe2232b717d57a877785c68aad0aae9fa2caea5035fa13efd62421b4e0ac23dfe.
+//
+// Solidity: event Staked(address indexed addr, uint32 amount, uint16 rewardPerGas, uint16 currentCapacity)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterStaked(opts *bind.FilterOpts, addr []common.Address) (*TaikoL1ProverPoolStakedIterator, error) {
+
+	var addrRule []interface{}
+	for _, addrItem := range addr {
+		addrRule = append(addrRule, addrItem)
+	}
+
+	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "Staked", addrRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ProverPoolStakedIterator{contract: _TaikoL1ProverPool.contract, event: "Staked", logs: logs, sub: sub}, nil
+}
+
+// WatchStaked is a free log subscription operation binding the contract event 0xe2232b717d57a877785c68aad0aae9fa2caea5035fa13efd62421b4e0ac23dfe.
+//
+// Solidity: event Staked(address indexed addr, uint32 amount, uint16 rewardPerGas, uint16 currentCapacity)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchStaked(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolStaked, addr []common.Address) (event.Subscription, error) {
+
+	var addrRule []interface{}
+	for _, addrItem := range addr {
+		addrRule = append(addrRule, addrItem)
+	}
+
+	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "Staked", addrRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ProverPoolStaked)
+				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "Staked", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseStaked is a log parse operation binding the contract event 0xe2232b717d57a877785c68aad0aae9fa2caea5035fa13efd62421b4e0ac23dfe.
+//
+// Solidity: event Staked(address indexed addr, uint32 amount, uint16 rewardPerGas, uint16 currentCapacity)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseStaked(log types.Log) (*TaikoL1ProverPoolStaked, error) {
+	event := new(TaikoL1ProverPoolStaked)
+	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "Staked", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ProverPoolWithdrawnIterator is returned from FilterWithdrawn and is used to iterate over the raw logs and unpacked data for Withdrawn events raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolWithdrawnIterator struct {
+	Event *TaikoL1ProverPoolWithdrawn // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ProverPoolWithdrawnIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ProverPoolWithdrawn)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ProverPoolWithdrawn)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ProverPoolWithdrawnIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ProverPoolWithdrawnIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ProverPoolWithdrawn represents a Withdrawn event raised by the TaikoL1ProverPool contract.
+type TaikoL1ProverPoolWithdrawn struct {
+	Addr   common.Address
+	Amount uint32
 	Raw    types.Log // Blockchain specific contextual infos
 }
 
-// FilterProverSlashed is a free log retrieval operation binding the contract event 0x664b84a0f5b173c1d62371e87f48268f943748c0fe5805d64ebfab28af48e17b.
+// FilterWithdrawn is a free log retrieval operation binding the contract event 0x28f8f642e0ef98c9c0d14e1bd28a687ea91da388d69e6ca60165b772ef408c7c.
 //
-// Solidity: event ProverSlashed(address prover, uint256 amount)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterProverSlashed(opts *bind.FilterOpts) (*TaikoL1ProverPoolProverSlashedIterator, error) {
+// Solidity: event Withdrawn(address indexed addr, uint32 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterWithdrawn(opts *bind.FilterOpts, addr []common.Address) (*TaikoL1ProverPoolWithdrawnIterator, error) {
 
-	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "ProverSlashed")
+	var addrRule []interface{}
+	for _, addrItem := range addr {
+		addrRule = append(addrRule, addrItem)
+	}
+
+	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "Withdrawn", addrRule)
 	if err != nil {
 		return nil, err
 	}
-	return &TaikoL1ProverPoolProverSlashedIterator{contract: _TaikoL1ProverPool.contract, event: "ProverSlashed", logs: logs, sub: sub}, nil
+	return &TaikoL1ProverPoolWithdrawnIterator{contract: _TaikoL1ProverPool.contract, event: "Withdrawn", logs: logs, sub: sub}, nil
 }
 
-// WatchProverSlashed is a free log subscription operation binding the contract event 0x664b84a0f5b173c1d62371e87f48268f943748c0fe5805d64ebfab28af48e17b.
+// WatchWithdrawn is a free log subscription operation binding the contract event 0x28f8f642e0ef98c9c0d14e1bd28a687ea91da388d69e6ca60165b772ef408c7c.
 //
-// Solidity: event ProverSlashed(address prover, uint256 amount)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverSlashed(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolProverSlashed) (event.Subscription, error) {
+// Solidity: event Withdrawn(address indexed addr, uint32 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchWithdrawn(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolWithdrawn, addr []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "ProverSlashed")
+	var addrRule []interface{}
+	for _, addrItem := range addr {
+		addrRule = append(addrRule, addrItem)
+	}
+
+	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "Withdrawn", addrRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1944,8 +1936,8 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverSlashed(opts *bi
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ProverPoolProverSlashed)
-				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverSlashed", log); err != nil {
+				event := new(TaikoL1ProverPoolWithdrawn)
+				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "Withdrawn", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1966,283 +1958,12 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverSlashed(opts *bi
 	}), nil
 }
 
-// ParseProverSlashed is a log parse operation binding the contract event 0x664b84a0f5b173c1d62371e87f48268f943748c0fe5805d64ebfab28af48e17b.
+// ParseWithdrawn is a log parse operation binding the contract event 0x28f8f642e0ef98c9c0d14e1bd28a687ea91da388d69e6ca60165b772ef408c7c.
 //
-// Solidity: event ProverSlashed(address prover, uint256 amount)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverSlashed(log types.Log) (*TaikoL1ProverPoolProverSlashed, error) {
-	event := new(TaikoL1ProverPoolProverSlashed)
-	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverSlashed", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ProverPoolProverStakedMoreTokensIterator is returned from FilterProverStakedMoreTokens and is used to iterate over the raw logs and unpacked data for ProverStakedMoreTokens events raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverStakedMoreTokensIterator struct {
-	Event *TaikoL1ProverPoolProverStakedMoreTokens // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ProverPoolProverStakedMoreTokensIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ProverPoolProverStakedMoreTokens)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ProverPoolProverStakedMoreTokens)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ProverPoolProverStakedMoreTokensIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ProverPoolProverStakedMoreTokensIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ProverPoolProverStakedMoreTokens represents a ProverStakedMoreTokens event raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverStakedMoreTokens struct {
-	Prover      common.Address
-	Amount      *big.Int
-	TotalStaked *big.Int
-	Raw         types.Log // Blockchain specific contextual infos
-}
-
-// FilterProverStakedMoreTokens is a free log retrieval operation binding the contract event 0xede799219aee9e2d2e6ce762bb15b4cdfb387b1618280f67b3404dc12463c382.
-//
-// Solidity: event ProverStakedMoreTokens(address prover, uint256 amount, uint256 totalStaked)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterProverStakedMoreTokens(opts *bind.FilterOpts) (*TaikoL1ProverPoolProverStakedMoreTokensIterator, error) {
-
-	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "ProverStakedMoreTokens")
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ProverPoolProverStakedMoreTokensIterator{contract: _TaikoL1ProverPool.contract, event: "ProverStakedMoreTokens", logs: logs, sub: sub}, nil
-}
-
-// WatchProverStakedMoreTokens is a free log subscription operation binding the contract event 0xede799219aee9e2d2e6ce762bb15b4cdfb387b1618280f67b3404dc12463c382.
-//
-// Solidity: event ProverStakedMoreTokens(address prover, uint256 amount, uint256 totalStaked)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverStakedMoreTokens(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolProverStakedMoreTokens) (event.Subscription, error) {
-
-	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "ProverStakedMoreTokens")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ProverPoolProverStakedMoreTokens)
-				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverStakedMoreTokens", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseProverStakedMoreTokens is a log parse operation binding the contract event 0xede799219aee9e2d2e6ce762bb15b4cdfb387b1618280f67b3404dc12463c382.
-//
-// Solidity: event ProverStakedMoreTokens(address prover, uint256 amount, uint256 totalStaked)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverStakedMoreTokens(log types.Log) (*TaikoL1ProverPoolProverStakedMoreTokens, error) {
-	event := new(TaikoL1ProverPoolProverStakedMoreTokens)
-	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverStakedMoreTokens", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ProverPoolProverWithdrawAwardsIterator is returned from FilterProverWithdrawAwards and is used to iterate over the raw logs and unpacked data for ProverWithdrawAwards events raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverWithdrawAwardsIterator struct {
-	Event *TaikoL1ProverPoolProverWithdrawAwards // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ProverPoolProverWithdrawAwardsIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ProverPoolProverWithdrawAwards)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ProverPoolProverWithdrawAwards)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ProverPoolProverWithdrawAwardsIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ProverPoolProverWithdrawAwardsIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ProverPoolProverWithdrawAwards represents a ProverWithdrawAwards event raised by the TaikoL1ProverPool contract.
-type TaikoL1ProverPoolProverWithdrawAwards struct {
-	Prover common.Address
-	Amount *big.Int
-	Raw    types.Log // Blockchain specific contextual infos
-}
-
-// FilterProverWithdrawAwards is a free log retrieval operation binding the contract event 0x78e57d846371816e02bd37310e6cc83bb7a979a78e86a5f47214fa6f90518be4.
-//
-// Solidity: event ProverWithdrawAwards(address prover, uint256 amount)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterProverWithdrawAwards(opts *bind.FilterOpts) (*TaikoL1ProverPoolProverWithdrawAwardsIterator, error) {
-
-	logs, sub, err := _TaikoL1ProverPool.contract.FilterLogs(opts, "ProverWithdrawAwards")
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ProverPoolProverWithdrawAwardsIterator{contract: _TaikoL1ProverPool.contract, event: "ProverWithdrawAwards", logs: logs, sub: sub}, nil
-}
-
-// WatchProverWithdrawAwards is a free log subscription operation binding the contract event 0x78e57d846371816e02bd37310e6cc83bb7a979a78e86a5f47214fa6f90518be4.
-//
-// Solidity: event ProverWithdrawAwards(address prover, uint256 amount)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchProverWithdrawAwards(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolProverWithdrawAwards) (event.Subscription, error) {
-
-	logs, sub, err := _TaikoL1ProverPool.contract.WatchLogs(opts, "ProverWithdrawAwards")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ProverPoolProverWithdrawAwards)
-				if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverWithdrawAwards", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseProverWithdrawAwards is a log parse operation binding the contract event 0x78e57d846371816e02bd37310e6cc83bb7a979a78e86a5f47214fa6f90518be4.
-//
-// Solidity: event ProverWithdrawAwards(address prover, uint256 amount)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseProverWithdrawAwards(log types.Log) (*TaikoL1ProverPoolProverWithdrawAwards, error) {
-	event := new(TaikoL1ProverPoolProverWithdrawAwards)
-	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "ProverWithdrawAwards", log); err != nil {
+// Solidity: event Withdrawn(address indexed addr, uint32 amount)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseWithdrawn(log types.Log) (*TaikoL1ProverPoolWithdrawn, error) {
+	event := new(TaikoL1ProverPoolWithdrawn)
+	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "Withdrawn", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
