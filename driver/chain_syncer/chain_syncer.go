@@ -67,12 +67,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	// If current L2 execution engine's chain is behind of the protocol's latest verified block head, and the
 	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
 	// latest verified block head.
-	needBeaconSyncTriggered, err := s.needNewBeaconSyncTriggered()
-	if err != nil {
-		return err
-	}
-
-	if needBeaconSyncTriggered {
+	if s.needNewBeaconSyncTriggered() {
 		if err := s.beaconSyncer.TriggerBeaconSync(); err != nil {
 			return fmt.Errorf("trigger beacon sync error: %w", err)
 		}
@@ -124,17 +119,40 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	return s.calldataSyncer.ProcessL1Blocks(s.ctx, l1End)
 }
 
+// AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
+func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
+	verifiedHeightToCompare := s.state.GetLatestVerifiedBlock().ID.Uint64()
+	log.Debug(
+		"Checking whether the execution engine is ahead of protocol's verified head",
+		"latestVerifiedBlock", verifiedHeightToCompare,
+		"executionEngineHead", s.state.GetL2Head().Number,
+	)
+	if verifiedHeightToCompare > 0 {
+		// If latest verified head height is equal to L2 execution engine's synced head height minus one,
+		// we also mark the triggered P2P sync progress as finished to prevent a potential `InsertBlockWithoutSetHead` in
+		// execution engine, which may cause errors since we do not pass all transactions in ExecutePayload when calling
+		// NewPayloadV1.
+		verifiedHeightToCompare -= 1
+	}
+
+	if s.state.GetL2Head().Number.Uint64() < verifiedHeightToCompare {
+		return false
+	}
+
+	if s.progressTracker.LastSyncedVerifiedBlockHeight() != nil {
+		return s.state.GetL2Head().Number.Uint64() >= s.progressTracker.LastSyncedVerifiedBlockHeight().Uint64()
+	}
+
+	return true
+}
+
 // needNewBeaconSyncTriggered checks whether the current L2 execution engine needs to trigger
 // another new beacon sync.
-func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (bool, error) {
-	synced, err := s.BeaconSyncer().Synced()
-	if err != nil {
-		return false, err
-	}
+func (s *L2ChainSyncer) needNewBeaconSyncTriggered() bool {
 	return s.p2pSyncVerifiedBlocks &&
-		s.state.GetLatestVerifiedBlock().Height.Uint64() > 0 &&
-		!synced &&
-		!s.progressTracker.OutOfSync(), nil
+		s.state.GetLatestVerifiedBlock().ID.Uint64() > 0 &&
+		!s.AheadOfProtocolVerifiedHead() &&
+		!s.progressTracker.OutOfSync()
 }
 
 // BeaconSyncer returns the inner beacon syncer.

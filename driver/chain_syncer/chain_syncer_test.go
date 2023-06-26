@@ -49,3 +49,7 @@ func (s *ChainSyncerTestSuite) TestSync() {
 func TestChainSyncerTestSuite(t *testing.T) {
 	suite.Run(t, new(ChainSyncerTestSuite))
 }
+
+func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead() {
+	s.True(s.s.AheadOfProtocolVerifiedHead())
+}

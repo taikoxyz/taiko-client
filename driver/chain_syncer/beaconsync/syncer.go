@@ -52,19 +52,6 @@ func (s *Syncer) TriggerBeaconSync() error {
 			)
 		}
 
-		// Keep the heartbeat with L2 execution engine.
-		fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &engine.ForkchoiceStateV1{
-			HeadBlockHash:      s.progressTracker.LastSyncedVerifiedBlockHash(),
-			SafeBlockHash:      s.progressTracker.LastSyncedVerifiedBlockHash(),
-			FinalizedBlockHash: s.progressTracker.LastSyncedVerifiedBlockHash(),
-		}, nil)
-		if err != nil {
-			return err
-		}
-		if fcRes.PayloadStatus.Status != engine.SYNCING {
-			return fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
-		}
-
 		return nil
 	}
 
@@ -107,19 +94,6 @@ func (s *Syncer) TriggerBeaconSync() error {
 	)
 
 	return nil
-}
-
-func (s *Syncer) Synced() (bool, error) {
-	if !s.progressTracker.Triggered() {
-		return false, nil
-	}
-	heightToSync := s.progressTracker.LastSyncedVerifiedBlockHeight()
-	l2Head, err := s.rpc.L2.BlockNumber(s.ctx)
-	if err != nil {
-		return false, err
-	}
-	log.Debug("Check if the L2 execution engine is synced", "heightToSync", heightToSync, "l2Head", l2Head)
-	return new(big.Int).SetUint64(l2Head).Cmp(heightToSync) >= 0, nil
 }
 
 // getVerifiedBlockPayload fetches the latest verified block's header, and converts it to an Engine API executable data,
