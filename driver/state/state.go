@@ -236,16 +236,15 @@ func (s *State) GetL2Head() *types.Header {
 
 // VerifiedHeaderInfo contains information about a verified L2 block header.
 type VerifiedHeaderInfo struct {
-	ID     *big.Int
-	Hash   common.Hash
-	Height *big.Int
+	ID   *big.Int
+	Hash common.Hash
 }
 
 // setLatestVerifiedBlockHash sets the latest verified L2 block hash concurrent safely.
 func (s *State) setLatestVerifiedBlockHash(id *big.Int, height *big.Int, hash common.Hash) {
 	log.Debug("New verified block", "height", height, "hash", hash)
 	metrics.DriverL2VerifiedHeightGauge.Update(height.Int64())
-	s.l2VerifiedHead.Store(&VerifiedHeaderInfo{ID: id, Height: height, Hash: hash})
+	s.l2VerifiedHead.Store(&VerifiedHeaderInfo{ID: id, Hash: hash})
 }
 
 // GetLatestVerifiedBlock reads the latest verified L2 block concurrent safely.

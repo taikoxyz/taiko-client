@@ -262,7 +262,7 @@ func (s *Syncer) onBlockProposed(
 		"blockID", event.Id,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
-		"latestVerifiedBlockHeight", s.state.GetLatestVerifiedBlock().Height,
+		"latestVerifiedBlockID", s.state.GetLatestVerifiedBlock().ID,
 		"latestVerifiedBlockHash", s.state.GetLatestVerifiedBlock().Hash,
 		"transactions", len(payloadData.Transactions),
 		"baseFee", payloadData.BaseFeePerGas,
@@ -455,7 +455,11 @@ func (s *Syncer) createExecutionPayloads(
 // the corresponding L2 EE block hash.
 func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, error) {
 	lastVerifiedBlockInfo := s.state.GetLatestVerifiedBlock()
-	l2Header, err := s.rpc.L2.HeaderByNumber(ctx, lastVerifiedBlockInfo.Height)
+	if s.state.GetL2Head().Number.Cmp(lastVerifiedBlockInfo.ID) < 0 {
+		return false, nil
+	}
+
+	l2Header, err := s.rpc.L2.HeaderByNumber(ctx, lastVerifiedBlockInfo.ID)
 	if err != nil {
 		return false, err
 	}

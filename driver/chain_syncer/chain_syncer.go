@@ -121,7 +121,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 
 // AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
 func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
-	verifiedHeightToCompare := s.state.GetLatestVerifiedBlock().Height.Uint64()
+	verifiedHeightToCompare := s.state.GetLatestVerifiedBlock().ID.Uint64()
 	log.Debug(
 		"Checking whether the execution engine is ahead of protocol's verified head",
 		"latestVerifiedBlock", verifiedHeightToCompare,
@@ -150,7 +150,7 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 // another new beacon sync.
 func (s *L2ChainSyncer) needNewBeaconSyncTriggered() bool {
 	return s.p2pSyncVerifiedBlocks &&
-		s.state.GetLatestVerifiedBlock().Height.Uint64() > 0 &&
+		s.state.GetLatestVerifiedBlock().ID.Uint64() > 0 &&
 		!s.AheadOfProtocolVerifiedHead() &&
 		!s.progressTracker.OutOfSync()
 }
