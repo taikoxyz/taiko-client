@@ -266,12 +266,12 @@ func (p *Prover) eventLoop() {
 			}
 		case <-checkProofWindowExpiredTicker.C:
 			if err := p.checkProofWindowsExpired(p.ctx); err != nil {
-				log.Error("error checking proof window expired", "error", "err")
+				log.Error("error checking proof window expired", "error", err)
 			}
 		case proofWithHeader := <-p.proofGenerationCh:
 			p.submitProofOp(p.ctx, proofWithHeader)
-		case <-p.proveNotify:
-			if err := p.proveOp(nil); err != nil {
+		case blockId := <-p.proveNotify:
+			if err := p.proveOp(blockId); err != nil {
 				log.Error("Prove new blocks error", "error", err)
 			}
 		case <-p.blockProposedCh:
