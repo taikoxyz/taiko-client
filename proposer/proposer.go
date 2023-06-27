@@ -403,7 +403,7 @@ func getTxOpts(
 // checkTaikoTokenBalance ensures you have at least the block fee in your balance, and approved, before
 // attempting to propose block, as it will use transferFrom.
 func (p *Proposer) checkTaikoTokenBalance() error {
-	fee, err := p.rpc.TaikoL1.GetBlockFee(nil, uint32(p.protocolConfigs.BlockMaxGasLimit))
+	fee, err := p.rpc.TaikoL1.GetBlockFee(nil, p.protocolConfigs.BlockMaxGasLimit)
 	if err != nil {
 		return fmt.Errorf("failed to get block fee: %w", err)
 	}

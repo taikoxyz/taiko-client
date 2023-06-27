@@ -96,7 +96,6 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 
 	if proverInfo.Staker.ProverId == 0 {
-
 		minStakePerCapacity, err := s.RpcClient.TaikoProverPoolL1.MINSTAKEPERCAPACITY(nil)
 		s.Nil(err)
 
