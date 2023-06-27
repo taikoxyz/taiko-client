@@ -3,7 +3,6 @@ package testutils
 import (
 	"context"
 	"crypto/ecdsa"
-	"fmt"
 	"math"
 	"math/big"
 	"os"
@@ -93,15 +92,8 @@ func (s *ClientTestSuite) SetupTest() {
 	proverOpts, err := bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
 	s.Nil(err)
 
-	balance, err := s.RpcClient.TaikoTokenL1.BalanceOf(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
-	s.Nil(err)
-
-	fmt.Println("prover balance", "balance", balance.String())
-
 	proverInfo, err := s.RpcClient.TaikoProverPoolL1.GetStaker(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
 	s.Nil(err)
-
-	log.Info("proverInfo", "proverId", proverInfo.Staker.ProverId, "capacity", proverInfo.Staker.MaxCapacity)
 
 	if proverInfo.Staker.ProverId == 0 {
 
