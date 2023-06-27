@@ -74,7 +74,7 @@ type Prover struct {
 
 	currentBlocksBeingProven                map[uint64]cancelFunc
 	currentBlocksBeingProvenMutex           *sync.Mutex
-	currentBlocksWaitingForProofWindow      map[uint64]cancelFunc
+	currentBlocksWaitingForProofWindow      []uint64
 	currentBlocksWaitingForProofWindowMutex *sync.Mutex
 
 	ctx context.Context
@@ -97,7 +97,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.ctx = ctx
 	p.currentBlocksBeingProven = make(map[uint64]cancelFunc)
 	p.currentBlocksBeingProvenMutex = &sync.Mutex{}
-	p.currentBlocksWaitingForProofWindow = make(map[uint64]cancelFunc)
+	p.currentBlocksWaitingForProofWindow = make([]uint64, 0)
 	p.currentBlocksWaitingForProofWindowMutex = &sync.Mutex{}
 
 	// Clients
@@ -449,11 +449,8 @@ func (p *Prover) onBlockProposed(
 			if !proofWindowExpired {
 				// if we cant prove it
 				p.currentBlocksWaitingForProofWindowMutex.Lock()
-				p.currentBlocksWaitingForProofWindow[event.Meta.Id] = cancelFunc(func() {
-					p.currentBlocksWaitingForProofWindowMutex.Lock()
-					defer p.currentBlocksWaitingForProofWindowMutex.Unlock()
-					delete(p.currentBlocksWaitingForProofWindow, event.Meta.Id)
-				})
+				p.currentBlocksWaitingForProofWindow = append(p.currentBlocksWaitingForProofWindow, event.Meta.Id)
+				p.currentBlocksBeingProvenMutex.Unlock()
 			}
 
 			return nil
@@ -684,8 +681,8 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 }
 
 func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
-	for blockId, cancel := range p.currentBlocksWaitingForProofWindow {
-		if err := p.checkProofWindowExpired(ctx, blockId, cancel); err != nil {
+	for i, blockId := range p.currentBlocksWaitingForProofWindow {
+		if err := p.checkProofWindowExpired(ctx, i, blockId); err != nil {
 			return err
 		}
 	}
@@ -693,7 +690,7 @@ func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
 	return nil
 }
 
-func (p *Prover) checkProofWindowExpired(ctx context.Context, blockId uint64, cancel cancelFunc) error {
+func (p *Prover) checkProofWindowExpired(ctx context.Context, i int, blockId uint64) error {
 	p.currentBlocksWaitingForProofWindowMutex.Lock()
 	defer p.currentBlocksWaitingForProofWindowMutex.Unlock()
 
@@ -723,7 +720,10 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, blockId uint64, ca
 			// we should remove this block from being watched, a proof has already come in that agrees with
 			// our expected fork choice.
 			// cancel will remove this from the map.
-			cancel()
+			p.currentBlocksWaitingForProofWindow = append(
+				p.currentBlocksWaitingForProofWindow[:i],
+				p.currentBlocksWaitingForProofWindow[i+1:]...,
+			)
 		}
 	}
 
