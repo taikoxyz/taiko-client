@@ -35,7 +35,7 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoL2.sol/TaikoL2.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoL2Client --pkg bindings --out $DIR/../bindings/gen_taiko_l2.go
 
-cat ${TAIKO_MONO_DIR}/packages/protocol/out/ProverPool.sol/ProverPool.json |
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/ProverPool2.sol/ProverPool2.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoL1ProverPool --pkg bindings --out $DIR/../bindings/gen_taiko_prover_pool_l1.go
 

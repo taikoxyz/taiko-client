@@ -77,6 +77,9 @@ func (s *ClientTestSuite) SetupTest() {
 	proposerOpts, err := bind.NewKeyedTransactorWithChainID(l1ProposerPrivKey, rpcCli.L1ChainID)
 	s.Nil(err)
 
+	_, err = s.RpcClient.TaikoL1.DepositTaikoToken(proposerOpts, new(big.Int).SetUint64(uint64(math.Pow(2, 32))))
+	s.Nil(err)
+
 	_, err = s.RpcClient.TaikoTokenL1.Approve(
 		proposerOpts,
 		taikoL1Address,
@@ -92,37 +95,28 @@ func (s *ClientTestSuite) SetupTest() {
 	proverOpts, err := bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
 	s.Nil(err)
 
-	proverInfo, err := s.RpcClient.TaikoProverPoolL1.GetStaker(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
-	s.Nil(err)
+	staker, err := s.RpcClient.TaikoProverPoolL1.Stakers(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
+	s.Nil(err, "1")
 
-	if proverInfo.Staker.ProverId == 0 {
-		minStakePerCapacity, err := s.RpcClient.TaikoProverPoolL1.MINSTAKEPERCAPACITY(nil)
-		s.Nil(err)
+	// if not already staked in a different suite setup, stake now
+	if staker.RewardPerGas == uint16(0) {
+		slots, err := s.RpcClient.TaikoProverPoolL1.NUMSLOTS(nil)
+		s.Nil(err, "2")
 
-		capacity, err := s.RpcClient.TaikoProverPoolL1.MAXCAPACITYLOWERBOUND(nil)
-		s.Nil(err)
-		amt := new(big.Int).Mul(big.NewInt(int64(minStakePerCapacity)), big.NewInt(int64(capacity)))
-
-		oneTko, err := s.RpcClient.TaikoProverPoolL1.ONETKO(nil)
-		s.Nil(err)
-
-		amtTko := new(big.Int).Mul(amt, new(big.Int).SetInt64(int64(oneTko)))
-
-		log.Info("amt to stake", "amt", amtTko)
-
-		// proposer has tKO, need to transfer to prover
-		_, err = s.RpcClient.TaikoTokenL1.Transfer(proposerOpts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), amtTko)
-		s.Nil(err)
+		amt := new(big.Int).Exp(big.NewInt(1), big.NewInt(8), nil)
+		// proposer has TKO, need to transfer to prover
+		_, err = s.RpcClient.TaikoTokenL1.Transfer(proposerOpts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), amt)
+		s.Nil(err, "3")
 
 		rewardPerGas := 1
-		s.Nil(err)
+
 		_, err = s.RpcClient.TaikoProverPoolL1.Stake(
 			proverOpts,
-			uint32(amt.Uint64()),
+			amt,
 			uint16(rewardPerGas),
-			uint16(capacity),
+			uint16(slots.Uint64())-uint16(1),
 		)
-		s.Nil(err)
+		s.Nil(err, "4")
 	}
 
 	s.Nil(rpcCli.L1RawRPC.CallContext(context.Background(), &s.testnetL1SnapshotID, "evm_snapshot"))
