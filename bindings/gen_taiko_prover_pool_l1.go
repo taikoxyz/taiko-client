@@ -31,22 +31,23 @@ var (
 
 // ProverPoolProver is an auto generated low-level Go binding around an user-defined struct.
 type ProverPoolProver struct {
-	StakedAmount    uint32
+	StakedAmount    uint64
 	RewardPerGas    uint16
 	CurrentCapacity uint16
+	Weight          uint64
 }
 
 // ProverPoolStaker is an auto generated low-level Go binding around an user-defined struct.
 type ProverPoolStaker struct {
 	ExitRequestedAt uint64
-	ExitAmount      uint32
+	ExitAmount      uint64
 	MaxCapacity     uint16
 	ProverId        uint8
 }
 
 // TaikoL1ProverPoolMetaData contains all meta data concerning the TaikoL1ProverPool contract.
 var TaikoL1ProverPoolMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"INVALID_PARAMS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NO_MATURE_EXIT\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"PROVER_NOT_GOOD_ENOUGH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_DENIED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_INVALID_ADDR\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"}],\"name\":\"RESOLVER_ZERO_ADDR\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"UNAUTHORIZED\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"addressManager\",\"type\":\"address\"}],\"name\":\"AddressManagerChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"amount\",\"type\":\"uint32\"}],\"name\":\"Exited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"amount\",\"type\":\"uint32\"}],\"name\":\"Slashed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"amount\",\"type\":\"uint32\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"currentCapacity\",\"type\":\"uint16\"}],\"name\":\"Staked\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"amount\",\"type\":\"uint32\"}],\"name\":\"Withdrawn\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"EXIT_PERIOD\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_CAPACITY_LOWER_BOUND\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_NUM_PROVERS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_STAKE_PER_CAPACITY\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"ONE_TKO\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"SLASH_POINTS\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"feePerGas\",\"type\":\"uint32\"}],\"name\":\"assignProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"internalType\":\"uint32\",\"name\":\"rewardPerGas\",\"type\":\"uint32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"exit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getCapacity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"capacity\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getProvers\",\"outputs\":[{\"components\":[{\"internalType\":\"uint32\",\"name\":\"stakedAmount\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"currentCapacity\",\"type\":\"uint16\"}],\"internalType\":\"structProverPool.Prover[]\",\"name\":\"_provers\",\"type\":\"tuple[]\"},{\"internalType\":\"address[]\",\"name\":\"_stakers\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getStaker\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"exitRequestedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"exitAmount\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"maxCapacity\",\"type\":\"uint16\"},{\"internalType\":\"uint8\",\"name\":\"proverId\",\"type\":\"uint8\"}],\"internalType\":\"structProverPool.Staker\",\"name\":\"staker\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint32\",\"name\":\"stakedAmount\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"currentCapacity\",\"type\":\"uint16\"}],\"internalType\":\"structProverPool.Prover\",\"name\":\"prover\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"feePerGas\",\"type\":\"uint32\"}],\"name\":\"getWeights\",\"outputs\":[{\"internalType\":\"uint256[32]\",\"name\":\"weights\",\"type\":\"uint256[32]\"},{\"internalType\":\"uint256\",\"name\":\"totalWeight\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"idToProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"releaseProver\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddressManager\",\"type\":\"address\"}],\"name\":\"setAddressManager\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"slashProver\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"amount\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"maxCapacity\",\"type\":\"uint16\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"stakers\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"exitRequestedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"exitAmount\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"maxCapacity\",\"type\":\"uint16\"},{\"internalType\":\"uint8\",\"name\":\"proverId\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[],\"name\":\"INVALID_PARAMS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NO_MATURE_EXIT\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"PROVER_NOT_GOOD_ENOUGH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_DENIED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_INVALID_ADDR\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"}],\"name\":\"RESOLVER_ZERO_ADDR\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"UNAUTHORIZED\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"addressManager\",\"type\":\"address\"}],\"name\":\"AddressManagerChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"}],\"name\":\"Exited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"}],\"name\":\"Slashed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"currentCapacity\",\"type\":\"uint16\"}],\"name\":\"Staked\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"}],\"name\":\"Withdrawn\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"EXIT_PERIOD\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_CAPACITY_LOWER_BOUND\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_NUM_PROVERS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_SLASH_AMOUNT\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_STAKE_PER_CAPACITY\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"SLASH_POINTS\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"name\":\"assignProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"internalType\":\"uint32\",\"name\":\"rewardPerGas\",\"type\":\"uint32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"exit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getCapacity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"capacity\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getProvers\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"stakedAmount\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"currentCapacity\",\"type\":\"uint16\"},{\"internalType\":\"uint64\",\"name\":\"weight\",\"type\":\"uint64\"}],\"internalType\":\"structProverPool.Prover[]\",\"name\":\"_provers\",\"type\":\"tuple[]\"},{\"internalType\":\"address[]\",\"name\":\"_stakers\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getStaker\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"exitRequestedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"exitAmount\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"maxCapacity\",\"type\":\"uint16\"},{\"internalType\":\"uint8\",\"name\":\"proverId\",\"type\":\"uint8\"}],\"internalType\":\"structProverPool.Staker\",\"name\":\"staker\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"stakedAmount\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"currentCapacity\",\"type\":\"uint16\"},{\"internalType\":\"uint64\",\"name\":\"weight\",\"type\":\"uint64\"}],\"internalType\":\"structProverPool.Prover\",\"name\":\"prover\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"idToProver\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"provers\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"stakedAmount\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"currentCapacity\",\"type\":\"uint16\"},{\"internalType\":\"uint64\",\"name\":\"weight\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"releaseProver\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddressManager\",\"type\":\"address\"}],\"name\":\"setAddressManager\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"slashProver\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rewardPerGas\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"maxCapacity\",\"type\":\"uint16\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"stakers\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"exitRequestedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"exitAmount\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"maxCapacity\",\"type\":\"uint16\"},{\"internalType\":\"uint8\",\"name\":\"proverId\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // TaikoL1ProverPoolABI is the input ABI used to generate the binding from.
@@ -288,43 +289,12 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) MAXNUMPROVERS() (*big.
 	return _TaikoL1ProverPool.Contract.MAXNUMPROVERS(&_TaikoL1ProverPool.CallOpts)
 }
 
-// MINSTAKEPERCAPACITY is a free data retrieval call binding the contract method 0x7d62c057.
+// MINSLASHAMOUNT is a free data retrieval call binding the contract method 0x1972bc0d.
 //
-// Solidity: function MIN_STAKE_PER_CAPACITY() view returns(uint32)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) MINSTAKEPERCAPACITY(opts *bind.CallOpts) (uint32, error) {
+// Solidity: function MIN_SLASH_AMOUNT() view returns(uint64)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) MINSLASHAMOUNT(opts *bind.CallOpts) (uint64, error) {
 	var out []interface{}
-	err := _TaikoL1ProverPool.contract.Call(opts, &out, "MIN_STAKE_PER_CAPACITY")
-
-	if err != nil {
-		return *new(uint32), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(uint32)).(*uint32)
-
-	return out0, err
-
-}
-
-// MINSTAKEPERCAPACITY is a free data retrieval call binding the contract method 0x7d62c057.
-//
-// Solidity: function MIN_STAKE_PER_CAPACITY() view returns(uint32)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) MINSTAKEPERCAPACITY() (uint32, error) {
-	return _TaikoL1ProverPool.Contract.MINSTAKEPERCAPACITY(&_TaikoL1ProverPool.CallOpts)
-}
-
-// MINSTAKEPERCAPACITY is a free data retrieval call binding the contract method 0x7d62c057.
-//
-// Solidity: function MIN_STAKE_PER_CAPACITY() view returns(uint32)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) MINSTAKEPERCAPACITY() (uint32, error) {
-	return _TaikoL1ProverPool.Contract.MINSTAKEPERCAPACITY(&_TaikoL1ProverPool.CallOpts)
-}
-
-// ONETKO is a free data retrieval call binding the contract method 0xe22fcaaa.
-//
-// Solidity: function ONE_TKO() view returns(uint64)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) ONETKO(opts *bind.CallOpts) (uint64, error) {
-	var out []interface{}
-	err := _TaikoL1ProverPool.contract.Call(opts, &out, "ONE_TKO")
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "MIN_SLASH_AMOUNT")
 
 	if err != nil {
 		return *new(uint64), err
@@ -336,18 +306,49 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) ONETKO(opts *bind.CallOpts) (
 
 }
 
-// ONETKO is a free data retrieval call binding the contract method 0xe22fcaaa.
+// MINSLASHAMOUNT is a free data retrieval call binding the contract method 0x1972bc0d.
 //
-// Solidity: function ONE_TKO() view returns(uint64)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) ONETKO() (uint64, error) {
-	return _TaikoL1ProverPool.Contract.ONETKO(&_TaikoL1ProverPool.CallOpts)
+// Solidity: function MIN_SLASH_AMOUNT() view returns(uint64)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) MINSLASHAMOUNT() (uint64, error) {
+	return _TaikoL1ProverPool.Contract.MINSLASHAMOUNT(&_TaikoL1ProverPool.CallOpts)
 }
 
-// ONETKO is a free data retrieval call binding the contract method 0xe22fcaaa.
+// MINSLASHAMOUNT is a free data retrieval call binding the contract method 0x1972bc0d.
 //
-// Solidity: function ONE_TKO() view returns(uint64)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) ONETKO() (uint64, error) {
-	return _TaikoL1ProverPool.Contract.ONETKO(&_TaikoL1ProverPool.CallOpts)
+// Solidity: function MIN_SLASH_AMOUNT() view returns(uint64)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) MINSLASHAMOUNT() (uint64, error) {
+	return _TaikoL1ProverPool.Contract.MINSLASHAMOUNT(&_TaikoL1ProverPool.CallOpts)
+}
+
+// MINSTAKEPERCAPACITY is a free data retrieval call binding the contract method 0x7d62c057.
+//
+// Solidity: function MIN_STAKE_PER_CAPACITY() view returns(uint64)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) MINSTAKEPERCAPACITY(opts *bind.CallOpts) (uint64, error) {
+	var out []interface{}
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "MIN_STAKE_PER_CAPACITY")
+
+	if err != nil {
+		return *new(uint64), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint64)).(*uint64)
+
+	return out0, err
+
+}
+
+// MINSTAKEPERCAPACITY is a free data retrieval call binding the contract method 0x7d62c057.
+//
+// Solidity: function MIN_STAKE_PER_CAPACITY() view returns(uint64)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) MINSTAKEPERCAPACITY() (uint64, error) {
+	return _TaikoL1ProverPool.Contract.MINSTAKEPERCAPACITY(&_TaikoL1ProverPool.CallOpts)
+}
+
+// MINSTAKEPERCAPACITY is a free data retrieval call binding the contract method 0x7d62c057.
+//
+// Solidity: function MIN_STAKE_PER_CAPACITY() view returns(uint64)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) MINSTAKEPERCAPACITY() (uint64, error) {
+	return _TaikoL1ProverPool.Contract.MINSTAKEPERCAPACITY(&_TaikoL1ProverPool.CallOpts)
 }
 
 // SLASHPOINTS is a free data retrieval call binding the contract method 0xdd9fb65c.
@@ -445,7 +446,7 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) GetCapacity() (*big.In
 
 // GetProvers is a free data retrieval call binding the contract method 0xc0bfd036.
 //
-// Solidity: function getProvers() view returns((uint32,uint16,uint16)[] _provers, address[] _stakers)
+// Solidity: function getProvers() view returns((uint64,uint16,uint16,uint64)[] _provers, address[] _stakers)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) GetProvers(opts *bind.CallOpts) (struct {
 	Provers []ProverPoolProver
 	Stakers []common.Address
@@ -470,7 +471,7 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) GetProvers(opts *bind.CallOpt
 
 // GetProvers is a free data retrieval call binding the contract method 0xc0bfd036.
 //
-// Solidity: function getProvers() view returns((uint32,uint16,uint16)[] _provers, address[] _stakers)
+// Solidity: function getProvers() view returns((uint64,uint16,uint16,uint64)[] _provers, address[] _stakers)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) GetProvers() (struct {
 	Provers []ProverPoolProver
 	Stakers []common.Address
@@ -480,7 +481,7 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) GetProvers() (struct {
 
 // GetProvers is a free data retrieval call binding the contract method 0xc0bfd036.
 //
-// Solidity: function getProvers() view returns((uint32,uint16,uint16)[] _provers, address[] _stakers)
+// Solidity: function getProvers() view returns((uint64,uint16,uint16,uint64)[] _provers, address[] _stakers)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) GetProvers() (struct {
 	Provers []ProverPoolProver
 	Stakers []common.Address
@@ -490,7 +491,7 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) GetProvers() (struct {
 
 // GetStaker is a free data retrieval call binding the contract method 0xa23c44b1.
 //
-// Solidity: function getStaker(address addr) view returns((uint64,uint32,uint16,uint8) staker, (uint32,uint16,uint16) prover)
+// Solidity: function getStaker(address addr) view returns((uint64,uint64,uint16,uint8) staker, (uint64,uint16,uint16,uint64) prover)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) GetStaker(opts *bind.CallOpts, addr common.Address) (struct {
 	Staker ProverPoolStaker
 	Prover ProverPoolProver
@@ -515,7 +516,7 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) GetStaker(opts *bind.CallOpts
 
 // GetStaker is a free data retrieval call binding the contract method 0xa23c44b1.
 //
-// Solidity: function getStaker(address addr) view returns((uint64,uint32,uint16,uint8) staker, (uint32,uint16,uint16) prover)
+// Solidity: function getStaker(address addr) view returns((uint64,uint64,uint16,uint8) staker, (uint64,uint16,uint16,uint64) prover)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) GetStaker(addr common.Address) (struct {
 	Staker ProverPoolStaker
 	Prover ProverPoolProver
@@ -525,57 +526,12 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) GetStaker(addr common.Addres
 
 // GetStaker is a free data retrieval call binding the contract method 0xa23c44b1.
 //
-// Solidity: function getStaker(address addr) view returns((uint64,uint32,uint16,uint8) staker, (uint32,uint16,uint16) prover)
+// Solidity: function getStaker(address addr) view returns((uint64,uint64,uint16,uint8) staker, (uint64,uint16,uint16,uint64) prover)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) GetStaker(addr common.Address) (struct {
 	Staker ProverPoolStaker
 	Prover ProverPoolProver
 }, error) {
 	return _TaikoL1ProverPool.Contract.GetStaker(&_TaikoL1ProverPool.CallOpts, addr)
-}
-
-// GetWeights is a free data retrieval call binding the contract method 0xc2082974.
-//
-// Solidity: function getWeights(uint32 feePerGas) view returns(uint256[32] weights, uint256 totalWeight)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) GetWeights(opts *bind.CallOpts, feePerGas uint32) (struct {
-	Weights     [32]*big.Int
-	TotalWeight *big.Int
-}, error) {
-	var out []interface{}
-	err := _TaikoL1ProverPool.contract.Call(opts, &out, "getWeights", feePerGas)
-
-	outstruct := new(struct {
-		Weights     [32]*big.Int
-		TotalWeight *big.Int
-	})
-	if err != nil {
-		return *outstruct, err
-	}
-
-	outstruct.Weights = *abi.ConvertType(out[0], new([32]*big.Int)).(*[32]*big.Int)
-	outstruct.TotalWeight = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-
-	return *outstruct, err
-
-}
-
-// GetWeights is a free data retrieval call binding the contract method 0xc2082974.
-//
-// Solidity: function getWeights(uint32 feePerGas) view returns(uint256[32] weights, uint256 totalWeight)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) GetWeights(feePerGas uint32) (struct {
-	Weights     [32]*big.Int
-	TotalWeight *big.Int
-}, error) {
-	return _TaikoL1ProverPool.Contract.GetWeights(&_TaikoL1ProverPool.CallOpts, feePerGas)
-}
-
-// GetWeights is a free data retrieval call binding the contract method 0xc2082974.
-//
-// Solidity: function getWeights(uint32 feePerGas) view returns(uint256[32] weights, uint256 totalWeight)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) GetWeights(feePerGas uint32) (struct {
-	Weights     [32]*big.Int
-	TotalWeight *big.Int
-}, error) {
-	return _TaikoL1ProverPool.Contract.GetWeights(&_TaikoL1ProverPool.CallOpts, feePerGas)
 }
 
 // IdToProver is a free data retrieval call binding the contract method 0x2f88a7fe.
@@ -638,6 +594,61 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Owner() (common.Address, err
 // Solidity: function owner() view returns(address)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) Owner() (common.Address, error) {
 	return _TaikoL1ProverPool.Contract.Owner(&_TaikoL1ProverPool.CallOpts)
+}
+
+// Provers is a free data retrieval call binding the contract method 0xfd1190ea.
+//
+// Solidity: function provers(uint256 ) view returns(uint64 stakedAmount, uint16 rewardPerGas, uint16 currentCapacity, uint64 weight)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) Provers(opts *bind.CallOpts, arg0 *big.Int) (struct {
+	StakedAmount    uint64
+	RewardPerGas    uint16
+	CurrentCapacity uint16
+	Weight          uint64
+}, error) {
+	var out []interface{}
+	err := _TaikoL1ProverPool.contract.Call(opts, &out, "provers", arg0)
+
+	outstruct := new(struct {
+		StakedAmount    uint64
+		RewardPerGas    uint16
+		CurrentCapacity uint16
+		Weight          uint64
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.StakedAmount = *abi.ConvertType(out[0], new(uint64)).(*uint64)
+	outstruct.RewardPerGas = *abi.ConvertType(out[1], new(uint16)).(*uint16)
+	outstruct.CurrentCapacity = *abi.ConvertType(out[2], new(uint16)).(*uint16)
+	outstruct.Weight = *abi.ConvertType(out[3], new(uint64)).(*uint64)
+
+	return *outstruct, err
+
+}
+
+// Provers is a free data retrieval call binding the contract method 0xfd1190ea.
+//
+// Solidity: function provers(uint256 ) view returns(uint64 stakedAmount, uint16 rewardPerGas, uint16 currentCapacity, uint64 weight)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Provers(arg0 *big.Int) (struct {
+	StakedAmount    uint64
+	RewardPerGas    uint16
+	CurrentCapacity uint16
+	Weight          uint64
+}, error) {
+	return _TaikoL1ProverPool.Contract.Provers(&_TaikoL1ProverPool.CallOpts, arg0)
+}
+
+// Provers is a free data retrieval call binding the contract method 0xfd1190ea.
+//
+// Solidity: function provers(uint256 ) view returns(uint64 stakedAmount, uint16 rewardPerGas, uint16 currentCapacity, uint64 weight)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) Provers(arg0 *big.Int) (struct {
+	StakedAmount    uint64
+	RewardPerGas    uint16
+	CurrentCapacity uint16
+	Weight          uint64
+}, error) {
+	return _TaikoL1ProverPool.Contract.Provers(&_TaikoL1ProverPool.CallOpts, arg0)
 }
 
 // Resolve is a free data retrieval call binding the contract method 0x6c6563f6.
@@ -704,10 +715,10 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) Resolve0(name [32]byte
 
 // Stakers is a free data retrieval call binding the contract method 0x9168ae72.
 //
-// Solidity: function stakers(address staker) view returns(uint64 exitRequestedAt, uint32 exitAmount, uint16 maxCapacity, uint8 proverId)
+// Solidity: function stakers(address staker) view returns(uint64 exitRequestedAt, uint64 exitAmount, uint16 maxCapacity, uint8 proverId)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) Stakers(opts *bind.CallOpts, staker common.Address) (struct {
 	ExitRequestedAt uint64
-	ExitAmount      uint32
+	ExitAmount      uint64
 	MaxCapacity     uint16
 	ProverId        uint8
 }, error) {
@@ -716,7 +727,7 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) Stakers(opts *bind.CallOpts, 
 
 	outstruct := new(struct {
 		ExitRequestedAt uint64
-		ExitAmount      uint32
+		ExitAmount      uint64
 		MaxCapacity     uint16
 		ProverId        uint8
 	})
@@ -725,7 +736,7 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) Stakers(opts *bind.CallOpts, 
 	}
 
 	outstruct.ExitRequestedAt = *abi.ConvertType(out[0], new(uint64)).(*uint64)
-	outstruct.ExitAmount = *abi.ConvertType(out[1], new(uint32)).(*uint32)
+	outstruct.ExitAmount = *abi.ConvertType(out[1], new(uint64)).(*uint64)
 	outstruct.MaxCapacity = *abi.ConvertType(out[2], new(uint16)).(*uint16)
 	outstruct.ProverId = *abi.ConvertType(out[3], new(uint8)).(*uint8)
 
@@ -735,10 +746,10 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCaller) Stakers(opts *bind.CallOpts, 
 
 // Stakers is a free data retrieval call binding the contract method 0x9168ae72.
 //
-// Solidity: function stakers(address staker) view returns(uint64 exitRequestedAt, uint32 exitAmount, uint16 maxCapacity, uint8 proverId)
+// Solidity: function stakers(address staker) view returns(uint64 exitRequestedAt, uint64 exitAmount, uint16 maxCapacity, uint8 proverId)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Stakers(staker common.Address) (struct {
 	ExitRequestedAt uint64
-	ExitAmount      uint32
+	ExitAmount      uint64
 	MaxCapacity     uint16
 	ProverId        uint8
 }, error) {
@@ -747,10 +758,10 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Stakers(staker common.Addres
 
 // Stakers is a free data retrieval call binding the contract method 0x9168ae72.
 //
-// Solidity: function stakers(address staker) view returns(uint64 exitRequestedAt, uint32 exitAmount, uint16 maxCapacity, uint8 proverId)
+// Solidity: function stakers(address staker) view returns(uint64 exitRequestedAt, uint64 exitAmount, uint16 maxCapacity, uint8 proverId)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) Stakers(staker common.Address) (struct {
 	ExitRequestedAt uint64
-	ExitAmount      uint32
+	ExitAmount      uint64
 	MaxCapacity     uint16
 	ProverId        uint8
 }, error) {
@@ -759,23 +770,23 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolCallerSession) Stakers(staker common.
 
 // AssignProver is a paid mutator transaction binding the contract method 0xbd849fe9.
 //
-// Solidity: function assignProver(uint64 blockId, uint32 feePerGas) returns(address prover, uint32 rewardPerGas)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) AssignProver(opts *bind.TransactOpts, blockId uint64, feePerGas uint32) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.contract.Transact(opts, "assignProver", blockId, feePerGas)
+// Solidity: function assignProver(uint64 blockId, uint32 ) returns(address prover, uint32 rewardPerGas)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) AssignProver(opts *bind.TransactOpts, blockId uint64, arg1 uint32) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.contract.Transact(opts, "assignProver", blockId, arg1)
 }
 
 // AssignProver is a paid mutator transaction binding the contract method 0xbd849fe9.
 //
-// Solidity: function assignProver(uint64 blockId, uint32 feePerGas) returns(address prover, uint32 rewardPerGas)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) AssignProver(blockId uint64, feePerGas uint32) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.AssignProver(&_TaikoL1ProverPool.TransactOpts, blockId, feePerGas)
+// Solidity: function assignProver(uint64 blockId, uint32 ) returns(address prover, uint32 rewardPerGas)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) AssignProver(blockId uint64, arg1 uint32) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.AssignProver(&_TaikoL1ProverPool.TransactOpts, blockId, arg1)
 }
 
 // AssignProver is a paid mutator transaction binding the contract method 0xbd849fe9.
 //
-// Solidity: function assignProver(uint64 blockId, uint32 feePerGas) returns(address prover, uint32 rewardPerGas)
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) AssignProver(blockId uint64, feePerGas uint32) (*types.Transaction, error) {
-	return _TaikoL1ProverPool.Contract.AssignProver(&_TaikoL1ProverPool.TransactOpts, blockId, feePerGas)
+// Solidity: function assignProver(uint64 blockId, uint32 ) returns(address prover, uint32 rewardPerGas)
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) AssignProver(blockId uint64, arg1 uint32) (*types.Transaction, error) {
+	return _TaikoL1ProverPool.Contract.AssignProver(&_TaikoL1ProverPool.TransactOpts, blockId, arg1)
 }
 
 // Exit is a paid mutator transaction binding the contract method 0xe9fad8ee.
@@ -904,24 +915,24 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) SlashProver(addr c
 	return _TaikoL1ProverPool.Contract.SlashProver(&_TaikoL1ProverPool.TransactOpts, addr)
 }
 
-// Stake is a paid mutator transaction binding the contract method 0x3ca316f1.
+// Stake is a paid mutator transaction binding the contract method 0x75244643.
 //
-// Solidity: function stake(uint32 amount, uint16 rewardPerGas, uint16 maxCapacity) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) Stake(opts *bind.TransactOpts, amount uint32, rewardPerGas uint16, maxCapacity uint16) (*types.Transaction, error) {
+// Solidity: function stake(uint64 amount, uint16 rewardPerGas, uint16 maxCapacity) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactor) Stake(opts *bind.TransactOpts, amount uint64, rewardPerGas uint16, maxCapacity uint16) (*types.Transaction, error) {
 	return _TaikoL1ProverPool.contract.Transact(opts, "stake", amount, rewardPerGas, maxCapacity)
 }
 
-// Stake is a paid mutator transaction binding the contract method 0x3ca316f1.
+// Stake is a paid mutator transaction binding the contract method 0x75244643.
 //
-// Solidity: function stake(uint32 amount, uint16 rewardPerGas, uint16 maxCapacity) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Stake(amount uint32, rewardPerGas uint16, maxCapacity uint16) (*types.Transaction, error) {
+// Solidity: function stake(uint64 amount, uint16 rewardPerGas, uint16 maxCapacity) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolSession) Stake(amount uint64, rewardPerGas uint16, maxCapacity uint16) (*types.Transaction, error) {
 	return _TaikoL1ProverPool.Contract.Stake(&_TaikoL1ProverPool.TransactOpts, amount, rewardPerGas, maxCapacity)
 }
 
-// Stake is a paid mutator transaction binding the contract method 0x3ca316f1.
+// Stake is a paid mutator transaction binding the contract method 0x75244643.
 //
-// Solidity: function stake(uint32 amount, uint16 rewardPerGas, uint16 maxCapacity) returns()
-func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) Stake(amount uint32, rewardPerGas uint16, maxCapacity uint16) (*types.Transaction, error) {
+// Solidity: function stake(uint64 amount, uint16 rewardPerGas, uint16 maxCapacity) returns()
+func (_TaikoL1ProverPool *TaikoL1ProverPoolTransactorSession) Stake(amount uint64, rewardPerGas uint16, maxCapacity uint16) (*types.Transaction, error) {
 	return _TaikoL1ProverPool.Contract.Stake(&_TaikoL1ProverPool.TransactOpts, amount, rewardPerGas, maxCapacity)
 }
 
@@ -1171,13 +1182,13 @@ func (it *TaikoL1ProverPoolExitedIterator) Close() error {
 // TaikoL1ProverPoolExited represents a Exited event raised by the TaikoL1ProverPool contract.
 type TaikoL1ProverPoolExited struct {
 	Addr   common.Address
-	Amount uint32
+	Amount uint64
 	Raw    types.Log // Blockchain specific contextual infos
 }
 
-// FilterExited is a free log retrieval operation binding the contract event 0xfa715c30456da257872290458c962d9495b3a623e7df06cacb5b8dd68668554d.
+// FilterExited is a free log retrieval operation binding the contract event 0x7b870040d0137f84191e3e446a10f48b5ac5d26ec96be3f795fcfc4c954410fe.
 //
-// Solidity: event Exited(address indexed addr, uint32 amount)
+// Solidity: event Exited(address indexed addr, uint64 amount)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterExited(opts *bind.FilterOpts, addr []common.Address) (*TaikoL1ProverPoolExitedIterator, error) {
 
 	var addrRule []interface{}
@@ -1192,9 +1203,9 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterExited(opts *bind.Fil
 	return &TaikoL1ProverPoolExitedIterator{contract: _TaikoL1ProverPool.contract, event: "Exited", logs: logs, sub: sub}, nil
 }
 
-// WatchExited is a free log subscription operation binding the contract event 0xfa715c30456da257872290458c962d9495b3a623e7df06cacb5b8dd68668554d.
+// WatchExited is a free log subscription operation binding the contract event 0x7b870040d0137f84191e3e446a10f48b5ac5d26ec96be3f795fcfc4c954410fe.
 //
-// Solidity: event Exited(address indexed addr, uint32 amount)
+// Solidity: event Exited(address indexed addr, uint64 amount)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchExited(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolExited, addr []common.Address) (event.Subscription, error) {
 
 	var addrRule []interface{}
@@ -1234,9 +1245,9 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchExited(opts *bind.Watc
 	}), nil
 }
 
-// ParseExited is a log parse operation binding the contract event 0xfa715c30456da257872290458c962d9495b3a623e7df06cacb5b8dd68668554d.
+// ParseExited is a log parse operation binding the contract event 0x7b870040d0137f84191e3e446a10f48b5ac5d26ec96be3f795fcfc4c954410fe.
 //
-// Solidity: event Exited(address indexed addr, uint32 amount)
+// Solidity: event Exited(address indexed addr, uint64 amount)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseExited(log types.Log) (*TaikoL1ProverPoolExited, error) {
 	event := new(TaikoL1ProverPoolExited)
 	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "Exited", log); err != nil {
@@ -1603,13 +1614,13 @@ func (it *TaikoL1ProverPoolSlashedIterator) Close() error {
 // TaikoL1ProverPoolSlashed represents a Slashed event raised by the TaikoL1ProverPool contract.
 type TaikoL1ProverPoolSlashed struct {
 	Addr   common.Address
-	Amount uint32
+	Amount uint64
 	Raw    types.Log // Blockchain specific contextual infos
 }
 
-// FilterSlashed is a free log retrieval operation binding the contract event 0xf2ca0cd8f45e853110fce6e92f38f84a31350c1168dce2735a782f9d6424e648.
+// FilterSlashed is a free log retrieval operation binding the contract event 0xdd80bbe216163c1792fa59b50e56f1a7ac79674c4815b65da0ef875a39655e08.
 //
-// Solidity: event Slashed(address indexed addr, uint32 amount)
+// Solidity: event Slashed(address indexed addr, uint64 amount)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterSlashed(opts *bind.FilterOpts, addr []common.Address) (*TaikoL1ProverPoolSlashedIterator, error) {
 
 	var addrRule []interface{}
@@ -1624,9 +1635,9 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterSlashed(opts *bind.Fi
 	return &TaikoL1ProverPoolSlashedIterator{contract: _TaikoL1ProverPool.contract, event: "Slashed", logs: logs, sub: sub}, nil
 }
 
-// WatchSlashed is a free log subscription operation binding the contract event 0xf2ca0cd8f45e853110fce6e92f38f84a31350c1168dce2735a782f9d6424e648.
+// WatchSlashed is a free log subscription operation binding the contract event 0xdd80bbe216163c1792fa59b50e56f1a7ac79674c4815b65da0ef875a39655e08.
 //
-// Solidity: event Slashed(address indexed addr, uint32 amount)
+// Solidity: event Slashed(address indexed addr, uint64 amount)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchSlashed(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolSlashed, addr []common.Address) (event.Subscription, error) {
 
 	var addrRule []interface{}
@@ -1666,9 +1677,9 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchSlashed(opts *bind.Wat
 	}), nil
 }
 
-// ParseSlashed is a log parse operation binding the contract event 0xf2ca0cd8f45e853110fce6e92f38f84a31350c1168dce2735a782f9d6424e648.
+// ParseSlashed is a log parse operation binding the contract event 0xdd80bbe216163c1792fa59b50e56f1a7ac79674c4815b65da0ef875a39655e08.
 //
-// Solidity: event Slashed(address indexed addr, uint32 amount)
+// Solidity: event Slashed(address indexed addr, uint64 amount)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseSlashed(log types.Log) (*TaikoL1ProverPoolSlashed, error) {
 	event := new(TaikoL1ProverPoolSlashed)
 	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "Slashed", log); err != nil {
@@ -1748,15 +1759,15 @@ func (it *TaikoL1ProverPoolStakedIterator) Close() error {
 // TaikoL1ProverPoolStaked represents a Staked event raised by the TaikoL1ProverPool contract.
 type TaikoL1ProverPoolStaked struct {
 	Addr            common.Address
-	Amount          uint32
+	Amount          uint64
 	RewardPerGas    uint16
 	CurrentCapacity uint16
 	Raw             types.Log // Blockchain specific contextual infos
 }
 
-// FilterStaked is a free log retrieval operation binding the contract event 0xe2232b717d57a877785c68aad0aae9fa2caea5035fa13efd62421b4e0ac23dfe.
+// FilterStaked is a free log retrieval operation binding the contract event 0xb071f01ce43c8c0960b11143f30bedc46b345006ee5631abbdfd2a5cb6562774.
 //
-// Solidity: event Staked(address indexed addr, uint32 amount, uint16 rewardPerGas, uint16 currentCapacity)
+// Solidity: event Staked(address indexed addr, uint64 amount, uint16 rewardPerGas, uint16 currentCapacity)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterStaked(opts *bind.FilterOpts, addr []common.Address) (*TaikoL1ProverPoolStakedIterator, error) {
 
 	var addrRule []interface{}
@@ -1771,9 +1782,9 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterStaked(opts *bind.Fil
 	return &TaikoL1ProverPoolStakedIterator{contract: _TaikoL1ProverPool.contract, event: "Staked", logs: logs, sub: sub}, nil
 }
 
-// WatchStaked is a free log subscription operation binding the contract event 0xe2232b717d57a877785c68aad0aae9fa2caea5035fa13efd62421b4e0ac23dfe.
+// WatchStaked is a free log subscription operation binding the contract event 0xb071f01ce43c8c0960b11143f30bedc46b345006ee5631abbdfd2a5cb6562774.
 //
-// Solidity: event Staked(address indexed addr, uint32 amount, uint16 rewardPerGas, uint16 currentCapacity)
+// Solidity: event Staked(address indexed addr, uint64 amount, uint16 rewardPerGas, uint16 currentCapacity)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchStaked(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolStaked, addr []common.Address) (event.Subscription, error) {
 
 	var addrRule []interface{}
@@ -1813,9 +1824,9 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchStaked(opts *bind.Watc
 	}), nil
 }
 
-// ParseStaked is a log parse operation binding the contract event 0xe2232b717d57a877785c68aad0aae9fa2caea5035fa13efd62421b4e0ac23dfe.
+// ParseStaked is a log parse operation binding the contract event 0xb071f01ce43c8c0960b11143f30bedc46b345006ee5631abbdfd2a5cb6562774.
 //
-// Solidity: event Staked(address indexed addr, uint32 amount, uint16 rewardPerGas, uint16 currentCapacity)
+// Solidity: event Staked(address indexed addr, uint64 amount, uint16 rewardPerGas, uint16 currentCapacity)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseStaked(log types.Log) (*TaikoL1ProverPoolStaked, error) {
 	event := new(TaikoL1ProverPoolStaked)
 	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "Staked", log); err != nil {
@@ -1895,13 +1906,13 @@ func (it *TaikoL1ProverPoolWithdrawnIterator) Close() error {
 // TaikoL1ProverPoolWithdrawn represents a Withdrawn event raised by the TaikoL1ProverPool contract.
 type TaikoL1ProverPoolWithdrawn struct {
 	Addr   common.Address
-	Amount uint32
+	Amount uint64
 	Raw    types.Log // Blockchain specific contextual infos
 }
 
-// FilterWithdrawn is a free log retrieval operation binding the contract event 0x28f8f642e0ef98c9c0d14e1bd28a687ea91da388d69e6ca60165b772ef408c7c.
+// FilterWithdrawn is a free log retrieval operation binding the contract event 0xbae95d59332d6e1e8f1ae78e7bebdaeef072d57b731c8790a636667e3a0a87ee.
 //
-// Solidity: event Withdrawn(address indexed addr, uint32 amount)
+// Solidity: event Withdrawn(address indexed addr, uint64 amount)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterWithdrawn(opts *bind.FilterOpts, addr []common.Address) (*TaikoL1ProverPoolWithdrawnIterator, error) {
 
 	var addrRule []interface{}
@@ -1916,9 +1927,9 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) FilterWithdrawn(opts *bind.
 	return &TaikoL1ProverPoolWithdrawnIterator{contract: _TaikoL1ProverPool.contract, event: "Withdrawn", logs: logs, sub: sub}, nil
 }
 
-// WatchWithdrawn is a free log subscription operation binding the contract event 0x28f8f642e0ef98c9c0d14e1bd28a687ea91da388d69e6ca60165b772ef408c7c.
+// WatchWithdrawn is a free log subscription operation binding the contract event 0xbae95d59332d6e1e8f1ae78e7bebdaeef072d57b731c8790a636667e3a0a87ee.
 //
-// Solidity: event Withdrawn(address indexed addr, uint32 amount)
+// Solidity: event Withdrawn(address indexed addr, uint64 amount)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchWithdrawn(opts *bind.WatchOpts, sink chan<- *TaikoL1ProverPoolWithdrawn, addr []common.Address) (event.Subscription, error) {
 
 	var addrRule []interface{}
@@ -1958,9 +1969,9 @@ func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) WatchWithdrawn(opts *bind.W
 	}), nil
 }
 
-// ParseWithdrawn is a log parse operation binding the contract event 0x28f8f642e0ef98c9c0d14e1bd28a687ea91da388d69e6ca60165b772ef408c7c.
+// ParseWithdrawn is a log parse operation binding the contract event 0xbae95d59332d6e1e8f1ae78e7bebdaeef072d57b731c8790a636667e3a0a87ee.
 //
-// Solidity: event Withdrawn(address indexed addr, uint32 amount)
+// Solidity: event Withdrawn(address indexed addr, uint64 amount)
 func (_TaikoL1ProverPool *TaikoL1ProverPoolFilterer) ParseWithdrawn(log types.Log) (*TaikoL1ProverPoolWithdrawn, error) {
 	event := new(TaikoL1ProverPoolWithdrawn)
 	if err := _TaikoL1ProverPool.contract.UnpackLog(event, "Withdrawn", log); err != nil {

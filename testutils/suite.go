@@ -101,14 +101,10 @@ func (s *ClientTestSuite) SetupTest() {
 
 		capacity, err := s.RpcClient.TaikoProverPoolL1.MAXCAPACITYLOWERBOUND(nil)
 		s.Nil(err)
+
 		amt := new(big.Int).Mul(big.NewInt(int64(minStakePerCapacity)), big.NewInt(int64(capacity)))
 
-		oneTko, err := s.RpcClient.TaikoProverPoolL1.ONETKO(nil)
-		s.Nil(err)
-
-		amtTko := new(big.Int).Mul(amt, new(big.Int).SetInt64(int64(oneTko)))
-
-		log.Info("amt to stake", "amt", amtTko)
+		amtTko := new(big.Int).Exp(amt, big.NewInt(8), nil)
 
 		// proposer has tKO, need to transfer to prover
 		_, err = s.RpcClient.TaikoTokenL1.Transfer(proposerOpts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), amtTko)
@@ -118,7 +114,7 @@ func (s *ClientTestSuite) SetupTest() {
 		s.Nil(err)
 		_, err = s.RpcClient.TaikoProverPoolL1.Stake(
 			proverOpts,
-			uint32(amt.Uint64()),
+			amt.Uint64(),
 			uint16(rewardPerGas),
 			uint16(capacity),
 		)
