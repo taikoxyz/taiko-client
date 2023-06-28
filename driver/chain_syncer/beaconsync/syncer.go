@@ -51,8 +51,6 @@ func (s *Syncer) TriggerBeaconSync() error {
 				"newBlockID", blockID,
 			)
 		}
-
-		return nil
 	}
 
 	status, err := s.rpc.L2Engine.NewPayload(
