@@ -87,7 +87,7 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 
 	if proverInfo.Staker.ProverId == 0 {
-		_, err = s.RpcClient.TaikoL1.DepositTaikoToken(proposerOpts, new(big.Int).SetUint64(uint64(math.Pow(2, 26))))
+		_, err = s.RpcClient.TaikoL1.DepositTaikoToken(proposerOpts, new(big.Int).SetUint64(uint64(math.Pow(2, 32))))
 		s.Nil(err)
 
 		minStakePerCapacity, err := s.RpcClient.TaikoProverPoolL1.MINSTAKEPERCAPACITY(nil)
