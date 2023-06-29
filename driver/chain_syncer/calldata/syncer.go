@@ -116,12 +116,35 @@ func (s *Syncer) onBlockProposed(
 
 	if !s.progressTracker.Triggered() {
 		// Check whteher we need to reorg the L2 chain at first.
-		reorged, l1CurrentToReset, lastInsertedBlockIDToReset, err := s.rpc.CheckL1Reorg(
-			ctx,
-			new(big.Int).Sub(event.Id, common.Big1),
+		// 1. Last verified block
+		var (
+			reorged                    bool
+			l1CurrentToReset           *types.Header
+			lastInsertedBlockIDToReset *big.Int
+			err                        error
 		)
+		reorged, err = s.checkLastVerifiedBlockMismatch(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to check whether L1 chain has been reorged: %w", err)
+			return fmt.Errorf("failed to check if last verified block in L2 EE has been reorged: %w", err)
+		}
+
+		// 2. Parent block
+		if reorged {
+			genesisL1Header, err := s.rpc.GetGenesisL1Header(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to fetch genesis L1 header: %w", err)
+			}
+
+			l1CurrentToReset = genesisL1Header
+			lastInsertedBlockIDToReset = common.Big0
+		} else {
+			reorged, l1CurrentToReset, lastInsertedBlockIDToReset, err = s.rpc.CheckL1Reorg(
+				ctx,
+				new(big.Int).Sub(event.Id, common.Big1),
+			)
+			if err != nil {
+				return fmt.Errorf("failed to check whether L1 chain has been reorged: %w", err)
+			}
 		}
 
 		if reorged {
@@ -239,7 +262,7 @@ func (s *Syncer) onBlockProposed(
 		"blockID", event.Id,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
-		"latestVerifiedBlockHeight", s.state.GetLatestVerifiedBlock().Height,
+		"latestVerifiedBlockID", s.state.GetLatestVerifiedBlock().ID,
 		"latestVerifiedBlockHash", s.state.GetLatestVerifiedBlock().Hash,
 		"transactions", len(payloadData.Transactions),
 		"baseFee", payloadData.BaseFeePerGas,
@@ -426,4 +449,20 @@ func (s *Syncer) createExecutionPayloads(
 	}
 
 	return payload, nil
+}
+
+// checkLastVerifiedBlockMismatch checks if there is a mismatch between protocol's last verified block hash and
+// the corresponding L2 EE block hash.
+func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, error) {
+	lastVerifiedBlockInfo := s.state.GetLatestVerifiedBlock()
+	if s.state.GetL2Head().Number.Cmp(lastVerifiedBlockInfo.ID) < 0 {
+		return false, nil
+	}
+
+	l2Header, err := s.rpc.L2.HeaderByNumber(ctx, lastVerifiedBlockInfo.ID)
+	if err != nil {
+		return false, err
+	}
+
+	return l2Header.Hash() != lastVerifiedBlockInfo.Hash, nil
 }
