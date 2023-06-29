@@ -53,8 +53,6 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 	s.NotEmpty(jwtSecret)
 
-	taikoL1Address := common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS"))
-
 	rpcCli, err := rpc.NewClient(context.Background(), &rpc.ClientConfig{
 		L1Endpoint:               os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:               os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -77,13 +75,6 @@ func (s *ClientTestSuite) SetupTest() {
 	proposerOpts, err := bind.NewKeyedTransactorWithChainID(l1ProposerPrivKey, rpcCli.L1ChainID)
 	s.Nil(err)
 
-	_, err = s.RpcClient.TaikoTokenL1.Approve(
-		proposerOpts,
-		taikoL1Address,
-		new(big.Int).SetUint64(uint64(math.Pow(2, 32))),
-	)
-	s.Nil(err)
-
 	// register prover as a staker/eligible prover
 
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
@@ -96,6 +87,9 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 
 	if proverInfo.Staker.ProverId == 0 {
+		_, err = s.RpcClient.TaikoL1.DepositTaikoToken(proposerOpts, new(big.Int).SetUint64(uint64(math.Pow(2, 26))))
+		s.Nil(err)
+
 		minStakePerCapacity, err := s.RpcClient.TaikoProverPoolL1.MINSTAKEPERCAPACITY(nil)
 		s.Nil(err)
 
@@ -104,7 +98,9 @@ func (s *ClientTestSuite) SetupTest() {
 
 		amt := new(big.Int).Mul(big.NewInt(int64(minStakePerCapacity)), big.NewInt(int64(capacity)))
 
-		amtTko := new(big.Int).Exp(amt, big.NewInt(8), nil)
+		amtTko := new(big.Int).Mul(amt, big.NewInt(8))
+
+		log.Info("amtTko", "amt", amtTko.String())
 
 		// proposer has tKO, need to transfer to prover
 		_, err = s.RpcClient.TaikoTokenL1.Transfer(proposerOpts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), amtTko)
@@ -118,7 +114,7 @@ func (s *ClientTestSuite) SetupTest() {
 			uint16(rewardPerGas),
 			uint16(capacity),
 		)
-		s.Nil(err)
+		s.Nil(err, "2")
 	}
 
 	s.Nil(rpcCli.L1RawRPC.CallContext(context.Background(), &s.testnetL1SnapshotID, "evm_snapshot"))
