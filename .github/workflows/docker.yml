@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [main]
+    branches: [main,integrate-new-circuits]
     tags:
       - "v*"
 
