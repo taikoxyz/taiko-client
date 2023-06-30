@@ -103,22 +103,6 @@ func sendTxWithBackoff(
 			return nil
 		}
 
-		// Check if this proof is still needed at first.
-		needNewProof, err := rpc.NeedNewProof(ctx, cli, blockID, common.Address{})
-		if err != nil {
-			log.Warn(
-				"Failed to check if the generated proof is needed",
-				"blockID", blockID,
-				"error", err,
-			)
-			return err
-		}
-
-		if !needNewProof {
-			log.Info("Proof was submitted another prover, skip the current proof submission", "blockID", blockID)
-			return nil
-		}
-
 		tx, err := sendTxFunc()
 		if err != nil {
 			err = encoding.TryParsingCustomError(err)
