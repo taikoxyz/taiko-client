@@ -67,7 +67,6 @@ func sendTxWithBackoff(
 	cli *rpc.Client,
 	blockID *big.Int,
 	proposedAt uint64,
-	expectedReward uint64,
 	meta *bindings.TaikoDataBlockMetadata,
 	sendTxFunc func() (*types.Transaction, error),
 	retryInterval time.Duration,
@@ -104,23 +103,20 @@ func sendTxWithBackoff(
 			return nil
 		}
 
-		// Check the expected reward.
-		if expectedReward != 0 {
-			// Check if this proof is still needed at first.
-			needNewProof, err := rpc.NeedNewProof(ctx, cli, blockID, common.Address{})
-			if err != nil {
-				log.Warn(
-					"Failed to check if the generated proof is needed",
-					"blockID", blockID,
-					"error", err,
-				)
-				return err
-			}
+		// Check if this proof is still needed at first.
+		needNewProof, err := rpc.NeedNewProof(ctx, cli, blockID, common.Address{})
+		if err != nil {
+			log.Warn(
+				"Failed to check if the generated proof is needed",
+				"blockID", blockID,
+				"error", err,
+			)
+			return err
+		}
 
-			if !needNewProof {
-				log.Info("Proof was submitted another prover, skip the current proof submission", "blockID", blockID)
-				return nil
-			}
+		if !needNewProof {
+			log.Info("Proof was submitted another prover, skip the current proof submission", "blockID", blockID)
+			return nil
 		}
 
 		tx, err := sendTxFunc()

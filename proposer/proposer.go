@@ -190,10 +190,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Comparing proposer TKO balance to block fee", "proposer", p.l1ProposerAddress.Hex())
 
-	if err := p.checkTaikoTokenBalance(); err != nil {
-		return fmt.Errorf("failed to check Taiko token balance: %w", err)
-	}
-
 	// Wait until L2 execution engine is synced at first.
 	if err := p.rpc.WaitTillL2ExecutionEngineSynced(ctx); err != nil {
 		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
@@ -400,9 +396,9 @@ func getTxOpts(
 	return opts, nil
 }
 
-// checkTaikoTokenBalance ensures you have at least the block fee in your balance, and approved, before
-// attempting to propose block, as it will use transferFrom.
-func (p *Proposer) checkTaikoTokenBalance() error {
+// CheckTaikoTokenBalance checks if the current proposer has enough balance to pay
+// the current block fee.
+func (p *Proposer) CheckTaikoTokenBalance() error {
 	fee, err := p.rpc.TaikoL1.GetBlockFee(nil, p.protocolConfigs.BlockMaxGasLimit)
 	if err != nil {
 		return fmt.Errorf("failed to get block fee: %w", err)

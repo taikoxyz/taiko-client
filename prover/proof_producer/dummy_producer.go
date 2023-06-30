@@ -1,6 +1,7 @@
 package producer
 
 import (
+	"bytes"
 	"context"
 	"math/big"
 	"math/rand"
@@ -39,16 +40,9 @@ func (d *DummyProofProducer) RequestProof(
 			BlockID: blockID,
 			Meta:    meta,
 			Header:  header,
-			// proof must be 32 bytes min since protocol uses bytes utils and reads 32 bytes, so even
-			// make proofs must be 32 bytes
-			ZkProof: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-				0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-				0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-				0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-				0xff, 0xff, 0xff, 0xff, 0xff,
-			},
-			Degree: CircuitsDegree10Txs,
-			Opts:   opts,
+			ZkProof: bytes.Repeat([]byte{0xff}, 100),
+			Degree:  CircuitsIdx,
+			Opts:    opts,
 		}
 	})
 

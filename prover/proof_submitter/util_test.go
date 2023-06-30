@@ -37,7 +37,6 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		s.RpcClient,
 		common.Big1,
 		0,
-		0,
 		meta,
 		func() (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
 		12*time.Second,
@@ -47,7 +46,6 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		context.Background(),
 		s.RpcClient,
 		common.Big1,
-		0,
 		0,
 		meta,
 		func() (*types.Transaction, error) {

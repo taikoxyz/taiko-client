@@ -65,7 +65,6 @@ func (s *ClientTestSuite) SetupTest() {
 		RetryInterval:            backoff.DefaultMaxInterval,
 	})
 	s.Nil(err)
-
 	s.RpcClient = rpcCli
 
 	// set allowance

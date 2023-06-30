@@ -38,7 +38,6 @@ type ValidProofSubmitter struct {
 	mutex             *sync.Mutex
 	isOracleProver    bool
 	graffiti          [32]byte
-	expectedReward    uint64
 	retryInterval     time.Duration
 }
 
@@ -52,7 +51,6 @@ func NewValidProofSubmitter(
 	mutex *sync.Mutex,
 	isOracleProver bool,
 	graffiti string,
-	expectedReward uint64,
 	retryInterval time.Duration,
 ) (*ValidProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
@@ -70,11 +68,6 @@ func NewValidProofSubmitter(
 		return nil, err
 	}
 
-	// OracleProver does not care about the expected proof reward.
-	if isOracleProver {
-		expectedReward = 0
-	}
-
 	return &ValidProofSubmitter{
 		rpc:               rpcClient,
 		proofProducer:     proofProducer,
@@ -88,7 +81,6 @@ func NewValidProofSubmitter(
 		mutex:             mutex,
 		isOracleProver:    isOracleProver,
 		graffiti:          rpc.StringToBytes32(graffiti),
-		expectedReward:    expectedReward,
 		retryInterval:     retryInterval,
 	}, nil
 }
@@ -257,7 +249,6 @@ func (s *ValidProofSubmitter) SubmitProof(
 		s.rpc,
 		blockID,
 		block.Header().Time,
-		s.expectedReward,
 		proofWithHeader.Meta,
 		sendTx,
 		s.retryInterval,

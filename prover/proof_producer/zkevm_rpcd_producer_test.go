@@ -23,7 +23,7 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 	require.Nil(t, err)
 
 	dummyZkevmRpcdProducer.CustomProofHook = func() ([]byte, uint64, error) {
-		return []byte{0}, CircuitsDegree10Txs, nil
+		return []byte{0}, CircuitsIdx, nil
 	}
 
 	resCh := make(chan *ProofWithHeader, 1)
