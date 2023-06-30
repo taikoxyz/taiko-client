@@ -48,7 +48,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		&sync.Mutex{},
 		false,
 		"test",
-		0,
 		12*time.Second,
 	)
 	s.Nil(err)
