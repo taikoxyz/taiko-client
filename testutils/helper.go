@@ -172,10 +172,10 @@ func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey) {
 
 	opts, err := bind.NewKeyedTransactorWithChainID(depositerPrivKey, s.RpcClient.L1ChainID)
 	s.Nil(err)
-	opts.Value = config.MinEthDepositAmount
+	opts.Value = config.EthDepositMinAmount
 
-	for i := 0; i < int(config.MinEthDepositsPerBlock); i++ {
-		_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts)
+	for i := 0; i < int(config.EthDepositMinAmount.Uint64()); i++ {
+		_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts, crypto.PubkeyToAddress(depositerPrivKey.PublicKey))
 		s.Nil(err)
 	}
 }

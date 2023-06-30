@@ -71,7 +71,7 @@ func (p *ZkevmCmdProducer) RequestProof(
 		Header:  header,
 		Meta:    meta,
 		ZkProof: proof,
-		Degree:  CircuitsDegree10Txs,
+		Degree:  CircuitsIdx,
 		Opts:    opts,
 	}
 

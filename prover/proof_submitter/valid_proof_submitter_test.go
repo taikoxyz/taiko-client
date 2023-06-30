@@ -1,6 +1,7 @@
 package submitter
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"sync"
@@ -104,7 +105,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotF
 				BlockID: common.Big256,
 				Meta:    &bindings.TaikoDataBlockMetadata{},
 				Header:  &types.Header{},
-				ZkProof: []byte{0xff},
+				ZkProof: bytes.Repeat([]byte{0xff}, 100),
 			},
 		),
 	)

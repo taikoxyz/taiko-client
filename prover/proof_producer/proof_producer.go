@@ -2,7 +2,6 @@ package producer
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -11,11 +10,7 @@ import (
 )
 
 const (
-	CircuitsDegree10Txs = 19
-	CircuitsDegree80Txs = 21
-
-	CircuitsIdx10Txs = 0
-	CircuitsIdx80Txs = 1
+	CircuitsIdx = 0 // Currently we only have one verification contract in protocol.
 )
 
 // ProofRequestOptions contains all options that need to be passed to zkEVM rpcd service.
@@ -57,12 +52,5 @@ type ProofProducer interface {
 }
 
 func DegreeToCircuitsIdx(degree uint64) (uint16, error) {
-	switch degree {
-	case CircuitsDegree10Txs:
-		return CircuitsIdx10Txs, nil
-	case CircuitsDegree80Txs:
-		return CircuitsIdx80Txs, nil
-	default:
-		return 0, fmt.Errorf("invalid degree: %d", degree)
-	}
+	return CircuitsIdx, nil
 }

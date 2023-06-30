@@ -489,7 +489,15 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 		}()
 
 		if err := backoff.Retry(
-			func() error { return p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader) },
+			func() error {
+				err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader)
+				if err != nil {
+					log.Error("Submit proof error", "error", err)
+					return err
+				}
+
+				return nil
+			},
 			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
 		); err != nil {
 			log.Error("Submit proof error", "error", err)
