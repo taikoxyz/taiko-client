@@ -688,6 +688,9 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 	}
 }
 
+// checkProofWindowsExpired iterates through the current blocks waiting for proof window to expire,
+// which are blocks that have been proposed, but we were not selected as the prover. if the proof window
+// has expired, we can start generating a proof for them.
 func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
 	for i, blockId := range p.currentBlocksWaitingForProofWindow {
 		if err := p.checkProofWindowExpired(ctx, i, blockId); err != nil {
@@ -698,6 +701,8 @@ func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
 	return nil
 }
 
+// checkProofWindowExpired checks a single instance of a block to see if its proof winodw has expired
+// and the proof is now able to be submitted by anyone, not just the blocks assigned prover.
 func (p *Prover) checkProofWindowExpired(ctx context.Context, i int, blockId uint64) error {
 	p.currentBlocksWaitingForProofWindowMutex.Lock()
 	defer p.currentBlocksWaitingForProofWindowMutex.Unlock()

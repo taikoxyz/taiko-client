@@ -100,8 +100,6 @@ func (s *ClientTestSuite) SetupTest() {
 
 		amtTko := new(big.Int).Mul(amt, big.NewInt(8))
 
-		log.Info("amtTko", "amt", amtTko.String())
-
 		// proposer has tKO, need to transfer to prover
 		_, err = s.RpcClient.TaikoTokenL1.Transfer(proposerOpts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), amtTko)
 		s.Nil(err)
@@ -114,7 +112,7 @@ func (s *ClientTestSuite) SetupTest() {
 			uint16(rewardPerGas),
 			uint16(capacity),
 		)
-		s.Nil(err, "2")
+		s.Nil(err)
 	}
 
 	s.Nil(rpcCli.L1RawRPC.CallContext(context.Background(), &s.testnetL1SnapshotID, "evm_snapshot"))
