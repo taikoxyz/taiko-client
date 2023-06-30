@@ -62,6 +62,8 @@ type Prover struct {
 	blockProvenSub   event.Subscription
 	blockVerifiedCh  chan *bindings.TaikoL1ClientBlockVerified
 	blockVerifiedSub event.Subscription
+	proverSlashedCh  chan *bindings.TaikoL1ProverPoolSlashed
+	proverSlashedSub event.Subscription
 	proveNotify      chan *big.Int
 
 	// Proof related
@@ -135,6 +137,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	p.blockProvenCh = make(chan *bindings.TaikoL1ClientBlockProven, chBufferSize)
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
+	p.proverSlashedCh = make(chan *bindings.TaikoL1ProverPoolSlashed, chBufferSize)
 	p.proveNotify = make(chan *big.Int, 1)
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
@@ -283,6 +286,10 @@ func (p *Prover) eventLoop() {
 		case e := <-p.blockProvenCh:
 			if err := p.onBlockProven(p.ctx, e); err != nil {
 				log.Error("Handle BlockProven event error", "error", err)
+			}
+		case e := <-p.proverSlashedCh:
+			if e.Addr.Hex() == p.proverAddress.Hex() {
+				log.Info("Prover slashed", "address", e.Addr.Hex(), "amount", e.Amount)
 			}
 		case <-forceProvingTicker.C:
 			reqProving()
@@ -614,6 +621,7 @@ func (p *Prover) initSubscription() {
 	p.blockProposedSub = rpc.SubscribeBlockProposed(p.rpc.TaikoL1, p.blockProposedCh)
 	p.blockVerifiedSub = rpc.SubscribeBlockVerified(p.rpc.TaikoL1, p.blockVerifiedCh)
 	p.blockProvenSub = rpc.SubscribeBlockProven(p.rpc.TaikoL1, p.blockProvenCh)
+	p.proverSlashedSub = rpc.SubscribeSlashed(p.rpc.TaikoProverPoolL1, p.proverSlashedCh)
 }
 
 // closeSubscription closes all subscriptions.

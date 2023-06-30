@@ -44,6 +44,13 @@ func TestSubscribeBlockProven(t *testing.T) {
 	)
 }
 
+func TestSubscribeSlashed(t *testing.T) {
+	require.NotNil(t, SubscribeSlashed(
+		newTestClient(t).TaikoProverPoolL1,
+		make(chan *bindings.TaikoL1ProverPoolSlashed, 1024)),
+	)
+}
+
 func TestSubscribeChainHead(t *testing.T) {
 	require.NotNil(t, SubscribeChainHead(
 		newTestClient(t).L1,
