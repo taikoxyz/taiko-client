@@ -47,7 +47,7 @@ func (s *ProverTestSuite) SetupTest() {
 		OracleProverPrivateKey:                   l1ProverPrivKey,
 		Dummy:                                    true,
 		MaxConcurrentProvingJobs:                 1,
-		CheckProofWindowExpiredIntervalInSeconds: time.Duration(5 * time.Second),
+		CheckProofWindowExpiredIntervalInSeconds: 5 * time.Second,
 	})))
 	s.p = p
 	s.cancel = cancel
