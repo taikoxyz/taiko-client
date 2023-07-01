@@ -75,6 +75,12 @@ var (
 		Required: true,
 		Category: commonCategory,
 	}
+	CheckProofWindowExpiredInterval = &cli.Uint64Flag{
+		Name:     "prover.checkProofWindowExpiredInterval",
+		Usage:    "Interval in seconds to check for expired proof windows from other provers",
+		Category: commonCategory,
+		Value:    15,
+	}
 )
 
 // All prover flags.
@@ -93,4 +99,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	OracleProverPrivateKey,
 	Graffiti,
 	TaikoProverPoolL1Address,
+	CheckProofWindowExpiredInterval,
 })

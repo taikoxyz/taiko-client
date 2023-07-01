@@ -79,6 +79,9 @@ type Prover struct {
 	currentBlocksWaitingForProofWindow      []uint64
 	currentBlocksWaitingForProofWindowMutex *sync.Mutex
 
+	// interval settings
+	checkProofWindowExpiredIntervalInSeconds time.Duration
+
 	ctx context.Context
 	wg  sync.WaitGroup
 }
@@ -146,6 +149,8 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	// Concurrency guards
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
+
+	p.checkProofWindowExpiredIntervalInSeconds = p.cfg.CheckProofWindowExpiredIntervalInSeconds
 
 	oracleProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, rpc.StringToBytes32("oracle_prover"), true)
 	if err != nil {
@@ -249,7 +254,7 @@ func (p *Prover) eventLoop() {
 	)
 	defer verificationCheckTicker.Stop()
 
-	checkProofWindowExpiredTicker := time.NewTicker(10 * time.Second)
+	checkProofWindowExpiredTicker := time.NewTicker(p.checkProofWindowExpiredIntervalInSeconds)
 	defer checkProofWindowExpiredTicker.Stop()
 
 	// Call reqProving() right away to catch up with the latest state.

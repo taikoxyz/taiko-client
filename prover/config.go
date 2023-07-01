@@ -15,26 +15,27 @@ import (
 
 // Config contains the configurations to initialize a Taiko prover.
 type Config struct {
-	L1WsEndpoint                    string
-	L1HttpEndpoint                  string
-	L2WsEndpoint                    string
-	L2HttpEndpoint                  string
-	TaikoL1Address                  common.Address
-	TaikoProverPoolL1Address        common.Address
-	TaikoL2Address                  common.Address
-	L1ProverPrivKey                 *ecdsa.PrivateKey
-	ZKEvmRpcdEndpoint               string
-	ZkEvmRpcdParamsPath             string
-	StartingBlockID                 *big.Int
-	MaxConcurrentProvingJobs        uint
-	Dummy                           bool
-	OracleProver                    bool
-	OracleProverPrivateKey          *ecdsa.PrivateKey
-	Graffiti                        string
-	RandomDummyProofDelayLowerBound *time.Duration
-	RandomDummyProofDelayUpperBound *time.Duration
-	BackOffMaxRetrys                uint64
-	BackOffRetryInterval            time.Duration
+	L1WsEndpoint                             string
+	L1HttpEndpoint                           string
+	L2WsEndpoint                             string
+	L2HttpEndpoint                           string
+	TaikoL1Address                           common.Address
+	TaikoProverPoolL1Address                 common.Address
+	TaikoL2Address                           common.Address
+	L1ProverPrivKey                          *ecdsa.PrivateKey
+	ZKEvmRpcdEndpoint                        string
+	ZkEvmRpcdParamsPath                      string
+	StartingBlockID                          *big.Int
+	MaxConcurrentProvingJobs                 uint
+	Dummy                                    bool
+	OracleProver                             bool
+	OracleProverPrivateKey                   *ecdsa.PrivateKey
+	Graffiti                                 string
+	RandomDummyProofDelayLowerBound          *time.Duration
+	RandomDummyProofDelayUpperBound          *time.Duration
+	BackOffMaxRetrys                         uint64
+	BackOffRetryInterval                     time.Duration
+	CheckProofWindowExpiredIntervalInSeconds time.Duration
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -97,25 +98,26 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	return &Config{
-		L1WsEndpoint:                    c.String(flags.L1WSEndpoint.Name),
-		L1HttpEndpoint:                  c.String(flags.L1HTTPEndpoint.Name),
-		L2WsEndpoint:                    c.String(flags.L2WSEndpoint.Name),
-		L2HttpEndpoint:                  c.String(flags.L2HTTPEndpoint.Name),
-		TaikoL1Address:                  common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
-		TaikoL2Address:                  common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-		TaikoProverPoolL1Address:        common.HexToAddress(c.String(flags.TaikoProverPoolL1Address.Name)),
-		L1ProverPrivKey:                 l1ProverPrivKey,
-		ZKEvmRpcdEndpoint:               c.String(flags.ZkEvmRpcdEndpoint.Name),
-		ZkEvmRpcdParamsPath:             c.String(flags.ZkEvmRpcdParamsPath.Name),
-		StartingBlockID:                 startingBlockID,
-		MaxConcurrentProvingJobs:        c.Uint(flags.MaxConcurrentProvingJobs.Name),
-		Dummy:                           c.Bool(flags.Dummy.Name),
-		OracleProver:                    c.Bool(flags.OracleProver.Name),
-		OracleProverPrivateKey:          oracleProverPrivKey,
-		Graffiti:                        c.String(flags.Graffiti.Name),
-		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
-		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
-		BackOffMaxRetrys:                c.Uint64(flags.BackOffMaxRetrys.Name),
-		BackOffRetryInterval:            time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
+		L1WsEndpoint:                             c.String(flags.L1WSEndpoint.Name),
+		L1HttpEndpoint:                           c.String(flags.L1HTTPEndpoint.Name),
+		L2WsEndpoint:                             c.String(flags.L2WSEndpoint.Name),
+		L2HttpEndpoint:                           c.String(flags.L2HTTPEndpoint.Name),
+		TaikoL1Address:                           common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
+		TaikoL2Address:                           common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
+		TaikoProverPoolL1Address:                 common.HexToAddress(c.String(flags.TaikoProverPoolL1Address.Name)),
+		L1ProverPrivKey:                          l1ProverPrivKey,
+		ZKEvmRpcdEndpoint:                        c.String(flags.ZkEvmRpcdEndpoint.Name),
+		ZkEvmRpcdParamsPath:                      c.String(flags.ZkEvmRpcdParamsPath.Name),
+		StartingBlockID:                          startingBlockID,
+		MaxConcurrentProvingJobs:                 c.Uint(flags.MaxConcurrentProvingJobs.Name),
+		Dummy:                                    c.Bool(flags.Dummy.Name),
+		OracleProver:                             c.Bool(flags.OracleProver.Name),
+		OracleProverPrivateKey:                   oracleProverPrivKey,
+		Graffiti:                                 c.String(flags.Graffiti.Name),
+		RandomDummyProofDelayLowerBound:          randomDummyProofDelayLowerBound,
+		RandomDummyProofDelayUpperBound:          randomDummyProofDelayUpperBound,
+		BackOffMaxRetrys:                         c.Uint64(flags.BackOffMaxRetrys.Name),
+		BackOffRetryInterval:                     time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
+		CheckProofWindowExpiredIntervalInSeconds: time.Duration(c.Uint64(flags.CheckProofWindowExpiredInterval.Name)) * time.Second,
 	}, nil
 }
