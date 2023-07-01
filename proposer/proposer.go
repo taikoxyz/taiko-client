@@ -41,9 +41,6 @@ type Proposer struct {
 	l1ProposerAddress       common.Address
 	l2SuggestedFeeRecipient common.Address
 
-	// Contract addresses
-	taikoL1Address common.Address
-
 	// Proposing configurations
 	proposingInterval          *time.Duration
 	proposeEmptyBlocksInterval *time.Duration
@@ -80,7 +77,6 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
 	p.l1ProposerAddress = crypto.PubkeyToAddress(cfg.L1ProposerPrivKey.PublicKey)
 	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
-	p.taikoL1Address = cfg.TaikoL1Address
 	p.proposingInterval = cfg.ProposeInterval
 	p.proposeEmptyBlocksInterval = cfg.ProposeEmptyBlocksInterval
 	p.proposeBlockTxGasLimit = cfg.ProposeBlockTxGasLimit
