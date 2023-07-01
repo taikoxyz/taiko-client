@@ -18,7 +18,6 @@ type Config struct {
 	L2Endpoint                 string
 	TaikoL1Address             common.Address
 	TaikoL2Address             common.Address
-	TaikoTokenL1Address        common.Address
 	L1ProposerPrivKey          *ecdsa.PrivateKey
 	L2SuggestedFeeRecipient    common.Address
 	ProposeInterval            *time.Duration
