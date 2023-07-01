@@ -88,12 +88,11 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 
 	// RPC clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
-		L1Endpoint:          cfg.L1Endpoint,
-		L2Endpoint:          cfg.L2Endpoint,
-		TaikoL1Address:      cfg.TaikoL1Address,
-		TaikoL2Address:      cfg.TaikoL2Address,
-		TaikoTokenL1Address: cfg.TaikoTokenL1Address,
-		RetryInterval:       cfg.BackOffRetryInterval,
+		L1Endpoint:     cfg.L1Endpoint,
+		L2Endpoint:     cfg.L2Endpoint,
+		TaikoL1Address: cfg.TaikoL1Address,
+		TaikoL2Address: cfg.TaikoL2Address,
+		RetryInterval:  cfg.BackOffRetryInterval,
 	}); err != nil {
 		return fmt.Errorf("initialize rpc clients error: %w", err)
 	}

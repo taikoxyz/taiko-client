@@ -86,7 +86,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L2Endpoint:                 c.String(flags.L2HTTPEndpoint.Name),
 		TaikoL1Address:             common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:             common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-		TaikoTokenL1Address:        common.HexToAddress(c.String(flags.L1TaikoTokenAddress.Name)),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:    common.HexToAddress(l2SuggestedFeeRecipient),
 		ProposeInterval:            proposingInterval,

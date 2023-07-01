@@ -20,12 +20,6 @@ var (
 		Required: true,
 		Category: proposerCategory,
 	}
-	L1TaikoTokenAddress = &cli.StringFlag{
-		Name:     "l1.taikoTokenAddress",
-		Usage:    "Address of the taiko token L1 contract",
-		Required: true,
-		Category: proposerCategory,
-	}
 )
 
 // Optional flags used by proposer.

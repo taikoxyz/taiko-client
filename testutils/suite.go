@@ -58,7 +58,6 @@ func (s *ClientTestSuite) SetupTest() {
 		L2Endpoint:               os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenL1Address:      common.HexToAddress(os.Getenv("TAIKO_TOKEN_L1_ADDRESS")),
 		TaikoProverPoolL1Address: common.HexToAddress(os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")),
 		L2EngineEndpoint:         os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		JwtSecret:                string(jwtSecret),
@@ -96,12 +95,6 @@ func (s *ClientTestSuite) SetupTest() {
 		s.Nil(err)
 
 		amt := new(big.Int).Mul(big.NewInt(int64(minStakePerCapacity)), big.NewInt(int64(capacity)))
-
-		amtTko := new(big.Int).Mul(amt, big.NewInt(8))
-
-		// proposer has tKO, need to transfer to prover
-		_, err = s.RpcClient.TaikoTokenL1.Transfer(proposerOpts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), amtTko)
-		s.Nil(err)
 
 		rewardPerGas := 1
 		s.Nil(err)
