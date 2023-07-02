@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	OracleProverAddress = common.HexToAddress("0x0000000000000000000000000000000000000000")
+	OracleProverAddress = common.HexToAddress("0x0000000000000000000000000000000000000001")
 )
 
 type BlockHeader struct {
