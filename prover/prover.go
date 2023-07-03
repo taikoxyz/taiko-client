@@ -452,20 +452,33 @@ func (p *Prover) onBlockProposed(
 			return err
 		}
 
+		log.Info(
+			"Proposed block information",
+			"blockID", event.Id,
+			"prover", block.AssignedProver.Hex(),
+			"proposedAt", block.ProposedAt,
+			"proofWindow", block.ProofWindow,
+		)
+
 		proofWindowExpired := uint64(time.Now().Unix()) > block.ProposedAt+block.ProofWindow
 		// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
 		if block.AssignedProver != p.proverAddress && block.AssignedProver != zeroAddress && !proofWindowExpired {
-			log.Info("proposed block not proveable", "blockID", event.Id, "prover", block.AssignedProver.Hex())
+			log.Info("Proposed block not proveable", "blockID", event.Id, "prover", block.AssignedProver.Hex())
 
-			if !proofWindowExpired {
-				// if we cant prove it
-				p.currentBlocksWaitingForProofWindowMutex.Lock()
-				p.currentBlocksWaitingForProofWindow = append(p.currentBlocksWaitingForProofWindow, event.Meta.Id)
-				p.currentBlocksBeingProvenMutex.Unlock()
-			}
+			// if we cant prove it
+			p.currentBlocksWaitingForProofWindowMutex.Lock()
+			p.currentBlocksWaitingForProofWindow = append(p.currentBlocksWaitingForProofWindow, event.Meta.Id)
+			p.currentBlocksBeingProvenMutex.Unlock()
 
 			return nil
 		}
+
+		log.Info(
+			"Proposed block is proveable",
+			"blockID", event.Id,
+			"prover", block.AssignedProver.Hex(),
+			"proofWindowExpired", proofWindowExpired,
+		)
 
 		ctx, cancelCtx := context.WithCancel(ctx)
 		p.currentBlocksBeingProvenMutex.Lock()
