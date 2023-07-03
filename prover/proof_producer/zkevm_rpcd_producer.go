@@ -230,9 +230,9 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 				Graffiti:                opts.Graffiti,
 				GasUsed:                 opts.GasUsed,
 				ParentGasUsed:           opts.ParentGasUsed,
-				BlockMaxGasLimit:        p.ProtocolConfig.BlockMaxGasLimit,
-				MaxTransactionsPerBlock: p.ProtocolConfig.MaxTransactionsPerBlock,
-				MaxBytesPerTxList:       p.ProtocolConfig.MaxBytesPerTxList,
+				BlockMaxGasLimit:        uint64(p.ProtocolConfig.BlockMaxGasLimit),
+				MaxTransactionsPerBlock: p.ProtocolConfig.BlockMaxTransactions,
+				MaxBytesPerTxList:       p.ProtocolConfig.BlockMaxTxListBytes,
 			},
 		}},
 	}

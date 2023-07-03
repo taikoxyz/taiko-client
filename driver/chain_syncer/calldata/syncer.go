@@ -64,9 +64,9 @@ func NewSyncer(
 		progressTracker:   progressTracker,
 		anchorConstructor: constructor,
 		txListValidator: txListValidator.NewTxListValidator(
-			configs.BlockMaxGasLimit,
-			configs.MaxTransactionsPerBlock,
-			configs.MaxBytesPerTxList,
+			uint64(configs.BlockMaxGasLimit),
+			configs.BlockMaxTransactions,
+			configs.BlockMaxTxListBytes,
 			rpc.L2ChainID,
 		),
 	}, nil
@@ -176,7 +176,6 @@ func (s *Syncer) onBlockProposed(
 		"L1Height", event.Raw.BlockNumber,
 		"L1Hash", event.Raw.BlockHash,
 		"BlockID", event.Id,
-		"BlockFee", event.BlockFee,
 		"Removed", event.Raw.Removed,
 	)
 

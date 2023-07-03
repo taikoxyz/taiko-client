@@ -47,9 +47,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		l1ProverPrivKey,
 		&sync.Mutex{},
 		false,
-		false,
 		"test",
-		0,
 		12*time.Second,
 	)
 	s.Nil(err)

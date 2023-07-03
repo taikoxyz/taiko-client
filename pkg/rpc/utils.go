@@ -69,81 +69,13 @@ func WaitReceipt(ctx context.Context, client *ethclient.Client, tx *types.Transa
 	}
 }
 
-// NeedNewSystemProof checks whether the L2 block still needs a new system proof.
-func NeedNewSystemProof(ctx context.Context, cli *Client, id *big.Int, realProofSkipSize *big.Int) (bool, error) {
-	if realProofSkipSize == nil || realProofSkipSize.Uint64() <= 1 {
-		return false, nil
-	}
-	if id.Uint64()%realProofSkipSize.Uint64() == 0 {
-		log.Info(
-			"Skipping system block proof",
-			"blockID", id.Uint64(),
-			"skipSize", realProofSkipSize.Uint64(),
-		)
-
-		return false, nil
-	}
-
-	var parent *types.Header
-	if id.Cmp(common.Big1) == 0 {
-		header, err := cli.L2.HeaderByNumber(ctx, common.Big0)
-		if err != nil {
-			return false, err
-		}
-
-		parent = header
-	} else {
-		parentL1Origin, err := cli.WaitL1Origin(ctx, new(big.Int).Sub(id, common.Big1))
-		if err != nil {
-			return false, err
-		}
-
-		if parent, err = cli.L2.HeaderByHash(ctx, parentL1Origin.L2BlockHash); err != nil {
-			return false, err
-		}
-	}
-
-	fc, err := cli.TaikoL1.GetForkChoice(nil, id, parent.Hash(), uint32(parent.GasUsed))
-	if err != nil {
-		if !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
-			return false, encoding.TryParsingCustomError(err)
-		}
-
-		return true, nil
-	}
-
-	if fc.Prover == encoding.SystemProverAddress {
-		log.Info(
-			"📬 Block's system proof has already been submitted by another system prover",
-			"blockID", id,
-			"prover", fc.Prover,
-			"provenAt", fc.ProvenAt,
-		)
-
-		return false, nil
-	}
-
-	return true, nil
-}
-
 // NeedNewProof checks whether the L2 block still needs a new proof.
 func NeedNewProof(
 	ctx context.Context,
 	cli *Client,
 	id *big.Int,
 	proverAddress common.Address,
-	realProofSkipSize *big.Int,
 ) (bool, error) {
-	if realProofSkipSize != nil && id.Uint64()%realProofSkipSize.Uint64() != 0 {
-		log.Info(
-			"Skipping valid block proof",
-			"blockID", id.Uint64(),
-			"skipSize", realProofSkipSize.Uint64(),
-		)
-
-		return false, nil
-	}
-
 	var parent *types.Header
 	if id.Cmp(common.Big1) == 0 {
 		header, err := cli.L2.HeaderByNumber(ctx, common.Big0)
@@ -172,7 +104,7 @@ func NeedNewProof(
 		return true, nil
 	}
 
-	if fc.Prover == encoding.OracleProverAddress || fc.Prover == encoding.SystemProverAddress {
+	if fc.Prover == encoding.OracleProverAddress {
 		return true, nil
 	}
 

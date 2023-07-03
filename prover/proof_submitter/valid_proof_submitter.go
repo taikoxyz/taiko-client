@@ -37,9 +37,7 @@ type ValidProofSubmitter struct {
 	l2SignalService   common.Address
 	mutex             *sync.Mutex
 	isOracleProver    bool
-	isSystemProver    bool
 	graffiti          [32]byte
-	expectedReward    uint64
 	retryInterval     time.Duration
 }
 
@@ -52,9 +50,7 @@ func NewValidProofSubmitter(
 	proverPrivKey *ecdsa.PrivateKey,
 	mutex *sync.Mutex,
 	isOracleProver bool,
-	isSystemProver bool,
 	graffiti string,
-	expectedReward uint64,
 	retryInterval time.Duration,
 ) (*ValidProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
@@ -72,11 +68,6 @@ func NewValidProofSubmitter(
 		return nil, err
 	}
 
-	// OracleProver and SystemProver do not care about the expected proof reward.
-	if isOracleProver || isSystemProver {
-		expectedReward = 0
-	}
-
 	return &ValidProofSubmitter{
 		rpc:               rpcClient,
 		proofProducer:     proofProducer,
@@ -89,9 +80,7 @@ func NewValidProofSubmitter(
 		taikoL2Address:    taikoL2Address,
 		mutex:             mutex,
 		isOracleProver:    isOracleProver,
-		isSystemProver:    isSystemProver,
 		graffiti:          rpc.StringToBytes32(graffiti),
-		expectedReward:    expectedReward,
 		retryInterval:     retryInterval,
 	}, nil
 }
@@ -221,12 +210,9 @@ func (s *ValidProofSubmitter) SubmitProof(
 	var circuitsIdx uint16
 	var prover common.Address
 
-	if s.isOracleProver || s.isSystemProver {
-		if s.isSystemProver {
-			prover = encoding.SystemProverAddress
-		} else {
-			prover = encoding.OracleProverAddress
-		}
+	if s.isOracleProver {
+		prover = encoding.OracleProverAddress
+
 		circuitsIdx = uint16(int(zkProof[64]))
 		evidence.Proof = zkProof[0:64]
 	} else {
@@ -263,7 +249,6 @@ func (s *ValidProofSubmitter) SubmitProof(
 		s.rpc,
 		blockID,
 		block.Header().Time,
-		s.expectedReward,
 		proofWithHeader.Meta,
 		sendTx,
 		s.retryInterval,

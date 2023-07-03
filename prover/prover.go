@@ -26,6 +26,10 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var (
+	zeroAddress = common.HexToAddress("0x0000000000000000000000000000000000000000")
+)
+
 type cancelFunc func()
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
@@ -34,7 +38,6 @@ type Prover struct {
 	cfg                 *Config
 	proverAddress       common.Address
 	oracleProverAddress common.Address
-	systemProverAddress common.Address
 
 	// Clients
 	rpc *rpc.Client
@@ -59,7 +62,9 @@ type Prover struct {
 	blockProvenSub   event.Subscription
 	blockVerifiedCh  chan *bindings.TaikoL1ClientBlockVerified
 	blockVerifiedSub event.Subscription
-	proveNotify      chan struct{}
+	proverSlashedCh  chan *bindings.TaikoL1ProverPoolSlashed
+	proverSlashedSub event.Subscription
+	proveNotify      chan *big.Int
 
 	// Proof related
 	proofGenerationCh chan *proofProducer.ProofWithHeader
@@ -69,8 +74,13 @@ type Prover struct {
 	submitProofConcurrencyGuard chan struct{}
 	submitProofTxMutex          *sync.Mutex
 
-	currentBlocksBeingProven      map[uint64]cancelFunc
-	currentBlocksBeingProvenMutex *sync.Mutex
+	currentBlocksBeingProven                map[uint64]cancelFunc
+	currentBlocksBeingProvenMutex           *sync.Mutex
+	currentBlocksWaitingForProofWindow      []uint64
+	currentBlocksWaitingForProofWindowMutex *sync.Mutex
+
+	// interval settings
+	checkProofWindowExpiredIntervalInSeconds time.Duration
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -92,14 +102,17 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.ctx = ctx
 	p.currentBlocksBeingProven = make(map[uint64]cancelFunc)
 	p.currentBlocksBeingProvenMutex = &sync.Mutex{}
+	p.currentBlocksWaitingForProofWindow = make([]uint64, 0)
+	p.currentBlocksWaitingForProofWindowMutex = &sync.Mutex{}
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
-		L1Endpoint:     cfg.L1WsEndpoint,
-		L2Endpoint:     cfg.L2WsEndpoint,
-		TaikoL1Address: cfg.TaikoL1Address,
-		TaikoL2Address: cfg.TaikoL2Address,
-		RetryInterval:  cfg.BackOffRetryInterval,
+		L1Endpoint:               cfg.L1WsEndpoint,
+		L2Endpoint:               cfg.L2WsEndpoint,
+		TaikoL1Address:           cfg.TaikoL1Address,
+		TaikoL2Address:           cfg.TaikoL2Address,
+		TaikoProverPoolL1Address: cfg.TaikoProverPoolL1Address,
+		RetryInterval:            cfg.BackOffRetryInterval,
 	}); err != nil {
 		return err
 	}
@@ -115,19 +128,20 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	p.submitProofTxMutex = &sync.Mutex{}
 	p.txListValidator = txListValidator.NewTxListValidator(
-		p.protocolConfigs.BlockMaxGasLimit,
-		p.protocolConfigs.MaxTransactionsPerBlock,
-		p.protocolConfigs.MaxBytesPerTxList,
+		uint64(p.protocolConfigs.BlockMaxGasLimit),
+		p.protocolConfigs.BlockMaxTransactions,
+		p.protocolConfigs.BlockMaxTxListBytes,
 		p.rpc.L2ChainID,
 	)
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 
-	chBufferSize := p.protocolConfigs.MaxNumProposedBlocks.Uint64()
+	chBufferSize := p.protocolConfigs.BlockMaxProposals.Uint64()
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	p.blockProvenCh = make(chan *bindings.TaikoL1ClientBlockProven, chBufferSize)
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
-	p.proveNotify = make(chan struct{}, 1)
+	p.proverSlashedCh = make(chan *bindings.TaikoL1ProverPoolSlashed, chBufferSize)
+	p.proveNotify = make(chan *big.Int, 1)
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
 	}
@@ -136,6 +150,8 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
+	p.checkProofWindowExpiredIntervalInSeconds = p.cfg.CheckProofWindowExpiredIntervalInSeconds
+
 	oracleProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, rpc.StringToBytes32("oracle_prover"), true)
 	if err != nil {
 		return err
@@ -143,28 +159,16 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	p.oracleProverAddress = oracleProverAddress
 
-	systemProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, rpc.StringToBytes32("system_prover"), true)
-	if err != nil {
-		return err
-	}
-
-	p.systemProverAddress = systemProverAddress
-
 	var producer proofProducer.ProofProducer
 
-	isSystemProver := cfg.SystemProver
 	isOracleProver := cfg.OracleProver
 
-	if isSystemProver || isOracleProver {
+	if isOracleProver {
 		var specialProverAddress common.Address
 		var privateKey *ecdsa.PrivateKey
-		if isSystemProver {
-			specialProverAddress = systemProverAddress
-			privateKey = p.cfg.SystemProverPrivateKey
-		} else {
-			specialProverAddress = oracleProverAddress
-			privateKey = p.cfg.OracleProverPrivateKey
-		}
+
+		specialProverAddress = oracleProverAddress
+		privateKey = p.cfg.OracleProverPrivateKey
 
 		if producer, err = proofProducer.NewSpecialProofProducer(
 			p.rpc,
@@ -172,7 +176,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			p.cfg.TaikoL2Address,
 			specialProverAddress,
 			p.cfg.Graffiti,
-			isSystemProver,
 		); err != nil {
 			return err
 		}
@@ -203,9 +206,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.L1ProverPrivKey,
 		p.submitProofTxMutex,
 		p.cfg.OracleProver,
-		p.cfg.SystemProver,
 		p.cfg.Graffiti,
-		p.cfg.ExpectedReward,
 		p.cfg.BackOffRetryInterval,
 	); err != nil {
 		return err
@@ -233,7 +234,7 @@ func (p *Prover) eventLoop() {
 	// if we are already proving.
 	reqProving := func() {
 		select {
-		case p.proveNotify <- struct{}{}:
+		case p.proveNotify <- nil:
 		default:
 		}
 	}
@@ -249,9 +250,12 @@ func (p *Prover) eventLoop() {
 	// If there is no new block verification in `proofCooldownPeriod * 2` seconeds, and the current prover is
 	// a special prover, we will go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
 	verificationCheckTicker := time.NewTicker(
-		time.Duration(p.protocolConfigs.ProofCooldownPeriod.Uint64()*2) * time.Second,
+		time.Duration(p.protocolConfigs.ProofRegularCooldown.Uint64()*2) * time.Second,
 	)
 	defer verificationCheckTicker.Stop()
+
+	checkProofWindowExpiredTicker := time.NewTicker(p.checkProofWindowExpiredIntervalInSeconds)
+	defer checkProofWindowExpiredTicker.Stop()
 
 	// Call reqProving() right away to catch up with the latest state.
 	reqProving()
@@ -267,10 +271,14 @@ func (p *Prover) eventLoop() {
 			); err != nil {
 				log.Error("Check chain verification error", "error", err)
 			}
+		case <-checkProofWindowExpiredTicker.C:
+			if err := p.checkProofWindowsExpired(p.ctx); err != nil {
+				log.Error("error checking proof window expired", "error", err)
+			}
 		case proofWithHeader := <-p.proofGenerationCh:
 			p.submitProofOp(p.ctx, proofWithHeader)
-		case <-p.proveNotify:
-			if err := p.proveOp(); err != nil {
+		case blockId := <-p.proveNotify:
+			if err := p.proveOp(blockId); err != nil {
 				log.Error("Prove new blocks error", "error", err)
 			}
 		case <-p.blockProposedCh:
@@ -282,6 +290,10 @@ func (p *Prover) eventLoop() {
 		case e := <-p.blockProvenCh:
 			if err := p.onBlockProven(p.ctx, e); err != nil {
 				log.Error("Handle BlockProven event error", "error", err)
+			}
+		case e := <-p.proverSlashedCh:
+			if e.Addr.Hex() == p.proverAddress.Hex() {
+				log.Info("Prover slashed", "address", e.Addr.Hex(), "amount", e.Amount)
 			}
 		case <-forceProvingTicker.C:
 			reqProving()
@@ -297,8 +309,12 @@ func (p *Prover) Close() {
 
 // proveOp performs a proving operation, find current unproven blocks, then
 // request generating proofs for them.
-func (p *Prover) proveOp() error {
+func (p *Prover) proveOp(startHeight *big.Int) error {
 	firstTry := true
+
+	if startHeight == nil {
+		startHeight = new(big.Int).SetUint64(p.l1Current)
+	}
 	for firstTry || p.reorgDetectedFlag {
 		p.reorgDetectedFlag = false
 		firstTry = false
@@ -306,7 +322,7 @@ func (p *Prover) proveOp() error {
 		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
 			Client:               p.rpc.L1,
 			TaikoL1:              p.rpc.TaikoL1,
-			StartHeight:          new(big.Int).SetUint64(p.l1Current),
+			StartHeight:          startHeight,
 			OnBlockProposedEvent: p.onBlockProposed,
 		})
 		if err != nil {
@@ -390,7 +406,6 @@ func (p *Prover) onBlockProposed(
 		"L1Height", event.Raw.BlockNumber,
 		"L1Hash", event.Raw.BlockHash,
 		"BlockID", event.Id,
-		"BlockFee", event.BlockFee,
 		"Removed", event.Raw.Removed,
 	)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
@@ -410,13 +425,12 @@ func (p *Prover) onBlockProposed(
 		}
 
 		// Check whether the block's proof is still needed.
-		if !p.cfg.OracleProver && !p.cfg.SystemProver {
+		if !p.cfg.OracleProver {
 			needNewProof, err := rpc.NeedNewProof(
 				p.ctx,
 				p.rpc,
 				event.Id,
 				p.proverAddress,
-				p.protocolConfigs.RealProofSkipSize,
 			)
 			if err != nil {
 				return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
@@ -427,21 +441,30 @@ func (p *Prover) onBlockProposed(
 			}
 		}
 
-		if p.cfg.SystemProver {
-			needNewSystemProof, err := rpc.NeedNewSystemProof(ctx, p.rpc, event.Id, p.protocolConfigs.RealProofSkipSize)
-			if err != nil {
-				return fmt.Errorf("failed to check whether the L2 block needs a new system proof: %w", err)
-			}
-
-			if !needNewSystemProof {
-				return nil
-			}
-		}
-
 		// Check if the current prover has seen this block ID before, there was probably
 		// a L1 reorg, we need to cancel that reorged block's proof generation task at first.
 		if p.currentBlocksBeingProven[event.Meta.Id] != nil {
 			p.cancelProof(ctx, event.Meta.Id)
+		}
+
+		block, err := p.rpc.TaikoL1.GetBlock(nil, event.Id)
+		if err != nil {
+			return err
+		}
+
+		proofWindowExpired := uint64(time.Now().Unix()) > block.ProposedAt+block.ProofWindow
+		// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
+		if block.AssignedProver != p.proverAddress && block.AssignedProver != zeroAddress && !proofWindowExpired {
+			log.Info("proposed block not proveable", "blockID", event.Id, "prover", block.AssignedProver.Hex())
+
+			if !proofWindowExpired {
+				// if we cant prove it
+				p.currentBlocksWaitingForProofWindowMutex.Lock()
+				p.currentBlocksWaitingForProofWindow = append(p.currentBlocksWaitingForProofWindow, event.Meta.Id)
+				p.currentBlocksBeingProvenMutex.Unlock()
+			}
+
+			return nil
 		}
 
 		ctx, cancelCtx := context.WithCancel(ctx)
@@ -510,18 +533,10 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
 
-	isNormalProof := p.protocolConfigs.RealProofSkipSize == nil ||
-		(p.protocolConfigs.RealProofSkipSize != nil && event.Id.Uint64()%p.protocolConfigs.RealProofSkipSize.Uint64() == 0)
 	if event.Reward > math.MaxInt64 {
 		metrics.ProverAllProofRewardGauge.Update(math.MaxInt64)
-		if isNormalProof {
-			metrics.ProverNormalProofRewardGauge.Update(math.MaxInt64)
-		}
 	} else {
 		metrics.ProverAllProofRewardGauge.Update(int64(event.Reward))
-		if isNormalProof {
-			metrics.ProverNormalProofRewardGauge.Update(int64(event.Reward))
-		}
 	}
 
 	p.latestVerifiedL1Height = event.Raw.BlockNumber
@@ -545,8 +560,6 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 	metrics.ProverReceivedProvenBlockGauge.Update(event.Id.Int64())
 	// if this proof is submitted by an oracle prover or a system prover, don't cancel proof.
 	if event.Prover == p.oracleProverAddress ||
-		event.Prover == p.systemProverAddress ||
-		event.Prover == encoding.SystemProverAddress ||
 		event.Prover == encoding.OracleProverAddress {
 		return nil
 	}
@@ -620,6 +633,7 @@ func (p *Prover) initSubscription() {
 	p.blockProposedSub = rpc.SubscribeBlockProposed(p.rpc.TaikoL1, p.blockProposedCh)
 	p.blockVerifiedSub = rpc.SubscribeBlockVerified(p.rpc.TaikoL1, p.blockVerifiedCh)
 	p.blockProvenSub = rpc.SubscribeBlockProven(p.rpc.TaikoL1, p.blockProvenCh)
+	p.proverSlashedSub = rpc.SubscribeSlashed(p.rpc.TaikoProverPoolL1, p.proverSlashedCh)
 }
 
 // closeSubscription closes all subscriptions.
@@ -631,14 +645,14 @@ func (p *Prover) closeSubscription() {
 // checkChainVerification checks if there is no new block verification in protocol, if so,
 // it will let current sepecial prover to go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
 func (p *Prover) checkChainVerification(lastLatestVerifiedL1Height uint64) error {
-	if (!p.cfg.SystemProver && !p.cfg.OracleProver) || lastLatestVerifiedL1Height != p.latestVerifiedL1Height {
+	if (!p.cfg.OracleProver) || lastLatestVerifiedL1Height != p.latestVerifiedL1Height {
 		return nil
 	}
 
 	log.Warn(
 		"No new block verification in `proofCooldownPeriod * 2` seconeds",
 		"latestVerifiedL1Height", p.latestVerifiedL1Height,
-		"proofCooldownPeriod", p.protocolConfigs.ProofCooldownPeriod,
+		"proofCooldownPeriod", p.protocolConfigs.ProofRegularCooldown,
 	)
 
 	stateVar, err := p.rpc.TaikoL1.GetStateVariables(nil)
@@ -684,4 +698,60 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 		cancel()
 		delete(p.currentBlocksBeingProven, blockID)
 	}
+}
+
+// checkProofWindowsExpired iterates through the current blocks waiting for proof window to expire,
+// which are blocks that have been proposed, but we were not selected as the prover. if the proof window
+// has expired, we can start generating a proof for them.
+func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
+	for i, blockId := range p.currentBlocksWaitingForProofWindow {
+		if err := p.checkProofWindowExpired(ctx, i, blockId); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// checkProofWindowExpired checks a single instance of a block to see if its proof winodw has expired
+// and the proof is now able to be submitted by anyone, not just the blocks assigned prover.
+func (p *Prover) checkProofWindowExpired(ctx context.Context, i int, blockId uint64) error {
+	p.currentBlocksWaitingForProofWindowMutex.Lock()
+	defer p.currentBlocksWaitingForProofWindowMutex.Unlock()
+
+	block, err := p.rpc.TaikoL1.GetBlock(nil, big.NewInt(int64(blockId)))
+	if err != nil {
+		return err
+	}
+
+	if time.Now().Unix() > int64(block.ProposedAt)+int64(block.ProofWindow) {
+		// we can see if a fork choice with correct parentHash/gasUsed has come in.
+		// if it hasnt, we can start to generate a proof for this.
+
+		parent, err := p.rpc.L2ParentByBlockId(ctx, big.NewInt(int64(blockId)))
+		if err != nil {
+			return err
+		}
+
+		forkChoice, err := p.rpc.TaikoL1.GetForkChoice(nil, big.NewInt(int64(blockId)), parent.Hash(), uint32(parent.GasUsed))
+		if err != nil {
+			return err
+		}
+
+		if forkChoice.Prover == zeroAddress {
+			// we can generate the proof
+			p.proveNotify <- big.NewInt(int64(blockId))
+		} else {
+			// we should remove this block from being watched, a proof has already come in that agrees with
+			// our expected fork choice.
+			// cancel will remove this from the map.
+			p.currentBlocksWaitingForProofWindow = append(
+				p.currentBlocksWaitingForProofWindow[:i],
+				p.currentBlocksWaitingForProofWindow[i+1:]...,
+			)
+		}
+	}
+
+	// otherwise, keep it in the map and check again next iteration
+	return nil
 }

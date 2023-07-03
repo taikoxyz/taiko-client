@@ -100,6 +100,24 @@ func SubscribeBlockProven(
 	})
 }
 
+// SubscribeSlashed subscribes the prover pool's Slashed events.
+func SubscribeSlashed(
+	taikoProverPool *bindings.TaikoL1ProverPool,
+	ch chan *bindings.TaikoL1ProverPoolSlashed,
+) event.Subscription {
+	return SubscribeEvent("Slashed", func(ctx context.Context) (event.Subscription, error) {
+		sub, err := taikoProverPool.WatchSlashed(nil, ch, nil)
+		if err != nil {
+			log.Error("Create taikoProverPool.WatchSlashed subscription error", "error", err)
+			return nil, err
+		}
+
+		defer sub.Unsubscribe()
+
+		return waitSubErr(ctx, sub)
+	})
+}
+
 // SubscribeChainHead subscribes the new chain heads.
 func SubscribeChainHead(
 	client *ethclient.Client,

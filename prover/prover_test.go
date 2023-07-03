@@ -36,17 +36,18 @@ func (s *ProverTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
 	s.Nil(InitFromConfig(ctx, p, (&Config{
-		L1WsEndpoint:             os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L1HttpEndpoint:           os.Getenv("L1_NODE_HTTP_ENDPOINT"),
-		L2WsEndpoint:             os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2HttpEndpoint:           os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		L1ProverPrivKey:          l1ProverPrivKey,
-		OracleProverPrivateKey:   l1ProverPrivKey,
-		SystemProverPrivateKey:   l1ProverPrivKey,
-		Dummy:                    true,
-		MaxConcurrentProvingJobs: 1,
+		L1WsEndpoint:                             os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:                           os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:                             os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:                           os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:                           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoProverPoolL1Address:                 common.HexToAddress(os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")),
+		L1ProverPrivKey:                          l1ProverPrivKey,
+		OracleProverPrivateKey:                   l1ProverPrivKey,
+		Dummy:                                    true,
+		MaxConcurrentProvingJobs:                 1,
+		CheckProofWindowExpiredIntervalInSeconds: 5 * time.Second,
 	})))
 	s.p = p
 	s.cancel = cancel
@@ -110,6 +111,7 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 		s.d.ChainSyncer().CalldataSyncer(),
 	) {
 		s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
+
 		s.Nil(s.p.validProofSubmitter.SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 	}
 }
@@ -148,7 +150,6 @@ func (s *ProverTestSuite) TestStartSubscription() {
 func (s *ProverTestSuite) TestCheckChainVerification() {
 	s.Nil(s.p.checkChainVerification(0))
 	s.p.latestVerifiedL1Height = 1024
-	s.p.cfg.SystemProver = true
 	s.Nil(s.p.checkChainVerification(1024))
 }
 

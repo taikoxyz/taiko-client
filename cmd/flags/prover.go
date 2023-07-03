@@ -58,19 +58,9 @@ var (
 		Usage:    "Set whether prover should use oracle prover or not",
 		Category: proverCategory,
 	}
-	SystemProver = &cli.BoolFlag{
-		Name:     "systemProver",
-		Usage:    "Set whether prover should use system prover or not",
-		Category: proverCategory,
-	}
 	OracleProverPrivateKey = &cli.StringFlag{
 		Name:     "oracleProverPrivateKey",
 		Usage:    "Private key of oracle prover",
-		Category: proverCategory,
-	}
-	SystemProverPrivateKey = &cli.StringFlag{
-		Name:     "systemProverPrivateKey",
-		Usage:    "Private key of system prover",
 		Category: proverCategory,
 	}
 	Graffiti = &cli.StringFlag{
@@ -79,11 +69,17 @@ var (
 		Category: proverCategory,
 		Value:    "",
 	}
-	ExpectedReward = &cli.Uint64Flag{
-		Name:     "expectedReward",
-		Usage:    "The expected prover reward for each block",
-		Category: proverCategory,
-		Value:    100_000_000,
+	TaikoProverPoolL1Address = &cli.StringFlag{
+		Name:     "taikoProverPoolL1",
+		Usage:    "TaikoProverPoolL1 contract address",
+		Required: true,
+		Category: commonCategory,
+	}
+	CheckProofWindowExpiredInterval = &cli.Uint64Flag{
+		Name:     "prover.checkProofWindowExpiredInterval",
+		Usage:    "Interval in seconds to check for expired proof windows from other provers",
+		Category: commonCategory,
+		Value:    15,
 	}
 )
 
@@ -100,9 +96,8 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	Dummy,
 	RandomDummyProofDelay,
 	OracleProver,
-	SystemProver,
 	OracleProverPrivateKey,
-	SystemProverPrivateKey,
 	Graffiti,
-	ExpectedReward,
+	TaikoProverPoolL1Address,
+	CheckProofWindowExpiredInterval,
 })

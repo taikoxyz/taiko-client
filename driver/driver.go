@@ -197,7 +197,7 @@ func (d *Driver) reportProtocolStatus() {
 				return err
 			}
 
-			maxNumBlocks = configs.MaxNumProposedBlocks.Uint64()
+			maxNumBlocks = configs.BlockMaxProposals.Uint64()
 			return nil
 		},
 		backoff.NewConstantBackOff(d.backOffRetryInterval),

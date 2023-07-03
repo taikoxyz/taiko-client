@@ -67,7 +67,6 @@ func sendTxWithBackoff(
 	cli *rpc.Client,
 	blockID *big.Int,
 	proposedAt uint64,
-	expectedReward uint64,
 	meta *bindings.TaikoDataBlockMetadata,
 	sendTxFunc func() (*types.Transaction, error),
 	retryInterval time.Duration,
