@@ -468,7 +468,7 @@ func (p *Prover) onBlockProposed(
 			// if we cant prove it
 			p.currentBlocksWaitingForProofWindowMutex.Lock()
 			p.currentBlocksWaitingForProofWindow = append(p.currentBlocksWaitingForProofWindow, event.Meta.Id)
-			p.currentBlocksBeingProvenMutex.Unlock()
+			p.currentBlocksWaitingForProofWindowMutex.Unlock()
 
 			return nil
 		}
