@@ -106,6 +106,20 @@ var (
 			},
 		},
 	}
+	depositsProcessedComponents = []abi.ArgumentMarshaling{
+		{
+			Name: "recipient",
+			Type: "address",
+		},
+		{
+			Name: "amount",
+			Type: "uint96",
+		},
+		{
+			Name: "id",
+			Type: "uint64",
+		},
+	}
 	evidenceComponents = []abi.ArgumentMarshaling{
 		{
 			Name: "metaHash",
@@ -160,6 +174,9 @@ var (
 	// Evidence
 	EvidenceType, _ = abi.NewType("tuple", "TaikoData.BlockEvidence", evidenceComponents)
 	EvidenceArgs    = abi.Arguments{{Name: "Evidence", Type: EvidenceType}}
+	// DepositsProcessed
+	DepositsProcessedType, _ = abi.NewType("tuple[]", "TaikoData.EthDeposit[]", depositsProcessedComponents)
+	DepositsProcessedArgs    = abi.Arguments{{Name: "DepositsProcessed", Type: DepositsProcessedType}}
 )
 
 // Contract ABIs.
@@ -235,6 +252,15 @@ func EncodeProveBlockInput(
 	}
 
 	return evidenceBytes, nil
+}
+
+// EncodeDepositsProcessed performs the solidity `abi.encode` for the given deposits.
+func EncodeDepositsProcessed(deposits []bindings.TaikoDataEthDeposit) ([]byte, error) {
+	b, err := DepositsProcessedArgs.Pack(deposits)
+	if err != nil {
+		return nil, fmt.Errorf("failed to abi.encode deposits, %w", err)
+	}
+	return b, nil
 }
 
 // EncodeProveBlockInvalidInput encodes the input params for TaikoL1.proveBlockInvalid.

@@ -14,8 +14,10 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 var (
@@ -59,20 +61,36 @@ type RequestProofBodyParam struct {
 
 // RequestProofBody represents the JSON body of RequestProofBody.Param's `protocol_instance` field.
 type ProtocolInstance struct {
-	L1SignalService         string `json:"l1_signal_service"`
-	L2SignalService         string `json:"l2_signal_service"`
-	TaikoL2                 string `json:"l2_contract"`
-	MetaHash                string `json:"meta_hash"`
-	BlockHash               string `json:"block_hash"`
-	ParentHash              string `json:"parent_hash"`
-	SignalRoot              string `json:"signal_root"`
-	Graffiti                string `json:"graffiti"`
-	Prover                  string `json:"prover"`
-	GasUsed                 uint64 `json:"gas_used"`
-	ParentGasUsed           uint64 `json:"parent_gas_used"`
-	BlockMaxGasLimit        uint64 `json:"block_max_gas_limit"`
-	MaxTransactionsPerBlock uint64 `json:"max_transactions_per_block"`
-	MaxBytesPerTxList       uint64 `json:"max_bytes_per_tx_list"`
+	L1SignalService         string                `json:"l1_signal_service"`
+	L2SignalService         string                `json:"l2_signal_service"`
+	TaikoL2                 string                `json:"l2_contract"`
+	MetaData                *RequestProofMetaData `json:"meta_data"`
+	BlockHash               string                `json:"block_hash"`
+	ParentHash              string                `json:"parent_hash"`
+	SignalRoot              string                `json:"signal_root"`
+	Graffiti                string                `json:"graffiti"`
+	Prover                  string                `json:"prover"`
+	GasUsed                 uint64                `json:"gas_used"`
+	ParentGasUsed           uint64                `json:"parent_gas_used"`
+	BlockMaxGasLimit        uint64                `json:"block_max_gas_limit"`
+	MaxTransactionsPerBlock uint64                `json:"max_transactions_per_block"`
+	MaxBytesPerTxList       uint64                `json:"max_bytes_per_tx_list"`
+	AnchorGasCost           uint64                `json:"anchor_gas_cost"`
+}
+
+type RequestProofMetaData struct {
+	ID                uint64 `json:"id"`
+	Timestamp         uint64 `json:"timestamp"`
+	L1Height          uint64 `json:"l1_height"`
+	L1Hash            string `json:"l1_hash"`
+	L1MixHash         string `json:"l1_mix_hash"`
+	DepositsProcessed string `json:"deposits_processed"`
+	TxListHash        string `json:"tx_list_hash"`
+	TxListByteStart   uint32 `json:"tx_list_byte_start"`
+	TxListByteEnd     uint32 `json:"tx_list_byte_end"`
+	GasLimit          uint32 `json:"gas_limit"`
+	Beneficiary       string `json:"beneficiary"`
+	Treasury          string `json:"treasury"`
 }
 
 // RequestProofBodyResponse represents the JSON body of the response of the proof requests.
@@ -204,6 +222,11 @@ func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 
 // requestProof sends a RPC request to proverd to try to get the requested proof.
 func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput, error) {
+	abiEncodedDeposits, err := encoding.EncodeDepositsProcessed(opts.MetaData.DepositsProcessed)
+	if err != nil {
+		return nil, err
+	}
+
 	reqBody := RequestProofBody{
 		JsonRPC: "2.0",
 		ID:      common.Big1,
@@ -219,11 +242,24 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 			MockFeedback: false,
 			Aggregate:    true,
 			ProtocolInstance: &ProtocolInstance{
-				Prover:                  opts.ProverAddress.Hex()[2:],
-				L1SignalService:         opts.L1SignalService.Hex()[2:],
-				L2SignalService:         opts.L2SignalService.Hex()[2:],
-				TaikoL2:                 opts.TaikoL2.Hex()[2:],
-				MetaHash:                opts.MetaHash.Hex()[2:],
+				Prover:          opts.ProverAddress.Hex()[2:],
+				L1SignalService: opts.L1SignalService.Hex()[2:],
+				L2SignalService: opts.L2SignalService.Hex()[2:],
+				TaikoL2:         opts.TaikoL2.Hex()[2:],
+				MetaData: &RequestProofMetaData{
+					ID:                opts.MetaData.Id,
+					Timestamp:         opts.MetaData.Timestamp,
+					L1Height:          opts.MetaData.L1Height,
+					L1Hash:            common.Bytes2Hex(opts.MetaData.L1Hash[:])[2:],
+					L1MixHash:         common.Bytes2Hex(opts.MetaData.MixHash[:])[2:],
+					DepositsProcessed: crypto.Keccak256Hash(abiEncodedDeposits).Hex()[2:],
+					TxListHash:        common.Bytes2Hex(opts.MetaData.TxListHash[:])[2:],
+					TxListByteStart:   uint32(opts.MetaData.TxListByteStart.Uint64()),
+					TxListByteEnd:     uint32(opts.MetaData.TxListByteEnd.Uint64()),
+					GasLimit:          opts.MetaData.GasLimit,
+					Beneficiary:       opts.MetaData.Beneficiary.Hex()[2:],
+					Treasury:          opts.MetaData.Treasury.Hex()[2:],
+				},
 				BlockHash:               opts.BlockHash.Hex()[2:],
 				ParentHash:              opts.ParentHash.Hex()[2:],
 				SignalRoot:              opts.SignalRoot.Hex()[2:],
@@ -233,6 +269,7 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 				BlockMaxGasLimit:        uint64(p.ProtocolConfig.BlockMaxGasLimit),
 				MaxTransactionsPerBlock: p.ProtocolConfig.BlockMaxTransactions,
 				MaxBytesPerTxList:       p.ProtocolConfig.BlockMaxTxListBytes,
+				AnchorGasCost:           opts.AnchorGasCost,
 			},
 		}},
 	}

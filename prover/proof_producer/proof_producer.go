@@ -21,13 +21,14 @@ type ProofRequestOptions struct {
 	L1SignalService    common.Address
 	L2SignalService    common.Address
 	TaikoL2            common.Address
-	MetaHash           common.Hash
+	MetaData           *bindings.TaikoDataBlockMetadata
 	BlockHash          common.Hash
 	ParentHash         common.Hash
 	SignalRoot         common.Hash
 	Graffiti           string
 	GasUsed            uint64
 	ParentGasUsed      uint64
+	AnchorGasCost      uint64
 }
 
 type ProofWithHeader struct {

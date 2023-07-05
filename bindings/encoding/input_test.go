@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
+	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 func TestEncodeEvidence(t *testing.T) {
@@ -37,6 +38,13 @@ func TestEncodeCommitHash(t *testing.T) {
 
 func TestEncodeProposeBlockInput(t *testing.T) {
 	encoded, err := EncodeProposeBlockInput(&testMetaInput)
+
+	require.Nil(t, err)
+	require.NotNil(t, encoded)
+}
+
+func TestEncodeDepositsProcessed(t *testing.T) {
+	encoded, err := EncodeDepositsProcessed([]bindings.TaikoDataEthDeposit{})
 
 	require.Nil(t, err)
 	require.NotNil(t, encoded)

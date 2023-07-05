@@ -103,18 +103,18 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		return fmt.Errorf("failed to get the L2 parent block by hash (%s): %w", block.ParentHash(), err)
 	}
 
-	blockInfo, err := s.rpc.TaikoL1.GetBlock(nil, event.Id)
-	if err != nil {
-		return err
-	}
-
 	if block.Transactions().Len() == 0 {
 		return errors.New("no transaction in block")
 	}
 
 	signalRoot, err := s.rpc.GetStorageRoot(ctx, s.rpc.L2GethClient, s.l2SignalService, block.Number())
 	if err != nil {
-		return fmt.Errorf("error getting storageroot: %w", err)
+		return fmt.Errorf("failed to get storage root: %w", err)
+	}
+
+	anchorTxReceipt, err := s.anchorTxValidator.GetAndValidateAnchorTxReceipt(ctx, block.Transactions()[0])
+	if err != nil {
+		return fmt.Errorf("failed to get anchor transaction receipt: %w", err)
 	}
 
 	// Request proof.
@@ -125,13 +125,14 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		L1SignalService:    s.l1SignalService,
 		L2SignalService:    s.l2SignalService,
 		TaikoL2:            s.taikoL2Address,
-		MetaHash:           blockInfo.MetaHash,
+		MetaData:           &event.Meta,
 		BlockHash:          block.Hash(),
 		ParentHash:         block.ParentHash(),
 		SignalRoot:         signalRoot,
 		Graffiti:           common.Bytes2Hex(s.graffiti[:]),
 		GasUsed:            block.GasUsed(),
 		ParentGasUsed:      parent.GasUsed(),
+		AnchorGasCost:      anchorTxReceipt.GasUsed,
 	}
 
 	if err := s.proofProducer.RequestProof(ctx, opts, event.Id, &event.Meta, block.Header(), s.resultCh); err != nil {
@@ -196,8 +197,13 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
+	blockInfo, err := s.rpc.TaikoL1.GetBlock(nil, blockID)
+	if err != nil {
+		return err
+	}
+
 	evidence := &encoding.TaikoL1Evidence{
-		MetaHash:      proofWithHeader.Opts.MetaHash,
+		MetaHash:      blockInfo.MetaHash,
 		ParentHash:    proofWithHeader.Opts.ParentHash,
 		BlockHash:     proofWithHeader.Opts.BlockHash,
 		SignalRoot:    proofWithHeader.Opts.SignalRoot,
@@ -207,9 +213,10 @@ func (s *ValidProofSubmitter) SubmitProof(
 		Proof:         zkProof,
 	}
 
-	var circuitsIdx uint16
-	var prover common.Address
-
+	var (
+		circuitsIdx uint16
+		prover      common.Address
+	)
 	if s.isOracleProver {
 		prover = encoding.OracleProverAddress
 
