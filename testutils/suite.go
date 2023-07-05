@@ -101,8 +101,8 @@ func (s *ClientTestSuite) SetupTest() {
 		_, err = s.RpcClient.TaikoProverPoolL1.Stake(
 			proverOpts,
 			amt.Uint64(),
-			uint16(rewardPerGas),
-			uint16(capacity),
+			uint32(rewardPerGas),
+			capacity,
 		)
 		s.Nil(err)
 	}
