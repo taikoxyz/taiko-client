@@ -28,7 +28,7 @@ type ProofRequestOptions struct {
 	Graffiti           string
 	GasUsed            uint64
 	ParentGasUsed      uint64
-	AnchorGasCost      uint64
+	AnchorGasLimit     uint64
 }
 
 type ProofWithHeader struct {

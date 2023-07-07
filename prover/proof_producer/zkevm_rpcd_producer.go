@@ -75,7 +75,7 @@ type ProtocolInstance struct {
 	BlockMaxGasLimit        uint64                `json:"block_max_gas_limit"`
 	MaxTransactionsPerBlock uint64                `json:"max_transactions_per_block"`
 	MaxBytesPerTxList       uint64                `json:"max_bytes_per_tx_list"`
-	AnchorGasCost           uint64                `json:"anchor_gas_cost"`
+	AnchorGasLimit          uint64                `json:"anchor_gas_limit"`
 }
 
 type RequestProofMetaData struct {
@@ -269,7 +269,7 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 				BlockMaxGasLimit:        uint64(p.ProtocolConfig.BlockMaxGasLimit),
 				MaxTransactionsPerBlock: p.ProtocolConfig.BlockMaxTransactions,
 				MaxBytesPerTxList:       p.ProtocolConfig.BlockMaxTxListBytes,
-				AnchorGasCost:           opts.AnchorGasCost,
+				AnchorGasLimit:          opts.AnchorGasLimit,
 			},
 		}},
 	}

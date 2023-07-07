@@ -112,11 +112,6 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		return fmt.Errorf("failed to get storage root: %w", err)
 	}
 
-	anchorTxReceipt, err := s.anchorTxValidator.GetAndValidateAnchorTxReceipt(ctx, block.Transactions()[0])
-	if err != nil {
-		return fmt.Errorf("failed to get anchor transaction receipt: %w", err)
-	}
-
 	// Request proof.
 	opts := &proofProducer.ProofRequestOptions{
 		Height:             block.Number(),
@@ -132,7 +127,7 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		Graffiti:           common.Bytes2Hex(s.graffiti[:]),
 		GasUsed:            block.GasUsed(),
 		ParentGasUsed:      parent.GasUsed(),
-		AnchorGasCost:      anchorTxReceipt.GasUsed,
+		AnchorGasLimit:     block.Transactions()[0].Gas(),
 	}
 
 	if err := s.proofProducer.RequestProof(ctx, opts, event.Id, &event.Meta, block.Header(), s.resultCh); err != nil {
