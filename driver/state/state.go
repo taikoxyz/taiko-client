@@ -166,13 +166,13 @@ func (s *State) startSubscriptions(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case e := <-s.blockProposedCh:
-				s.setHeadBlockID(e.Id)
+				s.setHeadBlockID(e.BlockId)
 			case e := <-s.blockProvenCh:
 				if e.Prover != encoding.OracleProverAddress {
-					log.Info("✅ Block proven", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
+					log.Info("✅ Block proven", "blockID", e.BlockId, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
 				}
 			case e := <-s.blockVerifiedCh:
-				log.Info("📈 Block verified", "blockID", e.Id, "hash", common.Hash(e.BlockHash), "reward", e.Reward)
+				log.Info("📈 Block verified", "blockID", e.BlockId, "hash", common.Hash(e.BlockHash), "reward", e.ProofReward)
 			case e := <-s.crossChainSynced:
 				// Verify the protocol synced block, check if it exists in
 				// L2 execution engine.
@@ -305,7 +305,7 @@ func (s *State) getSyncedHeaderID(l1Height uint64, hash common.Hash) (*big.Int, 
 			continue
 		}
 
-		return e.Id, nil
+		return e.BlockId, nil
 	}
 
 	return nil, fmt.Errorf("verified block %s BlockVerified event not found", hash)
