@@ -92,7 +92,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofDeadlineExc
 
 	s.ErrorContains(
 		s.validProofSubmitter.RequestProof(
-			ctx, &bindings.TaikoL1ClientBlockProposed{Id: common.Big256}), "context deadline exceeded",
+			ctx, &bindings.TaikoL1ClientBlockProposed{BlockId: common.Big256}), "context deadline exceeded",
 	)
 }
 
@@ -129,7 +129,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofCancelled()
 
 	s.ErrorContains(
 		s.validProofSubmitter.RequestProof(
-			ctx, &bindings.TaikoL1ClientBlockProposed{Id: common.Big256}), "context canceled",
+			ctx, &bindings.TaikoL1ClientBlockProposed{BlockId: common.Big256}), "context canceled",
 	)
 }
 

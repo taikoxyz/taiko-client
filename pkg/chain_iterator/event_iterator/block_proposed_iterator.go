@@ -111,6 +111,7 @@ func assembleBlockProposedIteratorCallback(
 		iter, err := taikoL1Client.FilterBlockProposed(
 			&bind.FilterOpts{Start: start.Number.Uint64(), End: &endHeight, Context: ctx},
 			filterQuery,
+			nil,
 		)
 		if err != nil {
 			return err

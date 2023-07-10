@@ -81,7 +81,7 @@ type Prover struct {
 	currentBlocksWaitingForProofWindowMutex *sync.Mutex
 
 	// interval settings
-	checkProofWindowExpiredIntervalInSeconds time.Duration
+	checkProofWindowExpiredInterval time.Duration
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -151,7 +151,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
-	p.checkProofWindowExpiredIntervalInSeconds = p.cfg.CheckProofWindowExpiredIntervalInSeconds
+	p.checkProofWindowExpiredInterval = p.cfg.CheckProofWindowExpiredInterval
 
 	oracleProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, rpc.StringToBytes32("oracle_prover"), true)
 	if err != nil {
@@ -255,7 +255,7 @@ func (p *Prover) eventLoop() {
 	)
 	defer verificationCheckTicker.Stop()
 
-	checkProofWindowExpiredTicker := time.NewTicker(p.checkProofWindowExpiredIntervalInSeconds)
+	checkProofWindowExpiredTicker := time.NewTicker(p.checkProofWindowExpiredInterval)
 	defer checkProofWindowExpiredTicker.Stop()
 
 	// Call reqProving() right away to catch up with the latest state.
@@ -350,17 +350,17 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
-	if _, err := p.rpc.WaitL1Origin(ctx, event.Id); err != nil {
-		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.Id, err)
+	if _, err := p.rpc.WaitL1Origin(ctx, event.BlockId); err != nil {
+		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
 	}
 
 	// Check whteher the L1 chain has been reorged.
 	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1Reorg(
 		ctx,
-		new(big.Int).Sub(event.Id, common.Big1),
+		new(big.Int).Sub(event.BlockId, common.Big1),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to check whether L1 chain was reorged (eventID %d): %w", event.Id, err)
+		return fmt.Errorf("failed to check whether L1 chain was reorged (eventID %d): %w", event.BlockId, err)
 	}
 
 	if reorged {
@@ -378,7 +378,7 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
-	if event.Id.Uint64() <= p.lastHandledBlockID {
+	if event.BlockId.Uint64() <= p.lastHandledBlockID {
 		return nil
 	}
 
@@ -406,22 +406,22 @@ func (p *Prover) onBlockProposed(
 		"Proposed block",
 		"L1Height", event.Raw.BlockNumber,
 		"L1Hash", event.Raw.BlockHash,
-		"BlockID", event.Id,
+		"BlockID", event.BlockId,
 		"Removed", event.Raw.Removed,
 	)
-	metrics.ProverReceivedProposedBlockGauge.Update(event.Id.Int64())
+	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
 
 	handleBlockProposedEvent := func() error {
 		defer func() { <-p.proposeConcurrencyGuard }()
 
 		// Check whether the block has been verified.
-		isVerified, err := p.isBlockVerified(event.Id)
+		isVerified, err := p.isBlockVerified(event.BlockId)
 		if err != nil {
 			return fmt.Errorf("failed to check if the current L2 block is verified: %w", err)
 		}
 
 		if isVerified {
-			log.Info("📋 Block has been verified", "blockID", event.Id)
+			log.Info("📋 Block has been verified", "blockID", event.BlockId)
 			return nil
 		}
 
@@ -430,7 +430,7 @@ func (p *Prover) onBlockProposed(
 			needNewProof, err := rpc.NeedNewProof(
 				p.ctx,
 				p.rpc,
-				event.Id,
+				event.BlockId,
 				p.proverAddress,
 			)
 			if err != nil {
@@ -448,14 +448,14 @@ func (p *Prover) onBlockProposed(
 			p.cancelProof(ctx, event.Meta.Id)
 		}
 
-		block, err := p.rpc.TaikoL1.GetBlock(nil, event.Id)
+		block, err := p.rpc.TaikoL1.GetBlock(nil, event.BlockId)
 		if err != nil {
 			return err
 		}
 
 		log.Info(
 			"Proposed block information",
-			"blockID", event.Id,
+			"blockID", event.BlockId,
 			"prover", block.AssignedProver.Hex(),
 			"proposedAt", block.ProposedAt,
 			"proofWindow", block.ProofWindow,
@@ -464,7 +464,7 @@ func (p *Prover) onBlockProposed(
 		proofWindowExpired := uint64(time.Now().Unix()) > block.ProposedAt+block.ProofWindow
 		// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
 		if block.AssignedProver != p.proverAddress && block.AssignedProver != zeroAddress && !proofWindowExpired {
-			log.Info("Proposed block not proveable", "blockID", event.Id, "prover", block.AssignedProver.Hex())
+			log.Info("Proposed block not proveable", "blockID", event.BlockId, "prover", block.AssignedProver.Hex())
 
 			// if we cant prove it
 			p.currentBlocksWaitingForProofWindowMutex.Lock()
@@ -476,17 +476,17 @@ func (p *Prover) onBlockProposed(
 
 		log.Info(
 			"Proposed block is proveable",
-			"blockID", event.Id,
+			"blockID", event.BlockId,
 			"prover", block.AssignedProver.Hex(),
 			"proofWindowExpired", proofWindowExpired,
 		)
 
 		ctx, cancelCtx := context.WithCancel(ctx)
 		p.currentBlocksBeingProvenMutex.Lock()
-		p.currentBlocksBeingProven[event.Id.Uint64()] = cancelFunc(func() {
+		p.currentBlocksBeingProven[event.BlockId.Uint64()] = cancelFunc(func() {
 			defer cancelCtx()
-			if err := p.validProofSubmitter.CancelProof(ctx, event.Id); err != nil {
-				log.Error("failed to cancel proof", "error", err, "blockID", event.Id)
+			if err := p.validProofSubmitter.CancelProof(ctx, event.BlockId); err != nil {
+				log.Error("failed to cancel proof", "error", err, "blockID", event.BlockId)
 			}
 		})
 		p.currentBlocksBeingProvenMutex.Unlock()
@@ -497,7 +497,7 @@ func (p *Prover) onBlockProposed(
 	p.proposeConcurrencyGuard <- struct{}{}
 
 	p.l1Current = event.Raw.BlockNumber
-	p.lastHandledBlockID = event.Id.Uint64()
+	p.lastHandledBlockID = event.BlockId.Uint64()
 
 	go func() {
 		if err := backoff.Retry(
@@ -505,7 +505,7 @@ func (p *Prover) onBlockProposed(
 			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
 		); err != nil {
 			p.currentBlocksBeingProvenMutex.Lock()
-			delete(p.currentBlocksBeingProven, event.Id.Uint64())
+			delete(p.currentBlocksBeingProven, event.BlockId.Uint64())
 			p.currentBlocksBeingProvenMutex.Unlock()
 			log.Error("Handle new BlockProposed event error", "error", err)
 		}
@@ -545,25 +545,25 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 // onBlockVerified update the latestVerified block in current state, and cancels
 // the block being proven if it's verified.
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
-	metrics.ProverLatestVerifiedIDGauge.Update(event.Id.Int64())
+	metrics.ProverLatestVerifiedIDGauge.Update(event.BlockId.Int64())
 
-	if event.Reward > math.MaxInt64 {
+	if event.ProofReward > math.MaxInt64 {
 		metrics.ProverAllProofRewardGauge.Update(math.MaxInt64)
 	} else {
-		metrics.ProverAllProofRewardGauge.Update(int64(event.Reward))
+		metrics.ProverAllProofRewardGauge.Update(int64(event.ProofReward))
 	}
 
 	p.latestVerifiedL1Height = event.Raw.BlockNumber
 
 	log.Info(
 		"New verified block",
-		"blockID", event.Id,
+		"blockID", event.BlockId,
 		"hash", common.BytesToHash(event.BlockHash[:]),
-		"reward", event.Reward,
+		"reward", event.ProofReward,
 	)
 
 	// cancel any proofs being generated for this block
-	p.cancelProof(ctx, event.Id.Uint64())
+	p.cancelProof(ctx, event.BlockId.Uint64())
 
 	return nil
 }
@@ -571,7 +571,7 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 // onBlockProven cancels proof generation if the proof is being generated by this prover,
 // and the proof is not the oracle proof address.
 func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1ClientBlockProven) error {
-	metrics.ProverReceivedProvenBlockGauge.Update(event.Id.Int64())
+	metrics.ProverReceivedProvenBlockGauge.Update(event.BlockId.Int64())
 	// if this proof is submitted by an oracle prover or a system prover, don't cancel proof.
 	if event.Prover == p.oracleProverAddress ||
 		event.Prover == encoding.OracleProverAddress {
@@ -579,7 +579,12 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 	}
 
 	// cancel any proofs being generated for this block
-	if err := p.cancelProofIfValid(ctx, event.Id.Uint64(), uint64(event.ParentGasUsed), event.ParentHash); err != nil {
+	if err := p.cancelProofIfValid(
+		ctx,
+		event.BlockId.Uint64(),
+		uint64(event.ParentGasUsed),
+		event.ParentHash,
+	); err != nil {
 		return err
 	}
 

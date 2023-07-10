@@ -61,7 +61,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 			crypto.PubkeyToAddress(c.OracleProverPrivateKey.PublicKey),
 		)
 		s.Equal("", c.Graffiti)
-		s.Equal(30*time.Second, c.CheckProofWindowExpiredIntervalInSeconds)
+		s.Equal(30*time.Second, c.CheckProofWindowExpiredInterval)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
 		return err

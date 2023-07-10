@@ -36,18 +36,18 @@ func (s *ProverTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
 	s.Nil(InitFromConfig(ctx, p, (&Config{
-		L1WsEndpoint:                             os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L1HttpEndpoint:                           os.Getenv("L1_NODE_HTTP_ENDPOINT"),
-		L2WsEndpoint:                             os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2HttpEndpoint:                           os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:                           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoProverPoolL1Address:                 common.HexToAddress(os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")),
-		L1ProverPrivKey:                          l1ProverPrivKey,
-		OracleProverPrivateKey:                   l1ProverPrivKey,
-		Dummy:                                    true,
-		MaxConcurrentProvingJobs:                 1,
-		CheckProofWindowExpiredIntervalInSeconds: 5 * time.Second,
+		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:                  os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:                  common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                  common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoProverPoolL1Address:        common.HexToAddress(os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")),
+		L1ProverPrivKey:                 l1ProverPrivKey,
+		OracleProverPrivateKey:          l1ProverPrivKey,
+		Dummy:                           true,
+		MaxConcurrentProvingJobs:        1,
+		CheckProofWindowExpiredInterval: 5 * time.Second,
 	})))
 	s.p = p
 	s.cancel = cancel
@@ -118,7 +118,7 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 
 func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 	s.Nil(s.p.onBlockVerified(context.Background(), &bindings.TaikoL1ClientBlockVerified{
-		Id:        common.Big1,
+		BlockId:   common.Big1,
 		BlockHash: common.Hash{}},
 	))
 }

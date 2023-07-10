@@ -66,8 +66,16 @@ func (s *CalldataSyncerTestSuite) TestProcessL1Blocks() {
 }
 
 func (s *CalldataSyncerTestSuite) TestOnBlockProposed() {
-	s.Nil(s.s.onBlockProposed(context.Background(), &bindings.TaikoL1ClientBlockProposed{Id: common.Big0}, func() {}))
-	s.NotNil(s.s.onBlockProposed(context.Background(), &bindings.TaikoL1ClientBlockProposed{Id: common.Big1}, func() {}))
+	s.Nil(s.s.onBlockProposed(
+		context.Background(),
+		&bindings.TaikoL1ClientBlockProposed{BlockId: common.Big0},
+		func() {},
+	))
+	s.NotNil(s.s.onBlockProposed(
+		context.Background(),
+		&bindings.TaikoL1ClientBlockProposed{BlockId: common.Big1},
+		func() {},
+	))
 }
 
 func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
@@ -78,7 +86,7 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 	_, err = s.s.insertNewHead(
 		context.Background(),
 		&bindings.TaikoL1ClientBlockProposed{
-			Id: common.Big1,
+			BlockId: common.Big1,
 			Meta: bindings.TaikoDataBlockMetadata{
 				Id:          1,
 				L1Height:    l1Head.NumberU64(),
