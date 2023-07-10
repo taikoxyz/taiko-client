@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"strings"
 	"sync"
 	"time"
 
@@ -737,23 +738,28 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, i int, blockId uin
 	p.currentBlocksWaitingForProofWindowMutex.Lock()
 	defer p.currentBlocksWaitingForProofWindowMutex.Unlock()
 
-	block, err := p.rpc.TaikoL1.GetBlock(nil, big.NewInt(int64(blockId)))
+	block, err := p.rpc.TaikoL1.GetBlock(nil, new(big.Int).SetUint64(blockId))
 	if err != nil {
-		return err
+		return encoding.TryParsingCustomError(err)
 	}
 
 	if time.Now().Unix() > int64(block.ProposedAt)+int64(block.ProofWindow) {
 		// we can see if a fork choice with correct parentHash/gasUsed has come in.
 		// if it hasnt, we can start to generate a proof for this.
-
-		parent, err := p.rpc.L2ParentByBlockId(ctx, big.NewInt(int64(blockId)))
+		parent, err := p.rpc.L2ParentByBlockId(ctx, new(big.Int).SetUint64(blockId))
 		if err != nil {
 			return err
 		}
 
-		forkChoice, err := p.rpc.TaikoL1.GetForkChoice(nil, big.NewInt(int64(blockId)), parent.Hash(), uint32(parent.GasUsed))
-		if err != nil {
-			return err
+		forkChoice, err := p.rpc.TaikoL1.GetForkChoice(
+			nil,
+			new(big.Int).SetUint64(blockId),
+			parent.Hash(),
+			uint32(parent.GasUsed),
+		)
+
+		if err != nil && !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
+			return encoding.TryParsingCustomError(err)
 		}
 
 		if forkChoice.Prover == zeroAddress {
