@@ -314,7 +314,7 @@ func (s *Syncer) insertNewHead(
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{BlockNumber: parent.Number},
 		uint32(event.Meta.Timestamp-parentTimestamp),
-		uint32(event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit())),
+		event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit()),
 		uint32(parent.GasUsed),
 	)
 	if err != nil {
