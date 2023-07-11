@@ -824,24 +824,27 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, i int, blockId uin
 			return encoding.TryParsingCustomError(err)
 		}
 
+		// we should remove this block from being watched regardless of whether the block
+		// has a valid proof
+		p.currentBlocksWaitingForProofWindow = append(
+			p.currentBlocksWaitingForProofWindow[:i],
+			p.currentBlocksWaitingForProofWindow[i+1:]...,
+		)
+
 		if forkChoice.Prover == zeroAddress {
-			// we can generate the proof
+			// we can generate the proof, no proof came in by proof window expiring
 			p.proveNotify <- big.NewInt(int64(blockId))
 		} else {
+			// we need to check the block hash vs the proof's blockHash to see
+			// if the proof is valid or not
 			block, err := p.rpc.L2.BlockByNumber(ctx, new(big.Int).SetUint64(blockId))
 			if err != nil {
 				return err
 			}
 
-			if block.Hash() == forkChoice.BlockHash {
-				// we should remove this block from being watched, a proof has already come in that agrees with
-				// our expected fork choice.
-				// cancel will remove this from the map.
-				p.currentBlocksWaitingForProofWindow = append(
-					p.currentBlocksWaitingForProofWindow[:i],
-					p.currentBlocksWaitingForProofWindow[i+1:]...,
-				)
-			} else {
+			// if the hashes dont match, we can generate proof even though
+			// a proof came in before proofwindow expired.
+			if block.Hash() != forkChoice.BlockHash {
 				// we can generate the proof, the proof is incorrect since blockHash does not match
 				// the correct one but parentHash/gasUsed are correct.
 				p.proveNotify <- big.NewInt(int64(blockId))
