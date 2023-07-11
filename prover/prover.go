@@ -640,7 +640,6 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 	} else {
 		// generate oracle proof if oracle prover, proof is invalid
 		if p.cfg.OracleProver {
-			log.Info("invalid proof detected, generating oracle proof", "blockId", event.BlockId.Uint64())
 			p.proveNotify <- event.BlockId
 		}
 	}
@@ -829,13 +828,24 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, i int, blockId uin
 			// we can generate the proof
 			p.proveNotify <- big.NewInt(int64(blockId))
 		} else {
-			// we should remove this block from being watched, a proof has already come in that agrees with
-			// our expected fork choice.
-			// cancel will remove this from the map.
-			p.currentBlocksWaitingForProofWindow = append(
-				p.currentBlocksWaitingForProofWindow[:i],
-				p.currentBlocksWaitingForProofWindow[i+1:]...,
-			)
+			block, err := p.rpc.L2.BlockByNumber(ctx, new(big.Int).SetUint64(blockId))
+			if err != nil {
+				return err
+			}
+
+			if block.Hash() == forkChoice.BlockHash {
+				// we should remove this block from being watched, a proof has already come in that agrees with
+				// our expected fork choice.
+				// cancel will remove this from the map.
+				p.currentBlocksWaitingForProofWindow = append(
+					p.currentBlocksWaitingForProofWindow[:i],
+					p.currentBlocksWaitingForProofWindow[i+1:]...,
+				)
+			} else {
+				// we can generate the proof, the proof is incorrect since blockHash does not match
+				// the correct one but parentHash/gasUsed are correct.
+				p.proveNotify <- big.NewInt(int64(blockId))
+			}
 		}
 	}
 
