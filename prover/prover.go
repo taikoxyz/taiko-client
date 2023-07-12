@@ -461,13 +461,12 @@ func (p *Prover) onBlockProposed(
 			"proofWindow", block.ProofWindow,
 		)
 
-		var skipProofWindowExpiredCheck bool = false
-
+		var skipProofWindowExpiredCheck bool
 		if p.cfg.OracleProver {
-			for {
+			shouldSkipProofWindowExpiredCheck := func() (bool, error) {
 				parent, err := p.rpc.L2ParentByBlockId(ctx, event.BlockId)
 				if err != nil {
-					return err
+					return false, err
 				}
 
 				// check if an invalid proof has been submitted, if so, we can skip proofWindowExpired check below
@@ -475,16 +474,16 @@ func (p *Prover) onBlockProposed(
 				forkChoice, err := p.rpc.TaikoL1.GetForkChoice(nil, event.BlockId, parent.Hash(), uint32(parent.GasUsed))
 				if err != nil {
 					if strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
-						// proof hasnt been submitted, just break and continue as normal
-						break
+						// proof hasnt been submitted
+						return false, nil
 					} else {
-						return err
+						return false, err
 					}
 				}
 
 				block, err := p.rpc.L2.BlockByNumber(ctx, event.BlockId)
 				if err != nil {
-					return err
+					return false, err
 				}
 
 				// proof is invalid but has correct parents, oracle prover should skip
@@ -497,9 +496,14 @@ func (p *Prover) onBlockProposed(
 						"expectedBlockHash", block.Hash().Hex(),
 					)
 
-					skipProofWindowExpiredCheck = true
-					break
+					return true, nil
 				}
+
+				return false, nil
+			}
+
+			if skipProofWindowExpiredCheck, err = shouldSkipProofWindowExpiredCheck(); err != nil {
+				return err
 			}
 		}
 
