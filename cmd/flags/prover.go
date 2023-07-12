@@ -83,7 +83,7 @@ var (
 	}
 	ProveExpiredProofs = &cli.BoolFlag{
 		Name:     "prover.proveExpiredProofs",
-		Usage:    "Wh",
+		Usage:    "Whether you want to prover expired proofs, or only work on assigned proofs",
 		Category: commonCategory,
 		Value:    true,
 	}

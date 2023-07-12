@@ -513,7 +513,8 @@ func (p *Prover) onBlockProposed(
 			if block.AssignedProver != p.proverAddress && block.AssignedProver != zeroAddress && !proofWindowExpired {
 				log.Info("Proposed block not proveable", "blockID", event.BlockId, "prover", block.AssignedProver.Hex())
 
-				// if we cant prove it
+				// if we cant prove it now, but config is set to wait and try to prove
+				// expired proofs
 				if p.cfg.ProveExpiredProofs {
 					p.currentBlocksWaitingForProofWindowMutex.Lock()
 					p.currentBlocksWaitingForProofWindow[event.Meta.Id] = event.Raw.BlockNumber
