@@ -77,7 +77,7 @@ type Prover struct {
 
 	currentBlocksBeingProven                map[uint64]cancelFunc
 	currentBlocksBeingProvenMutex           *sync.Mutex
-	currentBlocksWaitingForProofWindow      []uint64
+	currentBlocksWaitingForProofWindow      map[uint64]uint64 // l2BlockId : l1Height
 	currentBlocksWaitingForProofWindowMutex *sync.Mutex
 
 	// interval settings
@@ -103,7 +103,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.ctx = ctx
 	p.currentBlocksBeingProven = make(map[uint64]cancelFunc)
 	p.currentBlocksBeingProvenMutex = &sync.Mutex{}
-	p.currentBlocksWaitingForProofWindow = make([]uint64, 0)
+	p.currentBlocksWaitingForProofWindow = make(map[uint64]uint64, 0)
 	p.currentBlocksWaitingForProofWindowMutex = &sync.Mutex{}
 
 	// Clients
@@ -278,8 +278,8 @@ func (p *Prover) eventLoop() {
 			}
 		case proofWithHeader := <-p.proofGenerationCh:
 			p.submitProofOp(p.ctx, proofWithHeader)
-		case blockId := <-p.proveNotify:
-			if err := p.proveOp(blockId); err != nil {
+		case startHeight := <-p.proveNotify:
+			if err := p.proveOp(startHeight); err != nil {
 				log.Error("Prove new blocks error", "error", err)
 			}
 		case <-p.blockProposedCh:
@@ -511,7 +511,7 @@ func (p *Prover) onBlockProposed(
 
 				// if we cant prove it
 				p.currentBlocksWaitingForProofWindowMutex.Lock()
-				p.currentBlocksWaitingForProofWindow = append(p.currentBlocksWaitingForProofWindow, event.Meta.Id)
+				p.currentBlocksWaitingForProofWindow[event.Meta.Id] = event.Raw.BlockNumber
 				p.currentBlocksWaitingForProofWindowMutex.Unlock()
 
 				return nil
@@ -640,7 +640,8 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 	} else {
 		// generate oracle proof if oracle prover, proof is invalid
 		if p.cfg.OracleProver {
-			p.proveNotify <- event.BlockId
+			// call proveNotify and pass in the L1 start height
+			p.proveNotify <- new(big.Int).SetUint64(event.Raw.BlockNumber)
 		}
 	}
 
@@ -785,8 +786,8 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 // which are blocks that have been proposed, but we were not selected as the prover. if the proof window
 // has expired, we can start generating a proof for them.
 func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
-	for i, blockId := range p.currentBlocksWaitingForProofWindow {
-		if err := p.checkProofWindowExpired(ctx, i, blockId); err != nil {
+	for blockId, l1Height := range p.currentBlocksWaitingForProofWindow {
+		if err := p.checkProofWindowExpired(ctx, l1Height, blockId); err != nil {
 			return err
 		}
 	}
@@ -796,7 +797,7 @@ func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
 
 // checkProofWindowExpired checks a single instance of a block to see if its proof winodw has expired
 // and the proof is now able to be submitted by anyone, not just the blocks assigned prover.
-func (p *Prover) checkProofWindowExpired(ctx context.Context, i int, blockId uint64) error {
+func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId uint64) error {
 	p.currentBlocksWaitingForProofWindowMutex.Lock()
 	defer p.currentBlocksWaitingForProofWindowMutex.Unlock()
 
@@ -806,6 +807,10 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, i int, blockId uin
 	}
 
 	if time.Now().Unix() > int64(block.ProposedAt)+int64(block.ProofWindow) {
+		// we should remove this block from being watched regardless of whether the block
+		// has a valid proof
+		delete(p.currentBlocksWaitingForProofWindow, blockId)
+
 		// we can see if a fork choice with correct parentHash/gasUsed has come in.
 		// if it hasnt, we can start to generate a proof for this.
 		parent, err := p.rpc.L2ParentByBlockId(ctx, new(big.Int).SetUint64(blockId))
@@ -824,13 +829,6 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, i int, blockId uin
 			return encoding.TryParsingCustomError(err)
 		}
 
-		// we should remove this block from being watched regardless of whether the block
-		// has a valid proof
-		p.currentBlocksWaitingForProofWindow = append(
-			p.currentBlocksWaitingForProofWindow[:i],
-			p.currentBlocksWaitingForProofWindow[i+1:]...,
-		)
-
 		if forkChoice.Prover == zeroAddress {
 			// we can generate the proof, no proof came in by proof window expiring
 			p.proveNotify <- big.NewInt(int64(blockId))
@@ -847,7 +845,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, i int, blockId uin
 			if block.Hash() != forkChoice.BlockHash {
 				// we can generate the proof, the proof is incorrect since blockHash does not match
 				// the correct one but parentHash/gasUsed are correct.
-				p.proveNotify <- big.NewInt(int64(blockId))
+				p.proveNotify <- new(big.Int).SetUint64(l1Height)
 			}
 		}
 	}
