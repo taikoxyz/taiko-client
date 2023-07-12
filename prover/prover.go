@@ -831,7 +831,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 
 		if forkChoice.Prover == zeroAddress {
 			// we can generate the proof, no proof came in by proof window expiring
-			p.proveNotify <- big.NewInt(int64(blockId))
+			p.proveNotify <- big.NewInt(int64(l1Height))
 		} else {
 			// we need to check the block hash vs the proof's blockHash to see
 			// if the proof is valid or not
