@@ -73,18 +73,18 @@ var (
 		Name:     "taikoProverPoolL1",
 		Usage:    "TaikoProverPoolL1 contract address",
 		Required: true,
-		Category: commonCategory,
+		Category: proverCategory,
 	}
 	CheckProofWindowExpiredInterval = &cli.Uint64Flag{
 		Name:     "prover.checkProofWindowExpiredInterval",
 		Usage:    "Interval in seconds to check for expired proof windows from other provers",
-		Category: commonCategory,
+		Category: proverCategory,
 		Value:    15,
 	}
 	ProveExpiredProofs = &cli.BoolFlag{
 		Name:     "prover.proveExpiredProofs",
 		Usage:    "Whether you want to prover expired proofs, or only work on assigned proofs",
-		Category: commonCategory,
+		Category: proverCategory,
 		Value:    true,
 	}
 )
