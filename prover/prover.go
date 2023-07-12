@@ -514,9 +514,11 @@ func (p *Prover) onBlockProposed(
 				log.Info("Proposed block not proveable", "blockID", event.BlockId, "prover", block.AssignedProver.Hex())
 
 				// if we cant prove it
-				p.currentBlocksWaitingForProofWindowMutex.Lock()
-				p.currentBlocksWaitingForProofWindow[event.Meta.Id] = event.Raw.BlockNumber
-				p.currentBlocksWaitingForProofWindowMutex.Unlock()
+				if p.cfg.ProveExpiredProofs {
+					p.currentBlocksWaitingForProofWindowMutex.Lock()
+					p.currentBlocksWaitingForProofWindow[event.Meta.Id] = event.Raw.BlockNumber
+					p.currentBlocksWaitingForProofWindowMutex.Unlock()
+				}
 
 				return nil
 			}

@@ -81,6 +81,12 @@ var (
 		Category: commonCategory,
 		Value:    15,
 	}
+	ProveExpiredProofs = &cli.BoolFlag{
+		Name:     "prover.proveExpiredProofs",
+		Usage:    "Wh",
+		Category: commonCategory,
+		Value:    true,
+	}
 )
 
 // All prover flags.
@@ -100,4 +106,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	Graffiti,
 	TaikoProverPoolL1Address,
 	CheckProofWindowExpiredInterval,
+	ProveExpiredProofs,
 })

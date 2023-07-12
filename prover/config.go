@@ -36,6 +36,7 @@ type Config struct {
 	BackOffMaxRetrys                uint64
 	BackOffRetryInterval            time.Duration
 	CheckProofWindowExpiredInterval time.Duration
+	ProveExpiredProofs              bool
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -121,5 +122,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		CheckProofWindowExpiredInterval: time.Duration(
 			c.Uint64(flags.CheckProofWindowExpiredInterval.Name),
 		) * time.Second,
+		ProveExpiredProofs: c.Bool(flags.ProveExpiredProofs.Name),
 	}, nil
 }
