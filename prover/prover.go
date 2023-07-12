@@ -508,14 +508,30 @@ func (p *Prover) onBlockProposed(
 		}
 
 		if !skipProofWindowExpiredCheck {
-			proofWindowExpired := uint64(time.Now().Unix()) > block.ProposedAt+block.ProofWindow
+			proofWindowExpiresAt := block.ProposedAt + block.ProofWindow
+			proofWindowExpired := uint64(time.Now().Unix()) > proofWindowExpiresAt
 			// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
 			if block.AssignedProver != p.proverAddress && block.AssignedProver != zeroAddress && !proofWindowExpired {
-				log.Info("Proposed block not proveable", "blockID", event.BlockId, "prover", block.AssignedProver.Hex())
+				log.Info("Proposed block not proveable",
+					"blockID",
+					event.BlockId,
+					"prover",
+					block.AssignedProver.Hex(),
+					"proofWindowExpiresAt",
+					proofWindowExpiresAt,
+				)
 
 				// if we cant prove it now, but config is set to wait and try to prove
 				// expired proofs
 				if p.cfg.ProveUnassignedBlocks {
+					log.Info("Adding proposed block to wait for proof window expiration",
+						"blockID",
+						event.BlockId,
+						"prover",
+						block.AssignedProver.Hex(),
+						"proofWindowExpiresAt",
+						proofWindowExpiresAt,
+					)
 					p.currentBlocksWaitingForProofWindowMutex.Lock()
 					p.currentBlocksWaitingForProofWindow[event.Meta.Id] = event.Raw.BlockNumber
 					p.currentBlocksWaitingForProofWindowMutex.Unlock()
