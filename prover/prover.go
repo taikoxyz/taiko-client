@@ -508,10 +508,6 @@ func (p *Prover) onBlockProposed(
 		}
 
 		if !skipProofWindowExpiredCheck {
-			if block.AssignedProver == zeroAddress {
-				// anyone can prove, dont need to check the proofWindowExpired
-			}
-
 			proofWindowExpired := uint64(time.Now().Unix()) > block.ProposedAt+block.ProofWindow
 			// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
 			if block.AssignedProver != p.proverAddress && block.AssignedProver != zeroAddress && !proofWindowExpired {
