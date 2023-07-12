@@ -81,9 +81,9 @@ var (
 		Category: proverCategory,
 		Value:    15,
 	}
-	ProveExpiredProofs = &cli.BoolFlag{
-		Name:     "prover.proveExpiredProofs",
-		Usage:    "Whether you want to prover expired proofs, or only work on assigned proofs",
+	ProveUnassignedBlocks = &cli.BoolFlag{
+		Name:     "prover.ProveUnassignedBlocks",
+		Usage:    "Whether you want to prove unassigned blocks, or only work on assigned proofs",
 		Category: proverCategory,
 		Value:    true,
 	}
@@ -106,5 +106,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	Graffiti,
 	TaikoProverPoolL1Address,
 	CheckProofWindowExpiredInterval,
-	ProveExpiredProofs,
+	ProveUnassignedBlocks,
 })
