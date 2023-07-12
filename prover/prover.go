@@ -862,6 +862,12 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 		}
 
 		if forkChoice.Prover == zeroAddress {
+			log.Info("proof window for proof not assigned to us expired, requesting proof",
+				"blockID",
+				blockId,
+				"l1Height",
+				l1Height,
+			)
 			// we can generate the proof, no proof came in by proof window expiring
 			p.proveNotify <- big.NewInt(int64(l1Height))
 		} else {
@@ -875,6 +881,16 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 			// if the hashes dont match, we can generate proof even though
 			// a proof came in before proofwindow expired.
 			if block.Hash() != forkChoice.BlockHash {
+				log.Info("invalid proof detected while watching for proof window expiration, requesting proof",
+					"blockID",
+					blockId,
+					"l1Height",
+					l1Height,
+					"expectedBlockHash",
+					block.Hash(),
+					"forkChoiceBlockHash",
+					common.Bytes2Hex(forkChoice.BlockHash[:]),
+				)
 				// we can generate the proof, the proof is incorrect since blockHash does not match
 				// the correct one but parentHash/gasUsed are correct.
 				p.proveNotify <- new(big.Int).SetUint64(l1Height)
