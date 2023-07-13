@@ -48,6 +48,7 @@ func (s *ProverTestSuite) SetupTest() {
 		Dummy:                           true,
 		MaxConcurrentProvingJobs:        1,
 		CheckProofWindowExpiredInterval: 5 * time.Second,
+		ProveUnassignedBlocks:           true,
 	})))
 	s.p = p
 	s.cancel = cancel

@@ -73,13 +73,19 @@ var (
 		Name:     "taikoProverPoolL1",
 		Usage:    "TaikoProverPoolL1 contract address",
 		Required: true,
-		Category: commonCategory,
+		Category: proverCategory,
 	}
 	CheckProofWindowExpiredInterval = &cli.Uint64Flag{
 		Name:     "prover.checkProofWindowExpiredInterval",
 		Usage:    "Interval in seconds to check for expired proof windows from other provers",
-		Category: commonCategory,
+		Category: proverCategory,
 		Value:    15,
+	}
+	ProveUnassignedBlocks = &cli.BoolFlag{
+		Name:     "prover.ProveUnassignedBlocks",
+		Usage:    "Whether you want to prove unassigned blocks, or only work on assigned proofs",
+		Category: proverCategory,
+		Value:    true,
 	}
 )
 
@@ -100,4 +106,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	Graffiti,
 	TaikoProverPoolL1Address,
 	CheckProofWindowExpiredInterval,
+	ProveUnassignedBlocks,
 })

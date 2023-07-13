@@ -25,6 +25,7 @@ var testFlags = []cli.Flag{
 	&cli.StringFlag{Name: flags.Graffiti.Name},
 	&cli.StringFlag{Name: flags.TaikoProverPoolL1Address.Name},
 	&cli.Uint64Flag{Name: flags.CheckProofWindowExpiredInterval.Name},
+	&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
 }
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
@@ -62,6 +63,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		)
 		s.Equal("", c.Graffiti)
 		s.Equal(30*time.Second, c.CheckProofWindowExpiredInterval)
+		s.Equal(true, c.ProveUnassignedBlocks)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -83,6 +85,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.CheckProofWindowExpiredInterval.Name, "30",
+		"-" + flags.ProveUnassignedBlocks.Name, "true",
 	}))
 }
 

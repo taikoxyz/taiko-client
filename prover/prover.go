@@ -508,16 +508,44 @@ func (p *Prover) onBlockProposed(
 		}
 
 		if !skipProofWindowExpiredCheck {
-			proofWindowExpired := uint64(time.Now().Unix()) > block.ProposedAt+block.ProofWindow
+			proofWindowExpiresAt := block.ProposedAt + block.ProofWindow
+			proofWindowExpired := uint64(time.Now().Unix()) > proofWindowExpiresAt
 			// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
 			if block.AssignedProver != p.proverAddress && block.AssignedProver != zeroAddress && !proofWindowExpired {
-				log.Info("Proposed block not proveable", "blockID", event.BlockId, "prover", block.AssignedProver.Hex())
+				log.Info("Proposed block not proveable",
+					"blockID",
+					event.BlockId,
+					"prover",
+					block.AssignedProver.Hex(),
+					"proofWindowExpiresAt",
+					proofWindowExpiresAt,
+				)
 
-				// if we cant prove it
-				p.currentBlocksWaitingForProofWindowMutex.Lock()
-				p.currentBlocksWaitingForProofWindow[event.Meta.Id] = event.Raw.BlockNumber
-				p.currentBlocksWaitingForProofWindowMutex.Unlock()
+				// if we cant prove it now, but config is set to wait and try to prove
+				// expired proofs
+				if p.cfg.ProveUnassignedBlocks {
+					log.Info("Adding proposed block to wait for proof window expiration",
+						"blockID",
+						event.BlockId,
+						"prover",
+						block.AssignedProver.Hex(),
+						"proofWindowExpiresAt",
+						proofWindowExpiresAt,
+					)
+					p.currentBlocksWaitingForProofWindowMutex.Lock()
+					p.currentBlocksWaitingForProofWindow[event.Meta.Id] = event.Raw.BlockNumber
+					p.currentBlocksWaitingForProofWindowMutex.Unlock()
+				}
 
+				return nil
+			}
+
+			// if set not to prove unassigned blocks, this block is still not provable
+			// by us even though its open proving.
+			if block.AssignedProver == zeroAddress && !p.cfg.ProveUnassignedBlocks {
+				log.Info("Skipping proposed open proving block, not assigned to us",
+					"blockID", event.BlockId,
+				)
 				return nil
 			}
 
@@ -834,6 +862,12 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 		}
 
 		if forkChoice.Prover == zeroAddress {
+			log.Info("proof window for proof not assigned to us expired, requesting proof",
+				"blockID",
+				blockId,
+				"l1Height",
+				l1Height,
+			)
 			// we can generate the proof, no proof came in by proof window expiring
 			p.proveNotify <- big.NewInt(int64(l1Height))
 		} else {
@@ -847,6 +881,16 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 			// if the hashes dont match, we can generate proof even though
 			// a proof came in before proofwindow expired.
 			if block.Hash() != forkChoice.BlockHash {
+				log.Info("invalid proof detected while watching for proof window expiration, requesting proof",
+					"blockID",
+					blockId,
+					"l1Height",
+					l1Height,
+					"expectedBlockHash",
+					block.Hash(),
+					"forkChoiceBlockHash",
+					common.Bytes2Hex(forkChoice.BlockHash[:]),
+				)
 				// we can generate the proof, the proof is incorrect since blockHash does not match
 				// the correct one but parentHash/gasUsed are correct.
 				p.proveNotify <- new(big.Int).SetUint64(l1Height)
