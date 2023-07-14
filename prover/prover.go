@@ -692,7 +692,7 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 						"blockID",
 						event.BlockId.Uint64(),
 						"l1Height",
-						new(big.Int).SetUint64(event.Raw.BlockNumber),
+						event.Raw.BlockNumber,
 					)
 				}
 			}
