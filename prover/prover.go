@@ -938,7 +938,3 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 	// otherwise, keep it in the map and check again next iteration
 	return nil
 }
-
-func (p *Prover) notify(l1Height *big.Int) {
-
-}
