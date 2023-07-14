@@ -313,9 +313,16 @@ func (p *Prover) Close() {
 func (p *Prover) proveOp(startHeight *big.Int) error {
 	firstTry := true
 
+	var endHeight *big.Int = nil
+
 	if startHeight == nil {
 		startHeight = new(big.Int).SetUint64(p.l1Current)
+	} else {
+		// if startHeight is passed in, we really mean to say, we want to target a blockProposedEvent in
+		// that specific block.
+		endHeight = new(big.Int).Add(startHeight, big.NewInt(1))
 	}
+
 	for firstTry || p.reorgDetectedFlag {
 		p.reorgDetectedFlag = false
 		firstTry = false
@@ -324,6 +331,7 @@ func (p *Prover) proveOp(startHeight *big.Int) error {
 			Client:               p.rpc.L1,
 			TaikoL1:              p.rpc.TaikoL1,
 			StartHeight:          startHeight,
+			EndHeight:            endHeight,
 			OnBlockProposedEvent: p.onBlockProposed,
 		})
 		if err != nil {
@@ -533,6 +541,7 @@ func (p *Prover) onBlockProposed(
 						"proofWindowExpiresAt",
 						proofWindowExpiresAt,
 					)
+
 					p.currentBlocksWaitingForProofWindowMutex.Lock()
 					p.currentBlocksWaitingForProofWindow[event.Meta.Id] = event.Raw.BlockNumber
 					p.currentBlocksWaitingForProofWindowMutex.Unlock()
@@ -841,6 +850,14 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 	}
 
 	if time.Now().Unix() > int64(block.ProposedAt)+int64(block.ProofWindow) {
+
+		notify := func() {
+			select {
+			case p.proveNotify <- new(big.Int).SetUint64(l1Height):
+			default:
+			}
+		}
+
 		// we should remove this block from being watched regardless of whether the block
 		// has a valid proof
 		delete(p.currentBlocksWaitingForProofWindow, blockId)
@@ -871,7 +888,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 				l1Height,
 			)
 			// we can generate the proof, no proof came in by proof window expiring
-			p.proveNotify <- big.NewInt(int64(l1Height))
+			notify()
 		} else {
 			// we need to check the block hash vs the proof's blockHash to see
 			// if the proof is valid or not
@@ -895,7 +912,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 				)
 				// we can generate the proof, the proof is incorrect since blockHash does not match
 				// the correct one but parentHash/gasUsed are correct.
-				p.proveNotify <- new(big.Int).SetUint64(l1Height)
+				notify()
 			}
 		}
 	}
