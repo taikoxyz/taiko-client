@@ -684,7 +684,20 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 		// generate oracle proof if oracle prover, proof is invalid
 		if p.cfg.OracleProver {
 			// call proveNotify and pass in the L1 start height
-			p.proveNotify <- new(big.Int).SetUint64(event.Raw.BlockNumber)
+			notify := func() {
+				select {
+				case p.proveNotify <- new(big.Int).SetUint64(event.Raw.BlockNumber):
+				default:
+					log.Info("unable to request oracle proof, proveNotify channel busy",
+						"blockID",
+						event.BlockId.Uint64(),
+						"l1Height",
+						new(big.Int).SetUint64(event.Raw.BlockNumber),
+					)
+				}
+			}
+
+			notify()
 		}
 	}
 
@@ -924,4 +937,8 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 
 	// otherwise, keep it in the map and check again next iteration
 	return nil
+}
+
+func (p *Prover) notify(l1Height *big.Int) {
+
 }
