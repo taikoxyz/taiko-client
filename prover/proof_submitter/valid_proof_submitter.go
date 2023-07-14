@@ -114,7 +114,7 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 
 	signalRoot, err := s.rpc.GetStorageRoot(ctx, s.rpc.L2GethClient, s.l2SignalService, block.Number())
 	if err != nil {
-		return fmt.Errorf("error getting storageroot: %w", err)
+		return fmt.Errorf("failed to get storage root: %w", err)
 	}
 
 	// Request proof.
