@@ -134,18 +134,16 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		ParentGasUsed:      parent.GasUsed(),
 	}
 
-	log.Info("opts", "opts", opts)
-
-	// if err := s.proofProducer.RequestProof(
-	// 	ctx,
-	// 	opts,
-	// 	event.BlockId,
-	// 	&event.Meta,
-	// 	block.Header(),
-	// 	s.resultCh,
-	// ); err != nil {
-	// 	return fmt.Errorf("failed to request proof (id: %d): %w", event.BlockId, err)
-	// }
+	if err := s.proofProducer.RequestProof(
+		ctx,
+		opts,
+		event.BlockId,
+		&event.Meta,
+		block.Header(),
+		s.resultCh,
+	); err != nil {
+		return fmt.Errorf("failed to request proof (id: %d): %w", event.BlockId, err)
+	}
 
 	metrics.ProverQueuedProofCounter.Inc(1)
 	metrics.ProverQueuedValidProofCounter.Inc(1)
