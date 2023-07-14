@@ -82,7 +82,7 @@ var (
 		Value:    15,
 	}
 	ProveUnassignedBlocks = &cli.BoolFlag{
-		Name:     "prover.ProveUnassignedBlocks",
+		Name:     "prover.proveUnassignedBlocks",
 		Usage:    "Whether you want to prove unassigned blocks, or only work on assigned proofs",
 		Category: proverCategory,
 		Value:    true,
