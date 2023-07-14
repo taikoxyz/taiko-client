@@ -950,6 +950,8 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 		})
 		p.currentBlocksBeingProvenMutex.Unlock()
 
+		p.proposeConcurrencyGuard <- struct{}{}
+
 		if err := p.validProofSubmitter.RequestProof(ctx, event); err != nil {
 			return err
 		}
@@ -957,29 +959,34 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 		return nil
 	}
 
-	p.proposeConcurrencyGuard <- struct{}{}
-
-	go func() {
+	handleBlockProposedEvent := func() error {
 		defer func() { <-p.proposeConcurrencyGuard }()
 
+		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
+			Client:               p.rpc.L1,
+			TaikoL1:              p.rpc.TaikoL1,
+			StartHeight:          l1Height,
+			EndHeight:            new(big.Int).Add(l1Height, common.Big1),
+			OnBlockProposedEvent: onBlockProposed,
+			FilterQuery:          []*big.Int{blockId},
+		})
+		if err != nil {
+			return err
+		}
+
+		return iter.Iter()
+	}
+
+	go func() {
 		if err := backoff.Retry(
 			func() error {
-				iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
-					Client:               p.rpc.L1,
-					TaikoL1:              p.rpc.TaikoL1,
-					StartHeight:          l1Height,
-					EndHeight:            new(big.Int).Add(l1Height, common.Big1),
-					OnBlockProposedEvent: onBlockProposed,
-					FilterQuery:          []*big.Int{blockId},
-				})
-				if err != nil {
-					return err
-				}
-
-				return iter.Iter()
+				return handleBlockProposedEvent()
 			},
 			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
 		); err != nil {
+			p.currentBlocksBeingProvenMutex.Lock()
+			defer p.currentBlocksBeingProvenMutex.Unlock()
+			delete(p.currentBlocksBeingProven, blockId.Uint64())
 			log.Error("Request proof with a given block ID", "blockID", blockId, "error", err)
 		}
 	}()
