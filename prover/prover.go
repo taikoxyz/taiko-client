@@ -838,7 +838,6 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 	}
 
 	if time.Now().Unix() > int64(block.ProposedAt)+int64(block.ProofWindow) {
-
 		// we should remove this block from being watched regardless of whether the block
 		// has a valid proof
 		delete(p.currentBlocksWaitingForProofWindow, blockId)
