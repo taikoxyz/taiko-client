@@ -512,7 +512,8 @@ func (p *Prover) onBlockProposed(
 			proofWindowExpired := uint64(time.Now().Unix()) > proofWindowExpiresAt
 			// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
 			if block.AssignedProver != p.proverAddress && block.AssignedProver != zeroAddress && !proofWindowExpired {
-				log.Info("Proposed block not proveable",
+				log.Info(
+					"Proposed block not proveable",
 					"blockID",
 					event.BlockId,
 					"prover",
@@ -542,8 +543,9 @@ func (p *Prover) onBlockProposed(
 
 			// if set not to prove unassigned blocks, this block is still not provable
 			// by us even though its open proving.
-			if block.AssignedProver == zeroAddress && !p.cfg.ProveUnassignedBlocks {
-				log.Info("Skipping proposed open proving block, not assigned to us",
+			if (block.AssignedProver == zeroAddress || proofWindowExpired) && !p.cfg.ProveUnassignedBlocks {
+				log.Info(
+					"Skipping proposed open proving block, not assigned to us",
 					"blockID", event.BlockId,
 				)
 				return nil
