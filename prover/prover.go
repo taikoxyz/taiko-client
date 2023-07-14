@@ -850,11 +850,16 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 	}
 
 	if time.Now().Unix() > int64(block.ProposedAt)+int64(block.ProofWindow) {
-
 		notify := func() {
 			select {
 			case p.proveNotify <- new(big.Int).SetUint64(l1Height):
 			default:
+				log.Info("unable to request proof, proveNotify channel busy",
+					"blockID",
+					blockId,
+					"l1Height",
+					l1Height,
+				)
 			}
 		}
 
