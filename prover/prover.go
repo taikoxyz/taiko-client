@@ -950,11 +950,7 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 		})
 		p.currentBlocksBeingProvenMutex.Unlock()
 
-		log.Info("req proof before guard")
-
 		p.proposeConcurrencyGuard <- struct{}{}
-
-		log.Info("req proof after guard")
 
 		if err := p.validProofSubmitter.RequestProof(ctx, event); err != nil {
 			return err
