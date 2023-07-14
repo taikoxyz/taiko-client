@@ -255,8 +255,7 @@ func (p *Prover) eventLoop() {
 	)
 	defer verificationCheckTicker.Stop()
 
-	checkProofWindowExpiredTicker := time.NewTicker(p.checkProofWindowExpiredInterval)
-	defer checkProofWindowExpiredTicker.Stop()
+	checkProofWindowExpiredTicker := time.After(p.checkProofWindowExpiredInterval)
 
 	// Call reqProving() right away to catch up with the latest state.
 	reqProving()
@@ -272,10 +271,13 @@ func (p *Prover) eventLoop() {
 			); err != nil {
 				log.Error("Check chain verification error", "error", err)
 			}
-		case <-checkProofWindowExpiredTicker.C:
-			if err := p.checkProofWindowsExpired(p.ctx); err != nil {
-				log.Error("error checking proof window expired", "error", err)
-			}
+		case <-checkProofWindowExpiredTicker:
+			func() {
+				defer func() { checkProofWindowExpiredTicker = time.After(p.checkProofWindowExpiredInterval) }()
+				if err := p.checkProofWindowsExpired(p.ctx); err != nil {
+					log.Error("error checking proof window expired", "error", err)
+				}
+			}()
 		case proofWithHeader := <-p.proofGenerationCh:
 			p.submitProofOp(p.ctx, proofWithHeader)
 		case <-p.proveNotify:
@@ -517,6 +519,8 @@ func (p *Prover) onBlockProposed(
 					block.AssignedProver.Hex(),
 					"proofWindowExpiresAt",
 					proofWindowExpiresAt,
+					"timeToExipre",
+					proofWindowExpiresAt-uint64(time.Now().Unix()),
 				)
 
 				// if we cant prove it now, but config is set to wait and try to prove
@@ -817,6 +821,9 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 // which are blocks that have been proposed, but we were not selected as the prover. if the proof window
 // has expired, we can start generating a proof for them.
 func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
+	p.currentBlocksWaitingForProofWindowMutex.Lock()
+	defer p.currentBlocksWaitingForProofWindowMutex.Unlock()
+
 	for blockId, l1Height := range p.currentBlocksWaitingForProofWindow {
 		if err := p.checkProofWindowExpired(ctx, l1Height, blockId); err != nil {
 			return err
@@ -829,15 +836,17 @@ func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
 // checkProofWindowExpired checks a single instance of a block to see if its proof winodw has expired
 // and the proof is now able to be submitted by anyone, not just the blocks assigned prover.
 func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId uint64) error {
-	p.currentBlocksWaitingForProofWindowMutex.Lock()
-	defer p.currentBlocksWaitingForProofWindowMutex.Unlock()
-
 	block, err := p.rpc.TaikoL1.GetBlock(nil, new(big.Int).SetUint64(blockId))
 	if err != nil {
 		return encoding.TryParsingCustomError(err)
 	}
 
-	if time.Now().Unix() > int64(block.ProposedAt)+int64(block.ProofWindow) {
+	isExpired := time.Now().Unix() > int64(block.ProposedAt)+int64(block.ProofWindow)
+
+	if isExpired {
+		log.Debug(
+			"Block proof window is expired", "blockID", blockId, "l1Height", l1Height)
+
 		// we should remove this block from being watched regardless of whether the block
 		// has a valid proof
 		delete(p.currentBlocksWaitingForProofWindow, blockId)
@@ -861,7 +870,8 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 		}
 
 		if forkChoice.Prover == zeroAddress {
-			log.Info("proof window for proof not assigned to us expired, requesting proof",
+			log.Info(
+				"Proof window for proof not assigned to us expired, requesting proof",
 				"blockID",
 				blockId,
 				"l1Height",
@@ -882,7 +892,8 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 			// if the hashes dont match, we can generate proof even though
 			// a proof came in before proofwindow expired.
 			if block.Hash() != forkChoice.BlockHash {
-				log.Info("invalid proof detected while watching for proof window expiration, requesting proof",
+				log.Info(
+					"Invalid proof detected while watching for proof window expiration, requesting proof",
 					"blockID",
 					blockId,
 					"l1Height",
@@ -913,12 +924,6 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 		event *bindings.TaikoL1ClientBlockProposed,
 		end eventIterator.EndBlockProposedEventIterFunc,
 	) error {
-		// If there is newly generated proofs, we need to submit them as soon as possible.
-		if len(p.proofGenerationCh) > 0 {
-			end()
-			return nil
-		}
-
 		// only filter for exact blockID we want
 		if event.BlockId.Cmp(blockId) != 0 {
 			return nil
@@ -940,7 +945,7 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 		p.currentBlocksBeingProven[event.BlockId.Uint64()] = cancelFunc(func() {
 			defer cancelCtx()
 			if err := p.validProofSubmitter.CancelProof(ctx, event.BlockId); err != nil {
-				log.Error("failed to cancel proof", "error", err, "blockID", event.BlockId)
+				log.Error("Failed to cancel proof", "error", err, "blockID", event.BlockId)
 			}
 		})
 		p.currentBlocksBeingProvenMutex.Unlock()
@@ -952,20 +957,32 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 		return nil
 	}
 
-	iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
-		Client:               p.rpc.L1,
-		TaikoL1:              p.rpc.TaikoL1,
-		StartHeight:          l1Height,
-		EndHeight:            new(big.Int).Add(l1Height, big.NewInt(1)),
-		OnBlockProposedEvent: onBlockProposed,
-	})
-	if err != nil {
-		return err
-	}
+	p.proposeConcurrencyGuard <- struct{}{}
 
-	if err := iter.Iter(); err != nil {
-		return err
-	}
+	go func() {
+		defer func() { <-p.proposeConcurrencyGuard }()
+
+		if err := backoff.Retry(
+			func() error {
+				iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
+					Client:               p.rpc.L1,
+					TaikoL1:              p.rpc.TaikoL1,
+					StartHeight:          l1Height,
+					EndHeight:            new(big.Int).Add(l1Height, common.Big1),
+					OnBlockProposedEvent: onBlockProposed,
+					FilterQuery:          []*big.Int{blockId},
+				})
+				if err != nil {
+					return err
+				}
+
+				return iter.Iter()
+			},
+			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
+		); err != nil {
+			log.Error("Request proof with a given block ID", "blockID", blockId, "error", err)
+		}
+	}()
 
 	return nil
 }
