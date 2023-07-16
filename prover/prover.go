@@ -297,6 +297,8 @@ func (p *Prover) eventLoop() {
 		case e := <-p.proverSlashedCh:
 			if e.Addr.Hex() == p.proverAddress.Hex() {
 				log.Info("Prover slashed", "address", e.Addr.Hex(), "amount", e.Amount)
+				metrics.ProverSlashedCounter.Inc(1)
+				metrics.ProverSlashedAmount.Inc(int64(e.Amount))
 			}
 		case <-forceProvingTicker.C:
 			reqProving()
@@ -559,6 +561,8 @@ func (p *Prover) onBlockProposed(
 				"prover", block.AssignedProver.Hex(),
 				"proofWindowExpired", proofWindowExpired,
 			)
+
+			metrics.ProverProofsAssigned.Inc(1)
 		}
 
 		ctx, cancelCtx := context.WithCancel(ctx)
