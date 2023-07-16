@@ -297,6 +297,8 @@ func (p *Prover) eventLoop() {
 		case e := <-p.proverSlashedCh:
 			if e.Addr.Hex() == p.proverAddress.Hex() {
 				log.Info("Prover slashed", "address", e.Addr.Hex(), "amount", e.Amount)
+				metrics.ProverSlashedCounter.Inc(1)
+				metrics.ProverSlashedAmount.Inc(int64(e.Amount))
 			}
 		case <-forceProvingTicker.C:
 			reqProving()
@@ -559,6 +561,8 @@ func (p *Prover) onBlockProposed(
 				"prover", block.AssignedProver.Hex(),
 				"proofWindowExpired", proofWindowExpired,
 			)
+
+			metrics.ProverProofsAssigned.Inc(1)
 		}
 
 		ctx, cancelCtx := context.WithCancel(ctx)
@@ -627,10 +631,15 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(event.BlockId.Int64())
 
+	var reward int64
 	if event.ProofReward > math.MaxInt64 {
-		metrics.ProverAllProofRewardGauge.Update(math.MaxInt64)
+		reward = math.MaxInt64
 	} else {
-		metrics.ProverAllProofRewardGauge.Update(int64(event.ProofReward))
+		reward = int64(event.ProofReward)
+	}
+	metrics.ProverAllProofRewardGauge.Update(reward)
+	if event.Prover == p.proverAddress {
+		metrics.ProverProofRewardGauge.Update(reward)
 	}
 
 	p.latestVerifiedL1Height = event.Raw.BlockNumber
