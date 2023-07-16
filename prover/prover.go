@@ -631,10 +631,15 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(event.BlockId.Int64())
 
+	var reward int64
 	if event.ProofReward > math.MaxInt64 {
-		metrics.ProverAllProofRewardGauge.Update(math.MaxInt64)
+		reward = math.MaxInt64
 	} else {
-		metrics.ProverAllProofRewardGauge.Update(int64(event.ProofReward))
+		reward = int64(event.ProofReward)
+	}
+	metrics.ProverAllProofRewardGauge.Update(reward)
+	if event.Prover == p.proverAddress {
+		metrics.ProverProofRewardGauge.Update(reward)
 	}
 
 	p.latestVerifiedL1Height = event.Raw.BlockNumber
