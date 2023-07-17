@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -28,6 +29,7 @@ type SpecialProofProducer struct {
 	proverPrivKey     *ecdsa.PrivateKey
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	graffiti          [32]byte
+	delay             time.Duration
 }
 
 // NewSpecialProofProducer creates a new NewSpecialProofProducer instance, which can be either
@@ -38,6 +40,7 @@ func NewSpecialProofProducer(
 	taikoL2Address common.Address,
 	protocolSpecialProverAddress common.Address,
 	graffiti string,
+	delay time.Duration,
 ) (*SpecialProofProducer, error) {
 	proverAddress := crypto.PubkeyToAddress(proverPrivKey.PublicKey)
 	if proverAddress != protocolSpecialProverAddress {
@@ -54,6 +57,7 @@ func NewSpecialProofProducer(
 		proverPrivKey,
 		anchorValidator,
 		rpc.StringToBytes32(graffiti),
+		delay,
 	}, nil
 }
 
@@ -123,13 +127,15 @@ func (p *SpecialProofProducer) RequestProof(
 		return fmt.Errorf("failed to sign evidence: %w", err)
 	}
 
-	resultCh <- &ProofWithHeader{
-		BlockID: blockID,
-		Header:  header,
-		Meta:    meta,
-		ZkProof: proof,
-		Opts:    opts,
-	}
+	time.AfterFunc(p.delay, func() {
+		resultCh <- &ProofWithHeader{
+			BlockID: blockID,
+			Header:  header,
+			Meta:    meta,
+			ZkProof: proof,
+			Opts:    opts,
+		}
+	})
 
 	return nil
 }

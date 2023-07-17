@@ -177,6 +177,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			p.cfg.TaikoL2Address,
 			specialProverAddress,
 			p.cfg.Graffiti,
+			p.cfg.OracleProofSubmissionDelay,
 		); err != nil {
 			return err
 		}

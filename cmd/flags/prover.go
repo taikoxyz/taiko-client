@@ -63,6 +63,12 @@ var (
 		Usage:    "Private key of oracle prover",
 		Category: proverCategory,
 	}
+	OracleProofSubmissionDelay = &cli.Uint64Flag{
+		Name:     "oracleProofSubmissionDelay",
+		Usage:    "Oracle proof submission delay in seconds",
+		Value:    0,
+		Category: proverCategory,
+	}
 	Graffiti = &cli.StringFlag{
 		Name:     "graffiti",
 		Usage:    "When string is passed, adds additional graffiti info to proof evidence",
