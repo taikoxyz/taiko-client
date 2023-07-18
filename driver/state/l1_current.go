@@ -75,9 +75,9 @@ func (s *State) ResetL1Current(
 					e *bindings.TaikoL1ClientBlockProven,
 					end eventIterator.EndBlockProvenEventIterFunc,
 				) error {
-					log.Debug("Filtered BlockProven event", "ID", e.Id, "hash", common.Hash(e.BlockHash))
+					log.Debug("Filtered BlockProven event", "ID", e.BlockId, "hash", common.Hash(e.BlockHash))
 					if e.BlockHash == targetHash {
-						heightOrID.ID = e.Id
+						heightOrID.ID = e.BlockId
 						end()
 					}
 

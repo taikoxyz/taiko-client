@@ -87,9 +87,9 @@ func NewValidProofSubmitter(
 
 // RequestProof implements the ProofSubmitter interface.
 func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
-	l1Origin, err := s.rpc.WaitL1Origin(ctx, event.Id)
+	l1Origin, err := s.rpc.WaitL1Origin(ctx, event.BlockId)
 	if err != nil {
-		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.Id, err)
+		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.BlockId, err)
 	}
 
 	// Get the header of the block to prove from L2 execution engine.
@@ -130,8 +130,15 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		AnchorGasLimit:     block.Transactions()[0].Gas(),
 	}
 
-	if err := s.proofProducer.RequestProof(ctx, opts, event.Id, &event.Meta, block.Header(), s.resultCh); err != nil {
-		return fmt.Errorf("failed to request proof (id: %d): %w", event.Id, err)
+	if err := s.proofProducer.RequestProof(
+		ctx,
+		opts,
+		event.BlockId,
+		&event.Meta,
+		block.Header(),
+		s.resultCh,
+	); err != nil {
+		return fmt.Errorf("failed to request proof (id: %d): %w", event.BlockId, err)
 	}
 
 	metrics.ProverQueuedProofCounter.Inc(1)

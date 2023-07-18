@@ -15,27 +15,29 @@ import (
 
 // Config contains the configurations to initialize a Taiko prover.
 type Config struct {
-	L1WsEndpoint                             string
-	L1HttpEndpoint                           string
-	L2WsEndpoint                             string
-	L2HttpEndpoint                           string
-	TaikoL1Address                           common.Address
-	TaikoProverPoolL1Address                 common.Address
-	TaikoL2Address                           common.Address
-	L1ProverPrivKey                          *ecdsa.PrivateKey
-	ZKEvmRpcdEndpoint                        string
-	ZkEvmRpcdParamsPath                      string
-	StartingBlockID                          *big.Int
-	MaxConcurrentProvingJobs                 uint
-	Dummy                                    bool
-	OracleProver                             bool
-	OracleProverPrivateKey                   *ecdsa.PrivateKey
-	Graffiti                                 string
-	RandomDummyProofDelayLowerBound          *time.Duration
-	RandomDummyProofDelayUpperBound          *time.Duration
-	BackOffMaxRetrys                         uint64
-	BackOffRetryInterval                     time.Duration
-	CheckProofWindowExpiredIntervalInSeconds time.Duration
+	L1WsEndpoint                    string
+	L1HttpEndpoint                  string
+	L2WsEndpoint                    string
+	L2HttpEndpoint                  string
+	TaikoL1Address                  common.Address
+	TaikoProverPoolL1Address        common.Address
+	TaikoL2Address                  common.Address
+	L1ProverPrivKey                 *ecdsa.PrivateKey
+	ZKEvmRpcdEndpoint               string
+	ZkEvmRpcdParamsPath             string
+	StartingBlockID                 *big.Int
+	MaxConcurrentProvingJobs        uint
+	Dummy                           bool
+	OracleProver                    bool
+	OracleProverPrivateKey          *ecdsa.PrivateKey
+	OracleProofSubmissionDelay      time.Duration
+	Graffiti                        string
+	RandomDummyProofDelayLowerBound *time.Duration
+	RandomDummyProofDelayUpperBound *time.Duration
+	BackOffMaxRetrys                uint64
+	BackOffRetryInterval            time.Duration
+	CheckProofWindowExpiredInterval time.Duration
+	ProveUnassignedBlocks           bool
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -113,13 +115,15 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		Dummy:                           c.Bool(flags.Dummy.Name),
 		OracleProver:                    c.Bool(flags.OracleProver.Name),
 		OracleProverPrivateKey:          oracleProverPrivKey,
+		OracleProofSubmissionDelay:      time.Duration(c.Uint64(flags.OracleProofSubmissionDelay.Name)) * time.Second,
 		Graffiti:                        c.String(flags.Graffiti.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
 		BackOffMaxRetrys:                c.Uint64(flags.BackOffMaxRetrys.Name),
 		BackOffRetryInterval:            time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
-		CheckProofWindowExpiredIntervalInSeconds: time.Duration(
+		CheckProofWindowExpiredInterval: time.Duration(
 			c.Uint64(flags.CheckProofWindowExpiredInterval.Name),
 		) * time.Second,
+		ProveUnassignedBlocks: c.Bool(flags.ProveUnassignedBlocks.Name),
 	}, nil
 }

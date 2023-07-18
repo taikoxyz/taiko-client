@@ -104,11 +104,6 @@ func NeedNewProof(
 		return true, nil
 	}
 
-	if fc.Prover == encoding.OracleProverAddress {
-		log.Info("Only oracle proof submitted, try generating a normal proof", "blockID", id)
-		return true, nil
-	}
-
 	if proverAddress == fc.Prover {
 		log.Info("📬 Block's proof has already been submitted by current prover", "blockID", id)
 		return false, nil

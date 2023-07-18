@@ -52,7 +52,7 @@ func SubscribeBlockProposed(
 	ch chan *bindings.TaikoL1ClientBlockProposed,
 ) event.Subscription {
 	return SubscribeEvent("BlockProposed", func(ctx context.Context) (event.Subscription, error) {
-		sub, err := taikoL1.WatchBlockProposed(nil, ch, nil)
+		sub, err := taikoL1.WatchBlockProposed(nil, ch, nil, nil)
 		if err != nil {
 			log.Error("Create TaikoL1.BlockProposed subscription error", "error", err)
 			return nil, err

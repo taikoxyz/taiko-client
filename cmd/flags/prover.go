@@ -63,6 +63,12 @@ var (
 		Usage:    "Private key of oracle prover",
 		Category: proverCategory,
 	}
+	OracleProofSubmissionDelay = &cli.Uint64Flag{
+		Name:     "oracleProofSubmissionDelay",
+		Usage:    "Oracle proof submission delay in seconds",
+		Value:    0,
+		Category: proverCategory,
+	}
 	Graffiti = &cli.StringFlag{
 		Name:     "graffiti",
 		Usage:    "When string is passed, adds additional graffiti info to proof evidence",
@@ -73,13 +79,19 @@ var (
 		Name:     "taikoProverPoolL1",
 		Usage:    "TaikoProverPoolL1 contract address",
 		Required: true,
-		Category: commonCategory,
+		Category: proverCategory,
 	}
 	CheckProofWindowExpiredInterval = &cli.Uint64Flag{
 		Name:     "prover.checkProofWindowExpiredInterval",
 		Usage:    "Interval in seconds to check for expired proof windows from other provers",
-		Category: commonCategory,
+		Category: proverCategory,
 		Value:    15,
+	}
+	ProveUnassignedBlocks = &cli.BoolFlag{
+		Name:     "prover.proveUnassignedBlocks",
+		Usage:    "Whether you want to prove unassigned blocks, or only work on assigned proofs",
+		Category: proverCategory,
+		Value:    true,
 	}
 )
 
@@ -97,7 +109,9 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	RandomDummyProofDelay,
 	OracleProver,
 	OracleProverPrivateKey,
+	OracleProofSubmissionDelay,
 	Graffiti,
 	TaikoProverPoolL1Address,
 	CheckProofWindowExpiredInterval,
+	ProveUnassignedBlocks,
 })

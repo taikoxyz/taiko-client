@@ -84,7 +84,7 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 		"gasUsed", parentGasUsed,
 	)
 
-	return c.rpc.TaikoL2.Anchor(opts, l1Hash, signalRoot, l1Height.Uint64(), parentGasUsed)
+	return c.rpc.TaikoL2.Anchor(opts, l1Hash, signalRoot, l1Height.Uint64(), uint32(parentGasUsed))
 }
 
 // transactOpts is a utility method to create some transact options of the anchor transaction in given L2 block with

@@ -67,7 +67,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
-	sub, err := s.p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil)
+	sub, err := s.p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
 	s.Nil(err)
 	defer func() {
 		sub.Unsubscribe()
@@ -82,7 +82,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	parent, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	baseFee, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint64(gaslimit), parent.GasUsed())
+	baseFee, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint32(gaslimit), uint32(parent.GasUsed()))
 	s.Nil(err)
 
 	to := common.BytesToAddress(testutils.RandomBytes(32))

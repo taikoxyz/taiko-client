@@ -110,7 +110,7 @@ func (s *Syncer) onBlockProposed(
 	event *bindings.TaikoL1ClientBlockProposed,
 	endIter eventIterator.EndBlockProposedEventIterFunc,
 ) error {
-	if event.Id.Cmp(common.Big0) == 0 {
+	if event.BlockId.Cmp(common.Big0) == 0 {
 		return nil
 	}
 
@@ -140,7 +140,7 @@ func (s *Syncer) onBlockProposed(
 		} else {
 			reorged, l1CurrentToReset, lastInsertedBlockIDToReset, err = s.rpc.CheckL1Reorg(
 				ctx,
-				new(big.Int).Sub(event.Id, common.Big1),
+				new(big.Int).Sub(event.BlockId, common.Big1),
 			)
 			if err != nil {
 				return fmt.Errorf("failed to check whether L1 chain has been reorged: %w", err)
@@ -167,7 +167,7 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	// Ignore those already inserted blocks.
-	if s.lastInsertedBlockID != nil && event.Id.Cmp(s.lastInsertedBlockID) <= 0 {
+	if s.lastInsertedBlockID != nil && event.BlockId.Cmp(s.lastInsertedBlockID) <= 0 {
 		return nil
 	}
 
@@ -175,7 +175,7 @@ func (s *Syncer) onBlockProposed(
 		"New BlockProposed event",
 		"L1Height", event.Raw.BlockNumber,
 		"L1Hash", event.Raw.BlockHash,
-		"BlockID", event.Id,
+		"BlockID", event.BlockId,
 		"Removed", event.Raw.Removed,
 	)
 
@@ -186,13 +186,13 @@ func (s *Syncer) onBlockProposed(
 	)
 	if s.progressTracker.Triggered() {
 		// Already synced through beacon sync, just skip this event.
-		if event.Id.Cmp(s.progressTracker.LastSyncedVerifiedBlockID()) <= 0 {
+		if event.BlockId.Cmp(s.progressTracker.LastSyncedVerifiedBlockID()) <= 0 {
 			return nil
 		}
 
 		parent, err = s.rpc.L2.HeaderByHash(ctx, s.progressTracker.LastSyncedVerifiedBlockHash())
 	} else {
-		parent, err = s.rpc.L2ParentByBlockId(ctx, event.Id)
+		parent, err = s.rpc.L2ParentByBlockId(ctx, event.BlockId)
 	}
 
 	if err != nil {
@@ -211,20 +211,20 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	// Check whether the transactions list is valid.
-	txListBytes, hint, invalidTxIndex, err := s.txListValidator.ValidateTxList(event.Id, tx.Data())
+	txListBytes, hint, invalidTxIndex, err := s.txListValidator.ValidateTxList(event.BlockId, tx.Data())
 	if err != nil {
 		return fmt.Errorf("failed to validate transactions list: %w", err)
 	}
 
 	log.Info(
 		"Validate transactions list",
-		"blockID", event.Id,
+		"blockID", event.BlockId,
 		"hint", hint,
 		"invalidTxIndex", invalidTxIndex,
 	)
 
 	l1Origin := &rawdb.L1Origin{
-		BlockID:       event.Id,
+		BlockID:       event.BlockId,
 		L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
 		L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
 		L1BlockHash:   event.Raw.BlockHash,
@@ -237,7 +237,7 @@ func (s *Syncer) onBlockProposed(
 
 	// If the transactions list is invalid, we simply insert an empty L2 block.
 	if hint != txListValidator.HintOK {
-		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", event.Id)
+		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", event.BlockId)
 		txListBytes = []byte{}
 	}
 
@@ -258,7 +258,7 @@ func (s *Syncer) onBlockProposed(
 
 	log.Info(
 		"🔗 New L2 block inserted",
-		"blockID", event.Id,
+		"blockID", event.BlockId,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
 		"latestVerifiedBlockID", s.state.GetLatestVerifiedBlock().ID,
@@ -269,7 +269,7 @@ func (s *Syncer) onBlockProposed(
 	)
 
 	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
-	s.lastInsertedBlockID = event.Id
+	s.lastInsertedBlockID = event.BlockId
 
 	if s.progressTracker.Triggered() {
 		s.progressTracker.ClearMeta()
@@ -300,7 +300,7 @@ func (s *Syncer) insertNewHead(
 	var txList []*types.Transaction
 	if len(txListBytes) != 0 {
 		if err := rlp.DecodeBytes(txListBytes, &txList); err != nil {
-			log.Error("Invalid txList bytes", "blockID", event.Id)
+			log.Error("Invalid txList bytes", "blockID", event.BlockId)
 			return nil, err
 		}
 	}
@@ -314,8 +314,8 @@ func (s *Syncer) insertNewHead(
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{BlockNumber: parent.Number},
 		uint32(event.Meta.Timestamp-parentTimestamp),
-		uint64(event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit())),
-		parent.GasUsed,
+		event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit()),
+		uint32(parent.GasUsed),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
@@ -351,7 +351,7 @@ func (s *Syncer) insertNewHead(
 	txList = append([]*types.Transaction{anchorTx}, txList...)
 
 	if txListBytes, err = rlp.EncodeToBytes(txList); err != nil {
-		log.Error("Encode txList error", "blockID", event.Id, "error", err)
+		log.Error("Encode txList error", "blockID", event.BlockId, "error", err)
 		return nil, err
 	}
 

@@ -46,7 +46,7 @@ func ProposeAndInsertEmptyBlocks(
 
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
-	sub, err := s.RpcClient.TaikoL1.WatchBlockProposed(nil, sink, nil)
+	sub, err := s.RpcClient.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
 	s.Nil(err)
 	defer func() {
 		sub.Unsubscribe()
@@ -110,14 +110,14 @@ func ProposeAndInsertValidBlock(
 	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
-	sub, err := s.RpcClient.TaikoL1.WatchBlockProposed(nil, sink, nil)
+	sub, err := s.RpcClient.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
 	s.Nil(err)
 	defer func() {
 		sub.Unsubscribe()
 		close(sink)
 	}()
 
-	baseFee, err := s.RpcClient.TaikoL2.GetBasefee(nil, 0, 60000000, l2Head.GasUsed)
+	baseFee, err := s.RpcClient.TaikoL2.GetBasefee(nil, 0, 60000000, uint32(l2Head.GasUsed))
 	s.Nil(err)
 
 	nonce, err := s.RpcClient.L2.PendingNonceAt(context.Background(), s.TestAddr)
