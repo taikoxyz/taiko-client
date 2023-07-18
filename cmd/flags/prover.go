@@ -109,6 +109,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	RandomDummyProofDelay,
 	OracleProver,
 	OracleProverPrivateKey,
+	OracleProofSubmissionDelay,
 	Graffiti,
 	TaikoProverPoolL1Address,
 	CheckProofWindowExpiredInterval,
