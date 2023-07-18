@@ -30,6 +30,7 @@ type Config struct {
 	Dummy                           bool
 	OracleProver                    bool
 	OracleProverPrivateKey          *ecdsa.PrivateKey
+	OracleProofSubmissionDelay      time.Duration
 	Graffiti                        string
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
@@ -114,6 +115,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		Dummy:                           c.Bool(flags.Dummy.Name),
 		OracleProver:                    c.Bool(flags.OracleProver.Name),
 		OracleProverPrivateKey:          oracleProverPrivKey,
+		OracleProofSubmissionDelay:      time.Duration(c.Uint64(flags.OracleProofSubmissionDelay.Name)) * time.Second,
 		Graffiti:                        c.String(flags.Graffiti.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
