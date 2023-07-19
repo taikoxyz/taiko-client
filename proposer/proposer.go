@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -31,7 +32,6 @@ var (
 	errNoNewTxs                = errors.New("no new transactions")
 	waitReceiptTimeout         = 1 * time.Minute
 	maxSendProposeBlockTxRetry = 10
-	txReplacementTipMultiplier = 2
 )
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
@@ -53,6 +53,7 @@ type Proposer struct {
 	minBlockGasLimit           *uint64
 	maxProposedTxListsPerEpoch uint64
 	proposeBlockTxGasLimit     *uint64
+	txReplacementTipMultiplier uint64
 
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -87,6 +88,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.locals = cfg.LocalAddresses
 	p.commitSlot = cfg.CommitSlot
 	p.maxProposedTxListsPerEpoch = cfg.MaxProposedTxListsPerEpoch
+	p.txReplacementTipMultiplier = cfg.ProposeBlockTxReplacementMultiplier
 	p.ctx = ctx
 
 	// RPC clients
@@ -273,6 +275,45 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	return nil
 }
 
+// sendProposeBlockTx tries to send a TaikoL1.proposeBlock transaction.
+func (p *Proposer) sendProposeBlockTx(
+	ctx context.Context,
+	meta *encoding.TaikoL1BlockMetadataInput,
+	txListBytes []byte,
+	nonce *uint64,
+	isReplacement bool,
+) (*types.Transaction, error) {
+	if p.minBlockGasLimit != nil && meta.GasLimit < uint32(*p.minBlockGasLimit) {
+		meta.GasLimit = uint32(*p.minBlockGasLimit)
+	}
+
+	// Propose the transactions list
+	inputs, err := encoding.EncodeProposeBlockInput(meta)
+	if err != nil {
+		return nil, err
+	}
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
+	if err != nil {
+		return nil, err
+	}
+	if nonce != nil {
+		opts.Nonce = new(big.Int).SetUint64(*nonce)
+	}
+	if p.proposeBlockTxGasLimit != nil {
+		opts.GasLimit = *p.proposeBlockTxGasLimit
+	}
+	if isReplacement {
+		opts.GasTipCap = new(big.Int).Mul(opts.GasTipCap, new(big.Int).SetUint64(uint64(p.txReplacementTipMultiplier)))
+	}
+
+	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs, txListBytes)
+	if err != nil {
+		return nil, encoding.TryParsingCustomError(err)
+	}
+
+	return proposeTx, nil
+}
+
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
@@ -281,62 +322,34 @@ func (p *Proposer) ProposeTxList(
 	txNum uint,
 	nonce *uint64,
 ) error {
-	sendProposeBlockTx := func(isReplacement bool) (*types.Transaction, error) {
-		if p.minBlockGasLimit != nil && meta.GasLimit < uint32(*p.minBlockGasLimit) {
-			meta.GasLimit = uint32(*p.minBlockGasLimit)
-		}
-
-		// Propose the transactions list
-		inputs, err := encoding.EncodeProposeBlockInput(meta)
-		if err != nil {
-			return nil, err
-		}
-
-		opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
-		if err != nil {
-			return nil, err
-		}
-		if nonce != nil {
-			opts.Nonce = new(big.Int).SetUint64(*nonce)
-		}
-		if p.proposeBlockTxGasLimit != nil {
-			opts.GasLimit = *p.proposeBlockTxGasLimit
-		}
-
-		if isReplacement {
-			opts.GasTipCap = new(big.Int).Mul(opts.GasTipCap, new(big.Int).SetUint64(uint64(txReplacementTipMultiplier)))
-		}
-
-		proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs, txListBytes)
-		if err != nil {
-			return nil, encoding.TryParsingCustomError(err)
-		}
-
-		return proposeTx, nil
-	}
-
 	var (
-		try           = 0
-		tx            *types.Transaction
 		isReplacement bool
+		tx            *types.Transaction
 		err           error
 	)
 
-	for try < maxSendProposeBlockTxRetry {
-		if tx, err = sendProposeBlockTx(isReplacement); err != nil {
-			try += 1
-			log.Warn("Failed to send propose block transaction, retrying", "error", err)
-			if strings.Contains(err.Error(), "replacement transaction underpriced") {
-				isReplacement = true
-			} else {
-				isReplacement = false
+	backoff.Retry(
+		func() error {
+			if ctx.Err() != nil {
+				return nil
 			}
-			continue
-		}
+			if tx, err = p.sendProposeBlockTx(ctx, meta, txListBytes, nonce, isReplacement); err != nil {
+				log.Warn("Failed to send propose block transaction, retrying", "error", err)
+				if strings.Contains(err.Error(), "replacement transaction underpriced") {
+					isReplacement = true
+				} else {
+					isReplacement = false
+				}
+				return err
+			}
 
-		break
+			return nil
+		},
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), uint64(maxSendProposeBlockTxRetry)),
+	)
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
-
 	if err != nil {
 		return err
 	}

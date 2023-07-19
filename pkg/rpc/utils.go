@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 
@@ -117,6 +118,29 @@ func NeedNewProof(
 	)
 
 	return false, nil
+}
+
+// GetPendingTxByNonce tries to retrieve a pending transaction with a given nonce in a node's mempool.
+func GetPendingTxByNonce(
+	ctx context.Context,
+	cli *Client,
+	address common.Address,
+	nonce uint64,
+) (*types.Transaction, error) {
+	content, err := cli.L2ContentFrom(ctx, address)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, txMap := range content {
+		for txNonce, tx := range txMap {
+			if txNonce == strconv.Itoa(int(nonce)) {
+				return tx, nil
+			}
+		}
+	}
+
+	return nil, nil
 }
 
 // SetHead makes a `debug_setHead` RPC call to set the chain's head, should only be used

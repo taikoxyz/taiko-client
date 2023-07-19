@@ -32,14 +32,15 @@ func (s *ProposerTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.Background())
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(InitFromConfig(ctx, p, (&Config{
-		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		L1ProposerPrivKey:          l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:            &proposeInterval,
-		MaxProposedTxListsPerEpoch: 1,
+		L1Endpoint:                          os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:                          os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:                      common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                      common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1ProposerPrivKey:                   l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:             common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		ProposeInterval:                     &proposeInterval,
+		MaxProposedTxListsPerEpoch:          1,
+		ProposeBlockTxReplacementMultiplier: 2,
 	})))
 
 	s.p = p
@@ -128,6 +129,19 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 
 	s.Nil(s.p.ProposeOp(context.Background()))
 	s.True(flag)
+}
+
+func (s *ProposerTestSuite) TestSendProposeBlockTx() {
+	tip, err := getTxOpts(
+		context.Background(),
+		s.p.rpc.L1,
+		s.p.l1ProposerPrivKey,
+		s.RpcClient.L1ChainID,
+	)
+	s.Nil(err)
+	s.Greater(tip.GasTipCap.Uint64(), uint64(0))
+
+	// TODO: add more tests
 }
 
 func (s *ProposerTestSuite) TestUpdateProposingTicker() {
