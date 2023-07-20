@@ -237,22 +237,6 @@ func (c *Client) GetPoolContent(
 	return result, err
 }
 
-type AccountPoolContent map[string]map[string]*types.Transaction
-
-// L1ContentFrom fetches a given account's transactions list from a L1 node's transactions pool.
-func (c *Client) L1ContentFrom(
-	ctx context.Context,
-	address common.Address,
-) (AccountPoolContent, error) {
-	var result AccountPoolContent
-	return result, c.L1RawRPC.CallContext(
-		ctx,
-		&result,
-		"txpool_contentFrom",
-		address,
-	)
-}
-
 // L2AccountNonce fetches the nonce of the given L2 account at a specified height.
 func (c *Client) L2AccountNonce(
 	ctx context.Context,

@@ -2,12 +2,9 @@ package rpc
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -65,38 +62,4 @@ func TestGetProtocolStateVariables(t *testing.T) {
 	client := newTestClient(t)
 	_, err := client.GetProtocolStateVariables(nil)
 	require.Nil(t, err)
-}
-
-func TestL2ContentFrom(t *testing.T) {
-	client := newTestClient(t)
-	l2Head, err := client.L2.HeaderByNumber(context.Background(), nil)
-	require.Nil(t, err)
-
-	baseFee, err := client.TaikoL2.GetBasefee(nil, 0, 60000000, uint32(l2Head.GasUsed))
-	require.Nil(t, err)
-
-	testAddrPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	require.Nil(t, err)
-
-	testAddr := crypto.PubkeyToAddress(testAddrPrivKey.PublicKey)
-
-	nonce, err := client.L2.PendingNonceAt(context.Background(), testAddr)
-	require.Nil(t, err)
-
-	tx := types.NewTransaction(
-		nonce,
-		testAddr,
-		common.Big1,
-		100000,
-		baseFee,
-		[]byte{},
-	)
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(client.L2ChainID), testAddrPrivKey)
-	require.Nil(t, err)
-	require.Nil(t, client.L2.SendTransaction(context.Background(), signedTx))
-
-	content, err := client.L1ContentFrom(context.Background(), testAddr)
-	require.Nil(t, err)
-
-	require.NotZero(t, len(content["pending"]))
 }

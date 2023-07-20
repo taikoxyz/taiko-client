@@ -65,7 +65,7 @@ func (s *ProposerTestSuite) TestName() {
 
 func (s *ProposerTestSuite) TestProposeOp() {
 	// Nothing to propose
-	// s.EqualError(errNoNewTxs, s.p.ProposeOp(context.Background()).Error())
+	s.EqualError(errNoNewTxs, s.p.ProposeOp(context.Background()).Error())
 
 	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
