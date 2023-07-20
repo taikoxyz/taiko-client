@@ -303,7 +303,30 @@ func (p *Proposer) sendProposeBlockTx(
 		opts.GasLimit = *p.proposeBlockTxGasLimit
 	}
 	if isReplacement {
-		opts.GasTipCap = new(big.Int).Mul(opts.GasTipCap, new(big.Int).SetUint64(uint64(p.txReplacementTipMultiplier)))
+		log.Info("Try replacing a transaction with same nonce", "sender", p.l1ProposerAddress, "nonce", nonce)
+		originalTx, err := rpc.GetPendingTxByNonce(ctx, p.rpc, p.l1ProposerAddress, *nonce)
+		if err != nil || originalTx == nil {
+			log.Warn(
+				"Original transaction not found",
+				"sender", p.l1ProposerAddress,
+				"nonce", nonce,
+				"error", err,
+			)
+
+			opts.GasTipCap = new(big.Int).Mul(opts.GasTipCap, new(big.Int).SetUint64(uint64(p.txReplacementTipMultiplier)))
+		} else {
+			log.Info(
+				"Original transaction to replace",
+				"sender", p.l1ProposerAddress,
+				"nonce", nonce,
+				"tx", originalTx,
+			)
+
+			opts.GasTipCap = new(big.Int).Mul(
+				originalTx.GasTipCap(),
+				new(big.Int).SetUint64(uint64(p.txReplacementTipMultiplier)),
+			)
+		}
 	}
 
 	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs, txListBytes)

@@ -95,7 +95,7 @@ func TestL2ContentFrom(t *testing.T) {
 	require.Nil(t, err)
 	require.Nil(t, client.L2.SendTransaction(context.Background(), signedTx))
 
-	content, err := client.L2ContentFrom(context.Background(), testAddr)
+	content, err := client.L1ContentFrom(context.Background(), testAddr)
 	require.Nil(t, err)
 
 	require.NotZero(t, len(content["pending"]))

@@ -127,7 +127,7 @@ func GetPendingTxByNonce(
 	address common.Address,
 	nonce uint64,
 ) (*types.Transaction, error) {
-	content, err := cli.L2ContentFrom(ctx, address)
+	content, err := cli.L1ContentFrom(ctx, address)
 	if err != nil {
 		return nil, err
 	}

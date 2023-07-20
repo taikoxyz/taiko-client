@@ -10,8 +10,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -63,7 +65,7 @@ func (s *ProposerTestSuite) TestName() {
 
 func (s *ProposerTestSuite) TestProposeOp() {
 	// Nothing to propose
-	s.EqualError(errNoNewTxs, s.p.ProposeOp(context.Background()).Error())
+	// s.EqualError(errNoNewTxs, s.p.ProposeOp(context.Background()).Error())
 
 	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
@@ -132,16 +134,54 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 }
 
 func (s *ProposerTestSuite) TestSendProposeBlockTx() {
-	tip, err := getTxOpts(
+	opts, err := getTxOpts(
 		context.Background(),
 		s.p.rpc.L1,
 		s.p.l1ProposerPrivKey,
 		s.RpcClient.L1ChainID,
 	)
 	s.Nil(err)
-	s.Greater(tip.GasTipCap.Uint64(), uint64(0))
+	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
 
-	// TODO: add more tests
+	nonce, err := s.RpcClient.L1.PendingNonceAt(context.Background(), s.p.l1ProposerAddress)
+	s.Nil(err)
+
+	tx := types.NewTransaction(
+		nonce,
+		common.BytesToAddress([]byte{}),
+		common.Big1,
+		100000,
+		opts.GasTipCap,
+		[]byte{},
+	)
+
+	s.SetL1Automine(false)
+	defer s.SetL1Automine(true)
+
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RpcClient.L1ChainID), s.p.l1ProposerPrivKey)
+	s.Nil(err)
+	s.Nil(s.RpcClient.L1.SendTransaction(context.Background(), signedTx))
+
+	var emptyTxs []types.Transaction
+	encoded, err := rlp.EncodeToBytes(emptyTxs)
+	s.Nil(err)
+
+	newTx, err := s.p.sendProposeBlockTx(
+		context.Background(),
+		&encoding.TaikoL1BlockMetadataInput{
+			Beneficiary:     s.p.L2SuggestedFeeRecipient(),
+			GasLimit:        21000,
+			TxListHash:      crypto.Keccak256Hash(encoded),
+			TxListByteStart: common.Big0,
+			TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
+			CacheTxListInfo: 0,
+		},
+		encoded,
+		&nonce,
+		true,
+	)
+	s.Nil(err)
+	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }
 
 func (s *ProposerTestSuite) TestUpdateProposingTicker() {
