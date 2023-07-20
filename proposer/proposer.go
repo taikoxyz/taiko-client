@@ -313,7 +313,7 @@ func (p *Proposer) sendProposeBlockTx(
 				"error", err,
 			)
 
-			opts.GasTipCap = new(big.Int).Mul(opts.GasTipCap, new(big.Int).SetUint64(uint64(p.txReplacementTipMultiplier)))
+			opts.GasTipCap = new(big.Int).Mul(opts.GasTipCap, new(big.Int).SetUint64(p.txReplacementTipMultiplier))
 		} else {
 			log.Info(
 				"Original transaction to replace",
@@ -324,7 +324,7 @@ func (p *Proposer) sendProposeBlockTx(
 
 			opts.GasTipCap = new(big.Int).Mul(
 				originalTx.GasTipCap(),
-				new(big.Int).SetUint64(uint64(p.txReplacementTipMultiplier)),
+				new(big.Int).SetUint64(p.txReplacementTipMultiplier),
 			)
 		}
 	}
@@ -350,8 +350,7 @@ func (p *Proposer) ProposeTxList(
 		tx            *types.Transaction
 		err           error
 	)
-
-	backoff.Retry(
+	if err := backoff.Retry(
 		func() error {
 			if ctx.Err() != nil {
 				return nil
@@ -369,7 +368,9 @@ func (p *Proposer) ProposeTxList(
 			return nil
 		},
 		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), uint64(maxSendProposeBlockTxRetry)),
-	)
+	); err != nil {
+		return err
+	}
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
