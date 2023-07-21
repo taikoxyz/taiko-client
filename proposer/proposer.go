@@ -50,6 +50,7 @@ type Proposer struct {
 	proposingTimer             *time.Timer
 	commitSlot                 uint64
 	locals                     []common.Address
+	localsOnly                 bool
 	minBlockGasLimit           *uint64
 	maxProposedTxListsPerEpoch uint64
 	proposeBlockTxGasLimit     *uint64
@@ -86,6 +87,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.proposeBlockTxGasLimit = cfg.ProposeBlockTxGasLimit
 	p.wg = sync.WaitGroup{}
 	p.locals = cfg.LocalAddresses
+	p.localsOnly = cfg.LocalAddressesOnly
 	p.commitSlot = cfg.CommitSlot
 	p.maxProposedTxListsPerEpoch = cfg.MaxProposedTxListsPerEpoch
 	p.txReplacementTipMultiplier = cfg.ProposeBlockTxReplacementMultiplier
@@ -209,6 +211,33 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	)
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
+	}
+
+	if p.localsOnly {
+		var (
+			localTxsLists []types.Transactions
+			signer        = types.LatestSignerForChainID(p.rpc.L2ChainID)
+		)
+		for _, txs := range txLists {
+			var filtered types.Transactions
+			for _, tx := range txs {
+				sender, err := types.Sender(signer, tx)
+				if err != nil {
+					return err
+				}
+
+				for _, localAddress := range p.locals {
+					if sender == localAddress {
+						filtered = append(filtered, tx)
+					}
+				}
+			}
+
+			if filtered.Len() != 0 {
+				localTxsLists = append(localTxsLists, filtered)
+			}
+		}
+		txLists = localTxsLists
 	}
 
 	log.Info("Transactions lists count", "count", len(txLists))
