@@ -23,6 +23,7 @@ type Config struct {
 	ProposeInterval                     *time.Duration
 	CommitSlot                          uint64
 	LocalAddresses                      []common.Address
+	LocalAddressesOnly                  bool
 	ProposeEmptyBlocksInterval          *time.Duration
 	MinBlockGasLimit                    uint64
 	MaxProposedTxListsPerEpoch          uint64
@@ -99,6 +100,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProposeInterval:                     proposingInterval,
 		CommitSlot:                          c.Uint64(flags.CommitSlot.Name),
 		LocalAddresses:                      localAddresses,
+		LocalAddressesOnly:                  c.Bool(flags.TxPoolLocalsOnly.Name),
 		ProposeEmptyBlocksInterval:          proposeEmptyBlocksInterval,
 		MinBlockGasLimit:                    c.Uint64(flags.MinBlockGasLimit.Name),
 		MaxProposedTxListsPerEpoch:          c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
