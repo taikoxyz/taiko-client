@@ -40,6 +40,12 @@ var (
 		Usage:    "Comma separated accounts to treat as locals (priority inclusion)",
 		Category: proposerCategory,
 	}
+	TxPoolLocalsOnly = &cli.BoolFlag{
+		Name:     "txpool.localsOnly",
+		Usage:    "If set to true, proposer will only propose transactions whose sender is in txpool.locals list",
+		Value:    false,
+		Category: proposerCategory,
+	}
 	ProposeEmptyBlocksInterval = &cli.StringFlag{
 		Name:     "proposeEmptyBlockInterval",
 		Usage:    "Time interval to propose empty blocks",
@@ -76,6 +82,7 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProposeInterval,
 	CommitSlot,
 	TxPoolLocals,
+	TxPoolLocalsOnly,
 	ProposeEmptyBlocksInterval,
 	MinBlockGasLimit,
 	MaxProposedTxListsPerEpoch,
