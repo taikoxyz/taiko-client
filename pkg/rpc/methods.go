@@ -356,11 +356,33 @@ func (c *Client) CheckL1Reorg(ctx context.Context, blockID *big.Int) (bool, *typ
 
 		l1Origin, err := c.L2.L1OriginByID(ctx, blockID)
 		if err != nil {
-			// If the L2 EE is just synced through P2P, there is a chance that the EE do not have
-			// the chain head L1Origin information recorded.
 			if err.Error() == ethereum.NotFound.Error() {
 				log.Info("L1Origin not found", "blockID", blockID)
-				return false, nil, nil, nil
+
+				// If the L2 EE is just synced through P2P, there is a chance that the EE do not have
+				// the chain head L1Origin information recorded.
+				justSyncedByP2P, err := c.IsJustSyncedByP2P(ctx)
+				if err != nil {
+					return false,
+						nil,
+						nil,
+						fmt.Errorf("failed to check whether the L2 execution engine has just finished a P2P sync: %w", err)
+				}
+
+				log.Info(
+					"Check whether the L2 execution engine has just finished a P2P sync",
+					"justSyncedByP2P",
+					justSyncedByP2P,
+				)
+
+				if justSyncedByP2P {
+					return false, nil, nil, nil
+				}
+
+				log.Info("Reorg detected due to L1Origin not found", "blockID", blockID)
+				reorged = true
+				blockID = new(big.Int).Sub(blockID, common.Big1)
+				continue
 			}
 			return false, nil, nil, err
 		}
@@ -400,4 +422,23 @@ func (c *Client) CheckL1Reorg(ctx context.Context, blockID *big.Int) (bool, *typ
 	)
 
 	return reorged, l1CurrentToReset, blockIDToReset, nil
+}
+
+// IsJustSyncedByP2P checks whether the given L2 execution engine has just finished a P2P
+// sync.
+func (c *Client) IsJustSyncedByP2P(ctx context.Context) (bool, error) {
+	l2Head, err := c.L2.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+
+	if _, err = c.L2.L1OriginByID(ctx, l2Head.Number); err != nil {
+		if err.Error() == ethereum.NotFound.Error() {
+			return true, nil
+		}
+
+		return false, err
+	}
+
+	return false, nil
 }
