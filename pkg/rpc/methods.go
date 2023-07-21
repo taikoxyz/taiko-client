@@ -359,8 +359,20 @@ func (c *Client) CheckL1Reorg(ctx context.Context, blockID *big.Int) (bool, *typ
 			// If the L2 EE is just synced through P2P, there is a chance that the EE do not have
 			// the chain head L1Origin information recorded.
 			if err.Error() == ethereum.NotFound.Error() {
+				stateVars, err := c.TaikoL1.GetStateVariables(nil)
+				if err != nil {
+					return false, nil, nil, err
+				}
 				log.Info("L1Origin not found", "blockID", blockID)
-				return false, nil, nil, nil
+
+				if blockID.Uint64() <= stateVars.LastVerifiedBlockId {
+					return false, nil, nil, nil
+				}
+
+				log.Info("Reorg detected due to L1Origin not found", "blockID", blockID)
+				reorged = true
+				blockID = new(big.Int).Sub(blockID, common.Big1)
+				continue
 			}
 			return false, nil, nil, err
 		}
