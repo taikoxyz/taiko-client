@@ -96,3 +96,7 @@ func (s *ClientTestSuite) TearDownTest() {
 
 	s.Nil(rpc.SetHead(context.Background(), s.RpcClient.L2RawRPC, common.Big0))
 }
+
+func (s *ClientTestSuite) SetL1Automine(automine bool) {
+	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), nil, "evm_setAutomine", automine))
+}

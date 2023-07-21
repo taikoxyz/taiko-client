@@ -36,6 +36,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		&cli.StringFlag{Name: flags.ProposeInterval.Name},
 		&cli.Uint64Flag{Name: flags.CommitSlot.Name},
 		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
+		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
@@ -50,6 +51,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(uint64(commitSlot), c.CommitSlot)
 		s.Equal(1, len(c.LocalAddresses))
 		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
+		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -66,5 +68,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.ProposeInterval.Name, proposeInterval,
 		"-" + flags.CommitSlot.Name, strconv.Itoa(commitSlot),
 		"-" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
+		"-" + flags.ProposeBlockTxReplacementMultiplier.Name, "5",
 	}))
 }
