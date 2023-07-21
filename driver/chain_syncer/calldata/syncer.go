@@ -82,7 +82,7 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 
 		startHeight := s.state.GetL1Current().Number
 		// If there is a L1 reorg, sometimes this will happen.
-		if startHeight.Uint64() > l1End.Number.Uint64() {
+		if startHeight.Uint64() >= l1End.Number.Uint64() {
 			startHeight = new(big.Int).Sub(l1End.Number, common.Big1)
 			newL1Current, err := s.rpc.L1.HeaderByNumber(ctx, startHeight)
 			if err != nil {
