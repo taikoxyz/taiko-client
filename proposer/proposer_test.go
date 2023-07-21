@@ -10,8 +10,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -32,14 +34,15 @@ func (s *ProposerTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.Background())
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(InitFromConfig(ctx, p, (&Config{
-		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		L1ProposerPrivKey:          l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:            &proposeInterval,
-		MaxProposedTxListsPerEpoch: 1,
+		L1Endpoint:                          os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:                          os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:                      common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                      common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1ProposerPrivKey:                   l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:             common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		ProposeInterval:                     &proposeInterval,
+		MaxProposedTxListsPerEpoch:          1,
+		ProposeBlockTxReplacementMultiplier: 2,
 	})))
 
 	s.p = p
@@ -61,9 +64,6 @@ func (s *ProposerTestSuite) TestName() {
 }
 
 func (s *ProposerTestSuite) TestProposeOp() {
-	// Nothing to propose
-	s.EqualError(errNoNewTxs, s.p.ProposeOp(context.Background()).Error())
-
 	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
@@ -128,6 +128,57 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 
 	s.Nil(s.p.ProposeOp(context.Background()))
 	s.True(flag)
+}
+
+func (s *ProposerTestSuite) TestSendProposeBlockTx() {
+	opts, err := getTxOpts(
+		context.Background(),
+		s.p.rpc.L1,
+		s.p.l1ProposerPrivKey,
+		s.RpcClient.L1ChainID,
+	)
+	s.Nil(err)
+	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
+
+	nonce, err := s.RpcClient.L1.PendingNonceAt(context.Background(), s.p.l1ProposerAddress)
+	s.Nil(err)
+
+	tx := types.NewTransaction(
+		nonce,
+		common.BytesToAddress([]byte{}),
+		common.Big1,
+		100000,
+		opts.GasTipCap,
+		[]byte{},
+	)
+
+	s.SetL1Automine(false)
+	defer s.SetL1Automine(true)
+
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RpcClient.L1ChainID), s.p.l1ProposerPrivKey)
+	s.Nil(err)
+	s.Nil(s.RpcClient.L1.SendTransaction(context.Background(), signedTx))
+
+	var emptyTxs []types.Transaction
+	encoded, err := rlp.EncodeToBytes(emptyTxs)
+	s.Nil(err)
+
+	newTx, err := s.p.sendProposeBlockTx(
+		context.Background(),
+		&encoding.TaikoL1BlockMetadataInput{
+			Beneficiary:     s.p.L2SuggestedFeeRecipient(),
+			GasLimit:        21000,
+			TxListHash:      crypto.Keccak256Hash(encoded),
+			TxListByteStart: common.Big0,
+			TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
+			CacheTxListInfo: 0,
+		},
+		encoded,
+		&nonce,
+		true,
+	)
+	s.Nil(err)
+	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }
 
 func (s *ProposerTestSuite) TestUpdateProposingTicker() {
