@@ -42,7 +42,7 @@ var (
 	}
 	TxPoolLocalsOnly = &cli.BoolFlag{
 		Name:     "txpool.localsOnly",
-		Usage:    "If set to true, proposer will only propose transactions whose sender is in txpool.locals list",
+		Usage:    "If set to true, proposer will only propose local addresses' transactions",
 		Value:    false,
 		Category: proposerCategory,
 	}
