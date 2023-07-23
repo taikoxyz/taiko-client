@@ -77,7 +77,19 @@ func (p *SpecialProofProducer) RequestProof(
 		"hash", header.Hash(),
 	)
 
-	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
+	return p.requestSpecialProof(ctx, opts, blockID, meta, header, resultCh)
+}
+
+// requestSpecialProof tries to generate a special proof for protocol.
+func (p *SpecialProofProducer) requestSpecialProof(
+	ctx context.Context,
+	opts *ProofRequestOptions,
+	blockID *big.Int,
+	meta *bindings.TaikoDataBlockMetadata,
+	header *types.Header,
+	resultCh chan *ProofWithHeader,
+) error {
+	block, err := p.rpc.L2.BlockByNumber(ctx, header.Number)
 	if err != nil {
 		return fmt.Errorf("failed to get L2 block with given hash %s: %w", header.Hash(), err)
 	}

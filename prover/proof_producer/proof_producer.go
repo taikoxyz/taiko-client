@@ -30,6 +30,7 @@ type ProofRequestOptions struct {
 	BlockHash          common.Hash
 	ParentHash         common.Hash
 	SignalRoot         common.Hash
+	EventL1Hash        common.Hash
 	Graffiti           string
 	GasUsed            uint64
 	ParentGasUsed      uint64

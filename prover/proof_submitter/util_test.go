@@ -31,11 +31,14 @@ func (s *ProofSubmitterTestSuite) TestGetProveBlocksTxOpts() {
 func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	meta := &bindings.TaikoDataBlockMetadata{L1Height: l1Head.Number.Uint64(), L1Hash: l1Head.Hash()}
+	l1HeadChild, err := s.RpcClient.L1.HeaderByNumber(context.Background(), new(big.Int).Sub(l1Head.Number, common.Big1))
+	s.Nil(err)
+	meta := &bindings.TaikoDataBlockMetadata{L1Height: l1HeadChild.Number.Uint64(), L1Hash: l1HeadChild.Hash()}
 	s.NotNil(sendTxWithBackoff(
 		context.Background(),
 		s.RpcClient,
 		common.Big1,
+		l1Head.Hash(),
 		0,
 		0,
 		meta,
@@ -47,6 +50,7 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		context.Background(),
 		s.RpcClient,
 		common.Big1,
+		l1Head.Hash(),
 		0,
 		0,
 		meta,
