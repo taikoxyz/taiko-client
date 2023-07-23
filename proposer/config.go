@@ -14,20 +14,22 @@ import (
 
 // Config contains all configurations to initialize a Taiko proposer.
 type Config struct {
-	L1Endpoint                 string
-	L2Endpoint                 string
-	TaikoL1Address             common.Address
-	TaikoL2Address             common.Address
-	L1ProposerPrivKey          *ecdsa.PrivateKey
-	L2SuggestedFeeRecipient    common.Address
-	ProposeInterval            *time.Duration
-	CommitSlot                 uint64
-	LocalAddresses             []common.Address
-	ProposeEmptyBlocksInterval *time.Duration
-	MinBlockGasLimit           uint64
-	MaxProposedTxListsPerEpoch uint64
-	ProposeBlockTxGasLimit     *uint64
-	BackOffRetryInterval       time.Duration
+	L1Endpoint                          string
+	L2Endpoint                          string
+	TaikoL1Address                      common.Address
+	TaikoL2Address                      common.Address
+	L1ProposerPrivKey                   *ecdsa.PrivateKey
+	L2SuggestedFeeRecipient             common.Address
+	ProposeInterval                     *time.Duration
+	CommitSlot                          uint64
+	LocalAddresses                      []common.Address
+	LocalAddressesOnly                  bool
+	ProposeEmptyBlocksInterval          *time.Duration
+	MinBlockGasLimit                    uint64
+	MaxProposedTxListsPerEpoch          uint64
+	ProposeBlockTxGasLimit              *uint64
+	BackOffRetryInterval                time.Duration
+	ProposeBlockTxReplacementMultiplier uint64
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -80,20 +82,30 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proposeBlockTxGasLimit = &gasLimit
 	}
 
+	proposeBlockTxReplacementMultiplier := c.Uint64(flags.ProposeBlockTxReplacementMultiplier.Name)
+	if proposeBlockTxReplacementMultiplier == 0 {
+		return nil, fmt.Errorf(
+			"invalid --proposeBlockTxReplacementMultiplier value: %d",
+			proposeBlockTxReplacementMultiplier,
+		)
+	}
+
 	return &Config{
-		L1Endpoint:                 c.String(flags.L1WSEndpoint.Name),
-		L2Endpoint:                 c.String(flags.L2HTTPEndpoint.Name),
-		TaikoL1Address:             common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
-		TaikoL2Address:             common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-		L1ProposerPrivKey:          l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:    common.HexToAddress(l2SuggestedFeeRecipient),
-		ProposeInterval:            proposingInterval,
-		CommitSlot:                 c.Uint64(flags.CommitSlot.Name),
-		LocalAddresses:             localAddresses,
-		ProposeEmptyBlocksInterval: proposeEmptyBlocksInterval,
-		MinBlockGasLimit:           c.Uint64(flags.MinBlockGasLimit.Name),
-		MaxProposedTxListsPerEpoch: c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
-		ProposeBlockTxGasLimit:     proposeBlockTxGasLimit,
-		BackOffRetryInterval:       time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
+		L1Endpoint:                          c.String(flags.L1WSEndpoint.Name),
+		L2Endpoint:                          c.String(flags.L2HTTPEndpoint.Name),
+		TaikoL1Address:                      common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
+		TaikoL2Address:                      common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
+		L1ProposerPrivKey:                   l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:             common.HexToAddress(l2SuggestedFeeRecipient),
+		ProposeInterval:                     proposingInterval,
+		CommitSlot:                          c.Uint64(flags.CommitSlot.Name),
+		LocalAddresses:                      localAddresses,
+		LocalAddressesOnly:                  c.Bool(flags.TxPoolLocalsOnly.Name),
+		ProposeEmptyBlocksInterval:          proposeEmptyBlocksInterval,
+		MinBlockGasLimit:                    c.Uint64(flags.MinBlockGasLimit.Name),
+		MaxProposedTxListsPerEpoch:          c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
+		ProposeBlockTxGasLimit:              proposeBlockTxGasLimit,
+		BackOffRetryInterval:                time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
+		ProposeBlockTxReplacementMultiplier: proposeBlockTxReplacementMultiplier,
 	}, nil
 }

@@ -40,6 +40,12 @@ var (
 		Usage:    "Comma separated accounts to treat as locals (priority inclusion)",
 		Category: proposerCategory,
 	}
+	TxPoolLocalsOnly = &cli.BoolFlag{
+		Name:     "txpool.localsOnly",
+		Usage:    "If set to true, proposer will only propose transactions of local accounts",
+		Value:    false,
+		Category: proposerCategory,
+	}
 	ProposeEmptyBlocksInterval = &cli.StringFlag{
 		Name:     "proposeEmptyBlockInterval",
 		Usage:    "Time interval to propose empty blocks",
@@ -57,6 +63,13 @@ var (
 	}
 	ProposeBlockTxGasLimit = &cli.Uint64Flag{
 		Name:     "proposeBlockTxGasLimit",
+		Usage:    "Gas limit will be used for TaikoL1.proposeBlock transactions",
+		Category: proposerCategory,
+	}
+	ProposeBlockTxReplacementMultiplier = &cli.Uint64Flag{
+		Name:     "proposeBlockTxReplacementMultiplier",
+		Value:    2,
+		Usage:    "Gas tip multiplier when replacing a TaikoL1.proposeBlock transaction with same nonce",
 		Category: proposerCategory,
 	}
 )
@@ -69,8 +82,10 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProposeInterval,
 	CommitSlot,
 	TxPoolLocals,
+	TxPoolLocalsOnly,
 	ProposeEmptyBlocksInterval,
 	MinBlockGasLimit,
 	MaxProposedTxListsPerEpoch,
 	ProposeBlockTxGasLimit,
+	ProposeBlockTxReplacementMultiplier,
 })
