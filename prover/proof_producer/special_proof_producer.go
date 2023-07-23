@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -76,9 +77,31 @@ func (p *SpecialProofProducer) RequestProof(
 		"beneficiary", meta.Beneficiary,
 		"height", header.Number,
 		"hash", header.Hash(),
+		"delay", p.delay,
 	)
 
-	block, err := p.rpc.L2.BlockByHash(ctx, header.Hash())
+	time.AfterFunc(p.delay, func() {
+		if err := backoff.Retry(
+			func() error { return p.requestSpecialProof(ctx, opts, blockID, meta, header, resultCh) },
+			backoff.NewExponentialBackOff(),
+		); err != nil {
+			log.Error("Failed to request special proof", "blockID", blockID)
+		}
+	})
+
+	return nil
+}
+
+// requestSpecialProof tries to generate a special proof for protocol.
+func (p *SpecialProofProducer) requestSpecialProof(
+	ctx context.Context,
+	opts *ProofRequestOptions,
+	blockID *big.Int,
+	meta *bindings.TaikoDataBlockMetadata,
+	header *types.Header,
+	resultCh chan *ProofWithHeader,
+) error {
+	block, err := p.rpc.L2.BlockByNumber(ctx, header.Number)
 	if err != nil {
 		return fmt.Errorf("failed to get L2 block with given hash %s: %w", header.Hash(), err)
 	}
@@ -127,15 +150,13 @@ func (p *SpecialProofProducer) RequestProof(
 		return fmt.Errorf("failed to sign evidence: %w", err)
 	}
 
-	time.AfterFunc(p.delay, func() {
-		resultCh <- &ProofWithHeader{
-			BlockID: blockID,
-			Header:  header,
-			Meta:    meta,
-			ZkProof: proof,
-			Opts:    opts,
-		}
-	})
+	resultCh <- &ProofWithHeader{
+		BlockID: blockID,
+		Header:  header,
+		Meta:    meta,
+		ZkProof: proof,
+		Opts:    opts,
+	}
 
 	return nil
 }
