@@ -13,6 +13,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
@@ -50,7 +51,8 @@ type Prover struct {
 	// States
 	latestVerifiedL1Height uint64
 	lastHandledBlockID     uint64
-	l1Current              uint64
+	genesisHeightL1        uint64
+	l1Current              *types.Header
 	reorgDetectedFlag      bool
 
 	// Proof submitters
@@ -325,7 +327,7 @@ func (p *Prover) proveOp() error {
 		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
 			Client:               p.rpc.L1,
 			TaikoL1:              p.rpc.TaikoL1,
-			StartHeight:          new(big.Int).SetUint64(p.l1Current),
+			StartHeight:          new(big.Int).SetUint64(p.l1Current.Number.Uint64()),
 			OnBlockProposedEvent: p.onBlockProposed,
 		})
 		if err != nil {
@@ -356,13 +358,28 @@ func (p *Prover) onBlockProposed(
 		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
 	}
 
-	// Check whteher the L1 chain has been reorged.
-	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1Reorg(
+	// Check whteher the L2 EE's recorded L1 info, to see if the L1 chain has been reorged.
+	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1ReorgFromL2EE(
 		ctx,
 		new(big.Int).Sub(event.BlockId, common.Big1),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to check whether L1 chain was reorged (eventID %d): %w", event.BlockId, err)
+		return fmt.Errorf("failed to check whether L1 chain was reorged from L2EE (eventID %d): %w", event.BlockId, err)
+	}
+
+	// then check the l1Current cursor at first, to see if the L1 chain has been reorged.
+	if !reorged {
+		if reorged, l1CurrentToReset, err = p.rpc.CheckL1ReorgFromL1Cursor(
+			ctx,
+			p.l1Current,
+			p.genesisHeightL1,
+		); err != nil {
+			return fmt.Errorf(
+				"failed to check whether L1 chain was reorged from l1Current (eventID %d): %w",
+				event.BlockId,
+				err,
+			)
+		}
 	}
 
 	if reorged {
@@ -373,8 +390,12 @@ func (p *Prover) onBlockProposed(
 			"lastHandledBlockIDOld", p.lastHandledBlockID,
 			"lastHandledBlockIDNew", lastHandledBlockIDToReset,
 		)
-		p.l1Current = l1CurrentToReset.Number.Uint64()
-		p.lastHandledBlockID = lastHandledBlockIDToReset.Uint64()
+		p.l1Current = l1CurrentToReset
+		if lastHandledBlockIDToReset == nil {
+			p.lastHandledBlockID = 0
+		} else {
+			p.lastHandledBlockID = lastHandledBlockIDToReset.Uint64()
+		}
 		p.reorgDetectedFlag = true
 
 		return nil
@@ -581,7 +602,11 @@ func (p *Prover) onBlockProposed(
 
 	p.proposeConcurrencyGuard <- struct{}{}
 
-	p.l1Current = event.Raw.BlockNumber
+	newL1Current, err := p.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash)
+	if err != nil {
+		return err
+	}
+	p.l1Current = newL1Current
 	p.lastHandledBlockID = event.BlockId.Uint64()
 
 	go func() {
@@ -704,14 +729,20 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 		return err
 	}
 
-	if startingBlockID == nil {
-		stateVars, err := p.rpc.GetProtocolStateVariables(nil)
-		if err != nil {
-			return err
-		}
+	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
+	if err != nil {
+		return err
+	}
+	p.genesisHeightL1 = stateVars.GenesisHeight
 
+	if startingBlockID == nil {
 		if stateVars.LastVerifiedBlockId == 0 {
-			p.l1Current = stateVars.GenesisHeight
+			genesisL1Header, err := p.rpc.L1.HeaderByNumber(p.ctx, new(big.Int).SetUint64(stateVars.GenesisHeight))
+			if err != nil {
+				return err
+			}
+
+			p.l1Current = genesisL1Header
 			return nil
 		}
 
@@ -724,7 +755,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 	if err != nil {
 		if err.Error() == ethereum.NotFound.Error() {
 			log.Warn("Failed to find L1Origin for blockID, use latest L1 head instead", "blockID", startingBlockID)
-			l1Head, err := p.rpc.L1.BlockNumber(p.ctx)
+			l1Head, err := p.rpc.L1.HeaderByNumber(p.ctx, nil)
 			if err != nil {
 				return err
 			}
@@ -735,7 +766,10 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 		return err
 	}
 
-	p.l1Current = latestVerifiedHeaderL1Origin.L1BlockHeight.Uint64()
+	if p.l1Current, err = p.rpc.L1.HeaderByHash(p.ctx, latestVerifiedHeaderL1Origin.L1BlockHash); err != nil {
+		return err
+	}
+
 	return nil
 }
 

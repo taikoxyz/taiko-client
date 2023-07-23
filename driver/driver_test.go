@@ -132,7 +132,7 @@ func (s *DriverTestSuite) TestCheckL1Reorg() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
 
-	reorged, _, _, err := s.RpcClient.CheckL1Reorg(context.Background(), l2Head2.Number)
+	reorged, _, _, err := s.RpcClient.CheckL1ReorgFromL2EE(context.Background(), l2Head2.Number)
 	s.Nil(err)
 	s.False(reorged)
 

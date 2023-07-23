@@ -66,6 +66,7 @@ func sendTxWithBackoff(
 	ctx context.Context,
 	cli *rpc.Client,
 	blockID *big.Int,
+	eventL1Hash common.Hash,
 	proposedAt uint64,
 	meta *bindings.TaikoDataBlockMetadata,
 	sendTxFunc func() (*types.Transaction, error),
@@ -81,23 +82,22 @@ func sendTxWithBackoff(
 		}
 
 		// Check if the corresponding L1 block is still in the canonical chain.
-		l1Header, err := cli.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(meta.L1Height))
+		l1Header, err := cli.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(meta.L1Height+1))
 		if err != nil {
 			log.Warn(
 				"Failed to fetch L1 block",
 				"blockID", blockID,
-				"l1Height", meta.L1Height,
-				"l1Hash", common.BytesToHash(meta.L1Hash[:]),
+				"l1Height", meta.L1Height+1,
 				"error", err,
 			)
 			return err
 		}
-		if l1Header.Hash() != meta.L1Hash {
+		if l1Header.Hash() != eventL1Hash {
 			log.Warn(
 				"Reorg detected, skip the current proof submission",
 				"blockID", blockID,
-				"l1Height", meta.L1Height,
-				"l1HashOld", common.BytesToHash(meta.L1Hash[:]),
+				"l1Height", meta.L1Height+1,
+				"l1HashOld", eventL1Hash,
 				"l1HashNew", l1Header.Hash(),
 			)
 			return nil
