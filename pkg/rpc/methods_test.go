@@ -90,3 +90,9 @@ func TestCheckL1ReorgFromL1Cursor(t *testing.T) {
 	require.True(t, reorged)
 	require.Equal(t, l1Head.ParentHash, newL1Current.Hash())
 }
+
+func TestIsJustSyncedByP2P(t *testing.T) {
+	client := newTestClient(t)
+	_, err := client.IsJustSyncedByP2P(context.Background())
+	require.Nil(t, err)
+}
