@@ -105,7 +105,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	}
 
 	// Protocol configs
-	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(nil)
+	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return fmt.Errorf("failed to get protocol configs: %w", err)
 	}
@@ -500,7 +500,7 @@ func getTxOpts(
 // CheckTaikoTokenBalance checks if the current proposer has enough balance to pay
 // the current block fee.
 func (p *Proposer) CheckTaikoTokenBalance() error {
-	fee, err := p.rpc.TaikoL1.GetBlockFee(nil, p.protocolConfigs.BlockMaxGasLimit)
+	fee, err := p.rpc.TaikoL1.GetBlockFee(&bind.CallOpts{Context: p.ctx}, p.protocolConfigs.BlockMaxGasLimit)
 	if err != nil {
 		return fmt.Errorf("failed to get block fee: %w", err)
 	}
@@ -513,7 +513,7 @@ func (p *Proposer) CheckTaikoTokenBalance() error {
 		metrics.ProposerBlockFeeGauge.Update(int64(fee))
 	}
 
-	balance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(nil, p.l1ProposerAddress)
+	balance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(&bind.CallOpts{Context: p.ctx}, p.l1ProposerAddress)
 	if err != nil {
 		return fmt.Errorf("failed to get tko balance: %w", err)
 	}

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -125,7 +126,7 @@ func (p *SpecialProofProducer) requestSpecialProof(
 		return err
 	}
 
-	blockInfo, err := p.rpc.TaikoL1.GetBlock(nil, blockID)
+	blockInfo, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, blockID)
 	if err != nil {
 		return err
 	}

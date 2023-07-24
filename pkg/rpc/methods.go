@@ -34,14 +34,14 @@ var (
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
 // and checks whether the fetched genesis is same to the node local genesis.
 func (c *Client) ensureGenesisMatched(ctx context.Context) error {
-	stateVars, err := c.GetProtocolStateVariables(nil)
+	stateVars, err := c.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return err
 	}
 
 	// Fetch the genesis `BlockVerified` event.
 	iter, err := c.TaikoL1.FilterBlockVerified(
-		&bind.FilterOpts{Start: stateVars.GenesisHeight, End: &stateVars.GenesisHeight},
+		&bind.FilterOpts{Start: stateVars.GenesisHeight, End: &stateVars.GenesisHeight, Context: ctx},
 		[]*big.Int{common.Big0},
 	)
 	if err != nil {
@@ -99,7 +99,7 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 
 			return nil
 		},
-		backoff.NewConstantBackOff(syncProgressRecheckDelay),
+		backoff.WithMaxRetries(backoff.NewConstantBackOff(syncProgressRecheckDelay), 10),
 	)
 }
 
@@ -138,7 +138,7 @@ func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, erro
 
 // GetGenesisL1Header fetches the L1 header that including L2 genesis block.
 func (c *Client) GetGenesisL1Header(ctx context.Context) (*types.Header, error) {
-	stateVars, err := c.GetProtocolStateVariables(nil)
+	stateVars, err := c.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +271,7 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 	})
 
 	g.Go(func() error {
-		stateVars, err := c.GetProtocolStateVariables(nil)
+		stateVars, err := c.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 		if err != nil {
 			return err
 		}
@@ -305,6 +305,22 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
 func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*bindings.TaikoDataStateVariables, error) {
+	var (
+		ctxWithTimeout context.Context
+		cancel         context.CancelFunc
+	)
+	if opts != nil && opts.Context != nil {
+		if _, ok := opts.Context.Deadline(); !ok {
+			ctxWithTimeout, cancel = context.WithTimeout(opts.Context, defaultWaitReceiptTimeout)
+			defer cancel()
+			opts.Context = ctxWithTimeout
+		}
+	} else {
+		ctxWithTimeout, cancel = context.WithTimeout(context.Background(), defaultWaitReceiptTimeout)
+		defer cancel()
+		opts = &bind.CallOpts{Context: ctxWithTimeout}
+	}
+
 	return GetProtocolStateVariables(c.TaikoL1, opts)
 }
 
@@ -338,7 +354,7 @@ func (c *Client) CheckL1ReorgFromL2EE(ctx context.Context, blockID *big.Int) (bo
 	)
 	for {
 		if blockID.Cmp(common.Big0) == 0 {
-			stateVars, err := c.TaikoL1.GetStateVariables(nil)
+			stateVars, err := c.TaikoL1.GetStateVariables(&bind.CallOpts{Context: ctx})
 			if err != nil {
 				return false, nil, nil, err
 			}

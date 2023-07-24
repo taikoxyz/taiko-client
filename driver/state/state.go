@@ -102,7 +102,7 @@ func (s *State) Close() {
 
 // init fetches the latest status and initializes the state instance.
 func (s *State) init(ctx context.Context) error {
-	stateVars, err := s.rpc.GetProtocolStateVariables(nil)
+	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (s *State) init(ctx context.Context) error {
 	s.setL2Head(l2Head)
 
 	latestVerifiedBlockHash, err := s.rpc.TaikoL1.GetCrossChainBlockHash(
-		nil,
+		&bind.CallOpts{Context: ctx},
 		new(big.Int).SetUint64(stateVars.LastVerifiedBlockId),
 	)
 	if err != nil {
@@ -182,7 +182,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 						continue
 					}
 				}
-				id, err := s.getSyncedHeaderID(e.Raw.BlockNumber, e.BlockHash)
+				id, err := s.getSyncedHeaderID(ctx, e.Raw.BlockNumber, e.BlockHash)
 				if err != nil {
 					log.Error("Get synced header block ID error", "error", err)
 					continue
@@ -289,10 +289,11 @@ func (s *State) VerifyL2Block(ctx context.Context, height *big.Int, hash common.
 }
 
 // getSyncedHeaderID fetches the block ID of the synced L2 header.
-func (s *State) getSyncedHeaderID(l1Height uint64, hash common.Hash) (*big.Int, error) {
+func (s *State) getSyncedHeaderID(ctx context.Context, l1Height uint64, hash common.Hash) (*big.Int, error) {
 	iter, err := s.rpc.TaikoL1.FilterBlockVerified(&bind.FilterOpts{
-		Start: l1Height,
-		End:   &l1Height,
+		Start:   l1Height,
+		End:     &l1Height,
+		Context: ctx,
 	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to filter BlockVerified event: %w", err)

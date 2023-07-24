@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -103,7 +104,7 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		return fmt.Errorf("failed to get the L2 parent block by hash (%s): %w", block.ParentHash(), err)
 	}
 
-	blockInfo, err := s.rpc.TaikoL1.GetBlock(nil, event.BlockId)
+	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId)
 	if err != nil {
 		return err
 	}

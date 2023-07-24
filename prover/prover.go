@@ -12,6 +12,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -121,7 +122,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// Configs
-	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(nil)
+	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return fmt.Errorf("failed to get protocol configs: %w", err)
 	}
@@ -155,7 +156,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	p.checkProofWindowExpiredInterval = p.cfg.CheckProofWindowExpiredInterval
 
-	oracleProverAddress, err := p.rpc.TaikoL1.Resolve(nil, p.rpc.L1ChainID, rpc.StringToBytes32("oracle_prover"), true)
+	oracleProverAddress, err := p.rpc.TaikoL1.Resolve(
+		&bind.CallOpts{Context: ctx},
+		p.rpc.L1ChainID,
+		rpc.StringToBytes32("oracle_prover"),
+		true,
+	)
 	if err != nil {
 		return err
 	}
@@ -471,7 +477,7 @@ func (p *Prover) onBlockProposed(
 			p.cancelProof(ctx, event.Meta.Id)
 		}
 
-		block, err := p.rpc.TaikoL1.GetBlock(nil, event.BlockId)
+		block, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId)
 		if err != nil {
 			return err
 		}
@@ -494,7 +500,12 @@ func (p *Prover) onBlockProposed(
 
 				// check if an invalid proof has been submitted, if so, we can skip proofWindowExpired check below
 				// and always submit proof. otherwise, oracleProver follows same proof logic as regular.
-				forkChoice, err := p.rpc.TaikoL1.GetForkChoice(nil, event.BlockId, parent.Hash(), uint32(parent.GasUsed))
+				forkChoice, err := p.rpc.TaikoL1.GetForkChoice(
+					&bind.CallOpts{Context: ctx},
+					event.BlockId,
+					parent.Hash(),
+					uint32(parent.GasUsed),
+				)
 				if err != nil {
 					if strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
 						// proof hasnt been submitted
@@ -729,7 +740,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 		return err
 	}
 
-	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
+	stateVars, err := p.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: p.ctx})
 	if err != nil {
 		return err
 	}
@@ -775,7 +786,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 
 // isBlockVerified checks whether the given block has been verified by other provers.
 func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
-	stateVars, err := p.rpc.GetProtocolStateVariables(nil)
+	stateVars, err := p.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: p.ctx})
 	if err != nil {
 		return false, err
 	}
@@ -810,7 +821,7 @@ func (p *Prover) checkChainVerification(lastLatestVerifiedL1Height uint64) error
 		"proofCooldownPeriod", p.protocolConfigs.ProofRegularCooldown,
 	)
 
-	stateVar, err := p.rpc.TaikoL1.GetStateVariables(nil)
+	stateVar, err := p.rpc.TaikoL1.GetStateVariables(&bind.CallOpts{Context: p.ctx})
 	if err != nil {
 		log.Error("Failed to get protocol state variables", "error", err)
 		return err
@@ -880,7 +891,7 @@ func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
 // checkProofWindowExpired checks a single instance of a block to see if its proof winodw has expired
 // and the proof is now able to be submitted by anyone, not just the blocks assigned prover.
 func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId uint64) error {
-	block, err := p.rpc.TaikoL1.GetBlock(nil, new(big.Int).SetUint64(blockId))
+	block, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, new(big.Int).SetUint64(blockId))
 	if err != nil {
 		return encoding.TryParsingCustomError(err)
 	}
@@ -903,7 +914,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 		}
 
 		forkChoice, err := p.rpc.TaikoL1.GetForkChoice(
-			nil,
+			&bind.CallOpts{Context: ctx},
 			new(big.Int).SetUint64(blockId),
 			parent.Hash(),
 			uint32(parent.GasUsed),
