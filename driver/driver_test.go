@@ -181,6 +181,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 
 	// Propose two L2 blocks
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	time.Sleep(3 * time.Second)
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
