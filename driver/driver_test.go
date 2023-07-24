@@ -146,7 +146,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
-	// Propose two blocks on another fork
+	// Propose ten blocks on another fork
 	for i := 0; i < 10; i++ {
 		testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 	}
@@ -260,7 +260,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
-	// Propose one blocks on another fork
+	// Propose two blocks on another fork
 	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 	time.Sleep(3 * time.Second)
 	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
