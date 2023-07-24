@@ -158,7 +158,7 @@ func (s *Syncer) onBlockProposed(
 			l1CurrentToReset = genesisL1Header
 			lastInsertedBlockIDToReset = common.Big0
 		} else {
-			reorged, l1CurrentToReset, lastInsertedBlockIDToReset, err = s.rpc.CheckL1Reorg(
+			reorged, l1CurrentToReset, lastInsertedBlockIDToReset, err = s.rpc.CheckL1ReorgFromL2EE(
 				ctx,
 				new(big.Int).Sub(event.BlockId, common.Big1),
 			)
