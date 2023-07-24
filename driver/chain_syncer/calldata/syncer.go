@@ -88,8 +88,6 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 			if err != nil {
 				return err
 			}
-			s.state.SetL1Current(newL1Current)
-			s.lastInsertedBlockID = nil
 
 			log.Info(
 				"Reorg detected",
@@ -97,6 +95,9 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 				"newL1Current", startHeight,
 				"l1Head", l1End.Number,
 			)
+
+			s.state.SetL1Current(newL1Current)
+			s.lastInsertedBlockID = nil
 		}
 
 		iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
