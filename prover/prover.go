@@ -350,7 +350,7 @@ func (p *Prover) onBlockProposed(
 
 	// then check the l1Current cursor at first, to see if the L1 chain has been reorged.
 	if !reorged {
-		if reorged, l1CurrentToReset, err = p.rpc.CheckL1ReorgFromL1Cursor(
+		if reorged, l1CurrentToReset, lastHandledBlockIDToReset, err = p.rpc.CheckL1ReorgFromL1Cursor(
 			ctx,
 			p.l1Current,
 			p.genesisHeightL1,
