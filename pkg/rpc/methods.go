@@ -189,7 +189,7 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 	log.Debug("Start fetching L1Origin from L2 execution engine", "blockID", blockID)
 	for ; true; <-ticker.C {
 		if ctxWithTimeout.Err() != nil {
-			return nil, ctx.Err()
+			return nil, ctxWithTimeout.Err()
 		}
 
 		l1Origin, err = c.L2.L1OriginByID(ctxWithTimeout, blockID)
