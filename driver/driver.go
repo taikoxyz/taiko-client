@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -84,7 +85,11 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
 	}
 
-	signalServiceAddress, err := d.rpc.TaikoL1.Resolve0(nil, rpc.StringToBytes32("signal_service"), false)
+	signalServiceAddress, err := d.rpc.TaikoL1.Resolve0(
+		&bind.CallOpts{Context: ctx},
+		rpc.StringToBytes32("signal_service"),
+		false,
+	)
 	if err != nil {
 		return err
 	}
@@ -192,7 +197,10 @@ func (d *Driver) reportProtocolStatus() {
 	var maxNumBlocks uint64
 	if err := backoff.Retry(
 		func() error {
-			configs, err := d.rpc.TaikoL1.GetConfig(nil)
+			if d.ctx.Err() != nil {
+				return nil
+			}
+			configs, err := d.rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: d.ctx})
 			if err != nil {
 				return err
 			}
@@ -211,7 +219,7 @@ func (d *Driver) reportProtocolStatus() {
 		case <-d.ctx.Done():
 			return
 		case <-ticker.C:
-			vars, err := d.rpc.GetProtocolStateVariables(nil)
+			vars, err := d.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: d.ctx})
 			if err != nil {
 				log.Error("Failed to get protocol state variables", "error", err)
 				continue

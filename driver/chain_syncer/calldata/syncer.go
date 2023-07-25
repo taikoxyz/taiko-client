@@ -47,7 +47,7 @@ func NewSyncer(
 	progressTracker *beaconsync.SyncProgressTracker,
 	signalServiceAddress common.Address,
 ) (*Syncer, error) {
-	configs, err := rpc.TaikoL1.GetConfig(nil)
+	configs, err := rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
 	}
@@ -88,8 +88,6 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 			if err != nil {
 				return err
 			}
-			s.state.SetL1Current(newL1Current)
-			s.lastInsertedBlockID = nil
 
 			log.Info(
 				"Reorg detected",
@@ -97,6 +95,9 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 				"newL1Current", startHeight,
 				"l1Head", l1End.Number,
 			)
+
+			s.state.SetL1Current(newL1Current)
+			s.lastInsertedBlockID = nil
 		}
 
 		iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
@@ -324,14 +325,14 @@ func (s *Syncer) insertNewHead(
 		}
 	}
 
-	parentTimestamp, err := s.rpc.TaikoL2.ParentTimestamp(&bind.CallOpts{BlockNumber: parent.Number})
+	parentTimestamp, err := s.rpc.TaikoL2.ParentTimestamp(&bind.CallOpts{BlockNumber: parent.Number, Context: ctx})
 	if err != nil {
 		return nil, err
 	}
 
 	// Get L2 baseFee
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
-		&bind.CallOpts{BlockNumber: parent.Number},
+		&bind.CallOpts{BlockNumber: parent.Number, Context: ctx},
 		uint32(event.Meta.Timestamp-parentTimestamp),
 		event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit()),
 		uint32(parent.GasUsed),
