@@ -446,7 +446,7 @@ func (c *Client) CheckL1ReorgFromL1Cursor(
 	ctx context.Context,
 	l1Current *types.Header,
 	genesisHeightL1 uint64,
-) (bool, *types.Header, error) {
+) (bool, *types.Header, *big.Int, error) {
 	var (
 		reorged          bool
 		l1CurrentToReset *types.Header
@@ -455,7 +455,7 @@ func (c *Client) CheckL1ReorgFromL1Cursor(
 		if l1Current.Number.Uint64() <= genesisHeightL1 {
 			newL1Current, err := c.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(genesisHeightL1))
 			if err != nil {
-				return false, nil, err
+				return false, nil, nil, err
 			}
 
 			l1CurrentToReset = newL1Current
@@ -468,7 +468,7 @@ func (c *Client) CheckL1ReorgFromL1Cursor(
 				continue
 			}
 
-			return false, nil, err
+			return false, nil, nil, err
 		}
 
 		if l1Header.Hash() != l1Current.Hash() {
@@ -480,7 +480,7 @@ func (c *Client) CheckL1ReorgFromL1Cursor(
 			)
 			reorged = true
 			if l1Current, err = c.L1.HeaderByHash(ctx, l1Current.ParentHash); err != nil {
-				return false, nil, err
+				return false, nil, nil, err
 			}
 			continue
 		}
@@ -496,7 +496,7 @@ func (c *Client) CheckL1ReorgFromL1Cursor(
 		"l1CurrentToResetHash", l1CurrentToReset.Hash(),
 	)
 
-	return reorged, l1CurrentToReset, nil
+	return reorged, l1CurrentToReset, nil, nil
 }
 
 // IsJustSyncedByP2P checks whether the given L2 execution engine has just finished a P2P
