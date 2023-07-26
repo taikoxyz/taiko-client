@@ -3,6 +3,7 @@ package prover
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -30,7 +31,8 @@ import (
 )
 
 var (
-	zeroAddress = common.HexToAddress("0x0000000000000000000000000000000000000000")
+	zeroAddress       = common.HexToAddress("0x0000000000000000000000000000000000000000")
+	errNotArchiveNode = errors.New("error with rpc: node must be archive node")
 )
 
 type cancelFunc func()
@@ -119,6 +121,15 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		RetryInterval:            cfg.BackOffRetryInterval,
 	}); err != nil {
 		return err
+	}
+
+	isArchive, err := rpc.IsArchiveNode(ctx, p.rpc.L1)
+	if err != nil {
+		return err
+	}
+
+	if !isArchive {
+		return errNotArchiveNode
 	}
 
 	// Configs
