@@ -30,6 +30,7 @@ import (
 
 var (
 	errNoNewTxs                = errors.New("no new transactions")
+	errNotArchiveNode          = errors.New("error with rpc: node must be archive node")
 	waitReceiptTimeout         = 1 * time.Minute
 	maxSendProposeBlockTxRetry = 10
 )
@@ -102,6 +103,15 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		RetryInterval:  cfg.BackOffRetryInterval,
 	}); err != nil {
 		return fmt.Errorf("initialize rpc clients error: %w", err)
+	}
+
+	isArchive, err := rpc.IsArchiveNode(ctx, p.rpc.L1)
+	if err != nil {
+		return err
+	}
+
+	if !isArchive {
+		return nil, errNotArchiveNode
 	}
 
 	// Protocol configs
