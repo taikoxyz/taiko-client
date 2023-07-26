@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"errors"
 	"math/big"
 	"time"
 
@@ -10,6 +11,10 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/taikoxyz/taiko-client/bindings"
+)
+
+var (
+	errNotArchiveNode = errors.New("error with rpc: node must be archive node")
 )
 
 // Client contains all L1/L2 RPC clients that a driver needs.
@@ -55,6 +60,15 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	l1RPC, err := DialClientWithBackoff(ctx, cfg.L1Endpoint, cfg.RetryInterval)
 	if err != nil {
 		return nil, err
+	}
+
+	isArchive, err := isArchiveNode(ctx, l1RPC)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isArchive {
+		return nil, errNotArchiveNode
 	}
 
 	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1RPC)
