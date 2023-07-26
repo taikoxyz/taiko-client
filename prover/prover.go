@@ -217,6 +217,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.submitProofTxMutex,
 		p.cfg.OracleProver,
 		p.cfg.Graffiti,
+		p.cfg.ProofSubmissionMaxRetry,
 		p.cfg.BackOffRetryInterval,
 	); err != nil {
 		return err
