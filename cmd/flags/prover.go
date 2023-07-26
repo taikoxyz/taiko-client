@@ -69,6 +69,12 @@ var (
 		Value:    0,
 		Category: proverCategory,
 	}
+	ProofSubmissionMaxRetry = &cli.Uint64Flag{
+		Name:     "proofSubmissionMaxRetry",
+		Usage:    "Max retry counts for proof submission",
+		Value:    0,
+		Category: proverCategory,
+	}
 	Graffiti = &cli.StringFlag{
 		Name:     "graffiti",
 		Usage:    "When string is passed, adds additional graffiti info to proof evidence",
@@ -110,6 +116,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	OracleProver,
 	OracleProverPrivateKey,
 	OracleProofSubmissionDelay,
+	ProofSubmissionMaxRetry,
 	Graffiti,
 	TaikoProverPoolL1Address,
 	CheckProofWindowExpiredInterval,

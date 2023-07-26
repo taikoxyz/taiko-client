@@ -11,6 +11,10 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
+var (
+	testMaxRetry uint64 = 1
+)
+
 func (s *ProofSubmitterTestSuite) TestIsSubmitProofTxErrorRetryable() {
 	s.True(isSubmitProofTxErrorRetryable(errors.New(testAddr.String()), common.Big0))
 	s.False(isSubmitProofTxErrorRetryable(errors.New("L1_NOT_SPECIAL_PROVER"), common.Big0))
@@ -43,6 +47,7 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		meta,
 		func() (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
 		12*time.Second,
+		&testMaxRetry,
 	))
 
 	s.Nil(sendTxWithBackoff(
@@ -69,5 +74,6 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 			return block.Transactions()[0], nil
 		},
 		12*time.Second,
+		&testMaxRetry,
 	))
 }
