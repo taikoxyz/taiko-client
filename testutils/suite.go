@@ -91,7 +91,7 @@ func (s *ClientTestSuite) SetupTest() {
 		minStakePerCapacity, err := s.RpcClient.TaikoProverPoolL1.MINSTAKEPERCAPACITY(nil)
 		s.Nil(err)
 
-		capacity, err := s.RpcClient.TaikoProverPoolL1.MAXCAPACITYLOWERBOUND(nil)
+		capacity, err := s.RpcClient.TaikoProverPoolL1.MINCAPACITY(nil)
 		s.Nil(err)
 
 		amt := new(big.Int).Mul(big.NewInt(int64(minStakePerCapacity)), big.NewInt(int64(capacity)))
