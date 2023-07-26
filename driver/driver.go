@@ -2,6 +2,7 @@ package driver
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -23,6 +24,10 @@ const (
 	protocolStatusReportInterval     = 30 * time.Second
 	exchangeTransitionConfigTimeout  = 30 * time.Second
 	exchangeTransitionConfigInterval = 1 * time.Minute
+)
+
+var (
+	errNotArchiveNode = errors.New("error with rpc: node must be archive node")
 )
 
 // Driver keeps the L2 execution engine's local block chain in sync with the TaikoL1
@@ -70,6 +75,15 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		RetryInterval:    cfg.BackOffRetryInterval,
 	}); err != nil {
 		return err
+	}
+
+	isArchive, err := rpc.IsArchiveNode(ctx, d.rpc.L1)
+	if err != nil {
+		return err
+	}
+
+	if !isArchive {
+		return errNotArchiveNode
 	}
 
 	if d.state, err = state.New(d.ctx, d.rpc); err != nil {
