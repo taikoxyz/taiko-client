@@ -22,6 +22,7 @@ import (
 var (
 	waitReceiptPollingInterval = 3 * time.Second
 	defaultWaitReceiptTimeout  = 1 * time.Minute
+	zeroAddress                = common.HexToAddress("0x0000000000000000000000000000000000000000")
 )
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
@@ -172,4 +173,17 @@ func StringToBytes32(str string) [32]byte {
 	copy(b[:], []byte(str))
 
 	return b
+}
+
+func IsArchiveNode(ctx context.Context, client *ethclient.Client) (bool, error) {
+	_, err := client.BalanceAt(ctx, zeroAddress, big.NewInt(1))
+	if err != nil {
+		if strings.Contains(err.Error(), "missing trie node") {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
 }
