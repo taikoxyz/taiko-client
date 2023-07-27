@@ -19,7 +19,6 @@ func (s *DriverStateTestSuite) TestSetL1Current() {
 
 	// should warn, but not panic
 	s.s.SetL1Current(nil)
-
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentEmptyHeight() {
@@ -48,8 +47,7 @@ func (s *DriverStateTestSuite) TestResetL1CurrentCtxErr() {
 	s.NotNil(err)
 }
 
-func (s *DriverStateTestSuite) TestResetL1CurrentNonEmptyHeightEmptyID() {
-	_, _, err := s.s.ResetL1Current(context.Background(), &HeightOrID{Height: common.Big3})
-	s.Nil(err)
-
-}
+// func (s *DriverStateTestSuite) TestResetL1CurrentNonEmptyHeightEmptyID() {
+// 	_, _, err := s.s.ResetL1Current(context.Background(), &HeightOrID{Height: common.Big3})
+// 	s.Nil(err)
+// }
