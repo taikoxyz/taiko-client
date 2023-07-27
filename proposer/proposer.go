@@ -208,6 +208,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		p.protocolConfigs.BlockMaxGasLimit,
 		p.protocolConfigs.BlockMaxTxListBytes,
 		p.locals,
+		p.maxProposedTxListsPerEpoch,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)

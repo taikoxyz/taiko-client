@@ -216,6 +216,7 @@ func (c *Client) GetPoolContent(
 	blockMaxGasLimit uint32,
 	maxBytesPerTxList uint64,
 	locals []common.Address,
+	maxTransactions uint64,
 ) ([]types.Transactions, error) {
 	var localsArg []string
 	for _, local := range locals {
@@ -232,6 +233,7 @@ func (c *Client) GetPoolContent(
 		maxBytesPerTxList,
 		minTxGasLimit,
 		localsArg,
+		maxTransactions,
 	)
 
 	return result, err

@@ -2,19 +2,16 @@ package rpc
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/taikoxyz/taiko-client/bindings"
-)
-
-var (
-	errNotArchiveNode = errors.New("error with rpc: node must be archive node")
 )
 
 // Client contains all L1/L2 RPC clients that a driver needs.
@@ -62,15 +59,6 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	isArchive, err := IsArchiveNode(ctx, l1RPC)
-	if err != nil {
-		return nil, err
-	}
-
-	if !isArchive {
-		return nil, errNotArchiveNode
-	}
-
 	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1RPC)
 	if err != nil {
 		return nil, err
@@ -92,6 +80,20 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	taikoL2, err := bindings.NewTaikoL2Client(cfg.TaikoL2Address, l2RPC)
 	if err != nil {
 		return nil, err
+	}
+
+	stateVars, err := taikoL1.GetStateVariables(&bind.CallOpts{Context: ctx})
+	if err != nil {
+		return nil, err
+	}
+
+	isArchive, err := IsArchiveNode(ctx, l1RPC, stateVars.GenesisHeight)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isArchive {
+		return nil, fmt.Errorf("error with RPC endpoint: node (%s) must be archive node", cfg.L1Endpoint)
 	}
 
 	l1RawRPC, err := rpc.Dial(cfg.L1Endpoint)
