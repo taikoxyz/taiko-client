@@ -175,8 +175,8 @@ func StringToBytes32(str string) [32]byte {
 	return b
 }
 
-func IsArchiveNode(ctx context.Context, client *ethclient.Client) (bool, error) {
-	_, err := client.BalanceAt(ctx, zeroAddress, big.NewInt(1))
+func IsArchiveNode(ctx context.Context, client *ethclient.Client, l2GenesisHeight uint64) (bool, error) {
+	_, err := client.BalanceAt(ctx, zeroAddress, new(big.Int).SetUint64(l2GenesisHeight))
 	if err != nil {
 		if strings.Contains(err.Error(), "missing trie node") {
 			return false, nil
