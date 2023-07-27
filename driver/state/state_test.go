@@ -77,6 +77,21 @@ func (s *DriverStateTestSuite) TestGetSyncedHeaderID() {
 	s.Zero(id.Uint64())
 }
 
+func (s *DriverStateTestSuite) TestNewDriverContextErr() {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	state, err := New(ctx, s.RpcClient)
+	s.Nil(state)
+	s.NotNil(err)
+}
+
+func (s *DriverStateTestSuite) TestDriverInitContextErr() {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	err := s.s.init(ctx)
+	s.NotNil(err)
+}
+
 func TestDriverStateTestSuite(t *testing.T) {
 	suite.Run(t, new(DriverStateTestSuite))
 }
