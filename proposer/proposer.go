@@ -51,7 +51,6 @@ type Proposer struct {
 	commitSlot                 uint64
 	locals                     []common.Address
 	localsOnly                 bool
-	minBlockGasLimit           *uint64
 	maxProposedTxListsPerEpoch uint64
 	proposeBlockTxGasLimit     *uint64
 	txReplacementTipMultiplier uint64
@@ -110,17 +109,6 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		return fmt.Errorf("failed to get protocol configs: %w", err)
 	}
 	p.protocolConfigs = &protocolConfigs
-
-	if cfg.MinBlockGasLimit != 0 {
-		if uint32(cfg.MinBlockGasLimit) > p.protocolConfigs.BlockMaxGasLimit {
-			return fmt.Errorf(
-				"minimal block gas limit too large, set: %d, limit: %d",
-				cfg.MinBlockGasLimit,
-				p.protocolConfigs.BlockMaxGasLimit,
-			)
-		}
-		p.minBlockGasLimit = &cfg.MinBlockGasLimit
-	}
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
@@ -202,11 +190,30 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
+	l2Head, err := p.rpc.L2.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	baseFee, err := p.rpc.TaikoL2.GetBasefee(
+		&bind.CallOpts{Context: ctx},
+		uint32(time.Now().Unix()-int64(l2Head.Time)),
+		p.protocolConfigs.BlockMaxGasLimit,
+		uint32(l2Head.GasUsed),
+	)
+	if err != nil {
+		return err
+	}
+
+	log.Info("Current base fee", "fee", baseFee)
+
 	txLists, err := p.rpc.GetPoolContent(
 		ctx,
-		p.protocolConfigs.BlockMaxTransactions,
-		p.protocolConfigs.BlockMaxGasLimit,
-		p.protocolConfigs.BlockMaxTxListBytes,
+		p.l2SuggestedFeeRecipient,
+		baseFee.Uint64(),
+		uint64(p.protocolConfigs.BlockMaxTransactions),
+		uint64(p.protocolConfigs.BlockMaxGasUsed),
+		uint64(p.protocolConfigs.BlockMaxTxListBytes),
 		p.locals,
 		p.maxProposedTxListsPerEpoch,
 	)
@@ -278,7 +285,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 				txNonce := nonce + uint64(i)
 				if err := p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
 					Beneficiary:     p.l2SuggestedFeeRecipient,
-					GasLimit:        uint32(sumTxsGasLimit(txs)),
 					TxListHash:      crypto.Keccak256Hash(txListBytes),
 					TxListByteStart: common.Big0,
 					TxListByteEnd:   new(big.Int).SetUint64(uint64(len(txListBytes))),
@@ -313,10 +319,6 @@ func (p *Proposer) sendProposeBlockTx(
 	nonce *uint64,
 	isReplacement bool,
 ) (*types.Transaction, error) {
-	if p.minBlockGasLimit != nil && meta.GasLimit < uint32(*p.minBlockGasLimit) {
-		meta.GasLimit = uint32(*p.minBlockGasLimit)
-	}
-
 	// Propose the transactions list
 	inputs, err := encoding.EncodeProposeBlockInput(meta)
 	if err != nil {
@@ -428,7 +430,6 @@ func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
 	return p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
 		TxListHash:      crypto.Keccak256Hash([]byte{}),
 		Beneficiary:     p.L2SuggestedFeeRecipient(),
-		GasLimit:        21000,
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
 		CacheTxListInfo: 0,

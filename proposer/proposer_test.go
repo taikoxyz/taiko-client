@@ -167,7 +167,6 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		context.Background(),
 		&encoding.TaikoL1BlockMetadataInput{
 			Beneficiary:     s.p.L2SuggestedFeeRecipient(),
-			GasLimit:        21000,
 			TxListHash:      crypto.Keccak256Hash(encoded),
 			TxListByteStart: common.Big0,
 			TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),

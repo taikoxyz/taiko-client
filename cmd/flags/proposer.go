@@ -51,11 +51,6 @@ var (
 		Usage:    "Time interval to propose empty blocks",
 		Category: proposerCategory,
 	}
-	MinBlockGasLimit = &cli.Uint64Flag{
-		Name:     "minimalBlockGasLimit",
-		Usage:    "Minimal block gasLimit when proposing a block",
-		Category: proposerCategory,
-	}
 	MaxProposedTxListsPerEpoch = &cli.Uint64Flag{
 		Name:     "maxProposedTxListsPerEpoch",
 		Value:    1,
@@ -84,7 +79,6 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	TxPoolLocals,
 	TxPoolLocalsOnly,
 	ProposeEmptyBlocksInterval,
-	MinBlockGasLimit,
 	MaxProposedTxListsPerEpoch,
 	ProposeBlockTxGasLimit,
 	ProposeBlockTxReplacementMultiplier,

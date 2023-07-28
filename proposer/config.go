@@ -25,7 +25,6 @@ type Config struct {
 	LocalAddresses                      []common.Address
 	LocalAddressesOnly                  bool
 	ProposeEmptyBlocksInterval          *time.Duration
-	MinBlockGasLimit                    uint64
 	MaxProposedTxListsPerEpoch          uint64
 	ProposeBlockTxGasLimit              *uint64
 	BackOffRetryInterval                time.Duration
@@ -102,7 +101,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		LocalAddresses:                      localAddresses,
 		LocalAddressesOnly:                  c.Bool(flags.TxPoolLocalsOnly.Name),
 		ProposeEmptyBlocksInterval:          proposeEmptyBlocksInterval,
-		MinBlockGasLimit:                    c.Uint64(flags.MinBlockGasLimit.Name),
 		MaxProposedTxListsPerEpoch:          c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
 		ProposeBlockTxGasLimit:              proposeBlockTxGasLimit,
 		BackOffRetryInterval:                time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
