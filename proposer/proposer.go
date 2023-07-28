@@ -501,12 +501,12 @@ func getTxOpts(
 // CheckTaikoTokenBalance checks if the current proposer has enough balance to pay
 // the current block fee.
 func (p *Proposer) CheckTaikoTokenBalance() error {
-	fee, err := p.rpc.TaikoL1.GetBlockFee(&bind.CallOpts{Context: p.ctx}, p.protocolConfigs.BlockMaxGasLimit)
+	fee, err := p.rpc.TaikoL1.GetBlockFee(&bind.CallOpts{Context: p.ctx})
 	if err != nil {
 		return fmt.Errorf("failed to get block fee: %w", err)
 	}
 
-	log.Info("GetBlockFee", "fee", fee)
+	log.Info("Get current block fee", "fee", fee)
 
 	if fee > math.MaxInt64 {
 		metrics.ProposerBlockFeeGauge.Update(math.MaxInt64)

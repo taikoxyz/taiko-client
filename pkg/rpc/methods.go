@@ -212,9 +212,9 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 // upper limit.
 func (c *Client) GetPoolContent(
 	ctx context.Context,
-	maxTransactionsPerBlock uint64,
+	maxTransactionsPerBlock uint32,
 	blockMaxGasLimit uint32,
-	maxBytesPerTxList uint64,
+	maxBytesPerTxList uint32,
 	locals []common.Address,
 	maxTransactions uint64,
 ) ([]types.Transactions, error) {

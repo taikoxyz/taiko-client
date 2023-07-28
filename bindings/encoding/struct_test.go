@@ -49,7 +49,6 @@ var (
 		TxListHash:        randomHash(),
 		TxListByteStart:   common.Big0,
 		TxListByteEnd:     common.Big256,
-		GasLimit:          rand.Uint32(),
 		Beneficiary:       common.BytesToAddress(randomHash().Bytes()),
 		Treasury:          common.BytesToAddress(randomHash().Bytes()),
 		DepositsProcessed: []bindings.TaikoDataEthDeposit{},

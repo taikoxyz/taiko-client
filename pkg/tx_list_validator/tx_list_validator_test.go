@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	maxBlocksGasLimit = uint64(50)
-	maxBlockNumTxs    = uint64(11)
-	maxTxlistBytes    = uint64(10000)
+	maxBlocksGasLimit = uint32(50)
+	maxBlockNumTxs    = uint32(11)
+	maxTxlistBytes    = uint32(10000)
 	chainID           = genesis.Config.ChainID
 	testKey, _        = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	testAddr          = crypto.PubkeyToAddress(testKey.PublicKey)
@@ -137,7 +137,7 @@ func rlpEncodedTransactionBytes(l int, signed bool) []byte {
 	return b
 }
 
-func randBytes(l uint64) []byte {
+func randBytes(l uint32) []byte {
 	b := make([]byte, l)
 	rand.Read(b)
 	return b

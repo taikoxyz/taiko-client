@@ -36,6 +36,7 @@ type Syncer struct {
 	txListValidator   *txListValidator.TxListValidator         // Transactions list validator
 	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
+	blockGasLimit       uint32
 	reorgDetectedFlag   bool
 }
 
@@ -64,11 +65,12 @@ func NewSyncer(
 		progressTracker:   progressTracker,
 		anchorConstructor: constructor,
 		txListValidator: txListValidator.NewTxListValidator(
-			uint64(configs.BlockMaxGasLimit),
+			configs.BlockMaxGasLimit,
 			configs.BlockMaxTransactions,
 			configs.BlockMaxTxListBytes,
 			rpc.L2ChainID,
 		),
+		blockGasLimit: configs.BlockMaxGasLimit,
 	}, nil
 }
 
@@ -334,7 +336,7 @@ func (s *Syncer) insertNewHead(
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{BlockNumber: parent.Number, Context: ctx},
 		uint32(event.Meta.Timestamp-parentTimestamp),
-		event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit()),
+		s.blockGasLimit+uint32(s.anchorConstructor.GasLimit()),
 		uint32(parent.GasUsed),
 	)
 	if err != nil {
@@ -342,10 +344,9 @@ func (s *Syncer) insertNewHead(
 	}
 
 	log.Debug(
-		"GetBasefee",
+		"Get base fee",
 		"baseFee", baseFee,
 		"timeSinceParent", uint32(event.Meta.Timestamp-parentTimestamp),
-		"gasLimit", uint64(event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit())),
 		"parentGasUsed", parent.GasUsed,
 	)
 
@@ -426,7 +427,7 @@ func (s *Syncer) createExecutionPayloads(
 		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
-			GasLimit:       uint64(event.Meta.GasLimit) + s.anchorConstructor.GasLimit(),
+			GasLimit:       uint64(s.blockGasLimit) + s.anchorConstructor.GasLimit(),
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,

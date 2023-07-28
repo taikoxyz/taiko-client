@@ -3,7 +3,6 @@ package calldata
 import (
 	"context"
 	"math/big"
-	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -94,7 +93,6 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 				Beneficiary: common.BytesToAddress(testutils.RandomBytes(1024)),
 				TxListHash:  testutils.RandomHash(),
 				MixHash:     testutils.RandomHash(),
-				GasLimit:    rand.Uint32(),
 				Timestamp:   uint64(time.Now().Unix()),
 			},
 		},
