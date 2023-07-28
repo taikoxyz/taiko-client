@@ -37,6 +37,7 @@ type Syncer struct {
 	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
 	blockGasLimit       uint32
+	gasUsedLimit        uint32
 	reorgDetectedFlag   bool
 }
 
@@ -71,6 +72,7 @@ func NewSyncer(
 			rpc.L2ChainID,
 		),
 		blockGasLimit: configs.BlockMaxGasLimit,
+		gasUsedLimit:  configs.BlockMaxGasUsed,
 	}, nil
 }
 
@@ -432,6 +434,7 @@ func (s *Syncer) createExecutionPayloads(
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
 			ExtraData:      []byte{},
+			GasUsedLimit:   uint64(s.gasUsedLimit),
 		},
 		BaseFeePerGas: baseFeee,
 		L1Origin:      l1Origin,
