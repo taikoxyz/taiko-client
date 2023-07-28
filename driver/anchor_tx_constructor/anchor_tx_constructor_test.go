@@ -63,6 +63,14 @@ func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
 	s.Equal(common.Big0, opts.GasTipCap)
 }
 
+func (s *AnchorTxConstructorTestSuite) TestCancelCtxTransactOpts() {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	opts, err := s.c.transactOpts(ctx, common.Big1, common.Big256)
+	s.Nil(opts)
+	s.NotNil(err)
+}
+
 func (s *AnchorTxConstructorTestSuite) TestSign() {
 	// Payload 1
 	hash := hexutil.MustDecode("0x44943399d1507f3ce7525e9be2f987c3db9136dc759cb7f92f742154196868b9")
@@ -93,6 +101,13 @@ func (s *AnchorTxConstructorTestSuite) TestSign() {
 	signed, err = s.c.signTxPayload(hash)
 	s.Nil(err)
 	s.Equal(signatureBytes, signed)
+}
+
+func (s *AnchorTxConstructorTestSuite) TestSignShortHash() {
+	rand := testutils.RandomHash().Bytes()
+	hash := rand[:len(rand)-2]
+	_, err := s.c.signTxPayload(hash)
+	s.NotNil(err)
 }
 
 func TestAnchorTxConstructorTestSuite(t *testing.T) {
