@@ -35,10 +35,9 @@ type Syncer struct {
 	anchorConstructor *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
 	txListValidator   *txListValidator.TxListValidator         // Transactions list validator
 	// Used by BlockInserter
-	lastInsertedBlockID *big.Int
-	blockGasLimit       uint32
-	gasUsedLimit        uint32
-	reorgDetectedFlag   bool
+	lastInsertedBlockID  *big.Int
+	blockAndTxMaxGasUsed uint32
+	reorgDetectedFlag    bool
 }
 
 // NewSyncer creates a new syncer instance.
@@ -66,13 +65,11 @@ func NewSyncer(
 		progressTracker:   progressTracker,
 		anchorConstructor: constructor,
 		txListValidator: txListValidator.NewTxListValidator(
-			configs.BlockMaxGasLimit,
 			configs.BlockMaxTransactions,
 			configs.BlockMaxTxListBytes,
 			rpc.L2ChainID,
 		),
-		blockGasLimit: configs.BlockMaxGasLimit,
-		gasUsedLimit:  configs.BlockMaxGasUsed,
+		blockAndTxMaxGasUsed: configs.BlockAndTxMaxGasUsed,
 	}, nil
 }
 
@@ -338,7 +335,7 @@ func (s *Syncer) insertNewHead(
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{BlockNumber: parent.Number, Context: ctx},
 		uint32(event.Meta.Timestamp-parentTimestamp),
-		s.blockGasLimit+uint32(s.anchorConstructor.GasLimit()),
+		s.blockAndTxMaxGasUsed+uint32(s.anchorConstructor.GasLimit()), // TODO: use a correct gas limit
 		uint32(parent.GasUsed),
 	)
 	if err != nil {
@@ -429,12 +426,12 @@ func (s *Syncer) createExecutionPayloads(
 		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Beneficiary,
-			GasLimit:       uint64(s.blockGasLimit) + s.anchorConstructor.GasLimit(),
+			GasLimit:       uint64(s.blockAndTxMaxGasUsed) + s.anchorConstructor.GasLimit(), // TODO: use a correct gas limit
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
 			ExtraData:      []byte{},
-			GasUsedLimit:   uint64(s.gasUsedLimit),
+			GasUsedLimit:   uint64(s.blockAndTxMaxGasUsed),
 		},
 		BaseFeePerGas: baseFeee,
 		L1Origin:      l1Origin,

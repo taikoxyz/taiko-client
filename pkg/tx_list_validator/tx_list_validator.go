@@ -19,7 +19,6 @@ const (
 )
 
 type TxListValidator struct {
-	blockMaxGasLimit        uint32
 	maxTransactionsPerBlock uint32
 	maxBytesPerTxList       uint32
 	chainID                 *big.Int
@@ -27,13 +26,11 @@ type TxListValidator struct {
 
 // NewTxListValidator creates a new TxListValidator instance based on giving configurations.
 func NewTxListValidator(
-	blockMaxGasLimit uint32,
 	maxTransactionsPerBlock uint32,
 	maxBytesPerTxList uint32,
 	chainID *big.Int,
 ) *TxListValidator {
 	return &TxListValidator{
-		blockMaxGasLimit:        blockMaxGasLimit,
 		maxTransactionsPerBlock: maxTransactionsPerBlock,
 		maxBytesPerTxList:       maxBytesPerTxList,
 		chainID:                 chainID,
@@ -78,16 +75,6 @@ func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (h
 
 	if txs.Len() > int(v.maxTransactionsPerBlock) {
 		log.Info("Too many transactions", "blockID", blockID, "count", txs.Len())
-		return HintNone, 0
-	}
-
-	sumGasLimit := uint32(0)
-	for _, tx := range txs {
-		sumGasLimit += uint32(tx.Gas())
-	}
-
-	if sumGasLimit > v.blockMaxGasLimit {
-		log.Info("Accumulate gas limit too large", "blockID", blockID, "sumGasLimit", sumGasLimit)
 		return HintNone, 0
 	}
 

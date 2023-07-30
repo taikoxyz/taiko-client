@@ -132,7 +132,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	p.submitProofTxMutex = &sync.Mutex{}
 	p.txListValidator = txListValidator.NewTxListValidator(
-		p.protocolConfigs.BlockMaxGasLimit,
 		p.protocolConfigs.BlockMaxTransactions,
 		p.protocolConfigs.BlockMaxTxListBytes,
 		p.rpc.L2ChainID,

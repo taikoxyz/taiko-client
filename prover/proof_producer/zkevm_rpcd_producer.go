@@ -70,7 +70,7 @@ type ProtocolInstance struct {
 	Prover                  string `json:"prover"`
 	GasUsed                 uint64 `json:"gas_used"`
 	ParentGasUsed           uint64 `json:"parent_gas_used"`
-	BlockMaxGasLimit        uint32 `json:"block_max_gas_limit"`
+	BlockAndTxMaxGasUsed    uint32 `json:"block_and_tx_max_gas_used"`
 	MaxTransactionsPerBlock uint32 `json:"max_transactions_per_block"`
 	MaxBytesPerTxList       uint32 `json:"max_bytes_per_tx_list"`
 }
@@ -230,7 +230,7 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 				Graffiti:                opts.Graffiti,
 				GasUsed:                 opts.GasUsed,
 				ParentGasUsed:           opts.ParentGasUsed,
-				BlockMaxGasLimit:        p.ProtocolConfig.BlockMaxGasLimit,
+				BlockAndTxMaxGasUsed:    p.ProtocolConfig.BlockAndTxMaxGasUsed,
 				MaxTransactionsPerBlock: p.ProtocolConfig.BlockMaxTransactions,
 				MaxBytesPerTxList:       p.ProtocolConfig.BlockMaxTxListBytes,
 			},

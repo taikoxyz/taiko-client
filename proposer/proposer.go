@@ -198,7 +198,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	baseFee, err := p.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{Context: ctx},
 		uint32(time.Now().Unix()-int64(l2Head.Time)),
-		p.protocolConfigs.BlockMaxGasLimit,
+		p.protocolConfigs.BlockAndTxMaxGasUsed,
 		uint32(l2Head.GasUsed),
 	)
 	if err != nil {
@@ -212,7 +212,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		p.l2SuggestedFeeRecipient,
 		baseFee.Uint64(),
 		uint64(p.protocolConfigs.BlockMaxTransactions),
-		uint64(p.protocolConfigs.BlockMaxGasUsed),
+		uint64(p.protocolConfigs.BlockAndTxMaxGasUsed),
 		uint64(p.protocolConfigs.BlockMaxTxListBytes),
 		p.locals,
 		p.maxProposedTxListsPerEpoch,

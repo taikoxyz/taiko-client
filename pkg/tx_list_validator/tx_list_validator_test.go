@@ -32,7 +32,6 @@ var (
 
 func TestValidateTxList(t *testing.T) {
 	v := NewTxListValidator(
-		maxBlocksGasLimit,
 		maxBlockNumTxs,
 		maxTxlistBytes,
 		chainID,
@@ -46,7 +45,6 @@ func TestValidateTxList(t *testing.T) {
 
 func TestIsTxListValid(t *testing.T) {
 	v := NewTxListValidator(
-		maxBlocksGasLimit,
 		maxBlockNumTxs,
 		maxTxlistBytes,
 		chainID,
