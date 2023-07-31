@@ -3,6 +3,7 @@ package submitter
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
@@ -225,7 +226,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 	if s.isOracleProver {
 		prover = encoding.OracleProverAddress
 
-		circuitsIdx = uint16(int(zkProof[64]))
+		circuitsIdx = uint16(0)
 		evidence.Proof = zkProof[0:64]
 	} else {
 		prover = s.proverAddress
@@ -235,8 +236,8 @@ func (s *ValidProofSubmitter) SubmitProof(
 			return err
 		}
 	}
+	evidence.Proof = append(uint16ToBytes(circuitsIdx), evidence.Proof...)
 	evidence.Prover = prover
-	evidence.VerifierId = circuitsIdx
 
 	input, err := encoding.EncodeProveBlockInput(evidence)
 	if err != nil {
@@ -291,4 +292,11 @@ func (s *ValidProofSubmitter) SubmitProof(
 // with the current zkevm software.
 func (s *ValidProofSubmitter) CancelProof(ctx context.Context, blockID *big.Int) error {
 	return s.proofProducer.Cancel(ctx, blockID)
+}
+
+// uint16ToBytes converts an uint16 to bytes.
+func uint16ToBytes(i uint16) []byte {
+	b := make([]byte, 2)
+	binary.BigEndian.PutUint16(b, i)
+	return b
 }

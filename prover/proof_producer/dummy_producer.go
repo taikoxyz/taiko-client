@@ -40,7 +40,7 @@ func (d *DummyProofProducer) RequestProof(
 			BlockID: blockID,
 			Meta:    meta,
 			Header:  header,
-			ZkProof: bytes.Repeat([]byte{0xff}, 100),
+			ZkProof: append([]byte{0x00}, bytes.Repeat([]byte{0xff}, 100)...),
 			Degree:  CircuitsIdx,
 			Opts:    opts,
 		}

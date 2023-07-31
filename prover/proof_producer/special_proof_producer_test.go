@@ -33,7 +33,6 @@ func TestHashAndSignOracleProof(t *testing.T) {
 		Prover:        common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
 		ParentGasUsed: 1024,
 		GasUsed:       1024,
-		VerifierId:    0,
 		Proof:         nil,
 	}
 

@@ -40,7 +40,6 @@ type TaikoL1Evidence struct {
 	Prover        common.Address
 	ParentGasUsed uint32
 	GasUsed       uint32
-	VerifierId    uint16
 	Proof         []byte
 }
 

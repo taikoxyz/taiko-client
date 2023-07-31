@@ -140,10 +140,6 @@ var (
 			Type: "uint32",
 		},
 		{
-			Name: "verifierId",
-			Type: "uint16",
-		},
-		{
 			Name: "proof",
 			Type: "bytes",
 		},

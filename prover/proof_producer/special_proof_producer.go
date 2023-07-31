@@ -142,7 +142,6 @@ func (p *SpecialProofProducer) requestSpecialProof(
 		Prover:        encoding.OracleProverAddress,
 		ParentGasUsed: uint32(parent.GasUsed()),
 		GasUsed:       uint32(block.GasUsed()),
-		VerifierId:    0,
 		Proof:         []byte{},
 	}
 
