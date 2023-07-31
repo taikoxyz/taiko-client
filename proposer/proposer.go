@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -475,7 +474,7 @@ func sumTxsGasLimit(txs []*types.Transaction) uint64 {
 // getTxOpts creates a bind.TransactOpts instance using the given private key.
 func getTxOpts(
 	ctx context.Context,
-	cli *ethclient.Client,
+	cli *rpc.EthClientWithDefaultTimeout,
 	privKey *ecdsa.PrivateKey,
 	chainID *big.Int,
 ) (*bind.TransactOpts, error) {

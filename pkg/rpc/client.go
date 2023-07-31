@@ -14,12 +14,16 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
+const (
+	defaultTimeout = 1 * time.Minute
+)
+
 // Client contains all L1/L2 RPC clients that a driver needs.
 type Client struct {
 	// Geth ethclient clients
-	L1           *ethclient.Client
-	L2           *ethclient.Client
-	L2CheckPoint *ethclient.Client
+	L1           *EthClientWithDefaultTimeout
+	L2           *EthClientWithDefaultTimeout
+	L2CheckPoint *EthClientWithDefaultTimeout
 	// Geth gethclient clients
 	L1GethClient *gethclient.Client
 	L2GethClient *gethclient.Client
@@ -59,14 +63,16 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1RPC)
+	l1RPCWithDefaultTimeout := NewEthClientWithDefaultTimeout(l1RPC, defaultTimeout)
+
+	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1RPCWithDefaultTimeout)
 	if err != nil {
 		return nil, err
 	}
 
 	var taikoProverPoolL1 *bindings.TaikoL1ProverPool
 	if cfg.TaikoProverPoolL1Address.Hex() != "" {
-		taikoProverPoolL1, err = bindings.NewTaikoL1ProverPool(cfg.TaikoProverPoolL1Address, l1RPC)
+		taikoProverPoolL1, err = bindings.NewTaikoL1ProverPool(cfg.TaikoProverPoolL1Address, l1RPCWithDefaultTimeout)
 		if err != nil {
 			return nil, err
 		}
@@ -77,7 +83,9 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	taikoL2, err := bindings.NewTaikoL2Client(cfg.TaikoL2Address, l2RPC)
+	l2RPCWithDefaultTimeout := NewEthClientWithDefaultTimeout(l2RPC, defaultTimeout)
+
+	taikoL2, err := bindings.NewTaikoL2Client(cfg.TaikoL2Address, l2RPCWithDefaultTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -138,9 +146,9 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	}
 
 	client := &Client{
-		L1:                l1RPC,
-		L2:                l2RPC,
-		L2CheckPoint:      l2CheckPoint,
+		L1:                l1RPCWithDefaultTimeout,
+		L2:                l2RPCWithDefaultTimeout,
+		L2CheckPoint:      NewEthClientWithDefaultTimeout(l2CheckPoint, defaultTimeout),
 		L1RawRPC:          l1RawRPC,
 		L2RawRPC:          l2RawRPC,
 		L1GethClient:      gethclient.New(l1RawRPC),

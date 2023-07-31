@@ -39,7 +39,11 @@ func GetProtocolStateVariables(
 
 // WaitReceipt keeps waiting until the given transaction has an execution
 // receipt to know whether it was reverted or not.
-func WaitReceipt(ctx context.Context, client *ethclient.Client, tx *types.Transaction) (*types.Receipt, error) {
+func WaitReceipt(
+	ctx context.Context,
+	client *EthClientWithDefaultTimeout,
+	tx *types.Transaction,
+) (*types.Receipt, error) {
 	ticker := time.NewTicker(waitReceiptPollingInterval)
 	defer ticker.Stop()
 
