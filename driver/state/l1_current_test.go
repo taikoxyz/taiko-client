@@ -46,8 +46,3 @@ func (s *DriverStateTestSuite) TestResetL1CurrentCtxErr() {
 	_, _, err := s.s.ResetL1Current(ctx, &HeightOrID{Height: common.Big1})
 	s.NotNil(err)
 }
-
-// func (s *DriverStateTestSuite) TestResetL1CurrentNonEmptyHeightEmptyID() {
-// 	_, _, err := s.s.ResetL1Current(context.Background(), &HeightOrID{Height: common.Big3})
-// 	s.Nil(err)
-// }

@@ -61,7 +61,13 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 func (s *CalldataSyncerTestSuite) TestNewSyncer() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	syncer, err := NewSyncer(ctx, s.RpcClient, s.s.state, s.s.progressTracker, common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")))
+	syncer, err := NewSyncer(
+		ctx,
+		s.RpcClient,
+		s.s.state,
+		s.s.progressTracker,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
+	)
 	s.Nil(syncer)
 	s.NotNil(err)
 }
