@@ -474,7 +474,7 @@ func sumTxsGasLimit(txs []*types.Transaction) uint64 {
 // getTxOpts creates a bind.TransactOpts instance using the given private key.
 func getTxOpts(
 	ctx context.Context,
-	cli *rpc.EthClientWithDefaultTimeout,
+	cli *rpc.EthClient,
 	privKey *ecdsa.PrivateKey,
 	chainID *big.Int,
 ) (*bind.TransactOpts, error) {

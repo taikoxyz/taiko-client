@@ -38,7 +38,7 @@ func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
 // Used for creating TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
 func getProveBlocksTxOpts(
 	ctx context.Context,
-	cli *rpc.EthClientWithDefaultTimeout,
+	cli *rpc.EthClient,
 	chainID *big.Int,
 	proverPrivKey *ecdsa.PrivateKey,
 ) (*bind.TransactOpts, error) {

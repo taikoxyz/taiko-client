@@ -21,7 +21,7 @@ var (
 // connected peer or some other reasons).
 type SyncProgressTracker struct {
 	// RPC client
-	client *rpc.EthClientWithDefaultTimeout
+	client *rpc.EthClient
 
 	// Meta data
 	triggered                     bool
@@ -41,7 +41,7 @@ type SyncProgressTracker struct {
 }
 
 // NewSyncProgressTracker creates a new SyncProgressTracker instance.
-func NewSyncProgressTracker(c *rpc.EthClientWithDefaultTimeout, timeout time.Duration) *SyncProgressTracker {
+func NewSyncProgressTracker(c *rpc.EthClient, timeout time.Duration) *SyncProgressTracker {
 	return &SyncProgressTracker{client: c, timeout: timeout, ticker: time.NewTicker(syncProgressCheckInterval)}
 }
 

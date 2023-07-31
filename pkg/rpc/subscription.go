@@ -119,7 +119,7 @@ func SubscribeSlashed(
 
 // SubscribeChainHead subscribes the new chain heads.
 func SubscribeChainHead(
-	client *EthClientWithDefaultTimeout,
+	client *EthClient,
 	ch chan *types.Header,
 ) event.Subscription {
 	return SubscribeEvent("ChainHead", func(ctx context.Context) (event.Subscription, error) {

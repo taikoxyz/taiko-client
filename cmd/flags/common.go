@@ -95,6 +95,11 @@ var (
 		Category: commonCategory,
 		Value:    12,
 	}
+	RPCTimeout = &cli.Uint64Flag{
+		Name:     "rpc.timeout",
+		Usage:    "Timeout in seconds for RPC calls",
+		Category: commonCategory,
+	}
 )
 
 // All common flags.
@@ -111,6 +116,7 @@ var CommonFlags = []cli.Flag{
 	MetricsPort,
 	BackOffMaxRetrys,
 	BackOffRetryInterval,
+	RPCTimeout,
 }
 
 // MergeFlags merges the given flag slices.
