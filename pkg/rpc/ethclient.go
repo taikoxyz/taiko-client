@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// EthClient is a wrapper for go-ethereum ethclient with a default timeout.
+// EthClient is a wrapper for go-ethereum ethclient with a timeout attached.
 type EthClient struct {
 	*ethclient.Client
 	timeout time.Duration

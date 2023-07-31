@@ -67,6 +67,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		L2EngineEndpoint: cfg.L2EngineEndpoint,
 		JwtSecret:        cfg.JwtSecret,
 		RetryInterval:    cfg.BackOffRetryInterval,
+		Timeout:          cfg.RPCTimeout,
 	}); err != nil {
 		return err
 	}

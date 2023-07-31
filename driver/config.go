@@ -23,6 +23,7 @@ type Config struct {
 	P2PSyncVerifiedBlocks bool
 	P2PSyncTimeout        time.Duration
 	BackOffRetryInterval  time.Duration
+	RPCTimeout            *time.Duration
 }
 
 // NewConfigFromCliContext creates a new config instance from
@@ -42,6 +43,13 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, errors.New("empty L2 check point URL")
 	}
 
+	var timeout *time.Duration
+
+	if c.IsSet(flags.RPCTimeout.Name) {
+		duration := time.Duration(c.Uint64(flags.RPCTimeout.Name)) * time.Second
+		timeout = &duration
+	}
+
 	return &Config{
 		L1Endpoint:            c.String(flags.L1WSEndpoint.Name),
 		L2Endpoint:            c.String(flags.L2WSEndpoint.Name),
@@ -53,5 +61,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		P2PSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
 		P2PSyncTimeout:        time.Duration(int64(time.Second) * int64(c.Uint(flags.P2PSyncTimeout.Name))),
 		BackOffRetryInterval:  time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
+		RPCTimeout:            timeout,
 	}, nil
 }
