@@ -19,7 +19,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 	proposeInterval := "10s"
 	commitSlot := 1024
-	rpcTimeout := time.Duration(5 * time.Second)
+	rpcTimeout := 5 * time.Second
 
 	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)

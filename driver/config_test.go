@@ -15,7 +15,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 	l2EngineEndpoint := os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
-	rpcTimeout := time.Duration(5 * time.Second)
+	rpcTimeout := 5 * time.Second
 
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{

@@ -37,7 +37,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 	taikoProverPoolL1 := os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")
-	rpcTimeout := time.Duration(5 * time.Second)
+	rpcTimeout := 5 * time.Second
 
 	app := cli.NewApp()
 	app.Flags = testFlags
@@ -88,7 +88,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.CheckProofWindowExpiredInterval.Name, "30",
-		"-" + flags.ProveUnassignedBlocks.Name, "true", "-" + flags.RPCTimeout.Name, "5",
+		"-" + flags.ProveUnassignedBlocks.Name, "true",
+		"-" + flags.RPCTimeout.Name, "5",
 	}))
 }
 
@@ -123,5 +124,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.OracleProver.Name,
 		"-" + flags.Graffiti.Name, "",
+		"-" + flags.RPCTimeout.Name, "5",
 	}), "oracleProver flag set without oracleProverPrivateKey set")
 }
