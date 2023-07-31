@@ -2,7 +2,6 @@ package prover
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"fmt"
 	"math"
 	"math/big"
@@ -170,26 +169,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	var producer proofProducer.ProofProducer
 
-	isOracleProver := cfg.OracleProver
-
-	if isOracleProver {
-		var specialProverAddress common.Address
-		var privateKey *ecdsa.PrivateKey
-
-		specialProverAddress = oracleProverAddress
-		privateKey = p.cfg.OracleProverPrivateKey
-
-		if producer, err = proofProducer.NewSpecialProofProducer(
-			p.rpc,
-			privateKey,
-			p.cfg.TaikoL2Address,
-			specialProverAddress,
-			p.cfg.Graffiti,
-			p.cfg.OracleProofSubmissionDelay,
-		); err != nil {
-			return err
-		}
-	} else if cfg.Dummy {
+	if cfg.Dummy {
 		producer = &proofProducer.DummyProofProducer{
 			RandomDummyProofDelayLowerBound: p.cfg.RandomDummyProofDelayLowerBound,
 			RandomDummyProofDelayUpperBound: p.cfg.RandomDummyProofDelayUpperBound,

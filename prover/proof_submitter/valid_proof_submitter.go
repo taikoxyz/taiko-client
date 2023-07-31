@@ -227,7 +227,6 @@ func (s *ValidProofSubmitter) SubmitProof(
 		prover = encoding.OracleProverAddress
 
 		circuitsIdx = uint16(0)
-		evidence.Proof = zkProof[0:64]
 	} else {
 		prover = s.proverAddress
 
