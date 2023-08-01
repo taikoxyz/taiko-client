@@ -99,6 +99,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		TaikoL1Address: cfg.TaikoL1Address,
 		TaikoL2Address: cfg.TaikoL2Address,
 		RetryInterval:  cfg.BackOffRetryInterval,
+		Timeout:        cfg.RPCTimeout,
 	}); err != nil {
 		return fmt.Errorf("initialize rpc clients error: %w", err)
 	}
@@ -474,7 +475,7 @@ func sumTxsGasLimit(txs []*types.Transaction) uint64 {
 // getTxOpts creates a bind.TransactOpts instance using the given private key.
 func getTxOpts(
 	ctx context.Context,
-	cli *rpc.EthClientWithDefaultTimeout,
+	cli *rpc.EthClient,
 	privKey *ecdsa.PrivateKey,
 	chainID *big.Int,
 ) (*bind.TransactOpts, error) {

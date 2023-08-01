@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -41,7 +40,7 @@ func GetProtocolStateVariables(
 // receipt to know whether it was reverted or not.
 func WaitReceipt(
 	ctx context.Context,
-	client *EthClientWithDefaultTimeout,
+	client *EthClient,
 	tx *types.Transaction,
 ) (*types.Receipt, error) {
 	ticker := time.NewTicker(waitReceiptPollingInterval)
@@ -180,7 +179,7 @@ func StringToBytes32(str string) [32]byte {
 }
 
 // IsArchiveNode checks if the given node is an archive node.
-func IsArchiveNode(ctx context.Context, client *ethclient.Client, l2GenesisHeight uint64) (bool, error) {
+func IsArchiveNode(ctx context.Context, client *EthClient, l2GenesisHeight uint64) (bool, error) {
 	if _, err := client.BalanceAt(ctx, zeroAddress, new(big.Int).SetUint64(l2GenesisHeight)); err != nil {
 		if strings.Contains(err.Error(), "missing trie node") {
 			return false, nil

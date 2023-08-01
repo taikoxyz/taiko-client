@@ -43,7 +43,7 @@ type EndIterFunc func()
 // with the awareness of reorganization.
 type BlockBatchIterator struct {
 	ctx                context.Context
-	client             *rpc.EthClientWithDefaultTimeout
+	client             *rpc.EthClient
 	chainID            *big.Int
 	blocksReadPerEpoch uint64
 	startHeight        uint64
@@ -58,7 +58,7 @@ type BlockBatchIterator struct {
 
 // BlockBatchIteratorConfig represents the configs of a block batch iterator.
 type BlockBatchIteratorConfig struct {
-	Client                *rpc.EthClientWithDefaultTimeout
+	Client                *rpc.EthClient
 	MaxBlocksReadPerEpoch *uint64
 	StartHeight           *big.Int
 	EndHeight             *big.Int

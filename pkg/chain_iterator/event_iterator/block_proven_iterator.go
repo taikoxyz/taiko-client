@@ -31,7 +31,7 @@ type BlockProvenIterator struct {
 
 // BlockProvenIteratorConfig represents the configs of a BlockProven event iterator.
 type BlockProvenIteratorConfig struct {
-	Client                *rpc.EthClientWithDefaultTimeout
+	Client                *rpc.EthClient
 	TaikoL1               *bindings.TaikoL1Client
 	MaxBlocksReadPerEpoch *uint64
 	StartHeight           *big.Int
@@ -91,7 +91,7 @@ func (i *BlockProvenIterator) end() {
 // assembleBlockProvenIteratorCallback assembles the callback which will be used
 // by a event iterator's inner block iterator.
 func assembleBlockProvenIteratorCallback(
-	client *rpc.EthClientWithDefaultTimeout,
+	client *rpc.EthClient,
 	taikoL1Client *bindings.TaikoL1Client,
 	filterQuery []*big.Int,
 	callback OnBlockProvenEvent,
