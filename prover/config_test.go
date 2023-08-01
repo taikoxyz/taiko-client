@@ -27,6 +27,7 @@ var testFlags = []cli.Flag{
 	&cli.Uint64Flag{Name: flags.CheckProofWindowExpiredInterval.Name},
 	&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
 	&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
+	&cli.Uint64Flag{Name: flags.WaitReceiptTimeout.Name},
 }
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
@@ -37,6 +38,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 	taikoProverPoolL1 := os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")
+	waitReceiptTimeout := 10 * time.Second
 
 	app := cli.NewApp()
 	app.Flags = testFlags
@@ -65,6 +67,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		s.Equal("", c.Graffiti)
 		s.Equal(30*time.Second, c.CheckProofWindowExpiredInterval)
 		s.Equal(true, c.ProveUnassignedBlocks)
+		s.Equal(10*time.Second, c.WaitReceiptTimeout)
 		s.Nil(c.RPCTimeout)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
@@ -88,6 +91,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.CheckProofWindowExpiredInterval.Name, "30",
 		"-" + flags.ProveUnassignedBlocks.Name, "true",
+		"-" + flags.WaitReceiptTimeout.Name, "10",
 	}))
 }
 
@@ -123,5 +127,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"-" + flags.OracleProver.Name,
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.RPCTimeout.Name, "5",
+		"-" + flags.WaitReceiptTimeout.Name, "10",
 	}), "oracleProver flag set without oracleProverPrivateKey set")
 }

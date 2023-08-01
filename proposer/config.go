@@ -31,6 +31,7 @@ type Config struct {
 	BackOffRetryInterval                time.Duration
 	ProposeBlockTxReplacementMultiplier uint64
 	RPCTimeout                          *time.Duration
+	WaitReceiptTimeout                  time.Duration
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -116,5 +117,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		BackOffRetryInterval:                time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
 		ProposeBlockTxReplacementMultiplier: proposeBlockTxReplacementMultiplier,
 		RPCTimeout:                          timeout,
+		WaitReceiptTimeout:                  time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
 	}, nil
 }

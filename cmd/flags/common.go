@@ -100,6 +100,12 @@ var (
 		Usage:    "Timeout in seconds for RPC calls",
 		Category: commonCategory,
 	}
+	WaitReceiptTimeout = &cli.Uint64Flag{
+		Name:     "rpc.waitReceiptTimeout",
+		Usage:    "Timeout in seconds for wait for receipts for RPC transactions",
+		Category: commonCategory,
+		Value:    60,
+	}
 )
 
 // All common flags.
@@ -117,6 +123,7 @@ var CommonFlags = []cli.Flag{
 	BackOffMaxRetrys,
 	BackOffRetryInterval,
 	RPCTimeout,
+	WaitReceiptTimeout,
 }
 
 // MergeFlags merges the given flag slices.
