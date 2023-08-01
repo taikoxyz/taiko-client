@@ -90,8 +90,8 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 
 			log.Info(
 				"Reorg detected",
-				"oldL1CurrentHeight", s.state.GetL1Current().Number,
-				"oldL1CurrentHash", s.state.GetL1Current().Hash(),
+				"oldL1CurrentHeight", startL1Current.Number,
+				"oldL1CurrentHash", startL1Current.Hash(),
 				"newL1CurrentHeight", newL1Current.Number,
 				"newL1CurrentHash", newL1Current.Hash(),
 				"l1Head", l1End.Number,
