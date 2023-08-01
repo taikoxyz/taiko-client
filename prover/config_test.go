@@ -25,6 +25,7 @@ var testFlags = []cli.Flag{
 	&cli.BoolFlag{Name: flags.SystemProver.Name},
 	&cli.StringFlag{Name: flags.SystemProverPrivateKey.Name},
 	&cli.StringFlag{Name: flags.Graffiti.Name},
+	&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
 }
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
@@ -59,6 +60,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 			crypto.PubkeyToAddress(c.OracleProverPrivateKey.PublicKey),
 		)
 		s.Equal("", c.Graffiti)
+		s.Nil(c.RPCTimeout)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -164,6 +166,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.OracleProver.Name,
 		"-" + flags.Graffiti.Name, "",
+		"-" + flags.RPCTimeout.Name, "5",
 	}), "oracleProver flag set without oracleProverPrivateKey set")
 }
 

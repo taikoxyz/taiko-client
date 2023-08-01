@@ -7,9 +7,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/taikoxyz/taiko-client/bindings"
 	chainIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // EndBlockProvenEventIterFunc ends the current iteration.
@@ -31,7 +31,7 @@ type BlockProvenIterator struct {
 
 // BlockProvenIteratorConfig represents the configs of a BlockProven event iterator.
 type BlockProvenIteratorConfig struct {
-	Client                *ethclient.Client
+	Client                *rpc.EthClient
 	TaikoL1               *bindings.TaikoL1Client
 	MaxBlocksReadPerEpoch *uint64
 	StartHeight           *big.Int
@@ -91,7 +91,7 @@ func (i *BlockProvenIterator) end() {
 // assembleBlockProvenIteratorCallback assembles the callback which will be used
 // by a event iterator's inner block iterator.
 func assembleBlockProvenIteratorCallback(
-	client *ethclient.Client,
+	client *rpc.EthClient,
 	taikoL1Client *bindings.TaikoL1Client,
 	filterQuery []*big.Int,
 	callback OnBlockProvenEvent,

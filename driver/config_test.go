@@ -15,6 +15,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 	l2EngineEndpoint := os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
+	rpcTimeout := 5 * time.Second
 
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
@@ -25,6 +26,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
 		&cli.StringFlag{Name: flags.JWTSecret.Name},
 		&cli.UintFlag{Name: flags.P2PSyncTimeout.Name},
+		&cli.UintFlag{Name: flags.RPCTimeout.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
@@ -35,6 +37,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
 		s.Equal(120*time.Second, c.P2PSyncTimeout)
+		s.Equal(rpcTimeout, *c.RPCTimeout)
 		s.NotEmpty(c.JwtSecret)
 		s.Nil(new(Driver).InitFromCli(context.Background(), ctx))
 
@@ -50,5 +53,6 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
 		"-" + flags.P2PSyncTimeout.Name, "120",
+		"-" + flags.RPCTimeout.Name, "5",
 	}))
 }

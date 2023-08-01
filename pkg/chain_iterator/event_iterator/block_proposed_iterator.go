@@ -7,9 +7,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/taikoxyz/taiko-client/bindings"
 	chainIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // EndBlockProposedEventIterFunc ends the current iteration.
@@ -35,7 +35,7 @@ type BlockProposedIterator struct {
 
 // BlockProposedIteratorConfig represents the configs of a BlockProposed event iterator.
 type BlockProposedIteratorConfig struct {
-	Client                *ethclient.Client
+	Client                *rpc.EthClient
 	TaikoL1               *bindings.TaikoL1Client
 	MaxBlocksReadPerEpoch *uint64
 	StartHeight           *big.Int
@@ -95,7 +95,7 @@ func (i *BlockProposedIterator) end() {
 // assembleBlockProposedIteratorCallback assembles the callback which will be used
 // by a event iterator's inner block iterator.
 func assembleBlockProposedIteratorCallback(
-	client *ethclient.Client,
+	client *rpc.EthClient,
 	taikoL1Client *bindings.TaikoL1Client,
 	filterQuery []*big.Int,
 	callback OnBlockProposedEvent,

@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -40,7 +39,7 @@ func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
 // Used for creating TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
 func getProveBlocksTxOpts(
 	ctx context.Context,
-	cli *ethclient.Client,
+	cli *rpc.EthClient,
 	chainID *big.Int,
 	proverPrivKey *ecdsa.PrivateKey,
 ) (*bind.TransactOpts, error) {

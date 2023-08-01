@@ -30,6 +30,7 @@ type Config struct {
 	ProposeBlockTxGasLimit              *uint64
 	BackOffRetryInterval                time.Duration
 	ProposeBlockTxReplacementMultiplier uint64
+	RPCTimeout                          *time.Duration
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -90,6 +91,13 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		)
 	}
 
+	var timeout *time.Duration
+
+	if c.IsSet(flags.RPCTimeout.Name) {
+		duration := time.Duration(c.Uint64(flags.RPCTimeout.Name)) * time.Second
+		timeout = &duration
+	}
+
 	return &Config{
 		L1Endpoint:                          c.String(flags.L1WSEndpoint.Name),
 		L2Endpoint:                          c.String(flags.L2HTTPEndpoint.Name),
@@ -107,5 +115,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProposeBlockTxGasLimit:              proposeBlockTxGasLimit,
 		BackOffRetryInterval:                time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
 		ProposeBlockTxReplacementMultiplier: proposeBlockTxReplacementMultiplier,
+		RPCTimeout:                          timeout,
 	}, nil
 }

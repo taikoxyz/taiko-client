@@ -20,7 +20,6 @@ import (
 
 const (
 	protocolStatusReportInterval     = 30 * time.Second
-	exchangeTransitionConfigTimeout  = 30 * time.Second
 	exchangeTransitionConfigInterval = 1 * time.Minute
 )
 
@@ -67,6 +66,7 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		L2EngineEndpoint: cfg.L2EngineEndpoint,
 		JwtSecret:        cfg.JwtSecret,
 		RetryInterval:    cfg.BackOffRetryInterval,
+		Timeout:          cfg.RPCTimeout,
 	}); err != nil {
 		return err
 	}
@@ -242,10 +242,7 @@ func (d *Driver) exchangeTransitionConfigLoop() {
 			return
 		case <-ticker.C:
 			func() {
-				ctx, cancel := context.WithTimeout(d.ctx, exchangeTransitionConfigTimeout)
-				defer cancel()
-
-				tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(ctx, &engine.TransitionConfigurationV1{
+				tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
 					TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
 					TerminalBlockHash:       common.Hash{},
 					TerminalBlockNumber:     0,

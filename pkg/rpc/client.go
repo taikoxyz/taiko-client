@@ -2,29 +2,27 @@ package rpc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 var (
-	errNotArchiveNode = errors.New("error with rpc: node must be archive node")
+	defaultTimeout = 1 * time.Minute
 )
 
 // Client contains all L1/L2 RPC clients that a driver needs.
 type Client struct {
 	// Geth ethclient clients
-	L1           *ethclient.Client
-	L2           *ethclient.Client
-	L2CheckPoint *ethclient.Client
+	L1           *EthClient
+	L2           *EthClient
+	L2CheckPoint *EthClient
 	// Geth gethclient clients
 	L1GethClient *gethclient.Client
 	L2GethClient *gethclient.Client
@@ -45,29 +43,42 @@ type Client struct {
 // RPC client. If not providing L2EngineEndpoint or JwtSecret, then the L2Engine client
 // won't be initialized.
 type ClientConfig struct {
-	L1Endpoint       string
-	L2Endpoint       string
-	L2CheckPoint     string
-	TaikoL1Address   common.Address
-	TaikoL2Address   common.Address
-	L2EngineEndpoint string
-	JwtSecret        string
-	RetryInterval    time.Duration
+	L1Endpoint               string
+	L2Endpoint               string
+	L2CheckPoint             string
+	TaikoL1Address           common.Address
+	TaikoProverPoolL1Address common.Address
+	TaikoL2Address           common.Address
+	L2EngineEndpoint         string
+	JwtSecret                string
+	RetryInterval            time.Duration
+	Timeout                  *time.Duration
 }
 
 // NewClient initializes all RPC clients used by Taiko client softwares.
 func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
-	l1RPC, err := DialClientWithBackoff(ctx, cfg.L1Endpoint, cfg.RetryInterval)
+	l1EthClient, err := DialClientWithBackoff(ctx, cfg.L1Endpoint, cfg.RetryInterval)
 	if err != nil {
 		return nil, err
+	}
+
+	l2EthClient, err := DialClientWithBackoff(ctx, cfg.L2Endpoint, cfg.RetryInterval)
+	if err != nil {
+		return nil, err
+	}
+
+	var l1RPC *EthClient
+	var l2RPC *EthClient
+
+	if cfg.Timeout != nil {
+		l1RPC = NewEthClientWithTimeout(l1EthClient, *cfg.Timeout)
+		l2RPC = NewEthClientWithTimeout(l2EthClient, *cfg.Timeout)
+	} else {
+		l1RPC = NewEthClientWithDefaultTimeout(l1EthClient)
+		l2RPC = NewEthClientWithDefaultTimeout(l2EthClient)
 	}
 
 	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1RPC)
-	if err != nil {
-		return nil, err
-	}
-
-	l2RPC, err := DialClientWithBackoff(ctx, cfg.L2Endpoint, cfg.RetryInterval)
 	if err != nil {
 		return nil, err
 	}
@@ -125,10 +136,18 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		}
 	}
 
-	var l2CheckPoint *ethclient.Client
+	var l2CheckPoint *EthClient
 	if len(cfg.L2CheckPoint) != 0 {
-		if l2CheckPoint, err = DialClientWithBackoff(ctx, cfg.L2CheckPoint, cfg.RetryInterval); err != nil {
+		l2CheckPointEthClient, err := DialClientWithBackoff(ctx, cfg.L2CheckPoint, cfg.RetryInterval)
+
+		if err != nil {
 			return nil, err
+		}
+
+		if cfg.Timeout != nil {
+			l2CheckPoint = NewEthClientWithTimeout(l2CheckPointEthClient, *cfg.Timeout)
+		} else {
+			l2CheckPoint = NewEthClientWithDefaultTimeout(l2CheckPointEthClient)
 		}
 	}
 

@@ -5,7 +5,6 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -102,7 +101,7 @@ func SubscribeBlockProven(
 
 // SubscribeChainHead subscribes the new chain heads.
 func SubscribeChainHead(
-	client *ethclient.Client,
+	client *EthClient,
 	ch chan *types.Header,
 ) event.Subscription {
 	return SubscribeEvent("ChainHead", func(ctx context.Context) (event.Subscription, error) {
