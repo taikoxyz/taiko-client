@@ -60,6 +60,7 @@ func (s *DriverTestSuite) SetupTest() {
 		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
 		MaxProposedTxListsPerEpoch: 1,
+		WaitReceiptTimeout:         10 * time.Second,
 	})))
 	s.p = p
 }

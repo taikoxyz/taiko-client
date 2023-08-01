@@ -214,6 +214,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.Graffiti,
 		p.cfg.ProofSubmissionMaxRetry,
 		p.cfg.BackOffRetryInterval,
+		p.cfg.WaitReceiptTimeout,
 	); err != nil {
 		return err
 	}
