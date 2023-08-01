@@ -28,7 +28,6 @@ var (
 	syncProgressRecheckDelay    = 12 * time.Second
 	waitL1OriginPollingInterval = 3 * time.Second
 	defaultWaitL1OriginTimeout  = 3 * time.Minute
-	minTxGasLimit               = 21000
 )
 
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
@@ -212,11 +211,13 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 // upper limit.
 func (c *Client) GetPoolContent(
 	ctx context.Context,
+	beneficiary common.Address,
+	baseFee *big.Int,
 	maxTransactionsPerBlock uint64,
 	blockMaxGasLimit uint32,
 	maxBytesPerTxList uint64,
 	locals []common.Address,
-	maxTransactions uint64,
+	maxTransactionsLists uint64,
 ) ([]types.Transactions, error) {
 	var localsArg []string
 	for _, local := range locals {
@@ -228,12 +229,13 @@ func (c *Client) GetPoolContent(
 		ctx,
 		&result,
 		"taiko_txPoolContent",
+		beneficiary,
+		baseFee,
 		maxTransactionsPerBlock,
 		blockMaxGasLimit,
 		maxBytesPerTxList,
-		minTxGasLimit,
 		localsArg,
-		maxTransactions,
+		maxTransactionsLists,
 	)
 
 	return result, err

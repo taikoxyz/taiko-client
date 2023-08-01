@@ -80,13 +80,6 @@ func TestIsTxListValid(t *testing.T) {
 			0,
 		},
 		{
-			"txListBytes gas limit too large",
-			chainID,
-			rlpEncodedTransactionBytes(6, true),
-			HintNone,
-			0,
-		},
-		{
 			"success empty tx list",
 			chainID,
 			rlpEncodedTransactionBytes(0, true),
