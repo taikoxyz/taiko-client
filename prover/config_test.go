@@ -26,6 +26,7 @@ var testFlags = []cli.Flag{
 	&cli.StringFlag{Name: flags.TaikoProverPoolL1Address.Name},
 	&cli.Uint64Flag{Name: flags.CheckProofWindowExpiredInterval.Name},
 	&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
+	&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
 }
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
@@ -64,6 +65,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		s.Equal("", c.Graffiti)
 		s.Equal(30*time.Second, c.CheckProofWindowExpiredInterval)
 		s.Equal(true, c.ProveUnassignedBlocks)
+		s.Nil(c.RPCTimeout)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -120,5 +122,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.OracleProver.Name,
 		"-" + flags.Graffiti.Name, "",
+		"-" + flags.RPCTimeout.Name, "5",
 	}), "oracleProver flag set without oracleProverPrivateKey set")
 }

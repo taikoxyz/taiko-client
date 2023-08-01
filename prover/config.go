@@ -39,6 +39,7 @@ type Config struct {
 	BackOffRetryInterval            time.Duration
 	CheckProofWindowExpiredInterval time.Duration
 	ProveUnassignedBlocks           bool
+	RPCTimeout                      *time.Duration
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -100,6 +101,13 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		startingBlockID = new(big.Int).SetUint64(c.Uint64(flags.StartingBlockID.Name))
 	}
 
+	var timeout *time.Duration
+
+	if c.IsSet(flags.RPCTimeout.Name) {
+		duration := time.Duration(c.Uint64(flags.RPCTimeout.Name)) * time.Second
+		timeout = &duration
+	}
+
 	return &Config{
 		L1WsEndpoint:                    c.String(flags.L1WSEndpoint.Name),
 		L1HttpEndpoint:                  c.String(flags.L1HTTPEndpoint.Name),
@@ -127,5 +135,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			c.Uint64(flags.CheckProofWindowExpiredInterval.Name),
 		) * time.Second,
 		ProveUnassignedBlocks: c.Bool(flags.ProveUnassignedBlocks.Name),
+		RPCTimeout:            timeout,
 	}, nil
 }
