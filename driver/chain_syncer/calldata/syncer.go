@@ -80,11 +80,10 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 		s.reorgDetectedFlag = false
 		firstTry = false
 
-		startHeight := s.state.GetL1Current().Number
+		startL1Current := s.state.GetL1Current()
 		// If there is a L1 reorg, sometimes this will happen.
-		if startHeight.Uint64() >= l1End.Number.Uint64() {
-			startHeight = new(big.Int).Sub(l1End.Number, common.Big1)
-			newL1Current, err := s.rpc.L1.HeaderByNumber(ctx, startHeight)
+		if startL1Current.Number.Uint64() >= l1End.Number.Uint64() && startL1Current.Hash() != l1End.Hash() {
+			newL1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).Sub(l1End.Number, common.Big1))
 			if err != nil {
 				return err
 			}
@@ -93,8 +92,10 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 
 			log.Info(
 				"Reorg detected",
-				"oldL1Current", s.state.GetL1Current().Number,
-				"newL1Current", startHeight,
+				"oldL1CurrentHeight", startL1Current.Number,
+				"oldL1CurrentHash", startL1Current.Hash(),
+				"newL1CurrentHeight", newL1Current.Number,
+				"newL1CurrentHash", newL1Current.Hash(),
 				"l1Head", l1End.Number,
 			)
 		}
@@ -102,7 +103,7 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 		iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
 			Client:               s.rpc.L1,
 			TaikoL1:              s.rpc.TaikoL1,
-			StartHeight:          startHeight,
+			StartHeight:          s.state.GetL1Current().Number,
 			EndHeight:            l1End.Number,
 			FilterQuery:          nil,
 			OnBlockProposedEvent: s.onBlockProposed,
