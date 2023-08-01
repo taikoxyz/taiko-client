@@ -71,6 +71,7 @@ func sendTxWithBackoff(
 	sendTxFunc func() (*types.Transaction, error),
 	retryInterval time.Duration,
 	maxRetry *uint64,
+	waitReceiptTimeout time.Duration,
 ) error {
 	var (
 		isUnretryableError bool
@@ -120,7 +121,10 @@ func sendTxWithBackoff(
 			return nil
 		}
 
-		if _, err := rpc.WaitReceipt(ctx, cli.L1, tx); err != nil {
+		ctxWithTimeout, cancel := context.WithTimeout(ctx, waitReceiptTimeout)
+		defer cancel()
+
+		if _, err := rpc.WaitReceipt(ctxWithTimeout, cli.L1, tx); err != nil {
 			log.Warn("Failed to wait till transaction executed", "blockID", blockID, "txHash", tx.Hash(), "error", err)
 			return err
 		}

@@ -42,6 +42,7 @@ type ValidProofSubmitter struct {
 	graffiti           [32]byte
 	submissionMaxRetry uint64
 	retryInterval      time.Duration
+	waitReceiptTimeout time.Duration
 }
 
 // NewValidProofSubmitter creates a new ValidProofSubmitter instance.
@@ -56,6 +57,7 @@ func NewValidProofSubmitter(
 	graffiti string,
 	submissionMaxRetry uint64,
 	retryInterval time.Duration,
+	waitReceiptTimeout time.Duration,
 ) (*ValidProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
 	if err != nil {
@@ -87,6 +89,7 @@ func NewValidProofSubmitter(
 		graffiti:           rpc.StringToBytes32(graffiti),
 		submissionMaxRetry: submissionMaxRetry,
 		retryInterval:      retryInterval,
+		waitReceiptTimeout: waitReceiptTimeout,
 	}, nil
 }
 
@@ -271,6 +274,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		sendTx,
 		s.retryInterval,
 		maxRetry,
+		s.waitReceiptTimeout,
 	); err != nil {
 		if errors.Is(err, errUnretryable) {
 			return nil
