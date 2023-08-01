@@ -59,9 +59,7 @@ func (v *TxListValidator) ValidateTxList(
 	return txListBytes, hint, txIdx, nil
 }
 
-// isTxListValid checks whether the transaction list is valid, must match
-// the validation rule defined in LibInvalidTxList.sol.
-// ref: https://github.com/taikoxyz/taiko-mono/blob/main/packages/bindings/contracts/libs/LibInvalidTxList.sol
+// isTxListValid checks whether the transaction list is valid.
 func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (hint InvalidTxListReason, txIdx int) {
 	if len(txListBytes) > int(v.maxBytesPerTxList) {
 		log.Info("Transactions list binary too large", "length", len(txListBytes), "blockID", blockID)
@@ -78,16 +76,6 @@ func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (h
 
 	if txs.Len() > int(v.maxTransactionsPerBlock) {
 		log.Info("Too many transactions", "blockID", blockID, "count", txs.Len())
-		return HintNone, 0
-	}
-
-	sumGasLimit := uint64(0)
-	for _, tx := range txs {
-		sumGasLimit += tx.Gas()
-	}
-
-	if sumGasLimit > v.blockMaxGasLimit {
-		log.Info("Accumulate gas limit too large", "blockID", blockID, "sumGasLimit", sumGasLimit)
 		return HintNone, 0
 	}
 
