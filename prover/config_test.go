@@ -38,7 +38,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 	taikoProverPoolL1 := os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")
-	waitReceiptTimeout := 10 * time.Second
 
 	app := cli.NewApp()
 	app.Flags = testFlags
