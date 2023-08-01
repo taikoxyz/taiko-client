@@ -12,15 +12,15 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
-	l1Endpoint := os.Getenv("L1_NODE_WS_ENDPOINT")
-	l2Endpoint := os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
-	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
-	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
-	proposeInterval := "10s"
-	commitSlot := 1024
-	rpcTimeout := 5 * time.Second
+var l1Endpoint = os.Getenv("L1_NODE_WS_ENDPOINT")
+var l2Endpoint = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+var taikoL1 = os.Getenv("TAIKO_L1_ADDRESS")
+var taikoL2 = os.Getenv("TAIKO_L2_ADDRESS")
+var proposeInterval = "10s"
+var commitSlot = 1024
+var rpcTimeout = 5 * time.Second
 
+func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)
 
@@ -88,8 +88,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextPropIntervalErr() {
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextEmptyPropoIntervalErr() {
-	proposeInterval := "10s"
-
 	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
 	s.Nil(err)
 
@@ -104,8 +102,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextEmptyPropoIntervalErr() {
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextL2RecipErr() {
-	proposeInterval := "10s"
-
 	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
 	s.Nil(err)
 
@@ -121,8 +117,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextL2RecipErr() {
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
-	proposeInterval := "10s"
-
 	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)
 
@@ -142,8 +136,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
-	proposeInterval := "10s"
-
 	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)
 

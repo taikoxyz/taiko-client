@@ -10,36 +10,16 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var testFlags = []cli.Flag{
-	&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
-	&cli.StringFlag{Name: flags.L1HTTPEndpoint.Name},
-	&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
-	&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
-	&cli.StringFlag{Name: flags.TaikoL1Address.Name},
-	&cli.StringFlag{Name: flags.TaikoL2Address.Name},
-	&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
-	&cli.BoolFlag{Name: flags.Dummy.Name},
-	&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
-	&cli.BoolFlag{Name: flags.OracleProver.Name},
-	&cli.StringFlag{Name: flags.OracleProverPrivateKey.Name},
-	&cli.StringFlag{Name: flags.Graffiti.Name},
-	&cli.StringFlag{Name: flags.TaikoProverPoolL1Address.Name},
-	&cli.Uint64Flag{Name: flags.CheckProofWindowExpiredInterval.Name},
-	&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
-	&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
-}
+var l1WsEndpoint = os.Getenv("L1_NODE_WS_ENDPOINT")
+var l1HttpEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
+var l2WsEndpoint = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
+var l2HttpEndpoint = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+var taikoL1 = os.Getenv("TAIKO_L1_ADDRESS")
+var taikoL2 = os.Getenv("TAIKO_L2_ADDRESS")
+var taikoProverPoolL1 = os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
-	l1WsEndpoint := os.Getenv("L1_NODE_WS_ENDPOINT")
-	l1HttpEndpoint := os.Getenv("L1_NODE_HTTP_ENDPOINT")
-	l2WsEndpoint := os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
-	l2HttpEndpoint := os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
-	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
-	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
-	taikoProverPoolL1 := os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")
-
-	app := cli.NewApp()
-	app.Flags = testFlags
+	app := s.SetupApp()
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
@@ -88,25 +68,13 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.CheckProofWindowExpiredInterval.Name, "30",
 		"-" + flags.ProveUnassignedBlocks.Name, "true",
+		"-" + flags.RPCTimeout.Name, "5",
+		"-" + flags.StartingBlockID.Name, "3",
 	}))
 }
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
-	l1WsEndpoint := os.Getenv("L1_NODE_WS_ENDPOINT")
-	l1HttpEndpoint := os.Getenv("L1_NODE_HTTP_ENDPOINT")
-	l2WsEndpoint := os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
-	l2HttpEndpoint := os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
-	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
-	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
-	taikoProverPoolL1 := os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")
-
-	app := cli.NewApp()
-	app.Flags = testFlags
-	app.Action = func(ctx *cli.Context) error {
-		_, err := NewConfigFromCliContext(ctx)
-		s.NotNil(err)
-		return err
-	}
+	app := s.SetupApp()
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
@@ -124,4 +92,96 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.RPCTimeout.Name, "5",
 	}), "oracleProver flag set without oracleProverPrivateKey set")
+}
+
+func (s *ProverTestSuite) TestNewConfigFromCliContext_ProverKeyError() {
+	app := s.SetupApp()
+
+	s.ErrorContains(app.Run([]string{
+		"TestNewConfigFromCliContext",
+		"-" + flags.L1ProverPrivKey.Name, "0x",
+	}), "invalid L1 prover private key")
+}
+
+// TODO: find case for ToECDSA failing
+// func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverKeyError() {
+// 	app := s.SetupApp()
+
+// 	s.NotNil(app.Run([]string{
+// 		"TestNewConfigFromCliContext",
+// 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+// 		"-" + flags.OracleProverPrivateKey.Name, "0x",
+// 	}))
+// }
+
+func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayError() {
+	app := s.SetupApp()
+
+	s.ErrorContains(app.Run([]string{
+		"TestNewConfigFromCliContext",
+		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.RandomDummyProofDelay.Name, "130m",
+	}), "invalid random dummy proof delay value")
+}
+
+func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorLower() {
+	app := s.SetupApp()
+
+	s.ErrorContains(app.Run([]string{
+		"TestNewConfigFromCliContext",
+		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.RandomDummyProofDelay.Name, "30x-1h",
+	}), "invalid random dummy proof delay value")
+}
+
+func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorUpper() {
+	app := s.SetupApp()
+
+	s.ErrorContains(app.Run([]string{
+		"TestNewConfigFromCliContext",
+		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.RandomDummyProofDelay.Name, "30m-1x",
+	}), "invalid random dummy proof delay value")
+}
+
+func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorOrder() {
+	app := s.SetupApp()
+
+	s.ErrorContains(app.Run([]string{
+		"TestNewConfigFromCliContext",
+		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.RandomDummyProofDelay.Name, "1h-30m",
+	}), "invalid random dummy proof delay value (lower > upper)")
+}
+
+func (s *ProverTestSuite) SetupApp() *cli.App {
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
+		&cli.StringFlag{Name: flags.L1HTTPEndpoint.Name},
+		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
+		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
+		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
+		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
+		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
+		&cli.BoolFlag{Name: flags.Dummy.Name},
+		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
+		&cli.BoolFlag{Name: flags.OracleProver.Name},
+		&cli.StringFlag{Name: flags.OracleProverPrivateKey.Name},
+		&cli.StringFlag{Name: flags.Graffiti.Name},
+		&cli.StringFlag{Name: flags.TaikoProverPoolL1Address.Name},
+		&cli.Uint64Flag{Name: flags.CheckProofWindowExpiredInterval.Name},
+		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
+		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
+	}
+	app.Action = func(ctx *cli.Context) error {
+		_, err := NewConfigFromCliContext(ctx)
+		s.NotNil(err)
+		return err
+	}
+	return app
 }
