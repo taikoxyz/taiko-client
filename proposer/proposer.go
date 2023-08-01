@@ -148,15 +148,16 @@ func (p *Proposer) eventLoop() {
 		select {
 		case <-p.ctx.Done():
 			return
+		// proposing interval timer has been reached
 		case <-p.proposingTimer.C:
 			metrics.ProposerProposeEpochCounter.Inc(1)
-
+			// attempt propose operation
 			if err := p.ProposeOp(p.ctx); err != nil {
 				if !errors.Is(err, errNoNewTxs) {
 					log.Error("Proposing operation error", "error", err)
 					continue
 				}
-
+				// if no new transactions and empty block interval has passed, propose an empty block
 				if p.proposeEmptyBlocksInterval != nil {
 					if time.Now().Before(lastNonEmptyBlockProposedAt.Add(*p.proposeEmptyBlocksInterval)) {
 						continue

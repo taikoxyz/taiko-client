@@ -27,20 +27,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
 	s.Nil(err)
 
-	app := cli.NewApp()
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
-		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
-		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
-		&cli.StringFlag{Name: flags.L1ProposerPrivKey.Name},
-		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
-		&cli.StringFlag{Name: flags.ProposeInterval.Name},
-		&cli.Uint64Flag{Name: flags.CommitSlot.Name},
-		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
-		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
-		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
-	}
+	app := s.SetupApp()
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
@@ -74,5 +61,128 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
 		"-" + flags.ProposeBlockTxReplacementMultiplier.Name, "5",
 		"-" + flags.RPCTimeout.Name, "5",
+		"-" + flags.ProposeBlockTxGasLimit.Name, "100000",
 	}))
+}
+
+func (s *ProposerTestSuite) TestNewConfigFromCliContextPrivKeyErr() {
+	app := s.SetupApp()
+
+	s.NotNil(app.Run([]string{
+		"TestNewConfigFromCliContextPrivKeyErr",
+		"-" + flags.L1ProposerPrivKey.Name, string(common.FromHex("0x")),
+	}))
+}
+
+func (s *ProposerTestSuite) TestNewConfigFromCliContextPropIntervalErr() {
+	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	s.Nil(err)
+
+	app := s.SetupApp()
+
+	s.NotNil(app.Run([]string{
+		"TestNewConfigFromCliContextProposeIntervalErr",
+		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"-" + flags.ProposeInterval.Name, "",
+	}))
+}
+
+func (s *ProposerTestSuite) TestNewConfigFromCliContextEmptyPropoIntervalErr() {
+	proposeInterval := "10s"
+
+	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	s.Nil(err)
+
+	app := s.SetupApp()
+
+	s.NotNil(app.Run([]string{
+		"TestNewConfigFromCliContextEmptyProposalIntervalErr",
+		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"-" + flags.ProposeInterval.Name, proposeInterval,
+		"-" + flags.ProposeEmptyBlocksInterval.Name, "",
+	}))
+}
+
+func (s *ProposerTestSuite) TestNewConfigFromCliContextL2RecipErr() {
+	proposeInterval := "10s"
+
+	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	s.Nil(err)
+
+	app := s.SetupApp()
+
+	s.NotNil(app.Run([]string{
+		"TestNewConfigFromCliContextL2RecipErr",
+		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"-" + flags.ProposeInterval.Name, proposeInterval,
+		"-" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
+		"-" + flags.L2SuggestedFeeRecipient.Name, "notAnAddress",
+	}))
+}
+
+func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
+	proposeInterval := "10s"
+
+	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	s.Nil(err)
+
+	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	s.Nil(err)
+
+	app := s.SetupApp()
+
+	s.NotNil(app.Run([]string{
+		"TestNewConfigFromCliContextTxPoolLocalsErr",
+		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"-" + flags.ProposeInterval.Name, proposeInterval,
+		"-" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
+		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
+		"-" + flags.TxPoolLocals.Name, "notAnAddress",
+	}))
+}
+
+func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
+	proposeInterval := "10s"
+
+	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	s.Nil(err)
+
+	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	s.Nil(err)
+
+	app := s.SetupApp()
+
+	s.NotNil(app.Run([]string{
+		"TestNewConfigFromCliContextReplMultErr",
+		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"-" + flags.ProposeInterval.Name, proposeInterval,
+		"-" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
+		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
+		"-" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
+		"-" + flags.ProposeBlockTxReplacementMultiplier.Name, "0",
+	}))
+}
+
+func (s *ProposerTestSuite) SetupApp() *cli.App {
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
+		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
+		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
+		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
+		&cli.StringFlag{Name: flags.L1ProposerPrivKey.Name},
+		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
+		&cli.StringFlag{Name: flags.ProposeEmptyBlocksInterval.Name},
+		&cli.StringFlag{Name: flags.ProposeInterval.Name},
+		&cli.Uint64Flag{Name: flags.CommitSlot.Name},
+		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
+		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
+		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
+		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasLimit.Name},
+	}
+	app.Action = func(ctx *cli.Context) error {
+		_, err := NewConfigFromCliContext(ctx)
+		return err
+	}
+	return app
 }
