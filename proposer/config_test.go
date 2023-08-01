@@ -28,6 +28,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	s.Nil(err)
 
 	app := s.SetupApp()
+
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
@@ -43,6 +44,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
 		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
 		s.Equal(rpcTimeout, *c.RPCTimeout)
+		s.Equal(10*time.Second, c.WaitReceiptTimeout)
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err

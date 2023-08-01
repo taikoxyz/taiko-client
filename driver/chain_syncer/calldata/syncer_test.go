@@ -54,6 +54,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
+		WaitReceiptTimeout:         10 * time.Second,
 	})))
 
 	s.p = prop
