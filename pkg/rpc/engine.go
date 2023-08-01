@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"context"
-	"time"
 
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -21,7 +20,7 @@ func (c *EngineClient) ForkchoiceUpdate(
 	fc *engine.ForkchoiceStateV1,
 	attributes *engine.PayloadAttributes,
 ) (*engine.ForkChoiceResponse, error) {
-	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	timeoutCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
 	var result *engine.ForkChoiceResponse
@@ -37,7 +36,7 @@ func (c *EngineClient) NewPayload(
 	ctx context.Context,
 	payload *engine.ExecutableData,
 ) (*engine.PayloadStatusV1, error) {
-	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	timeoutCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
 	var result *engine.PayloadStatusV1
@@ -53,7 +52,7 @@ func (c *EngineClient) GetPayload(
 	ctx context.Context,
 	payloadID *engine.PayloadID,
 ) (*engine.ExecutableData, error) {
-	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	timeoutCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
 	var result *engine.ExecutionPayloadEnvelope
@@ -69,8 +68,11 @@ func (c *EngineClient) ExchangeTransitionConfiguration(
 	ctx context.Context,
 	cfg *engine.TransitionConfigurationV1,
 ) (*engine.TransitionConfigurationV1, error) {
+	timeoutCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
+	defer cancel()
+
 	var result *engine.TransitionConfigurationV1
-	if err := c.Client.CallContext(ctx, &result, "engine_exchangeTransitionConfigurationV1", cfg); err != nil {
+	if err := c.Client.CallContext(timeoutCtx, &result, "engine_exchangeTransitionConfigurationV1", cfg); err != nil {
 		return nil, err
 	}
 

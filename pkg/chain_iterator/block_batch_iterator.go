@@ -11,8 +11,8 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 const (
@@ -43,7 +43,7 @@ type EndIterFunc func()
 // with the awareness of reorganization.
 type BlockBatchIterator struct {
 	ctx                context.Context
-	client             *ethclient.Client
+	client             *rpc.EthClient
 	chainID            *big.Int
 	blocksReadPerEpoch uint64
 	startHeight        uint64
@@ -58,7 +58,7 @@ type BlockBatchIterator struct {
 
 // BlockBatchIteratorConfig represents the configs of a block batch iterator.
 type BlockBatchIteratorConfig struct {
-	Client                *ethclient.Client
+	Client                *rpc.EthClient
 	MaxBlocksReadPerEpoch *uint64
 	StartHeight           *big.Int
 	EndHeight             *big.Int

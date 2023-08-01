@@ -8,8 +8,8 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 // connected peer or some other reasons).
 type SyncProgressTracker struct {
 	// RPC client
-	client *ethclient.Client
+	client *rpc.EthClient
 
 	// Meta data
 	triggered                     bool
@@ -41,7 +41,7 @@ type SyncProgressTracker struct {
 }
 
 // NewSyncProgressTracker creates a new SyncProgressTracker instance.
-func NewSyncProgressTracker(c *ethclient.Client, timeout time.Duration) *SyncProgressTracker {
+func NewSyncProgressTracker(c *rpc.EthClient, timeout time.Duration) *SyncProgressTracker {
 	return &SyncProgressTracker{client: c, timeout: timeout, ticker: time.NewTicker(syncProgressCheckInterval)}
 }
 
