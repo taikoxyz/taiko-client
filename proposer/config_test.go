@@ -16,7 +16,6 @@ var l2Endpoint = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 var taikoL1 = os.Getenv("TAIKO_L1_ADDRESS")
 var taikoL2 = os.Getenv("TAIKO_L2_ADDRESS")
 var proposeInterval = "10s"
-var commitSlot = 1024
 var rpcTimeout = 5 * time.Second
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
@@ -166,7 +165,6 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
 		&cli.StringFlag{Name: flags.ProposeEmptyBlocksInterval.Name},
 		&cli.StringFlag{Name: flags.ProposeInterval.Name},
-		&cli.Uint64Flag{Name: flags.CommitSlot.Name},
 		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
