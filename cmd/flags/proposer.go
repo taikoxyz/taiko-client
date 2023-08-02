@@ -1,8 +1,6 @@
 package flags
 
 import (
-	"math/rand"
-
 	"github.com/urfave/cli/v2"
 )
 
@@ -29,12 +27,6 @@ var (
 		Usage:    "Time interval to propose L2 pending transactions",
 		Category: proposerCategory,
 	}
-	CommitSlot = &cli.Uint64Flag{
-		Name:     "commitSlot",
-		Usage:    "The commit slot will be used by proposer, by default, a random number will be used",
-		Value:    rand.Uint64(),
-		Category: proposerCategory,
-	}
 	TxPoolLocals = &cli.StringFlag{
 		Name:     "txpool.locals",
 		Usage:    "Comma separated accounts to treat as locals (priority inclusion)",
@@ -49,11 +41,6 @@ var (
 	ProposeEmptyBlocksInterval = &cli.StringFlag{
 		Name:     "proposeEmptyBlockInterval",
 		Usage:    "Time interval to propose empty blocks",
-		Category: proposerCategory,
-	}
-	MinBlockGasLimit = &cli.Uint64Flag{
-		Name:     "minimalBlockGasLimit",
-		Usage:    "Minimal block gasLimit when proposing a block",
 		Category: proposerCategory,
 	}
 	MaxProposedTxListsPerEpoch = &cli.Uint64Flag{
@@ -80,11 +67,9 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L1ProposerPrivKey,
 	L2SuggestedFeeRecipient,
 	ProposeInterval,
-	CommitSlot,
 	TxPoolLocals,
 	TxPoolLocalsOnly,
 	ProposeEmptyBlocksInterval,
-	MinBlockGasLimit,
 	MaxProposedTxListsPerEpoch,
 	ProposeBlockTxGasLimit,
 	ProposeBlockTxReplacementMultiplier,
