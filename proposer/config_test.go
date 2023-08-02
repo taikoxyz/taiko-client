@@ -3,7 +3,6 @@ package proposer
 import (
 	"context"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -18,7 +17,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
 	proposeInterval := "10s"
-	commitSlot := 1024
 	rpcTimeout := 5 * time.Second
 
 	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
@@ -36,7 +34,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		&cli.StringFlag{Name: flags.L1ProposerPrivKey.Name},
 		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
 		&cli.StringFlag{Name: flags.ProposeInterval.Name},
-		&cli.Uint64Flag{Name: flags.CommitSlot.Name},
 		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
@@ -51,7 +48,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(goldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
 		s.Equal(goldenTouchAddress, c.L2SuggestedFeeRecipient)
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
-		s.Equal(uint64(commitSlot), c.CommitSlot)
 		s.Equal(1, len(c.LocalAddresses))
 		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
 		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
@@ -70,7 +66,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
 		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"-" + flags.ProposeInterval.Name, proposeInterval,
-		"-" + flags.CommitSlot.Name, strconv.Itoa(commitSlot),
 		"-" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
 		"-" + flags.ProposeBlockTxReplacementMultiplier.Name, "5",
 		"-" + flags.RPCTimeout.Name, "5",
