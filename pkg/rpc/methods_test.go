@@ -14,7 +14,7 @@ var (
 )
 
 func TestL2AccountNonce(t *testing.T) {
-	client := newTestClient(t)
+	client := newTestClientWithTimeout(t)
 
 	nonce, err := client.L2AccountNonce(context.Background(), testAddress, common.Big0)
 
