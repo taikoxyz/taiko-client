@@ -17,7 +17,6 @@ var l2HttpEndpoint = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 var taikoL1 = os.Getenv("TAIKO_L1_ADDRESS")
 var taikoL2 = os.Getenv("TAIKO_L2_ADDRESS")
 var taikoProverPoolL1 = os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")
-var rpcTimeout = 5 * time.Second
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 	app := s.SetupApp()
