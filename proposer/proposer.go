@@ -285,7 +285,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 				txNonce := nonce + uint64(i)
 				if err := p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
 					Beneficiary:     p.l2SuggestedFeeRecipient,
-					GasLimit:        uint32(p.protocolConfigs.BlockMaxGasLimit),
+					GasLimit:        p.protocolConfigs.BlockMaxGasLimit,
 					TxListHash:      crypto.Keccak256Hash(txListBytes),
 					TxListByteStart: common.Big0,
 					TxListByteEnd:   new(big.Int).SetUint64(uint64(len(txListBytes))),
@@ -431,7 +431,7 @@ func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
 	return p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
 		TxListHash:      crypto.Keccak256Hash([]byte{}),
 		Beneficiary:     p.L2SuggestedFeeRecipient(),
-		GasLimit:        uint32(p.protocolConfigs.BlockMaxGasLimit),
+		GasLimit:        p.protocolConfigs.BlockMaxGasLimit,
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
 		CacheTxListInfo: 0,
