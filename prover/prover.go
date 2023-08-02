@@ -22,7 +22,6 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/urfave/cli/v2"
@@ -45,7 +44,6 @@ type Prover struct {
 	rpc *rpc.Client
 
 	// Contract configurations
-	txListValidator *txListValidator.TxListValidator
 	protocolConfigs *bindings.TaikoDataConfig
 
 	// States
@@ -131,12 +129,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
 	p.submitProofTxMutex = &sync.Mutex{}
-	p.txListValidator = txListValidator.NewTxListValidator(
-		uint64(p.protocolConfigs.BlockMaxGasLimit),
-		p.protocolConfigs.BlockMaxTransactions,
-		p.protocolConfigs.BlockMaxTxListBytes,
-		p.rpc.L2ChainID,
-	)
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 
 	chBufferSize := p.protocolConfigs.BlockMaxProposals.Uint64()

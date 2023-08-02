@@ -46,10 +46,8 @@ type Proposer struct {
 	proposingInterval          *time.Duration
 	proposeEmptyBlocksInterval *time.Duration
 	proposingTimer             *time.Timer
-	commitSlot                 uint64
 	locals                     []common.Address
 	localsOnly                 bool
-	minBlockGasLimit           *uint64
 	maxProposedTxListsPerEpoch uint64
 	proposeBlockTxGasLimit     *uint64
 	txReplacementTipMultiplier uint64
@@ -88,7 +86,6 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.wg = sync.WaitGroup{}
 	p.locals = cfg.LocalAddresses
 	p.localsOnly = cfg.LocalAddressesOnly
-	p.commitSlot = cfg.CommitSlot
 	p.maxProposedTxListsPerEpoch = cfg.MaxProposedTxListsPerEpoch
 	p.txReplacementTipMultiplier = cfg.ProposeBlockTxReplacementMultiplier
 	p.ctx = ctx
@@ -112,17 +109,6 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		return fmt.Errorf("failed to get protocol configs: %w", err)
 	}
 	p.protocolConfigs = &protocolConfigs
-
-	if cfg.MinBlockGasLimit != 0 {
-		if uint32(cfg.MinBlockGasLimit) > p.protocolConfigs.BlockMaxGasLimit {
-			return fmt.Errorf(
-				"minimal block gas limit too large, set: %d, limit: %d",
-				cfg.MinBlockGasLimit,
-				p.protocolConfigs.BlockMaxGasLimit,
-			)
-		}
-		p.minBlockGasLimit = &cfg.MinBlockGasLimit
-	}
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
@@ -299,7 +285,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 				txNonce := nonce + uint64(i)
 				if err := p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
 					Beneficiary:     p.l2SuggestedFeeRecipient,
-					GasLimit:        uint32(sumTxsGasLimit(txs)),
+					GasLimit:        p.protocolConfigs.BlockMaxGasLimit,
 					TxListHash:      crypto.Keccak256Hash(txListBytes),
 					TxListByteStart: common.Big0,
 					TxListByteEnd:   new(big.Int).SetUint64(uint64(len(txListBytes))),
@@ -334,10 +320,6 @@ func (p *Proposer) sendProposeBlockTx(
 	nonce *uint64,
 	isReplacement bool,
 ) (*types.Transaction, error) {
-	if p.minBlockGasLimit != nil && meta.GasLimit < uint32(*p.minBlockGasLimit) {
-		meta.GasLimit = uint32(*p.minBlockGasLimit)
-	}
-
 	// Propose the transactions list
 	inputs, err := encoding.EncodeProposeBlockInput(meta)
 	if err != nil {
@@ -449,7 +431,7 @@ func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
 	return p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
 		TxListHash:      crypto.Keccak256Hash([]byte{}),
 		Beneficiary:     p.L2SuggestedFeeRecipient(),
-		GasLimit:        21000,
+		GasLimit:        p.protocolConfigs.BlockMaxGasLimit,
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
 		CacheTxListInfo: 0,
@@ -482,15 +464,6 @@ func (p *Proposer) Name() string {
 // L2SuggestedFeeRecipient returns the L2 suggested fee recipient of the current proposer.
 func (p *Proposer) L2SuggestedFeeRecipient() common.Address {
 	return p.l2SuggestedFeeRecipient
-}
-
-// sumTxsGasLimit calculates the accumulated gas limit of all transactions in the list.
-func sumTxsGasLimit(txs []*types.Transaction) uint64 {
-	var total uint64
-	for i := range txs {
-		total += txs[i].Gas()
-	}
-	return total
 }
 
 // getTxOpts creates a bind.TransactOpts instance using the given private key.

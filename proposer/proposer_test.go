@@ -50,16 +50,6 @@ func (s *ProposerTestSuite) SetupTest() {
 	s.cancel = cancel
 }
 
-func (s *ProposerTestSuite) TestSumTxsGasLimit() {
-	txs := []*types.Transaction{
-		types.NewTransaction(0, common.Address{}, common.Big0, 1, common.Big0, []byte{}), // gasLimit: 1
-		types.NewTransaction(0, common.Address{}, common.Big0, 2, common.Big0, []byte{}), // gasLimit: 2
-		types.NewTransaction(0, common.Address{}, common.Big0, 3, common.Big0, []byte{}), // gasLimit: 3
-	}
-
-	s.Equal(uint64(1+2+3), sumTxsGasLimit(txs))
-}
-
 func (s *ProposerTestSuite) TestName() {
 	s.Equal("proposer", s.p.Name())
 }
