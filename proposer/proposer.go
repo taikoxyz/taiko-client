@@ -29,7 +29,6 @@ import (
 
 var (
 	errNoNewTxs                = errors.New("no new transactions")
-	waitReceiptTimeout         = 1 * time.Minute
 	maxSendProposeBlockTxRetry = 10
 )
 
@@ -62,6 +61,8 @@ type Proposer struct {
 
 	ctx context.Context
 	wg  sync.WaitGroup
+
+	waitReceiptTimeout time.Duration
 }
 
 // New initializes the given proposer instance based on the command line flags.
@@ -88,6 +89,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.maxProposedTxListsPerEpoch = cfg.MaxProposedTxListsPerEpoch
 	p.txReplacementTipMultiplier = cfg.ProposeBlockTxReplacementMultiplier
 	p.ctx = ctx
+	p.waitReceiptTimeout = cfg.WaitReceiptTimeout
 
 	// RPC clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -409,7 +411,7 @@ func (p *Proposer) ProposeTxList(
 		return err
 	}
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, waitReceiptTimeout)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, p.waitReceiptTimeout)
 	defer cancel()
 
 	if _, err := rpc.WaitReceipt(ctxWithTimeout, p.rpc.L1, tx); err != nil {

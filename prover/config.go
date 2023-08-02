@@ -40,6 +40,7 @@ type Config struct {
 	CheckProofWindowExpiredInterval time.Duration
 	ProveUnassignedBlocks           bool
 	RPCTimeout                      *time.Duration
+	WaitReceiptTimeout              time.Duration
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -136,5 +137,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		) * time.Second,
 		ProveUnassignedBlocks: c.Bool(flags.ProveUnassignedBlocks.Name),
 		RPCTimeout:            timeout,
+		WaitReceiptTimeout:    time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
 	}, nil
 }

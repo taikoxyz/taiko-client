@@ -48,6 +48,7 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		func() (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
 		12*time.Second,
 		&testMaxRetry,
+		5*time.Second,
 	))
 
 	s.Nil(sendTxWithBackoff(
@@ -75,5 +76,6 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		},
 		12*time.Second,
 		&testMaxRetry,
+		5*time.Second,
 	))
 }

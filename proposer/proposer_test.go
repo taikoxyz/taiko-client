@@ -43,6 +43,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		ProposeInterval:                     &proposeInterval,
 		MaxProposedTxListsPerEpoch:          1,
 		ProposeBlockTxReplacementMultiplier: 2,
+		WaitReceiptTimeout:                  10 * time.Second,
 	})))
 
 	s.p = p

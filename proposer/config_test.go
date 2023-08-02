@@ -37,6 +37,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
+		&cli.Uint64Flag{Name: flags.WaitReceiptTimeout.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
@@ -52,6 +53,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
 		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
 		s.Equal(rpcTimeout, *c.RPCTimeout)
+		s.Equal(10*time.Second, c.WaitReceiptTimeout)
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -69,5 +71,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
 		"-" + flags.ProposeBlockTxReplacementMultiplier.Name, "5",
 		"-" + flags.RPCTimeout.Name, "5",
+		"-" + flags.WaitReceiptTimeout.Name, "10",
 	}))
 }
