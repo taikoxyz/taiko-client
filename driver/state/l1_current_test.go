@@ -21,7 +21,6 @@ func (s *DriverStateTestSuite) TestSetL1Current() {
 	s.NotPanics(func() {
 		s.s.SetL1Current(nil)
 	})
-
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentEmptyHeight() {
