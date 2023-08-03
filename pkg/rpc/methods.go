@@ -315,8 +315,17 @@ func (c *Client) GetStorageRoot(
 	contract common.Address,
 	height *big.Int,
 ) (common.Hash, error) {
+	var (
+		ctxWithTimeout = ctx
+		cancel         context.CancelFunc
+	)
+	if _, ok := ctx.Deadline(); !ok {
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, defaultTimeout)
+		defer cancel()
+	}
+
 	proof, err := gethclient.GetProof(
-		ctx,
+		ctxWithTimeout,
 		contract,
 		[]string{"0x0000000000000000000000000000000000000000000000000000000000000000"},
 		height,
