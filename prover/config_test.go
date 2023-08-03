@@ -18,6 +18,7 @@ var (
 	taikoL1           = os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2           = os.Getenv("TAIKO_L2_ADDRESS")
 	taikoProverPoolL1 = os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")
+	rpcTimeout        = 5 * time.Second
 )
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
@@ -47,7 +48,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		s.Equal("", c.Graffiti)
 		s.Equal(30*time.Second, c.CheckProofWindowExpiredInterval)
 		s.Equal(true, c.ProveUnassignedBlocks)
-		s.Equal(5*time.Second, c.RPCTimeout)
+		s.Equal(rpcTimeout, *c.RPCTimeout)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
 		return err
