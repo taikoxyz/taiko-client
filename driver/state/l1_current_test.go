@@ -18,7 +18,10 @@ func (s *DriverStateTestSuite) TestSetL1Current() {
 	s.Equal(h.Hash(), s.s.GetL1Current().Hash())
 
 	// should warn, but not panic
-	s.s.SetL1Current(nil)
+	s.NotPanics(func() {
+		s.s.SetL1Current(nil)
+	})
+
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentEmptyHeight() {
@@ -32,17 +35,17 @@ func (s *DriverStateTestSuite) TestResetL1CurrentEmptyHeight() {
 
 func (s *DriverStateTestSuite) TestResetL1CurrentEmptyID() {
 	_, _, err := s.s.ResetL1Current(context.Background(), &HeightOrID{Height: common.Big1})
-	s.NotNil(err)
+	s.ErrorContains(err, "not found")
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentEmptyHeightAndID() {
 	_, _, err := s.s.ResetL1Current(context.Background(), &HeightOrID{})
-	s.NotNil(err)
+	s.ErrorContains(err, "empty input")
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentCtxErr() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, _, err := s.s.ResetL1Current(ctx, &HeightOrID{Height: common.Big1})
-	s.NotNil(err)
+	_, _, err := s.s.ResetL1Current(ctx, &HeightOrID{Height: common.Big0})
+	s.ErrorContains(err, "context canceled")
 }

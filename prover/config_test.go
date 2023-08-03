@@ -10,13 +10,15 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var l1WsEndpoint = os.Getenv("L1_NODE_WS_ENDPOINT")
-var l1HttpEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
-var l2WsEndpoint = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
-var l2HttpEndpoint = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
-var taikoL1 = os.Getenv("TAIKO_L1_ADDRESS")
-var taikoL2 = os.Getenv("TAIKO_L2_ADDRESS")
-var taikoProverPoolL1 = os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")
+var (
+	l1WsEndpoint      = os.Getenv("L1_NODE_WS_ENDPOINT")
+	l1HttpEndpoint    = os.Getenv("L1_NODE_HTTP_ENDPOINT")
+	l2WsEndpoint      = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
+	l2HttpEndpoint    = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+	taikoL1           = os.Getenv("TAIKO_L1_ADDRESS")
+	taikoL2           = os.Getenv("TAIKO_L2_ADDRESS")
+	taikoProverPoolL1 = os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")
+)
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 	app := s.SetupApp()
@@ -68,8 +70,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.CheckProofWindowExpiredInterval.Name, "30",
 		"-" + flags.ProveUnassignedBlocks.Name, "true",
-		"-" + flags.RPCTimeout.Name, "5",
 		"-" + flags.StartingBlockID.Name, "3",
+		"-" + flags.RPCTimeout.Name, "5",
 	}))
 }
 
@@ -107,11 +109,11 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_ProverKeyError() {
 // func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverKeyError() {
 // 	app := s.SetupApp()
 
-// 	s.NotNil(app.Run([]string{
+// 	s.ErrorContains(app.Run([]string{
 // 		"TestNewConfigFromCliContext",
 // 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 // 		"-" + flags.OracleProverPrivateKey.Name, "0x",
-// 	}))
+// 	}), "invalid oracle private key")
 // }
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayError() {
@@ -176,8 +178,8 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.TaikoProverPoolL1Address.Name},
 		&cli.Uint64Flag{Name: flags.CheckProofWindowExpiredInterval.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
-		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
 		&cli.Uint64Flag{Name: flags.StartingBlockID.Name},
+		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

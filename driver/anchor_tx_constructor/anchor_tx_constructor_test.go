@@ -68,7 +68,7 @@ func (s *AnchorTxConstructorTestSuite) TestCancelCtxTransactOpts() {
 	cancel()
 	opts, err := s.c.transactOpts(ctx, common.Big1, common.Big256)
 	s.Nil(opts)
-	s.NotNil(err)
+	s.ErrorContains(err, "context canceled")
 }
 
 func (s *AnchorTxConstructorTestSuite) TestSign() {
@@ -107,7 +107,7 @@ func (s *AnchorTxConstructorTestSuite) TestSignShortHash() {
 	rand := testutils.RandomHash().Bytes()
 	hash := rand[:len(rand)-2]
 	_, err := s.c.signTxPayload(hash)
-	s.NotNil(err)
+	s.ErrorContains(err, "hash is required to be exactly 32 bytes")
 }
 
 func TestAnchorTxConstructorTestSuite(t *testing.T) {

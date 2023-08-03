@@ -11,12 +11,14 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var l1Endpoint = os.Getenv("L1_NODE_WS_ENDPOINT")
-var l2Endpoint = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
-var taikoL1 = os.Getenv("TAIKO_L1_ADDRESS")
-var taikoL2 = os.Getenv("TAIKO_L2_ADDRESS")
-var proposeInterval = "10s"
-var rpcTimeout = 5 * time.Second
+var (
+	l1Endpoint      = os.Getenv("L1_NODE_WS_ENDPOINT")
+	l2Endpoint      = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+	taikoL1         = os.Getenv("TAIKO_L1_ADDRESS")
+	taikoL2         = os.Getenv("TAIKO_L2_ADDRESS")
+	proposeInterval = "10s"
+	rpcTimeout      = 5 * time.Second
+)
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
@@ -67,10 +69,10 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 func (s *ProposerTestSuite) TestNewConfigFromCliContextPrivKeyErr() {
 	app := s.SetupApp()
 
-	s.NotNil(app.Run([]string{
+	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextPrivKeyErr",
 		"-" + flags.L1ProposerPrivKey.Name, string(common.FromHex("0x")),
-	}))
+	}), "invalid L1 proposer private key")
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextPropIntervalErr() {
@@ -79,11 +81,11 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextPropIntervalErr() {
 
 	app := s.SetupApp()
 
-	s.NotNil(app.Run([]string{
+	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextProposeIntervalErr",
 		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
 		"-" + flags.ProposeInterval.Name, "",
-	}))
+	}), "invalid proposing interval")
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextEmptyPropoIntervalErr() {
@@ -92,12 +94,12 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextEmptyPropoIntervalErr() {
 
 	app := s.SetupApp()
 
-	s.NotNil(app.Run([]string{
+	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextEmptyProposalIntervalErr",
 		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
 		"-" + flags.ProposeInterval.Name, proposeInterval,
 		"-" + flags.ProposeEmptyBlocksInterval.Name, "",
-	}))
+	}), "invalid proposing empty blocks interval")
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextL2RecipErr() {
@@ -106,13 +108,13 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextL2RecipErr() {
 
 	app := s.SetupApp()
 
-	s.NotNil(app.Run([]string{
+	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextL2RecipErr",
 		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
 		"-" + flags.ProposeInterval.Name, proposeInterval,
 		"-" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
 		"-" + flags.L2SuggestedFeeRecipient.Name, "notAnAddress",
-	}))
+	}), "invalid L2 suggested fee recipient address")
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
@@ -124,14 +126,14 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
 
 	app := s.SetupApp()
 
-	s.NotNil(app.Run([]string{
+	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextTxPoolLocalsErr",
 		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
 		"-" + flags.ProposeInterval.Name, proposeInterval,
 		"-" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
 		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"-" + flags.TxPoolLocals.Name, "notAnAddress",
-	}))
+	}), "invalid account in --txpool.locals")
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
@@ -143,7 +145,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
 
 	app := s.SetupApp()
 
-	s.NotNil(app.Run([]string{
+	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextReplMultErr",
 		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
 		"-" + flags.ProposeInterval.Name, proposeInterval,
@@ -151,7 +153,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
 		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"-" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
 		"-" + flags.ProposeBlockTxReplacementMultiplier.Name, "0",
-	}))
+	}), "invalid --proposeBlockTxReplacementMultiplier value")
 }
 
 func (s *ProposerTestSuite) SetupApp() *cli.App {

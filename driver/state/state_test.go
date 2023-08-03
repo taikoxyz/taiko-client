@@ -82,14 +82,14 @@ func (s *DriverStateTestSuite) TestNewDriverContextErr() {
 	cancel()
 	state, err := New(ctx, s.RpcClient)
 	s.Nil(state)
-	s.NotNil(err)
+	s.ErrorContains(err, "context canceled")
 }
 
 func (s *DriverStateTestSuite) TestDriverInitContextErr() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	err := s.s.init(ctx)
-	s.NotNil(err)
+	s.ErrorContains(err, "context canceled")
 }
 
 func TestDriverStateTestSuite(t *testing.T) {
