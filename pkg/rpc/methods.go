@@ -340,7 +340,7 @@ func (c *Client) GetStorageRoot(
 		cancel         context.CancelFunc
 	)
 	if _, ok := ctx.Deadline(); !ok {
-		ctxWithTimeout, cancel = context.WithTimeout(ctx, c.L1.timeout)
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, defaultTimeout)
 		defer cancel()
 	}
 
