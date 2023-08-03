@@ -105,7 +105,7 @@ func SubscribeSlashed(
 	ch chan *bindings.TaikoL1ProverPoolSlashed,
 ) event.Subscription {
 	return SubscribeEvent("Slashed", func(ctx context.Context) (event.Subscription, error) {
-		sub, err := taikoProverPool.WatchSlashed(nil, ch, nil)
+		sub, err := taikoProverPool.WatchSlashed(nil, ch, nil, nil)
 		if err != nil {
 			log.Error("Create taikoProverPool.WatchSlashed subscription error", "error", err)
 			return nil, err
