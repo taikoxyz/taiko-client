@@ -280,7 +280,7 @@ func (p *Prover) eventLoop() {
 			}
 		case e := <-p.proverSlashedCh:
 			if e.Addr.Hex() == p.proverAddress.Hex() {
-				log.Info("Prover slashed", "address", e.Addr.Hex(), "amount", e.Amount)
+				log.Info("Prover slashed", "blockID", e.BlockId, "address", e.Addr.Hex(), "amount", e.Amount)
 				metrics.ProverSlashedCounter.Inc(1)
 				metrics.ProverSlashedAmount.Inc(int64(e.Amount))
 			}
