@@ -47,7 +47,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		s.Equal("", c.Graffiti)
 		s.Equal(30*time.Second, c.CheckProofWindowExpiredInterval)
 		s.Equal(true, c.ProveUnassignedBlocks)
-		s.Nil(c.RPCTimeout)
+		s.Equal(5*time.Second, c.RPCTimeout)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -63,6 +63,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.TaikoProverPoolL1Address.Name, taikoProverPoolL1,
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.StartingBlockID.Name, "3",
+		"-" + flags.RPCTimeout.Name, "5",
 		"-" + flags.Dummy.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.OracleProver.Name,
@@ -70,8 +72,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.CheckProofWindowExpiredInterval.Name, "30",
 		"-" + flags.ProveUnassignedBlocks.Name, "true",
-		"-" + flags.StartingBlockID.Name, "3",
-		"-" + flags.RPCTimeout.Name, "5",
 	}))
 }
 
@@ -170,6 +170,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
 		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
+		&cli.Uint64Flag{Name: flags.StartingBlockID.Name},
 		&cli.BoolFlag{Name: flags.Dummy.Name},
 		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
 		&cli.BoolFlag{Name: flags.OracleProver.Name},
@@ -178,7 +179,6 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.TaikoProverPoolL1Address.Name},
 		&cli.Uint64Flag{Name: flags.CheckProofWindowExpiredInterval.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
-		&cli.Uint64Flag{Name: flags.StartingBlockID.Name},
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
