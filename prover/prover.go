@@ -378,7 +378,7 @@ func (p *Prover) onBlockProposed(
 			p.lastHandledBlockID = lastHandledBlockIDToReset.Uint64()
 		}
 		p.reorgDetectedFlag = true
-
+		end()
 		return nil
 	}
 
