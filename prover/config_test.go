@@ -64,7 +64,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.TaikoProverPoolL1Address.Name, taikoProverPoolL1,
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + flags.StartingBlockID.Name, "3",
+		"-" + flags.StartingBlockID.Name, "0",
 		"-" + flags.RPCTimeout.Name, "5",
 		"-" + flags.Dummy.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
