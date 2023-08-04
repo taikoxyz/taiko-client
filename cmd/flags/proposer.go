@@ -59,6 +59,11 @@ var (
 		Usage:    "Gas tip multiplier when replacing a TaikoL1.proposeBlock transaction with same nonce",
 		Category: proposerCategory,
 	}
+	ProposeBlockTxGasTipCap = &cli.Uint64Flag{
+		Name:     "proposeBlockTxGasTipCap",
+		Usage:    "Gas tip cap for a TaikoL1.proposeBlock transaction when doing the transaction replacement",
+		Category: proposerCategory,
+	}
 )
 
 // All proposer flags.
@@ -73,4 +78,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxProposedTxListsPerEpoch,
 	ProposeBlockTxGasLimit,
 	ProposeBlockTxReplacementMultiplier,
+	ProposeBlockTxGasTipCap,
 })
