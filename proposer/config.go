@@ -3,6 +3,7 @@ package proposer
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
@@ -32,6 +33,7 @@ type Config struct {
 	ProposeBlockTxReplacementMultiplier uint64
 	RPCTimeout                          *time.Duration
 	WaitReceiptTimeout                  time.Duration
+	ProposeBlockTxGasTipCap             *big.Int
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -93,10 +95,14 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	var timeout *time.Duration
-
 	if c.IsSet(flags.RPCTimeout.Name) {
 		duration := time.Duration(c.Uint64(flags.RPCTimeout.Name)) * time.Second
 		timeout = &duration
+	}
+
+	var proposeBlockTxGasTipCap *big.Int
+	if c.IsSet(flags.ProposeBlockTxGasTipCap.Name) {
+		proposeBlockTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProposeBlockTxGasTipCap.Name))
 	}
 
 	return &Config{
@@ -118,5 +124,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProposeBlockTxReplacementMultiplier: proposeBlockTxReplacementMultiplier,
 		RPCTimeout:                          timeout,
 		WaitReceiptTimeout:                  time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
+		ProposeBlockTxGasTipCap:             proposeBlockTxGasTipCap,
 	}, nil
 }
