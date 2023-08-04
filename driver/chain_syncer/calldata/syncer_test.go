@@ -59,9 +59,29 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 
 	s.p = prop
 }
+func (s *CalldataSyncerTestSuite) TestNewSyncer() {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	syncer, err := NewSyncer(
+		ctx,
+		s.RpcClient,
+		s.s.state,
+		s.s.progressTracker,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
+	)
+	s.Nil(syncer)
+	s.NotNil(err)
+}
 
 func (s *CalldataSyncerTestSuite) TestProcessL1Blocks() {
 	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+	s.Nil(s.s.ProcessL1Blocks(context.Background(), head))
+}
+
+func (s *CalldataSyncerTestSuite) TestProcessL1BlocksReorg() {
+	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
+	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
 	s.Nil(err)
 	s.Nil(s.s.ProcessL1Blocks(context.Background(), head))
 }
