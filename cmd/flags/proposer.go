@@ -61,7 +61,7 @@ var (
 	}
 	ProposeBlockTxGasTipCap = &cli.Uint64Flag{
 		Name:     "proposeBlockTxGasTipCap",
-		Usage:    "Gas tip cap for a TaikoL1.proposeBlock transaction when doing the transaction replacement",
+		Usage:    "Gas tip cap (in gwei) for a TaikoL1.proposeBlock transaction when doing the transaction replacement",
 		Category: proposerCategory,
 	}
 )
