@@ -15,6 +15,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/txpool"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -51,6 +52,7 @@ type Proposer struct {
 	maxProposedTxListsPerEpoch uint64
 	proposeBlockTxGasLimit     *uint64
 	txReplacementTipMultiplier uint64
+	proposeBlockTxGasTipCap    *big.Int
 
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -88,6 +90,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.localsOnly = cfg.LocalAddressesOnly
 	p.maxProposedTxListsPerEpoch = cfg.MaxProposedTxListsPerEpoch
 	p.txReplacementTipMultiplier = cfg.ProposeBlockTxReplacementMultiplier
+	p.proposeBlockTxGasTipCap = cfg.ProposeBlockTxGasTipCap
 	p.ctx = ctx
 	p.waitReceiptTimeout = cfg.WaitReceiptTimeout
 
@@ -353,13 +356,24 @@ func (p *Proposer) sendProposeBlockTx(
 				"Original transaction to replace",
 				"sender", p.l1ProposerAddress,
 				"nonce", nonce,
-				"tx", originalTx,
+				"gasTipCap", originalTx.GasTipCap(),
+				"gasFeeCap", originalTx.GasFeeCap(),
 			)
 
 			opts.GasTipCap = new(big.Int).Mul(
 				originalTx.GasTipCap(),
 				new(big.Int).SetUint64(p.txReplacementTipMultiplier),
 			)
+		}
+
+		if p.proposeBlockTxGasTipCap != nil && opts.GasTipCap.Cmp(p.proposeBlockTxGasTipCap) > 0 {
+			log.Info(
+				"New gasTipCap exceeds limit, keep waiting",
+				"multiplier", p.txReplacementTipMultiplier,
+				"newGasTipCap", opts.GasTipCap,
+				"maxTipCap", p.proposeBlockTxGasTipCap,
+			)
+			return nil, txpool.ErrReplaceUnderpriced
 		}
 	}
 
@@ -391,7 +405,7 @@ func (p *Proposer) ProposeTxList(
 			}
 			if tx, err = p.sendProposeBlockTx(ctx, meta, txListBytes, nonce, isReplacement); err != nil {
 				log.Warn("Failed to send propose block transaction, retrying", "error", err)
-				if strings.Contains(err.Error(), "replacement transaction underpriced") {
+				if strings.Contains(err.Error(), txpool.ErrReplaceUnderpriced.Error()) {
 					isReplacement = true
 				} else {
 					isReplacement = false
