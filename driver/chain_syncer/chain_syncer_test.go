@@ -46,6 +46,11 @@ func (s *ChainSyncerTestSuite) TestSync() {
 	s.Nil(s.s.Sync(head))
 }
 
+// func (s *ChainSyncerTestSuite) TestSyncTriggerBeaconSync() {
+// 	s.s.p2pSyncVerifiedBlocks = true
+// 	s.s.state.setLatestVerifiedBlockHash(common.Hash{})
+// }
+
 func TestChainSyncerTestSuite(t *testing.T) {
 	suite.Run(t, new(ChainSyncerTestSuite))
 }

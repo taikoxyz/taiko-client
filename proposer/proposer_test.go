@@ -187,6 +187,22 @@ func (s *ProposerTestSuite) TestStartClose() {
 	s.NotPanics(s.p.Close)
 }
 
+// TODO: not working
+// func (s *ProposerTestSuite) TestEventLoopEmptyBlock() {
+// 	fiveSecs := 5 * time.Second
+// 	s.p.proposingInterval = &fiveSecs
+// 	s.p.proposeEmptyBlocksInterval = &fiveSecs
+// 	s.p.Start()
+// 	time.Sleep(30 * time.Second)
+// 	s.cancel()
+// 	s.p.Close()
+// 	// check if empty blocks have been proposed? query TaikoL1 contract?
+// 	block, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
+// 	s.Nil(err)
+// 	s.Equal(uint64(block.GasLimit()), uint64(21000))
+// 	s.Equal(block.TxHash(), common.Hash(crypto.Keccak256Hash([]byte{})))
+// }
+
 func TestProposerTestSuite(t *testing.T) {
 	suite.Run(t, new(ProposerTestSuite))
 }
