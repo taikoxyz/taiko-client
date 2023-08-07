@@ -76,10 +76,6 @@ var (
 			Type: "uint24",
 		},
 		{
-			Name: "gasLimit",
-			Type: "uint32",
-		},
-		{
 			Name: "beneficiary",
 			Type: "address",
 		},

@@ -34,7 +34,6 @@ var (
 	}
 	testMetaInput = TaikoL1BlockMetadataInput{
 		Beneficiary:     common.BytesToAddress(randomHash().Bytes()),
-		GasLimit:        rand.Uint32(),
 		TxListHash:      randomHash(),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,

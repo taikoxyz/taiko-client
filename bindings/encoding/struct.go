@@ -46,7 +46,6 @@ type TaikoL1Evidence struct {
 type TaikoL1BlockMetadataInput struct {
 	TxListHash      [32]byte
 	Beneficiary     common.Address
-	GasLimit        uint32
 	TxListByteStart *big.Int
 	TxListByteEnd   *big.Int
 	CacheTxListInfo uint8
