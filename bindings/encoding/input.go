@@ -26,10 +26,6 @@ var (
 			Type: "address",
 		},
 		{
-			Name: "gasLimit",
-			Type: "uint32",
-		},
-		{
 			Name: "txListByteStart",
 			Type: "uint24",
 		},
@@ -74,6 +70,10 @@ var (
 		{
 			Name: "txListByteEnd",
 			Type: "uint24",
+		},
+		{
+			Name: "gasLimit",
+			Type: "uint32",
 		},
 		{
 			Name: "beneficiary",
