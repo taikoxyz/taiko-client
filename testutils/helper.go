@@ -19,14 +19,10 @@ import (
 )
 
 func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
-	configs, err := s.RpcClient.TaikoL1.GetConfig(nil)
-	s.Nil(err)
-
 	invalidTxListBytes := RandomBytes(256)
 
 	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
 		Beneficiary:     proposer.L2SuggestedFeeRecipient(),
-		GasLimit:        uint32(rand.Int63n(int64(configs.BlockMaxGasLimit))),
 		TxListHash:      crypto.Keccak256Hash(invalidTxListBytes),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(invalidTxListBytes))),
@@ -60,7 +56,6 @@ func ProposeAndInsertEmptyBlocks(
 
 	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
 		Beneficiary:     proposer.L2SuggestedFeeRecipient(),
-		GasLimit:        21000,
 		TxListHash:      crypto.Keccak256Hash(encoded),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
@@ -117,7 +112,7 @@ func ProposeAndInsertValidBlock(
 		close(sink)
 	}()
 
-	baseFee, err := s.RpcClient.TaikoL2.GetBasefee(nil, 0, 60000000, uint32(l2Head.GasUsed))
+	baseFee, err := s.RpcClient.TaikoL2.GetBasefee(nil, 0, uint32(l2Head.GasUsed))
 	s.Nil(err)
 
 	nonce, err := s.RpcClient.L2.PendingNonceAt(context.Background(), s.TestAddr)

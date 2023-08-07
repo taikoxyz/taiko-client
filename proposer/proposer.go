@@ -201,8 +201,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	baseFee, err := p.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{Context: ctx},
-		uint32(time.Now().Unix()-int64(l2Head.Time)),
-		p.protocolConfigs.BlockMaxGasLimit,
+		uint64(time.Now().Unix())-l2Head.Time,
 		uint32(l2Head.GasUsed),
 	)
 	if err != nil {
@@ -289,7 +288,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 				txNonce := nonce + uint64(i)
 				if err := p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
 					Beneficiary:     p.l2SuggestedFeeRecipient,
-					GasLimit:        p.protocolConfigs.BlockMaxGasLimit,
 					TxListHash:      crypto.Keccak256Hash(txListBytes),
 					TxListByteStart: common.Big0,
 					TxListByteEnd:   new(big.Int).SetUint64(uint64(len(txListBytes))),
@@ -446,7 +444,6 @@ func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
 	return p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
 		TxListHash:      crypto.Keccak256Hash([]byte{}),
 		Beneficiary:     p.L2SuggestedFeeRecipient(),
-		GasLimit:        p.protocolConfigs.BlockMaxGasLimit,
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
 		CacheTxListInfo: 0,

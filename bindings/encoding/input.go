@@ -26,10 +26,6 @@ var (
 			Type: "address",
 		},
 		{
-			Name: "gasLimit",
-			Type: "uint32",
-		},
-		{
 			Name: "txListByteStart",
 			Type: "uint24",
 		},

@@ -270,7 +270,6 @@ func (s *Syncer) onBlockProposed(
 		txListBytes,
 		l1Origin,
 	)
-
 	if err != nil {
 		return fmt.Errorf("failed to insert new head to L2 execution engine: %w", err)
 	}
@@ -334,8 +333,7 @@ func (s *Syncer) insertNewHead(
 	// Get L2 baseFee
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{BlockNumber: parent.Number, Context: ctx},
-		uint32(event.Meta.Timestamp-parentTimestamp),
-		event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit()),
+		event.Meta.Timestamp-parentTimestamp,
 		uint32(parent.GasUsed),
 	)
 	if err != nil {
@@ -346,7 +344,6 @@ func (s *Syncer) insertNewHead(
 		"GetBasefee",
 		"baseFee", baseFee,
 		"timeSinceParent", uint32(event.Meta.Timestamp-parentTimestamp),
-		"gasLimit", uint64(event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit())),
 		"parentGasUsed", parent.GasUsed,
 	)
 
@@ -386,7 +383,6 @@ func (s *Syncer) insertNewHead(
 		baseFee,
 		withdrawals,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create execution payloads: %w", err)
 	}
@@ -437,7 +433,21 @@ func (s *Syncer) createExecutionPayloads(
 		L1Origin:      l1Origin,
 	}
 
-	log.Debug("PayloadAttributes", "attributes", attributes, "meta", attributes.BlockMetadata)
+	log.Debug(
+		"PayloadAttributes",
+		"blockID", event.BlockId,
+		"timestamp", attributes.Timestamp,
+		"random", attributes.Random,
+		"suggestedFeeRecipient", attributes.SuggestedFeeRecipient,
+		"withdrawals", len(attributes.Withdrawals),
+		"highestBlockID", attributes.BlockMetadata.HighestBlockID,
+		"gasLimit", attributes.BlockMetadata.GasLimit,
+		"timestamp", attributes.BlockMetadata.Timestamp,
+		"mixHash", attributes.BlockMetadata.MixHash,
+		"baseFee", attributes.BaseFeePerGas,
+		"l1OriginHeight", attributes.L1Origin.L1BlockHeight,
+		"l1OriginHash", attributes.L1Origin.L1BlockHash,
+	)
 
 	// Step 1, prepare a payload
 	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, attributes)
@@ -457,7 +467,17 @@ func (s *Syncer) createExecutionPayloads(
 		return nil, fmt.Errorf("failed to get payload: %w", err)
 	}
 
-	log.Debug("Payload", "payload", payload)
+	log.Debug(
+		"Payload",
+		"blockID", event.BlockId,
+		"baseFee", payload.BaseFeePerGas,
+		"number", payload.Number,
+		"hash", payload.BlockHash,
+		"gasLimit", payload.GasLimit,
+		"gasUsed", payload.GasUsed,
+		"timestamp", payload.Timestamp,
+		"withdrawalsHash", payload.WithdrawalsHash,
+	)
 
 	// Step 3, execute the payload
 	execStatus, err := s.rpc.L2Engine.NewPayload(ctx, payload)

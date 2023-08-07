@@ -73,7 +73,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	parent, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	baseFee, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint32(gaslimit), uint32(parent.GasUsed()))
+	baseFee, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
 	s.Nil(err)
 
 	to := common.BytesToAddress(testutils.RandomBytes(32))
@@ -158,7 +158,6 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		context.Background(),
 		&encoding.TaikoL1BlockMetadataInput{
 			Beneficiary:     s.p.L2SuggestedFeeRecipient(),
-			GasLimit:        21000,
 			TxListHash:      crypto.Keccak256Hash(encoded),
 			TxListByteStart: common.Big0,
 			TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
