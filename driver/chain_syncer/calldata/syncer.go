@@ -334,8 +334,7 @@ func (s *Syncer) insertNewHead(
 	// Get L2 baseFee
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{BlockNumber: parent.Number, Context: ctx},
-		uint32(event.Meta.Timestamp-parentTimestamp),
-		event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit()),
+		event.Meta.Timestamp-parentTimestamp,
 		uint32(parent.GasUsed),
 	)
 	if err != nil {
@@ -346,7 +345,6 @@ func (s *Syncer) insertNewHead(
 		"GetBasefee",
 		"baseFee", baseFee,
 		"timeSinceParent", uint32(event.Meta.Timestamp-parentTimestamp),
-		"gasLimit", uint64(event.Meta.GasLimit+uint32(s.anchorConstructor.GasLimit())),
 		"parentGasUsed", parent.GasUsed,
 	)
 
