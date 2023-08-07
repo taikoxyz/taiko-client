@@ -97,7 +97,7 @@ var (
 		Name:     "prover.proveUnassignedBlocks",
 		Usage:    "Whether you want to prove unassigned blocks, or only work on assigned proofs",
 		Category: proverCategory,
-		Value:    true,
+		Value:    false,
 	}
 )
 
