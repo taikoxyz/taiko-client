@@ -106,16 +106,16 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_ProverKeyError() {
 	}), "invalid L1 prover private key")
 }
 
-// TODO: find case for ToECDSA failing
-// func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverKeyError() {
-// 	app := s.SetupApp()
+func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverKeyError() {
+	app := s.SetupApp()
 
-// 	s.ErrorContains(app.Run([]string{
-// 		"TestNewConfigFromCliContext",
-// 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-// 		"-" + flags.OracleProverPrivateKey.Name, "0x",
-// 	}), "invalid oracle private key")
-// }
+	s.ErrorContains(app.Run([]string{
+		"TestNewConfigFromCliContext",
+		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.OracleProver.Name,
+		"-" + flags.OracleProverPrivateKey.Name, "",
+	}), "invalid oracle private key")
+}
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayError() {
 	app := s.SetupApp()
