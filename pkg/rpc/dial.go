@@ -20,7 +20,10 @@ func DialClientWithBackoff(ctx context.Context, url string, retryInterval time.D
 	var client *ethclient.Client
 	if err := backoff.Retry(
 		func() (err error) {
-			client, err = ethclient.DialContext(ctx, url)
+			ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+			defer cancel()
+
+			client, err = ethclient.DialContext(ctxWithTimeout, url)
 			if err != nil {
 				log.Error("Dial ethclient error", "url", url, "error", err)
 			}
@@ -45,7 +48,10 @@ func DialEngineClientWithBackoff(
 	var engineClient *EngineClient
 	if err := backoff.Retry(
 		func() (err error) {
-			client, err := DialEngineClient(ctx, url, jwtSecret)
+			ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+			defer cancel()
+
+			client, err := DialEngineClient(ctxWithTimeout, url, jwtSecret)
 			if err != nil {
 				log.Error("Dial engine client error", "url", url, "error", err)
 				return err
@@ -65,6 +71,9 @@ func DialEngineClientWithBackoff(
 // DialEngineClient initializes an RPC connection with authentication headers.
 // Taken from https://github.com/prysmaticlabs/prysm/blob/v2.1.4/beacon-chain/execution/rpc_connection.go#L151
 func DialEngineClient(ctx context.Context, endpointUrl string, jwtSecret string) (*rpc.Client, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
 	endpoint := network.Endpoint{
 		Url: endpointUrl,
 		Auth: network.AuthorizationData{
@@ -81,12 +90,12 @@ func DialEngineClient(ctx context.Context, endpointUrl string, jwtSecret string)
 	}
 	switch u.Scheme {
 	case "http", "https":
-		client, err = rpc.DialOptions(ctx, endpoint.Url, rpc.WithHTTPClient(endpoint.HttpClient()))
+		client, err = rpc.DialOptions(ctxWithTimeout, endpoint.Url, rpc.WithHTTPClient(endpoint.HttpClient()))
 		if err != nil {
 			return nil, err
 		}
 	case "":
-		client, err = rpc.DialIPC(ctx, endpoint.Url)
+		client, err = rpc.DialIPC(ctxWithTimeout, endpoint.Url)
 		if err != nil {
 			return nil, err
 		}
