@@ -44,16 +44,12 @@ func WaitReceipt(
 	tx *types.Transaction,
 ) (*types.Receipt, error) {
 	ticker := time.NewTicker(waitReceiptPollingInterval)
-	defer ticker.Stop()
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultWaitReceiptTimeout)
 
-	var (
-		ctxWithTimeout = ctx
-		cancel         context.CancelFunc
-	)
-	if _, ok := ctx.Deadline(); !ok {
-		ctxWithTimeout, cancel = context.WithTimeout(ctx, defaultWaitReceiptTimeout)
-		defer cancel()
-	}
+	defer func() {
+		cancel()
+		ticker.Stop()
+	}()
 
 	for {
 		select {
@@ -89,26 +85,34 @@ func NeedNewSystemProof(ctx context.Context, cli *Client, id *big.Int, realProof
 		return false, nil
 	}
 
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
 	var parent *types.Header
 	if id.Cmp(common.Big1) == 0 {
-		header, err := cli.L2.HeaderByNumber(ctx, common.Big0)
+		header, err := cli.L2.HeaderByNumber(ctxWithTimeout, common.Big0)
 		if err != nil {
 			return false, err
 		}
 
 		parent = header
 	} else {
-		parentL1Origin, err := cli.WaitL1Origin(ctx, new(big.Int).Sub(id, common.Big1))
+		parentL1Origin, err := cli.WaitL1Origin(ctxWithTimeout, new(big.Int).Sub(id, common.Big1))
 		if err != nil {
 			return false, err
 		}
 
-		if parent, err = cli.L2.HeaderByHash(ctx, parentL1Origin.L2BlockHash); err != nil {
+		if parent, err = cli.L2.HeaderByHash(ctxWithTimeout, parentL1Origin.L2BlockHash); err != nil {
 			return false, err
 		}
 	}
 
-	fc, err := cli.TaikoL1.GetForkChoice(nil, id, parent.Hash(), uint32(parent.GasUsed))
+	fc, err := cli.TaikoL1.GetForkChoice(
+		&bind.CallOpts{Context: ctxWithTimeout},
+		id,
+		parent.Hash(),
+		uint32(parent.GasUsed),
+	)
 	if err != nil {
 		if !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
 			return false, encoding.TryParsingCustomError(err)
@@ -204,9 +208,12 @@ func ContentFrom(
 	rawRPC *rpc.Client,
 	address common.Address,
 ) (AccountPoolContent, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
 	var result AccountPoolContent
 	return result, rawRPC.CallContext(
-		ctx,
+		ctxWithTimeout,
 		&result,
 		"txpool_contentFrom",
 		address,
@@ -220,7 +227,10 @@ func GetPendingTxByNonce(
 	address common.Address,
 	nonce uint64,
 ) (*types.Transaction, error) {
-	content, err := ContentFrom(ctx, cli.L1RawRPC, address)
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	content, err := ContentFrom(ctxWithTimeout, cli.L1RawRPC, address)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +249,10 @@ func GetPendingTxByNonce(
 // SetHead makes a `debug_setHead` RPC call to set the chain's head, should only be used
 // for testing purpose.
 func SetHead(ctx context.Context, rpc *rpc.Client, headNum *big.Int) error {
-	return gethclient.New(rpc).SetHead(ctx, headNum)
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	return gethclient.New(rpc).SetHead(ctxWithTimeout, headNum)
 }
 
 // StringToBytes32 converts the given string to [32]byte.
@@ -252,7 +265,10 @@ func StringToBytes32(str string) [32]byte {
 
 // IsArchiveNode checks if the given node is an archive node.
 func IsArchiveNode(ctx context.Context, client *EthClient, l2GenesisHeight uint64) (bool, error) {
-	if _, err := client.BalanceAt(ctx, zeroAddress, new(big.Int).SetUint64(l2GenesisHeight)); err != nil {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	if _, err := client.BalanceAt(ctxWithTimeout, zeroAddress, new(big.Int).SetUint64(l2GenesisHeight)); err != nil {
 		if strings.Contains(err.Error(), "missing trie node") {
 			return false, nil
 		}
@@ -261,4 +277,19 @@ func IsArchiveNode(ctx context.Context, client *EthClient, l2GenesisHeight uint6
 	}
 
 	return true, nil
+}
+
+// ctxWithTimeoutOrDefault sets a context timeout if the deadline has not passed or is not set,
+// and otherwise returns the context as passed in. cancel func is always set to an empty function
+// so is safe to defer the cancel.
+func ctxWithTimeoutOrDefault(ctx context.Context, defaultTimeout time.Duration) (context.Context, context.CancelFunc) {
+	var (
+		ctxWithTimeout                    = ctx
+		cancel         context.CancelFunc = func() {}
+	)
+	if _, ok := ctx.Deadline(); !ok {
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, defaultTimeout)
+	}
+
+	return ctxWithTimeout, cancel
 }

@@ -102,6 +102,8 @@ func (c *AnchorTxConstructor) transactOpts(
 		return nil, err
 	}
 
+	log.Info("Golden touch account nonce", "nonce", nonce)
+
 	return &bind.TransactOpts{
 		From: c.goldenTouchAddress,
 		Signer: func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
