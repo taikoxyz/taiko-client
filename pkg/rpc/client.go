@@ -58,19 +58,23 @@ type ClientConfig struct {
 
 // NewClient initializes all RPC clients used by Taiko client softwares.
 func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
-	l1EthClient, err := DialClientWithBackoff(ctx, cfg.L1Endpoint, cfg.RetryInterval)
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	l1EthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L1Endpoint, cfg.RetryInterval)
 	if err != nil {
 		return nil, err
 	}
 
-	l2EthClient, err := DialClientWithBackoff(ctx, cfg.L2Endpoint, cfg.RetryInterval)
+	l2EthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L2Endpoint, cfg.RetryInterval)
 	if err != nil {
 		return nil, err
 	}
 
-	var l1RPC *EthClient
-	var l2RPC *EthClient
-
+	var (
+		l1RPC *EthClient
+		l2RPC *EthClient
+	)
 	if cfg.Timeout != nil {
 		l1RPC = NewEthClientWithTimeout(l1EthClient, *cfg.Timeout)
 		l2RPC = NewEthClientWithTimeout(l2EthClient, *cfg.Timeout)
@@ -97,12 +101,12 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	stateVars, err := taikoL1.GetStateVariables(&bind.CallOpts{Context: ctx})
+	stateVars, err := taikoL1.GetStateVariables(&bind.CallOpts{Context: ctxWithTimeout})
 	if err != nil {
 		return nil, err
 	}
 
-	isArchive, err := IsArchiveNode(ctx, l1RPC, stateVars.GenesisHeight)
+	isArchive, err := IsArchiveNode(ctxWithTimeout, l1RPC, stateVars.GenesisHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -121,12 +125,12 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	l1ChainID, err := l1RPC.ChainID(ctx)
+	l1ChainID, err := l1RPC.ChainID(ctxWithTimeout)
 	if err != nil {
 		return nil, err
 	}
 
-	l2ChainID, err := l2RPC.ChainID(ctx)
+	l2ChainID, err := l2RPC.ChainID(ctxWithTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +140,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	var l2AuthRPC *EngineClient
 	if len(cfg.L2EngineEndpoint) != 0 && len(cfg.JwtSecret) != 0 {
 		if l2AuthRPC, err = DialEngineClientWithBackoff(
-			ctx,
+			ctxWithTimeout,
 			cfg.L2EngineEndpoint,
 			cfg.JwtSecret,
 			cfg.RetryInterval,
@@ -147,8 +151,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 
 	var l2CheckPoint *EthClient
 	if len(cfg.L2CheckPoint) != 0 {
-		l2CheckPointEthClient, err := DialClientWithBackoff(ctx, cfg.L2CheckPoint, cfg.RetryInterval)
-
+		l2CheckPointEthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L2CheckPoint, cfg.RetryInterval)
 		if err != nil {
 			return nil, err
 		}
@@ -176,7 +179,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		L2ChainID:         l2ChainID,
 	}
 
-	if err := client.ensureGenesisMatched(ctx); err != nil {
+	if err := client.ensureGenesisMatched(ctxWithTimeout); err != nil {
 		return nil, err
 	}
 
