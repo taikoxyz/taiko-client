@@ -529,7 +529,7 @@ func (p *Prover) onBlockProposed(
 					block.AssignedProver.Hex(),
 					"proofWindowExpiresAt",
 					proofWindowExpiresAt,
-					"timeToExipre",
+					"timeToExpire",
 					proofWindowExpiresAt-uint64(time.Now().Unix()),
 				)
 
