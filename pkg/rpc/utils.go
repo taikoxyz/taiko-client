@@ -190,3 +190,18 @@ func IsArchiveNode(ctx context.Context, client *EthClient, l2GenesisHeight uint6
 
 	return true, nil
 }
+
+// ctxWithTimeoutOrDefault sets a context timeout if the deadline has not passed or is not set,
+// and otherwise returns the context as passed in. cancel func is always set to an empty function
+// so is safe to defer the cancel.
+func ctxWithTimeoutOrDefault(ctx context.Context, defaultTimeout time.Duration) (context.Context, context.CancelFunc) {
+	var (
+		ctxWithTimeout                    = ctx
+		cancel         context.CancelFunc = func() {}
+	)
+	if _, ok := ctx.Deadline(); !ok {
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, defaultTimeout)
+	}
+
+	return ctxWithTimeout, cancel
+}
