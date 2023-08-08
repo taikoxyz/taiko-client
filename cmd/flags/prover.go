@@ -100,7 +100,7 @@ var (
 		Value:    false,
 	}
 	ProveBlockTxGasLimit = &cli.Uint64Flag{
-		Name:     "proveBlockTxGasLimit",
+		Name:     "prover.proveBlockTxGasLimit",
 		Usage:    "Gas limit will be used for TaikoL1.proveBlock transactions",
 		Category: proverCategory,
 	}
