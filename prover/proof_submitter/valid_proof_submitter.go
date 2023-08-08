@@ -28,21 +28,22 @@ var _ ProofSubmitter = (*ValidProofSubmitter)(nil)
 // ValidProofSubmitter is responsible requesting zk proofs for the given valid L2
 // blocks, and submitting the generated proofs to the TaikoL1 smart contract.
 type ValidProofSubmitter struct {
-	rpc                *rpc.Client
-	proofProducer      proofProducer.ProofProducer
-	resultCh           chan *proofProducer.ProofWithHeader
-	anchorTxValidator  *anchorTxValidator.AnchorTxValidator
-	proverPrivKey      *ecdsa.PrivateKey
-	proverAddress      common.Address
-	taikoL2Address     common.Address
-	l1SignalService    common.Address
-	l2SignalService    common.Address
-	mutex              *sync.Mutex
-	isOracleProver     bool
-	graffiti           [32]byte
-	submissionMaxRetry uint64
-	retryInterval      time.Duration
-	waitReceiptTimeout time.Duration
+	rpc                  *rpc.Client
+	proofProducer        proofProducer.ProofProducer
+	resultCh             chan *proofProducer.ProofWithHeader
+	anchorTxValidator    *anchorTxValidator.AnchorTxValidator
+	proverPrivKey        *ecdsa.PrivateKey
+	proverAddress        common.Address
+	taikoL2Address       common.Address
+	l1SignalService      common.Address
+	l2SignalService      common.Address
+	mutex                *sync.Mutex
+	isOracleProver       bool
+	graffiti             [32]byte
+	submissionMaxRetry   uint64
+	retryInterval        time.Duration
+	waitReceiptTimeout   time.Duration
+	proveBlockTxGasLimit *uint64
 }
 
 // NewValidProofSubmitter creates a new ValidProofSubmitter instance.
@@ -58,6 +59,7 @@ func NewValidProofSubmitter(
 	submissionMaxRetry uint64,
 	retryInterval time.Duration,
 	waitReceiptTimeout time.Duration,
+	proveBlockTxGasLimit *uint64,
 ) (*ValidProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
 	if err != nil {
@@ -75,21 +77,22 @@ func NewValidProofSubmitter(
 	}
 
 	return &ValidProofSubmitter{
-		rpc:                rpcClient,
-		proofProducer:      proofProducer,
-		resultCh:           resultCh,
-		anchorTxValidator:  anchorValidator,
-		proverPrivKey:      proverPrivKey,
-		proverAddress:      crypto.PubkeyToAddress(proverPrivKey.PublicKey),
-		l1SignalService:    l1SignalService,
-		l2SignalService:    l2SignalService,
-		taikoL2Address:     taikoL2Address,
-		mutex:              mutex,
-		isOracleProver:     isOracleProver,
-		graffiti:           rpc.StringToBytes32(graffiti),
-		submissionMaxRetry: submissionMaxRetry,
-		retryInterval:      retryInterval,
-		waitReceiptTimeout: waitReceiptTimeout,
+		rpc:                  rpcClient,
+		proofProducer:        proofProducer,
+		resultCh:             resultCh,
+		anchorTxValidator:    anchorValidator,
+		proverPrivKey:        proverPrivKey,
+		proverAddress:        crypto.PubkeyToAddress(proverPrivKey.PublicKey),
+		l1SignalService:      l1SignalService,
+		l2SignalService:      l2SignalService,
+		taikoL2Address:       taikoL2Address,
+		mutex:                mutex,
+		isOracleProver:       isOracleProver,
+		graffiti:             rpc.StringToBytes32(graffiti),
+		submissionMaxRetry:   submissionMaxRetry,
+		retryInterval:        retryInterval,
+		waitReceiptTimeout:   waitReceiptTimeout,
+		proveBlockTxGasLimit: proveBlockTxGasLimit,
 	}, nil
 }
 
@@ -252,6 +255,10 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return err
 	}
 
+	if s.proveBlockTxGasLimit != nil {
+		txOpts.GasLimit = *s.proveBlockTxGasLimit
+	}
+
 	sendTx := func() (*types.Transaction, error) {
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
@@ -275,6 +282,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		s.retryInterval,
 		maxRetry,
 		s.waitReceiptTimeout,
+		s.proveBlockTxGasLimit,
 	); err != nil {
 		if errors.Is(err, errUnretryable) {
 			return nil
