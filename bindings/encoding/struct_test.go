@@ -37,7 +37,7 @@ var (
 		TxListHash:      randomHash(),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
-		CacheTxListInfo: 0,
+		CacheTxListInfo: false,
 	}
 	testMeta = bindings.TaikoDataBlockMetadata{
 		Id:                rand.Uint64(),

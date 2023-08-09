@@ -161,7 +161,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 			TxListHash:      crypto.Keccak256Hash(encoded),
 			TxListByteStart: common.Big0,
 			TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
-			CacheTxListInfo: 0,
+			CacheTxListInfo: false,
 		},
 		encoded,
 		&nonce,

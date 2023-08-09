@@ -41,6 +41,7 @@ type Config struct {
 	ProveUnassignedBlocks           bool
 	RPCTimeout                      *time.Duration
 	WaitReceiptTimeout              time.Duration
+	ProveBlockGasLimit              *uint64
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -109,6 +110,12 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		timeout = &duration
 	}
 
+	var proveBlockTxGasLimit *uint64
+	if c.IsSet(flags.ProveBlockTxGasLimit.Name) {
+		gasLimit := c.Uint64(flags.ProveBlockTxGasLimit.Name)
+		proveBlockTxGasLimit = &gasLimit
+	}
+
 	return &Config{
 		L1WsEndpoint:                    c.String(flags.L1WSEndpoint.Name),
 		L1HttpEndpoint:                  c.String(flags.L1HTTPEndpoint.Name),
@@ -138,5 +145,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProveUnassignedBlocks: c.Bool(flags.ProveUnassignedBlocks.Name),
 		RPCTimeout:            timeout,
 		WaitReceiptTimeout:    time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
+		ProveBlockGasLimit:    proveBlockTxGasLimit,
 	}, nil
 }
