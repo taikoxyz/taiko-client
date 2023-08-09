@@ -38,6 +38,7 @@ type Config struct {
 	BackOffMaxRetrys                uint64
 	BackOffRetryInterval            time.Duration
 	RPCTimeout                      *time.Duration
+	ProveBlockGasLimit              *uint64
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -125,6 +126,12 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		timeout = &duration
 	}
 
+	var proveBlockTxGasLimit *uint64
+	if c.IsSet(flags.ProveBlockTxGasLimit.Name) {
+		gasLimit := c.Uint64(flags.ProveBlockTxGasLimit.Name)
+		proveBlockTxGasLimit = &gasLimit
+	}
+
 	return &Config{
 		L1WsEndpoint:                    c.String(flags.L1WSEndpoint.Name),
 		L1HttpEndpoint:                  c.String(flags.L1HTTPEndpoint.Name),
@@ -149,5 +156,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		BackOffMaxRetrys:                c.Uint64(flags.BackOffMaxRetrys.Name),
 		BackOffRetryInterval:            time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
 		RPCTimeout:                      timeout,
+		ProveBlockGasLimit:              proveBlockTxGasLimit,
 	}, nil
 }

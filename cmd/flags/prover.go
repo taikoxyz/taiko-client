@@ -85,6 +85,11 @@ var (
 		Category: proverCategory,
 		Value:    100_000_000,
 	}
+	ProveBlockTxGasLimit = &cli.Uint64Flag{
+		Name:     "prover.proveBlockTxGasLimit",
+		Usage:    "Gas limit will be used for TaikoL1.proveBlock transactions",
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -105,4 +110,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	SystemProverPrivateKey,
 	Graffiti,
 	ExpectedReward,
+	ProveBlockTxGasLimit,
 })
