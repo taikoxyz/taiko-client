@@ -215,6 +215,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.ProofSubmissionMaxRetry,
 		p.cfg.BackOffRetryInterval,
 		p.cfg.WaitReceiptTimeout,
+		p.cfg.ProveBlockGasLimit,
 	); err != nil {
 		return err
 	}
