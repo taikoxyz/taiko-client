@@ -291,7 +291,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 					TxListHash:      crypto.Keccak256Hash(txListBytes),
 					TxListByteStart: common.Big0,
 					TxListByteEnd:   new(big.Int).SetUint64(uint64(len(txListBytes))),
-					CacheTxListInfo: 0,
+					CacheTxListInfo: false,
 				}, txListBytes, uint(txs.Len()), &txNonce); err != nil {
 					return fmt.Errorf("failed to propose transactions: %w", err)
 				}
@@ -402,7 +402,7 @@ func (p *Proposer) ProposeTxList(
 				return nil
 			}
 			if tx, err = p.sendProposeBlockTx(ctx, meta, txListBytes, nonce, isReplacement); err != nil {
-				log.Warn("Failed to send propose block transaction, retrying", "error", err)
+				log.Warn("Failed to send propose block transaction, retrying", "error", encoding.TryParsingCustomError(err))
 				if strings.Contains(err.Error(), txpool.ErrReplaceUnderpriced.Error()) {
 					isReplacement = true
 				} else {
@@ -446,7 +446,7 @@ func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
 		Beneficiary:     p.L2SuggestedFeeRecipient(),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
-		CacheTxListInfo: 0,
+		CacheTxListInfo: false,
 	}, []byte{}, 0, nil)
 }
 
