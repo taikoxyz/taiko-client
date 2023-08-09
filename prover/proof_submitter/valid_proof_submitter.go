@@ -282,7 +282,6 @@ func (s *ValidProofSubmitter) SubmitProof(
 		s.retryInterval,
 		maxRetry,
 		s.waitReceiptTimeout,
-		s.proveBlockTxGasLimit,
 	); err != nil {
 		if errors.Is(err, errUnretryable) {
 			return nil

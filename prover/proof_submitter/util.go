@@ -72,7 +72,6 @@ func sendTxWithBackoff(
 	retryInterval time.Duration,
 	maxRetry *uint64,
 	waitReceiptTimeout time.Duration,
-	proveBlocktxGasLimit *uint64,
 ) error {
 	var (
 		isUnretryableError bool

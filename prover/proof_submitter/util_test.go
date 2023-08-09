@@ -49,7 +49,6 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		12*time.Second,
 		&testMaxRetry,
 		5*time.Second,
-		nil,
 	))
 
 	s.Nil(sendTxWithBackoff(
@@ -78,6 +77,5 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		12*time.Second,
 		&testMaxRetry,
 		5*time.Second,
-		nil,
 	))
 }
