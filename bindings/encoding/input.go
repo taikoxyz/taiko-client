@@ -35,7 +35,7 @@ var (
 		},
 		{
 			Name: "cacheTxListInfo",
-			Type: "uint8",
+			Type: "bool",
 		},
 	}
 	blockMetadataComponents = []abi.ArgumentMarshaling{

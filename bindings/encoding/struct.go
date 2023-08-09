@@ -48,7 +48,7 @@ type TaikoL1BlockMetadataInput struct {
 	Beneficiary     common.Address
 	TxListByteStart *big.Int
 	TxListByteEnd   *big.Int
-	CacheTxListInfo uint8
+	CacheTxListInfo bool
 }
 
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.
