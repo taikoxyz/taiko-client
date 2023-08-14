@@ -117,6 +117,7 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 				MixHash:     testutils.RandomHash(),
 				GasLimit:    rand.Uint32(),
 				Timestamp:   uint64(time.Now().Unix()),
+				Treasury:    s.TestAddr,
 			},
 		},
 		parent,
