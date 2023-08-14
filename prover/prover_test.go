@@ -156,7 +156,7 @@ func (s *ProverTestSuite) TestSubmitProofOp() {
 	s.NotPanics(func() {
 		s.p.submitProofOp(context.Background(), &producer.ProofWithHeader{
 			BlockID: common.Big1,
-			Meta:    &bindings.TaikoDataBlockMetadata{},
+			Meta:    &bindings.TaikoDataBlockMetadata{Treasury: s.TestAddr},
 			Header:  &types.Header{},
 			ZkProof: []byte{},
 		})
@@ -164,7 +164,7 @@ func (s *ProverTestSuite) TestSubmitProofOp() {
 	s.NotPanics(func() {
 		s.p.submitProofOp(context.Background(), &producer.ProofWithHeader{
 			BlockID: common.Big1,
-			Meta:    &bindings.TaikoDataBlockMetadata{},
+			Meta:    &bindings.TaikoDataBlockMetadata{Treasury: s.TestAddr},
 			Header:  &types.Header{},
 			ZkProof: []byte{},
 		})

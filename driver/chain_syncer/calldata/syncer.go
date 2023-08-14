@@ -367,7 +367,6 @@ func (s *Syncer) insertNewHead(
 	}
 
 	txList = append([]*types.Transaction{anchorTx}, txList...)
-
 	if txListBytes, err = rlp.EncodeToBytes(txList); err != nil {
 		log.Error("Encode txList error", "blockID", event.BlockId, "error", err)
 		return nil, err
@@ -427,7 +426,7 @@ func (s *Syncer) createExecutionPayloads(
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
-			ExtraData:      []byte{},
+			Treasury:       event.Meta.Treasury,
 		},
 		BaseFeePerGas: baseFeee,
 		L1Origin:      l1Origin,
