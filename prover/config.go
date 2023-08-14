@@ -42,6 +42,7 @@ type Config struct {
 	RPCTimeout                      *time.Duration
 	WaitReceiptTimeout              time.Duration
 	ProveBlockGasLimit              *uint64
+	ProofSkipSize                   *uint64
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -116,6 +117,12 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proveBlockTxGasLimit = &gasLimit
 	}
 
+	var proofSkipSize *uint64
+	if c.IsSet(flags.ProofSkipSize.Name) {
+		skipSize := c.Uint64(flags.ProofSkipSize.Name)
+		proofSkipSize = &skipSize
+	}
+
 	return &Config{
 		L1WsEndpoint:                    c.String(flags.L1WSEndpoint.Name),
 		L1HttpEndpoint:                  c.String(flags.L1HTTPEndpoint.Name),
@@ -146,5 +153,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		RPCTimeout:            timeout,
 		WaitReceiptTimeout:    time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
 		ProveBlockGasLimit:    proveBlockTxGasLimit,
+		ProofSkipSize:         proofSkipSize,
 	}, nil
 }
