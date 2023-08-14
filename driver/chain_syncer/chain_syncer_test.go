@@ -2,11 +2,13 @@ package chainSyncer
 
 import (
 	"context"
+
 	"fmt"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
@@ -82,24 +84,47 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	// propose a couple blocks
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s.calldataSyncer)
 
+	arr := rpc.StringToBytes32(os.Getenv("L1_PROVER_PRIVATE_KEY"))
+	privKey, err := crypto.ToECDSA(arr[:])
+	s.Nil(err)
+	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.RpcClient.L1ChainID)
+	s.Nil(err)
+
+	head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+
+	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+
+	fmt.Printf("L1HeaderByNumber head: %v\n", head.Number)
+	// (equiv to s.state.GetL2Head().Number)
+	fmt.Printf("L2HeaderByNumber head: %v\n", l2Head.Number)
+	fmt.Printf("LatestVerifiedBlock number: %v\n", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
+
 	var result uint64
 	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", 2000))
 	s.NotNil(result)
 	fmt.Printf("evm time increase: %v\n", result)
 
-	head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
+	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, common.Big3) // pass a gas price
+	s.Nil(err)
+	s.NotNil(tx)
+
+	head2, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	fmt.Printf("L1HeaderByNumber head: %v\n", head.Number)
+	l2Head2, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+
+	fmt.Printf("L1HeaderByNumber head2: %v\n", head2.Number)
+	fmt.Printf("L2HeaderByNumber head: %v\n", l2Head2.Number)
 	fmt.Printf("LatestVerifiedBlock number: %v\n", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
-	fmt.Printf("LatestL2Head Number: %v\n", s.s.state.GetL2Head().Number)
 
 	// NOTE: verify the block so that the state returns a value > 0
 	// Can't figure out how to do this, all the listed methods below don't work / give
 	// nil pointer referencing errors or just aren't relevant.
 
 	// s.s.rpc.TaikoL1.TaikoL1ClientTransactor.VerifyBlocks(nil, common.Big1)
-	// s.s.rpc.TaikoL1.VerifyBlocks(nil, common.Big1)
 	// s.Nil(s.s.state.VerifyL2Block(context.Background(), head.Number, head.Hash()))
 	// tx, err := s.s.rpc.TaikoL1.VerifyBlocks(nil, common.Big1)
 	// s.Nil(err)
