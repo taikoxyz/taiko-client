@@ -83,7 +83,7 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s.calldataSyncer)
 
 	var result uint64
-	s.RpcClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", 2000)
+	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", 2000))
 	s.NotNil(result)
 	fmt.Printf("evm time increase: %v\n", result)
 
