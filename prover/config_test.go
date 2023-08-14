@@ -66,6 +66,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.StartingBlockID.Name, "0",
 		"-" + flags.RPCTimeout.Name, "5",
+		"-" + flags.ProveBlockTxGasLimit.Name, "100000",
 		"-" + flags.Dummy.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.OracleProver.Name,
@@ -73,7 +74,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.CheckProofWindowExpiredInterval.Name, "30",
 		"-" + flags.ProveUnassignedBlocks.Name, "true",
-		"-" + flags.ProveBlockTxGasLimit.Name, "100000",
 	}))
 }
 
