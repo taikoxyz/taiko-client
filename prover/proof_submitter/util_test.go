@@ -8,10 +8,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 var (
+	testKey, _          = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	testAddr            = crypto.PubkeyToAddress(testKey.PublicKey)
 	testMaxRetry uint64 = 1
 )
 
@@ -37,7 +40,11 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 	s.Nil(err)
 	l1HeadChild, err := s.RpcClient.L1.HeaderByNumber(context.Background(), new(big.Int).Sub(l1Head.Number, common.Big1))
 	s.Nil(err)
-	meta := &bindings.TaikoDataBlockMetadata{L1Height: l1HeadChild.Number.Uint64(), L1Hash: l1HeadChild.Hash()}
+	meta := &bindings.TaikoDataBlockMetadata{
+		L1Height: l1HeadChild.Number.Uint64(),
+		L1Hash:   l1HeadChild.Hash(),
+		Treasury: s.TestAddr,
+	}
 	s.NotNil(sendTxWithBackoff(
 		context.Background(),
 		s.RpcClient,
