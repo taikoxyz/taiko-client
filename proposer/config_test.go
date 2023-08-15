@@ -63,6 +63,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.RPCTimeout.Name, "5",
 		"-" + flags.WaitReceiptTimeout.Name, "10",
 		"-" + flags.ProposeBlockTxGasTipCap.Name, "100000",
+		"-" + flags.ProposeBlockTxGasLimit.Name, "100000",
 	}))
 }
 
@@ -172,6 +173,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
 		&cli.Uint64Flag{Name: flags.WaitReceiptTimeout.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasTipCap.Name},
+		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasLimit.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
