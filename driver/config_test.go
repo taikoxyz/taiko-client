@@ -56,7 +56,6 @@ func (s *DriverTestSuite) TestNewConfigFromCliContextJWTError() {
 		"TestNewConfigFromCliContext",
 		"-" + flags.JWTSecret.Name, "wrongsecretfile.txt",
 	}), "invalid JWT secret file")
-
 }
 
 func (s *DriverTestSuite) TestNewConfigFromCliContextEmptyL2CheckPoint() {
