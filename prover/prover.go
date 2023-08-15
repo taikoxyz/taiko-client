@@ -429,6 +429,19 @@ func (p *Prover) onBlockProposed(
 		)
 	}
 
+	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
+
+	if p.cfg.ProofSkipSize != nil && (event.BlockId.Uint64()%*p.cfg.ProofSkipSize != 0) {
+		log.Info("Skipping proposed block",
+			"L1Height", event.Raw.BlockNumber,
+			"L1Hash", event.Raw.BlockHash,
+			"SkipSize", *p.cfg.ProofSkipSize,
+			"BlockID", event.BlockId,
+			"Removed", event.Raw.Removed,
+		)
+		return nil
+	}
+
 	log.Info(
 		"Proposed block",
 		"L1Height", event.Raw.BlockNumber,
@@ -436,7 +449,6 @@ func (p *Prover) onBlockProposed(
 		"BlockID", event.BlockId,
 		"Removed", event.Raw.Removed,
 	)
-	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
 
 	handleBlockProposedEvent := func() error {
 		defer func() { <-p.proposeConcurrencyGuard }()

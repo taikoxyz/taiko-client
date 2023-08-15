@@ -104,6 +104,11 @@ var (
 		Usage:    "Gas limit will be used for TaikoL1.proveBlock transactions",
 		Category: proverCategory,
 	}
+	ProofSkipSize = &cli.Uint64Flag{
+		Name:     "prover.proofSkipSize",
+		Usage:    "Prove every Nth block",
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -127,4 +132,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	CheckProofWindowExpiredInterval,
 	ProveUnassignedBlocks,
 	ProveBlockTxGasLimit,
+	ProofSkipSize,
 })
