@@ -84,8 +84,10 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	// propose a couple blocks
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s.calldataSyncer)
 
-	arr := rpc.StringToBytes32(os.Getenv("L1_PROVER_PRIVATE_KEY"))
-	privKey, err := crypto.ToECDSA(arr[:])
+	// NOTE: need to prove the proposed blocks to be verified, writing helper function
+
+	// generate transactopts to interact with TaikoL1 contract with.
+	privKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.RpcClient.L1ChainID)
 	s.Nil(err)
@@ -101,12 +103,14 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	fmt.Printf("L2HeaderByNumber head: %v\n", l2Head.Number)
 	fmt.Printf("LatestVerifiedBlock number: %v\n", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
 
+	// increase evm time to make blocks verifiable.
 	var result uint64
 	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", 2000))
 	s.NotNil(result)
 	fmt.Printf("evm time increase: %v\n", result)
 
-	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, common.Big3) // pass a gas price
+	// interact with TaikoL1 contract to allow for verification of L2 blocks
+	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, common.Big3)
 	s.Nil(err)
 	s.NotNil(tx)
 
@@ -119,18 +123,6 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	fmt.Printf("L1HeaderByNumber head2: %v\n", head2.Number)
 	fmt.Printf("L2HeaderByNumber head: %v\n", l2Head2.Number)
 	fmt.Printf("LatestVerifiedBlock number: %v\n", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
-
-	// NOTE: verify the block so that the state returns a value > 0
-	// Can't figure out how to do this, all the listed methods below don't work / give
-	// nil pointer referencing errors or just aren't relevant.
-
-	// s.s.rpc.TaikoL1.TaikoL1ClientTransactor.VerifyBlocks(nil, common.Big1)
-	// s.Nil(s.s.state.VerifyL2Block(context.Background(), head.Number, head.Hash()))
-	// tx, err := s.s.rpc.TaikoL1.VerifyBlocks(nil, common.Big1)
-	// s.Nil(err)
-	// err2 := s.s.rpc.TaikoL1.TaikoL1ClientCaller.contract.Call(nil, &out, "getBlock", common.Big0)
-	// s.Nil(err)
-	// fmt.Printf("tx: %v\n", tx.Hash().Hex())
 
 	s.RevertSnapshot()
 }

@@ -161,6 +161,26 @@ func ProposeAndInsertValidBlock(
 	return event
 }
 
+// func ProveBlocks(s *ClientTestSuite, p Prover, num big.Int) []*bindings.TaikoL1ClientBlockProven {
+// 	var events []*bindings.TaikoL1ClientBlockProven
+
+// 	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+// 	s.Nil(err)
+
+// 	sink := make(chan *bindings.TaikoL1ClientBlockProven)
+
+// 	sub, err := s.RpcClient.TaikoL1.WatchBlockProven(nil, sink, nil)
+// 	s.Nil(err)
+// 	defer func() {
+// 		sub.Unsubscribe()
+// 		close(sink)
+// 	}()
+
+// 	// p.requestProofForBlockId(, l1Head.Number)
+
+// 	return events
+// }
+
 func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey, recipient common.Address) {
 	config, err := s.RpcClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)

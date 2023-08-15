@@ -26,3 +26,9 @@ type Proposer interface {
 		nonce *uint64,
 	) error
 }
+
+// type Prover interface {
+// 	utils.SubcommandApplication
+// 	ProveOp(ctx context.Context) error
+// 	requestProofForBlockId(blockId *big.Int, l1Height *big.Int)
+// }
