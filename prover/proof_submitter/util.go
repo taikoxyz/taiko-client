@@ -137,6 +137,10 @@ func sendTxWithBackoff(
 
 		return nil
 	}, backOffPolicy); err != nil {
+		if maxRetry != nil {
+			log.Error("Failed to send TaikoL1.proveBlock transaction", "error", err, "maxRetry", *maxRetry)
+			return errUnretryable
+		}
 		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
 	}
 
