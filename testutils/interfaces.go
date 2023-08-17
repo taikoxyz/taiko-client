@@ -27,6 +27,7 @@ type Proposer interface {
 	) error
 }
 
+// TODO: add this interface for helper functions
 // type Prover interface {
 // 	utils.SubcommandApplication
 // 	ProveOp(ctx context.Context) error

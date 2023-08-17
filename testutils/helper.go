@@ -161,6 +161,7 @@ func ProposeAndInsertValidBlock(
 	return event
 }
 
+// TODO: Implement helper function to prove the proposed blocks for integration tests
 // func ProveBlocks(s *ClientTestSuite, p Prover, num big.Int) []*bindings.TaikoL1ClientBlockProven {
 // 	var events []*bindings.TaikoL1ClientBlockProven
 
