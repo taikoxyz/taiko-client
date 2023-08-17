@@ -31,6 +31,7 @@ import (
 var (
 	errNoNewTxs                = errors.New("no new transactions")
 	maxSendProposeBlockTxRetry = 10
+	retryInterval              = 12 * time.Second
 )
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
@@ -413,7 +414,10 @@ func (p *Proposer) ProposeTxList(
 
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), uint64(maxSendProposeBlockTxRetry)),
+		backoff.WithMaxRetries(
+			backoff.NewConstantBackOff(retryInterval),
+			uint64(maxSendProposeBlockTxRetry),
+		),
 	); err != nil {
 		return err
 	}
