@@ -411,7 +411,7 @@ func (p *Proposer) ProposeTxList(
 
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), uint64(maxSendProposeBlockTxRetry)),
+		backoff.WithMaxRetries(backoff.NewConstantBackOff(12*time.Second), uint64(maxSendProposeBlockTxRetry)),
 	); err != nil {
 		return err
 	}
