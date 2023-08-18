@@ -13,6 +13,10 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var (
+	proposeBlockGasLimitCap = 2_200_000
+)
+
 // Config contains all configurations to initialize a Taiko proposer.
 type Config struct {
 	L1Endpoint                          string
@@ -83,6 +87,13 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	var proposeBlockTxGasLimit *uint64
 	if c.IsSet(flags.ProposeBlockTxGasLimit.Name) {
 		gasLimit := c.Uint64(flags.ProposeBlockTxGasLimit.Name)
+		if gasLimit > uint64(proposeBlockGasLimitCap) {
+			return nil, fmt.Errorf(
+				"--proposeBlockTxGasLimit flag value (%d) larger than cap (%d)",
+				gasLimit,
+				proposeBlockGasLimitCap,
+			)
+		}
 		proposeBlockTxGasLimit = &gasLimit
 	}
 

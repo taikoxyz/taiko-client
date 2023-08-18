@@ -13,6 +13,10 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var (
+	proveBlockGasLimitCap = 2_000_000
+)
+
 // Config contains the configurations to initialize a Taiko prover.
 type Config struct {
 	L1WsEndpoint                    string
@@ -114,6 +118,13 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	var proveBlockTxGasLimit *uint64
 	if c.IsSet(flags.ProveBlockTxGasLimit.Name) {
 		gasLimit := c.Uint64(flags.ProveBlockTxGasLimit.Name)
+		if gasLimit > uint64(proveBlockGasLimitCap) {
+			return nil, fmt.Errorf(
+				"--prover.proveBlockTxGasLimit flag value (%d) larger than cap (%d)",
+				gasLimit,
+				proveBlockGasLimitCap,
+			)
+		}
 		proveBlockTxGasLimit = &gasLimit
 	}
 
