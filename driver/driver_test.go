@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -22,15 +21,16 @@ import (
 
 type DriverTestSuite struct {
 	testutils.ClientTestSuite
-	cancel context.CancelFunc
-	p      *proposer.Proposer
-	d      *Driver
+	cancel   context.CancelFunc
+	p        *proposer.Proposer
+	d        *Driver
+	l1Prover *prover.Prover
 }
 
 func (s *DriverTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	port := rand.Intn(10000)
+	port := testutils.RandomPort()
 
 	// Init driver
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
@@ -75,8 +75,8 @@ func (s *DriverTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	l1Prover := new(prover.Prover)
-	s.Nil(prover.InitFromConfig(ctx, l1Prover, (&prover.Config{
+	s.l1Prover = new(prover.Prover)
+	s.Nil(prover.InitFromConfig(ctx, s.l1Prover, (&prover.Config{
 		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
 		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -93,8 +93,12 @@ func (s *DriverTestSuite) SetupTest() {
 	})))
 
 	go func() {
-		_ = l1Prover.Start()
+		_ = s.l1Prover.Start()
 	}()
+}
+
+func (s *DriverTestSuite) TearDownTest() {
+	s.l1Prover.Close(context.Background())
 }
 
 func (s *DriverTestSuite) TestName() {

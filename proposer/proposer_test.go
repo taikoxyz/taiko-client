@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -24,12 +23,13 @@ type ProposerTestSuite struct {
 	testutils.ClientTestSuite
 	p      *Proposer
 	cancel context.CancelFunc
+	prover *prover.Prover
 }
 
 func (s *ProposerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	port := rand.Intn(10000)
+	port := testutils.RandomPort()
 
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -56,8 +56,8 @@ func (s *ProposerTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	l1Prover := new(prover.Prover)
-	s.Nil(prover.InitFromConfig(ctx, l1Prover, (&prover.Config{
+	s.prover = new(prover.Prover)
+	s.Nil(prover.InitFromConfig(ctx, s.prover, (&prover.Config{
 		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
 		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -74,13 +74,16 @@ func (s *ProposerTestSuite) SetupTest() {
 	})))
 
 	go func() {
-		_ = l1Prover.Start()
+		_ = s.prover.Start()
 	}()
 
 	s.p = p
 	s.cancel = cancel
 }
 
+func (s *ProposerTestSuite) TearDownTest() {
+	s.prover.Close(context.Background())
+}
 func (s *ProposerTestSuite) TestName() {
 	s.Equal("proposer", s.p.Name())
 }

@@ -96,6 +96,11 @@ func (s *ProverTestSuite) SetupTest() {
 	s.proposer = prop
 }
 
+func (s *ProverTestSuite) TearDownTest() {
+	err := s.p.srv.Shutdown(context.Background())
+	s.Nil(err)
+}
+
 func (s *ProverTestSuite) TestName() {
 	s.Equal("prover", s.p.Name())
 }

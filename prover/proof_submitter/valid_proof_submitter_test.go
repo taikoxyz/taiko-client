@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"math/rand"
 	"os"
 	"sync"
 	"testing"
@@ -31,12 +30,13 @@ type ProofSubmitterTestSuite struct {
 	proposer            *proposer.Proposer
 	validProofCh        chan *proofProducer.ProofWithHeader
 	invalidProofCh      chan *proofProducer.ProofWithHeader
+	srv                 *http.Server
 }
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	port := rand.Intn(10000)
+	port := testutils.RandomPort()
 
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -103,6 +103,10 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	}()
 
 	s.proposer = prop
+}
+
+func (s *ProofSubmitterTestSuite) TearDownTest() {
+	_ = s.srv.Shutdown(context.Background())
 }
 
 func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofDeadlineExceeded() {

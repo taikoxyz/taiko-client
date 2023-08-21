@@ -30,7 +30,7 @@ type CalldataSyncerTestSuite struct {
 func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	port := rand.Intn(10000)
+	port := testutils.RandomPort()
 
 	state, err := state.New(context.Background(), s.RpcClient)
 	s.Nil(err)
