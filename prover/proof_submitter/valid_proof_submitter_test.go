@@ -19,7 +19,7 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/proposer"
-	"github.com/taikoxyz/taiko-client/prover"
+	"github.com/taikoxyz/taiko-client/prover/http"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
@@ -93,25 +93,13 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
 	})))
 
-	l1Prover := new(prover.Prover)
-	s.Nil(prover.InitFromConfig(context.Background(), l1Prover, (&prover.Config{
-		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
-		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2HttpEndpoint:                  os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:                  common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                  common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		L1ProverPrivKey:                 l1ProverPrivKey,
-		OracleProverPrivateKey:          l1ProverPrivKey,
-		Dummy:                           true,
-		MaxConcurrentProvingJobs:        1,
-		CheckProofWindowExpiredInterval: 5 * time.Second,
-		ProveUnassignedBlocks:           true,
-		HTTPServerPort:                  uint64(port),
-	})))
+	srv, err := http.NewServer(http.NewServerOpts{
+		ProverPrivateKey: l1ProverPrivKey,
+	})
+	s.Nil(err)
 
 	go func() {
-		_ = l1Prover.Start()
+		_ = srv.Start(fmt.Sprintf(":%v", port))
 	}()
 
 	s.proposer = prop
