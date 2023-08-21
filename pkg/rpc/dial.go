@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"time"
@@ -14,8 +15,10 @@ import (
 	"github.com/prysmaticlabs/prysm/v4/network/authorization"
 )
 
+var dialError = "Dial ethclient error: "
+
 // DialClientWithBackoff connects a ethereum RPC client at the given URL with
-// a backoff strategy.
+// a backoff strategy. Added a retry limit so it doesn't retry endlessly
 func DialClientWithBackoff(ctx context.Context, url string, retryInterval time.Duration) (*ethclient.Client, error) {
 	var client *ethclient.Client
 	if err := backoff.Retry(
@@ -25,11 +28,14 @@ func DialClientWithBackoff(ctx context.Context, url string, retryInterval time.D
 
 			client, err = ethclient.DialContext(ctxWithTimeout, url)
 			if err != nil {
+				err := errors.New(dialError + err.Error())
 				log.Error("Dial ethclient error", "url", url, "error", err)
+				return err
 			}
-			return err
+
+			return nil
 		},
-		backoff.NewConstantBackOff(retryInterval),
+		backoff.WithMaxRetries(backoff.NewConstantBackOff(retryInterval), 100),
 	); err != nil {
 		return nil, err
 	}
@@ -38,7 +44,7 @@ func DialClientWithBackoff(ctx context.Context, url string, retryInterval time.D
 }
 
 // DialEngineClientWithBackoff connects an ethereum engine RPC client at the
-// given URL with a backoff strategy.
+// given URL with a backoff strategy. Added a retry limit so it doesn't retry endlessly
 func DialEngineClientWithBackoff(
 	ctx context.Context,
 	url string,
@@ -53,14 +59,15 @@ func DialEngineClientWithBackoff(
 
 			client, err := DialEngineClient(ctxWithTimeout, url, jwtSecret)
 			if err != nil {
-				log.Error("Dial engine client error", "url", url, "error", err)
+				err := errors.New(dialError + err.Error())
+				log.Error("Dial ethclient error", "url", url, "error", err)
 				return err
 			}
 
 			engineClient = &EngineClient{client}
 			return nil
 		},
-		backoff.NewConstantBackOff(retryInterval),
+		backoff.WithMaxRetries(backoff.NewConstantBackOff(retryInterval), 100),
 	); err != nil {
 		return nil, err
 	}

@@ -47,16 +47,30 @@ func TestDialClientWithBackoff(t *testing.T) {
 	require.Equal(t, common.Big0.Uint64(), genesis.Number.Uint64())
 }
 
-// NOTE: current constant backoff will only stop if passed -1 (backoff.Stop),
-// and error does not match
-// error comes back as "dial unix: ...." instead
+func TestDialClientWithBackoff_CtxError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err := DialClientWithBackoff(
+		ctx,
+		"invalid",
+		-1,
+	)
+	require.ErrorContains(t, err, "Dial ethclient error")
+}
 
-// func TestDialClientWithBackoff_CtxError(t *testing.T) {
-// 	ctx, _ := context.WithCancel(context.Background())
-// 	_, err := DialClientWithBackoff(
-// 		ctx,
-// 		"",
-// 		-1,
-// 	)
-// 	require.ErrorContains(t, err, "Dial engine client error")
-// }
+func TestDialEngineClientWithBackoff_CtxError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
+	require.Nil(t, err)
+	require.NotEmpty(t, jwtSecret)
+
+	_, err2 := DialEngineClientWithBackoff(
+		ctx,
+		"invalid",
+		string(jwtSecret),
+		-1,
+	)
+	require.ErrorContains(t, err2, "Dial ethclient error")
+}
