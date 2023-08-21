@@ -93,7 +93,6 @@ func (s *DriverTestSuite) SetupTest() {
 	}))
 
 	_ = s.l1Prover.Start()
-
 }
 
 func (s *DriverTestSuite) TestName() {
