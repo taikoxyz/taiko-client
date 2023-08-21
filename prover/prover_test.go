@@ -91,7 +91,6 @@ func (s *ProverTestSuite) SetupTest() {
 
 	go func() {
 		_ = p.srv.Start(fmt.Sprintf(":%v", "9876"))
-
 	}()
 
 	s.proposer = prop

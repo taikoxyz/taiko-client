@@ -550,7 +550,10 @@ func (p *Proposer) assignProver(
 			continue
 		}
 
-		log.Info("prover assigned for block", "prover", resp.Prover.Hex(), "signedPayload", common.Bytes2Hex(resp.SignedPayload))
+		log.Info("prover assigned for block",
+			"prover", resp.Prover.Hex(),
+			"signedPayload", common.Bytes2Hex(resp.SignedPayload),
+		)
 
 		// TODO(jeff): do an ecrecover here, and make sure data signed is what we sent,
 		// and signed by prover we received,
