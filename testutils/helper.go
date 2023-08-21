@@ -194,7 +194,7 @@ func RandomBytes(size int) (b []byte) {
 }
 
 func RandomPort() int64 {
-	return int64(rand.Intn(4000-8000) + 4000)
+	return int64(rand.Intn(8000-4000+1) + 4000)
 }
 
 // SignatureFromRSV creates the signature bytes from r,s,v.

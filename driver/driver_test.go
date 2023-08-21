@@ -76,7 +76,7 @@ func (s *DriverTestSuite) SetupTest() {
 	s.Nil(err)
 
 	s.l1Prover = new(prover.Prover)
-	s.Nil(prover.InitFromConfig(ctx, s.l1Prover, (&prover.Config{
+	s.Nil(prover.InitFromConfig(ctx, s.l1Prover, &prover.Config{
 		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
 		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -90,11 +90,10 @@ func (s *DriverTestSuite) SetupTest() {
 		CheckProofWindowExpiredInterval: 5 * time.Second,
 		ProveUnassignedBlocks:           true,
 		HTTPServerPort:                  uint64(port),
-	})))
+	}))
 
-	go func() {
-		_ = s.l1Prover.Start()
-	}()
+	_ = s.l1Prover.Start()
+
 }
 
 func (s *DriverTestSuite) TearDownTest() {

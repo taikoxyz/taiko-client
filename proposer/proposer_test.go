@@ -57,7 +57,7 @@ func (s *ProposerTestSuite) SetupTest() {
 	s.Nil(err)
 
 	s.prover = new(prover.Prover)
-	s.Nil(prover.InitFromConfig(ctx, s.prover, (&prover.Config{
+	s.Nil(prover.InitFromConfig(ctx, s.prover, &prover.Config{
 		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
 		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -71,11 +71,9 @@ func (s *ProposerTestSuite) SetupTest() {
 		CheckProofWindowExpiredInterval: 5 * time.Second,
 		ProveUnassignedBlocks:           true,
 		HTTPServerPort:                  uint64(port),
-	})))
+	}))
 
-	go func() {
-		_ = s.prover.Start()
-	}()
+	_ = s.prover.Start()
 
 	s.p = p
 	s.cancel = cancel
