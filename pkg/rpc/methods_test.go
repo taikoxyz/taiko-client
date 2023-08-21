@@ -96,3 +96,12 @@ func TestIsJustSyncedByP2P(t *testing.T) {
 	_, err := client.IsJustSyncedByP2P(context.Background())
 	require.Nil(t, err)
 }
+
+func TestWaitTillL2ExecutionEngineSynced(t *testing.T) {
+	client := newTestClient(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := client.WaitTillL2ExecutionEngineSynced(ctx)
+	require.NotNil(t, err)
+}
