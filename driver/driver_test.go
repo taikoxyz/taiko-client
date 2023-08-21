@@ -2,7 +2,9 @@ package driver
 
 import (
 	"context"
+	"fmt"
 	"math/big"
+	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -27,6 +29,8 @@ type DriverTestSuite struct {
 
 func (s *DriverTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
+
+	port := rand.Intn(10000)
 
 	// Init driver
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
@@ -63,7 +67,7 @@ func (s *DriverTestSuite) SetupTest() {
 		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
-		ProverEndpoints:            []string{"http://localhost:9876"},
+		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
 	})))
 	s.p = p
 
@@ -85,7 +89,7 @@ func (s *DriverTestSuite) SetupTest() {
 		MaxConcurrentProvingJobs:        1,
 		CheckProofWindowExpiredInterval: 5 * time.Second,
 		ProveUnassignedBlocks:           true,
-		HTTPServerPort:                  9876,
+		HTTPServerPort:                  uint64(port),
 	})))
 
 	go func() {

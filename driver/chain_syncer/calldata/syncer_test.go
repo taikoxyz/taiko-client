@@ -2,6 +2,7 @@ package calldata
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"math/rand"
 	"os"
@@ -28,6 +29,8 @@ type CalldataSyncerTestSuite struct {
 
 func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
+
+	port := rand.Intn(10000)
 
 	state, err := state.New(context.Background(), s.RpcClient)
 	s.Nil(err)
@@ -56,6 +59,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
+		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
 	})))
 	// Init prover
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
@@ -75,7 +79,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		MaxConcurrentProvingJobs:        1,
 		CheckProofWindowExpiredInterval: 5 * time.Second,
 		ProveUnassignedBlocks:           true,
-		HTTPServerPort:                  9876,
+		HTTPServerPort:                  uint64(port),
 	})))
 
 	go func() {

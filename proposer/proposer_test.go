@@ -2,7 +2,9 @@ package proposer
 
 import (
 	"context"
+	"fmt"
 	"math/big"
+	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -27,6 +29,8 @@ type ProposerTestSuite struct {
 func (s *ProposerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
+	port := rand.Intn(10000)
+
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 
@@ -45,7 +49,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		MaxProposedTxListsPerEpoch:          1,
 		ProposeBlockTxReplacementMultiplier: 2,
 		WaitReceiptTimeout:                  10 * time.Second,
-		ProverEndpoints:                     []string{"http://localhost:9876"},
+		ProverEndpoints:                     []string{fmt.Sprintf("http://localhost:%v", port)},
 	})))
 
 	// Init prover
@@ -66,7 +70,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		MaxConcurrentProvingJobs:        1,
 		CheckProofWindowExpiredInterval: 5 * time.Second,
 		ProveUnassignedBlocks:           true,
-		HTTPServerPort:                  9876,
+		HTTPServerPort:                  uint64(port),
 	})))
 
 	go func() {
