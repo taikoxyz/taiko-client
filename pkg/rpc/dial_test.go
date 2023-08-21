@@ -74,3 +74,8 @@ func TestDialEngineClientWithBackoff_CtxError(t *testing.T) {
 	)
 	require.ErrorContains(t, err2, "Dial ethclient error")
 }
+
+func TestDialEngineClient_UrlError(t *testing.T) {
+	_, err := DialEngineClient(context.Background(), "invalid", "invalid")
+	require.NotNil(t, err)
+}
