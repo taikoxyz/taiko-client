@@ -491,12 +491,12 @@ func (p *Proposer) updateProposingTicker() {
 
 // assignProver attempts to find a prover who wants to win the block.
 // if no provers want to do it for the price we set, we increase the price, and try again.
-// TODO: increase fee on each iteration
-// TODO: calculate fee
+// TODO(jeff): increase fee on each iteration
+// TODO(jeff): calculate fee
 func (p *Proposer) assignProver(ctx context.Context, meta *encoding.TaikoL1BlockMetadataInput) ([]byte, *big.Int, error) {
 	fee := big.NewInt(100000)
 	expiry := uint64(time.Now().Add(90 * time.Minute).Unix())
-	// TODO: fee and expiry dynamically
+	// TODO(jeff): fee and expiry dynamically
 	proposeBlockReq := proposeBlockRequest{
 		Expiry: expiry,
 		Input:  meta,
@@ -510,6 +510,9 @@ func (p *Proposer) assignProver(ctx context.Context, meta *encoding.TaikoL1Block
 
 	r := bytes.NewReader(jsonBody)
 
+	// iterate over each configured endpoint, and see if someone wants to accept your block.
+	// if it is denied, we continue on to the next endpoint.
+	// if we do not find a prover, we can increase the fee up to a point, or give up.
 	for _, endpoint := range p.proverEndpoints {
 		req, err := http.NewRequestWithContext(
 			ctx,
@@ -523,7 +526,7 @@ func (p *Proposer) assignProver(ctx context.Context, meta *encoding.TaikoL1Block
 
 		req.Header.Add("Content-Type", "application/json")
 
-		// TODO: custom client with timeout
+		// TODO(jeff): custom client with timeout
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
 			continue
@@ -546,7 +549,7 @@ func (p *Proposer) assignProver(ctx context.Context, meta *encoding.TaikoL1Block
 
 		log.Info("prover assigned for block", "prover", resp.Prover.Hex(), "signedPayload", common.Bytes2Hex(resp.SignedPayload))
 
-		// TODO: do an ecrecover here, and make sure data signed is what we sent,
+		// TODO(jeff): do an ecrecover here, and make sure data signed is what we sent,
 		// and signed by prover we received,
 		// to ensure it will not revert onchain
 		encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{

@@ -24,10 +24,10 @@ func (srv *Server) ProposeBlock(c echo.Context) error {
 		return webutils.LogAndRenderErrors(c, http.StatusUnprocessableEntity, err)
 	}
 
-	// TODO: logic to determine is prover wants this block.
+	// TODO(jeff): logic to determine is prover wants this block.
 	// check fee, check expiry, determine if its feasible/profitable.
 
-	// TODO: check capacity
+	// TODO(jeff): check capacity
 
 	encoded, err := encoding.EncodeProposeBlockData(r)
 	if err != nil {

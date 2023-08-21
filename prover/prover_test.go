@@ -90,7 +90,6 @@ func (s *ProverTestSuite) SetupTest() {
 	})))
 
 	go func() {
-		// TODO: handle err
 		_ = p.srv.Start(fmt.Sprintf(":%v", "9876"))
 
 	}()
