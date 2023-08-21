@@ -96,10 +96,6 @@ func (s *DriverTestSuite) SetupTest() {
 
 }
 
-func (s *DriverTestSuite) TearDownTest() {
-	s.l1Prover.Close(context.Background())
-}
-
 func (s *DriverTestSuite) TestName() {
 	s.Equal("driver", s.d.Name())
 }

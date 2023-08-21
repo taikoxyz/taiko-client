@@ -105,10 +105,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.proposer = prop
 }
 
-func (s *ProofSubmitterTestSuite) TearDownTest() {
-	_ = s.srv.Shutdown(context.Background())
-}
-
 func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofDeadlineExceeded() {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

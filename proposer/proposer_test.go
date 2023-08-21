@@ -79,9 +79,6 @@ func (s *ProposerTestSuite) SetupTest() {
 	s.cancel = cancel
 }
 
-func (s *ProposerTestSuite) TearDownTest() {
-	s.prover.Close(context.Background())
-}
 func (s *ProposerTestSuite) TestName() {
 	s.Equal("proposer", s.p.Name())
 }
