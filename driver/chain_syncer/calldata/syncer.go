@@ -410,7 +410,7 @@ func (s *Syncer) createExecutionPayloads(
 	l1Origin *rawdb.L1Origin,
 	headBlockID *big.Int,
 	txListBytes []byte,
-	baseFeee *big.Int,
+	baseFee *big.Int,
 	withdrawals types.Withdrawals,
 ) (payloadData *engine.ExecutableData, err error) {
 	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parentHash}
@@ -428,7 +428,7 @@ func (s *Syncer) createExecutionPayloads(
 			MixHash:        event.Meta.MixHash,
 			Treasury:       event.Meta.Treasury,
 		},
-		BaseFeePerGas: baseFeee,
+		BaseFeePerGas: baseFee,
 		L1Origin:      l1Origin,
 	}
 
