@@ -30,6 +30,8 @@ type ProverTestSuite struct {
 func (s *ProverTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
+	port := testutils.RandomPort()
+
 	// Init prover
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -86,11 +88,11 @@ func (s *ProverTestSuite) SetupTest() {
 		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
-		ProverEndpoints:            []string{"http://localhost:9876"},
+		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
 	})))
 
 	go func() {
-		_ = p.srv.Start(fmt.Sprintf(":%v", "9876"))
+		_ = p.srv.Start(fmt.Sprintf(":%v", port))
 	}()
 
 	s.proposer = prop
