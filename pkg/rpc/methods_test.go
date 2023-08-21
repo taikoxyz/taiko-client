@@ -97,11 +97,17 @@ func TestIsJustSyncedByP2P(t *testing.T) {
 	require.Nil(t, err)
 }
 
-func TestWaitTillL2ExecutionEngineSynced(t *testing.T) {
+func TestWaitTillL2ExecutionEngineSyncedNewClient(t *testing.T) {
+	client := newTestClient(t)
+	err := client.WaitTillL2ExecutionEngineSynced(context.Background())
+	require.Nil(t, err)
+}
+
+func TestWaitTillL2ExecutionEngineSyncedContextErr(t *testing.T) {
 	client := newTestClient(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
 	err := client.WaitTillL2ExecutionEngineSynced(ctx)
-	require.NotNil(t, err)
+	require.ErrorContains(t, err, "context canceled")
 }
