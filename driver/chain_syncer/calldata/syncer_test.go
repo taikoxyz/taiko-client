@@ -16,6 +16,7 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/proposer"
+	"github.com/taikoxyz/taiko-client/prover"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -56,6 +57,30 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
 	})))
+	// Init prover
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	l1Prover := new(prover.Prover)
+	s.Nil(prover.InitFromConfig(context.Background(), l1Prover, (&prover.Config{
+		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:                  os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:                  common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                  common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1ProverPrivKey:                 l1ProverPrivKey,
+		OracleProverPrivateKey:          l1ProverPrivKey,
+		Dummy:                           true,
+		MaxConcurrentProvingJobs:        1,
+		CheckProofWindowExpiredInterval: 5 * time.Second,
+		ProveUnassignedBlocks:           true,
+		HTTPServerPort:                  9876,
+	})))
+
+	go func() {
+		_ = l1Prover.Start()
+	}()
 
 	s.p = prop
 }
