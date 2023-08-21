@@ -426,7 +426,6 @@ func (s *Syncer) createExecutionPayloads(
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.MixHash,
-			Treasury:       event.Meta.Treasury,
 		},
 		BaseFeePerGas: baseFeee,
 		L1Origin:      l1Origin,

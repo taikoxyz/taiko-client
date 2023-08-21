@@ -105,7 +105,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotF
 		s.validProofSubmitter.SubmitProof(
 			context.Background(), &proofProducer.ProofWithHeader{
 				BlockID: common.Big256,
-				Meta:    &bindings.TaikoDataBlockMetadata{Treasury: s.TestAddr},
+				Meta:    &bindings.TaikoDataBlockMetadata{},
 				Header:  &types.Header{},
 				ZkProof: bytes.Repeat([]byte{0xff}, 100),
 			},

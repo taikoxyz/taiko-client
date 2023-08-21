@@ -114,7 +114,7 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		return fmt.Errorf("failed to get the L2 parent block by hash (%s): %w", block.ParentHash(), err)
 	}
 
-	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId)
+	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId.Uint64())
 	if err != nil {
 		return err
 	}
@@ -263,7 +263,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
 
-		return s.rpc.TaikoL1.ProveBlock(txOpts, blockID, input)
+		return s.rpc.TaikoL1.ProveBlock(txOpts, blockID.Uint64(), input)
 	}
 
 	var maxRetry = &s.submissionMaxRetry

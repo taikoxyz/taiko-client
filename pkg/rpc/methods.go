@@ -45,6 +45,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	iter, err := c.TaikoL1.FilterBlockVerified(
 		&bind.FilterOpts{Start: stateVars.GenesisHeight, End: &stateVars.GenesisHeight, Context: ctxWithTimeout},
 		[]*big.Int{common.Big0},
+		nil,
 	)
 	if err != nil {
 		return err

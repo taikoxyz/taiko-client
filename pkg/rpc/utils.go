@@ -101,7 +101,7 @@ func NeedNewProof(
 
 	fc, err := cli.TaikoL1.GetForkChoice(
 		&bind.CallOpts{Context: ctxWithTimeout},
-		id,
+		id.Uint64(),
 		parent.Hash(),
 		uint32(parent.GasUsed),
 	)

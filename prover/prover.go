@@ -3,7 +3,6 @@ package prover
 import (
 	"context"
 	"fmt"
-	"math"
 	"math/big"
 	"strings"
 	"sync"
@@ -63,8 +62,6 @@ type Prover struct {
 	blockProvenSub   event.Subscription
 	blockVerifiedCh  chan *bindings.TaikoL1ClientBlockVerified
 	blockVerifiedSub event.Subscription
-	proverSlashedCh  chan *bindings.TaikoL1ProverPoolSlashed
-	proverSlashedSub event.Subscription
 	proveNotify      chan struct{}
 
 	// Proof related
@@ -108,13 +105,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
-		L1Endpoint:               cfg.L1WsEndpoint,
-		L2Endpoint:               cfg.L2WsEndpoint,
-		TaikoL1Address:           cfg.TaikoL1Address,
-		TaikoL2Address:           cfg.TaikoL2Address,
-		TaikoProverPoolL1Address: cfg.TaikoProverPoolL1Address,
-		RetryInterval:            cfg.BackOffRetryInterval,
-		Timeout:                  cfg.RPCTimeout,
+		L1Endpoint:     cfg.L1WsEndpoint,
+		L2Endpoint:     cfg.L2WsEndpoint,
+		TaikoL1Address: cfg.TaikoL1Address,
+		TaikoL2Address: cfg.TaikoL2Address,
+		RetryInterval:  cfg.BackOffRetryInterval,
+		Timeout:        cfg.RPCTimeout,
 	}); err != nil {
 		return err
 	}
@@ -131,12 +127,11 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.submitProofTxMutex = &sync.Mutex{}
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 
-	chBufferSize := p.protocolConfigs.BlockMaxProposals.Uint64()
+	chBufferSize := p.protocolConfigs.BlockMaxProposals
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	p.blockProvenCh = make(chan *bindings.TaikoL1ClientBlockProven, chBufferSize)
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
-	p.proverSlashedCh = make(chan *bindings.TaikoL1ProverPoolSlashed, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
@@ -278,12 +273,6 @@ func (p *Prover) eventLoop() {
 		case e := <-p.blockProvenCh:
 			if err := p.onBlockProven(p.ctx, e); err != nil {
 				log.Error("Handle BlockProven event error", "error", err)
-			}
-		case e := <-p.proverSlashedCh:
-			if e.Addr.Hex() == p.proverAddress.Hex() {
-				log.Info("Prover slashed", "blockID", e.BlockId, "address", e.Addr.Hex(), "amount", e.Amount)
-				metrics.ProverSlashedCounter.Inc(1)
-				metrics.ProverSlashedAmount.Inc(int64(e.Amount))
 			}
 		case <-forceProvingTicker.C:
 			reqProving()
@@ -453,7 +442,7 @@ func (p *Prover) onBlockProposed(
 			p.cancelProof(ctx, event.Meta.Id)
 		}
 
-		block, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId)
+		block, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId.Uint64())
 		if err != nil {
 			return err
 		}
@@ -461,9 +450,8 @@ func (p *Prover) onBlockProposed(
 		log.Info(
 			"Proposed block information",
 			"blockID", event.BlockId,
-			"prover", block.AssignedProver.Hex(),
+			"prover", block.Prover,
 			"proposedAt", block.ProposedAt,
-			"proofWindow", block.ProofWindow,
 		)
 
 		var skipProofWindowExpiredCheck bool
@@ -478,7 +466,7 @@ func (p *Prover) onBlockProposed(
 				// and always submit proof. otherwise, oracleProver follows same proof logic as regular.
 				forkChoice, err := p.rpc.TaikoL1.GetForkChoice(
 					&bind.CallOpts{Context: ctx},
-					event.BlockId,
+					event.BlockId.Uint64(),
 					parent.Hash(),
 					uint32(parent.GasUsed),
 				)
@@ -518,16 +506,16 @@ func (p *Prover) onBlockProposed(
 		}
 
 		if !skipProofWindowExpiredCheck {
-			proofWindowExpiresAt := block.ProposedAt + block.ProofWindow
+			proofWindowExpiresAt := block.ProposedAt + uint64(p.protocolConfigs.ProofWindow)
 			proofWindowExpired := uint64(time.Now().Unix()) > proofWindowExpiresAt
 			// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
-			if block.AssignedProver != p.proverAddress && block.AssignedProver != zeroAddress && !proofWindowExpired {
+			if block.Prover != p.proverAddress && block.Prover != zeroAddress && !proofWindowExpired {
 				log.Info(
 					"Proposed block not proveable",
 					"blockID",
 					event.BlockId,
 					"prover",
-					block.AssignedProver.Hex(),
+					block.Prover.Hex(),
 					"proofWindowExpiresAt",
 					proofWindowExpiresAt,
 					"timeToExpire",
@@ -541,7 +529,7 @@ func (p *Prover) onBlockProposed(
 						"blockID",
 						event.BlockId,
 						"prover",
-						block.AssignedProver.Hex(),
+						block.Prover.Hex(),
 						"proofWindowExpiresAt",
 						proofWindowExpiresAt,
 					)
@@ -556,7 +544,7 @@ func (p *Prover) onBlockProposed(
 
 			// if set not to prove unassigned blocks, this block is still not provable
 			// by us even though its open proving.
-			if (block.AssignedProver == zeroAddress || proofWindowExpired) && !p.cfg.ProveUnassignedBlocks {
+			if (block.Prover == zeroAddress || proofWindowExpired) && !p.cfg.ProveUnassignedBlocks {
 				log.Info(
 					"Skipping proposed open proving block, not assigned to us",
 					"blockID", event.BlockId,
@@ -567,7 +555,7 @@ func (p *Prover) onBlockProposed(
 			log.Info(
 				"Proposed block is proveable",
 				"blockID", event.BlockId,
-				"prover", block.AssignedProver.Hex(),
+				"prover", block.Prover.Hex(),
 				"proofWindowExpired", proofWindowExpired,
 			)
 
@@ -644,24 +632,13 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(event.BlockId.Int64())
 
-	var reward int64
-	if event.ProofReward > math.MaxInt64 {
-		reward = math.MaxInt64
-	} else {
-		reward = int64(event.ProofReward)
-	}
-	metrics.ProverAllProofRewardGauge.Update(reward)
-	if event.Prover == p.proverAddress {
-		metrics.ProverProofRewardGauge.Update(reward)
-	}
-
 	p.latestVerifiedL1Height = event.Raw.BlockNumber
 
 	log.Info(
 		"New verified block",
 		"blockID", event.BlockId,
 		"hash", common.BytesToHash(event.BlockHash[:]),
-		"reward", event.ProofReward,
+		"prover", event.Prover,
 	)
 
 	// cancel any proofs being generated for this block
@@ -775,7 +752,6 @@ func (p *Prover) initSubscription() {
 	p.blockProposedSub = rpc.SubscribeBlockProposed(p.rpc.TaikoL1, p.blockProposedCh)
 	p.blockVerifiedSub = rpc.SubscribeBlockVerified(p.rpc.TaikoL1, p.blockVerifiedCh)
 	p.blockProvenSub = rpc.SubscribeBlockProven(p.rpc.TaikoL1, p.blockProvenCh)
-	p.proverSlashedSub = rpc.SubscribeSlashed(p.rpc.TaikoProverPoolL1, p.proverSlashedCh)
 }
 
 // closeSubscription closes all subscriptions.
@@ -867,12 +843,12 @@ func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
 // checkProofWindowExpired checks a single instance of a block to see if its proof winodw has expired
 // and the proof is now able to be submitted by anyone, not just the blocks assigned prover.
 func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId uint64) error {
-	block, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, new(big.Int).SetUint64(blockId))
+	block, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, blockId)
 	if err != nil {
 		return encoding.TryParsingCustomError(err)
 	}
 
-	isExpired := time.Now().Unix() > int64(block.ProposedAt)+int64(block.ProofWindow)
+	isExpired := time.Now().Unix() > int64(block.ProposedAt)+int64(p.protocolConfigs.ProofWindow)
 
 	if isExpired {
 		log.Debug(
@@ -891,7 +867,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 
 		forkChoice, err := p.rpc.TaikoL1.GetForkChoice(
 			&bind.CallOpts{Context: ctx},
-			new(big.Int).SetUint64(blockId),
+			blockId,
 			parent.Hash(),
 			uint32(parent.GasUsed),
 		)
