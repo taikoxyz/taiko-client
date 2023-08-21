@@ -69,7 +69,9 @@ func (s *ProposerTestSuite) SetupTest() {
 		HTTPServerPort:                  9876,
 	})))
 
-	go l1Prover.Start()
+	go func() {
+		_ = l1Prover.Start()
+	}()
 
 	s.p = p
 	s.cancel = cancel

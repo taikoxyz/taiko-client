@@ -493,7 +493,10 @@ func (p *Proposer) updateProposingTicker() {
 // if no provers want to do it for the price we set, we increase the price, and try again.
 // TODO(jeff): increase fee on each iteration
 // TODO(jeff): calculate fee
-func (p *Proposer) assignProver(ctx context.Context, meta *encoding.TaikoL1BlockMetadataInput) ([]byte, *big.Int, error) {
+func (p *Proposer) assignProver(
+	ctx context.Context,
+	meta *encoding.TaikoL1BlockMetadataInput,
+) ([]byte, *big.Int, error) {
 	fee := big.NewInt(100000)
 	expiry := uint64(time.Now().Add(90 * time.Minute).Unix())
 	// TODO(jeff): fee and expiry dynamically

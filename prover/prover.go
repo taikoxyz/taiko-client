@@ -85,8 +85,7 @@ type Prover struct {
 	checkProofWindowExpiredInterval time.Duration
 
 	// capacity-related configs
-	maxCapacity     uint64
-	currentCapacity uint64
+	maxCapacity uint64
 
 	ctx context.Context
 	wg  sync.WaitGroup

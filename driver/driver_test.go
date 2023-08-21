@@ -88,7 +88,9 @@ func (s *DriverTestSuite) SetupTest() {
 		HTTPServerPort:                  9876,
 	})))
 
-	go l1Prover.Start()
+	go func() {
+		_ = l1Prover.Start()
+	}()
 }
 
 func (s *DriverTestSuite) TestName() {

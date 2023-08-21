@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -46,7 +45,7 @@ func Test_ProposeBlock(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := testutils.NewUnauthenticatedRequest(
 				echo.POST,
-				fmt.Sprintf("/proposeBlock"),
+				"/proposeBlock",
 				tt.req,
 			)
 
