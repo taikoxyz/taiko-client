@@ -45,7 +45,7 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
-          branch: prover_abstraction_and_protocol_simplification
+          ref: prover_abstraction_and_protocol_simplification
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
