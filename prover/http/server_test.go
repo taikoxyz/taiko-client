@@ -4,15 +4,21 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	echo "github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 
 func newTestServer(url string) *Server {
+	l1ProverPrivKey, _ := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+
 	srv := &Server{
-		echo: echo.New(),
+		echo:             echo.New(),
+		proverPrivateKey: l1ProverPrivKey,
 	}
 
 	srv.configureMiddleware()

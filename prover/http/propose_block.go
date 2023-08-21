@@ -15,6 +15,9 @@ type proposeBlockResp struct {
 	Prover        common.Address `json:"prover"`
 }
 
+// ProposeBlock handles a propose block request, decides if this prover wants to
+// handle this block, and if so, returns a signed payload the proposer
+// can submit onchain.
 func (srv *Server) ProposeBlock(c echo.Context) error {
 	r := &encoding.ProposeBlockData{}
 	if err := c.Bind(r); err != nil {
