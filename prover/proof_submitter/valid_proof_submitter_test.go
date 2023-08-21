@@ -3,6 +3,8 @@ package submitter
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"math/rand"
 	"os"
 	"sync"
 	"testing"
@@ -17,6 +19,7 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/proposer"
+	"github.com/taikoxyz/taiko-client/prover"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
@@ -32,6 +35,8 @@ type ProofSubmitterTestSuite struct {
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
+
+	port := rand.Intn(10000)
 
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -85,7 +90,29 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
+		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
 	})))
+
+	l1Prover := new(prover.Prover)
+	s.Nil(prover.InitFromConfig(context.Background(), l1Prover, (&prover.Config{
+		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:                  os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:                  common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                  common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1ProverPrivKey:                 l1ProverPrivKey,
+		OracleProverPrivateKey:          l1ProverPrivKey,
+		Dummy:                           true,
+		MaxConcurrentProvingJobs:        1,
+		CheckProofWindowExpiredInterval: 5 * time.Second,
+		ProveUnassignedBlocks:           true,
+		HTTPServerPort:                  uint64(port),
+	})))
+
+	go func() {
+		_ = l1Prover.Start()
+	}()
 
 	s.proposer = prop
 }
