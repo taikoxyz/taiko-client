@@ -24,6 +24,8 @@ func (srv *Server) ProposeBlock(c echo.Context) error {
 	// TODO: logic to determine is prover wants this block.
 	// check fee, check expiry, determine if its feasible/profitable.
 
+	// TODO: check capacity
+
 	encoded, err := encoding.EncodeProposeBlockData(r)
 	if err != nil {
 		return webutils.LogAndRenderErrors(c, http.StatusUnprocessableEntity, err)
@@ -36,7 +38,7 @@ func (srv *Server) ProposeBlock(c echo.Context) error {
 		return webutils.LogAndRenderErrors(c, http.StatusUnprocessableEntity, err)
 	}
 
-	signed[65] = uint8(uint(signed[65])) + 27
+	signed[64] = uint8(uint(signed[64])) + 27
 
 	resp := &proposeBlockResp{
 		SignedPayload: signed,
