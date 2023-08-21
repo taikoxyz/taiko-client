@@ -3,9 +3,11 @@ package testutils
 import (
 	"context"
 	"crypto/ecdsa"
+	"math/big"
 	"os"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -64,6 +66,13 @@ func (s *ClientTestSuite) SetupTest() {
 
 	s.Nil(rpcCli.L1RawRPC.CallContext(context.Background(), &s.testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(s.testnetL1SnapshotID)
+
+	opts, err := bind.NewKeyedTransactorWithChainID(s.TestAddrPrivKey, rpcCli.L1ChainID)
+	s.Nil(err)
+
+	amt, _ := new(big.Int).SetString("10000000000000000000000", 10)
+	_, err = rpcCli.TaikoL1.DepositTaikoToken(opts, amt)
+	s.Nil(err)
 }
 
 func (s *ClientTestSuite) TearDownTest() {

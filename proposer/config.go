@@ -105,9 +105,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	var proverEndpoints []string
-	for _, endpoint := range strings.Split(c.String(flags.ProverEndpoints.Name), ",") {
-		proverEndpoints = append(proverEndpoints, endpoint)
-	}
+
+	proverEndpoints = append(proverEndpoints, strings.Split(c.String(flags.ProverEndpoints.Name), ",")...)
 
 	return &Config{
 		L1Endpoint:                          c.String(flags.L1WSEndpoint.Name),

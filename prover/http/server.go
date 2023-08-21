@@ -20,14 +20,15 @@ type Server struct {
 }
 
 type NewServerOpts struct {
-	proverPrivateKey *ecdsa.PrivateKey
+	ProverPrivateKey *ecdsa.PrivateKey
 }
 
 func NewServer(opts NewServerOpts) (*Server, error) {
-	address := crypto.PubkeyToAddress(opts.proverPrivateKey.PublicKey)
+	address := crypto.PubkeyToAddress(opts.ProverPrivateKey.PublicKey)
 	srv := &Server{
-		proverPrivateKey: opts.proverPrivateKey,
+		proverPrivateKey: opts.ProverPrivateKey,
 		proverAddress:    address,
+		echo:             echo.New(),
 	}
 
 	srv.configureMiddleware()

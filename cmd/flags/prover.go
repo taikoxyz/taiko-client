@@ -87,12 +87,6 @@ var (
 		Category: proverCategory,
 		Value:    "",
 	}
-	TaikoProverPoolL1Address = &cli.StringFlag{
-		Name:     "taikoProverPoolL1",
-		Usage:    "TaikoProverPoolL1 contract address",
-		Required: true,
-		Category: proverCategory,
-	}
 	CheckProofWindowExpiredInterval = &cli.Uint64Flag{
 		Name:     "prover.checkProofWindowExpiredInterval",
 		Usage:    "Interval in seconds to check for expired proof windows from other provers",
@@ -135,7 +129,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	OracleProofSubmissionDelay,
 	ProofSubmissionMaxRetry,
 	Graffiti,
-	TaikoProverPoolL1Address,
 	CheckProofWindowExpiredInterval,
 	ProveUnassignedBlocks,
 	ProveBlockTxGasLimit,

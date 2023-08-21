@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/prover"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -46,6 +47,29 @@ func (s *ProposerTestSuite) SetupTest() {
 		WaitReceiptTimeout:                  10 * time.Second,
 		ProverEndpoints:                     []string{"http://localhost:9876"},
 	})))
+
+	// Init prover
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	l1Prover := new(prover.Prover)
+	s.Nil(prover.InitFromConfig(ctx, l1Prover, (&prover.Config{
+		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:                  os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:                  common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                  common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1ProverPrivKey:                 l1ProverPrivKey,
+		OracleProverPrivateKey:          l1ProverPrivKey,
+		Dummy:                           true,
+		MaxConcurrentProvingJobs:        1,
+		CheckProofWindowExpiredInterval: 5 * time.Second,
+		ProveUnassignedBlocks:           true,
+		HTTPServerPort:                  9876,
+	})))
+
+	go l1Prover.Start()
 
 	s.p = p
 	s.cancel = cancel
@@ -123,11 +147,13 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 }
 
 func (s *ProposerTestSuite) TestSendProposeBlockTx() {
+	fee := big.NewInt(10000)
 	opts, err := getTxOpts(
 		context.Background(),
 		s.p.rpc.L1,
 		s.p.l1ProposerPrivKey,
 		s.RpcClient.L1ChainID,
+		fee,
 	)
 	s.Nil(err)
 	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
@@ -163,7 +189,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		CacheTxListInfo: false,
 	}
 
-	assignment, err := s.p.assignProver(context.Background(), meta)
+	assignment, fee, err := s.p.assignProver(context.Background(), meta)
 	s.Nil(err)
 
 	newTx, err := s.p.sendProposeBlockTx(
@@ -172,6 +198,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		encoded,
 		&nonce,
 		assignment,
+		fee,
 		true,
 	)
 	s.Nil(err)

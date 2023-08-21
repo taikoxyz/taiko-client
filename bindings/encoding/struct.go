@@ -58,9 +58,9 @@ type ProverAssignment struct {
 }
 
 type ProposeBlockData struct {
-	Input  []byte   `json:"input"`
-	Fee    *big.Int `json:"fee"`
-	Expiry uint64   `json:"expiry"`
+	Input  TaikoL1BlockMetadataInput `json:"input"`
+	Fee    *big.Int                  `json:"fee"`
+	Expiry uint64                    `json:"expiry"`
 }
 
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.

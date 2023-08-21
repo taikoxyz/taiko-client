@@ -38,9 +38,9 @@ var (
 )
 
 type proposeBlockRequest struct {
-	Input  []byte `json:"input"`
-	Fee    uint64 `json:"fee"`
-	Expiry int64  `json:"expiry"`
+	Input  *encoding.TaikoL1BlockMetadataInput `json:"input"`
+	Fee    *big.Int                            `json:"fee"`
+	Expiry uint64                              `json:"expiry"`
 }
 
 type proposeBlockResponse struct {
@@ -333,6 +333,7 @@ func (p *Proposer) sendProposeBlockTx(
 	txListBytes []byte,
 	nonce *uint64,
 	assignment []byte,
+	fee *big.Int,
 	isReplacement bool,
 ) (*types.Transaction, error) {
 	// Propose the transactions list
@@ -340,7 +341,7 @@ func (p *Proposer) sendProposeBlockTx(
 	if err != nil {
 		return nil, err
 	}
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID, fee)
 	if err != nil {
 		return nil, err
 	}
@@ -404,7 +405,7 @@ func (p *Proposer) ProposeTxList(
 	txNum uint,
 	nonce *uint64,
 ) error {
-	assignment, err := p.assignProver(ctx, meta)
+	assignment, fee, err := p.assignProver(ctx, meta)
 	if err != nil {
 		return err
 	}
@@ -418,7 +419,7 @@ func (p *Proposer) ProposeTxList(
 			if ctx.Err() != nil {
 				return nil
 			}
-			if tx, err = p.sendProposeBlockTx(ctx, meta, txListBytes, nonce, assignment, isReplacement); err != nil {
+			if tx, err = p.sendProposeBlockTx(ctx, meta, txListBytes, nonce, assignment, fee, isReplacement); err != nil {
 				log.Warn("Failed to send propose block transaction, retrying", "error", encoding.TryParsingCustomError(err))
 				if strings.Contains(err.Error(), txpool.ErrReplaceUnderpriced.Error()) {
 					isReplacement = true
@@ -488,27 +489,23 @@ func (p *Proposer) updateProposingTicker() {
 	p.proposingTimer = time.NewTimer(duration)
 }
 
-// assignProver attemtps to find a prover who wants to win the block.
+// assignProver attempts to find a prover who wants to win the block.
 // if no provers want to do it for the price we set, we increase the price, and try again.
 // TODO: increase fee on each iteration
 // TODO: calculate fee
-func (p *Proposer) assignProver(ctx context.Context, meta *encoding.TaikoL1BlockMetadataInput) ([]byte, error) {
-	// Propose the transactions list
-	inputs, err := encoding.EncodeProposeBlockInput(meta)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: fee and expiry
+func (p *Proposer) assignProver(ctx context.Context, meta *encoding.TaikoL1BlockMetadataInput) ([]byte, *big.Int, error) {
+	fee := big.NewInt(100000)
+	expiry := uint64(time.Now().Add(90 * time.Minute).Unix())
+	// TODO: fee and expiry dynamically
 	proposeBlockReq := proposeBlockRequest{
-		Expiry: time.Now().Add(90 * time.Minute).Unix(),
-		Input:  inputs,
-		Fee:    1,
+		Expiry: expiry,
+		Input:  meta,
+		Fee:    fee,
 	}
 
 	jsonBody, err := json.Marshal(proposeBlockReq)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	r := bytes.NewReader(jsonBody)
@@ -547,17 +544,24 @@ func (p *Proposer) assignProver(ctx context.Context, meta *encoding.TaikoL1Block
 			continue
 		}
 
+		log.Info("prover assigned for block", "prover", resp.Prover.Hex(), "signedPayload", common.Bytes2Hex(resp.SignedPayload))
+
 		// TODO: do an ecrecover here, and make sure data signed is what we sent,
 		// and signed by prover we received,
 		// to ensure it will not revert onchain
-		return encoding.EncodeProverAssignment(&encoding.ProverAssignment{
+		encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
 			Prover: resp.Prover,
-			Expiry: uint64(proposeBlockReq.Expiry),
+			Expiry: proposeBlockReq.Expiry,
 			Data:   resp.SignedPayload,
 		})
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return encoded, fee, nil
 	}
 
-	return nil, errors.New("unable to find prover")
+	return nil, nil, errors.New("unable to find prover")
 }
 
 // Name returns the application name.
@@ -576,6 +580,7 @@ func getTxOpts(
 	cli *rpc.EthClient,
 	privKey *ecdsa.PrivateKey,
 	chainID *big.Int,
+	fee *big.Int,
 ) (*bind.TransactOpts, error) {
 	opts, err := bind.NewKeyedTransactorWithChainID(privKey, chainID)
 	if err != nil {
@@ -592,6 +597,8 @@ func getTxOpts(
 	}
 
 	opts.GasTipCap = gasTipCap
+
+	opts.Value = fee
 
 	return opts, nil
 }

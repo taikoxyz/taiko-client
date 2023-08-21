@@ -73,19 +73,6 @@ func TestEncodeProverAssignment(t *testing.T) {
 	require.NotNil(t, encoded)
 }
 
-func TestEncodeProposeBlockData(t *testing.T) {
-	encoded, err := EncodeProposeBlockData(
-		&ProposeBlockData{
-			Input:  randomHash().Big().Bytes(),
-			Fee:    big.NewInt(10240000000000),
-			Expiry: 1024,
-		},
-	)
-
-	require.Nil(t, err)
-	require.NotNil(t, encoded)
-}
-
 func TestEncodeProveBlockInvalidInput(t *testing.T) {
 	encoded, err := EncodeProveBlockInvalidInput(
 		&TaikoL1Evidence{

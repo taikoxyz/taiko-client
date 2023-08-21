@@ -20,7 +20,6 @@ type Config struct {
 	L2WsEndpoint                    string
 	L2HttpEndpoint                  string
 	TaikoL1Address                  common.Address
-	TaikoProverPoolL1Address        common.Address
 	TaikoL2Address                  common.Address
 	L1ProverPrivKey                 *ecdsa.PrivateKey
 	ZKEvmRpcdEndpoint               string
@@ -125,7 +124,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L2HttpEndpoint:                  c.String(flags.L2HTTPEndpoint.Name),
 		TaikoL1Address:                  common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                  common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-		TaikoProverPoolL1Address:        common.HexToAddress(c.String(flags.TaikoProverPoolL1Address.Name)),
 		L1ProverPrivKey:                 l1ProverPrivKey,
 		ZKEvmRpcdEndpoint:               c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath:             c.String(flags.ZkEvmRpcdParamsPath.Name),

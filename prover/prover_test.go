@@ -2,6 +2,7 @@ package prover
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -42,7 +43,6 @@ func (s *ProverTestSuite) SetupTest() {
 		L2HttpEndpoint:                  os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
 		TaikoL1Address:                  common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:                  common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoProverPoolL1Address:        common.HexToAddress(os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")),
 		L1ProverPrivKey:                 l1ProverPrivKey,
 		OracleProverPrivateKey:          l1ProverPrivKey,
 		Dummy:                           true,
@@ -86,7 +86,14 @@ func (s *ProverTestSuite) SetupTest() {
 		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
+		ProverEndpoints:            []string{"http://localhost:9876"},
 	})))
+
+	go func() {
+		// TODO: handle err
+		_ = p.srv.Start(fmt.Sprintf(":%v", "9876"))
+
+	}()
 
 	s.proposer = prop
 }

@@ -111,9 +111,14 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.currentBlocksWaitingForProofWindow = make(map[uint64]uint64, 0)
 	p.currentBlocksWaitingForProofWindowMutex = &sync.Mutex{}
 	p.maxCapacity = cfg.Capacity
-	p.srv, err = http.NewServer(http.NewServerOpts{})
-	if err != nil {
-		return err
+
+	if !p.cfg.OracleProver {
+		p.srv, err = http.NewServer(http.NewServerOpts{
+			ProverPrivateKey: p.cfg.L1ProverPrivKey,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	// Clients
@@ -301,7 +306,9 @@ func (p *Prover) eventLoop() {
 // Close closes the prover instance.
 func (p *Prover) Close(ctx context.Context) {
 	p.closeSubscription()
-	p.srv.Shutdown(ctx)
+	if err := p.srv.Shutdown(ctx); err != nil {
+		log.Error("Error shutting down http server", "error", err)
+	}
 	p.wg.Wait()
 }
 

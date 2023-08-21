@@ -152,8 +152,9 @@ var (
 	}
 	proposeBlockDataComponents = []abi.ArgumentMarshaling{
 		{
-			Name: "input",
-			Type: "bytes",
+			Name:       "input",
+			Type:       "tuple",
+			Components: blockMetadataInputComponents,
 		},
 		{
 			Name: "fee",

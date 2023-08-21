@@ -14,6 +14,7 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/proposer"
+	"github.com/taikoxyz/taiko-client/prover"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -62,8 +63,32 @@ func (s *DriverTestSuite) SetupTest() {
 		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
+		ProverEndpoints:            []string{"http://localhost:9876"},
 	})))
 	s.p = p
+
+	// Init prover
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	l1Prover := new(prover.Prover)
+	s.Nil(prover.InitFromConfig(ctx, l1Prover, (&prover.Config{
+		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:                  os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:                  common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                  common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1ProverPrivKey:                 l1ProverPrivKey,
+		OracleProverPrivateKey:          l1ProverPrivKey,
+		Dummy:                           true,
+		MaxConcurrentProvingJobs:        1,
+		CheckProofWindowExpiredInterval: 5 * time.Second,
+		ProveUnassignedBlocks:           true,
+		HTTPServerPort:                  9876,
+	})))
+
+	go l1Prover.Start()
 }
 
 func (s *DriverTestSuite) TestName() {

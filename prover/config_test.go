@@ -11,14 +11,13 @@ import (
 )
 
 var (
-	l1WsEndpoint      = os.Getenv("L1_NODE_WS_ENDPOINT")
-	l1HttpEndpoint    = os.Getenv("L1_NODE_HTTP_ENDPOINT")
-	l2WsEndpoint      = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
-	l2HttpEndpoint    = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
-	taikoL1           = os.Getenv("TAIKO_L1_ADDRESS")
-	taikoL2           = os.Getenv("TAIKO_L2_ADDRESS")
-	taikoProverPoolL1 = os.Getenv("TAIKO_PROVER_POOL_L1_ADDRESS")
-	rpcTimeout        = 5 * time.Second
+	l1WsEndpoint   = os.Getenv("L1_NODE_WS_ENDPOINT")
+	l1HttpEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
+	l2WsEndpoint   = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
+	l2HttpEndpoint = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+	taikoL1        = os.Getenv("TAIKO_L1_ADDRESS")
+	taikoL2        = os.Getenv("TAIKO_L2_ADDRESS")
+	rpcTimeout     = 5 * time.Second
 )
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
@@ -32,7 +31,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		s.Equal(l2HttpEndpoint, c.L2HttpEndpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
-		s.Equal(taikoProverPoolL1, c.TaikoProverPoolL1Address.String())
 		s.Equal(
 			crypto.PubkeyToAddress(s.p.cfg.L1ProverPrivKey.PublicKey),
 			crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey),
@@ -62,7 +60,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.L2HTTPEndpoint.Name, l2HttpEndpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
-		"-" + flags.TaikoProverPoolL1Address.Name, taikoProverPoolL1,
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.StartingBlockID.Name, "0",
 		"-" + flags.RPCTimeout.Name, "5",
@@ -87,7 +84,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"-" + flags.L2HTTPEndpoint.Name, l2HttpEndpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
-		"-" + flags.TaikoProverPoolL1Address.Name, taikoProverPoolL1,
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Dummy.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
@@ -177,7 +173,6 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.BoolFlag{Name: flags.OracleProver.Name},
 		&cli.StringFlag{Name: flags.OracleProverPrivateKey.Name},
 		&cli.StringFlag{Name: flags.Graffiti.Name},
-		&cli.StringFlag{Name: flags.TaikoProverPoolL1Address.Name},
 		&cli.Uint64Flag{Name: flags.CheckProofWindowExpiredInterval.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
