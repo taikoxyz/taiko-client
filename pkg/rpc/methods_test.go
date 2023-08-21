@@ -3,8 +3,10 @@ package rpc
 import (
 	"context"
 	"math/big"
+	"os"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 )
@@ -110,4 +112,43 @@ func TestWaitTillL2ExecutionEngineSyncedContextErr(t *testing.T) {
 
 	err := client.WaitTillL2ExecutionEngineSynced(ctx)
 	require.ErrorContains(t, err, "context canceled")
+}
+
+func TestGetPoolContentValid(t *testing.T) {
+	client := newTestClient(t)
+	configs, err := client.TaikoL1.GetConfig(&bind.CallOpts{Context: context.Background()})
+	require.Nil(t, err)
+	goldenTouchAddress, err := client.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	require.Nil(t, err)
+	parent, err := client.L2.BlockByNumber(context.Background(), nil)
+	require.Nil(t, err)
+	baseFee, err := client.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
+	require.Nil(t, err)
+	maxTransactions := configs.BlockMaxTransactions
+	gasLimit := configs.BlockMaxGasLimit
+	maxBytes := configs.BlockMaxTxListBytes
+
+	txPools := []common.Address{goldenTouchAddress}
+
+	_, err2 := client.GetPoolContent(
+		context.Background(),
+		goldenTouchAddress,
+		baseFee,
+		maxTransactions,
+		gasLimit,
+		maxBytes,
+		txPools,
+		maxTransactions,
+	)
+	require.Nil(t, err2)
+}
+
+func TestGetStorageRootNewestBlock(t *testing.T) {
+	client := newTestClient(t)
+	_, err := client.GetStorageRoot(
+		context.Background(),
+		client.L1GethClient,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
+		nil)
+	require.Nil(t, err)
 }
