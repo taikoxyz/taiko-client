@@ -51,6 +51,18 @@ type TaikoL1BlockMetadataInput struct {
 	CacheTxListInfo bool
 }
 
+type ProverAssignment struct {
+	Prover common.Address
+	Expiry uint64
+	Data   []byte
+}
+
+type ProposeBlockData struct {
+	Input  []byte   `json:"input"`
+	Fee    *big.Int `json:"fee"`
+	Expiry uint64   `json:"expiry"`
+}
+
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.
 func FromGethHeader(header *types.Header) *BlockHeader {
 	baseFeePerGas := header.BaseFee

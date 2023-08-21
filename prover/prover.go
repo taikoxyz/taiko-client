@@ -21,6 +21,7 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/prover/http"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/urfave/cli/v2"
@@ -41,6 +42,9 @@ type Prover struct {
 
 	// Clients
 	rpc *rpc.Client
+
+	// HTTP Server
+	srv *http.Server
 
 	// Contract configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -80,6 +84,10 @@ type Prover struct {
 	// interval settings
 	checkProofWindowExpiredInterval time.Duration
 
+	// capacity-related configs
+	maxCapacity     uint64
+	currentCapacity uint64
+
 	ctx context.Context
 	wg  sync.WaitGroup
 }
@@ -102,6 +110,11 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.currentBlocksBeingProvenMutex = &sync.Mutex{}
 	p.currentBlocksWaitingForProofWindow = make(map[uint64]uint64, 0)
 	p.currentBlocksWaitingForProofWindowMutex = &sync.Mutex{}
+	p.maxCapacity = cfg.Capacity
+	p.srv, err = http.NewServer(http.NewServerOpts{})
+	if err != nil {
+		return err
+	}
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -200,6 +213,11 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 func (p *Prover) Start() error {
 	p.wg.Add(1)
 	p.initSubscription()
+	go func() {
+		// TODO: handle err
+		_ = p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort))
+
+	}()
 	go p.eventLoop()
 
 	return nil
@@ -281,8 +299,9 @@ func (p *Prover) eventLoop() {
 }
 
 // Close closes the prover instance.
-func (p *Prover) Close() {
+func (p *Prover) Close(ctx context.Context) {
 	p.closeSubscription()
+	p.srv.Shutdown(ctx)
 	p.wg.Wait()
 }
 

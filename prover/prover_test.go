@@ -158,7 +158,7 @@ func (s *ProverTestSuite) TestCheckChainVerification() {
 func (s *ProverTestSuite) TestStartClose() {
 	s.Nil(s.p.Start())
 	s.cancel()
-	s.NotPanics(s.p.Close)
+	s.NotPanics(func() { s.p.Close(context.Background()) })
 }
 
 func TestProverTestSuite(t *testing.T) {

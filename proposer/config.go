@@ -32,6 +32,7 @@ type Config struct {
 	RPCTimeout                          *time.Duration
 	WaitReceiptTimeout                  time.Duration
 	ProposeBlockTxGasTipCap             *big.Int
+	ProverEndpoints                     []string
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -103,6 +104,11 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proposeBlockTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProposeBlockTxGasTipCap.Name))
 	}
 
+	var proverEndpoints []string
+	for _, endpoint := range strings.Split(c.String(flags.ProverEndpoints.Name), ",") {
+		proverEndpoints = append(proverEndpoints, endpoint)
+	}
+
 	return &Config{
 		L1Endpoint:                          c.String(flags.L1WSEndpoint.Name),
 		L2Endpoint:                          c.String(flags.L2HTTPEndpoint.Name),
@@ -121,5 +127,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		RPCTimeout:                          timeout,
 		WaitReceiptTimeout:                  time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
 		ProposeBlockTxGasTipCap:             proposeBlockTxGasTipCap,
+		ProverEndpoints:                     proverEndpoints,
 	}, nil
 }

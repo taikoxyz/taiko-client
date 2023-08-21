@@ -44,6 +44,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		MaxProposedTxListsPerEpoch:          1,
 		ProposeBlockTxReplacementMultiplier: 2,
 		WaitReceiptTimeout:                  10 * time.Second,
+		ProverEndpoints:                     []string{"http://localhost:9876"},
 	})))
 
 	s.p = p
@@ -154,17 +155,23 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
+	meta := &encoding.TaikoL1BlockMetadataInput{
+		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
+		TxListHash:      crypto.Keccak256Hash(encoded),
+		TxListByteStart: common.Big0,
+		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
+		CacheTxListInfo: false,
+	}
+
+	assignment, err := s.p.assignProver(context.Background(), meta)
+	s.Nil(err)
+
 	newTx, err := s.p.sendProposeBlockTx(
 		context.Background(),
-		&encoding.TaikoL1BlockMetadataInput{
-			Beneficiary:     s.p.L2SuggestedFeeRecipient(),
-			TxListHash:      crypto.Keccak256Hash(encoded),
-			TxListByteStart: common.Big0,
-			TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
-			CacheTxListInfo: false,
-		},
+		meta,
 		encoded,
 		&nonce,
+		assignment,
 		true,
 	)
 	s.Nil(err)
@@ -183,7 +190,7 @@ func (s *ProposerTestSuite) TestUpdateProposingTicker() {
 func (s *ProposerTestSuite) TestStartClose() {
 	s.Nil(s.p.Start())
 	s.cancel()
-	s.NotPanics(s.p.Close)
+	s.NotPanics(func() { s.p.Close(context.Background()) })
 }
 
 // TODO: not working

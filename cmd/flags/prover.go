@@ -25,6 +25,12 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
+	ProverCapacity = &cli.Uint64Flag{
+		Name:     "prover.capacity",
+		Usage:    "Capacity of prover",
+		Required: true,
+		Category: proverCategory,
+	}
 )
 
 // Optional flags used by prover.
@@ -104,6 +110,12 @@ var (
 		Usage:    "Gas limit will be used for TaikoL1.proveBlock transactions",
 		Category: proverCategory,
 	}
+	ProverHTTPServerPort = &cli.Uint64Flag{
+		Name:     "prover.httpServerPort",
+		Usage:    "Port to expose for http server",
+		Category: proverCategory,
+		Value:    9876,
+	}
 )
 
 // All prover flags.
@@ -127,4 +139,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	CheckProofWindowExpiredInterval,
 	ProveUnassignedBlocks,
 	ProveBlockTxGasLimit,
+	ProverHTTPServerPort,
+	ProverCapacity,
 })

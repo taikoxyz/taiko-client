@@ -16,7 +16,7 @@ type SubcommandApplication interface {
 	InitFromCli(context.Context, *cli.Context) error
 	Name() string
 	Start() error
-	Close()
+	Close(context.Context)
 }
 
 func SubcommandAction(app SubcommandApplication) cli.ActionFunc {
@@ -44,7 +44,7 @@ func SubcommandAction(app SubcommandApplication) cli.ActionFunc {
 
 		defer func() {
 			ctxClose()
-			app.Close()
+			app.Close(ctx)
 			log.Info("Application stopped", "name", app.Name())
 		}()
 
