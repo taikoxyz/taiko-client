@@ -93,13 +93,13 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
 	})))
 
-	srv, err := http.NewServer(http.NewServerOpts{
+	s.srv, err = http.NewServer(http.NewServerOpts{
 		ProverPrivateKey: l1ProverPrivKey,
 	})
 	s.Nil(err)
 
 	go func() {
-		_ = srv.Start(fmt.Sprintf(":%v", port))
+		_ = s.srv.Start(fmt.Sprintf(":%v", port))
 	}()
 
 	s.proposer = prop
