@@ -16,7 +16,6 @@ import (
 
 var (
 	maxBlocksGasLimit = uint64(50)
-	maxBlockNumTxs    = uint64(11)
 	maxTxlistBytes    = uint64(10000)
 	chainID           = genesis.Config.ChainID
 	testKey, _        = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -33,7 +32,6 @@ var (
 func TestValidateTxList(t *testing.T) {
 	v := NewTxListValidator(
 		maxBlocksGasLimit,
-		maxBlockNumTxs,
 		maxTxlistBytes,
 		chainID,
 	)
@@ -47,7 +45,6 @@ func TestValidateTxList(t *testing.T) {
 func TestIsTxListValid(t *testing.T) {
 	v := NewTxListValidator(
 		maxBlocksGasLimit,
-		maxBlockNumTxs,
 		maxTxlistBytes,
 		chainID,
 	)
@@ -69,13 +66,6 @@ func TestIsTxListValid(t *testing.T) {
 			"txListBytes not decodable to rlp",
 			chainID,
 			randBytes(1),
-			HintNone,
-			0,
-		},
-		{
-			"txListBytes too many transactions",
-			chainID,
-			rlpEncodedTransactionBytes(int(maxBlockNumTxs)+1, true),
 			HintNone,
 			0,
 		},

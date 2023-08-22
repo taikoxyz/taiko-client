@@ -226,9 +226,8 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		ctx,
 		p.L2SuggestedFeeRecipient(),
 		baseFee,
-		p.protocolConfigs.BlockMaxTransactions,
 		p.protocolConfigs.BlockMaxGasLimit,
-		p.protocolConfigs.BlockMaxTxListBytes,
+		p.protocolConfigs.BlockMaxTxListBytes.Uint64(),
 		p.locals,
 		p.maxProposedTxListsPerEpoch,
 	)

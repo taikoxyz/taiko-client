@@ -65,8 +65,7 @@ func NewSyncer(
 		anchorConstructor: constructor,
 		txListValidator: txListValidator.NewTxListValidator(
 			uint64(configs.BlockMaxGasLimit),
-			configs.BlockMaxTransactions,
-			configs.BlockMaxTxListBytes,
+			configs.BlockMaxTxListBytes.Uint64(),
 			rpc.L2ChainID,
 		),
 	}, nil
