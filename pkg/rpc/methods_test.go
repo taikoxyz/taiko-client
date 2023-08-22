@@ -134,7 +134,6 @@ func TestGetPoolContentValid(t *testing.T) {
 		context.Background(),
 		goldenTouchAddress,
 		baseFee,
-		maxTransactions,
 		gasLimit,
 		maxBytes,
 		txPools,

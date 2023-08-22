@@ -80,15 +80,14 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 
 // WaitTillL2ExecutionEngineSynced keeps waiting until the L2 execution engine is fully synced.
 func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
+	// if ctx.Err() != nil {
+	// 	return ctx.Err()
+	// }
 	return backoff.Retry(
 		func() error {
 			if ctx.Err() != nil {
-				return ctx.Err()
+				return nil
 			}
-
 			progress, err := c.L2ExecutionEngineSyncProgress(ctx)
 			if err != nil {
 				log.Error("Fetch L2 execution engine sync progress error", "error", err)
@@ -228,7 +227,6 @@ func (c *Client) GetPoolContent(
 	ctx context.Context,
 	beneficiary common.Address,
 	baseFee *big.Int,
-	maxTransactionsPerBlock uint64,
 	blockMaxGasLimit uint32,
 	maxBytesPerTxList uint64,
 	locals []common.Address,
@@ -249,7 +247,6 @@ func (c *Client) GetPoolContent(
 		"taiko_txPoolContent",
 		beneficiary,
 		baseFee,
-		maxTransactionsPerBlock,
 		blockMaxGasLimit,
 		maxBytesPerTxList,
 		localsArg,
