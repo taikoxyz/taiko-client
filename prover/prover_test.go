@@ -117,7 +117,7 @@ func (s *ProverTestSuite) TestInitError() {
 		MaxConcurrentProvingJobs:        1,
 		CheckProofWindowExpiredInterval: 5 * time.Second,
 		ProveUnassignedBlocks:           true,
-	})), "Dial tcp:")
+	})), "dial tcp:")
 }
 
 func (s *ProverTestSuite) TestOnBlockProposed() {
