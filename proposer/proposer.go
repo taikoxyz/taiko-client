@@ -555,17 +555,12 @@ func (p *Proposer) assignProver(
 
 		hashed := crypto.Keccak256Hash(encodedBlockData)
 
-		compressedPubKey, err := crypto.Ecrecover(hashed.Bytes(), resp.SignedPayload)
+		pubKey, err := crypto.SigToPub(hashed.Bytes(), resp.SignedPayload)
 		if err != nil {
 			continue
 		}
 
-		decompressedPubKey, err := crypto.DecompressPubkey(compressedPubKey)
-		if err != nil {
-			continue
-		}
-
-		if crypto.PubkeyToAddress(*decompressedPubKey).Hex() != resp.Prover.Hex() {
+		if crypto.PubkeyToAddress(*pubKey).Hex() != resp.Prover.Hex() {
 			continue
 		}
 
