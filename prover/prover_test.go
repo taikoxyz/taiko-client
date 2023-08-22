@@ -3,6 +3,7 @@ package prover
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"os"
 	"testing"
 	"time"
@@ -91,6 +92,7 @@ func (s *ProverTestSuite) SetupTest() {
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
 		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
+		BlockProposalFee:           big.NewInt(1000),
 	})))
 
 	go func() {

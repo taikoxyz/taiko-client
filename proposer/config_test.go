@@ -2,6 +2,7 @@ package proposer
 
 import (
 	"context"
+	"math/big"
 	"os"
 	"strings"
 	"time"
@@ -13,13 +14,14 @@ import (
 )
 
 var (
-	l1Endpoint      = os.Getenv("L1_NODE_WS_ENDPOINT")
-	l2Endpoint      = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
-	proverEndpoints = "http://localhost:9876,http://localhost:1234"
-	taikoL1         = os.Getenv("TAIKO_L1_ADDRESS")
-	taikoL2         = os.Getenv("TAIKO_L2_ADDRESS")
-	proposeInterval = "10s"
-	rpcTimeout      = 5 * time.Second
+	l1Endpoint       = os.Getenv("L1_NODE_WS_ENDPOINT")
+	l2Endpoint       = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+	proverEndpoints  = "http://localhost:9876,http://localhost:1234"
+	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
+	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
+	blockProposalFee = "10000000000"
+	proposeInterval  = "10s"
+	rpcTimeout       = 5 * time.Second
 )
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
@@ -47,6 +49,11 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(rpcTimeout, *c.RPCTimeout)
 		s.Equal(10*time.Second, c.WaitReceiptTimeout)
 		s.Equal(strings.Split(proverEndpoints, ","), c.ProverEndpoints)
+
+		fee, _ := new(big.Int).SetString(blockProposalFee, 10)
+		s.Equal(fee, c.BlockProposalFee)
+
+		s.Equal(15, c.BlockProposalFeeIncreasePercentage)
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -67,6 +74,8 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.WaitReceiptTimeout.Name, "10",
 		"-" + flags.ProposeBlockTxGasLimit.Name, "100000",
 		"-" + flags.ProverEndpoints.Name, proverEndpoints,
+		"-" + flags.BlockProposalFee.Name, blockProposalFee,
+		"-" + flags.BlockProposalFeeIncreasePercentage.Name, "15",
 	}))
 }
 
@@ -173,10 +182,12 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.ProposeInterval.Name},
 		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
 		&cli.StringFlag{Name: flags.ProverEndpoints.Name},
+		&cli.Uint64Flag{Name: flags.BlockProposalFee.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
 		&cli.Uint64Flag{Name: flags.WaitReceiptTimeout.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasLimit.Name},
+		&cli.Uint64Flag{Name: flags.BlockProposalFeeIncreasePercentage.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

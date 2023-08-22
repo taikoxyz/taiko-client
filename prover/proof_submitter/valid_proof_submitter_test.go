@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math/big"
 	"os"
 	"sync"
 	"testing"
@@ -91,6 +92,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
 		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
+		BlockProposalFee:           big.NewInt(1000),
 	})))
 
 	s.srv, err = http.NewServer(http.NewServerOpts{

@@ -114,6 +114,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if !p.cfg.OracleProver {
 		p.srv, err = http.NewServer(http.NewServerOpts{
 			ProverPrivateKey: p.cfg.L1ProverPrivKey,
+			MaxCapacity:      p.cfg.Capacity,
 		})
 		if err != nil {
 			return err

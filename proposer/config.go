@@ -33,6 +33,8 @@ type Config struct {
 	WaitReceiptTimeout                  time.Duration
 	ProposeBlockTxGasTipCap             *big.Int
 	ProverEndpoints                     []string
+	BlockProposalFee                    *big.Int
+	BlockProposalFeeIncreasePercentage  uint64
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -108,6 +110,11 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 
 	proverEndpoints = append(proverEndpoints, strings.Split(c.String(flags.ProverEndpoints.Name), ",")...)
 
+	blockProposalFee, ok := new(big.Int).SetString(c.String(flags.BlockProposalFee.Name), 10)
+	if !ok {
+		return nil, fmt.Errorf("invalid blockProposalFee: %v", c.String(flags.BlockProposalFee.Name))
+	}
+
 	return &Config{
 		L1Endpoint:                          c.String(flags.L1WSEndpoint.Name),
 		L2Endpoint:                          c.String(flags.L2HTTPEndpoint.Name),
@@ -127,5 +134,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		WaitReceiptTimeout:                  time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
 		ProposeBlockTxGasTipCap:             proposeBlockTxGasTipCap,
 		ProverEndpoints:                     proverEndpoints,
+		BlockProposalFee:                    blockProposalFee,
+		BlockProposalFeeIncreasePercentage:  c.Uint64(flags.BlockProposalFeeIncreasePercentage.Name),
 	}, nil
 }

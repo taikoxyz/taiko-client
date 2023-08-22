@@ -67,6 +67,10 @@ type Proposer struct {
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
 
+	// Block proposal fee configurations
+	blockProposalFee                   *big.Int
+	blockProposalFeeIncreasePercentage uint64
+
 	// Only for testing purposes
 	CustomProposeOpHook func() error
 	AfterCommitHook     func() error
@@ -104,6 +108,8 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.ctx = ctx
 	p.waitReceiptTimeout = cfg.WaitReceiptTimeout
 	p.proverEndpoints = cfg.ProverEndpoints
+	p.blockProposalFee = cfg.BlockProposalFee
+	p.blockProposalFeeIncreasePercentage = cfg.BlockProposalFeeIncreasePercentage
 
 	// RPC clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -484,100 +490,115 @@ func (p *Proposer) updateProposingTicker() {
 
 // assignProver attempts to find a prover who wants to win the block.
 // if no provers want to do it for the price we set, we increase the price, and try again.
-// TODO(jeff): increase fee on each iteration
-// TODO(jeff): calculate fee
 func (p *Proposer) assignProver(
 	ctx context.Context,
 	meta *encoding.TaikoL1BlockMetadataInput,
 ) ([]byte, *big.Int, error) {
-	fee := big.NewInt(100000)
-	expiry := uint64(time.Now().Add(90 * time.Minute).Unix())
-	// TODO(jeff): fee and expiry dynamically
-	proposeBlockReq := &encoding.ProposeBlockData{
-		Expiry: expiry,
-		Input:  *meta,
-		Fee:    fee,
-	}
+	initialFee := p.blockProposalFee
 
-	jsonBody, err := json.Marshal(proposeBlockReq)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	r := bytes.NewReader(jsonBody)
+	percentBig := big.NewInt(int64(p.blockProposalFeeIncreasePercentage))
 
 	// iterate over each configured endpoint, and see if someone wants to accept your block.
 	// if it is denied, we continue on to the next endpoint.
 	// if we do not find a prover, we can increase the fee up to a point, or give up.
-	for _, endpoint := range p.proverEndpoints {
-		req, err := http.NewRequestWithContext(
-			ctx,
-			"POST",
-			fmt.Sprintf("%v/%v", endpoint, "proposeBlock"),
-			r,
-		)
-		if err != nil {
-			continue
+	// TODO(jeff): we loop 3 times, this should be a config var
+	for i := 0; i < 3; i++ {
+		fee := new(big.Int).Set(initialFee)
+
+		// increase fee on each failed loop
+		if i > 0 {
+			cumulativePercent := new(big.Int).Mul(percentBig, big.NewInt(int64(i)))
+			increase := new(big.Int).Mul(fee, cumulativePercent)
+			increase.Div(increase, big.NewInt(100))
+			fee.Add(fee, increase)
 		}
 
-		req.Header.Add("Content-Type", "application/json")
+		// TODO(jeff): config for expiry? dynamic?
+		expiry := uint64(time.Now().Add(90 * time.Minute).Unix())
 
-		// TODO(jeff): custom client with timeout
-		res, err := http.DefaultClient.Do(req)
-		if err != nil {
-			continue
+		proposeBlockReq := &encoding.ProposeBlockData{
+			Expiry: expiry,
+			Input:  *meta,
+			Fee:    fee,
 		}
 
-		if res.StatusCode != http.StatusOK {
-			continue
-		}
-
-		resBody, err := io.ReadAll(res.Body)
-		if err != nil {
-			continue
-		}
-
-		resp := &proposeBlockResponse{}
-
-		if err := json.Unmarshal(resBody, resp); err != nil {
-			continue
-		}
-
-		log.Info("Prover assigned for block",
-			"prover", resp.Prover.Hex(),
-			"signedPayload", common.Bytes2Hex(resp.SignedPayload),
-		)
-
-		encodedBlockData, err := encoding.EncodeProposeBlockData(proposeBlockReq)
-		if err != nil {
-			continue
-		}
-
-		hashed := crypto.Keccak256Hash(encodedBlockData)
-
-		pubKey, err := crypto.SigToPub(hashed.Bytes(), resp.SignedPayload)
-		if err != nil {
-			continue
-		}
-
-		if crypto.PubkeyToAddress(*pubKey).Hex() != resp.Prover.Hex() {
-			continue
-		}
-
-		signed := resp.SignedPayload
-
-		signed[64] = uint8(uint(signed[64])) + 27
-
-		encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
-			Prover: resp.Prover,
-			Expiry: proposeBlockReq.Expiry,
-			Data:   resp.SignedPayload,
-		})
+		jsonBody, err := json.Marshal(proposeBlockReq)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		return encoded, fee, nil
+		r := bytes.NewReader(jsonBody)
+
+		for _, endpoint := range p.proverEndpoints {
+			req, err := http.NewRequestWithContext(
+				ctx,
+				"POST",
+				fmt.Sprintf("%v/%v", endpoint, "proposeBlock"),
+				r,
+			)
+			if err != nil {
+				continue
+			}
+
+			req.Header.Add("Content-Type", "application/json")
+
+			// TODO(jeff): custom client with timeout
+			res, err := http.DefaultClient.Do(req)
+			if err != nil {
+				continue
+			}
+
+			if res.StatusCode != http.StatusOK {
+				continue
+			}
+
+			resBody, err := io.ReadAll(res.Body)
+			if err != nil {
+				continue
+			}
+
+			resp := &proposeBlockResponse{}
+
+			if err := json.Unmarshal(resBody, resp); err != nil {
+				continue
+			}
+
+			log.Info("Prover assigned for block",
+				"prover", resp.Prover.Hex(),
+				"signedPayload", common.Bytes2Hex(resp.SignedPayload),
+			)
+
+			encodedBlockData, err := encoding.EncodeProposeBlockData(proposeBlockReq)
+			if err != nil {
+				continue
+			}
+
+			hashed := crypto.Keccak256Hash(encodedBlockData)
+
+			pubKey, err := crypto.SigToPub(hashed.Bytes(), resp.SignedPayload)
+			if err != nil {
+				continue
+			}
+
+			if crypto.PubkeyToAddress(*pubKey).Hex() != resp.Prover.Hex() {
+				continue
+			}
+
+			signed := resp.SignedPayload
+
+			signed[64] = uint8(uint(signed[64])) + 27
+
+			encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
+				Prover: resp.Prover,
+				Expiry: proposeBlockReq.Expiry,
+				Data:   resp.SignedPayload,
+			})
+			if err != nil {
+				return nil, nil, err
+			}
+
+			return encoded, fee, nil
+		}
 	}
 
 	return nil, nil, errors.New("unable to find prover")
