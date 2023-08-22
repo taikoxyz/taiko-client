@@ -3,7 +3,6 @@ package chainSyncer
 import (
 	"context"
 
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -98,16 +98,16 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	fmt.Printf("L1HeaderByNumber head: %v\n", head.Number)
+	log.Info("L1HeaderByNumber head: %v\n", head.Number)
 	// (equiv to s.state.GetL2Head().Number)
-	fmt.Printf("L2HeaderByNumber head: %v\n", l2Head.Number)
-	fmt.Printf("LatestVerifiedBlock number: %v\n", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
+	log.Info("L2HeaderByNumber head: %v\n", l2Head.Number)
+	log.Info("LatestVerifiedBlock number: %v\n", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
 
 	// increase evm time to make blocks verifiable.
 	var result uint64
 	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", 2000))
 	s.NotNil(result)
-	fmt.Printf("evm time increase: %v\n", result)
+	log.Info("evm time increase: %v\n", result)
 
 	// interact with TaikoL1 contract to allow for verification of L2 blocks
 	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, common.Big3)
@@ -120,9 +120,9 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	l2Head2, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	fmt.Printf("L1HeaderByNumber head2: %v\n", head2.Number)
-	fmt.Printf("L2HeaderByNumber head: %v\n", l2Head2.Number)
-	fmt.Printf("LatestVerifiedBlock number: %v\n", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
+	log.Info("L1HeaderByNumber head2: %v\n", head2.Number)
+	log.Info("L2HeaderByNumber head: %v\n", l2Head2.Number)
+	log.Info("LatestVerifiedBlock number: %v\n", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
 
 	s.RevertSnapshot()
 }
