@@ -5,8 +5,11 @@ go 1.18
 require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2
 	github.com/cenkalti/backoff/v4 v4.1.3
+	github.com/cyberhorsey/webutils v0.0.0-20230314183728-56890c6ddbe7
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0
 	github.com/ethereum/go-ethereum v1.12.2
+	github.com/labstack/echo/v4 v4.11.1
+	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/prysmaticlabs/prysm/v4 v4.0.1
 	github.com/stretchr/testify v1.8.1
 	github.com/urfave/cli/v2 v2.24.1
@@ -30,7 +33,6 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/crate-crypto/go-kzg-4844 v0.3.0 // indirect
 	github.com/cyberhorsey/errors v0.0.0-20220929234051-087d6d8bb841 // indirect
-	github.com/cyberhorsey/webutils v0.0.0-20230314183728-56890c6ddbe7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/ethereum/c-kzg-4844 v0.3.1 // indirect
@@ -58,7 +60,6 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/labstack/echo/v4 v4.11.1 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

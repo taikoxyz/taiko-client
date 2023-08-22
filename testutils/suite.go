@@ -64,15 +64,28 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 	s.RpcClient = rpcCli
 
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	tokenBalance, err := rpcCli.TaikoL1.GetTaikoTokenBalance(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
+	s.Nil(err)
+
+	if tokenBalance.Cmp(common.Big0) == 0 {
+		opts, err := bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
+		s.Nil(err)
+
+		premintAmount, ok := new(big.Int).SetString(os.Getenv("PREMINT_TOKEN_AMOUNT"), 10)
+		s.True(ok)
+		s.True(premintAmount.Cmp(common.Big0) > 0)
+
+		tx, err := rpcCli.TaikoL1.DepositTaikoToken(opts, premintAmount)
+		s.Nil(err)
+		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
+		s.Nil(err)
+	}
+
 	s.Nil(rpcCli.L1RawRPC.CallContext(context.Background(), &s.testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(s.testnetL1SnapshotID)
-
-	opts, err := bind.NewKeyedTransactorWithChainID(s.TestAddrPrivKey, rpcCli.L1ChainID)
-	s.Nil(err)
-
-	amt, _ := new(big.Int).SetString("10000000000000000000000", 10)
-	_, err = rpcCli.TaikoL1.DepositTaikoToken(opts, amt)
-	s.Nil(err)
 }
 
 func (s *ClientTestSuite) TearDownTest() {

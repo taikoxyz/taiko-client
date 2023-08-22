@@ -549,7 +549,7 @@ func (p *Proposer) assignProver(
 			continue
 		}
 
-		log.Info("prover assigned for block",
+		log.Info("Prover assigned for block",
 			"prover", resp.Prover.Hex(),
 			"signedPayload", common.Bytes2Hex(resp.SignedPayload),
 		)

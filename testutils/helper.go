@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/phayes/freeport"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
@@ -193,8 +194,11 @@ func RandomBytes(size int) (b []byte) {
 	return
 }
 
-func RandomPort() int64 {
-	return int64(rand.Intn(8000-4000+1) + 4000)
+// RandomPort returns a local free random port.
+func RandomPort() int {
+	port, err := freeport.GetFreePort()
+	log.Crit("Failed to get local free random port", "err", err)
+	return port
 }
 
 // SignatureFromRSV creates the signature bytes from r,s,v.
