@@ -41,8 +41,6 @@ func (srv *Server) ProposeBlock(c echo.Context) error {
 		return webutils.LogAndRenderErrors(c, http.StatusUnprocessableEntity, err)
 	}
 
-	signed[64] = uint8(uint(signed[64])) + 27
-
 	resp := &proposeBlockResp{
 		SignedPayload: signed,
 		Prover:        srv.proverAddress,

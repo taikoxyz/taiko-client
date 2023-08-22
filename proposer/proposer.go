@@ -37,12 +37,6 @@ var (
 	retryInterval              = 12 * time.Second
 )
 
-type proposeBlockRequest struct {
-	Input  *encoding.TaikoL1BlockMetadataInput `json:"input"`
-	Fee    *big.Int                            `json:"fee"`
-	Expiry uint64                              `json:"expiry"`
-}
-
 type proposeBlockResponse struct {
 	SignedPayload []byte         `json:"signedPayload"`
 	Prover        common.Address `json:"prover"`
@@ -499,9 +493,9 @@ func (p *Proposer) assignProver(
 	fee := big.NewInt(100000)
 	expiry := uint64(time.Now().Add(90 * time.Minute).Unix())
 	// TODO(jeff): fee and expiry dynamically
-	proposeBlockReq := proposeBlockRequest{
+	proposeBlockReq := &encoding.ProposeBlockData{
 		Expiry: expiry,
-		Input:  meta,
+		Input:  *meta,
 		Fee:    fee,
 	}
 
@@ -554,9 +548,31 @@ func (p *Proposer) assignProver(
 			"signedPayload", common.Bytes2Hex(resp.SignedPayload),
 		)
 
-		// TODO(jeff): do an ecrecover here, and make sure data signed is what we sent,
-		// and signed by prover we received,
-		// to ensure it will not revert onchain
+		encodedBlockData, err := encoding.EncodeProposeBlockData(proposeBlockReq)
+		if err != nil {
+			continue
+		}
+
+		hashed := crypto.Keccak256Hash(encodedBlockData)
+
+		compressedPubKey, err := crypto.Ecrecover(hashed.Bytes(), resp.SignedPayload)
+		if err != nil {
+			continue
+		}
+
+		decompressedPubKey, err := crypto.DecompressPubkey(compressedPubKey)
+		if err != nil {
+			continue
+		}
+
+		if crypto.PubkeyToAddress(*decompressedPubKey).Hex() != resp.Prover.Hex() {
+			continue
+		}
+
+		signed := resp.SignedPayload
+
+		signed[64] = uint8(uint(signed[64])) + 27
+
 		encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
 			Prover: resp.Prover,
 			Expiry: proposeBlockReq.Expiry,
