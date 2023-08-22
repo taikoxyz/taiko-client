@@ -47,10 +47,12 @@ func (s *ProverTestSuite) SetupTest() {
 		TaikoL2Address:                  common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		L1ProverPrivKey:                 l1ProverPrivKey,
 		OracleProverPrivateKey:          l1ProverPrivKey,
+		OracleProver:                    false,
 		Dummy:                           true,
 		MaxConcurrentProvingJobs:        1,
 		CheckProofWindowExpiredInterval: 5 * time.Second,
 		ProveUnassignedBlocks:           true,
+		Capacity:                        100,
 	})))
 	s.p = p
 	s.cancel = cancel

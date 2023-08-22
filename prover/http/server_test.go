@@ -19,6 +19,7 @@ func newTestServer(url string) *Server {
 	srv := &Server{
 		echo:             echo.New(),
 		proverPrivateKey: l1ProverPrivKey,
+		maxCapacity:      8,
 	}
 
 	srv.configureMiddleware()

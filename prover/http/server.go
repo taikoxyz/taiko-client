@@ -17,10 +17,15 @@ type Server struct {
 	echo             *echo.Echo
 	proverPrivateKey *ecdsa.PrivateKey
 	proverAddress    common.Address
+
+	// capacity related configs
+	maxCapacity     uint64
+	currentCapacity uint64
 }
 
 type NewServerOpts struct {
 	ProverPrivateKey *ecdsa.PrivateKey
+	MaxCapacity      uint64
 }
 
 func NewServer(opts NewServerOpts) (*Server, error) {
@@ -29,6 +34,8 @@ func NewServer(opts NewServerOpts) (*Server, error) {
 		proverPrivateKey: opts.ProverPrivateKey,
 		proverAddress:    address,
 		echo:             echo.New(),
+		maxCapacity:      opts.MaxCapacity,
+		currentCapacity:  0,
 	}
 
 	srv.configureMiddleware()
