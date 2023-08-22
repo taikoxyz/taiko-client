@@ -16,6 +16,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/prover"
+	"github.com/taikoxyz/taiko-client/prover/http"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -24,6 +25,7 @@ type ProposerTestSuite struct {
 	p      *Proposer
 	cancel context.CancelFunc
 	prover *prover.Prover
+	srv    *http.Server
 }
 
 func (s *ProposerTestSuite) SetupTest() {
@@ -56,24 +58,14 @@ func (s *ProposerTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	s.prover = new(prover.Prover)
-	s.Nil(prover.InitFromConfig(ctx, s.prover, &prover.Config{
-		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
-		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2HttpEndpoint:                  os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:                  common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                  common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		L1ProverPrivKey:                 l1ProverPrivKey,
-		OracleProverPrivateKey:          l1ProverPrivKey,
-		Dummy:                           true,
-		MaxConcurrentProvingJobs:        1,
-		CheckProofWindowExpiredInterval: 5 * time.Second,
-		ProveUnassignedBlocks:           true,
-		HTTPServerPort:                  uint64(port),
-	}))
+	s.srv, err = http.NewServer(http.NewServerOpts{
+		ProverPrivateKey: l1ProverPrivKey,
+	})
+	s.Nil(err)
 
-	_ = s.prover.Start()
+	go func() {
+		_ = s.srv.Start(fmt.Sprintf(":%v", port))
+	}()
 
 	s.p = p
 	s.cancel = cancel
