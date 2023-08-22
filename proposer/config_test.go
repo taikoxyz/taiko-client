@@ -3,6 +3,7 @@ package proposer
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,6 +15,7 @@ import (
 var (
 	l1Endpoint      = os.Getenv("L1_NODE_WS_ENDPOINT")
 	l2Endpoint      = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+	proverEndpoints = "http://localhost:9876,http://localhost:1234"
 	taikoL1         = os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2         = os.Getenv("TAIKO_L2_ADDRESS")
 	proposeInterval = "10s"
@@ -44,6 +46,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
 		s.Equal(rpcTimeout, *c.RPCTimeout)
 		s.Equal(10*time.Second, c.WaitReceiptTimeout)
+		s.Equal(strings.Split(proverEndpoints, ","), c.ProverEndpoints)
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -63,6 +66,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.RPCTimeout.Name, "5",
 		"-" + flags.WaitReceiptTimeout.Name, "10",
 		"-" + flags.ProposeBlockTxGasLimit.Name, "100000",
+		"-" + flags.ProverEndpoints.Name, proverEndpoints,
 	}))
 }
 
@@ -168,6 +172,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.ProposeEmptyBlocksInterval.Name},
 		&cli.StringFlag{Name: flags.ProposeInterval.Name},
 		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
+		&cli.StringFlag{Name: flags.ProverEndpoints.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
 		&cli.Uint64Flag{Name: flags.WaitReceiptTimeout.Name},

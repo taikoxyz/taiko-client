@@ -70,6 +70,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.CheckProofWindowExpiredInterval.Name, "30",
 		"-" + flags.ProveUnassignedBlocks.Name, "true",
+		"-" + flags.ProverCapacity.Name, "8",
 	}))
 }
 
@@ -120,6 +121,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayError() {
 		"TestNewConfigFromCliContext",
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.OracleProver.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "130m",
 	}), "invalid random dummy proof delay value")
 }
@@ -131,6 +133,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorLower() {
 		"TestNewConfigFromCliContext",
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.OracleProver.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30x-1h",
 	}), "invalid random dummy proof delay value")
 }
@@ -142,6 +145,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorUpper() {
 		"TestNewConfigFromCliContext",
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.OracleProver.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1x",
 	}), "invalid random dummy proof delay value")
 }
@@ -153,6 +157,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorOrder() {
 		"TestNewConfigFromCliContext",
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"-" + flags.OracleProver.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "1h-30m",
 	}), "invalid random dummy proof delay value (lower > upper)")
 }
@@ -176,6 +181,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.CheckProofWindowExpiredInterval.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
+		&cli.Uint64Flag{Name: flags.ProverCapacity.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

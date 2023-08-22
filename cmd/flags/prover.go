@@ -25,12 +25,6 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
-	ProverCapacity = &cli.Uint64Flag{
-		Name:     "prover.capacity",
-		Usage:    "Capacity of prover",
-		Required: true,
-		Category: proverCategory,
-	}
 )
 
 // Optional flags used by prover.
@@ -109,6 +103,11 @@ var (
 		Usage:    "Port to expose for http server",
 		Category: proverCategory,
 		Value:    9876,
+	}
+	ProverCapacity = &cli.Uint64Flag{
+		Name:     "prover.capacity",
+		Usage:    "Capacity of prover, required if oracleProver is false",
+		Category: proverCategory,
 	}
 )
 

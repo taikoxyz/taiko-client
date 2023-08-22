@@ -68,6 +68,10 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid oracle private key: %w", err)
 		}
+	} else {
+		if !c.IsSet(flags.ProverCapacity.Name) {
+			return nil, fmt.Errorf("capacity is required if oracleProver is not set to true")
+		}
 	}
 
 	var (
