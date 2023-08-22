@@ -83,7 +83,6 @@ func (s *DriverTestSuite) SetupTest() {
 	go func() {
 		_ = s.srv.Start(fmt.Sprintf(":%v", port))
 	}()
-
 }
 
 func (s *DriverTestSuite) TestName() {
