@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/prover"
 	"github.com/taikoxyz/taiko-client/prover/http"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
@@ -24,7 +23,6 @@ type ProposerTestSuite struct {
 	testutils.ClientTestSuite
 	p      *Proposer
 	cancel context.CancelFunc
-	prover *prover.Prover
 	srv    *http.Server
 }
 

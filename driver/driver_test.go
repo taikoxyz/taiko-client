@@ -15,18 +15,16 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/proposer"
-	"github.com/taikoxyz/taiko-client/prover"
 	"github.com/taikoxyz/taiko-client/prover/http"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type DriverTestSuite struct {
 	testutils.ClientTestSuite
-	cancel   context.CancelFunc
-	p        *proposer.Proposer
-	d        *Driver
-	l1Prover *prover.Prover
-	srv      *http.Server
+	cancel context.CancelFunc
+	p      *proposer.Proposer
+	d      *Driver
+	srv    *http.Server
 }
 
 func (s *DriverTestSuite) SetupTest() {
