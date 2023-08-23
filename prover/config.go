@@ -110,7 +110,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	var timeout *time.Duration
-
 	if c.IsSet(flags.RPCTimeout.Name) {
 		duration := time.Duration(c.Uint64(flags.RPCTimeout.Name)) * time.Second
 		timeout = &duration
@@ -122,10 +121,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proveBlockTxGasLimit = &gasLimit
 	}
 
-	minProofFee, ok := new(big.Int).SetString(c.String(flags.MinProofFee.Name), 10)
-	if !ok {
-		return nil, fmt.Errorf("invalid minProof Fee: %v", c.String(flags.MinProofFee.Name))
-	}
+	minProofFee := new(big.Int).SetUint64(c.Uint64(flags.MinProofFee.Name))
 
 	return &Config{
 		L1WsEndpoint:                    c.String(flags.L1WSEndpoint.Name),

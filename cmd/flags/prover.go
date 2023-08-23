@@ -25,9 +25,10 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
-	MinProofFee = &cli.StringFlag{
+	MinProofFee = &cli.Uint64Flag{
 		Name:     "prover.minProofFee",
 		Usage:    "Minimum accepted fee for accepting proving a block",
+		Required: true,
 		Category: proverCategory,
 	}
 )
