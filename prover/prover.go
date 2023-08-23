@@ -87,7 +87,8 @@ type Prover struct {
 	checkProofWindowExpiredInterval time.Duration
 
 	// capacity-related configs
-	maxCapacity uint64
+	maxCapacity     uint64
+	currentCapacity uint64
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -601,6 +602,10 @@ func (p *Prover) onBlockProposed(
 		})
 		p.currentBlocksBeingProvenMutex.Unlock()
 
+		if !p.cfg.OracleProver {
+			p.currentCapacity--
+		}
+
 		return p.validProofSubmitter.RequestProof(ctx, event)
 	}
 
@@ -641,6 +646,10 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 
 		if err := backoff.Retry(
 			func() error {
+				if !p.cfg.OracleProver {
+					p.currentCapacity++
+				}
+
 				err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader)
 				if err != nil {
 					log.Error("Submit proof error", "error", err)
@@ -990,6 +999,10 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 
 		if err := p.validProofSubmitter.RequestProof(ctx, event); err != nil {
 			return err
+		}
+
+		if !p.cfg.OracleProver {
+			p.currentCapacity--
 		}
 
 		return nil
