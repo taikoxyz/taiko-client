@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"math/big"
 	"os"
 	"testing"
 	"time"
@@ -23,7 +24,7 @@ func TestDialEngineClientWithBackoff(t *testing.T) {
 		os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		string(jwtSecret),
 		12*time.Second,
-		nil,
+		new(big.Int).SetUint64(10),
 	)
 
 	require.Nil(t, err)
@@ -39,7 +40,7 @@ func TestDialClientWithBackoff(t *testing.T) {
 		context.Background(),
 		os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		12*time.Second,
-		nil,
+		new(big.Int).SetUint64(10),
 	)
 	require.Nil(t, err)
 
@@ -56,7 +57,7 @@ func TestDialClientWithBackoff_CtxError(t *testing.T) {
 		ctx,
 		"invalid",
 		-1,
-		nil,
+		new(big.Int).SetUint64(10),
 	)
 	require.NotNil(t, err)
 }
@@ -74,7 +75,7 @@ func TestDialEngineClientWithBackoff_CtxError(t *testing.T) {
 		"invalid",
 		string(jwtSecret),
 		-1,
-		nil,
+		new(big.Int).SetUint64(10),
 	)
 	require.NotNil(t, err2)
 }
