@@ -101,7 +101,11 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 
 	// increase evm time to make blocks verifiable.
 	var result uint64
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", config.ProofRegularCooldown.Uint64()))
+	s.Nil(s.RpcClient.L1RawRPC.CallContext(
+		context.Background(),
+		&result,
+		"evm_increaseTime",
+		config.ProofRegularCooldown.Uint64()))
 	s.NotNil(result)
 	log.Info("evm time increase:", "number", result)
 
