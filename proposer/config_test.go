@@ -53,7 +53,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		fee, _ := new(big.Int).SetString(blockProposalFee, 10)
 		s.Equal(fee, c.BlockProposalFee)
 
-		s.Equal(15, c.BlockProposalFeeIncreasePercentage)
+		s.Equal(uint64(15), c.BlockProposalFeeIncreasePercentage)
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err

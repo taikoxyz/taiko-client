@@ -203,6 +203,43 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }
 
+func (s *ProposerTestSuite) TestAssignProver_NoProvers() {
+	meta := &encoding.TaikoL1BlockMetadataInput{
+		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
+		TxListHash:      testutils.RandomHash(),
+		TxListByteStart: common.Big0,
+		TxListByteEnd:   common.Big0,
+		CacheTxListInfo: false,
+	}
+
+	s.SetL1Automine(false)
+	defer s.SetL1Automine(true)
+
+	s.p.proverEndpoints = []string{}
+
+	_, _, err := s.p.assignProver(context.Background(), meta)
+
+	s.Equal(err, errUnableToFindProver)
+}
+
+func (s *ProposerTestSuite) TestAssignProver_SuccessFirstRound() {
+	meta := &encoding.TaikoL1BlockMetadataInput{
+		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
+		TxListHash:      testutils.RandomHash(),
+		TxListByteStart: common.Big0,
+		TxListByteEnd:   common.Big0,
+		CacheTxListInfo: false,
+	}
+
+	s.SetL1Automine(false)
+	defer s.SetL1Automine(true)
+
+	_, fee, err := s.p.assignProver(context.Background(), meta)
+
+	s.Nil(err)
+	s.Equal(fee.Uint64(), s.p.blockProposalFee.Uint64())
+}
+
 func (s *ProposerTestSuite) TestUpdateProposingTicker() {
 	oneHour := 1 * time.Hour
 	s.p.proposingInterval = &oneHour

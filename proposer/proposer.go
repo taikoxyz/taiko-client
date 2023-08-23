@@ -33,6 +33,7 @@ import (
 
 var (
 	errNoNewTxs                = errors.New("no new transactions")
+	errUnableToFindProver      = errors.New("unable to find prover")
 	maxSendProposeBlockTxRetry = 10
 	retryInterval              = 12 * time.Second
 )
@@ -603,7 +604,7 @@ func (p *Proposer) assignProver(
 		}
 	}
 
-	return nil, nil, errors.New("unable to find prover")
+	return nil, nil, errUnableToFindProver
 }
 
 // Name returns the application name.
