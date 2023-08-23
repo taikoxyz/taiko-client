@@ -54,6 +54,7 @@ func (s *ProverTestSuite) SetupTest() {
 		CheckProofWindowExpiredInterval: 5 * time.Second,
 		ProveUnassignedBlocks:           true,
 		Capacity:                        100,
+		MinProofFee:                     big.NewInt(1),
 	})))
 	s.p = p
 	s.cancel = cancel
