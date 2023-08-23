@@ -43,6 +43,7 @@ type Config struct {
 	ProveBlockGasLimit              *uint64
 	HTTPServerPort                  uint64
 	Capacity                        uint64
+	MinProofFee                     *big.Int
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -121,6 +122,11 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proveBlockTxGasLimit = &gasLimit
 	}
 
+	minProofFee, ok := new(big.Int).SetString(c.String(flags.MinProofFee.Name), 10)
+	if !ok {
+		return nil, fmt.Errorf("invalid minProof Fee: %v", c.String(flags.MinProofFee.Name))
+	}
+
 	return &Config{
 		L1WsEndpoint:                    c.String(flags.L1WSEndpoint.Name),
 		L1HttpEndpoint:                  c.String(flags.L1HTTPEndpoint.Name),
@@ -152,5 +158,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProveBlockGasLimit:    proveBlockTxGasLimit,
 		Capacity:              c.Uint64(flags.ProverCapacity.Name),
 		HTTPServerPort:        c.Uint64(flags.ProverHTTPServerPort.Name),
+		MinProofFee:           minProofFee,
 	}, nil
 }

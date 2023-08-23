@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"crypto/ecdsa"
+	"math/big"
 	"net/http"
 	"os"
 
@@ -21,11 +22,13 @@ type Server struct {
 	// capacity related configs
 	maxCapacity     uint64
 	currentCapacity uint64
+	minProofFee     *big.Int
 }
 
 type NewServerOpts struct {
 	ProverPrivateKey *ecdsa.PrivateKey
 	MaxCapacity      uint64
+	MinProofFee      *big.Int
 }
 
 func NewServer(opts NewServerOpts) (*Server, error) {
@@ -35,6 +38,7 @@ func NewServer(opts NewServerOpts) (*Server, error) {
 		proverAddress:    address,
 		echo:             echo.New(),
 		maxCapacity:      opts.MaxCapacity,
+		minProofFee:      opts.MinProofFee,
 		currentCapacity:  0,
 	}
 

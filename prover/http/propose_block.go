@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/cyberhorsey/webutils"
@@ -24,8 +25,9 @@ func (srv *Server) ProposeBlock(c echo.Context) error {
 		return webutils.LogAndRenderErrors(c, http.StatusUnprocessableEntity, err)
 	}
 
-	// TODO(jeff): logic to determine is prover wants this block.
-	// check fee, check expiry, determine if its feasible/profitable.
+	if r.Fee.Cmp(srv.minProofFee) < 0 {
+		return webutils.LogAndRenderErrors(c, http.StatusUnprocessableEntity, errors.New("proof fee too low"))
+	}
 
 	// TODO(jeff): check capacity
 

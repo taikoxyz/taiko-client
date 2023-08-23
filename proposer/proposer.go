@@ -541,8 +541,11 @@ func (p *Proposer) assignProver(
 
 			req.Header.Add("Content-Type", "application/json")
 
-			// TODO(jeff): custom client with timeout
-			res, err := http.DefaultClient.Do(req)
+			client := &http.Client{
+				Timeout: 10 * time.Second,
+			}
+
+			res, err := client.Do(req)
 			if err != nil {
 				continue
 			}

@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -20,6 +21,7 @@ func newTestServer(url string) *Server {
 		echo:             echo.New(),
 		proverPrivateKey: l1ProverPrivKey,
 		maxCapacity:      8,
+		minProofFee:      big.NewInt(1),
 	}
 
 	srv.configureMiddleware()

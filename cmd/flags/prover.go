@@ -25,6 +25,11 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
+	MinProofFee = &cli.StringFlag{
+		Name:     "prover.minProofFee",
+		Usage:    "Minimum accepted fee for accepting proving a block",
+		Category: proverCategory,
+	}
 )
 
 // Optional flags used by prover.
@@ -133,4 +138,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProveBlockTxGasLimit,
 	ProverHTTPServerPort,
 	ProverCapacity,
+	MinProofFee,
 })

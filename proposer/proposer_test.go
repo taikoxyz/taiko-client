@@ -60,6 +60,8 @@ func (s *ProposerTestSuite) SetupTest() {
 
 	s.srv, err = http.NewServer(http.NewServerOpts{
 		ProverPrivateKey: l1ProverPrivKey,
+		MinProofFee:      big.NewInt(1),
+		MaxCapacity:      10,
 	})
 	s.Nil(err)
 

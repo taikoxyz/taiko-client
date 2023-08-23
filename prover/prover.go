@@ -115,6 +115,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.srv, err = http.NewServer(http.NewServerOpts{
 			ProverPrivateKey: p.cfg.L1ProverPrivKey,
 			MaxCapacity:      p.cfg.Capacity,
+			MinProofFee:      p.cfg.MinProofFee,
 		})
 		if err != nil {
 			return err
