@@ -18,10 +18,12 @@ func newTestServer(url string) *Server {
 	l1ProverPrivKey, _ := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 
 	srv := &Server{
-		echo:             echo.New(),
-		proverPrivateKey: l1ProverPrivKey,
-		maxCapacity:      8,
-		minProofFee:      big.NewInt(1),
+		echo:                     echo.New(),
+		proverPrivateKey:         l1ProverPrivKey,
+		maxCapacity:              8,
+		minProofFee:              big.NewInt(1),
+		requestCurrentCapacityCh: make(chan struct{}, 1024),
+		receiveCurrentCapacityCh: make(chan uint64, 1024),
 	}
 
 	srv.configureMiddleware()

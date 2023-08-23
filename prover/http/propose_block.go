@@ -1,7 +1,9 @@
 package http
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -29,22 +31,38 @@ func (srv *Server) ProposeBlock(c echo.Context) error {
 
 	// TODO(jeff): check capacity
 
-	encoded, err := encoding.EncodeProposeBlockData(r)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
+	srv.requestCurrentCapacityCh <- struct{}{}
+
+	ctx, cancel := context.WithTimeout(c.Request().Context(), 3*time.Second)
+	defer cancel()
+
+	for {
+		select {
+		case capacity := <-srv.receiveCurrentCapacityCh:
+			if capacity == 0 {
+				return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
+			}
+
+			encoded, err := encoding.EncodeProposeBlockData(r)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
+			}
+
+			hashed := crypto.Keccak256Hash(encoded)
+
+			signed, err := crypto.Sign(hashed.Bytes(), srv.proverPrivateKey)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusInternalServerError, err)
+			}
+
+			resp := &proposeBlockResp{
+				SignedPayload: signed,
+				Prover:        srv.proverAddress,
+			}
+
+			return c.JSON(http.StatusOK, resp)
+		case <-ctx.Done():
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, "timed out trying to get capacity")
+		}
 	}
-
-	hashed := crypto.Keccak256Hash(encoded)
-
-	signed, err := crypto.Sign(hashed.Bytes(), srv.proverPrivateKey)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
-	resp := &proposeBlockResp{
-		SignedPayload: signed,
-		Prover:        srv.proverAddress,
-	}
-
-	return c.JSON(http.StatusOK, resp)
 }

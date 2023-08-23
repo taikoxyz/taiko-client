@@ -87,8 +87,10 @@ type Prover struct {
 	checkProofWindowExpiredInterval time.Duration
 
 	// capacity-related configs
-	maxCapacity     uint64
-	currentCapacity uint64
+	maxCapacity              uint64
+	currentCapacity          uint64
+	requestCurrentCapacityCh chan struct{}
+	receiveCurrentCapacityCh chan uint64
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -113,12 +115,17 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.currentBlocksWaitingForProofWindow = make(map[uint64]uint64, 0)
 	p.currentBlocksWaitingForProofWindowMutex = &sync.Mutex{}
 	p.maxCapacity = cfg.Capacity
+	p.currentCapacity = cfg.Capacity
+	p.requestCurrentCapacityCh = make(chan struct{})
+	p.receiveCurrentCapacityCh = make(chan uint64)
 
 	if !p.cfg.OracleProver {
 		p.srv, err = http.NewServer(http.NewServerOpts{
-			ProverPrivateKey: p.cfg.L1ProverPrivKey,
-			MaxCapacity:      p.cfg.Capacity,
-			MinProofFee:      p.cfg.MinProofFee,
+			ProverPrivateKey:         p.cfg.L1ProverPrivKey,
+			MaxCapacity:              p.cfg.Capacity,
+			MinProofFee:              p.cfg.MinProofFee,
+			RequestCurrentCapacityCh: p.requestCurrentCapacityCh,
+			ReceiveCurrentCapacityCh: p.receiveCurrentCapacityCh,
 		})
 		if err != nil {
 			return err
@@ -301,6 +308,8 @@ func (p *Prover) eventLoop() {
 			if err := p.onBlockProven(p.ctx, e); err != nil {
 				log.Error("Handle BlockProven event error", "error", err)
 			}
+		case <-p.requestCurrentCapacityCh:
+			p.receiveCurrentCapacityCh <- p.currentCapacity
 		case <-forceProvingTicker.C:
 			reqProving()
 		}

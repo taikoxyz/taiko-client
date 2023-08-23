@@ -20,26 +20,30 @@ type Server struct {
 	proverAddress    common.Address
 
 	// capacity related configs
-	maxCapacity     uint64
-	currentCapacity uint64
-	minProofFee     *big.Int
+	maxCapacity              uint64
+	requestCurrentCapacityCh chan struct{}
+	receiveCurrentCapacityCh chan uint64
+	minProofFee              *big.Int
 }
 
 type NewServerOpts struct {
-	ProverPrivateKey *ecdsa.PrivateKey
-	MaxCapacity      uint64
-	MinProofFee      *big.Int
+	ProverPrivateKey         *ecdsa.PrivateKey
+	MaxCapacity              uint64
+	MinProofFee              *big.Int
+	RequestCurrentCapacityCh chan struct{}
+	ReceiveCurrentCapacityCh chan uint64
 }
 
 func NewServer(opts NewServerOpts) (*Server, error) {
 	address := crypto.PubkeyToAddress(opts.ProverPrivateKey.PublicKey)
 	srv := &Server{
-		proverPrivateKey: opts.ProverPrivateKey,
-		proverAddress:    address,
-		echo:             echo.New(),
-		maxCapacity:      opts.MaxCapacity,
-		minProofFee:      opts.MinProofFee,
-		currentCapacity:  0,
+		proverPrivateKey:         opts.ProverPrivateKey,
+		proverAddress:            address,
+		echo:                     echo.New(),
+		maxCapacity:              opts.MaxCapacity,
+		minProofFee:              opts.MinProofFee,
+		requestCurrentCapacityCh: opts.RequestCurrentCapacityCh,
+		receiveCurrentCapacityCh: opts.ReceiveCurrentCapacityCh,
 	}
 
 	srv.configureMiddleware()

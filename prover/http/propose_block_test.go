@@ -20,6 +20,7 @@ func Test_ProposeBlock(t *testing.T) {
 	tests := []struct {
 		name                  string
 		req                   *encoding.ProposeBlockData
+		chResponseFunc        func()
 		wantStatus            int
 		wantBodyRegexpMatches []string
 	}{
@@ -36,13 +37,37 @@ func Test_ProposeBlock(t *testing.T) {
 					CacheTxListInfo: false,
 				},
 			},
+			func() {
+				srv.receiveCurrentCapacityCh <- 100
+			},
 			http.StatusOK,
 			[]string{`"signedPayload"`},
+		},
+		{
+			"contextTimeout",
+			&encoding.ProposeBlockData{
+				Fee:    big.NewInt(1000),
+				Expiry: uint64(time.Now().Unix()),
+				Input: encoding.TaikoL1BlockMetadataInput{
+					Beneficiary:     common.BytesToAddress(taikotestutils.RandomHash().Bytes()),
+					TxListHash:      taikotestutils.RandomHash(),
+					TxListByteStart: common.Big0,
+					TxListByteEnd:   common.Big0,
+					CacheTxListInfo: false,
+				},
+			},
+			nil,
+			http.StatusUnprocessableEntity,
+			[]string{`{"message":"timed out trying to get capacity"}`},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.chResponseFunc != nil {
+				go tt.chResponseFunc()
+			}
+
 			req := testutils.NewUnauthenticatedRequest(
 				echo.POST,
 				"/proposeBlock",
