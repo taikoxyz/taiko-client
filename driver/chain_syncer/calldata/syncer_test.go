@@ -64,33 +64,11 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
 		BlockProposalFee:           big.NewInt(1000),
 	})))
-	// Init prover
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+
+	srv, cancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
 	s.Nil(err)
 
-	serverOpts := http.NewServerOpts{
-		ProverPrivateKey:         l1ProverPrivKey,
-		MinProofFee:              big.NewInt(1),
-		MaxCapacity:              10,
-		RequestCurrentCapacityCh: make(chan struct{}),
-		ReceiveCurrentCapacityCh: make(chan uint64),
-	}
-
-	s.srv, err = http.NewServer(serverOpts)
-	s.Nil(err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		for {
-			select {
-			case <-serverOpts.RequestCurrentCapacityCh:
-				serverOpts.ReceiveCurrentCapacityCh <- 100
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
+	s.srv = srv
 	s.cancel = cancel
 
 	s.p = prop

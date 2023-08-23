@@ -96,30 +96,11 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		BlockProposalFee:           big.NewInt(1000),
 	})))
 
-	serverOpts := http.NewServerOpts{
-		ProverPrivateKey:         l1ProverPrivKey,
-		MinProofFee:              big.NewInt(1),
-		MaxCapacity:              10,
-		RequestCurrentCapacityCh: make(chan struct{}),
-		ReceiveCurrentCapacityCh: make(chan uint64),
-	}
-
-	s.srv, err = http.NewServer(serverOpts)
+	srv, cancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
 	s.Nil(err)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	s.srv = srv
 	s.cancel = cancel
-	go func() {
-		for {
-			select {
-			case <-serverOpts.RequestCurrentCapacityCh:
-				serverOpts.ReceiveCurrentCapacityCh <- 100
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
 	s.proposer = prop
 }
 

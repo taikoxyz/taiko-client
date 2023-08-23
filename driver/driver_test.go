@@ -39,7 +39,6 @@ func (s *DriverTestSuite) SetupTest() {
 
 	d := new(Driver)
 	ctx, cancel := context.WithCancel(context.Background())
-	s.cancel = cancel
 	s.Nil(InitFromConfig(ctx, d, &Config{
 		L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -72,37 +71,11 @@ func (s *DriverTestSuite) SetupTest() {
 	})))
 	s.p = p
 
-	// Init prover
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	srv, cancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
 	s.Nil(err)
 
-	serverOpts := http.NewServerOpts{
-		ProverPrivateKey:         l1ProverPrivKey,
-		MinProofFee:              big.NewInt(1),
-		MaxCapacity:              10,
-		RequestCurrentCapacityCh: make(chan struct{}),
-		ReceiveCurrentCapacityCh: make(chan uint64),
-	}
-
-	s.srv, err = http.NewServer(serverOpts)
-	s.Nil(err)
-
-	go func() {
-		for {
-			select {
-			case <-serverOpts.RequestCurrentCapacityCh:
-				serverOpts.ReceiveCurrentCapacityCh <- 100
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
-	s.Nil(err)
-
-	go func() {
-		_ = s.srv.Start(fmt.Sprintf(":%v", port))
-	}()
+	s.srv = srv
+	s.cancel = cancel
 }
 
 func (s *DriverTestSuite) TestName() {

@@ -3,8 +3,10 @@ package testutils
 import (
 	"context"
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -17,6 +19,7 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/prover/http"
 )
 
 func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
@@ -174,6 +177,45 @@ func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey, re
 		_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts, recipient)
 		s.Nil(err)
 	}
+}
+
+// HTTPServer starts a new prover server that has channel listeners to respond and react
+// to requests for capacity, which provers can call.
+func HTTPServer(s *ClientTestSuite, port int) (*http.Server, func(), error) {
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	serverOpts := http.NewServerOpts{
+		ProverPrivateKey:         l1ProverPrivKey,
+		MinProofFee:              big.NewInt(1),
+		MaxCapacity:              10,
+		RequestCurrentCapacityCh: make(chan struct{}),
+		ReceiveCurrentCapacityCh: make(chan uint64),
+	}
+
+	srv, err := http.NewServer(serverOpts)
+	s.Nil(err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		for {
+			select {
+			case <-serverOpts.RequestCurrentCapacityCh:
+				serverOpts.ReceiveCurrentCapacityCh <- 100
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	go func() {
+		_ = srv.Start(fmt.Sprintf(":%v", port))
+	}()
+
+	return srv, func() {
+		cancel()
+		_ = srv.Shutdown(ctx)
+	}, err
 }
 
 // RandomHash generates a random blob of data and returns it as a hash.

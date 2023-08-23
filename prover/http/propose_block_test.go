@@ -1,6 +1,7 @@
 package http
 
 import (
+	"crypto/rand"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -11,9 +12,16 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	taikotestutils "github.com/taikoxyz/taiko-client/testutils"
 )
 
+// randomHash generates a random blob of data and returns it as a hash.
+func randomHash() common.Hash {
+	var hash common.Hash
+	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
+		panic(err)
+	}
+	return hash
+}
 func Test_ProposeBlock(t *testing.T) {
 	srv := newTestServer("")
 
@@ -30,8 +38,8 @@ func Test_ProposeBlock(t *testing.T) {
 				Fee:    big.NewInt(1000),
 				Expiry: uint64(time.Now().Unix()),
 				Input: encoding.TaikoL1BlockMetadataInput{
-					Beneficiary:     common.BytesToAddress(taikotestutils.RandomHash().Bytes()),
-					TxListHash:      taikotestutils.RandomHash(),
+					Beneficiary:     common.BytesToAddress(randomHash().Bytes()),
+					TxListHash:      randomHash(),
 					TxListByteStart: common.Big0,
 					TxListByteEnd:   common.Big0,
 					CacheTxListInfo: false,
