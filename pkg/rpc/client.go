@@ -158,7 +158,11 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 
 	var l2CheckPoint *EthClient
 	if len(cfg.L2CheckPoint) != 0 {
-		l2CheckPointEthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L2CheckPoint, cfg.RetryInterval, cfg.BackOffMaxRetrys)
+		l2CheckPointEthClient, err := DialClientWithBackoff(
+			ctxWithTimeout,
+			cfg.L2CheckPoint,
+			cfg.RetryInterval,
+			cfg.BackOffMaxRetrys)
 		if err != nil {
 			return nil, err
 		}

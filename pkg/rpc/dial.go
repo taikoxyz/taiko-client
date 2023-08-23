@@ -17,7 +17,11 @@ import (
 
 // DialClientWithBackoff connects a ethereum RPC client at the given URL with
 // a backoff strategy. Added a retry limit so it doesn't retry endlessly
-func DialClientWithBackoff(ctx context.Context, url string, retryInterval time.Duration, maxRetrys *big.Int) (*ethclient.Client, error) {
+func DialClientWithBackoff(
+	ctx context.Context,
+	url string,
+	retryInterval time.Duration,
+	maxRetrys *big.Int) (*ethclient.Client, error) {
 	var client *ethclient.Client
 	if err := backoff.Retry(
 		func() (err error) {
