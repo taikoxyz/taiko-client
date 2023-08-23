@@ -2,8 +2,10 @@ package prover
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
+	netHttp "net/http"
 	"strings"
 	"sync"
 	"time"
@@ -220,9 +222,8 @@ func (p *Prover) Start() error {
 	p.wg.Add(1)
 	p.initSubscription()
 	go func() {
-		err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort))
-		if err != nil {
-			log.Crit("error starting http server", "error", err)
+		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, netHttp.ErrServerClosed) {
+			log.Crit("Failed to start http server", "error", err)
 		}
 	}()
 	go p.eventLoop()

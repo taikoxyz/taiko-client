@@ -16,6 +16,7 @@ import (
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/proposer"
+	"github.com/taikoxyz/taiko-client/prover/http"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
@@ -172,7 +173,12 @@ func (s *ProverTestSuite) TestCheckChainVerification() {
 }
 
 func (s *ProverTestSuite) TestStartClose() {
-	s.p.srv.Shutdown(context.Background())
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	s.p.srv, _ = http.NewServer(http.NewServerOpts{
+		ProverPrivateKey: l1ProverPrivKey,
+	})
 	s.Nil(s.p.Start())
 	s.cancel()
 	s.NotPanics(func() { s.p.Close(context.Background()) })
