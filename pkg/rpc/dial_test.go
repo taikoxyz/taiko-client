@@ -23,6 +23,7 @@ func TestDialEngineClientWithBackoff(t *testing.T) {
 		os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		string(jwtSecret),
 		12*time.Second,
+		nil,
 	)
 
 	require.Nil(t, err)
@@ -38,6 +39,7 @@ func TestDialClientWithBackoff(t *testing.T) {
 		context.Background(),
 		os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		12*time.Second,
+		nil,
 	)
 	require.Nil(t, err)
 
@@ -54,6 +56,7 @@ func TestDialClientWithBackoff_CtxError(t *testing.T) {
 		ctx,
 		"invalid",
 		-1,
+		nil,
 	)
 	require.NotNil(t, err)
 }
@@ -71,6 +74,7 @@ func TestDialEngineClientWithBackoff_CtxError(t *testing.T) {
 		"invalid",
 		string(jwtSecret),
 		-1,
+		nil,
 	)
 	require.NotNil(t, err2)
 }

@@ -72,13 +72,6 @@ func (s *ChainSyncerTestSuite) TestSync() {
 	s.Nil(s.s.Sync(head))
 }
 
-// func (s *ChainSyncerTestSuite) TestSyncTriggerBeaconSync() {
-// 	s.s.p2pSyncVerifiedBlocks = true
-//  NOTE: need to increase the verified block as one of the conditions to trigger
-//         needBeaconSyncTriggered()
-// 	s.s.state.setLatestVerifiedBlockHash(common.Hash{})
-// }
-
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	s.TakeSnapshot()
 	// propose a couple blocks
