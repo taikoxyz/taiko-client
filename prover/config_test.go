@@ -63,6 +63,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.StartingBlockID.Name, "0",
 		"-" + flags.RPCTimeout.Name, "5",
+		"-" + flags.MinProofFee.Name, "1",
 		"-" + flags.Dummy.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.OracleProver.Name,
@@ -182,6 +183,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
 		&cli.Uint64Flag{Name: flags.ProverCapacity.Name},
+		&cli.StringFlag{Name: flags.MinProofFee.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

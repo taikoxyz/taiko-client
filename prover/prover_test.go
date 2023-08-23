@@ -28,6 +28,10 @@ type ProverTestSuite struct {
 	proposer *proposer.Proposer
 }
 
+var (
+	port = testutils.RandomPort()
+)
+
 func (s *ProverTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
@@ -58,6 +62,10 @@ func (s *ProverTestSuite) SetupTest() {
 	})))
 	s.p = p
 	s.cancel = cancel
+
+	go func() {
+		_ = s.p.srv.Start(fmt.Sprintf(":%v", port))
+	}()
 
 	// Init driver
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
@@ -95,10 +103,6 @@ func (s *ProverTestSuite) SetupTest() {
 		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
 		BlockProposalFee:           big.NewInt(1000),
 	})))
-
-	go func() {
-		_ = p.srv.Start(fmt.Sprintf(":%v", port))
-	}()
 
 	s.proposer = prop
 }
@@ -168,6 +172,7 @@ func (s *ProverTestSuite) TestCheckChainVerification() {
 }
 
 func (s *ProverTestSuite) TestStartClose() {
+	s.p.srv.Shutdown(context.Background())
 	s.Nil(s.p.Start())
 	s.cancel()
 	s.NotPanics(func() { s.p.Close(context.Background()) })
