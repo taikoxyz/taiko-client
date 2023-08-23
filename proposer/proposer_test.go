@@ -50,6 +50,8 @@ func (s *ProposerTestSuite) SetupTest() {
 		ProposeBlockTxReplacementMultiplier: 2,
 		WaitReceiptTimeout:                  10 * time.Second,
 		ProverEndpoints:                     []string{fmt.Sprintf("http://localhost:%v", port)},
+		BlockProposalFee:                    big.NewInt(100000),
+		BlockProposalFeeIncreasePercentage:  10,
 	})))
 
 	// Init prover
