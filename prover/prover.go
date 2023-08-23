@@ -219,10 +219,9 @@ func (p *Prover) Start() error {
 	p.wg.Add(1)
 	p.initSubscription()
 	go func() {
-		// TODO(jeff): handle err
 		err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort))
 		if err != nil {
-			log.Error("error starting http server", "error", err)
+			log.Crit("error starting http server", "error", err)
 		}
 	}()
 	go p.eventLoop()

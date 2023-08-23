@@ -513,7 +513,6 @@ func (p *Proposer) assignProver(
 			fee.Add(fee, increase)
 		}
 
-		// TODO(jeff): config for expiry? dynamic?
 		expiry := uint64(time.Now().Add(90 * time.Minute).Unix())
 
 		proposeBlockReq := &encoding.ProposeBlockData{
