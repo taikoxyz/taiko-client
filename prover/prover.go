@@ -116,8 +116,8 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.currentBlocksWaitingForProofWindowMutex = &sync.Mutex{}
 	p.maxCapacity = cfg.Capacity
 	p.currentCapacity = cfg.Capacity
-	p.requestCurrentCapacityCh = make(chan struct{})
-	p.receiveCurrentCapacityCh = make(chan uint64)
+	p.requestCurrentCapacityCh = make(chan struct{}, 1024)
+	p.receiveCurrentCapacityCh = make(chan uint64, 1024)
 
 	if !p.cfg.OracleProver {
 		p.srv, err = http.NewServer(http.NewServerOpts{
