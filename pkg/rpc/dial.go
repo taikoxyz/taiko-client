@@ -61,7 +61,7 @@ func DialEngineClientWithBackoff(
 
 			client, err := DialEngineClient(ctxWithTimeout, url, jwtSecret)
 			if err != nil {
-				log.Error("Dial ethclient error", "url", url, "error", err)
+				log.Error("Dial engine client error", "url", url, "error", err)
 				return err
 			}
 

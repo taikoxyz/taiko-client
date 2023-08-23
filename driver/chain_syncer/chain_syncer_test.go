@@ -91,16 +91,19 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	log.Info("L1HeaderByNumber head: %v\n", head.Number)
+	log.Info("L1HeaderByNumber head:", "number", head.Number)
 	// (equiv to s.state.GetL2Head().Number)
-	log.Info("L2HeaderByNumber head: %v\n", l2Head.Number)
-	log.Info("LatestVerifiedBlock number: %v\n", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
+	log.Info("L2HeaderByNumber head:", "number", l2Head.Number)
+	log.Info("LatestVerifiedBlock number:", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
+
+	config, err := s.s.rpc.TaikoL1.GetConfig(&bind.CallOpts{})
+	s.Nil(err)
 
 	// increase evm time to make blocks verifiable.
 	var result uint64
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", 2000))
+	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", config.ProofRegularCooldown.Uint64()))
 	s.NotNil(result)
-	log.Info("evm time increase: %v\n", result)
+	log.Info("evm time increase:", "number", result)
 
 	// interact with TaikoL1 contract to allow for verification of L2 blocks
 	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, common.Big3)
@@ -113,9 +116,9 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	l2Head2, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	log.Info("L1HeaderByNumber head2: %v\n", head2.Number)
-	log.Info("L2HeaderByNumber head: %v\n", l2Head2.Number)
-	log.Info("LatestVerifiedBlock number: %v\n", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
+	log.Info("L1HeaderByNumber head2:", "number", head2.Number)
+	log.Info("L2HeaderByNumber head:", "number", l2Head2.Number)
+	log.Info("LatestVerifiedBlock number:", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
 
 	s.RevertSnapshot()
 }
