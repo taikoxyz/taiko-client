@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
@@ -29,11 +30,9 @@ func (srv *Server) ProposeBlock(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "proof fee too low")
 	}
 
-	// TODO(jeff): check capacity
-
 	srv.requestCurrentCapacityCh <- struct{}{}
 
-	ctx, cancel := context.WithTimeout(c.Request().Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request().Context(), 8*time.Second)
 	defer cancel()
 
 	for {
@@ -62,6 +61,7 @@ func (srv *Server) ProposeBlock(c echo.Context) error {
 
 			return c.JSON(http.StatusOK, resp)
 		case <-ctx.Done():
+			log.Info("timed out trying to get capacity")
 			return echo.NewHTTPError(http.StatusUnprocessableEntity, "timed out trying to get capacity")
 		}
 	}

@@ -32,6 +32,7 @@ type ProofSubmitterTestSuite struct {
 	validProofCh        chan *proofProducer.ProofWithHeader
 	invalidProofCh      chan *proofProducer.ProofWithHeader
 	srv                 *http.Server
+	cancel              context.CancelFunc
 }
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
@@ -95,21 +96,35 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		BlockProposalFee:           big.NewInt(1000),
 	})))
 
-	s.srv, err = http.NewServer(http.NewServerOpts{
-		ProverPrivateKey: l1ProverPrivKey,
-		MinProofFee:      big.NewInt(1),
-		MaxCapacity:      10,
-	})
+	serverOpts := http.NewServerOpts{
+		ProverPrivateKey:         l1ProverPrivKey,
+		MinProofFee:              big.NewInt(1),
+		MaxCapacity:              10,
+		RequestCurrentCapacityCh: make(chan struct{}),
+		ReceiveCurrentCapacityCh: make(chan uint64),
+	}
+
+	s.srv, err = http.NewServer(serverOpts)
 	s.Nil(err)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	s.cancel = cancel
 	go func() {
-		_ = s.srv.Start(fmt.Sprintf(":%v", port))
+		for {
+			select {
+			case <-serverOpts.RequestCurrentCapacityCh:
+				serverOpts.ReceiveCurrentCapacityCh <- 100
+			case <-ctx.Done():
+				return
+			}
+		}
 	}()
 
 	s.proposer = prop
 }
 
 func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofDeadlineExceeded() {
+	defer s.cancel()
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -120,6 +135,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofDeadlineExc
 }
 
 func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotFound() {
+	defer s.cancel()
 	s.Error(
 		s.validProofSubmitter.SubmitProof(
 			context.Background(), &proofProducer.ProofWithHeader{
@@ -133,6 +149,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotF
 }
 
 func (s *ProofSubmitterTestSuite) TestValidSubmitProofs() {
+	defer s.cancel()
 	events := testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.proposer, s.calldataSyncer)
 
 	for _, e := range events {
@@ -143,6 +160,7 @@ func (s *ProofSubmitterTestSuite) TestValidSubmitProofs() {
 }
 
 func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofCancelled() {
+	defer s.cancel()
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		time.AfterFunc(2*time.Second, func() {

@@ -235,8 +235,21 @@ func (p *Prover) Start() error {
 		}
 	}()
 	go p.eventLoop()
+	go p.watchCurrentCapacity()
 
 	return nil
+}
+
+func (p *Prover) watchCurrentCapacity() {
+	for {
+		select {
+		case <-p.ctx.Done():
+			return
+		case <-p.requestCurrentCapacityCh:
+			log.Info("received request for current capacity", "currentCapacity", p.currentCapacity)
+			p.receiveCurrentCapacityCh <- p.currentCapacity
+		}
+	}
 }
 
 // eventLoop starts the main loop of Taiko prover.
@@ -308,8 +321,6 @@ func (p *Prover) eventLoop() {
 			if err := p.onBlockProven(p.ctx, e); err != nil {
 				log.Error("Handle BlockProven event error", "error", err)
 			}
-		case <-p.requestCurrentCapacityCh:
-			p.receiveCurrentCapacityCh <- p.currentCapacity
 		case <-forceProvingTicker.C:
 			reqProving()
 		}

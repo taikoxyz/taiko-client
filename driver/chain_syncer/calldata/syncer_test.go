@@ -23,9 +23,10 @@ import (
 
 type CalldataSyncerTestSuite struct {
 	testutils.ClientTestSuite
-	s   *Syncer
-	p   testutils.Proposer
-	srv *http.Server
+	s      *Syncer
+	p      testutils.Proposer
+	srv    *http.Server
+	cancel context.CancelFunc
 }
 
 func (s *CalldataSyncerTestSuite) SetupTest() {
@@ -67,20 +68,35 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	s.srv, err = http.NewServer(http.NewServerOpts{
-		ProverPrivateKey: l1ProverPrivKey,
-		MinProofFee:      big.NewInt(1),
-		MaxCapacity:      10,
-	})
+	serverOpts := http.NewServerOpts{
+		ProverPrivateKey:         l1ProverPrivKey,
+		MinProofFee:              big.NewInt(1),
+		MaxCapacity:              10,
+		RequestCurrentCapacityCh: make(chan struct{}),
+		ReceiveCurrentCapacityCh: make(chan uint64),
+	}
+
+	s.srv, err = http.NewServer(serverOpts)
 	s.Nil(err)
 
+	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		_ = s.srv.Start(fmt.Sprintf(":%v", port))
+		for {
+			select {
+			case <-serverOpts.RequestCurrentCapacityCh:
+				serverOpts.ReceiveCurrentCapacityCh <- 100
+			case <-ctx.Done():
+				return
+			}
+		}
 	}()
+
+	s.cancel = cancel
 
 	s.p = prop
 }
 func (s *CalldataSyncerTestSuite) TestNewSyncer() {
+	defer s.cancel()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	syncer, err := NewSyncer(
@@ -95,12 +111,14 @@ func (s *CalldataSyncerTestSuite) TestNewSyncer() {
 }
 
 func (s *CalldataSyncerTestSuite) TestProcessL1Blocks() {
+	defer s.cancel()
 	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Nil(s.s.ProcessL1Blocks(context.Background(), head))
 }
 
 func (s *CalldataSyncerTestSuite) TestProcessL1BlocksReorg() {
+	defer s.cancel()
 	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
 	s.Nil(err)
@@ -108,6 +126,7 @@ func (s *CalldataSyncerTestSuite) TestProcessL1BlocksReorg() {
 }
 
 func (s *CalldataSyncerTestSuite) TestOnBlockProposed() {
+	defer s.cancel()
 	s.Nil(s.s.onBlockProposed(
 		context.Background(),
 		&bindings.TaikoL1ClientBlockProposed{BlockId: common.Big0},
@@ -121,6 +140,7 @@ func (s *CalldataSyncerTestSuite) TestOnBlockProposed() {
 }
 
 func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
+	defer s.cancel()
 	parent, err := s.s.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	l1Head, err := s.s.rpc.L1.BlockByNumber(context.Background(), nil)
@@ -153,6 +173,7 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 }
 
 func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
+	defer s.cancel()
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())
 
@@ -175,6 +196,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
 }
 
 func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
+	defer s.cancel()
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())
 

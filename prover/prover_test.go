@@ -106,6 +106,8 @@ func (s *ProverTestSuite) SetupTest() {
 	})))
 
 	s.proposer = prop
+
+	go s.p.watchCurrentCapacity()
 }
 
 func (s *ProverTestSuite) TestName() {

@@ -76,11 +76,28 @@ func (s *DriverTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	s.srv, err = http.NewServer(http.NewServerOpts{
-		ProverPrivateKey: l1ProverPrivKey,
-		MinProofFee:      big.NewInt(1),
-		MaxCapacity:      10,
-	})
+	serverOpts := http.NewServerOpts{
+		ProverPrivateKey:         l1ProverPrivKey,
+		MinProofFee:              big.NewInt(1),
+		MaxCapacity:              10,
+		RequestCurrentCapacityCh: make(chan struct{}),
+		ReceiveCurrentCapacityCh: make(chan uint64),
+	}
+
+	s.srv, err = http.NewServer(serverOpts)
+	s.Nil(err)
+
+	go func() {
+		for {
+			select {
+			case <-serverOpts.RequestCurrentCapacityCh:
+				serverOpts.ReceiveCurrentCapacityCh <- 100
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
 	s.Nil(err)
 
 	go func() {
