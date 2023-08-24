@@ -36,8 +36,6 @@ var (
 func (s *ProverTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	port := testutils.RandomPort()
-
 	// Init prover
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
