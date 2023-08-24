@@ -3,7 +3,6 @@ package prover
 import (
 	"context"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -20,7 +19,7 @@ var (
 	taikoL1        = os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2        = os.Getenv("TAIKO_L2_ADDRESS")
 	rpcTimeout     = 5 * time.Second
-	minProofFee    = 1024
+	minProofFee    = "1024"
 )
 
 // TODO: fix this test
@@ -53,7 +52,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		s.Equal(true, c.ProveUnassignedBlocks)
 		s.Equal(rpcTimeout, *c.RPCTimeout)
 		s.Equal(uint64(8), c.Capacity)
-		s.Equal(uint64(minProofFee), c.MinProofFee.Uint64())
+		s.Equal(minProofFee, c.MinProofFee.String())
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -72,7 +71,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.RPCTimeout.Name, "5",
 		"-" + flags.Dummy.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
-		"-" + flags.MinProofFee.Name, strconv.Itoa(minProofFee),
+		"-" + flags.MinProofFee.Name, minProofFee,
 		"-" + flags.ProverCapacity.Name, "8",
 		"-" + flags.OracleProver.Name,
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
@@ -99,7 +98,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"-" + flags.OracleProver.Name,
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.RPCTimeout.Name, "5",
-		"-" + flags.MinProofFee.Name, strconv.Itoa(minProofFee),
+		"-" + flags.MinProofFee.Name, minProofFee,
 	}), "oracleProver flag set without oracleProverPrivateKey set")
 }
 
@@ -132,7 +131,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayError() {
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.OracleProver.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "130m",
-		"-" + flags.MinProofFee.Name, strconv.Itoa(minProofFee),
+		"-" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value")
 }
 
@@ -145,7 +144,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorLower() {
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.OracleProver.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30x-1h",
-		"-" + flags.MinProofFee.Name, strconv.Itoa(minProofFee),
+		"-" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value")
 }
 
@@ -158,7 +157,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorUpper() {
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.OracleProver.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1x",
-		"-" + flags.MinProofFee.Name, strconv.Itoa(minProofFee),
+		"-" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value")
 }
 
@@ -171,7 +170,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorOrder() {
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.OracleProver.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "1h-30m",
-		"-" + flags.MinProofFee.Name, strconv.Itoa(minProofFee),
+		"-" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value (lower > upper)")
 }
 

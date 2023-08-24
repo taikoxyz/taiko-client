@@ -121,7 +121,10 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proveBlockTxGasLimit = &gasLimit
 	}
 
-	minProofFee := new(big.Int).SetUint64(c.Uint64(flags.MinProofFee.Name))
+	minProofFee, ok := new(big.Int).SetString(c.String(flags.MinProofFee.Name), 10)
+	if !ok {
+		return nil, fmt.Errorf("invalid minProofFee: %v", minProofFee)
+	}
 
 	return &Config{
 		L1WsEndpoint:                    c.String(flags.L1WSEndpoint.Name),
