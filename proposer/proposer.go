@@ -566,11 +566,8 @@ func (p *Proposer) assignProver(
 				continue
 			}
 
-			log.Info("Prover assigned for block",
-				"prover", resp.Prover.Hex(),
-				"signedPayload", common.Bytes2Hex(resp.SignedPayload),
-			)
-
+			// ensure prover in response is the same as the one recovered
+			// from the signature
 			encodedBlockData, err := encoding.EncodeProposeBlockData(proposeBlockReq)
 			if err != nil {
 				continue
@@ -587,6 +584,20 @@ func (p *Proposer) assignProver(
 				continue
 			}
 
+			// make sure the prover has the necessary balance either in TaikoL1 token balances
+			// or, if not, check allowance, as contract will attempt to burn directly after
+			// if it doesnt have the available tokenbalance in-contract.
+			taikoTokenBalance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(nil, resp.Prover)
+			if err != nil {
+				continue
+			}
+
+			// TODO: check allowance on taikotoken contract
+			if p.protocolConfigs.ProofBond.Cmp(taikoTokenBalance) == 1 {
+				continue
+			}
+
+			// convert signature to one solidity can recover by adding 27 to 65th byte
 			signed := resp.SignedPayload
 
 			signed[64] = uint8(uint(signed[64])) + 27
@@ -599,6 +610,11 @@ func (p *Proposer) assignProver(
 			if err != nil {
 				return nil, nil, err
 			}
+
+			log.Info("Prover assigned for block",
+				"prover", resp.Prover.Hex(),
+				"signedPayload", common.Bytes2Hex(resp.SignedPayload),
+			)
 
 			return encoded, fee, nil
 		}
