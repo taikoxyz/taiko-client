@@ -80,6 +80,8 @@ type Proposer struct {
 	wg  sync.WaitGroup
 
 	waitReceiptTimeout time.Duration
+
+	cfg *Config
 }
 
 // New initializes the given proposer instance based on the command line flags.
@@ -111,15 +113,17 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.proverEndpoints = cfg.ProverEndpoints
 	p.blockProposalFee = cfg.BlockProposalFee
 	p.blockProposalFeeIncreasePercentage = cfg.BlockProposalFeeIncreasePercentage
+	p.cfg = cfg
 
 	// RPC clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
-		L1Endpoint:     cfg.L1Endpoint,
-		L2Endpoint:     cfg.L2Endpoint,
-		TaikoL1Address: cfg.TaikoL1Address,
-		TaikoL2Address: cfg.TaikoL2Address,
-		RetryInterval:  cfg.BackOffRetryInterval,
-		Timeout:        cfg.RPCTimeout,
+		L1Endpoint:        cfg.L1Endpoint,
+		L2Endpoint:        cfg.L2Endpoint,
+		TaikoL1Address:    cfg.TaikoL1Address,
+		TaikoL2Address:    cfg.TaikoL2Address,
+		TaikoTokenAddress: cfg.TaikoTokenAddress,
+		RetryInterval:     cfg.BackOffRetryInterval,
+		Timeout:           cfg.RPCTimeout,
 	}); err != nil {
 		return fmt.Errorf("initialize rpc clients error: %w", err)
 	}
@@ -592,9 +596,16 @@ func (p *Proposer) assignProver(
 				continue
 			}
 
-			// TODO: check allowance on taikotoken contract
 			if p.protocolConfigs.ProofBond.Cmp(taikoTokenBalance) == 1 {
-				continue
+				// check allowance on taikotoken contract
+				allowance, err := p.rpc.TaikoToken.Allowance(nil, resp.Prover, p.cfg.TaikoL1Address)
+				if err != nil {
+					continue
+				}
+
+				if p.protocolConfigs.ProofBond.Cmp(allowance) == 1 {
+					continue
+				}
 			}
 
 			// convert signature to one solidity can recover by adding 27 to 65th byte

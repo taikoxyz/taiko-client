@@ -19,6 +19,7 @@ type Config struct {
 	L2Endpoint                          string
 	TaikoL1Address                      common.Address
 	TaikoL2Address                      common.Address
+	TaikoTokenAddress                   common.Address
 	L1ProposerPrivKey                   *ecdsa.PrivateKey
 	L2SuggestedFeeRecipient             common.Address
 	ProposeInterval                     *time.Duration
@@ -120,6 +121,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L2Endpoint:                          c.String(flags.L2HTTPEndpoint.Name),
 		TaikoL1Address:                      common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                      common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
+		TaikoTokenAddress:                   common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:             common.HexToAddress(l2SuggestedFeeRecipient),
 		ProposeInterval:                     proposingInterval,

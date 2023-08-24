@@ -19,6 +19,7 @@ var (
 	proverEndpoints  = "http://localhost:9876,http://localhost:1234"
 	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
+	taikoToken       = os.Getenv("TAIKO_TOKEN_ADDRESS")
 	blockProposalFee = "10000000000"
 	proposeInterval  = "10s"
 	rpcTimeout       = 5 * time.Second
@@ -40,6 +41,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(l2Endpoint, c.L2Endpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
+		s.Equal(taikoToken, c.TaikoTokenAddress.String())
 		s.Equal(goldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
 		s.Equal(goldenTouchAddress, c.L2SuggestedFeeRecipient)
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
@@ -65,6 +67,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L2HTTPEndpoint.Name, l2Endpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
+		"-" + flags.TaikoTokenAddress.Name, taikoToken,
 		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
 		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"-" + flags.ProposeInterval.Name, proposeInterval,
@@ -176,6 +179,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
+		&cli.StringFlag{Name: flags.TaikoTokenAddress.Name},
 		&cli.StringFlag{Name: flags.L1ProposerPrivKey.Name},
 		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
 		&cli.StringFlag{Name: flags.ProposeEmptyBlocksInterval.Name},
