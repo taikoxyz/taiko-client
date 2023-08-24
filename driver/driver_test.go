@@ -71,11 +71,14 @@ func (s *DriverTestSuite) SetupTest() {
 	})))
 	s.p = p
 
-	srv, cancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
+	srv, srvCancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
 	s.Nil(err)
 
 	s.srv = srv
-	s.cancel = cancel
+	s.cancel = func() {
+		cancel()
+		srvCancel()
+	}
 }
 
 func (s *DriverTestSuite) TestName() {
