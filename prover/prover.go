@@ -30,7 +30,8 @@ import (
 )
 
 var (
-	zeroAddress = common.HexToAddress("0x0000000000000000000000000000000000000000")
+	errNoCapacity = errors.New("no prover capacity available")
+	zeroAddress   = common.HexToAddress("0x0000000000000000000000000000000000000000")
 )
 
 type cancelFunc func()
@@ -559,7 +560,7 @@ func (p *Prover) onBlockProposed(
 			proofWindowExpiresAt := block.ProposedAt + uint64(p.protocolConfigs.ProofWindow)
 			proofWindowExpired := uint64(time.Now().Unix()) > proofWindowExpiresAt
 			// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
-			if block.Prover != p.proverAddress && block.Prover != zeroAddress && !proofWindowExpired {
+			if block.Prover != p.proverAddress && !proofWindowExpired {
 				log.Info(
 					"Proposed block not proveable",
 					"blockID",
@@ -594,9 +595,9 @@ func (p *Prover) onBlockProposed(
 
 			// if set not to prove unassigned blocks, this block is still not provable
 			// by us even though its open proving.
-			if (block.Prover == zeroAddress || proofWindowExpired) && !p.cfg.ProveUnassignedBlocks {
+			if proofWindowExpired && !p.cfg.ProveUnassignedBlocks {
 				log.Info(
-					"Skipping proposed open proving block, not assigned to us",
+					"Skipping proofWindowExpired block",
 					"blockID", event.BlockId,
 				)
 				return nil
@@ -623,6 +624,10 @@ func (p *Prover) onBlockProposed(
 		p.currentBlocksBeingProvenMutex.Unlock()
 
 		if !p.cfg.OracleProver {
+			if p.currentCapacity == 0 {
+				return errNoCapacity
+			}
+
 			p.currentCapacity--
 		}
 
