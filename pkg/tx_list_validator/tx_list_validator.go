@@ -19,21 +19,24 @@ const (
 )
 
 type TxListValidator struct {
-	blockMaxGasLimit  uint64
-	maxBytesPerTxList uint64
-	chainID           *big.Int
+	blockMaxGasLimit        uint64
+	maxTransactionsPerBlock uint64
+	maxBytesPerTxList       uint64
+	chainID                 *big.Int
 }
 
 // NewTxListValidator creates a new TxListValidator instance based on giving configurations.
 func NewTxListValidator(
 	blockMaxGasLimit uint64,
+	maxTransactionsPerBlock uint64,
 	maxBytesPerTxList uint64,
 	chainID *big.Int,
 ) *TxListValidator {
 	return &TxListValidator{
-		blockMaxGasLimit:  blockMaxGasLimit,
-		maxBytesPerTxList: maxBytesPerTxList,
-		chainID:           chainID,
+		maxTransactionsPerBlock: maxTransactionsPerBlock,
+		blockMaxGasLimit:        blockMaxGasLimit,
+		maxBytesPerTxList:       maxBytesPerTxList,
+		chainID:                 chainID,
 	}
 }
 
@@ -70,6 +73,11 @@ func (v *TxListValidator) isTxListValid(blockID *big.Int, txListBytes []byte) (h
 	}
 
 	log.Debug("Transactions list decoded", "blockID", blockID, "length", len(txs))
+
+	if txs.Len() > int(v.maxTransactionsPerBlock) {
+		log.Info("Too many transactions", "blockID", blockID, "count", txs.Len())
+		return HintNone, 0
+	}
 
 	log.Info("Transaction list is valid", "blockID", blockID)
 	return HintOK, 0
