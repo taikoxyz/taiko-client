@@ -231,7 +231,7 @@ func EncodeProverAssignment(assignment *ProverAssignment) ([]byte, error) {
 	return b, nil
 }
 
-// EncodeProposeBlockData performs the solidity `abi.encode` for the given blockMetadata.
+// EncodeProposeBlockData performs the solidity `abi.encode` for the given proposeBlockData.
 func EncodeProposeBlockData(data *ProposeBlockData) ([]byte, error) {
 	b, err := proposeBlockDataArgs.Pack(data)
 	if err != nil {
