@@ -720,16 +720,10 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 		return nil
 	}
 
-	block, err := p.rpc.L2ParentByBlockId(ctx, event.BlockId)
-	if err != nil {
-		return err
-	}
-
 	// cancel any proofs being generated for this block
 	isValidProof, err := p.isValidProof(
 		ctx,
 		event.BlockId.Uint64(),
-		block.GasUsed,
 		event.ParentHash,
 		event.BlockHash,
 	)
@@ -860,7 +854,6 @@ func (p *Prover) checkChainVerification(lastLatestVerifiedL1Height uint64) error
 func (p *Prover) isValidProof(
 	ctx context.Context,
 	blockID uint64,
-	parentGasUsed uint64,
 	parentHash common.Hash,
 	blockHash common.Hash,
 ) (bool, error) {
@@ -874,7 +867,7 @@ func (p *Prover) isValidProof(
 		return false, err
 	}
 
-	if parent.GasUsed == parentGasUsed && parent.Hash() == parentHash && blockHash == block.Hash() {
+	if parent.Hash() == parentHash && blockHash == block.Hash() {
 		return true, nil
 	}
 
