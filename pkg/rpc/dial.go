@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"net/url"
 	"time"
 
@@ -15,8 +16,12 @@ import (
 )
 
 // DialClientWithBackoff connects a ethereum RPC client at the given URL with
-// a backoff strategy.
-func DialClientWithBackoff(ctx context.Context, url string, retryInterval time.Duration) (*ethclient.Client, error) {
+// a backoff strategy. Added a retry limit so it doesn't retry endlessly
+func DialClientWithBackoff(
+	ctx context.Context,
+	url string,
+	retryInterval time.Duration,
+	maxRetrys *big.Int) (*ethclient.Client, error) {
 	var client *ethclient.Client
 	if err := backoff.Retry(
 		func() (err error) {
@@ -26,10 +31,12 @@ func DialClientWithBackoff(ctx context.Context, url string, retryInterval time.D
 			client, err = ethclient.DialContext(ctxWithTimeout, url)
 			if err != nil {
 				log.Error("Dial ethclient error", "url", url, "error", err)
+				return err
 			}
-			return err
+
+			return nil
 		},
-		backoff.NewConstantBackOff(retryInterval),
+		backoff.WithMaxRetries(backoff.NewConstantBackOff(retryInterval), maxRetrys.Uint64()),
 	); err != nil {
 		return nil, err
 	}
@@ -38,12 +45,13 @@ func DialClientWithBackoff(ctx context.Context, url string, retryInterval time.D
 }
 
 // DialEngineClientWithBackoff connects an ethereum engine RPC client at the
-// given URL with a backoff strategy.
+// given URL with a backoff strategy. Added a retry limit so it doesn't retry endlessly
 func DialEngineClientWithBackoff(
 	ctx context.Context,
 	url string,
 	jwtSecret string,
 	retryInterval time.Duration,
+	maxRetrys *big.Int,
 ) (*EngineClient, error) {
 	var engineClient *EngineClient
 	if err := backoff.Retry(
@@ -60,7 +68,7 @@ func DialEngineClientWithBackoff(
 			engineClient = &EngineClient{client}
 			return nil
 		},
-		backoff.NewConstantBackOff(retryInterval),
+		backoff.WithMaxRetries(backoff.NewConstantBackOff(retryInterval), maxRetrys.Uint64()),
 	); err != nil {
 		return nil, err
 	}

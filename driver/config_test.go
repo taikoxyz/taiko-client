@@ -9,25 +9,18 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func (s *DriverTestSuite) TestNewConfigFromCliContext() {
-	l1Endpoint := os.Getenv("L1_NODE_WS_ENDPOINT")
-	l2Endpoint := os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
-	l2EngineEndpoint := os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
-	taikoL1 := os.Getenv("TAIKO_L1_ADDRESS")
-	taikoL2 := os.Getenv("TAIKO_L2_ADDRESS")
-	rpcTimeout := 5 * time.Second
+var (
+	l1Endpoint       = os.Getenv("L1_NODE_WS_ENDPOINT")
+	l2Endpoint       = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
+	l2EngineEndpoint = os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
+	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
+	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
+	rpcTimeout       = 5 * time.Second
+)
 
-	app := cli.NewApp()
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
-		&cli.StringFlag{Name: flags.L2AuthEndpoint.Name},
-		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
-		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
-		&cli.StringFlag{Name: flags.JWTSecret.Name},
-		&cli.UintFlag{Name: flags.P2PSyncTimeout.Name},
-		&cli.UintFlag{Name: flags.RPCTimeout.Name},
-	}
+func (s *DriverTestSuite) TestNewConfigFromCliContext() {
+	app := s.SetupApp()
+
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
@@ -55,4 +48,42 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.P2PSyncTimeout.Name, "120",
 		"-" + flags.RPCTimeout.Name, "5",
 	}))
+}
+
+func (s *DriverTestSuite) TestNewConfigFromCliContextJWTError() {
+	app := s.SetupApp()
+	s.ErrorContains(app.Run([]string{
+		"TestNewConfigFromCliContext",
+		"-" + flags.JWTSecret.Name, "wrongsecretfile.txt",
+	}), "invalid JWT secret file")
+}
+
+func (s *DriverTestSuite) TestNewConfigFromCliContextEmptyL2CheckPoint() {
+	app := s.SetupApp()
+	s.ErrorContains(app.Run([]string{
+		"TestNewConfigFromCliContext",
+		"-" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
+		"-" + flags.P2PSyncVerifiedBlocks.Name, "true",
+		"-" + flags.L2WSEndpoint.Name, "",
+	}), "empty L2 check point URL")
+}
+
+func (s *DriverTestSuite) SetupApp() *cli.App {
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
+		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
+		&cli.StringFlag{Name: flags.L2AuthEndpoint.Name},
+		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
+		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
+		&cli.StringFlag{Name: flags.JWTSecret.Name},
+		&cli.BoolFlag{Name: flags.P2PSyncVerifiedBlocks.Name},
+		&cli.UintFlag{Name: flags.P2PSyncTimeout.Name},
+		&cli.UintFlag{Name: flags.RPCTimeout.Name},
+	}
+	app.Action = func(ctx *cli.Context) error {
+		_, err := NewConfigFromCliContext(ctx)
+		return err
+	}
+	return app
 }

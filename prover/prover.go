@@ -115,6 +115,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		TaikoProverPoolL1Address: cfg.TaikoProverPoolL1Address,
 		RetryInterval:            cfg.BackOffRetryInterval,
 		Timeout:                  cfg.RPCTimeout,
+		BackOffMaxRetrys:         new(big.Int).SetUint64(p.cfg.BackOffMaxRetrys),
 	}); err != nil {
 		return err
 	}

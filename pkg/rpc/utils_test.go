@@ -26,6 +26,45 @@ func TestWaitReceiptTimeout(t *testing.T) {
 	require.ErrorContains(t, err, "context deadline exceeded")
 }
 
+// TODO: fix this, need to propose/prove/execute tx before this'll work
+// func TestWaitReceiptRevert(t *testing.T) {
+// 	client := newTestClient(t)
+// 	testAddrPrivKey, err := crypto.ToECDSA(
+// 		common.Hex2Bytes("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"),
+// 	)
+// 	require.Nil(t, err)
+// 	testAddr := common.HexToAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
+
+// 	// build transaction
+// 	nonce, err := client.L2.PendingNonceAt(context.Background(), testAddr)
+// 	require.Nil(t, err)
+// 	data := []byte("invalid")
+// 	parent, err := client.L2.BlockByNumber(context.Background(), nil)
+// 	require.Nil(t, err)
+// 	baseFee, err := client.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
+// 	require.Nil(t, err)
+// 	tx := types.NewTx(&types.DynamicFeeTx{
+// 		ChainID:   client.L2ChainID,
+// 		Nonce:     nonce,
+// 		GasTipCap: common.Big0,
+// 		GasFeeCap: new(big.Int).SetUint64(baseFee.Uint64() * 2),
+// 		Gas:       uint64(22000),
+// 		To:        &testAddr,
+// 		Value:     common.Big0,
+// 		Data:      data,
+// 	})
+
+// 	// sign transaction and send
+// 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(client.L2ChainID), testAddrPrivKey)
+// 	require.Nil(t, err)
+// 	require.Nil(t, client.L2.SendTransaction(context.Background(), signedTx))
+
+// 	_, err2 := WaitReceipt(
+// 		context.Background(), client.L2, signedTx,
+// 	)
+// 	require.ErrorContains(t, err2, "transaction reverted,")
+// }
+
 func TestSetHead(t *testing.T) {
 	require.Nil(t, SetHead(context.Background(), newTestClient(t).L2RawRPC, common.Big0))
 }
