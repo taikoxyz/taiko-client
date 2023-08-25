@@ -519,7 +519,6 @@ func (p *Prover) onBlockProposed(
 					&bind.CallOpts{Context: ctx},
 					event.BlockId.Uint64(),
 					parent.Hash(),
-					uint32(parent.GasUsed),
 				)
 				if err != nil {
 					if strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
@@ -720,11 +719,16 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 		return nil
 	}
 
+	block, err := p.rpc.L2ParentByBlockId(ctx, event.BlockId)
+	if err != nil {
+		return err
+	}
+
 	// cancel any proofs being generated for this block
 	isValidProof, err := p.isValidProof(
 		ctx,
 		event.BlockId.Uint64(),
-		uint64(event.ParentGasUsed),
+		block.GasUsed,
 		event.ParentHash,
 		event.BlockHash,
 	)
@@ -932,7 +936,6 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 			&bind.CallOpts{Context: ctx},
 			blockId,
 			parent.Hash(),
-			uint32(parent.GasUsed),
 		)
 
 		if err != nil && !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {

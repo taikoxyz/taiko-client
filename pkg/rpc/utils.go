@@ -103,7 +103,6 @@ func NeedNewProof(
 		&bind.CallOpts{Context: ctxWithTimeout},
 		id.Uint64(),
 		parent.Hash(),
-		uint32(parent.GasUsed),
 	)
 	if err != nil {
 		if !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
