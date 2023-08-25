@@ -18,6 +18,22 @@ var (
 		Required: true,
 		Category: proposerCategory,
 	}
+	ProverEndpoints = &cli.StringFlag{
+		Name:     "proverEndpoints",
+		Usage:    "Comma-delinated list of prover endpoints proposer should query when attemping to propose a block",
+		Category: proposerCategory,
+	}
+	BlockProposalFee = &cli.StringFlag{
+		Name:     "blockProposalFee",
+		Usage:    "Initial block proposal fee (in wei) paid on block proposing",
+		Category: proposerCategory,
+	}
+	TaikoTokenAddress = &cli.StringFlag{
+		Name:     "taikoToken",
+		Usage:    "TaikoToken contract address",
+		Required: true,
+		Category: proposerCategory,
+	}
 )
 
 // Optional flags used by proposer.
@@ -64,6 +80,12 @@ var (
 		Usage:    "Gas tip cap (in wei) for a TaikoL1.proposeBlock transaction when doing the transaction replacement",
 		Category: proposerCategory,
 	}
+	BlockProposalFeeIncreasePercentage = &cli.Uint64Flag{
+		Name:     "blockProposalFeeIncreasePercentage",
+		Usage:    "Increase fee by what percentage when no prover wants to accept the block at initial fee",
+		Category: proposerCategory,
+		Value:    10,
+	}
 )
 
 // All proposer flags.
@@ -79,4 +101,8 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProposeBlockTxGasLimit,
 	ProposeBlockTxReplacementMultiplier,
 	ProposeBlockTxGasTipCap,
+	ProverEndpoints,
+	BlockProposalFee,
+	BlockProposalFeeIncreasePercentage,
+	TaikoTokenAddress,
 })

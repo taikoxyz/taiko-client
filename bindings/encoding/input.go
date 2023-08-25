@@ -136,6 +136,36 @@ var (
 			Type: "bytes",
 		},
 	}
+	proverAssignmentComponents = []abi.ArgumentMarshaling{
+		{
+			Name: "prover",
+			Type: "address",
+		},
+		{
+			Name: "expiry",
+			Type: "uint64",
+		},
+		{
+			Name: "data",
+			Type: "bytes",
+		},
+	}
+	proposeBlockDataComponents = []abi.ArgumentMarshaling{
+		{
+			Name:       "input",
+			Type:       "tuple",
+			Components: blockMetadataInputComponents,
+		},
+		{
+			Name: "fee",
+			Type: "uint256",
+		},
+
+		{
+			Name: "expiry",
+			Type: "uint64",
+		},
+	}
 )
 
 var (
@@ -148,6 +178,12 @@ var (
 	// Evidence
 	EvidenceType, _ = abi.NewType("tuple", "TaikoData.BlockEvidence", evidenceComponents)
 	EvidenceArgs    = abi.Arguments{{Name: "Evidence", Type: EvidenceType}}
+	// ProverAssignment
+	proverAssignmentType, _ = abi.NewType("tuple", "ProverAssignment", proverAssignmentComponents)
+	proverAssignmentArgs    = abi.Arguments{{Name: "ProverAssignment", Type: proverAssignmentType}}
+	// ProposeBlockData
+	proposeBlockDataType, _ = abi.NewType("tuple", "ProposeBlockData", proposeBlockDataComponents)
+	proposeBlockDataArgs    = abi.Arguments{{Name: "ProposeBlockData", Type: proposeBlockDataType}}
 )
 
 // Contract ABIs.
@@ -182,6 +218,24 @@ func EncodeBlockMetadata(meta *bindings.TaikoDataBlockMetadata) ([]byte, error) 
 	b, err := blockMetadataArgs.Pack(meta)
 	if err != nil {
 		return nil, fmt.Errorf("failed to abi.encode block metadata, %w", err)
+	}
+	return b, nil
+}
+
+// EncodeProverAssignment performs the solidity `abi.encode` for the given proverAssignment.
+func EncodeProverAssignment(assignment *ProverAssignment) ([]byte, error) {
+	b, err := proverAssignmentArgs.Pack(assignment)
+	if err != nil {
+		return nil, fmt.Errorf("failed to abi.encode prover assignment, %w", err)
+	}
+	return b, nil
+}
+
+// EncodeProposeBlockData performs the solidity `abi.encode` for the given proposeBlockData.
+func EncodeProposeBlockData(data *ProposeBlockData) ([]byte, error) {
+	b, err := proposeBlockDataArgs.Pack(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to abi.encode proposeBlock data, %w", err)
 	}
 	return b, nil
 }

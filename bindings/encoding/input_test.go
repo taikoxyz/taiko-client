@@ -60,6 +60,19 @@ func TestEncodeProveBlockInput(t *testing.T) {
 	require.NotNil(t, encoded)
 }
 
+func TestEncodeProverAssignment(t *testing.T) {
+	encoded, err := EncodeProverAssignment(
+		&ProverAssignment{
+			Prover: common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
+			Data:   randomHash().Big().Bytes(),
+			Expiry: 1024,
+		},
+	)
+
+	require.Nil(t, err)
+	require.NotNil(t, encoded)
+}
+
 func TestEncodeProveBlockInvalidInput(t *testing.T) {
 	encoded, err := EncodeProveBlockInvalidInput(
 		&TaikoL1Evidence{

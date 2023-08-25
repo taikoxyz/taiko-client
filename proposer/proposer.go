@@ -1,13 +1,16 @@
 package proposer
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
+	"io"
 	"math/big"
 	"math/rand"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -30,9 +33,15 @@ import (
 
 var (
 	errNoNewTxs                = errors.New("no new transactions")
+	errUnableToFindProver      = errors.New("unable to find prover")
 	maxSendProposeBlockTxRetry = 10
 	retryInterval              = 12 * time.Second
 )
+
+type proposeBlockResponse struct {
+	SignedPayload []byte         `json:"signedPayload"`
+	Prover        common.Address `json:"prover"`
+}
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
 type Proposer struct {
@@ -54,9 +63,14 @@ type Proposer struct {
 	proposeBlockTxGasLimit     *uint64
 	txReplacementTipMultiplier uint64
 	proposeBlockTxGasTipCap    *big.Int
+	proverEndpoints            []string
 
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
+
+	// Block proposal fee configurations
+	blockProposalFee                   *big.Int
+	blockProposalFeeIncreasePercentage uint64
 
 	// Only for testing purposes
 	CustomProposeOpHook func() error
@@ -66,6 +80,8 @@ type Proposer struct {
 	wg  sync.WaitGroup
 
 	waitReceiptTimeout time.Duration
+
+	cfg *Config
 }
 
 // New initializes the given proposer instance based on the command line flags.
@@ -94,15 +110,20 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.proposeBlockTxGasTipCap = cfg.ProposeBlockTxGasTipCap
 	p.ctx = ctx
 	p.waitReceiptTimeout = cfg.WaitReceiptTimeout
+	p.proverEndpoints = cfg.ProverEndpoints
+	p.blockProposalFee = cfg.BlockProposalFee
+	p.blockProposalFeeIncreasePercentage = cfg.BlockProposalFeeIncreasePercentage
+	p.cfg = cfg
 
 	// RPC clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
-		L1Endpoint:     cfg.L1Endpoint,
-		L2Endpoint:     cfg.L2Endpoint,
-		TaikoL1Address: cfg.TaikoL1Address,
-		TaikoL2Address: cfg.TaikoL2Address,
-		RetryInterval:  cfg.BackOffRetryInterval,
-		Timeout:        cfg.RPCTimeout,
+		L1Endpoint:        cfg.L1Endpoint,
+		L2Endpoint:        cfg.L2Endpoint,
+		TaikoL1Address:    cfg.TaikoL1Address,
+		TaikoL2Address:    cfg.TaikoL2Address,
+		TaikoTokenAddress: cfg.TaikoTokenAddress,
+		RetryInterval:     cfg.BackOffRetryInterval,
+		Timeout:           cfg.RPCTimeout,
 	}); err != nil {
 		return fmt.Errorf("initialize rpc clients error: %w", err)
 	}
@@ -171,7 +192,7 @@ func (p *Proposer) eventLoop() {
 }
 
 // Close closes the proposer instance.
-func (p *Proposer) Close() {
+func (p *Proposer) Close(ctx context.Context) {
 	p.wg.Wait()
 }
 
@@ -181,11 +202,6 @@ func (p *Proposer) Close() {
 func (p *Proposer) ProposeOp(ctx context.Context) error {
 	if p.CustomProposeOpHook != nil {
 		return p.CustomProposeOpHook()
-	}
-
-	log.Info("Comparing proposer TKO balance to block fee", "proposer", p.l1ProposerAddress.Hex())
-	if err := p.CheckTaikoTokenBalance(); err != nil {
-		return fmt.Errorf("failed to check token balance: %w", err)
 	}
 
 	// Wait until L2 execution engine is synced at first.
@@ -215,9 +231,8 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		ctx,
 		p.L2SuggestedFeeRecipient(),
 		baseFee,
-		p.protocolConfigs.BlockMaxTransactions,
 		p.protocolConfigs.BlockMaxGasLimit,
-		p.protocolConfigs.BlockMaxTxListBytes,
+		p.protocolConfigs.BlockMaxTxListBytes.Uint64(),
 		p.locals,
 		p.maxProposedTxListsPerEpoch,
 	)
@@ -321,6 +336,8 @@ func (p *Proposer) sendProposeBlockTx(
 	meta *encoding.TaikoL1BlockMetadataInput,
 	txListBytes []byte,
 	nonce *uint64,
+	assignment []byte,
+	fee *big.Int,
 	isReplacement bool,
 ) (*types.Transaction, error) {
 	// Propose the transactions list
@@ -328,7 +345,7 @@ func (p *Proposer) sendProposeBlockTx(
 	if err != nil {
 		return nil, err
 	}
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID)
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID, fee)
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +393,7 @@ func (p *Proposer) sendProposeBlockTx(
 		}
 	}
 
-	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs, txListBytes)
+	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs, assignment, txListBytes)
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
 	}
@@ -392,17 +409,21 @@ func (p *Proposer) ProposeTxList(
 	txNum uint,
 	nonce *uint64,
 ) error {
+	assignment, fee, err := p.assignProver(ctx, meta)
+	if err != nil {
+		return err
+	}
+
 	var (
 		isReplacement bool
 		tx            *types.Transaction
-		err           error
 	)
 	if err := backoff.Retry(
 		func() error {
 			if ctx.Err() != nil {
 				return nil
 			}
-			if tx, err = p.sendProposeBlockTx(ctx, meta, txListBytes, nonce, isReplacement); err != nil {
+			if tx, err = p.sendProposeBlockTx(ctx, meta, txListBytes, nonce, assignment, fee, isReplacement); err != nil {
 				log.Warn("Failed to send propose block transaction, retrying", "error", encoding.TryParsingCustomError(err))
 				if strings.Contains(err.Error(), txpool.ErrReplaceUnderpriced.Error()) {
 					isReplacement = true
@@ -472,6 +493,145 @@ func (p *Proposer) updateProposingTicker() {
 	p.proposingTimer = time.NewTimer(duration)
 }
 
+// assignProver attempts to find a prover who wants to win the block.
+// if no provers want to do it for the price we set, we increase the price, and try again.
+func (p *Proposer) assignProver(
+	ctx context.Context,
+	meta *encoding.TaikoL1BlockMetadataInput,
+) ([]byte, *big.Int, error) {
+	initialFee := p.blockProposalFee
+
+	percentBig := big.NewInt(int64(p.blockProposalFeeIncreasePercentage))
+
+	// iterate over each configured endpoint, and see if someone wants to accept your block.
+	// if it is denied, we continue on to the next endpoint.
+	// if we do not find a prover, we can increase the fee up to a point, or give up.
+	// TODO(jeff): we loop 3 times, this should be a config var
+	for i := 0; i < 3; i++ {
+		fee := new(big.Int).Set(initialFee)
+
+		// increase fee on each failed loop
+		if i > 0 {
+			cumulativePercent := new(big.Int).Mul(percentBig, big.NewInt(int64(i)))
+			increase := new(big.Int).Mul(fee, cumulativePercent)
+			increase.Div(increase, big.NewInt(100))
+			fee.Add(fee, increase)
+		}
+
+		expiry := uint64(time.Now().Add(90 * time.Minute).Unix())
+
+		proposeBlockReq := &encoding.ProposeBlockData{
+			Expiry: expiry,
+			Input:  *meta,
+			Fee:    fee,
+		}
+
+		jsonBody, err := json.Marshal(proposeBlockReq)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		r := bytes.NewReader(jsonBody)
+
+		for _, endpoint := range p.proverEndpoints {
+			req, err := http.NewRequestWithContext(
+				ctx,
+				"POST",
+				fmt.Sprintf("%v/%v", endpoint, "proposeBlock"),
+				r,
+			)
+			if err != nil {
+				continue
+			}
+
+			req.Header.Add("Content-Type", "application/json")
+
+			client := &http.Client{
+				Timeout: 10 * time.Second,
+			}
+
+			res, err := client.Do(req)
+			if err != nil {
+				continue
+			}
+
+			if res.StatusCode != http.StatusOK {
+				continue
+			}
+
+			resBody, err := io.ReadAll(res.Body)
+			if err != nil {
+				continue
+			}
+
+			resp := &proposeBlockResponse{}
+
+			if err := json.Unmarshal(resBody, resp); err != nil {
+				continue
+			}
+
+			// ensure prover in response is the same as the one recovered
+			// from the signature
+			encodedBlockData, err := encoding.EncodeProposeBlockData(proposeBlockReq)
+			if err != nil {
+				continue
+			}
+
+			hashed := crypto.Keccak256Hash(encodedBlockData)
+
+			pubKey, err := crypto.SigToPub(hashed.Bytes(), resp.SignedPayload)
+			if err != nil {
+				continue
+			}
+
+			if crypto.PubkeyToAddress(*pubKey).Hex() != resp.Prover.Hex() {
+				continue
+			}
+
+			// make sure the prover has the necessary balance either in TaikoL1 token balances
+			// or, if not, check allowance, as contract will attempt to burn directly after
+			// if it doesnt have the available tokenbalance in-contract.
+			taikoTokenBalance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(nil, resp.Prover)
+			if err != nil {
+				continue
+			}
+
+			if p.protocolConfigs.ProofBond.Cmp(taikoTokenBalance) == 1 {
+				// check allowance on taikotoken contract
+				allowance, err := p.rpc.TaikoToken.Allowance(nil, resp.Prover, p.cfg.TaikoL1Address)
+				if err != nil {
+					continue
+				}
+
+				if p.protocolConfigs.ProofBond.Cmp(allowance) == 1 {
+					continue
+				}
+			}
+
+			// convert signature to one solidity can recover by adding 27 to 65th byte
+			resp.SignedPayload[64] = uint8(uint(resp.SignedPayload[64])) + 27
+
+			encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
+				Prover: resp.Prover,
+				Expiry: proposeBlockReq.Expiry,
+				Data:   resp.SignedPayload,
+			})
+			if err != nil {
+				return nil, nil, err
+			}
+
+			log.Info("Prover assigned for block",
+				"prover", resp.Prover.Hex(),
+				"signedPayload", common.Bytes2Hex(resp.SignedPayload),
+			)
+
+			return encoded, fee, nil
+		}
+	}
+
+	return nil, nil, errUnableToFindProver
+}
+
 // Name returns the application name.
 func (p *Proposer) Name() string {
 	return "proposer"
@@ -488,6 +648,7 @@ func getTxOpts(
 	cli *rpc.EthClient,
 	privKey *ecdsa.PrivateKey,
 	chainID *big.Int,
+	fee *big.Int,
 ) (*bind.TransactOpts, error) {
 	opts, err := bind.NewKeyedTransactorWithChainID(privKey, chainID)
 	if err != nil {
@@ -505,33 +666,7 @@ func getTxOpts(
 
 	opts.GasTipCap = gasTipCap
 
+	opts.Value = fee
+
 	return opts, nil
-}
-
-// CheckTaikoTokenBalance checks if the current proposer has enough balance to pay
-// the current block fee.
-func (p *Proposer) CheckTaikoTokenBalance() error {
-	fee, err := p.rpc.TaikoL1.GetBlockFee(&bind.CallOpts{Context: p.ctx}, p.protocolConfigs.BlockMaxGasLimit)
-	if err != nil {
-		return fmt.Errorf("failed to get block fee: %w", err)
-	}
-
-	log.Info("GetBlockFee", "fee", fee)
-
-	if fee > math.MaxInt64 {
-		metrics.ProposerBlockFeeGauge.Update(math.MaxInt64)
-	} else {
-		metrics.ProposerBlockFeeGauge.Update(int64(fee))
-	}
-
-	balance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(&bind.CallOpts{Context: p.ctx}, p.l1ProposerAddress)
-	if err != nil {
-		return fmt.Errorf("failed to get tko balance: %w", err)
-	}
-
-	if balance.Cmp(new(big.Int).SetUint64(fee)) == -1 {
-		return fmt.Errorf("proposer does not have enough tko balance to propose, balance: %d, fee: %d", balance, fee)
-	}
-
-	return nil
 }

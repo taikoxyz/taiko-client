@@ -2,8 +2,10 @@ package prover
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
+	netHttp "net/http"
 	"strings"
 	"sync"
 	"time"
@@ -21,13 +23,15 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/prover/http"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/urfave/cli/v2"
 )
 
 var (
-	zeroAddress = common.HexToAddress("0x0000000000000000000000000000000000000000")
+	errNoCapacity = errors.New("no prover capacity available")
+	zeroAddress   = common.HexToAddress("0x0000000000000000000000000000000000000000")
 )
 
 type cancelFunc func()
@@ -41,6 +45,9 @@ type Prover struct {
 
 	// Clients
 	rpc *rpc.Client
+
+	// HTTP Server
+	srv *http.Server
 
 	// Contract configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -80,6 +87,12 @@ type Prover struct {
 	// interval settings
 	checkProofWindowExpiredInterval time.Duration
 
+	// capacity-related configs
+	maxCapacity              uint64
+	currentCapacity          uint64
+	requestCurrentCapacityCh chan struct{}
+	receiveCurrentCapacityCh chan uint64
+
 	ctx context.Context
 	wg  sync.WaitGroup
 }
@@ -102,6 +115,23 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.currentBlocksBeingProvenMutex = &sync.Mutex{}
 	p.currentBlocksWaitingForProofWindow = make(map[uint64]uint64, 0)
 	p.currentBlocksWaitingForProofWindowMutex = &sync.Mutex{}
+	p.maxCapacity = cfg.Capacity
+	p.currentCapacity = cfg.Capacity
+	p.requestCurrentCapacityCh = make(chan struct{}, 1024)
+	p.receiveCurrentCapacityCh = make(chan uint64, 1024)
+
+	if !p.cfg.OracleProver {
+		p.srv, err = http.NewServer(http.NewServerOpts{
+			ProverPrivateKey:         p.cfg.L1ProverPrivKey,
+			MaxCapacity:              p.cfg.Capacity,
+			MinProofFee:              p.cfg.MinProofFee,
+			RequestCurrentCapacityCh: p.requestCurrentCapacityCh,
+			ReceiveCurrentCapacityCh: p.receiveCurrentCapacityCh,
+		})
+		if err != nil {
+			return err
+		}
+	}
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -200,9 +230,27 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 func (p *Prover) Start() error {
 	p.wg.Add(1)
 	p.initSubscription()
+	go func() {
+		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, netHttp.ErrServerClosed) {
+			log.Crit("Failed to start http server", "error", err)
+		}
+	}()
 	go p.eventLoop()
+	go p.watchCurrentCapacity()
 
 	return nil
+}
+
+func (p *Prover) watchCurrentCapacity() {
+	for {
+		select {
+		case <-p.ctx.Done():
+			return
+		case <-p.requestCurrentCapacityCh:
+			log.Info("received request for current capacity", "currentCapacity", p.currentCapacity)
+			p.receiveCurrentCapacityCh <- p.currentCapacity
+		}
+	}
 }
 
 // eventLoop starts the main loop of Taiko prover.
@@ -281,8 +329,11 @@ func (p *Prover) eventLoop() {
 }
 
 // Close closes the prover instance.
-func (p *Prover) Close() {
+func (p *Prover) Close(ctx context.Context) {
 	p.closeSubscription()
+	if err := p.srv.Shutdown(ctx); err != nil {
+		log.Error("Error shutting down http server", "error", err)
+	}
 	p.wg.Wait()
 }
 
@@ -468,7 +519,6 @@ func (p *Prover) onBlockProposed(
 					&bind.CallOpts{Context: ctx},
 					event.BlockId.Uint64(),
 					parent.Hash(),
-					uint32(parent.GasUsed),
 				)
 				if err != nil {
 					if strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
@@ -509,7 +559,7 @@ func (p *Prover) onBlockProposed(
 			proofWindowExpiresAt := block.ProposedAt + uint64(p.protocolConfigs.ProofWindow)
 			proofWindowExpired := uint64(time.Now().Unix()) > proofWindowExpiresAt
 			// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
-			if block.Prover != p.proverAddress && block.Prover != zeroAddress && !proofWindowExpired {
+			if block.Prover != p.proverAddress && !proofWindowExpired {
 				log.Info(
 					"Proposed block not proveable",
 					"blockID",
@@ -544,9 +594,9 @@ func (p *Prover) onBlockProposed(
 
 			// if set not to prove unassigned blocks, this block is still not provable
 			// by us even though its open proving.
-			if (block.Prover == zeroAddress || proofWindowExpired) && !p.cfg.ProveUnassignedBlocks {
+			if proofWindowExpired && !p.cfg.ProveUnassignedBlocks {
 				log.Info(
-					"Skipping proposed open proving block, not assigned to us",
+					"Skipping proofWindowExpired block",
 					"blockID", event.BlockId,
 				)
 				return nil
@@ -571,6 +621,14 @@ func (p *Prover) onBlockProposed(
 			}
 		})
 		p.currentBlocksBeingProvenMutex.Unlock()
+
+		if !p.cfg.OracleProver {
+			if p.currentCapacity == 0 {
+				return errNoCapacity
+			}
+
+			p.currentCapacity--
+		}
 
 		return p.validProofSubmitter.RequestProof(ctx, event)
 	}
@@ -612,6 +670,10 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 
 		if err := backoff.Retry(
 			func() error {
+				if !p.cfg.OracleProver {
+					p.currentCapacity++
+				}
+
 				err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader)
 				if err != nil {
 					log.Error("Submit proof error", "error", err)
@@ -657,11 +719,16 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 		return nil
 	}
 
+	block, err := p.rpc.L2ParentByBlockId(ctx, event.BlockId)
+	if err != nil {
+		return err
+	}
+
 	// cancel any proofs being generated for this block
 	isValidProof, err := p.isValidProof(
 		ctx,
 		event.BlockId.Uint64(),
-		uint64(event.ParentGasUsed),
+		block.GasUsed,
 		event.ParentHash,
 		event.BlockHash,
 	)
@@ -869,7 +936,6 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 			&bind.CallOpts{Context: ctx},
 			blockId,
 			parent.Hash(),
-			uint32(parent.GasUsed),
 		)
 
 		if err != nil && !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
@@ -961,6 +1027,10 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 
 		if err := p.validProofSubmitter.RequestProof(ctx, event); err != nil {
 			return err
+		}
+
+		if !p.cfg.OracleProver {
+			p.currentCapacity--
 		}
 
 		return nil

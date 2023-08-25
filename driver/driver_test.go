@@ -2,6 +2,7 @@ package driver
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"os"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/proposer"
+	"github.com/taikoxyz/taiko-client/prover/http"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -22,10 +24,13 @@ type DriverTestSuite struct {
 	cancel context.CancelFunc
 	p      *proposer.Proposer
 	d      *Driver
+	srv    *http.Server
 }
 
 func (s *DriverTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
+
+	port := testutils.RandomPort()
 
 	// Init driver
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
@@ -34,7 +39,6 @@ func (s *DriverTestSuite) SetupTest() {
 
 	d := new(Driver)
 	ctx, cancel := context.WithCancel(context.Background())
-	s.cancel = cancel
 	s.Nil(InitFromConfig(ctx, d, &Config{
 		L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -57,13 +61,25 @@ func (s *DriverTestSuite) SetupTest() {
 		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
+		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
+		BlockProposalFee:           big.NewInt(1000),
 	})))
 	s.p = p
+
+	srv, srvCancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
+	s.Nil(err)
+
+	s.srv = srv
+	s.cancel = func() {
+		cancel()
+		srvCancel()
+	}
 }
 
 func (s *DriverTestSuite) TestName() {
@@ -293,7 +309,7 @@ func (s *DriverTestSuite) TestDoSyncNoNewL2Blocks() {
 func (s *DriverTestSuite) TestStartClose() {
 	s.Nil(s.d.Start())
 	s.cancel()
-	s.d.Close()
+	s.d.Close(context.Background())
 }
 
 func (s *DriverTestSuite) TestL1Current() {

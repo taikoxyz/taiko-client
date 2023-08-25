@@ -19,6 +19,7 @@ type Config struct {
 	L2Endpoint                          string
 	TaikoL1Address                      common.Address
 	TaikoL2Address                      common.Address
+	TaikoTokenAddress                   common.Address
 	L1ProposerPrivKey                   *ecdsa.PrivateKey
 	L2SuggestedFeeRecipient             common.Address
 	ProposeInterval                     *time.Duration
@@ -32,6 +33,9 @@ type Config struct {
 	RPCTimeout                          *time.Duration
 	WaitReceiptTimeout                  time.Duration
 	ProposeBlockTxGasTipCap             *big.Int
+	ProverEndpoints                     []string
+	BlockProposalFee                    *big.Int
+	BlockProposalFeeIncreasePercentage  uint64
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -103,11 +107,21 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proposeBlockTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProposeBlockTxGasTipCap.Name))
 	}
 
+	var proverEndpoints []string
+
+	proverEndpoints = append(proverEndpoints, strings.Split(c.String(flags.ProverEndpoints.Name), ",")...)
+
+	blockProposalFee, ok := new(big.Int).SetString(c.String(flags.BlockProposalFee.Name), 10)
+	if !ok {
+		return nil, fmt.Errorf("invalid blockProposalFee: %v", c.String(flags.BlockProposalFee.Name))
+	}
+
 	return &Config{
 		L1Endpoint:                          c.String(flags.L1WSEndpoint.Name),
 		L2Endpoint:                          c.String(flags.L2HTTPEndpoint.Name),
 		TaikoL1Address:                      common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                      common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
+		TaikoTokenAddress:                   common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:             common.HexToAddress(l2SuggestedFeeRecipient),
 		ProposeInterval:                     proposingInterval,
@@ -121,5 +135,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		RPCTimeout:                          timeout,
 		WaitReceiptTimeout:                  time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
 		ProposeBlockTxGasTipCap:             proposeBlockTxGasTipCap,
+		ProverEndpoints:                     proverEndpoints,
+		BlockProposalFee:                    blockProposalFee,
+		BlockProposalFeeIncreasePercentage:  c.Uint64(flags.BlockProposalFeeIncreasePercentage.Name),
 	}, nil
 }

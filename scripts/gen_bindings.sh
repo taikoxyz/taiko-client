@@ -35,6 +35,10 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoL2.sol/TaikoL2.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoL2Client --pkg bindings --out $DIR/../bindings/gen_taiko_l2.go
 
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoToken.sol/TaikoToken.json |
+	jq .abi |
+	${ABIGEN_BIN} --abi - --type TaikoToken --pkg bindings --out $DIR/../bindings/gen_taiko_token.go
+
 git -C ${TAIKO_MONO_DIR} log --format="%H" -n 1 >./bindings/.githead
 
 echo "🍻 Go contract bindings generated!"

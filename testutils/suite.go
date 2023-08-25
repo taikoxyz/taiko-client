@@ -3,9 +3,11 @@ package testutils
 import (
 	"context"
 	"crypto/ecdsa"
+	"math/big"
 	"os"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -61,6 +63,26 @@ func (s *ClientTestSuite) SetupTest() {
 	})
 	s.Nil(err)
 	s.RpcClient = rpcCli
+
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	tokenBalance, err := rpcCli.TaikoL1.GetTaikoTokenBalance(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
+	s.Nil(err)
+
+	if tokenBalance.Cmp(common.Big0) == 0 {
+		opts, err := bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
+		s.Nil(err)
+
+		premintAmount, ok := new(big.Int).SetString(os.Getenv("PREMINT_TOKEN_AMOUNT"), 10)
+		s.True(ok)
+		s.True(premintAmount.Cmp(common.Big0) > 0)
+
+		tx, err := rpcCli.TaikoL1.DepositTaikoToken(opts, premintAmount)
+		s.Nil(err)
+		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
+		s.Nil(err)
+	}
 
 	s.Nil(rpcCli.L1RawRPC.CallContext(context.Background(), &s.testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(s.testnetL1SnapshotID)

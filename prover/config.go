@@ -20,7 +20,6 @@ type Config struct {
 	L2WsEndpoint                    string
 	L2HttpEndpoint                  string
 	TaikoL1Address                  common.Address
-	TaikoProverPoolL1Address        common.Address
 	TaikoL2Address                  common.Address
 	L1ProverPrivKey                 *ecdsa.PrivateKey
 	ZKEvmRpcdEndpoint               string
@@ -42,6 +41,9 @@ type Config struct {
 	RPCTimeout                      *time.Duration
 	WaitReceiptTimeout              time.Duration
 	ProveBlockGasLimit              *uint64
+	HTTPServerPort                  uint64
+	Capacity                        uint64
+	MinProofFee                     *big.Int
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -66,6 +68,10 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		oracleProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(oracleProverPrivKeyStr))
 		if err != nil {
 			return nil, fmt.Errorf("invalid oracle private key: %w", err)
+		}
+	} else {
+		if !c.IsSet(flags.ProverCapacity.Name) {
+			return nil, fmt.Errorf("capacity is required if oracleProver is not set to true")
 		}
 	}
 
@@ -104,7 +110,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	var timeout *time.Duration
-
 	if c.IsSet(flags.RPCTimeout.Name) {
 		duration := time.Duration(c.Uint64(flags.RPCTimeout.Name)) * time.Second
 		timeout = &duration
@@ -116,6 +121,11 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proveBlockTxGasLimit = &gasLimit
 	}
 
+	minProofFee, ok := new(big.Int).SetString(c.String(flags.MinProofFee.Name), 10)
+	if !ok {
+		return nil, fmt.Errorf("invalid minProofFee: %v", minProofFee)
+	}
+
 	return &Config{
 		L1WsEndpoint:                    c.String(flags.L1WSEndpoint.Name),
 		L1HttpEndpoint:                  c.String(flags.L1HTTPEndpoint.Name),
@@ -123,7 +133,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L2HttpEndpoint:                  c.String(flags.L2HTTPEndpoint.Name),
 		TaikoL1Address:                  common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                  common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-		TaikoProverPoolL1Address:        common.HexToAddress(c.String(flags.TaikoProverPoolL1Address.Name)),
 		L1ProverPrivKey:                 l1ProverPrivKey,
 		ZKEvmRpcdEndpoint:               c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath:             c.String(flags.ZkEvmRpcdParamsPath.Name),
@@ -146,5 +155,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		RPCTimeout:            timeout,
 		WaitReceiptTimeout:    time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
 		ProveBlockGasLimit:    proveBlockTxGasLimit,
+		Capacity:              c.Uint64(flags.ProverCapacity.Name),
+		HTTPServerPort:        c.Uint64(flags.ProverHTTPServerPort.Name),
+		MinProofFee:           minProofFee,
 	}, nil
 }

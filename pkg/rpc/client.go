@@ -32,8 +32,9 @@ type Client struct {
 	// Geth Engine API clients
 	L2Engine *EngineClient
 	// Protocol contracts clients
-	TaikoL1 *bindings.TaikoL1Client
-	TaikoL2 *bindings.TaikoL2Client
+	TaikoL1    *bindings.TaikoL1Client
+	TaikoL2    *bindings.TaikoL2Client
+	TaikoToken *bindings.TaikoToken
 	// Chain IDs
 	L1ChainID *big.Int
 	L2ChainID *big.Int
@@ -43,15 +44,16 @@ type Client struct {
 // RPC client. If not providing L2EngineEndpoint or JwtSecret, then the L2Engine client
 // won't be initialized.
 type ClientConfig struct {
-	L1Endpoint       string
-	L2Endpoint       string
-	L2CheckPoint     string
-	TaikoL1Address   common.Address
-	TaikoL2Address   common.Address
-	L2EngineEndpoint string
-	JwtSecret        string
-	RetryInterval    time.Duration
-	Timeout          *time.Duration
+	L1Endpoint        string
+	L2Endpoint        string
+	L2CheckPoint      string
+	TaikoL1Address    common.Address
+	TaikoL2Address    common.Address
+	TaikoTokenAddress common.Address
+	L2EngineEndpoint  string
+	JwtSecret         string
+	RetryInterval     time.Duration
+	Timeout           *time.Duration
 }
 
 // NewClient initializes all RPC clients used by Taiko client softwares.
@@ -89,6 +91,14 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	taikoL2, err := bindings.NewTaikoL2Client(cfg.TaikoL2Address, l2RPC)
 	if err != nil {
 		return nil, err
+	}
+
+	var taikoToken *bindings.TaikoToken
+	if cfg.TaikoTokenAddress.Hex() != zeroAddress.Hex() {
+		taikoToken, err = bindings.NewTaikoToken(cfg.TaikoTokenAddress, l1RPC)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	stateVars, err := taikoL1.GetStateVariables(&bind.CallOpts{Context: ctxWithTimeout})
@@ -164,6 +174,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		L2Engine:     l2AuthRPC,
 		TaikoL1:      taikoL1,
 		TaikoL2:      taikoL2,
+		TaikoToken:   taikoToken,
 		L1ChainID:    l1ChainID,
 		L2ChainID:    l2ChainID,
 	}

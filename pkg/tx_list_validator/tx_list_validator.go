@@ -33,8 +33,8 @@ func NewTxListValidator(
 	chainID *big.Int,
 ) *TxListValidator {
 	return &TxListValidator{
-		blockMaxGasLimit:        blockMaxGasLimit,
 		maxTransactionsPerBlock: maxTransactionsPerBlock,
+		blockMaxGasLimit:        blockMaxGasLimit,
 		maxBytesPerTxList:       maxBytesPerTxList,
 		chainID:                 chainID,
 	}
