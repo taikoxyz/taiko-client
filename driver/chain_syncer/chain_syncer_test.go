@@ -77,20 +77,17 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 }
 
 func (s *ChainSyncerTestSuite) TestGetInnerSyncers() {
-	defer s.cancel()
 	s.NotNil(s.s.BeaconSyncer())
 	s.NotNil(s.s.CalldataSyncer())
 }
 
 func (s *ChainSyncerTestSuite) TestSync() {
-	defer s.cancel()
 	head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Nil(s.s.Sync(head))
 }
 
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
-	defer s.cancel()
 	s.TakeSnapshot()
 	// propose a couple blocks
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s.calldataSyncer)
@@ -150,13 +147,11 @@ func TestChainSyncerTestSuite(t *testing.T) {
 }
 
 func (s *ChainSyncerTestSuite) TakeSnapshot() {
-	defer s.cancel()
 	// record snapshot state to revert to before changes
 	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &s.snapshotID, "evm_snapshot"))
 }
 
 func (s *ChainSyncerTestSuite) RevertSnapshot() {
-	defer s.cancel()
 	// revert to the snapshot state so protocol configs are unaffected
 	var revertRes bool
 	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", s.snapshotID))
@@ -165,6 +160,5 @@ func (s *ChainSyncerTestSuite) RevertSnapshot() {
 }
 
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead() {
-	defer s.cancel()
 	s.True(s.s.AheadOfProtocolVerifiedHead())
 }
