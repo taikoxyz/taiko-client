@@ -110,7 +110,7 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	log.Info("evm time increase:", "number", result)
 
 	// interact with TaikoL1 contract to allow for verification of L2 blocks
-	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, common.Big3)
+	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, uint64(3))
 	s.Nil(err)
 	s.NotNil(tx)
 
