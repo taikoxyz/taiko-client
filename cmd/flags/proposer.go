@@ -18,7 +18,7 @@ var (
 		Required: true,
 		Category: proposerCategory,
 	}
-	ProverEndpoints = &cli.Uint64Flag{
+	ProverEndpoints = &cli.StringFlag{
 		Name:     "proverEndpoints",
 		Usage:    "Comma-delinated list of prover endpoints proposer should query when attemping to propose a block",
 		Category: proposerCategory,
