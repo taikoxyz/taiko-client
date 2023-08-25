@@ -73,6 +73,13 @@ func TestIsTxListValid(t *testing.T) {
 			0,
 		},
 		{
+			"txListBytes too many transactions",
+			chainID,
+			rlpEncodedTransactionBytes(int(maxBlockNumTxs)+1, true),
+			HintNone,
+			0,
+		},
+		{
 			"success empty tx list",
 			chainID,
 			rlpEncodedTransactionBytes(0, true),
