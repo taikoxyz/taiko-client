@@ -235,7 +235,7 @@ func EncodeProverAssignment(assignment *ProverAssignment) ([]byte, error) {
 func EncodeProposeBlockData(data *ProposeBlockData) ([]byte, error) {
 	b, err := proposeBlockDataArgs.Pack(data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to abi.encode prover assignment, %w", err)
+		return nil, fmt.Errorf("failed to abi.encode proposeBlock data, %w", err)
 	}
 	return b, nil
 }
