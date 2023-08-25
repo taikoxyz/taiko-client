@@ -507,7 +507,7 @@ func (p *Proposer) assignProver(
 	// if it is denied, we continue on to the next endpoint.
 	// if we do not find a prover, we can increase the fee up to a point, or give up.
 	// TODO(jeff): we loop 3 times, this should be a config var
-	for i := 0; i < 3; i++ {
+	for i := 0; i < int(p.cfg.BlockProposalFeeIterations); i++ {
 		fee := new(big.Int).Set(initialFee)
 
 		// increase fee on each failed loop

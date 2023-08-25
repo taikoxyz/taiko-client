@@ -36,6 +36,7 @@ type Config struct {
 	ProverEndpoints                     []string
 	BlockProposalFee                    *big.Int
 	BlockProposalFeeIncreasePercentage  uint64
+	BlockProposalFeeIterations          uint64
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -138,5 +139,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProverEndpoints:                     proverEndpoints,
 		BlockProposalFee:                    blockProposalFee,
 		BlockProposalFeeIncreasePercentage:  c.Uint64(flags.BlockProposalFeeIncreasePercentage.Name),
+		BlockProposalFeeIterations:          c.Uint64(flags.BlockProposalFeeIterations.Name),
 	}, nil
 }

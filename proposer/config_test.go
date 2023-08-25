@@ -56,6 +56,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(fee, c.BlockProposalFee)
 
 		s.Equal(uint64(15), c.BlockProposalFeeIncreasePercentage)
+		s.Equal(uint64(5), c.BlockProposalFeeIterations)
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -80,6 +81,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.ProverEndpoints.Name, proverEndpoints,
 		"-" + flags.BlockProposalFee.Name, blockProposalFee,
 		"-" + flags.BlockProposalFeeIncreasePercentage.Name, "15",
+		"-" + flags.BlockProposalFeeIterations.Name, "5",
 	}))
 }
 
@@ -194,6 +196,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasTipCap.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasLimit.Name},
 		&cli.Uint64Flag{Name: flags.BlockProposalFeeIncreasePercentage.Name},
+		&cli.Uint64Flag{Name: flags.BlockProposalFeeIterations.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

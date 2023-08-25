@@ -86,6 +86,12 @@ var (
 		Category: proposerCategory,
 		Value:    10,
 	}
+	BlockProposalFeeIterations = &cli.Uint64Flag{
+		Name:     "blockProposalFeeIncreasePercentage",
+		Usage:    "If nobody accepts block at initial fee, how many iterations to increase fee before giving up",
+		Category: proposerCategory,
+		Value:    3,
+	}
 )
 
 // All proposer flags.
@@ -104,5 +110,6 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProverEndpoints,
 	BlockProposalFee,
 	BlockProposalFeeIncreasePercentage,
+	BlockProposalFeeIterations,
 	TaikoTokenAddress,
 })
