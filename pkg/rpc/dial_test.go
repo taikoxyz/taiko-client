@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"math/big"
 	"os"
 	"testing"
 	"time"
@@ -23,6 +24,7 @@ func TestDialEngineClientWithBackoff(t *testing.T) {
 		os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		string(jwtSecret),
 		12*time.Second,
+		new(big.Int).SetUint64(10),
 	)
 
 	require.Nil(t, err)
@@ -38,6 +40,7 @@ func TestDialClientWithBackoff(t *testing.T) {
 		context.Background(),
 		os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		12*time.Second,
+		new(big.Int).SetUint64(10),
 	)
 	require.Nil(t, err)
 
@@ -47,16 +50,37 @@ func TestDialClientWithBackoff(t *testing.T) {
 	require.Equal(t, common.Big0.Uint64(), genesis.Number.Uint64())
 }
 
-// NOTE: current constant backoff will only stop if passed -1 (backoff.Stop),
-// and error does not match
-// error comes back as "dial unix: ...." instead
+func TestDialClientWithBackoff_CtxError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err := DialClientWithBackoff(
+		ctx,
+		"invalid",
+		-1,
+		new(big.Int).SetUint64(10),
+	)
+	require.NotNil(t, err)
+}
 
-// func TestDialClientWithBackoff_CtxError(t *testing.T) {
-// 	ctx, _ := context.WithCancel(context.Background())
-// 	_, err := DialClientWithBackoff(
-// 		ctx,
-// 		"",
-// 		-1,
-// 	)
-// 	require.ErrorContains(t, err, "Dial engine client error")
-// }
+func TestDialEngineClientWithBackoff_CtxError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
+	require.Nil(t, err)
+	require.NotEmpty(t, jwtSecret)
+
+	_, err2 := DialEngineClientWithBackoff(
+		ctx,
+		"invalid",
+		string(jwtSecret),
+		-1,
+		new(big.Int).SetUint64(10),
+	)
+	require.NotNil(t, err2)
+}
+
+func TestDialEngineClient_UrlError(t *testing.T) {
+	_, err := DialEngineClient(context.Background(), "invalid", "invalid")
+	require.NotNil(t, err)
+}

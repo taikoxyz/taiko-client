@@ -28,7 +28,7 @@ var (
 	syncProgressRecheckDelay       = 12 * time.Second
 	waitL1OriginPollingInterval    = 3 * time.Second
 	defaultWaitL1OriginTimeout     = 3 * time.Minute
-	defaultMaxTransactionsPerblock = uint64(79) // hardcoded to 79, will need changing when circuits change
+	defaultMaxTransactionsPerBlock = uint64(79) // hardcoded to 79, will need changing when circuits change
 )
 
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
@@ -82,10 +82,13 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 
 // WaitTillL2ExecutionEngineSynced keeps waiting until the L2 execution engine is fully synced.
 func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 	return backoff.Retry(
 		func() error {
 			if ctx.Err() != nil {
-				return nil
+				return ctx.Err()
 			}
 			progress, err := c.L2ExecutionEngineSyncProgress(ctx)
 			if err != nil {
@@ -246,7 +249,7 @@ func (c *Client) GetPoolContent(
 		"taiko_txPoolContent",
 		beneficiary,
 		baseFee,
-		defaultMaxTransactionsPerblock,
+		defaultMaxTransactionsPerBlock,
 		blockMaxGasLimit,
 		maxBytesPerTxList,
 		localsArg,
