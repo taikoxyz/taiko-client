@@ -75,6 +75,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.p = prop
 }
 func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
+	defer s.cancel()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	syncer, err := NewSyncer(

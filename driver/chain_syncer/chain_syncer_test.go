@@ -2,6 +2,8 @@ package chainSyncer
 
 import (
 	"context"
+	"fmt"
+	"math/big"
 
 	"os"
 	"testing"
@@ -15,6 +17,7 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
+	"github.com/taikoxyz/taiko-client/prover/http"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -23,10 +26,14 @@ type ChainSyncerTestSuite struct {
 	s          *L2ChainSyncer
 	snapshotID string
 	p          testutils.Proposer
+	srv        *http.Server
+	cancel     func()
 }
 
 func (s *ChainSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
+
+	port := testutils.RandomPort()
 
 	state, err := state.New(context.Background(), s.RpcClient)
 	s.Nil(err)
@@ -56,23 +63,34 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
+		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
+		BlockProposalFee:           big.NewInt(1000),
 	})))
+
+	srv, srvCancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
+	s.Nil(err)
+
+	s.srv = srv
+	s.cancel = srvCancel
 
 	s.p = prop
 }
 
 func (s *ChainSyncerTestSuite) TestGetInnerSyncers() {
+	defer s.cancel()
 	s.NotNil(s.s.BeaconSyncer())
 	s.NotNil(s.s.CalldataSyncer())
 }
 
 func (s *ChainSyncerTestSuite) TestSync() {
+	defer s.cancel()
 	head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Nil(s.s.Sync(head))
 }
 
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
+	defer s.cancel()
 	s.TakeSnapshot()
 	// propose a couple blocks
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s.calldataSyncer)
@@ -132,11 +150,13 @@ func TestChainSyncerTestSuite(t *testing.T) {
 }
 
 func (s *ChainSyncerTestSuite) TakeSnapshot() {
+	defer s.cancel()
 	// record snapshot state to revert to before changes
 	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &s.snapshotID, "evm_snapshot"))
 }
 
 func (s *ChainSyncerTestSuite) RevertSnapshot() {
+	defer s.cancel()
 	// revert to the snapshot state so protocol configs are unaffected
 	var revertRes bool
 	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", s.snapshotID))
@@ -145,5 +165,6 @@ func (s *ChainSyncerTestSuite) RevertSnapshot() {
 }
 
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead() {
+	defer s.cancel()
 	s.True(s.s.AheadOfProtocolVerifiedHead())
 }
