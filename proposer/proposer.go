@@ -534,6 +534,12 @@ func (p *Proposer) assignProver(
 		r := bytes.NewReader(jsonBody)
 
 		for _, endpoint := range p.proverEndpoints {
+			log.Info("attempting to assign prover",
+				"endpoint", endpoint,
+				"fee", fee.String(),
+				"expiry", expiry,
+			)
+
 			req, err := http.NewRequestWithContext(
 				ctx,
 				"POST",
@@ -556,6 +562,11 @@ func (p *Proposer) assignProver(
 			}
 
 			if res.StatusCode != http.StatusOK {
+				log.Info("prover rejected request to assign block",
+					"endpoint", endpoint,
+					"fee", fee.String(),
+					"expiry", expiry,
+				)
 				continue
 			}
 
@@ -585,6 +596,11 @@ func (p *Proposer) assignProver(
 			}
 
 			if crypto.PubkeyToAddress(*pubKey).Hex() != resp.Prover.Hex() {
+				log.Info("assigned prover signature did not recover to provided prover address",
+					"endpoint", endpoint,
+					"recoveredAddress", crypto.PubkeyToAddress(*pubKey).Hex(),
+					"providedProver", resp.Prover.Hex(),
+				)
 				continue
 			}
 
@@ -604,6 +620,13 @@ func (p *Proposer) assignProver(
 				}
 
 				if p.protocolConfigs.ProofBond.Cmp(allowance) == 1 {
+					log.Info("assigned prover does not have required on-chain token balance or allowance",
+						"endpoint", endpoint,
+						"providedProver", resp.Prover.Hex(),
+						"taikoTokenBalance", taikoTokenBalance.String(),
+						"allowance", allowance.String(),
+						"requiredFee", fee.String(),
+					)
 					continue
 				}
 			}
