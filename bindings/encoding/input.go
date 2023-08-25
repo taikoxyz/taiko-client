@@ -222,7 +222,7 @@ func EncodeBlockMetadata(meta *bindings.TaikoDataBlockMetadata) ([]byte, error) 
 	return b, nil
 }
 
-// EncodeProverAssignment performs the solidity `abi.encode` for the given blockMetadata.
+// EncodeProverAssignment performs the solidity `abi.encode` for the given proverAssignment.
 func EncodeProverAssignment(assignment *ProverAssignment) ([]byte, error) {
 	b, err := proverAssignmentArgs.Pack(assignment)
 	if err != nil {
