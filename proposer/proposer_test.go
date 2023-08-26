@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -83,7 +84,9 @@ func (s *ProposerTestSuite) SetupTest() {
 	}()
 
 	go func() {
-		_ = s.srv.Start(fmt.Sprintf(":%v", port))
+		if err := s.srv.Start(fmt.Sprintf(":%v", port)); err != nil {
+			log.Crit("error starting prover http server", "error", err)
+		}
 	}()
 
 	s.p = p
