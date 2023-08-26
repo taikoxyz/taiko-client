@@ -79,6 +79,9 @@ func (s *ClientTestSuite) SetupTest() {
 		s.True(ok)
 		s.True(premintAmount.Cmp(common.Big0) > 0)
 
+		_, err = rpcCli.TaikoToken.Approve(opts, common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")), premintAmount)
+		s.Nil(err)
+
 		tx, err := rpcCli.TaikoL1.DepositTaikoToken(opts, premintAmount)
 		s.Nil(err)
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
