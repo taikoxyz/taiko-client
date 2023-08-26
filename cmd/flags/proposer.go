@@ -87,7 +87,7 @@ var (
 		Value:    10,
 	}
 	BlockProposalFeeIterations = &cli.Uint64Flag{
-		Name:     "blockProposalFeeIncreasePercentage",
+		Name:     "blockProposalFeeIterations",
 		Usage:    "If nobody accepts block at initial fee, how many iterations to increase fee before giving up",
 		Category: proposerCategory,
 		Value:    3,
