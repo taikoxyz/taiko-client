@@ -53,6 +53,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		ProverEndpoints:                     []string{fmt.Sprintf("http://localhost:%v", port)},
 		BlockProposalFee:                    big.NewInt(100000),
 		BlockProposalFeeIncreasePercentage:  10,
+		BlockProposalFeeIterations:          3,
 	})))
 
 	// Init prover
