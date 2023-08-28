@@ -32,7 +32,6 @@ TAIKO_L1_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq '.taiko' | sed 's/\"//g')
 L1_SIGNAL_SERVICE_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq '.signal_service' | sed 's/\"//g')
 TAIKO_TOKEN_CONTRACT_ADDRESS=$(echo $DEPLOYMENT_JSON | jq '.taiko_token' | sed 's/\"//g')
 
-
 trap "docker compose -f $TESTNET_CONFIG down -v" EXIT INT KILL ERR
 
 RUN_TESTS=${RUN_TESTS:-false}

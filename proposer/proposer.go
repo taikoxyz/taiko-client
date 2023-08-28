@@ -610,7 +610,7 @@ func (p *Proposer) assignProver(
 			// make sure the prover has the necessary balance either in TaikoL1 token balances
 			// or, if not, check allowance, as contract will attempt to burn directly after
 			// if it doesnt have the available tokenbalance in-contract.
-			taikoTokenBalance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(nil, resp.Prover)
+			taikoTokenBalance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(&bind.CallOpts{Context: ctx}, resp.Prover)
 			if err != nil {
 				log.Error(
 					"Get taiko token balance error",
@@ -621,9 +621,9 @@ func (p *Proposer) assignProver(
 				continue
 			}
 
-			if p.protocolConfigs.ProofBond.Cmp(taikoTokenBalance) == 1 {
+			if p.protocolConfigs.ProofBond.Cmp(taikoTokenBalance) > 0 {
 				// check allowance on taikotoken contract
-				allowance, err := p.rpc.TaikoToken.Allowance(nil, resp.Prover, p.cfg.TaikoL1Address)
+				allowance, err := p.rpc.TaikoToken.Allowance(&bind.CallOpts{Context: ctx}, resp.Prover, p.cfg.TaikoL1Address)
 				if err != nil {
 					log.Error(
 						"Get taiko token allowance error",
@@ -634,13 +634,14 @@ func (p *Proposer) assignProver(
 					continue
 				}
 
-				if p.protocolConfigs.ProofBond.Cmp(allowance) == 1 {
+				if p.protocolConfigs.ProofBond.Cmp(allowance) > 0 {
 					log.Info(
 						"Assigned prover does not have required on-chain token balance or allowance",
 						"endpoint", endpoint,
 						"providedProver", resp.Prover.Hex(),
 						"taikoTokenBalance", taikoTokenBalance.String(),
 						"allowance", allowance.String(),
+						"proofBond", p.protocolConfigs.ProofBond,
 						"requiredFee", fee.String(),
 					)
 					continue

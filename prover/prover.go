@@ -250,7 +250,7 @@ func (p *Prover) watchCurrentCapacity() {
 		case <-p.ctx.Done():
 			return
 		case <-p.requestCurrentCapacityCh:
-			log.Info("received request for current capacity", "currentCapacity", p.currentCapacity)
+			log.Info("Received request for current capacity", "currentCapacity", p.currentCapacity)
 			p.receiveCurrentCapacityCh <- p.currentCapacity
 		}
 	}
@@ -306,7 +306,7 @@ func (p *Prover) eventLoop() {
 			func() {
 				defer func() { checkProofWindowExpiredTicker = time.After(p.checkProofWindowExpiredInterval) }()
 				if err := p.checkProofWindowsExpired(p.ctx); err != nil {
-					log.Error("error checking proof window expired", "error", err)
+					log.Error("Failed to check if proof window is expired", "error", err)
 				}
 			}()
 		case proofWithHeader := <-p.proofGenerationCh:
