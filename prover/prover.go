@@ -231,11 +231,13 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 func (p *Prover) Start() error {
 	p.wg.Add(1)
 	p.initSubscription()
-	go func() {
-		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, netHttp.ErrServerClosed) {
-			log.Crit("Failed to start http server", "error", err)
-		}
-	}()
+	if !p.cfg.OracleProver {
+		go func() {
+			if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, netHttp.ErrServerClosed) {
+				log.Crit("Failed to start http server", "error", err)
+			}
+		}()
+	}
 	go p.eventLoop()
 	go p.watchCurrentCapacity()
 
