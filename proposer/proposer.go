@@ -36,6 +36,7 @@ var (
 	errUnableToFindProver      = errors.New("unable to find prover")
 	maxSendProposeBlockTxRetry = 10
 	retryInterval              = 12 * time.Second
+	requestProverServerTimeout = 12 * time.Second
 )
 
 type proposeBlockResponse struct {
@@ -534,11 +535,13 @@ func (p *Proposer) assignProver(
 		r := bytes.NewReader(jsonBody)
 
 		for _, endpoint := range p.proverEndpoints {
-			log.Info("attempting to assign prover",
+			log.Info(
+				"Attempting to assign prover",
 				"endpoint", endpoint,
 				"fee", fee.String(),
 				"expiry", expiry,
 			)
+			client := &http.Client{Timeout: requestProverServerTimeout}
 
 			req, err := http.NewRequestWithContext(
 				ctx,
@@ -547,22 +550,20 @@ func (p *Proposer) assignProver(
 				r,
 			)
 			if err != nil {
+				log.Error("Init http request error", "endpoint", endpoint, "err", err)
 				continue
 			}
-
 			req.Header.Add("Content-Type", "application/json")
-
-			client := &http.Client{
-				Timeout: 10 * time.Second,
-			}
 
 			res, err := client.Do(req)
 			if err != nil {
+				log.Error("Request prover server error", "endpoint", endpoint, "err", err)
 				continue
 			}
 
 			if res.StatusCode != http.StatusOK {
-				log.Info("prover rejected request to assign block",
+				log.Info(
+					"Prover rejected request to assign block",
 					"endpoint", endpoint,
 					"fee", fee.String(),
 					"expiry", expiry,
@@ -572,12 +573,13 @@ func (p *Proposer) assignProver(
 
 			resBody, err := io.ReadAll(res.Body)
 			if err != nil {
+				log.Error("Read response body error", "endpoint", endpoint, "err", err)
 				continue
 			}
 
 			resp := &proposeBlockResponse{}
-
 			if err := json.Unmarshal(resBody, resp); err != nil {
+				log.Error("Unmarshal response body error", "endpoint", endpoint, "err", err)
 				continue
 			}
 
@@ -585,18 +587,19 @@ func (p *Proposer) assignProver(
 			// from the signature
 			encodedBlockData, err := encoding.EncodeProposeBlockData(proposeBlockReq)
 			if err != nil {
+				log.Error("Encode block data error", "endpoint", endpoint, "error", err)
 				continue
 			}
 
-			hashed := crypto.Keccak256Hash(encodedBlockData)
-
-			pubKey, err := crypto.SigToPub(hashed.Bytes(), resp.SignedPayload)
+			pubKey, err := crypto.SigToPub(crypto.Keccak256Hash(encodedBlockData).Bytes(), resp.SignedPayload)
 			if err != nil {
+				log.Error("Failed to get public key from signature", "endpoint", endpoint, "error", err)
 				continue
 			}
 
 			if crypto.PubkeyToAddress(*pubKey).Hex() != resp.Prover.Hex() {
-				log.Info("assigned prover signature did not recover to provided prover address",
+				log.Info(
+					"Assigned prover signature did not recover to provided prover address",
 					"endpoint", endpoint,
 					"recoveredAddress", crypto.PubkeyToAddress(*pubKey).Hex(),
 					"providedProver", resp.Prover.Hex(),
@@ -609,6 +612,12 @@ func (p *Proposer) assignProver(
 			// if it doesnt have the available tokenbalance in-contract.
 			taikoTokenBalance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(nil, resp.Prover)
 			if err != nil {
+				log.Error(
+					"Get taiko token balance error",
+					"endpoint", endpoint,
+					"providedProver", resp.Prover.Hex(),
+					"error", err,
+				)
 				continue
 			}
 
@@ -616,11 +625,18 @@ func (p *Proposer) assignProver(
 				// check allowance on taikotoken contract
 				allowance, err := p.rpc.TaikoToken.Allowance(nil, resp.Prover, p.cfg.TaikoL1Address)
 				if err != nil {
+					log.Error(
+						"Get taiko token allowance error",
+						"endpoint", endpoint,
+						"providedProver", resp.Prover.Hex(),
+						"error", err,
+					)
 					continue
 				}
 
 				if p.protocolConfigs.ProofBond.Cmp(allowance) == 1 {
-					log.Info("assigned prover does not have required on-chain token balance or allowance",
+					log.Info(
+						"Assigned prover does not have required on-chain token balance or allowance",
 						"endpoint", endpoint,
 						"providedProver", resp.Prover.Hex(),
 						"taikoTokenBalance", taikoTokenBalance.String(),
@@ -643,7 +659,8 @@ func (p *Proposer) assignProver(
 				return nil, nil, err
 			}
 
-			log.Info("Prover assigned for block",
+			log.Info(
+				"Prover assigned for block",
 				"prover", resp.Prover.Hex(),
 				"signedPayload", common.Bytes2Hex(resp.SignedPayload),
 			)
