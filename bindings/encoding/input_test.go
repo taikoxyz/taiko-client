@@ -13,15 +13,13 @@ import (
 
 func TestEncodeEvidence(t *testing.T) {
 	evidence := &TaikoL1Evidence{
-		MetaHash:      randomHash(),
-		BlockHash:     randomHash(),
-		ParentHash:    randomHash(),
-		SignalRoot:    randomHash(),
-		Graffiti:      randomHash(),
-		Prover:        common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
-		ParentGasUsed: 1024,
-		GasUsed:       1024,
-		Proof:         randomHash().Big().Bytes(),
+		MetaHash:   randomHash(),
+		BlockHash:  randomHash(),
+		ParentHash: randomHash(),
+		SignalRoot: randomHash(),
+		Graffiti:   randomHash(),
+		Prover:     common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
+		Proofs:     randomHash().Big().Bytes(),
 	}
 
 	b, err := EncodeEvidence(evidence)
@@ -44,15 +42,13 @@ func TestEncodeProposeBlockInput(t *testing.T) {
 func TestEncodeProveBlockInput(t *testing.T) {
 	encoded, err := EncodeProveBlockInput(
 		&TaikoL1Evidence{
-			MetaHash:      randomHash(),
-			BlockHash:     randomHash(),
-			ParentHash:    randomHash(),
-			SignalRoot:    randomHash(),
-			Graffiti:      randomHash(),
-			Prover:        common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
-			ParentGasUsed: 1024,
-			GasUsed:       1024,
-			Proof:         randomHash().Big().Bytes(),
+			MetaHash:   randomHash(),
+			BlockHash:  randomHash(),
+			ParentHash: randomHash(),
+			SignalRoot: randomHash(),
+			Graffiti:   randomHash(),
+			Prover:     common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
+			Proofs:     randomHash().Big().Bytes(),
 		},
 	)
 
@@ -76,15 +72,13 @@ func TestEncodeProverAssignment(t *testing.T) {
 func TestEncodeProveBlockInvalidInput(t *testing.T) {
 	encoded, err := EncodeProveBlockInvalidInput(
 		&TaikoL1Evidence{
-			MetaHash:      randomHash(),
-			BlockHash:     randomHash(),
-			ParentHash:    randomHash(),
-			SignalRoot:    randomHash(),
-			Graffiti:      randomHash(),
-			Prover:        common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
-			ParentGasUsed: 1024,
-			GasUsed:       1024,
-			Proof:         randomHash().Big().Bytes(),
+			MetaHash:   randomHash(),
+			BlockHash:  randomHash(),
+			ParentHash: randomHash(),
+			SignalRoot: randomHash(),
+			Graffiti:   randomHash(),
+			Prover:     common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
+			Proofs:     randomHash().Big().Bytes(),
 		},
 		&testMeta,
 		types.NewReceipt(randomHash().Bytes(), false, 1024),

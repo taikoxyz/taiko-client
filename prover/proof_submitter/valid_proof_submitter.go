@@ -216,14 +216,12 @@ func (s *ValidProofSubmitter) SubmitProof(
 	}
 
 	evidence := &encoding.TaikoL1Evidence{
-		MetaHash:      proofWithHeader.Opts.MetaHash,
-		ParentHash:    proofWithHeader.Opts.ParentHash,
-		BlockHash:     proofWithHeader.Opts.BlockHash,
-		SignalRoot:    proofWithHeader.Opts.SignalRoot,
-		Graffiti:      s.graffiti,
-		ParentGasUsed: uint32(proofWithHeader.Opts.ParentGasUsed),
-		GasUsed:       uint32(proofWithHeader.Opts.GasUsed),
-		Proof:         zkProof,
+		MetaHash:   proofWithHeader.Opts.MetaHash,
+		ParentHash: proofWithHeader.Opts.ParentHash,
+		BlockHash:  proofWithHeader.Opts.BlockHash,
+		SignalRoot: proofWithHeader.Opts.SignalRoot,
+		Graffiti:   s.graffiti,
+		Proofs:     zkProof,
 	}
 
 	var circuitsIdx uint16
@@ -241,7 +239,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 			return err
 		}
 	}
-	evidence.Proof = append(uint16ToBytes(circuitsIdx), evidence.Proof...)
+	evidence.Proofs = append(uint16ToBytes(circuitsIdx), evidence.Proofs...)
 	evidence.Prover = prover
 
 	input, err := encoding.EncodeProveBlockInput(evidence)

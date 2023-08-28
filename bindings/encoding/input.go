@@ -124,15 +124,7 @@ var (
 			Type: "address",
 		},
 		{
-			Name: "parentGasUsed",
-			Type: "uint32",
-		},
-		{
-			Name: "gasUsed",
-			Type: "uint32",
-		},
-		{
-			Name: "proof",
+			Name: "proofs",
 			Type: "bytes",
 		},
 	}

@@ -32,15 +32,13 @@ type BlockHeader struct {
 }
 
 type TaikoL1Evidence struct {
-	MetaHash      [32]byte
-	BlockHash     [32]byte
-	ParentHash    [32]byte
-	SignalRoot    [32]byte
-	Graffiti      [32]byte
-	Prover        common.Address
-	ParentGasUsed uint32
-	GasUsed       uint32
-	Proof         []byte
+	MetaHash   [32]byte
+	BlockHash  [32]byte
+	ParentHash [32]byte
+	SignalRoot [32]byte
+	Graffiti   [32]byte
+	Prover     common.Address
+	Proofs     []byte
 }
 
 type TaikoL1BlockMetadataInput struct {
