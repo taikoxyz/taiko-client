@@ -518,7 +518,7 @@ func (p *Prover) onBlockProposed(
 
 				// check if an invalid proof has been submitted, if so, we can skip proofWindowExpired check below
 				// and always submit proof. otherwise, oracleProver follows same proof logic as regular.
-				forkChoice, err := p.rpc.TaikoL1.GetForkChoice(
+				transition, err := p.rpc.TaikoL1.GetTransition(
 					&bind.CallOpts{Context: ctx},
 					event.BlockId.Uint64(),
 					parent.Hash(),
@@ -539,11 +539,11 @@ func (p *Prover) onBlockProposed(
 
 				// proof is invalid but has correct parents, oracle prover should skip
 				// checking proofWindow expired, and simply force prove.
-				if forkChoice.BlockHash != block.Hash() {
+				if transition.BlockHash != block.Hash() {
 					log.Info(
 						"Oracle prover forcing prove block due to invalid proof",
 						"blockID", event.BlockId,
-						"forkChoiceBlockHash", common.BytesToHash(forkChoice.BlockHash[:]).Hex(),
+						"transitionBlockHash", common.BytesToHash(transition.BlockHash[:]).Hex(),
 						"expectedBlockHash", block.Hash().Hex(),
 					)
 
@@ -928,7 +928,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 			return err
 		}
 
-		forkChoice, err := p.rpc.TaikoL1.GetForkChoice(
+		transition, err := p.rpc.TaikoL1.GetTransition(
 			&bind.CallOpts{Context: ctx},
 			blockId,
 			parent.Hash(),
@@ -938,7 +938,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 			return encoding.TryParsingCustomError(err)
 		}
 
-		if forkChoice.Prover == zeroAddress {
+		if transition.Prover == zeroAddress {
 			log.Info(
 				"Proof window for proof not assigned to us expired, requesting proof",
 				"blockID",
@@ -960,7 +960,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 
 			// if the hashes dont match, we can generate proof even though
 			// a proof came in before proofwindow expired.
-			if block.Hash() != forkChoice.BlockHash {
+			if block.Hash() != transition.BlockHash {
 				log.Info(
 					"Invalid proof detected while watching for proof window expiration, requesting proof",
 					"blockID",
@@ -969,8 +969,8 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 					l1Height,
 					"expectedBlockHash",
 					block.Hash(),
-					"forkChoiceBlockHash",
-					common.Bytes2Hex(forkChoice.BlockHash[:]),
+					"transitionBlockHash",
+					common.Bytes2Hex(transition.BlockHash[:]),
 				)
 				// we can generate the proof, the proof is incorrect since blockHash does not match
 				// the correct one but parentHash/gasUsed are correct.
