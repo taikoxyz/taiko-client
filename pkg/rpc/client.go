@@ -54,7 +54,7 @@ type ClientConfig struct {
 	JwtSecret         string
 	RetryInterval     time.Duration
 	Timeout           *time.Duration
-	BackOffMaxRetries  *big.Int
+	BackOffMaxRetries *big.Int
 }
 
 // NewClient initializes all RPC clients used by Taiko client softwares.
