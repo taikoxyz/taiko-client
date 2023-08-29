@@ -28,7 +28,7 @@ var (
 	syncProgressRecheckDelay       = 12 * time.Second
 	waitL1OriginPollingInterval    = 3 * time.Second
 	defaultWaitL1OriginTimeout     = 3 * time.Minute
-	defaultMaxTransactionsPerBlock = uint64(79)
+	defaultMaxTransactionsPerBlock = uint64(79) // hardcoded to 79, will need changing when circuits change
 )
 
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
@@ -46,6 +46,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	iter, err := c.TaikoL1.FilterBlockVerified(
 		&bind.FilterOpts{Start: stateVars.GenesisHeight, End: &stateVars.GenesisHeight, Context: ctxWithTimeout},
 		[]*big.Int{common.Big0},
+		nil,
 	)
 	if err != nil {
 		return err

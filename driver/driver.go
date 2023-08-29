@@ -121,7 +121,7 @@ func (d *Driver) Start() error {
 }
 
 // Close closes the driver instance.
-func (d *Driver) Close() {
+func (d *Driver) Close(ctx context.Context) {
 	d.state.Close()
 	d.wg.Wait()
 }
@@ -205,7 +205,7 @@ func (d *Driver) reportProtocolStatus() {
 				return err
 			}
 
-			maxNumBlocks = configs.BlockMaxProposals.Uint64()
+			maxNumBlocks = configs.BlockMaxProposals
 			return nil
 		},
 		backoff.NewConstantBackOff(d.backOffRetryInterval),

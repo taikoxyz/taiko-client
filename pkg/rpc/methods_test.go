@@ -124,7 +124,6 @@ func TestGetPoolContentValid(t *testing.T) {
 	require.Nil(t, err)
 	baseFee, err := client.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
 	require.Nil(t, err)
-	maxTransactions := configs.BlockMaxTransactions
 	gasLimit := configs.BlockMaxGasLimit
 	maxBytes := configs.BlockMaxTxListBytes
 
@@ -135,9 +134,9 @@ func TestGetPoolContentValid(t *testing.T) {
 		goldenTouchAddress,
 		baseFee,
 		gasLimit,
-		maxBytes,
+		maxBytes.Uint64(),
 		txPools,
-		maxTransactions,
+		defaultMaxTransactionsPerBlock,
 	)
 	require.Nil(t, err2)
 }

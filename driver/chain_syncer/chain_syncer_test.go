@@ -2,6 +2,8 @@ package chainSyncer
 
 import (
 	"context"
+	"fmt"
+	"math/big"
 
 	"os"
 	"testing"
@@ -15,6 +17,7 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
+	"github.com/taikoxyz/taiko-client/prover/http"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -23,10 +26,14 @@ type ChainSyncerTestSuite struct {
 	s          *L2ChainSyncer
 	snapshotID string
 	p          testutils.Proposer
+	srv        *http.Server
+	cancel     func()
 }
 
 func (s *ChainSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
+
+	port := testutils.RandomPort()
 
 	state, err := state.New(context.Background(), s.RpcClient)
 	s.Nil(err)
@@ -51,12 +58,22 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
+		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
+		BlockProposalFee:           big.NewInt(1000),
+		BlockProposalFeeIterations: 3,
 	})))
+
+	srv, srvCancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
+	s.Nil(err)
+
+	s.srv = srv
+	s.cancel = srvCancel
 
 	s.p = prop
 }
@@ -110,7 +127,7 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	log.Info("evm time increase:", "number", result)
 
 	// interact with TaikoL1 contract to allow for verification of L2 blocks
-	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, common.Big3)
+	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, uint64(3))
 	s.Nil(err)
 	s.NotNil(tx)
 

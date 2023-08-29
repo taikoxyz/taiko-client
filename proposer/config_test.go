@@ -2,7 +2,9 @@ package proposer
 
 import (
 	"context"
+	"math/big"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -12,12 +14,15 @@ import (
 )
 
 var (
-	l1Endpoint      = os.Getenv("L1_NODE_WS_ENDPOINT")
-	l2Endpoint      = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
-	taikoL1         = os.Getenv("TAIKO_L1_ADDRESS")
-	taikoL2         = os.Getenv("TAIKO_L2_ADDRESS")
-	proposeInterval = "10s"
-	rpcTimeout      = 5 * time.Second
+	l1Endpoint       = os.Getenv("L1_NODE_WS_ENDPOINT")
+	l2Endpoint       = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+	proverEndpoints  = "http://localhost:9876,http://localhost:1234"
+	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
+	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
+	taikoToken       = os.Getenv("TAIKO_TOKEN_ADDRESS")
+	blockProposalFee = "10000000000"
+	proposeInterval  = "10s"
+	rpcTimeout       = 5 * time.Second
 )
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
@@ -36,6 +41,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(l2Endpoint, c.L2Endpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
+		s.Equal(taikoToken, c.TaikoTokenAddress.String())
 		s.Equal(goldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
 		s.Equal(goldenTouchAddress, c.L2SuggestedFeeRecipient)
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
@@ -44,6 +50,13 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
 		s.Equal(rpcTimeout, *c.RPCTimeout)
 		s.Equal(10*time.Second, c.WaitReceiptTimeout)
+		s.Equal(strings.Split(proverEndpoints, ","), c.ProverEndpoints)
+
+		fee, _ := new(big.Int).SetString(blockProposalFee, 10)
+		s.Equal(fee, c.BlockProposalFee)
+
+		s.Equal(uint64(15), c.BlockProposalFeeIncreasePercentage)
+		s.Equal(uint64(5), c.BlockProposalFeeIterations)
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -55,6 +68,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.L2HTTPEndpoint.Name, l2Endpoint,
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
+		"-" + flags.TaikoTokenAddress.Name, taikoToken,
 		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
 		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"-" + flags.ProposeInterval.Name, proposeInterval,
@@ -64,6 +78,10 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.WaitReceiptTimeout.Name, "10",
 		"-" + flags.ProposeBlockTxGasTipCap.Name, "100000",
 		"-" + flags.ProposeBlockTxGasLimit.Name, "100000",
+		"-" + flags.ProverEndpoints.Name, proverEndpoints,
+		"-" + flags.BlockProposalFee.Name, blockProposalFee,
+		"-" + flags.BlockProposalFeeIncreasePercentage.Name, "15",
+		"-" + flags.BlockProposalFeeIterations.Name, "5",
 	}))
 }
 
@@ -164,16 +182,21 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
+		&cli.StringFlag{Name: flags.TaikoTokenAddress.Name},
 		&cli.StringFlag{Name: flags.L1ProposerPrivKey.Name},
 		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
 		&cli.StringFlag{Name: flags.ProposeEmptyBlocksInterval.Name},
 		&cli.StringFlag{Name: flags.ProposeInterval.Name},
 		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
+		&cli.StringFlag{Name: flags.ProverEndpoints.Name},
+		&cli.Uint64Flag{Name: flags.BlockProposalFee.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
 		&cli.Uint64Flag{Name: flags.WaitReceiptTimeout.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasTipCap.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasLimit.Name},
+		&cli.Uint64Flag{Name: flags.BlockProposalFeeIncreasePercentage.Name},
+		&cli.Uint64Flag{Name: flags.BlockProposalFeeIterations.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

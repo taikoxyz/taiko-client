@@ -2,6 +2,7 @@ package proposer
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"os"
 	"testing"
@@ -10,10 +11,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/prover/http"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -21,10 +24,13 @@ type ProposerTestSuite struct {
 	testutils.ClientTestSuite
 	p      *Proposer
 	cancel context.CancelFunc
+	srv    *http.Server
 }
 
 func (s *ProposerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
+
+	port := testutils.RandomPort()
 
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -38,13 +44,50 @@ func (s *ProposerTestSuite) SetupTest() {
 		L2Endpoint:                          os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
 		TaikoL1Address:                      common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:                      common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:                   common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:             common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:                     &proposeInterval,
 		MaxProposedTxListsPerEpoch:          1,
 		ProposeBlockTxReplacementMultiplier: 2,
 		WaitReceiptTimeout:                  10 * time.Second,
+		ProverEndpoints:                     []string{fmt.Sprintf("http://localhost:%v", port)},
+		BlockProposalFee:                    big.NewInt(100000),
+		BlockProposalFeeIncreasePercentage:  10,
+		BlockProposalFeeIterations:          3,
 	})))
+
+	// Init prover
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	serverOpts := http.NewServerOpts{
+		ProverPrivateKey:         l1ProverPrivKey,
+		MinProofFee:              big.NewInt(1),
+		MaxCapacity:              10,
+		RequestCurrentCapacityCh: make(chan struct{}),
+		ReceiveCurrentCapacityCh: make(chan uint64),
+	}
+
+	s.srv, err = http.NewServer(serverOpts)
+	s.Nil(err)
+
+	go func() {
+		for {
+			select {
+			case <-serverOpts.RequestCurrentCapacityCh:
+				serverOpts.ReceiveCurrentCapacityCh <- 100
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	go func() {
+		if err := s.srv.Start(fmt.Sprintf(":%v", port)); err != nil {
+			log.Crit("error starting prover http server", "error", err)
+		}
+	}()
 
 	s.p = p
 	s.cancel = cancel
@@ -122,11 +165,13 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 }
 
 func (s *ProposerTestSuite) TestSendProposeBlockTx() {
+	fee := big.NewInt(10000)
 	opts, err := getTxOpts(
 		context.Background(),
 		s.p.rpc.L1,
 		s.p.l1ProposerPrivKey,
 		s.RpcClient.L1ChainID,
+		fee,
 	)
 	s.Nil(err)
 	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
@@ -154,21 +199,65 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
+	meta := &encoding.TaikoL1BlockMetadataInput{
+		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
+		TxListHash:      crypto.Keccak256Hash(encoded),
+		TxListByteStart: common.Big0,
+		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
+		CacheTxListInfo: false,
+	}
+
+	assignment, fee, err := s.p.assignProver(context.Background(), meta)
+	s.Nil(err)
+
 	newTx, err := s.p.sendProposeBlockTx(
 		context.Background(),
-		&encoding.TaikoL1BlockMetadataInput{
-			Beneficiary:     s.p.L2SuggestedFeeRecipient(),
-			TxListHash:      crypto.Keccak256Hash(encoded),
-			TxListByteStart: common.Big0,
-			TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
-			CacheTxListInfo: false,
-		},
+		meta,
 		encoded,
 		&nonce,
+		assignment,
+		fee,
 		true,
 	)
 	s.Nil(err)
 	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
+}
+
+func (s *ProposerTestSuite) TestAssignProver_NoProvers() {
+	meta := &encoding.TaikoL1BlockMetadataInput{
+		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
+		TxListHash:      testutils.RandomHash(),
+		TxListByteStart: common.Big0,
+		TxListByteEnd:   common.Big0,
+		CacheTxListInfo: false,
+	}
+
+	s.SetL1Automine(false)
+	defer s.SetL1Automine(true)
+
+	s.p.proverEndpoints = []string{}
+
+	_, _, err := s.p.assignProver(context.Background(), meta)
+
+	s.Equal(err, errUnableToFindProver)
+}
+
+func (s *ProposerTestSuite) TestAssignProver_SuccessFirstRound() {
+	meta := &encoding.TaikoL1BlockMetadataInput{
+		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
+		TxListHash:      testutils.RandomHash(),
+		TxListByteStart: common.Big0,
+		TxListByteEnd:   common.Big0,
+		CacheTxListInfo: false,
+	}
+
+	s.SetL1Automine(false)
+	defer s.SetL1Automine(true)
+
+	_, fee, err := s.p.assignProver(context.Background(), meta)
+
+	s.Nil(err)
+	s.Equal(fee.Uint64(), s.p.blockProposalFee.Uint64())
 }
 
 func (s *ProposerTestSuite) TestUpdateProposingTicker() {
@@ -183,7 +272,7 @@ func (s *ProposerTestSuite) TestUpdateProposingTicker() {
 func (s *ProposerTestSuite) TestStartClose() {
 	s.Nil(s.p.Start())
 	s.cancel()
-	s.NotPanics(s.p.Close)
+	s.NotPanics(func() { s.p.Close(context.Background()) })
 }
 
 // TODO: not working

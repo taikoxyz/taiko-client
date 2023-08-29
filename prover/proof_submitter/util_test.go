@@ -40,11 +40,7 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 	s.Nil(err)
 	l1HeadChild, err := s.RpcClient.L1.HeaderByNumber(context.Background(), new(big.Int).Sub(l1Head.Number, common.Big1))
 	s.Nil(err)
-	meta := &bindings.TaikoDataBlockMetadata{
-		L1Height: l1HeadChild.Number.Uint64(),
-		L1Hash:   l1HeadChild.Hash(),
-		Treasury: s.TestAddr,
-	}
+	meta := &bindings.TaikoDataBlockMetadata{L1Height: l1HeadChild.Number.Uint64(), L1Hash: l1HeadChild.Hash()}
 	s.NotNil(sendTxWithBackoff(
 		context.Background(),
 		s.RpcClient,

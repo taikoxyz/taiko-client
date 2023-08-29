@@ -32,15 +32,13 @@ type BlockHeader struct {
 }
 
 type TaikoL1Evidence struct {
-	MetaHash      [32]byte
-	BlockHash     [32]byte
-	ParentHash    [32]byte
-	SignalRoot    [32]byte
-	Graffiti      [32]byte
-	Prover        common.Address
-	ParentGasUsed uint32
-	GasUsed       uint32
-	Proof         []byte
+	MetaHash   [32]byte
+	BlockHash  [32]byte
+	ParentHash [32]byte
+	SignalRoot [32]byte
+	Graffiti   [32]byte
+	Prover     common.Address
+	Proofs     []byte
 }
 
 type TaikoL1BlockMetadataInput struct {
@@ -49,6 +47,18 @@ type TaikoL1BlockMetadataInput struct {
 	TxListByteStart *big.Int
 	TxListByteEnd   *big.Int
 	CacheTxListInfo bool
+}
+
+type ProverAssignment struct {
+	Prover common.Address
+	Expiry uint64
+	Data   []byte
+}
+
+type ProposeBlockData struct {
+	Input  TaikoL1BlockMetadataInput `json:"input"`
+	Fee    *big.Int                  `json:"fee"`
+	Expiry uint64                    `json:"expiry"`
 }
 
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.

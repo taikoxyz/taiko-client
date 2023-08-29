@@ -33,7 +33,7 @@ func SubscribeBlockVerified(
 	ch chan *bindings.TaikoL1ClientBlockVerified,
 ) event.Subscription {
 	return SubscribeEvent("BlockVerified", func(ctx context.Context) (event.Subscription, error) {
-		sub, err := taikoL1.WatchBlockVerified(nil, ch, nil)
+		sub, err := taikoL1.WatchBlockVerified(nil, ch, nil, nil)
 		if err != nil {
 			log.Error("Create TaikoL1.BlockVerified subscription error", "error", err)
 			return nil, err
@@ -90,24 +90,6 @@ func SubscribeBlockProven(
 		sub, err := taikoL1.WatchBlockProven(nil, ch, nil)
 		if err != nil {
 			log.Error("Create TaikoL1.BlockProven subscription error", "error", err)
-			return nil, err
-		}
-
-		defer sub.Unsubscribe()
-
-		return waitSubErr(ctx, sub)
-	})
-}
-
-// SubscribeSlashed subscribes the prover pool's Slashed events.
-func SubscribeSlashed(
-	taikoProverPool *bindings.TaikoL1ProverPool,
-	ch chan *bindings.TaikoL1ProverPoolSlashed,
-) event.Subscription {
-	return SubscribeEvent("Slashed", func(ctx context.Context) (event.Subscription, error) {
-		sub, err := taikoProverPool.WatchSlashed(nil, ch, nil, nil)
-		if err != nil {
-			log.Error("Create taikoProverPool.WatchSlashed subscription error", "error", err)
 			return nil, err
 		}
 

@@ -2,6 +2,7 @@ package calldata
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"math/rand"
 	"os"
@@ -16,17 +17,22 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/proposer"
+	"github.com/taikoxyz/taiko-client/prover/http"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type CalldataSyncerTestSuite struct {
 	testutils.ClientTestSuite
-	s *Syncer
-	p testutils.Proposer
+	s      *Syncer
+	p      testutils.Proposer
+	srv    *http.Server
+	cancel context.CancelFunc
 }
 
 func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
+
+	port := testutils.RandomPort()
 
 	state, err := state.New(context.Background(), s.RpcClient)
 	s.Nil(err)
@@ -50,16 +56,27 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
+		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
+		BlockProposalFee:           big.NewInt(1000),
+		BlockProposalFeeIterations: 3,
 	})))
+
+	srv, cancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
+	s.Nil(err)
+
+	s.srv = srv
+	s.cancel = cancel
 
 	s.p = prop
 }
 func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
+	defer s.cancel()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	syncer, err := NewSyncer(
@@ -74,12 +91,14 @@ func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
 }
 
 func (s *CalldataSyncerTestSuite) TestProcessL1Blocks() {
+	defer s.cancel()
 	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Nil(s.s.ProcessL1Blocks(context.Background(), head))
 }
 
 func (s *CalldataSyncerTestSuite) TestProcessL1BlocksReorg() {
+	defer s.cancel()
 	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
 	s.Nil(err)
@@ -87,6 +106,7 @@ func (s *CalldataSyncerTestSuite) TestProcessL1BlocksReorg() {
 }
 
 func (s *CalldataSyncerTestSuite) TestOnBlockProposed() {
+	defer s.cancel()
 	s.Nil(s.s.onBlockProposed(
 		context.Background(),
 		&bindings.TaikoL1ClientBlockProposed{BlockId: common.Big0},
@@ -100,6 +120,7 @@ func (s *CalldataSyncerTestSuite) TestOnBlockProposed() {
 }
 
 func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
+	defer s.cancel()
 	parent, err := s.s.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	l1Head, err := s.s.rpc.L1.BlockByNumber(context.Background(), nil)
@@ -117,7 +138,6 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 				MixHash:     testutils.RandomHash(),
 				GasLimit:    rand.Uint32(),
 				Timestamp:   uint64(time.Now().Unix()),
-				Treasury:    s.TestAddr,
 			},
 		},
 		parent,
@@ -133,6 +153,7 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 }
 
 func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
+	defer s.cancel()
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())
 
@@ -155,6 +176,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
 }
 
 func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
+	defer s.cancel()
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())
 

@@ -135,7 +135,7 @@ func (s *State) init(ctx context.Context) error {
 
 	latestVerifiedBlockHash, err := s.rpc.TaikoL1.GetCrossChainBlockHash(
 		&bind.CallOpts{Context: ctx},
-		new(big.Int).SetUint64(stateVars.LastVerifiedBlockId),
+		stateVars.LastVerifiedBlockId,
 	)
 	if err != nil {
 		return err
@@ -172,12 +172,12 @@ func (s *State) startSubscriptions(ctx context.Context) {
 					log.Info("✅ Block proven", "blockID", e.BlockId, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
 				}
 			case e := <-s.blockVerifiedCh:
-				log.Info("📈 Block verified", "blockID", e.BlockId, "hash", common.Hash(e.BlockHash), "reward", e.ProofReward)
+				log.Info("📈 Block verified", "blockID", e.BlockId, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
 			case e := <-s.crossChainSynced:
 				// Verify the protocol synced block, check if it exists in
 				// L2 execution engine.
-				if s.GetL2Head().Number.Cmp(e.SrcHeight) >= 0 {
-					if err := s.VerifyL2Block(ctx, e.SrcHeight, e.BlockHash); err != nil {
+				if s.GetL2Head().Number.Uint64() >= e.SrcHeight {
+					if err := s.VerifyL2Block(ctx, new(big.Int).SetUint64(e.SrcHeight), e.BlockHash); err != nil {
 						log.Error("Check new verified L2 block error", "error", err)
 						continue
 					}
@@ -187,7 +187,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 					log.Error("Get synced header block ID error", "error", err)
 					continue
 				}
-				s.setLatestVerifiedBlockHash(id, e.SrcHeight, e.BlockHash)
+				s.setLatestVerifiedBlockHash(id, new(big.Int).SetUint64(e.SrcHeight), e.BlockHash)
 			case newHead := <-s.l1HeadCh:
 				s.setL1Head(newHead)
 				s.l1HeadsFeed.Send(newHead)
@@ -294,7 +294,7 @@ func (s *State) getSyncedHeaderID(ctx context.Context, l1Height uint64, hash com
 		Start:   l1Height,
 		End:     &l1Height,
 		Context: ctx,
-	}, nil)
+	}, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to filter BlockVerified event: %w", err)
 	}

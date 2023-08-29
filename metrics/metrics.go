@@ -41,12 +41,8 @@ var (
 	ProverSentValidProofCounter       = metrics.NewRegisteredCounter("prover/proof/valid/sent", nil)
 	ProverSentInvalidProofCounter     = metrics.NewRegisteredCounter("prover/proof/invalid/sent", nil)
 	ProverProofsAssigned              = metrics.NewRegisteredCounter("prover/proof/assigned", nil)
-	ProverSlashedCounter              = metrics.NewRegisteredCounter("prover/slashed", nil)
-	ProverSlashedAmount               = metrics.NewRegisteredCounter("prover/slashed/amount", nil)
 	ProverReceivedProposedBlockGauge  = metrics.NewRegisteredGauge("prover/proposed/received", nil)
 	ProverReceivedProvenBlockGauge    = metrics.NewRegisteredGauge("prover/proven/received", nil)
-	ProverProofRewardGauge            = metrics.NewRegisteredGauge("prover/proofReward", nil)
-	ProverAllProofRewardGauge         = metrics.NewRegisteredGauge("prover/allProofReward", nil)
 )
 
 // Serve starts the metrics server on the given address, will be closed when the given

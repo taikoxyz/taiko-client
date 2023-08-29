@@ -25,6 +25,12 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
+	MinProofFee = &cli.StringFlag{
+		Name:     "prover.minProofFee",
+		Usage:    "Minimum accepted fee for accepting proving a block",
+		Required: true,
+		Category: proverCategory,
+	}
 )
 
 // Optional flags used by prover.
@@ -81,12 +87,6 @@ var (
 		Category: proverCategory,
 		Value:    "",
 	}
-	TaikoProverPoolL1Address = &cli.StringFlag{
-		Name:     "taikoProverPoolL1",
-		Usage:    "TaikoProverPoolL1 contract address",
-		Required: true,
-		Category: proverCategory,
-	}
 	CheckProofWindowExpiredInterval = &cli.Uint64Flag{
 		Name:     "prover.checkProofWindowExpiredInterval",
 		Usage:    "Interval in seconds to check for expired proof windows from other provers",
@@ -102,6 +102,17 @@ var (
 	ProveBlockTxGasLimit = &cli.Uint64Flag{
 		Name:     "prover.proveBlockTxGasLimit",
 		Usage:    "Gas limit will be used for TaikoL1.proveBlock transactions",
+		Category: proverCategory,
+	}
+	ProverHTTPServerPort = &cli.Uint64Flag{
+		Name:     "prover.httpServerPort",
+		Usage:    "Port to expose for http server",
+		Category: proverCategory,
+		Value:    9876,
+	}
+	ProverCapacity = &cli.Uint64Flag{
+		Name:     "prover.capacity",
+		Usage:    "Capacity of prover, required if oracleProver is false",
 		Category: proverCategory,
 	}
 )
@@ -123,8 +134,10 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	OracleProofSubmissionDelay,
 	ProofSubmissionMaxRetry,
 	Graffiti,
-	TaikoProverPoolL1Address,
 	CheckProofWindowExpiredInterval,
 	ProveUnassignedBlocks,
 	ProveBlockTxGasLimit,
+	ProverHTTPServerPort,
+	ProverCapacity,
+	MinProofFee,
 })

@@ -3,8 +3,10 @@ package testutils
 import (
 	"context"
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -14,8 +16,10 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/phayes/freeport"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/prover/http"
 )
 
 func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
@@ -175,6 +179,45 @@ func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey, re
 	}
 }
 
+// HTTPServer starts a new prover server that has channel listeners to respond and react
+// to requests for capacity, which provers can call.
+func HTTPServer(s *ClientTestSuite, port int) (*http.Server, func(), error) {
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	serverOpts := http.NewServerOpts{
+		ProverPrivateKey:         l1ProverPrivKey,
+		MinProofFee:              big.NewInt(1),
+		MaxCapacity:              10,
+		RequestCurrentCapacityCh: make(chan struct{}),
+		ReceiveCurrentCapacityCh: make(chan uint64),
+	}
+
+	srv, err := http.NewServer(serverOpts)
+	s.Nil(err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		for {
+			select {
+			case <-serverOpts.RequestCurrentCapacityCh:
+				serverOpts.ReceiveCurrentCapacityCh <- 100
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	go func() {
+		_ = srv.Start(fmt.Sprintf(":%v", port))
+	}()
+
+	return srv, func() {
+		cancel()
+		_ = srv.Shutdown(ctx)
+	}, err
+}
+
 // RandomHash generates a random blob of data and returns it as a hash.
 func RandomHash() common.Hash {
 	var hash common.Hash
@@ -191,6 +234,15 @@ func RandomBytes(size int) (b []byte) {
 		log.Crit("Generate random bytes error", "error", err)
 	}
 	return
+}
+
+// RandomPort returns a local free random port.
+func RandomPort() int {
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		log.Crit("Failed to get local free random port", "err", err)
+	}
+	return port
 }
 
 // SignatureFromRSV creates the signature bytes from r,s,v.
