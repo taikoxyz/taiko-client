@@ -229,7 +229,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 // Start starts the main loop of the L2 block prover.
 func (p *Prover) Start() error {
-	p.wg.Add(2)
+	p.wg.Add(1)
 	p.initSubscription()
 	if !p.cfg.OracleProver {
 		go func() {
@@ -245,6 +245,7 @@ func (p *Prover) Start() error {
 }
 
 func (p *Prover) watchCurrentCapacity() {
+	p.wg.Add(1)
 	defer func() {
 		p.wg.Done()
 	}()
