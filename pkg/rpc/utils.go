@@ -99,20 +99,20 @@ func NeedNewProof(
 		}
 	}
 
-	fc, err := cli.TaikoL1.GetForkChoice(
+	transition, err := cli.TaikoL1.GetTransition(
 		&bind.CallOpts{Context: ctxWithTimeout},
 		id.Uint64(),
 		parent.Hash(),
 	)
 	if err != nil {
-		if !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
+		if !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_TRANSITION_NOT_FOUND") {
 			return false, encoding.TryParsingCustomError(err)
 		}
 
 		return true, nil
 	}
 
-	if proverAddress == fc.Prover {
+	if proverAddress == transition.Prover {
 		log.Info("📬 Block's proof has already been submitted by current prover", "blockID", id)
 		return false, nil
 	}
@@ -120,8 +120,8 @@ func NeedNewProof(
 	log.Info(
 		"📬 Block's proof has already been submitted by another prover",
 		"blockID", id,
-		"prover", fc.Prover,
-		"provenAt", fc.ProvenAt,
+		"prover", transition.Prover,
+		"provenAt", transition.ProvenAt,
 	)
 
 	return false, nil
