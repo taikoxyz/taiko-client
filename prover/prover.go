@@ -524,7 +524,7 @@ func (p *Prover) onBlockProposed(
 					parent.Hash(),
 				)
 				if err != nil {
-					if strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
+					if strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_TRANSITION_NOT_FOUND") {
 						// proof hasnt been submitted
 						return false, nil
 					} else {
@@ -934,7 +934,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 			parent.Hash(),
 		)
 
-		if err != nil && !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
+		if err != nil && !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_TRANSITION_NOT_FOUND") {
 			return encoding.TryParsingCustomError(err)
 		}
 

@@ -105,7 +105,7 @@ func NeedNewProof(
 		parent.Hash(),
 	)
 	if err != nil {
-		if !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
+		if !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_TRANSITION_NOT_FOUND") {
 			return false, encoding.TryParsingCustomError(err)
 		}
 
