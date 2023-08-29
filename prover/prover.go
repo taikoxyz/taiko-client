@@ -141,7 +141,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		TaikoL2Address:   cfg.TaikoL2Address,
 		RetryInterval:    cfg.BackOffRetryInterval,
 		Timeout:          cfg.RPCTimeout,
-		BackOffMaxRetrys: new(big.Int).SetUint64(p.cfg.BackOffMaxRetrys),
+		BackOffMaxRetries: new(big.Int).SetUint64(p.cfg.BackOffMaxRetries),
 	}); err != nil {
 		return err
 	}
@@ -279,7 +279,7 @@ func (p *Prover) eventLoop() {
 	forceProvingTicker := time.NewTicker(15 * time.Second)
 	defer forceProvingTicker.Stop()
 
-	// If there is no new block verification in `proofCooldownPeriod * 2` seconeds, and the current prover is
+	// If there is no new block verification in `proofCooldownPeriod * 2` seconds, and the current prover is
 	// a special prover, we will go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
 	verificationCheckTicker := time.NewTicker(
 		time.Duration(p.protocolConfigs.ProofRegularCooldown.Uint64()*2) * time.Second,
@@ -383,7 +383,7 @@ func (p *Prover) onBlockProposed(
 		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
 	}
 
-	// Check whteher the L2 EE's recorded L1 info, to see if the L1 chain has been reorged.
+	// Check whether the L2 EE's recorded L1 info, to see if the L1 chain has been reorged.
 	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1ReorgFromL2EE(
 		ctx,
 		new(big.Int).Sub(event.BlockId, common.Big1),
@@ -525,7 +525,7 @@ func (p *Prover) onBlockProposed(
 				)
 				if err != nil {
 					if strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_FORK_CHOICE_NOT_FOUND") {
-						// proof hasnt been submitted
+						// proof hasn't been submitted
 						return false, nil
 					} else {
 						return false, err
@@ -564,7 +564,7 @@ func (p *Prover) onBlockProposed(
 			// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
 			if block.Prover != p.proverAddress && !proofWindowExpired {
 				log.Info(
-					"Proposed block not proveable",
+					"Proposed block not provable",
 					"blockID",
 					event.BlockId,
 					"prover",
@@ -606,7 +606,7 @@ func (p *Prover) onBlockProposed(
 			}
 
 			log.Info(
-				"Proposed block is proveable",
+				"Proposed block is provable",
 				"blockID", event.BlockId,
 				"prover", block.Prover.Hex(),
 				"proofWindowExpired", proofWindowExpired,
@@ -648,7 +648,7 @@ func (p *Prover) onBlockProposed(
 	go func() {
 		if err := backoff.Retry(
 			func() error { return handleBlockProposedEvent() },
-			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
+			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetries),
 		); err != nil {
 			p.currentBlocksBeingProvenMutex.Lock()
 			delete(p.currentBlocksBeingProven, event.BlockId.Uint64())
@@ -685,7 +685,7 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 
 				return nil
 			},
-			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
+			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetries),
 		); err != nil {
 			log.Error("Submit proof error", "error", err)
 		}
@@ -825,14 +825,14 @@ func (p *Prover) closeSubscription() {
 }
 
 // checkChainVerification checks if there is no new block verification in protocol, if so,
-// it will let current sepecial prover to go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
+// it will let current special prover to go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
 func (p *Prover) checkChainVerification(lastLatestVerifiedL1Height uint64) error {
 	if (!p.cfg.OracleProver) || lastLatestVerifiedL1Height != p.latestVerifiedL1Height {
 		return nil
 	}
 
 	log.Warn(
-		"No new block verification in `proofCooldownPeriod * 2` seconeds",
+		"No new block verification in `proofCooldownPeriod * 2` seconds",
 		"latestVerifiedL1Height", p.latestVerifiedL1Height,
 		"proofCooldownPeriod", p.protocolConfigs.ProofRegularCooldown,
 	)
@@ -903,7 +903,7 @@ func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
 	return nil
 }
 
-// checkProofWindowExpired checks a single instance of a block to see if its proof winodw has expired
+// checkProofWindowExpired checks a single instance of a block to see if its proof window has expired
 // and the proof is now able to be submitted by anyone, not just the blocks assigned prover.
 func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId uint64) error {
 	block, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, blockId)
@@ -922,7 +922,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 		delete(p.currentBlocksWaitingForProofWindow, blockId)
 
 		// we can see if a fork choice with correct parentHash/gasUsed has come in.
-		// if it hasnt, we can start to generate a proof for this.
+		// if it hasn't, we can start to generate a proof for this.
 		parent, err := p.rpc.L2ParentByBlockId(ctx, new(big.Int).SetUint64(blockId))
 		if err != nil {
 			return err
@@ -958,7 +958,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 				return err
 			}
 
-			// if the hashes dont match, we can generate proof even though
+			// if the hashes don't match, we can generate proof even though
 			// a proof came in before proofwindow expired.
 			if block.Hash() != forkChoice.BlockHash {
 				log.Info(
@@ -1055,7 +1055,7 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 			func() error {
 				return handleBlockProposedEvent()
 			},
-			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
+			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetries),
 		); err != nil {
 			p.currentBlocksBeingProvenMutex.Lock()
 			defer p.currentBlocksBeingProvenMutex.Unlock()

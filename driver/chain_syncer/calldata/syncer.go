@@ -141,7 +141,7 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	if !s.progressTracker.Triggered() {
-		// Check whteher we need to reorg the L2 chain at first.
+		// Check whether we need to reorg the L2 chain at first.
 		// 1. Last verified block
 		var (
 			reorged                    bool

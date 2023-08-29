@@ -34,7 +34,7 @@ type Config struct {
 	Graffiti                        string
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
-	BackOffMaxRetrys                uint64
+	BackOffMaxRetries                uint64
 	BackOffRetryInterval            time.Duration
 	CheckProofWindowExpiredInterval time.Duration
 	ProveUnassignedBlocks           bool
@@ -146,7 +146,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		Graffiti:                        c.String(flags.Graffiti.Name),
 		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
 		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
-		BackOffMaxRetrys:                c.Uint64(flags.BackOffMaxRetrys.Name),
+		BackOffMaxRetries:                c.Uint64(flags.BackOffMaxRetries.Name),
 		BackOffRetryInterval:            time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
 		CheckProofWindowExpiredInterval: time.Duration(
 			c.Uint64(flags.CheckProofWindowExpiredInterval.Name),

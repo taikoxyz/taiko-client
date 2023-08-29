@@ -54,7 +54,7 @@ type ClientConfig struct {
 	JwtSecret         string
 	RetryInterval     time.Duration
 	Timeout           *time.Duration
-	BackOffMaxRetrys  *big.Int
+	BackOffMaxRetries  *big.Int
 }
 
 // NewClient initializes all RPC clients used by Taiko client softwares.
@@ -62,17 +62,17 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	if cfg.BackOffMaxRetrys == nil {
-		defaultRetrys := new(big.Int).SetInt64(10)
-		cfg.BackOffMaxRetrys = defaultRetrys
+	if cfg.BackOffMaxRetries == nil {
+		defaultRetries := new(big.Int).SetInt64(10)
+		cfg.BackOffMaxRetries = defaultRetries
 	}
 
-	l1EthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L1Endpoint, cfg.RetryInterval, cfg.BackOffMaxRetrys)
+	l1EthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L1Endpoint, cfg.RetryInterval, cfg.BackOffMaxRetries)
 	if err != nil {
 		return nil, err
 	}
 
-	l2EthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L2Endpoint, cfg.RetryInterval, cfg.BackOffMaxRetrys)
+	l2EthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L2Endpoint, cfg.RetryInterval, cfg.BackOffMaxRetries)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 			cfg.L2EngineEndpoint,
 			cfg.JwtSecret,
 			cfg.RetryInterval,
-			cfg.BackOffMaxRetrys,
+			cfg.BackOffMaxRetries,
 		); err != nil {
 			return nil, err
 		}
@@ -162,7 +162,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 			ctxWithTimeout,
 			cfg.L2CheckPoint,
 			cfg.RetryInterval,
-			cfg.BackOffMaxRetrys)
+			cfg.BackOffMaxRetries)
 		if err != nil {
 			return nil, err
 		}

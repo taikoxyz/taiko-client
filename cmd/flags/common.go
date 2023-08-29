@@ -83,7 +83,7 @@ var (
 		Category: metricsCategory,
 		Value:    6060,
 	}
-	BackOffMaxRetrys = &cli.Uint64Flag{
+	BackOffMaxRetries = &cli.Uint64Flag{
 		Name:     "backoff.maxRetrys",
 		Usage:    "Max retry times when there is an error",
 		Category: commonCategory,
@@ -120,7 +120,7 @@ var CommonFlags = []cli.Flag{
 	MetricsEnabled,
 	MetricsAddr,
 	MetricsPort,
-	BackOffMaxRetrys,
+	BackOffMaxRetries,
 	BackOffRetryInterval,
 	RPCTimeout,
 	WaitReceiptTimeout,
