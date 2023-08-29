@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-client/cmd/utils"
 	"github.com/taikoxyz/taiko-client/driver"
@@ -56,6 +56,7 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Crit("Failed to start Taiko client", "error", err)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }
