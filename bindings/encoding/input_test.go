@@ -89,7 +89,6 @@ func TestEncodeProveBlockInvalidInput(t *testing.T) {
 	require.NotNil(t, encoded)
 }
 
-// TODO(Roger): fix this test
 func TestEncodeBlockMetadata(t *testing.T) {
 	// since strings are right padded in solidity https://github.com/ethereum/solidity/issues/1340
 	var abcdBytes [32]byte
