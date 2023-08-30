@@ -245,6 +245,11 @@ func (p *Prover) Start() error {
 }
 
 func (p *Prover) watchCurrentCapacity() {
+	p.wg.Add(1)
+	defer func() {
+		p.wg.Done()
+	}()
+
 	for {
 		select {
 		case <-p.ctx.Done():
