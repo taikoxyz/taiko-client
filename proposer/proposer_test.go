@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -30,8 +31,6 @@ type ProposerTestSuite struct {
 func (s *ProposerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	port := testutils.RandomPort()
-
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 
@@ -39,6 +38,8 @@ func (s *ProposerTestSuite) SetupTest() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
+	proverEndpoint := testutils.LocalRandomProverEndpoint()
+
 	s.Nil(InitFromConfig(ctx, p, (&Config{
 		L1Endpoint:                          os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:                          os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
@@ -51,9 +52,9 @@ func (s *ProposerTestSuite) SetupTest() {
 		MaxProposedTxListsPerEpoch:          1,
 		ProposeBlockTxReplacementMultiplier: 2,
 		WaitReceiptTimeout:                  10 * time.Second,
-		ProverEndpoints:                     []string{fmt.Sprintf("http://localhost:%v", port)},
+		ProverEndpoints:                     []*url.URL{proverEndpoint},
 		BlockProposalFee:                    big.NewInt(100000),
-		BlockProposalFeeIncreasePercentage:  10,
+		BlockProposalFeeIncreasePercentage:  common.Big2,
 		BlockProposalFeeIterations:          3,
 	})))
 
@@ -84,7 +85,7 @@ func (s *ProposerTestSuite) SetupTest() {
 	}()
 
 	go func() {
-		if err := s.srv.Start(fmt.Sprintf(":%v", port)); err != nil {
+		if err := s.srv.Start(fmt.Sprintf(":%v", proverEndpoint.Port())); err != nil {
 			log.Crit("error starting prover http server", "error", err)
 		}
 	}()
@@ -207,7 +208,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		CacheTxListInfo: false,
 	}
 
-	assignment, fee, err := s.p.assignProver(context.Background(), meta)
+	assignment, fee, err := s.p.proverSelector.AssignProver(context.Background(), meta)
 	s.Nil(err)
 
 	newTx, err := s.p.sendProposeBlockTx(
@@ -223,25 +224,6 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }
 
-func (s *ProposerTestSuite) TestAssignProver_NoProvers() {
-	meta := &encoding.TaikoL1BlockMetadataInput{
-		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
-		TxListHash:      testutils.RandomHash(),
-		TxListByteStart: common.Big0,
-		TxListByteEnd:   common.Big0,
-		CacheTxListInfo: false,
-	}
-
-	s.SetL1Automine(false)
-	defer s.SetL1Automine(true)
-
-	s.p.proverEndpoints = []string{}
-
-	_, _, err := s.p.assignProver(context.Background(), meta)
-
-	s.Equal(err, errUnableToFindProver)
-}
-
 func (s *ProposerTestSuite) TestAssignProver_SuccessFirstRound() {
 	meta := &encoding.TaikoL1BlockMetadataInput{
 		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
@@ -254,10 +236,10 @@ func (s *ProposerTestSuite) TestAssignProver_SuccessFirstRound() {
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	_, fee, err := s.p.assignProver(context.Background(), meta)
+	_, fee, err := s.p.proverSelector.AssignProver(context.Background(), meta)
 
 	s.Nil(err)
-	s.Equal(fee.Uint64(), s.p.blockProposalFee.Uint64())
+	s.Equal(fee.Uint64(), s.p.cfg.BlockProposalFee.Uint64())
 }
 
 func (s *ProposerTestSuite) TestUpdateProposingTicker() {

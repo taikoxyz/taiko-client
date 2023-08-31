@@ -3,8 +3,8 @@ package submitter
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"math/big"
+	"net/url"
 	"os"
 	"sync"
 	"testing"
@@ -37,8 +37,6 @@ type ProofSubmitterTestSuite struct {
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
-
-	port := testutils.RandomPort()
 
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -82,6 +80,8 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
+	localProverEndpoint := testutils.LocalRandomProverEndpoint()
+
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -93,12 +93,12 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
-		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
+		ProverEndpoints:            []*url.URL{localProverEndpoint},
 		BlockProposalFee:           big.NewInt(1000),
 		BlockProposalFeeIterations: 3,
 	})))
 
-	srv, cancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
+	srv, cancel, err := testutils.HTTPServer(&s.ClientTestSuite, localProverEndpoint)
 	s.Nil(err)
 
 	s.srv = srv

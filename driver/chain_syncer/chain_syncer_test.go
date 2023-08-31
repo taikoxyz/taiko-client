@@ -2,8 +2,8 @@ package chainSyncer
 
 import (
 	"context"
-	"fmt"
 	"math/big"
+	"net/url"
 
 	"os"
 	"testing"
@@ -33,8 +33,6 @@ type ChainSyncerTestSuite struct {
 func (s *ChainSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	port := testutils.RandomPort()
-
 	state, err := state.New(context.Background(), s.RpcClient)
 	s.Nil(err)
 
@@ -53,6 +51,8 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
+	localProverEndpoint := testutils.LocalRandomProverEndpoint()
+
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -64,12 +64,12 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
-		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
+		ProverEndpoints:            []*url.URL{localProverEndpoint},
 		BlockProposalFee:           big.NewInt(1000),
 		BlockProposalFeeIterations: 3,
 	})))
 
-	srv, srvCancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
+	srv, srvCancel, err := testutils.HTTPServer(&s.ClientTestSuite, localProverEndpoint)
 	s.Nil(err)
 
 	s.srv = srv

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"math/rand"
+	"net/url"
 	"os"
 	"time"
 
@@ -181,7 +182,7 @@ func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey, re
 
 // HTTPServer starts a new prover server that has channel listeners to respond and react
 // to requests for capacity, which provers can call.
-func HTTPServer(s *ClientTestSuite, port int) (*http.Server, func(), error) {
+func HTTPServer(s *ClientTestSuite, url *url.URL) (*http.Server, func(), error) {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
@@ -209,7 +210,7 @@ func HTTPServer(s *ClientTestSuite, port int) (*http.Server, func(), error) {
 	}()
 
 	go func() {
-		_ = srv.Start(fmt.Sprintf(":%v", port))
+		_ = srv.Start(fmt.Sprintf(":%v", url.Port()))
 	}()
 
 	return srv, func() {
@@ -243,6 +244,18 @@ func RandomPort() int {
 		log.Crit("Failed to get local free random port", "err", err)
 	}
 	return port
+}
+
+// LocalRandomProverEndpoint returns a local free random prover endpoint.
+func LocalRandomProverEndpoint() *url.URL {
+	port := RandomPort()
+
+	proverEndpoint, err := url.Parse(fmt.Sprintf("http://localhost:%v", port))
+	if err != nil {
+		log.Crit("Failed to parse local prover endpoint", "err", err)
+	}
+
+	return proverEndpoint
 }
 
 // SignatureFromRSV creates the signature bytes from r,s,v.

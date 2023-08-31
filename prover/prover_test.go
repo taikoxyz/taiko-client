@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -100,7 +101,7 @@ func (s *ProverTestSuite) SetupTest() {
 		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
-		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
+		ProverEndpoints:            []*url.URL{testutils.LocalRandomProverEndpoint()},
 		BlockProposalFee:           big.NewInt(1000),
 		BlockProposalFeeIterations: 3,
 	})))

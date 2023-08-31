@@ -2,8 +2,8 @@ package driver
 
 import (
 	"context"
-	"fmt"
 	"math/big"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -30,8 +30,6 @@ type DriverTestSuite struct {
 func (s *DriverTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	port := testutils.RandomPort()
-
 	// Init driver
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
 	s.Nil(err)
@@ -54,6 +52,7 @@ func (s *DriverTestSuite) SetupTest() {
 
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
+	localPorverEndpoint := testutils.LocalRandomProverEndpoint()
 
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(proposer.InitFromConfig(context.Background(), p, (&proposer.Config{
@@ -67,13 +66,13 @@ func (s *DriverTestSuite) SetupTest() {
 		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         10 * time.Second,
-		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
+		ProverEndpoints:            []*url.URL{localPorverEndpoint},
 		BlockProposalFee:           big.NewInt(1000),
 		BlockProposalFeeIterations: 3,
 	})))
 	s.p = p
 
-	srv, srvCancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
+	srv, srvCancel, err := testutils.HTTPServer(&s.ClientTestSuite, localPorverEndpoint)
 	s.Nil(err)
 
 	s.srv = srv
