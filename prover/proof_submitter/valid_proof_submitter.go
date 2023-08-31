@@ -264,7 +264,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return s.rpc.TaikoL1.ProveBlock(txOpts, blockID.Uint64(), input)
 	}
 
-	var maxRetry = &s.submissionMaxRetry
+	maxRetry := &s.submissionMaxRetry
 	if s.isOracleProver {
 		maxRetry = nil
 	}
@@ -296,7 +296,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 }
 
 // CancelProof cancels an existing proof generation.
-// Right now, it is just a stub that does nothing, because it is not possible to cnacel the proof
+// Right now, it is just a stub that does nothing, because it is not possible to cancel the proof
 // with the current zkevm software.
 func (s *ValidProofSubmitter) CancelProof(ctx context.Context, blockID *big.Int) error {
 	return s.proofProducer.Cancel(ctx, blockID)

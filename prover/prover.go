@@ -284,7 +284,7 @@ func (p *Prover) eventLoop() {
 	forceProvingTicker := time.NewTicker(15 * time.Second)
 	defer forceProvingTicker.Stop()
 
-	// If there is no new block verification in `proofCooldownPeriod * 2` seconeds, and the current prover is
+	// If there is no new block verification in `proofCooldownPeriod * 2` seconds, and the current prover is
 	// a special prover, we will go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
 	verificationCheckTicker := time.NewTicker(
 		time.Duration(p.protocolConfigs.ProofRegularCooldown.Uint64()*2) * time.Second,
@@ -388,7 +388,7 @@ func (p *Prover) onBlockProposed(
 		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
 	}
 
-	// Check whteher the L2 EE's recorded L1 info, to see if the L1 chain has been reorged.
+	// Check whether the L2 EE's recorded L1 info, to see if the L1 chain has been reorged.
 	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1ReorgFromL2EE(
 		ctx,
 		new(big.Int).Sub(event.BlockId, common.Big1),
@@ -569,7 +569,7 @@ func (p *Prover) onBlockProposed(
 			// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
 			if block.Prover != p.proverAddress && !proofWindowExpired {
 				log.Info(
-					"Proposed block not proveable",
+					"Proposed block not provable",
 					"blockID",
 					event.BlockId,
 					"prover",
@@ -611,7 +611,7 @@ func (p *Prover) onBlockProposed(
 			}
 
 			log.Info(
-				"Proposed block is proveable",
+				"Proposed block is provable",
 				"blockID", event.BlockId,
 				"prover", block.Prover.Hex(),
 				"proofWindowExpired", proofWindowExpired,
@@ -734,7 +734,6 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 		event.ParentHash,
 		event.BlockHash,
 	)
-
 	if err != nil {
 		return err
 	}
@@ -830,14 +829,14 @@ func (p *Prover) closeSubscription() {
 }
 
 // checkChainVerification checks if there is no new block verification in protocol, if so,
-// it will let current sepecial prover to go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
+// it will let current special prover to go back to try proving the block whose id is `lastVerifiedBlockId + 1`.
 func (p *Prover) checkChainVerification(lastLatestVerifiedL1Height uint64) error {
 	if (!p.cfg.OracleProver) || lastLatestVerifiedL1Height != p.latestVerifiedL1Height {
 		return nil
 	}
 
 	log.Warn(
-		"No new block verification in `proofCooldownPeriod * 2` seconeds",
+		"No new block verification in `proofCooldownPeriod * 2` seconds",
 		"latestVerifiedL1Height", p.latestVerifiedL1Height,
 		"proofCooldownPeriod", p.protocolConfigs.ProofRegularCooldown,
 	)
@@ -908,7 +907,7 @@ func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
 	return nil
 }
 
-// checkProofWindowExpired checks a single instance of a block to see if its proof winodw has expired
+// checkProofWindowExpired checks a single instance of a block to see if its proof window has expired
 // and the proof is now able to be submitted by anyone, not just the blocks assigned prover.
 func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId uint64) error {
 	block, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, blockId)
