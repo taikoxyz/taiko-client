@@ -53,7 +53,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		ProposeBlockTxReplacementMultiplier: 2,
 		WaitReceiptTimeout:                  10 * time.Second,
 		ProverEndpoints:                     []*url.URL{proverEndpoint},
-		BlockProposalFee:                    big.NewInt(100000),
+		BlockProposalFee:                    common.Big256,
 		BlockProposalFeeIncreasePercentage:  common.Big2,
 		BlockProposalFeeIterations:          3,
 	})))
@@ -64,7 +64,7 @@ func (s *ProposerTestSuite) SetupTest() {
 
 	serverOpts := http.NewServerOpts{
 		ProverPrivateKey:         l1ProverPrivKey,
-		MinProofFee:              big.NewInt(1),
+		MinProofFee:              common.Big1,
 		MaxCapacity:              10,
 		RequestCurrentCapacityCh: make(chan struct{}),
 		ReceiveCurrentCapacityCh: make(chan uint64),
