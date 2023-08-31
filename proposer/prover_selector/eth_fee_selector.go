@@ -1,14 +1,10 @@
 package selector
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math/big"
-	"net/http"
 	"net/url"
 	"time"
 
@@ -16,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/go-resty/resty/v2"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -100,155 +97,134 @@ func (s *ETHFeeSelector) AssignProver(
 			increase.Div(increase, big.NewInt(100))
 			fee.Add(fee, increase)
 		}
-
-		proposeBlockReq := &encoding.ProposeBlockData{
-			Expiry: expiry,
-			Input:  *meta,
-			Fee:    fee,
-		}
-
-		jsonBody, err := json.Marshal(proposeBlockReq)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		r := bytes.NewReader(jsonBody)
-
 		for _, endpoint := range s.proverEndpoints {
-			log.Info(
-				"Attempting to assign prover",
-				"endpoint", endpoint,
-				"fee", fee.String(),
-				"expiry", expiry,
-			)
-			client := &http.Client{Timeout: s.requestTimeout}
-
-			req, err := http.NewRequestWithContext(
-				ctx,
-				"POST",
-				fmt.Sprintf("%v/%v", endpoint, "proposeBlock"),
-				r,
-			)
+			encodedAssignment, proverAddress, err := assignProver(ctx, meta, endpoint, fee, expiry, s.requestTimeout)
 			if err != nil {
-				log.Error("Init http request error", "endpoint", endpoint, "err", err)
+				log.Warn("Failed to assign prover", "endpoint", endpoint, "error", err)
 				continue
 			}
-			req.Header.Add("Content-Type", "application/json")
 
-			res, err := client.Do(req)
+			ok, err := s.checkProverBalance(ctx, proverAddress)
 			if err != nil {
-				log.Error("Request prover server error", "endpoint", endpoint, "err", err)
+				log.Warn("Failed to check prover balance", "endpoint", endpoint, "error", err)
+				continue
+			}
+			if !ok {
 				continue
 			}
 
-			if res.StatusCode != http.StatusOK {
-				log.Info(
-					"Prover rejected request to assign block",
-					"endpoint", endpoint,
-					"fee", fee.String(),
-					"expiry", expiry,
-				)
-				continue
-			}
-
-			resBody, err := io.ReadAll(res.Body)
-			if err != nil {
-				log.Error("Read response body error", "endpoint", endpoint, "err", err)
-				continue
-			}
-
-			resp := &assignProverResponse{}
-			if err := json.Unmarshal(resBody, resp); err != nil {
-				log.Error("Unmarshal response body error", "endpoint", endpoint, "err", err)
-				continue
-			}
-
-			// ensure prover in response is the same as the one recovered
-			// from the signature
-			encodedBlockData, err := encoding.EncodeProposeBlockData(proposeBlockReq)
-			if err != nil {
-				log.Error("Encode block data error", "endpoint", endpoint, "error", err)
-				continue
-			}
-
-			pubKey, err := crypto.SigToPub(crypto.Keccak256Hash(encodedBlockData).Bytes(), resp.SignedPayload)
-			if err != nil {
-				log.Error("Failed to get public key from signature", "endpoint", endpoint, "error", err)
-				continue
-			}
-
-			if crypto.PubkeyToAddress(*pubKey).Hex() != resp.Prover.Hex() {
-				log.Info(
-					"Assigned prover signature did not recover to provided prover address",
-					"endpoint", endpoint,
-					"recoveredAddress", crypto.PubkeyToAddress(*pubKey).Hex(),
-					"providedProver", resp.Prover.Hex(),
-				)
-				continue
-			}
-
-			// make sure the prover has the necessary balance either in TaikoL1 token balances
-			// or, if not, check allowance, as contract will attempt to burn directly after
-			// if it doesnt have the available tokenbalance in-contract.
-			taikoTokenBalance, err := s.rpc.TaikoL1.GetTaikoTokenBalance(&bind.CallOpts{Context: ctx}, resp.Prover)
-			if err != nil {
-				log.Error(
-					"Get taiko token balance error",
-					"endpoint", endpoint,
-					"providedProver", resp.Prover.Hex(),
-					"error", err,
-				)
-				continue
-			}
-
-			if s.protocolConfigs.ProofBond.Cmp(taikoTokenBalance) > 0 {
-				// check allowance on taikotoken contract
-				allowance, err := s.rpc.TaikoToken.Allowance(&bind.CallOpts{Context: ctx}, resp.Prover, s.taikoL1Address)
-				if err != nil {
-					log.Error(
-						"Get taiko token allowance error",
-						"endpoint", endpoint,
-						"providedProver", resp.Prover.Hex(),
-						"error", err,
-					)
-					continue
-				}
-
-				if s.protocolConfigs.ProofBond.Cmp(allowance) > 0 {
-					log.Info(
-						"Assigned prover does not have required on-chain token balance or allowance",
-						"endpoint", endpoint,
-						"providedProver", resp.Prover.Hex(),
-						"taikoTokenBalance", taikoTokenBalance.String(),
-						"allowance", allowance.String(),
-						"proofBond", s.protocolConfigs.ProofBond,
-						"requiredFee", fee.String(),
-					)
-					continue
-				}
-			}
-
-			// convert signature to one solidity can recover by adding 27 to 65th byte
-			resp.SignedPayload[64] = uint8(uint(resp.SignedPayload[64])) + 27
-
-			encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
-				Prover: resp.Prover,
-				Expiry: proposeBlockReq.Expiry,
-				Data:   resp.SignedPayload,
-			})
-			if err != nil {
-				return nil, nil, err
-			}
-
-			log.Info(
-				"Prover assigned for block",
-				"prover", resp.Prover.Hex(),
-				"signedPayload", common.Bytes2Hex(resp.SignedPayload),
-			)
-
-			return encoded, fee, nil
+			return encodedAssignment, fee, nil
 		}
 	}
 
 	return nil, nil, errUnableToFindProver
+}
+
+// checkProverBalance checks if the prover has the necessary balance either in TaikoL1 token balances
+// or, if not, then check allowance, as contract will attempt to burn directly after
+// if it doesnt have the available token balance in-contract.
+func (s *ETHFeeSelector) checkProverBalance(ctx context.Context, prover common.Address) (bool, error) {
+	taikoTokenBalance, err := s.rpc.TaikoL1.GetTaikoTokenBalance(&bind.CallOpts{Context: ctx}, prover)
+	if err != nil {
+		return false, err
+	}
+
+	if s.protocolConfigs.ProofBond.Cmp(taikoTokenBalance) > 0 {
+		// Check allowance on taiko token contract
+		allowance, err := s.rpc.TaikoToken.Allowance(&bind.CallOpts{Context: ctx}, prover, s.taikoL1Address)
+		if err != nil {
+			return false, err
+		}
+
+		if s.protocolConfigs.ProofBond.Cmp(allowance) > 0 {
+			log.Info(
+				"Assigned prover does not have required on-chain token balance or allowance",
+				"providedProver", prover.Hex(),
+				"taikoTokenBalance", taikoTokenBalance.String(),
+				"allowance", allowance.String(),
+				"proofBond", s.protocolConfigs.ProofBond,
+			)
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func assignProver(
+	ctx context.Context,
+	meta *encoding.TaikoL1BlockMetadataInput,
+	endpoint *url.URL,
+	fee *big.Int,
+	expiry uint64,
+	timeout time.Duration,
+) ([]byte, common.Address, error) {
+	log.Info(
+		"Attempting to assign prover",
+		"endpoint", endpoint,
+		"fee", fee.String(),
+		"expiry", expiry,
+	)
+
+	// Send the HTTP request
+	var (
+		client  = resty.New()
+		reqBody = &encoding.ProposeBlockData{Expiry: expiry, Input: *meta, Fee: fee}
+		result  = assignProverResponse{}
+	)
+	requestUrl, err := url.JoinPath(endpoint.String(), "/proposeBlock")
+	if err != nil {
+		return nil, common.Address{}, err
+	}
+
+	ctxTimeout, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	resp, err := client.R().
+		SetContext(ctxTimeout).
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Accept", "application/json").
+		SetBody(reqBody).
+		SetResult(&result).
+		Post(requestUrl)
+	if err != nil {
+		return nil, common.Address{}, err
+	}
+	if !resp.IsSuccess() {
+		return nil, common.Address{}, fmt.Errorf("unsuccessful response %d", resp.StatusCode())
+	}
+
+	// Ensure prover in response is the same as the one recovered
+	// from the signature
+	encodedBlockData, err := encoding.EncodeProposeBlockData(reqBody)
+	if err != nil {
+		return nil, common.Address{}, err
+	}
+
+	pubKey, err := crypto.SigToPub(crypto.Keccak256Hash(encodedBlockData).Bytes(), result.SignedPayload)
+	if err != nil {
+		return nil, common.Address{}, err
+	}
+
+	if crypto.PubkeyToAddress(*pubKey).Hex() != result.Prover.Hex() {
+		return nil, common.Address{}, fmt.Errorf(
+			"assigned prover signature did not recover to provided prover address %s != %s",
+			crypto.PubkeyToAddress(*pubKey).Hex(),
+			result.Prover.Hex(),
+		)
+	}
+
+	// Convert signature to one solidity can recover by adding 27 to 65th byte
+	result.SignedPayload[64] = uint8(uint(result.SignedPayload[64])) + 27
+
+	encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
+		Prover: result.Prover,
+		Expiry: reqBody.Expiry,
+		Data:   result.SignedPayload,
+	})
+	if err != nil {
+		return nil, common.Address{}, err
+	}
+
+	return encoded, result.Prover, nil
 }

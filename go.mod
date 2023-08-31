@@ -8,6 +8,7 @@ require (
 	github.com/cyberhorsey/webutils v0.0.0-20230314183728-56890c6ddbe7
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0
 	github.com/ethereum/go-ethereum v1.12.2
+	github.com/go-resty/resty/v2 v2.7.0
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/labstack/gommon v0.4.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
