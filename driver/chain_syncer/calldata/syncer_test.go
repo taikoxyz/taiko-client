@@ -78,8 +78,9 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	// to ensure cancel is called
-	time.Sleep(1 * time.Second)
+	select {
+	case <-ctx.Done():
+	}
 	syncer, err := NewSyncer(
 		ctx,
 		s.RpcClient,
