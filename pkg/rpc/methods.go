@@ -96,10 +96,7 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 				return err
 			}
 
-			if progress.SyncProgress != nil ||
-				progress.CurrentBlockID == nil ||
-				progress.HighestBlockID == nil ||
-				progress.CurrentBlockID.Cmp(progress.HighestBlockID) < 0 {
+			if progress.isSyncing() {
 				log.Info("L2 execution engine is syncing", "progress", progress)
 				return errSyncing
 			}
@@ -279,6 +276,17 @@ type L2SyncProgress struct {
 	*ethereum.SyncProgress
 	CurrentBlockID *big.Int
 	HighestBlockID *big.Int
+}
+
+// isSyncing returns true if the L2 execution engine is syncing with L1.
+func (p *L2SyncProgress) isSyncing() bool {
+	if p.SyncProgress != nil ||
+		p.CurrentBlockID == nil ||
+		p.HighestBlockID == nil ||
+		p.CurrentBlockID.Cmp(p.HighestBlockID) < 0 {
+		return true
+	}
+	return false
 }
 
 // L2ExecutionEngineSyncProgress fetches the sync progress of the given L2 execution engine.
