@@ -3,8 +3,11 @@ package testutils
 import (
 	"context"
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
+	"net/url"
 	"os"
+	"sync"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -14,6 +17,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/prover/http"
 )
 
 type ClientTestSuite struct {
@@ -22,6 +26,8 @@ type ClientTestSuite struct {
 	RpcClient           *rpc.Client
 	TestAddrPrivKey     *ecdsa.PrivateKey
 	TestAddr            common.Address
+	ProverEndpoints     []*url.URL
+	once                sync.Once
 }
 
 func (s *ClientTestSuite) SetupTest() {
@@ -67,6 +73,24 @@ func (s *ClientTestSuite) SetupTest() {
 
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
+
+	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
+	s.once.Do(func() {
+		go func() {
+			proverServer, err := http.NewServer(&http.NewServerOpts{
+				ProverPrivateKey:         l1ProverPrivKey,
+				MinProofFee:              common.Big1,
+				MaxCapacity:              10,
+				RequestCurrentCapacityCh: make(chan struct{}),
+				ReceiveCurrentCapacityCh: make(chan uint64),
+			})
+			s.Nil(err)
+
+			if err := proverServer.Start(fmt.Sprintf(":%v", s.ProverEndpoints[0].Port())); err != nil {
+				log.Crit("Failed to start prover http server", "error", err)
+			}
+		}()
+	})
 
 	tokenBalance, err := rpcCli.TaikoL1.GetTaikoTokenBalance(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
 	s.Nil(err)
