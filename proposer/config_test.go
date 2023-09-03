@@ -50,12 +50,14 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
 		s.Equal(rpcTimeout, *c.RPCTimeout)
 		s.Equal(10*time.Second, c.WaitReceiptTimeout)
-		s.Equal(strings.Split(proverEndpoints, ","), c.ProverEndpoints)
+		for i, e := range strings.Split(proverEndpoints, ",") {
+			s.Equal(c.ProverEndpoints[i].String(), e)
+		}
 
 		fee, _ := new(big.Int).SetString(blockProposalFee, 10)
 		s.Equal(fee, c.BlockProposalFee)
 
-		s.Equal(uint64(15), c.BlockProposalFeeIncreasePercentage)
+		s.Equal(uint64(15), c.BlockProposalFeeIncreasePercentage.Uint64())
 		s.Equal(uint64(5), c.BlockProposalFeeIterations)
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
