@@ -31,7 +31,7 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	srv, err := http.NewServer(http.NewServerOpts{
+	srv, err := http.NewServer(&http.NewServerOpts{
 		ProverPrivateKey:         l1ProverPrivKey,
 		MinProofFee:              common.Big1,
 		MaxCapacity:              10,

@@ -201,7 +201,7 @@ func (s *ProverTestSuite) TestStartClose() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	s.p.srv, _ = http.NewServer(http.NewServerOpts{
+	s.p.srv, _ = http.NewServer(&http.NewServerOpts{
 		ProverPrivateKey: l1ProverPrivKey,
 	})
 	s.Nil(s.p.Start())

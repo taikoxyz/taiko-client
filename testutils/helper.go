@@ -186,7 +186,7 @@ func HTTPServer(s *ClientTestSuite, url *url.URL) (*http.Server, func(), error) 
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	serverOpts := http.NewServerOpts{
+	serverOpts := &http.NewServerOpts{
 		ProverPrivateKey:         l1ProverPrivKey,
 		MinProofFee:              big.NewInt(1),
 		MaxCapacity:              10,

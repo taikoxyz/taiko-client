@@ -33,7 +33,7 @@ type NewServerOpts struct {
 	ReceiveCurrentCapacityCh chan uint64
 }
 
-func NewServer(opts NewServerOpts) (*Server, error) {
+func NewServer(opts *NewServerOpts) (*Server, error) {
 	address := crypto.PubkeyToAddress(opts.ProverPrivateKey.PublicKey)
 	srv := &Server{
 		proverPrivateKey:         opts.ProverPrivateKey,
