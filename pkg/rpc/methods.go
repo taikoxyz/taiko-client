@@ -280,13 +280,10 @@ type L2SyncProgress struct {
 
 // isSyncing returns true if the L2 execution engine is syncing with L1.
 func (p *L2SyncProgress) isSyncing() bool {
-	if p.SyncProgress != nil ||
+	return p.SyncProgress != nil ||
 		p.CurrentBlockID == nil ||
 		p.HighestBlockID == nil ||
-		p.CurrentBlockID.Cmp(p.HighestBlockID) < 0 {
-		return true
-	}
-	return false
+		p.CurrentBlockID.Cmp(p.HighestBlockID) < 0
 }
 
 // L2ExecutionEngineSyncProgress fetches the sync progress of the given L2 execution engine.
