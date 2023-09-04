@@ -7,6 +7,29 @@ DIR=$(
     pwd
 )
 
+# Download solc for PlonkVerifier
+protocol_dir=$TAIKO_MONO_DIR/packages/protocol
+solc_bin=${protocol_dir}/bin/solc
+
+if [ -f "${solc_bin}" ]; then
+  echo "solc already exists, skipping download."
+else
+  mkdir -p "$(dirname ${solc_bin})"
+  VERSION=v0.8.18
+
+  if [ "$(uname)" = 'Darwin' ]; then
+    SOLC_FILE_NAME=solc-macos
+  elif [ "$(uname)" = 'Linux' ]; then
+    SOLC_FILE_NAME=solc-static-linux
+  else
+    echo "unsupported platform $(uname)"
+    exit 1
+  fi
+
+  wget -O "${solc_bin}" https://github.com/ethereum/solidity/releases/download/$VERSION/$SOLC_FILE_NAME
+  chmod +x "${solc_bin}"
+fi
+
 echo "Starting testnet..."
 
 docker compose -f $TESTNET_CONFIG down -v --remove-orphans &>/dev/null
@@ -32,6 +55,8 @@ L2_GENESIS_HASH=$(
         -d '{"jsonrpc":"2.0","id":0,"method":"eth_getBlockByNumber","params":["0x0", false]}' \
         localhost:28545 | jq .result.hash | sed 's/\"//g'
 )
+
+
 
 # Deploy Taiko protocol.
 cd $TAIKO_MONO_DIR/packages/protocol &&
