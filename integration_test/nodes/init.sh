@@ -56,8 +56,6 @@ L2_GENESIS_HASH=$(
         localhost:28545 | jq .result.hash | sed 's/\"//g'
 )
 
-
-
 # Deploy Taiko protocol.
 cd $TAIKO_MONO_DIR/packages/protocol &&
     PRIVATE_KEY=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
