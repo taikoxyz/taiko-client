@@ -142,6 +142,8 @@ func (s *BlockBatchIteratorTestSuite) TestIterCtxCancel() {
 
 	s.Nil(err)
 	cancel()
+	<-ctx.Done()
+
 	// should output a log.Warn and context cancel error
 	err8 := itr.Iter()
 	s.ErrorContains(err8, "context canceled")

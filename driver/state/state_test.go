@@ -80,6 +80,8 @@ func (s *DriverStateTestSuite) TestGetSyncedHeaderID() {
 func (s *DriverStateTestSuite) TestNewDriverContextErr() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
+	<-ctx.Done()
+
 	state, err := New(ctx, s.RpcClient)
 	s.Nil(state)
 	s.ErrorContains(err, "context canceled")
@@ -88,6 +90,8 @@ func (s *DriverStateTestSuite) TestNewDriverContextErr() {
 func (s *DriverStateTestSuite) TestDriverInitContextErr() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
+	<-ctx.Done()
+
 	err := s.s.init(ctx)
 	s.ErrorContains(err, "context canceled")
 }

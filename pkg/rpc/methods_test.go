@@ -109,6 +109,7 @@ func TestWaitTillL2ExecutionEngineSyncedContextErr(t *testing.T) {
 	client := newTestClient(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
+	<-ctx.Done()
 
 	err := client.WaitTillL2ExecutionEngineSynced(ctx)
 	require.ErrorContains(t, err, "context canceled")

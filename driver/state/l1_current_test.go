@@ -45,6 +45,8 @@ func (s *DriverStateTestSuite) TestResetL1CurrentEmptyHeightAndID() {
 func (s *DriverStateTestSuite) TestResetL1CurrentCtxErr() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
+	<-ctx.Done()
+
 	_, _, err := s.s.ResetL1Current(ctx, &HeightOrID{Height: common.Big0})
 	s.ErrorContains(err, "context canceled")
 }

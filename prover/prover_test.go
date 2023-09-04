@@ -117,6 +117,8 @@ func (s *ProverTestSuite) TestName() {
 func (s *ProverTestSuite) TestInitError() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
+	<-ctx.Done()
+
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 

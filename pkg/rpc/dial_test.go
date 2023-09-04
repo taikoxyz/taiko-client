@@ -53,6 +53,8 @@ func TestDialClientWithBackoff(t *testing.T) {
 func TestDialClientWithBackoff_CtxError(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
+	<-ctx.Done()
+
 	_, err := DialClientWithBackoff(
 		ctx,
 		"invalid",
@@ -65,6 +67,7 @@ func TestDialClientWithBackoff_CtxError(t *testing.T) {
 func TestDialEngineClientWithBackoff_CtxError(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
+	<-ctx.Done()
 
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
 	require.Nil(t, err)
