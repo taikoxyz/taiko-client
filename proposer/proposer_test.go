@@ -2,9 +2,7 @@ package proposer
 
 import (
 	"context"
-	"fmt"
 	"math/big"
-	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -12,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -38,7 +35,6 @@ func (s *ProposerTestSuite) SetupTest() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
-	proverEndpoint := testutils.LocalRandomProverEndpoint()
 
 	s.Nil(InitFromConfig(ctx, p, (&Config{
 		L1Endpoint:                          os.Getenv("L1_NODE_WS_ENDPOINT"),
@@ -52,7 +48,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		MaxProposedTxListsPerEpoch:          1,
 		ProposeBlockTxReplacementMultiplier: 2,
 		WaitReceiptTimeout:                  10 * time.Second,
-		ProverEndpoints:                     []*url.URL{proverEndpoint},
+		ProverEndpoints:                     s.ProverEndpoints,
 		BlockProposalFee:                    common.Big256,
 		BlockProposalFeeIncreasePercentage:  common.Big2,
 		BlockProposalFeeIterations:          3,
@@ -81,12 +77,6 @@ func (s *ProposerTestSuite) SetupTest() {
 			case <-ctx.Done():
 				return
 			}
-		}
-	}()
-
-	go func() {
-		if err := s.srv.Start(fmt.Sprintf(":%v", proverEndpoint.Port())); err != nil {
-			log.Crit("error starting prover http server", "error", err)
 		}
 	}()
 
@@ -256,22 +246,6 @@ func (s *ProposerTestSuite) TestStartClose() {
 	s.cancel()
 	s.NotPanics(func() { s.p.Close(context.Background()) })
 }
-
-// TODO: not working
-// func (s *ProposerTestSuite) TestEventLoopEmptyBlock() {
-// 	fiveSecs := 5 * time.Second
-// 	s.p.proposingInterval = &fiveSecs
-// 	s.p.proposeEmptyBlocksInterval = &fiveSecs
-// 	s.p.Start()
-// 	time.Sleep(30 * time.Second)
-// 	s.cancel()
-// 	s.p.Close()
-// 	// check if empty blocks have been proposed? query TaikoL1 contract?
-// 	block, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
-// 	s.Nil(err)
-// 	s.Equal(uint64(block.GasLimit()), uint64(21000))
-// 	s.Equal(block.TxHash(), common.Hash(crypto.Keccak256Hash([]byte{})))
-// }
 
 func TestProposerTestSuite(t *testing.T) {
 	suite.Run(t, new(ProposerTestSuite))

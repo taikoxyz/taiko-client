@@ -3,7 +3,6 @@ package driver
 import (
 	"context"
 	"math/big"
-	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/proposer"
-	"github.com/taikoxyz/taiko-client/prover/http"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -24,7 +22,6 @@ type DriverTestSuite struct {
 	cancel context.CancelFunc
 	p      *proposer.Proposer
 	d      *Driver
-	srv    *http.Server
 }
 
 func (s *DriverTestSuite) SetupTest() {
@@ -46,40 +43,32 @@ func (s *DriverTestSuite) SetupTest() {
 		JwtSecret:        string(jwtSecret),
 	}))
 	s.d = d
+	s.cancel = cancel
 
 	// Init proposer
 	p := new(proposer.Proposer)
 
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
-	localPorverEndpoint := testutils.LocalRandomProverEndpoint()
 
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(proposer.InitFromConfig(context.Background(), p, (&proposer.Config{
-		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L1ProposerPrivKey:          l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
-		MaxProposedTxListsPerEpoch: 1,
-		WaitReceiptTimeout:         10 * time.Second,
-		ProverEndpoints:            []*url.URL{localPorverEndpoint},
-		BlockProposalFee:           big.NewInt(1000),
-		BlockProposalFeeIterations: 3,
+		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                     common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:                  common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		L1ProposerPrivKey:                  l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:            common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		ProposeInterval:                    &proposeInterval, // No need to periodically propose transactions list in unit tests
+		MaxProposedTxListsPerEpoch:         1,
+		WaitReceiptTimeout:                 10 * time.Second,
+		ProverEndpoints:                    s.ProverEndpoints,
+		BlockProposalFee:                   big.NewInt(1000),
+		BlockProposalFeeIterations:         3,
+		BlockProposalFeeIncreasePercentage: common.Big2,
 	})))
 	s.p = p
-
-	srv, srvCancel, err := testutils.HTTPServer(&s.ClientTestSuite, localPorverEndpoint)
-	s.Nil(err)
-
-	s.srv = srv
-	s.cancel = func() {
-		cancel()
-		srvCancel()
-	}
 }
 
 func (s *DriverTestSuite) TestName() {

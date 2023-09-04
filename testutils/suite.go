@@ -3,7 +3,6 @@ package testutils
 import (
 	"context"
 	"crypto/ecdsa"
-	"fmt"
 	"math/big"
 	"net/url"
 	"os"
@@ -17,7 +16,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/prover/http"
 )
 
 type ClientTestSuite struct {
@@ -77,18 +75,8 @@ func (s *ClientTestSuite) SetupTest() {
 	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
 	s.once.Do(func() {
 		go func() {
-			proverServer, err := http.NewServer(&http.NewServerOpts{
-				ProverPrivateKey:         l1ProverPrivKey,
-				MinProofFee:              common.Big1,
-				MaxCapacity:              10,
-				RequestCurrentCapacityCh: make(chan struct{}),
-				ReceiveCurrentCapacityCh: make(chan uint64),
-			})
+			_, _, err := HTTPServer(s, s.ProverEndpoints[0])
 			s.Nil(err)
-
-			if err := proverServer.Start(fmt.Sprintf(":%v", s.ProverEndpoints[0].Port())); err != nil {
-				log.Crit("Failed to start prover http server", "error", err)
-			}
 		}()
 	})
 

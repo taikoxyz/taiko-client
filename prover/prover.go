@@ -187,7 +187,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.oracleProverAddress = oracleProverAddress
 
 	var producer proofProducer.ProofProducer
-
 	if cfg.Dummy {
 		producer = &proofProducer.DummyProofProducer{
 			RandomDummyProofDelayLowerBound: p.cfg.RandomDummyProofDelayLowerBound,

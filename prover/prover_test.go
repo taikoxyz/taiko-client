@@ -2,9 +2,7 @@ package prover
 
 import (
 	"context"
-	"fmt"
 	"math/big"
-	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -58,11 +56,6 @@ func (s *ProverTestSuite) SetupTest() {
 	})))
 	s.p = p
 	s.cancel = cancel
-	proverEndpoint := testutils.LocalRandomProverEndpoint()
-
-	go func() {
-		_ = s.p.srv.Start(fmt.Sprintf(":%v", proverEndpoint.Port()))
-	}()
 
 	// Init driver
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
@@ -98,7 +91,7 @@ func (s *ProverTestSuite) SetupTest() {
 		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
-		ProverEndpoints:                    []*url.URL{proverEndpoint},
+		ProverEndpoints:                    s.ProverEndpoints,
 		BlockProposalFee:                   big.NewInt(1000),
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,

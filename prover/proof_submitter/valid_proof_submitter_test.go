@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"math/big"
-	"net/url"
 	"os"
 	"sync"
 	"testing"
@@ -19,7 +18,6 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/proposer"
-	"github.com/taikoxyz/taiko-client/prover/http"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
@@ -31,8 +29,6 @@ type ProofSubmitterTestSuite struct {
 	proposer            *proposer.Proposer
 	validProofCh        chan *proofProducer.ProofWithHeader
 	invalidProofCh      chan *proofProducer.ProofWithHeader
-	srv                 *http.Server
-	cancel              context.CancelFunc
 }
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
@@ -80,34 +76,28 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
-	localProverEndpoint := testutils.LocalRandomProverEndpoint()
 
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
-		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L1ProposerPrivKey:          l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
-		MaxProposedTxListsPerEpoch: 1,
-		WaitReceiptTimeout:         10 * time.Second,
-		ProverEndpoints:            []*url.URL{localProverEndpoint},
-		BlockProposalFee:           big.NewInt(1000),
-		BlockProposalFeeIterations: 3,
+		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                     common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:                  common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		L1ProposerPrivKey:                  l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:            common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		ProposeInterval:                    &proposeInterval, // No need to periodically propose transactions list in unit tests
+		MaxProposedTxListsPerEpoch:         1,
+		WaitReceiptTimeout:                 10 * time.Second,
+		ProverEndpoints:                    s.ProverEndpoints,
+		BlockProposalFee:                   big.NewInt(1000),
+		BlockProposalFeeIterations:         3,
+		BlockProposalFeeIncreasePercentage: common.Big2,
 	})))
 
-	srv, cancel, err := testutils.HTTPServer(&s.ClientTestSuite, localProverEndpoint)
-	s.Nil(err)
-
-	s.srv = srv
-	s.cancel = cancel
 	s.proposer = prop
 }
 
 func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofDeadlineExceeded() {
-	defer s.cancel()
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -118,7 +108,6 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofDeadlineExc
 }
 
 func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotFound() {
-	defer s.cancel()
 	s.Error(
 		s.validProofSubmitter.SubmitProof(
 			context.Background(), &proofProducer.ProofWithHeader{
@@ -132,7 +121,6 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotF
 }
 
 func (s *ProofSubmitterTestSuite) TestValidSubmitProofs() {
-	defer s.cancel()
 	events := testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.proposer, s.calldataSyncer)
 
 	for _, e := range events {
@@ -143,7 +131,6 @@ func (s *ProofSubmitterTestSuite) TestValidSubmitProofs() {
 }
 
 func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofCancelled() {
-	defer s.cancel()
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		time.AfterFunc(2*time.Second, func() {
