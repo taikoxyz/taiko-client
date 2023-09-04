@@ -1,10 +1,9 @@
 package version
 
 // Version info.
-var (
-	Version = "0.14.0"
-	Meta    = "dev"
-)
+const Version = "0.14.0" // x-release-please-version
+
+var Meta = "dev"
 
 // Git commit/date info, set via linker flags.
 var (
