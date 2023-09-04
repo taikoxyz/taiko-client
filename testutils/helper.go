@@ -3,9 +3,9 @@ package testutils
 import (
 	"context"
 	"crypto/ecdsa"
+	"crypto/rand"
 	"fmt"
 	"math/big"
-	"math/rand"
 	"net/url"
 	"os"
 	"time"

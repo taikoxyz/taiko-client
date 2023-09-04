@@ -1,6 +1,7 @@
 package encoding
 
 import (
+	cryptoRand "crypto/rand"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -122,7 +123,7 @@ func TestToExecutableData(t *testing.T) {
 // randomHash generates a random blob of data and returns it as a hash.
 func randomHash() common.Hash {
 	var hash common.Hash
-	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
+	if n, err := cryptoRand.Read(hash[:]); n != common.HashLength || err != nil {
 		panic(err)
 	}
 	return hash
@@ -131,7 +132,7 @@ func randomHash() common.Hash {
 // randomBytes generates a random bytes.
 func randomBytes(size int) (b []byte) {
 	b = make([]byte, size)
-	if _, err := rand.Read(b); err != nil {
+	if _, err := cryptoRand.Read(b); err != nil {
 		log.Crit("Generate random bytes error", "error", err)
 	}
 	return

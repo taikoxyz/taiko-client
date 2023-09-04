@@ -85,7 +85,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		TaikoTokenAddress:                  common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		L1ProposerPrivKey:                  l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:            common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:                    &proposeInterval, // No need to periodically propose transactions list in unit tests
+		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
 		ProverEndpoints:                    s.ProverEndpoints,

@@ -16,7 +16,6 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
-	"github.com/taikoxyz/taiko-client/prover/http"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -25,7 +24,6 @@ type ChainSyncerTestSuite struct {
 	s          *L2ChainSyncer
 	snapshotID string
 	p          testutils.Proposer
-	srv        *http.Server
 }
 
 func (s *ChainSyncerTestSuite) SetupTest() {
