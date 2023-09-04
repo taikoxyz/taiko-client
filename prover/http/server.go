@@ -31,6 +31,7 @@ type NewServerOpts struct {
 	MinProofFee              *big.Int
 	RequestCurrentCapacityCh chan struct{}
 	ReceiveCurrentCapacityCh chan uint64
+	HideBanner               bool // only for testing purposes
 }
 
 func NewServer(opts *NewServerOpts) (*Server, error) {
@@ -43,6 +44,10 @@ func NewServer(opts *NewServerOpts) (*Server, error) {
 		minProofFee:              opts.MinProofFee,
 		requestCurrentCapacityCh: opts.RequestCurrentCapacityCh,
 		receiveCurrentCapacityCh: opts.ReceiveCurrentCapacityCh,
+	}
+
+	if opts.HideBanner {
+		srv.echo.HideBanner = true
 	}
 
 	srv.configureMiddleware()
@@ -71,6 +76,7 @@ func (srv *Server) Health(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
+// LogSkipper implements the `middleware.Skipper` interface.
 func LogSkipper(c echo.Context) bool {
 	switch c.Request().URL.Path {
 	case "/healthz":
@@ -82,13 +88,14 @@ func LogSkipper(c echo.Context) bool {
 	}
 }
 
+// configureMiddleware configures the server middlewares.
 func (srv *Server) configureMiddleware() {
 	srv.echo.Use(middleware.RequestID())
 
 	srv.echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Skipper: LogSkipper,
-		Format: `{"time":"${time_rfc3339_nano}","level":"INFO","message":{"id":"${id}","remote_ip":"${remote_ip}",` + //nolint:lll
-			`"host":"${host}","method":"${method}","uri":"${uri}","user_agent":"${user_agent}",` + //nolint:lll
+		Format: `{"time":"${time_rfc3339_nano}","level":"INFO","message":{"id":"${id}","remote_ip":"${remote_ip}",` +
+			`"host":"${host}","method":"${method}","uri":"${uri}","user_agent":"${user_agent}",` +
 			`"response_status":${status},"error":"${error}","latency":${latency},"latency_human":"${latency_human}",` +
 			`"bytes_in":${bytes_in},"bytes_out":${bytes_out}}}` + "\n",
 		Output: os.Stdout,

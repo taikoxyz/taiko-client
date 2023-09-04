@@ -73,7 +73,7 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 
 	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
-	server, _, err := HTTPServer(s, s.ProverEndpoints[0])
+	server, _, err := NewTestProverServer(s, l1ProverPrivKey, s.ProverEndpoints[0])
 	s.Nil(err)
 	s.proverServer = server
 

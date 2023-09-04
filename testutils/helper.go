@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/big"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -180,18 +179,20 @@ func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey, re
 	}
 }
 
-// HTTPServer starts a new prover server that has channel listeners to respond and react
+// NewTestProverServer starts a new prover server that has channel listeners to respond and react
 // to requests for capacity, which provers can call.
-func HTTPServer(s *ClientTestSuite, url *url.URL) (*http.Server, func(), error) {
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
-
+func NewTestProverServer(
+	s *ClientTestSuite,
+	proverPrivKey *ecdsa.PrivateKey,
+	url *url.URL,
+) (*http.Server, func(), error) {
 	serverOpts := &http.NewServerOpts{
-		ProverPrivateKey:         l1ProverPrivKey,
-		MinProofFee:              big.NewInt(1),
+		ProverPrivateKey:         proverPrivKey,
+		MinProofFee:              common.Big1,
 		MaxCapacity:              10,
 		RequestCurrentCapacityCh: make(chan struct{}),
 		ReceiveCurrentCapacityCh: make(chan uint64),
+		HideBanner:               true,
 	}
 
 	srv, err := http.NewServer(serverOpts)
@@ -209,9 +210,7 @@ func HTTPServer(s *ClientTestSuite, url *url.URL) (*http.Server, func(), error) 
 		}
 	}()
 
-	go func() {
-		_ = srv.Start(fmt.Sprintf(":%v", url.Port()))
-	}()
+	go func() { _ = srv.Start(fmt.Sprintf(":%v", url.Port())) }()
 
 	return srv, func() {
 		cancel()
