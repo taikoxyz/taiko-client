@@ -31,7 +31,6 @@ import (
 
 var (
 	errNoCapacity = errors.New("no prover capacity available")
-	zeroAddress   = common.HexToAddress("0x0000000000000000000000000000000000000000")
 )
 
 type cancelFunc func()
@@ -940,7 +939,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 			return encoding.TryParsingCustomError(err)
 		}
 
-		if transition.Prover == zeroAddress {
+		if transition.Prover == rpc.ZeroAddress {
 			log.Info(
 				"Proof window for proof not assigned to us expired, requesting proof",
 				"blockID",
