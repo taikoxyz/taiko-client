@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.15.0](https://github.com/taikoxyz/taiko-client/compare/v0.14.0...v0.15.0) (2023-09-04)
+
+
+### Features
+
+* **all:** update bindings based on latest tokenomics changes ([#367](https://github.com/taikoxyz/taiko-client/issues/367)) ([28ea4db](https://github.com/taikoxyz/taiko-client/commit/28ea4dbb658a7e708ffb7bc54a194a29d7013f18))
+* **bindings:** rename fork choice to state transition ([#372](https://github.com/taikoxyz/taiko-client/issues/372)) ([e09fd97](https://github.com/taikoxyz/taiko-client/commit/e09fd977b0fe2fa2efa8642b419d3dda21d8f3b0))
+* **bindings:** update bindings && remove unused files ([#360](https://github.com/taikoxyz/taiko-client/issues/360)) ([24b9309](https://github.com/taikoxyz/taiko-client/commit/24b9309532089f74ba0c3b04db721f6c6d6cd0a0))
+* **bindings:** update contract bindings ([#377](https://github.com/taikoxyz/taiko-client/issues/377)) ([becdd73](https://github.com/taikoxyz/taiko-client/commit/becdd735e83a5b444ed04671e4957ce44ab222a1))
+* **pkg:** add `isSyncing` method ([#379](https://github.com/taikoxyz/taiko-client/issues/379)) ([9c7a19a](https://github.com/taikoxyz/taiko-client/commit/9c7a19a1f32ea6a8ba7082bfff2deb04f8826a05))
+* **proposer:** update proposing retry policy ([#366](https://github.com/taikoxyz/taiko-client/issues/366)) ([e0adf17](https://github.com/taikoxyz/taiko-client/commit/e0adf175b87ec1ba4c5b4068794e6842b1ca129f))
+
+
+### Bug Fixes
+
+* **all:** fix missing logs should be print in stderr ([#370](https://github.com/taikoxyz/taiko-client/issues/370)) ([af6531b](https://github.com/taikoxyz/taiko-client/commit/af6531bb1fe2cc43a32772d264b56b8e5f243786))
+* **prover:** add to wait group in prover ([#373](https://github.com/taikoxyz/taiko-client/issues/373)) ([edf95a7](https://github.com/taikoxyz/taiko-client/commit/edf95a72a91005f6be5402b17b145928e55d9256))
+* **prover:** fix `maxRetry` configuration when submitting proofs ([#364](https://github.com/taikoxyz/taiko-client/issues/364)) ([b6cd4db](https://github.com/taikoxyz/taiko-client/commit/b6cd4db1cffd15f95f383b2c5058d1c95d30d473))
+* **prover:** fix some typo ([#374](https://github.com/taikoxyz/taiko-client/issues/374)) ([355e68b](https://github.com/taikoxyz/taiko-client/commit/355e68bc53bf01684198076fdd0c8a3ddb4bbed3))
+
 ## [0.14.0](https://github.com/taikoxyz/taiko-client/compare/v0.13.0...v0.14.0) (2023-08-09)
 
 
