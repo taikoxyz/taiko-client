@@ -192,7 +192,6 @@ func NewTestProverServer(
 	serverOpts := &http.NewServerOpts{
 		ProverPrivateKey:         proverPrivKey,
 		MinProofFee:              common.Big1,
-		MaxCapacity:              1024,
 		RequestCurrentCapacityCh: make(chan struct{}, 1),
 		ReceiveCurrentCapacityCh: make(chan uint64, 1),
 	}

@@ -20,7 +20,6 @@ type Server struct {
 	proverAddress    common.Address
 
 	// Capacity related configs
-	maxCapacity              uint64
 	requestCurrentCapacityCh chan struct{}
 	receiveCurrentCapacityCh chan uint64
 	minProofFee              *big.Int
@@ -29,7 +28,6 @@ type Server struct {
 // NewServerOpts contains all configurations for creating a prover server instance.
 type NewServerOpts struct {
 	ProverPrivateKey         *ecdsa.PrivateKey
-	MaxCapacity              uint64
 	MinProofFee              *big.Int
 	RequestCurrentCapacityCh chan struct{}
 	ReceiveCurrentCapacityCh chan uint64
@@ -42,7 +40,6 @@ func NewServer(opts *NewServerOpts) (*Server, error) {
 		proverPrivateKey:         opts.ProverPrivateKey,
 		proverAddress:            address,
 		echo:                     echo.New(),
-		maxCapacity:              opts.MaxCapacity,
 		minProofFee:              opts.MinProofFee,
 		requestCurrentCapacityCh: opts.RequestCurrentCapacityCh,
 		receiveCurrentCapacityCh: opts.ReceiveCurrentCapacityCh,

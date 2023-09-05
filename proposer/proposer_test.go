@@ -61,7 +61,6 @@ func (s *ProposerTestSuite) SetupTest() {
 	serverOpts := &http.NewServerOpts{
 		ProverPrivateKey:         l1ProverPrivKey,
 		MinProofFee:              common.Big1,
-		MaxCapacity:              10,
 		RequestCurrentCapacityCh: make(chan struct{}),
 		ReceiveCurrentCapacityCh: make(chan uint64),
 	}

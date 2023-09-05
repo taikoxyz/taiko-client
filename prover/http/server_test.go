@@ -20,7 +20,6 @@ func newTestServer(url string) *Server {
 	srv := &Server{
 		echo:                     echo.New(),
 		proverPrivateKey:         l1ProverPrivKey,
-		maxCapacity:              8,
 		minProofFee:              big.NewInt(1),
 		requestCurrentCapacityCh: make(chan struct{}, 1024),
 		receiveCurrentCapacityCh: make(chan uint64, 1024),
