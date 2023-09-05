@@ -141,7 +141,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	_, isPending, err := s.p.rpc.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
-	s.Equal(s.p.l2SuggestedFeeRecipient, event.Meta.Beneficiary)
+	s.Equal(s.p.l2SuggestedFeeRecipient, event.Meta.Proposer)
 
 	receipt, err := s.p.rpc.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
 	s.Nil(err)

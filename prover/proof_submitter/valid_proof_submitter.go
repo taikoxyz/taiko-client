@@ -171,7 +171,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 	log.Info(
 		"New valid block proof",
 		"blockID", proofWithHeader.BlockID,
-		"beneficiary", proofWithHeader.Meta.Beneficiary,
+		"beneficiary", proofWithHeader.Meta.Proposer,
 		"hash", proofWithHeader.Header.Hash(),
 		"proof", common.Bytes2Hex(proofWithHeader.ZkProof),
 		"graffiti", common.Bytes2Hex(s.graffiti[:]),

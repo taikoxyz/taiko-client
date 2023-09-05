@@ -49,7 +49,7 @@ var (
 		TxListByteStart:   common.Big0,
 		TxListByteEnd:     common.Big256,
 		GasLimit:          rand.Uint32(),
-		Beneficiary:       common.BytesToAddress(randomHash().Bytes()),
+		Proposer:          common.BytesToAddress(randomHash().Bytes()),
 		DepositsProcessed: []bindings.TaikoDataEthDeposit{},
 	}
 )
