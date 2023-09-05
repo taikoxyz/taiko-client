@@ -85,7 +85,6 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s.calldataSyncer)
 
 	// NOTE: need to prove the proposed blocks to be verified, writing helper function
-
 	// generate transactopts to interact with TaikoL1 contract with.
 	privKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -98,10 +97,10 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	log.Info("L1HeaderByNumber head:", "number", head.Number)
+	log.Info("L1HeaderByNumber head", "number", head.Number)
 	// (equiv to s.state.GetL2Head().Number)
-	log.Info("L2HeaderByNumber head:", "number", l2Head.Number)
-	log.Info("LatestVerifiedBlock number:", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
+	log.Info("L2HeaderByNumber head", "number", l2Head.Number)
+	log.Info("LatestVerifiedBlock number", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
 
 	config, err := s.s.rpc.TaikoL1.GetConfig(&bind.CallOpts{})
 	s.Nil(err)
@@ -114,7 +113,7 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 		"evm_increaseTime",
 		config.ProofRegularCooldown.Uint64()))
 	s.NotNil(result)
-	log.Info("evm time increase:", "number", result)
+	log.Info("EVM time increase", "number", result)
 
 	// interact with TaikoL1 contract to allow for verification of L2 blocks
 	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, uint64(3))
@@ -127,9 +126,9 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	l2Head2, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	log.Info("L1HeaderByNumber head2:", "number", head2.Number)
-	log.Info("L2HeaderByNumber head:", "number", l2Head2.Number)
-	log.Info("LatestVerifiedBlock number:", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
+	log.Info("L1HeaderByNumber head2", "number", head2.Number)
+	log.Info("L2HeaderByNumber head", "number", l2Head2.Number)
+	log.Info("LatestVerifiedBlock number", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
 
 	s.RevertSnapshot()
 }

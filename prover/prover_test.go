@@ -2,8 +2,9 @@ package prover
 
 import (
 	"context"
-	"math/big"
+	"net/url"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -35,6 +36,10 @@ func (s *ProverTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
+	proverServerUrl := testutils.LocalRandomProverEndpoint()
+	port, err := strconv.Atoi(proverServerUrl.Port())
+	s.Nil(err)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
 	s.Nil(InitFromConfig(ctx, p, (&Config{
@@ -51,9 +56,11 @@ func (s *ProverTestSuite) SetupTest() {
 		MaxConcurrentProvingJobs:        1,
 		CheckProofWindowExpiredInterval: 5 * time.Second,
 		ProveUnassignedBlocks:           true,
-		Capacity:                        100,
-		MinProofFee:                     big.NewInt(1),
+		Capacity:                        1024,
+		MinProofFee:                     common.Big1,
+		HTTPServerPort:                  uint64(port),
 	})))
+	p.srv = testutils.NewTestProverServer(&s.ClientTestSuite, l1ProverPrivKey, proverServerUrl)
 	s.p = p
 	s.cancel = cancel
 
@@ -91,8 +98,8 @@ func (s *ProverTestSuite) SetupTest() {
 		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
-		ProverEndpoints:                    s.ProverEndpoints,
-		BlockProposalFee:                   big.NewInt(1000),
+		ProverEndpoints:                    []*url.URL{proverServerUrl},
+		BlockProposalFee:                   common.Big256,
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,
 	})))
@@ -200,6 +207,10 @@ func (s *ProverTestSuite) TestStartClose() {
 	s.Nil(s.p.Start())
 	s.cancel()
 	s.NotPanics(func() { s.p.Close(context.Background()) })
+}
+
+func (s *ProverTestSuite) TearDownTest() {
+	s.Nil(s.p.srv.Shutdown(context.Background()))
 }
 
 func TestProverTestSuite(t *testing.T) {

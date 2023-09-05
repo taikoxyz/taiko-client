@@ -12,7 +12,9 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
-type proposeBlockResp struct {
+// ProposeBlockResponse represents the JSON response which will be returned by
+// the ProposeBlock request handler.
+type ProposeBlockResponse struct {
 	SignedPayload []byte         `json:"signedPayload"`
 	Prover        common.Address `json:"prover"`
 }
@@ -54,7 +56,7 @@ func (srv *Server) ProposeBlock(c echo.Context) error {
 				return echo.NewHTTPError(http.StatusInternalServerError, err)
 			}
 
-			resp := &proposeBlockResp{
+			resp := &ProposeBlockResponse{
 				SignedPayload: signed,
 				Prover:        srv.proverAddress,
 			}

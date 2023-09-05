@@ -16,6 +16,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/prover/http"
 )
 
 var (
@@ -23,11 +24,6 @@ var (
 	errEmptyProverEndpoints = errors.New("empty prover endpoints")
 	errUnableToFindProver   = errors.New("unable to find prover")
 )
-
-type assignProverResponse struct {
-	SignedPayload []byte         `json:"signedPayload"`
-	Prover        common.Address `json:"prover"`
-}
 
 type ETHFeeSelector struct {
 	protocolConfigs       *bindings.TaikoDataConfig
@@ -170,7 +166,7 @@ func assignProver(
 	var (
 		client  = resty.New()
 		reqBody = &encoding.ProposeBlockData{Expiry: expiry, Input: *meta, Fee: fee}
-		result  = assignProverResponse{}
+		result  = http.ProposeBlockResponse{}
 	)
 	requestUrl, err := url.JoinPath(endpoint.String(), "/proposeBlock")
 	if err != nil {

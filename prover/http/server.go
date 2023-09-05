@@ -13,27 +13,29 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
+// Server represents a prover server instance.
 type Server struct {
 	echo             *echo.Echo
 	proverPrivateKey *ecdsa.PrivateKey
 	proverAddress    common.Address
 
-	// capacity related configs
+	// Capacity related configs
 	maxCapacity              uint64
 	requestCurrentCapacityCh chan struct{}
 	receiveCurrentCapacityCh chan uint64
 	minProofFee              *big.Int
 }
 
+// NewServerOpts contains all configurations for creating a prover server instance.
 type NewServerOpts struct {
 	ProverPrivateKey         *ecdsa.PrivateKey
 	MaxCapacity              uint64
 	MinProofFee              *big.Int
 	RequestCurrentCapacityCh chan struct{}
 	ReceiveCurrentCapacityCh chan uint64
-	HideBanner               bool // only for testing purposes
 }
 
+// NewServer creates a new prover server instance.
 func NewServer(opts *NewServerOpts) (*Server, error) {
 	address := crypto.PubkeyToAddress(opts.ProverPrivateKey.PublicKey)
 	srv := &Server{
@@ -46,32 +48,29 @@ func NewServer(opts *NewServerOpts) (*Server, error) {
 		receiveCurrentCapacityCh: opts.ReceiveCurrentCapacityCh,
 	}
 
-	if opts.HideBanner {
-		srv.echo.HideBanner = true
-	}
-
+	srv.echo.HideBanner = true
 	srv.configureMiddleware()
 	srv.configureRoutes()
 
 	return srv, nil
 }
 
-// Start starts the HTTP server
+// Start starts the HTTP server.
 func (srv *Server) Start(address string) error {
 	return srv.echo.Start(address)
 }
 
-// Shutdown shuts down the HTTP server
+// Shutdown shuts down the HTTP server.
 func (srv *Server) Shutdown(ctx context.Context) error {
 	return srv.echo.Shutdown(ctx)
 }
 
-// ServeHTTP implements the `http.Handler` interface which serves HTTP requests
+// ServeHTTP implements the `http.Handler` interface which serves HTTP requests.
 func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	srv.echo.ServeHTTP(w, r)
 }
 
-// Health endpoints for probes
+// Health endpoints for probes.
 func (srv *Server) Health(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
@@ -100,4 +99,11 @@ func (srv *Server) configureMiddleware() {
 			`"bytes_in":${bytes_in},"bytes_out":${bytes_out}}}` + "\n",
 		Output: os.Stdout,
 	}))
+}
+
+// configureRoutes contains all routes which will be used by prover server.
+func (srv *Server) configureRoutes() {
+	srv.echo.GET("/", srv.Health)
+	srv.echo.GET("/healthz", srv.Health)
+	srv.echo.POST("/proposeBlock", srv.ProposeBlock)
 }

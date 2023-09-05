@@ -73,9 +73,7 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 
 	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
-	server, _, err := NewTestProverServer(s, l1ProverPrivKey, s.ProverEndpoints[0])
-	s.Nil(err)
-	s.proverServer = server
+	s.proverServer = NewTestProverServer(s, l1ProverPrivKey, s.ProverEndpoints[0])
 
 	tokenBalance, err := rpcCli.TaikoL1.GetTaikoTokenBalance(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
 	s.Nil(err)

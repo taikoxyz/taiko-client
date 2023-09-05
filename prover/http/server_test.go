@@ -32,7 +32,7 @@ func newTestServer(url string) *Server {
 	return srv
 }
 
-func Test_Health(t *testing.T) {
+func TestHealth(t *testing.T) {
 	srv := newTestServer("")
 
 	req, _ := http.NewRequest(echo.GET, "/healthz", nil)
@@ -45,7 +45,7 @@ func Test_Health(t *testing.T) {
 	}
 }
 
-func Test_Root(t *testing.T) {
+func TestRoot(t *testing.T) {
 	srv := newTestServer("")
 
 	req, _ := http.NewRequest(echo.GET, "/", nil)
@@ -58,7 +58,7 @@ func Test_Root(t *testing.T) {
 	}
 }
 
-func Test_StartShutdown(t *testing.T) {
+func TestStartShutdown(t *testing.T) {
 	srv := newTestServer("")
 
 	go func() {
