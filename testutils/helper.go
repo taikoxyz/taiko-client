@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
-	netHttp "net/http"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -22,7 +22,7 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/prover/http"
+	"github.com/taikoxyz/taiko-client/prover/server"
 )
 
 func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
@@ -188,15 +188,15 @@ func NewTestProverServer(
 	s *ClientTestSuite,
 	proverPrivKey *ecdsa.PrivateKey,
 	url *url.URL,
-) *http.Server {
-	serverOpts := &http.NewServerOpts{
+) *server.ProverServer {
+	serverOpts := &server.NewProverServerOpts{
 		ProverPrivateKey:         proverPrivKey,
 		MinProofFee:              common.Big1,
 		RequestCurrentCapacityCh: make(chan struct{}, 1),
 		ReceiveCurrentCapacityCh: make(chan uint64, 1),
 	}
 
-	srv, err := http.NewServer(serverOpts)
+	srv, err := server.New(serverOpts)
 	s.Nil(err)
 
 	go func() {
@@ -206,7 +206,7 @@ func NewTestProverServer(
 	}()
 
 	go func() {
-		if err := srv.Start(fmt.Sprintf(":%v", url.Port())); err != netHttp.ErrServerClosed {
+		if err := srv.Start(fmt.Sprintf(":%v", url.Port())); err != http.ErrServerClosed {
 			log.Error("Failed to start prover server", "error", err)
 		}
 	}()

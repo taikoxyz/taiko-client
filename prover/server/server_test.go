@@ -1,4 +1,4 @@
-package http
+package server
 
 import (
 	"context"
@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newTestServer(url string) *Server {
+func newTestServer(url string) *ProverServer {
 	l1ProverPrivKey, _ := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 
-	srv := &Server{
+	srv := &ProverServer{
 		echo:                     echo.New(),
 		proverPrivateKey:         l1ProverPrivKey,
 		minProofFee:              big.NewInt(1),

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	netHttp "net/http"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -23,9 +23,9 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/prover/http"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
+	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/urfave/cli/v2"
 )
 
@@ -45,8 +45,8 @@ type Prover struct {
 	// Clients
 	rpc *rpc.Client
 
-	// HTTP Server
-	srv *http.Server
+	// Prover Server
+	srv *server.ProverServer
 
 	// Contract configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -120,7 +120,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.receiveCurrentCapacityCh = make(chan uint64, 1024)
 
 	if !p.cfg.OracleProver {
-		p.srv, err = http.NewServer(&http.NewServerOpts{
+		p.srv, err = server.New(&server.NewProverServerOpts{
 			ProverPrivateKey:         p.cfg.L1ProverPrivKey,
 			MinProofFee:              p.cfg.MinProofFee,
 			RequestCurrentCapacityCh: p.requestCurrentCapacityCh,
@@ -230,7 +230,7 @@ func (p *Prover) Start() error {
 	p.initSubscription()
 	if !p.cfg.OracleProver {
 		go func() {
-			if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, netHttp.ErrServerClosed) {
+			if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
 				log.Crit("Failed to start http server", "error", err)
 			}
 		}()

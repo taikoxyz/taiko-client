@@ -16,7 +16,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/prover/http"
+	"github.com/taikoxyz/taiko-client/prover/server"
 )
 
 var (
@@ -166,7 +166,7 @@ func assignProver(
 	var (
 		client  = resty.New()
 		reqBody = &encoding.ProposeBlockData{Expiry: expiry, Input: *meta, Fee: fee}
-		result  = http.ProposeBlockResponse{}
+		result  = server.ProposeBlockResponse{}
 	)
 	requestUrl, err := url.JoinPath(endpoint.String(), "/proposeBlock")
 	if err != nil {

@@ -1,4 +1,4 @@
-package http
+package server
 
 import (
 	"context"
@@ -22,7 +22,7 @@ type ProposeBlockResponse struct {
 // ProposeBlock handles a propose block request, decides if this prover wants to
 // handle this block, and if so, returns a signed payload the proposer
 // can submit onchain.
-func (srv *Server) ProposeBlock(c echo.Context) error {
+func (srv *ProverServer) ProposeBlock(c echo.Context) error {
 	r := &encoding.ProposeBlockData{}
 	if err := c.Bind(r); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)

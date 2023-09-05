@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/prover/http"
+	"github.com/taikoxyz/taiko-client/prover/server"
 )
 
 type ClientTestSuite struct {
@@ -25,7 +25,7 @@ type ClientTestSuite struct {
 	TestAddrPrivKey     *ecdsa.PrivateKey
 	TestAddr            common.Address
 	ProverEndpoints     []*url.URL
-	proverServer        *http.Server
+	proverServer        *server.ProverServer
 }
 
 func (s *ClientTestSuite) SetupTest() {

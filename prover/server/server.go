@@ -1,4 +1,4 @@
-package http
+package server
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// Server represents a prover server instance.
-type Server struct {
+// ProverServer represents a prover server instance.
+type ProverServer struct {
 	echo             *echo.Echo
 	proverPrivateKey *ecdsa.PrivateKey
 	proverAddress    common.Address
@@ -25,18 +25,18 @@ type Server struct {
 	minProofFee              *big.Int
 }
 
-// NewServerOpts contains all configurations for creating a prover server instance.
-type NewServerOpts struct {
+// NewProverServerOpts contains all configurations for creating a prover server instance.
+type NewProverServerOpts struct {
 	ProverPrivateKey         *ecdsa.PrivateKey
 	MinProofFee              *big.Int
 	RequestCurrentCapacityCh chan struct{}
 	ReceiveCurrentCapacityCh chan uint64
 }
 
-// NewServer creates a new prover server instance.
-func NewServer(opts *NewServerOpts) (*Server, error) {
+// New creates a new prover server instance.
+func New(opts *NewProverServerOpts) (*ProverServer, error) {
 	address := crypto.PubkeyToAddress(opts.ProverPrivateKey.PublicKey)
-	srv := &Server{
+	srv := &ProverServer{
 		proverPrivateKey:         opts.ProverPrivateKey,
 		proverAddress:            address,
 		echo:                     echo.New(),
@@ -53,22 +53,22 @@ func NewServer(opts *NewServerOpts) (*Server, error) {
 }
 
 // Start starts the HTTP server.
-func (srv *Server) Start(address string) error {
+func (srv *ProverServer) Start(address string) error {
 	return srv.echo.Start(address)
 }
 
 // Shutdown shuts down the HTTP server.
-func (srv *Server) Shutdown(ctx context.Context) error {
+func (srv *ProverServer) Shutdown(ctx context.Context) error {
 	return srv.echo.Shutdown(ctx)
 }
 
 // ServeHTTP implements the `http.Handler` interface which serves HTTP requests.
-func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (srv *ProverServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	srv.echo.ServeHTTP(w, r)
 }
 
 // Health endpoints for probes.
-func (srv *Server) Health(c echo.Context) error {
+func (srv *ProverServer) Health(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
@@ -85,7 +85,7 @@ func LogSkipper(c echo.Context) bool {
 }
 
 // configureMiddleware configures the server middlewares.
-func (srv *Server) configureMiddleware() {
+func (srv *ProverServer) configureMiddleware() {
 	srv.echo.Use(middleware.RequestID())
 
 	srv.echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
@@ -99,7 +99,7 @@ func (srv *Server) configureMiddleware() {
 }
 
 // configureRoutes contains all routes which will be used by prover server.
-func (srv *Server) configureRoutes() {
+func (srv *ProverServer) configureRoutes() {
 	srv.echo.GET("/", srv.Health)
 	srv.echo.GET("/healthz", srv.Health)
 	srv.echo.POST("/proposeBlock", srv.ProposeBlock)
