@@ -25,7 +25,9 @@ var (
 	errUnableToFindProver   = errors.New("unable to find prover")
 )
 
-type ETHFeeSelector struct {
+// ETHFeeEOASelector is a prover selector implementation which use ETHs as prover fee and
+// all provers selected must be EOA accounts.
+type ETHFeeEOASelector struct {
 	protocolConfigs       *bindings.TaikoDataConfig
 	rpc                   *rpc.Client
 	taikoL1Address        common.Address
@@ -37,7 +39,8 @@ type ETHFeeSelector struct {
 	requestTimeout        time.Duration
 }
 
-func NewETHFeeSelector(
+// NewETHFeeEOASelector creates a new ETHFeeEOASelector instance.
+func NewETHFeeEOASelector(
 	protocolConfigs *bindings.TaikoDataConfig,
 	rpc *rpc.Client,
 	taikoL1Address common.Address,
@@ -47,7 +50,7 @@ func NewETHFeeSelector(
 	proposalFeeIterations uint64,
 	proposalExpiry time.Duration,
 	requestTimeout time.Duration,
-) (*ETHFeeSelector, error) {
+) (*ETHFeeEOASelector, error) {
 	if len(proverEndpoints) == 0 {
 		return nil, errEmptyProverEndpoints
 	}
@@ -58,7 +61,7 @@ func NewETHFeeSelector(
 		}
 	}
 
-	return &ETHFeeSelector{
+	return &ETHFeeEOASelector{
 		protocolConfigs,
 		rpc,
 		taikoL1Address,
@@ -71,9 +74,11 @@ func NewETHFeeSelector(
 	}, nil
 }
 
-func (s *ETHFeeSelector) ProverEndpoints() []*url.URL { return s.proverEndpoints }
+// ProverEndpoints returns all registered prover endpoints.
+func (s *ETHFeeEOASelector) ProverEndpoints() []*url.URL { return s.proverEndpoints }
 
-func (s *ETHFeeSelector) AssignProver(
+// AssignProver tries to pick a prover through the registered prover endpoints.
+func (s *ETHFeeEOASelector) AssignProver(
 	ctx context.Context,
 	meta *encoding.TaikoL1BlockMetadataInput,
 ) ([]byte, *big.Int, error) {
@@ -119,7 +124,7 @@ func (s *ETHFeeSelector) AssignProver(
 // checkProverBalance checks if the prover has the necessary balance either in TaikoL1 token balances
 // or, if not, then check allowance, as contract will attempt to burn directly after
 // if it doesnt have the available token balance in-contract.
-func (s *ETHFeeSelector) checkProverBalance(ctx context.Context, prover common.Address) (bool, error) {
+func (s *ETHFeeEOASelector) checkProverBalance(ctx context.Context, prover common.Address) (bool, error) {
 	taikoTokenBalance, err := s.rpc.TaikoL1.GetTaikoTokenBalance(&bind.CallOpts{Context: ctx}, prover)
 	if err != nil {
 		return false, err
@@ -147,6 +152,7 @@ func (s *ETHFeeSelector) checkProverBalance(ctx context.Context, prover common.A
 	return true, nil
 }
 
+// assignProver tries to assign a proof generation task to the given prover by HTTP API.
 func assignProver(
 	ctx context.Context,
 	meta *encoding.TaikoL1BlockMetadataInput,

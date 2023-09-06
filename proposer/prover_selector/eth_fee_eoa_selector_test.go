@@ -15,7 +15,7 @@ import (
 
 type ProverSelectorTestSuite struct {
 	testutils.ClientTestSuite
-	s             *ETHFeeSelector
+	s             *ETHFeeEOASelector
 	proverAddress common.Address
 }
 
@@ -29,7 +29,7 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 	protocolConfigs, err := s.RpcClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
 
-	s.s, err = NewETHFeeSelector(
+	s.s, err = NewETHFeeEOASelector(
 		&protocolConfigs,
 		s.RpcClient,
 		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),

@@ -125,7 +125,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
-	if p.proverSelector, err = selector.NewETHFeeSelector(
+	if p.proverSelector, err = selector.NewETHFeeEOASelector(
 		&protocolConfigs,
 		p.rpc,
 		cfg.TaikoL1Address,
