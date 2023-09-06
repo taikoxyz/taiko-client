@@ -87,7 +87,6 @@ type Prover struct {
 	checkProofWindowExpiredInterval time.Duration
 
 	// capacity-related configs
-	maxCapacity              uint64
 	currentCapacity          uint64
 	requestCurrentCapacityCh chan struct{}
 	receiveCurrentCapacityCh chan uint64
@@ -114,7 +113,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.currentBlocksBeingProvenMutex = &sync.Mutex{}
 	p.currentBlocksWaitingForProofWindow = make(map[uint64]uint64, 0)
 	p.currentBlocksWaitingForProofWindowMutex = &sync.Mutex{}
-	p.maxCapacity = cfg.Capacity
 	p.currentCapacity = cfg.Capacity
 	p.requestCurrentCapacityCh = make(chan struct{}, 1024)
 	p.receiveCurrentCapacityCh = make(chan uint64, 1024)
