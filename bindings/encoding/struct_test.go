@@ -34,7 +34,7 @@ var (
 		BaseFee:     new(big.Int).SetUint64(rand.Uint64()),
 	}
 	testMetaInput = TaikoL1BlockMetadataInput{
-		Beneficiary:     common.BytesToAddress(randomHash().Bytes()),
+		Proposer:        common.BytesToAddress(randomHash().Bytes()),
 		TxListHash:      randomHash(),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
@@ -50,7 +50,7 @@ var (
 		TxListByteStart:   common.Big0,
 		TxListByteEnd:     common.Big256,
 		GasLimit:          rand.Uint32(),
-		Beneficiary:       common.BytesToAddress(randomHash().Bytes()),
+		Proposer:          common.BytesToAddress(randomHash().Bytes()),
 		DepositsProcessed: []bindings.TaikoDataEthDeposit{},
 	}
 )

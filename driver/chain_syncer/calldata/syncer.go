@@ -422,11 +422,11 @@ func (s *Syncer) createExecutionPayloads(
 	attributes := &engine.PayloadAttributes{
 		Timestamp:             event.Meta.Timestamp,
 		Random:                event.Meta.MixHash,
-		SuggestedFeeRecipient: event.Meta.Beneficiary,
+		SuggestedFeeRecipient: event.Meta.Proposer,
 		Withdrawals:           withdrawals,
 		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
-			Beneficiary:    event.Meta.Beneficiary,
+			Beneficiary:    event.Meta.Proposer,
 			GasLimit:       uint64(event.Meta.GasLimit) + s.anchorConstructor.GasLimit(),
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,

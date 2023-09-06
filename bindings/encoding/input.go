@@ -22,7 +22,7 @@ var (
 			Type: "bytes32",
 		},
 		{
-			Name: "beneficiary",
+			Name: "proposer",
 			Type: "address",
 		},
 		{
@@ -76,7 +76,7 @@ var (
 			Type: "uint32",
 		},
 		{
-			Name: "beneficiary",
+			Name: "proposer",
 			Type: "address",
 		},
 		{

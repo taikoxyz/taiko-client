@@ -38,7 +38,7 @@ func TestProposeBlock(t *testing.T) {
 				Fee:    big.NewInt(1000),
 				Expiry: uint64(time.Now().Unix()),
 				Input: encoding.TaikoL1BlockMetadataInput{
-					Beneficiary:     common.BytesToAddress(randomHash().Bytes()),
+					Proposer:        common.BytesToAddress(randomHash().Bytes()),
 					TxListHash:      randomHash(),
 					TxListByteStart: common.Big0,
 					TxListByteEnd:   common.Big0,
@@ -57,7 +57,7 @@ func TestProposeBlock(t *testing.T) {
 				Fee:    big.NewInt(1000),
 				Expiry: uint64(time.Now().Unix()),
 				Input: encoding.TaikoL1BlockMetadataInput{
-					Beneficiary:     common.BytesToAddress(randomHash().Bytes()),
+					Proposer:        common.BytesToAddress(randomHash().Bytes()),
 					TxListHash:      randomHash(),
 					TxListByteStart: common.Big0,
 					TxListByteEnd:   common.Big0,

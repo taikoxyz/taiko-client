@@ -29,7 +29,7 @@ func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
 	invalidTxListBytes := RandomBytes(256)
 
 	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
-		Beneficiary:     proposer.L2SuggestedFeeRecipient(),
+		Proposer:        proposer.L2SuggestedFeeRecipient(),
 		TxListHash:      crypto.Keccak256Hash(invalidTxListBytes),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(invalidTxListBytes))),
@@ -62,7 +62,7 @@ func ProposeAndInsertEmptyBlocks(
 	s.Nil(err)
 
 	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
-		Beneficiary:     proposer.L2SuggestedFeeRecipient(),
+		Proposer:        proposer.L2SuggestedFeeRecipient(),
 		TxListHash:      crypto.Keccak256Hash(encoded),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),

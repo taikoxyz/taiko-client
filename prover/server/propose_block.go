@@ -41,11 +41,13 @@ func (srv *ProverServer) ProposeBlock(c echo.Context) error {
 		select {
 		case capacity := <-srv.receiveCurrentCapacityCh:
 			if capacity == 0 {
+				log.Warn("Prover does not have capacity")
 				return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 			}
 
 			encoded, err := encoding.EncodeProposeBlockData(r)
 			if err != nil {
+				log.Error("Failed to encode proposeBlock data", "error", err)
 				return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
 			}
 

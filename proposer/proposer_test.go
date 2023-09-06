@@ -131,7 +131,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	_, isPending, err := s.p.rpc.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
-	s.Equal(s.p.l2SuggestedFeeRecipient, event.Meta.Beneficiary)
+	s.Equal(s.p.l2SuggestedFeeRecipient, event.Meta.Proposer)
 
 	receipt, err := s.p.rpc.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
@@ -190,7 +190,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.Nil(err)
 
 	meta := &encoding.TaikoL1BlockMetadataInput{
-		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
+		Proposer:        s.p.L2SuggestedFeeRecipient(),
 		TxListHash:      crypto.Keccak256Hash(encoded),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
@@ -215,7 +215,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 
 func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
 	meta := &encoding.TaikoL1BlockMetadataInput{
-		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
+		Proposer:        s.p.L2SuggestedFeeRecipient(),
 		TxListHash:      testutils.RandomHash(),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
