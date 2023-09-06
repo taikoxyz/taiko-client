@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 )
 
 // ProverServer represents a prover server instance.
@@ -19,30 +20,27 @@ type ProverServer struct {
 	proverPrivateKey *ecdsa.PrivateKey
 	proverAddress    common.Address
 
-	// Capacity related configs
-	requestCurrentCapacityCh chan struct{}
-	receiveCurrentCapacityCh chan uint64
-	minProofFee              *big.Int
+	// capacity-related configs
+	capacityManager *capacity.CapacityManager
+	minProofFee     *big.Int
 }
 
 // NewProverServerOpts contains all configurations for creating a prover server instance.
 type NewProverServerOpts struct {
-	ProverPrivateKey         *ecdsa.PrivateKey
-	MinProofFee              *big.Int
-	RequestCurrentCapacityCh chan struct{}
-	ReceiveCurrentCapacityCh chan uint64
+	ProverPrivateKey *ecdsa.PrivateKey
+	MinProofFee      *big.Int
+	CapacityManager  *capacity.CapacityManager
 }
 
 // New creates a new prover server instance.
 func New(opts *NewProverServerOpts) (*ProverServer, error) {
 	address := crypto.PubkeyToAddress(opts.ProverPrivateKey.PublicKey)
 	srv := &ProverServer{
-		proverPrivateKey:         opts.ProverPrivateKey,
-		proverAddress:            address,
-		echo:                     echo.New(),
-		minProofFee:              opts.MinProofFee,
-		requestCurrentCapacityCh: opts.RequestCurrentCapacityCh,
-		receiveCurrentCapacityCh: opts.ReceiveCurrentCapacityCh,
+		proverPrivateKey: opts.ProverPrivateKey,
+		proverAddress:    address,
+		echo:             echo.New(),
+		minProofFee:      opts.MinProofFee,
+		capacityManager:  opts.CapacityManager,
 	}
 
 	srv.echo.HideBanner = true

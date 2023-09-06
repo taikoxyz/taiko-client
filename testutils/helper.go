@@ -190,21 +190,8 @@ func NewTestProverServer(
 	proverPrivKey *ecdsa.PrivateKey,
 	url *url.URL,
 ) *server.ProverServer {
-	serverOpts := &server.NewProverServerOpts{
-		ProverPrivateKey:         proverPrivKey,
-		MinProofFee:              common.Big1,
-		RequestCurrentCapacityCh: make(chan struct{}, 1),
-		ReceiveCurrentCapacityCh: make(chan uint64, 1),
-	}
-
-	srv, err := server.New(serverOpts)
+	srv, err := server.New(&server.NewProverServerOpts{ProverPrivateKey: proverPrivKey, MinProofFee: common.Big1})
 	s.Nil(err)
-
-	go func() {
-		for range serverOpts.RequestCurrentCapacityCh {
-			serverOpts.ReceiveCurrentCapacityCh <- 1024
-		}
-	}()
 
 	go func() {
 		if err := srv.Start(fmt.Sprintf(":%v", url.Port())); !errors.Is(err, http.ErrServerClosed) {

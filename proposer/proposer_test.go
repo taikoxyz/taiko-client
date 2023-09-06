@@ -59,25 +59,12 @@ func (s *ProposerTestSuite) SetupTest() {
 	s.Nil(err)
 
 	serverOpts := &server.NewProverServerOpts{
-		ProverPrivateKey:         l1ProverPrivKey,
-		MinProofFee:              common.Big1,
-		RequestCurrentCapacityCh: make(chan struct{}),
-		ReceiveCurrentCapacityCh: make(chan uint64),
+		ProverPrivateKey: l1ProverPrivKey,
+		MinProofFee:      common.Big1,
 	}
 
 	s.srv, err = server.New(serverOpts)
 	s.Nil(err)
-
-	go func() {
-		for {
-			select {
-			case <-serverOpts.RequestCurrentCapacityCh:
-				serverOpts.ReceiveCurrentCapacityCh <- 100
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
 
 	s.p = p
 	s.cancel = cancel

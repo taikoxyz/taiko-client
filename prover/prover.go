@@ -23,6 +23,7 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/taikoxyz/taiko-client/prover/server"
@@ -87,9 +88,7 @@ type Prover struct {
 	checkProofWindowExpiredInterval time.Duration
 
 	// capacity-related configs
-	currentCapacity          uint64
-	requestCurrentCapacityCh chan struct{}
-	receiveCurrentCapacityCh chan uint64
+	capacityManager *capacity.CapacityManager
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -110,24 +109,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
 	p.currentBlocksBeingProven = make(map[uint64]cancelFunc)
-	p.currentBlocksBeingProvenMutex = &sync.Mutex{}
+	p.currentBlocksBeingProvenMutex = new(sync.Mutex)
 	p.currentBlocksWaitingForProofWindow = make(map[uint64]uint64, 0)
-	p.currentBlocksWaitingForProofWindowMutex = &sync.Mutex{}
-	p.currentCapacity = cfg.Capacity
-	p.requestCurrentCapacityCh = make(chan struct{}, 1024)
-	p.receiveCurrentCapacityCh = make(chan uint64, 1024)
-
-	if !p.cfg.OracleProver {
-		p.srv, err = server.New(&server.NewProverServerOpts{
-			ProverPrivateKey:         p.cfg.L1ProverPrivKey,
-			MinProofFee:              p.cfg.MinProofFee,
-			RequestCurrentCapacityCh: p.requestCurrentCapacityCh,
-			ReceiveCurrentCapacityCh: p.receiveCurrentCapacityCh,
-		})
-		if err != nil {
-			return err
-		}
-	}
+	p.currentBlocksWaitingForProofWindowMutex = new(sync.Mutex)
+	p.capacityManager = capacity.New(cfg.Capacity)
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -140,6 +125,16 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		BackOffMaxRetrys: new(big.Int).SetUint64(p.cfg.BackOffMaxRetrys),
 	}); err != nil {
 		return err
+	}
+
+	// Prover server
+	if !p.cfg.OracleProver {
+		if p.srv, err = server.New(&server.NewProverServerOpts{
+			ProverPrivateKey: p.cfg.L1ProverPrivKey,
+			MinProofFee:      p.cfg.MinProofFee,
+		}); err != nil {
+			return err
+		}
 	}
 
 	// Configs
@@ -234,26 +229,8 @@ func (p *Prover) Start() error {
 		}()
 	}
 	go p.eventLoop()
-	go p.watchCurrentCapacity()
 
 	return nil
-}
-
-func (p *Prover) watchCurrentCapacity() {
-	p.wg.Add(1)
-	defer func() {
-		p.wg.Done()
-	}()
-
-	for {
-		select {
-		case <-p.ctx.Done():
-			return
-		case <-p.requestCurrentCapacityCh:
-			log.Info("Received request for current capacity", "currentCapacity", p.currentCapacity)
-			p.receiveCurrentCapacityCh <- p.currentCapacity
-		}
-	}
 }
 
 // eventLoop starts the main loop of Taiko prover.
@@ -626,11 +603,11 @@ func (p *Prover) onBlockProposed(
 		p.currentBlocksBeingProvenMutex.Unlock()
 
 		if !p.cfg.OracleProver {
-			if p.currentCapacity == 0 {
+			if p.capacityManager.ReadCapacity() == 0 {
 				return errNoCapacity
 			}
 
-			p.currentCapacity--
+			p.capacityManager.TakeOneCapacity()
 		}
 
 		return p.validProofSubmitter.RequestProof(ctx, event)
@@ -674,7 +651,7 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 		if err := backoff.Retry(
 			func() error {
 				if !p.cfg.OracleProver {
-					p.currentCapacity++
+					p.capacityManager.ReleaseOneCapacity()
 				}
 
 				err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader)
@@ -1025,7 +1002,7 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 		}
 
 		if !p.cfg.OracleProver {
-			p.currentCapacity--
+			p.capacityManager.TakeOneCapacity()
 		}
 
 		return nil

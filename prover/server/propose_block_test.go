@@ -13,8 +13,6 @@ import (
 )
 
 func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
-	s.srv.receiveCurrentCapacityCh <- 1024
-
 	rec := httptest.NewRecorder()
 
 	s.srv.ServeHTTP(rec, testutils.NewUnauthenticatedRequest(
