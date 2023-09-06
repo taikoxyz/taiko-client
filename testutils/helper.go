@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -206,7 +207,7 @@ func NewTestProverServer(
 	}()
 
 	go func() {
-		if err := srv.Start(fmt.Sprintf(":%v", url.Port())); err != http.ErrServerClosed {
+		if err := srv.Start(fmt.Sprintf(":%v", url.Port())); !errors.Is(err, http.ErrServerClosed) {
 			log.Error("Failed to start prover server", "error", err)
 		}
 	}()

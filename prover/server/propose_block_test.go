@@ -2,10 +2,8 @@ package server
 
 import (
 	"crypto/rand"
-	"math/big"
 	"net/http"
 	"net/http/httptest"
-	"testing"
 	"time"
 
 	"github.com/cyberhorsey/webutils/testutils"
@@ -14,6 +12,54 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
+func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
+	s.srv.receiveCurrentCapacityCh <- 1024
+
+	rec := httptest.NewRecorder()
+
+	s.srv.ServeHTTP(rec, testutils.NewUnauthenticatedRequest(
+		echo.POST,
+		"/proposeBlock",
+		&encoding.ProposeBlockData{
+			Fee:    common.Big256,
+			Expiry: uint64(time.Now().Unix()),
+			Input: encoding.TaikoL1BlockMetadataInput{
+				Proposer:        common.BytesToAddress(randomHash().Bytes()),
+				TxListHash:      randomHash(),
+				TxListByteStart: common.Big0,
+				TxListByteEnd:   common.Big0,
+				CacheTxListInfo: false,
+			},
+		},
+	))
+
+	testutils.AssertStatusAndBody(s.T(), rec, http.StatusOK, []string{"signedPayload"})
+}
+
+func (s *ProverServerTestSuite) TestProposeBlockTimeout() {
+	rec := httptest.NewRecorder()
+
+	s.srv.ServeHTTP(rec, testutils.NewUnauthenticatedRequest(
+		echo.POST,
+		"/proposeBlock",
+		&encoding.ProposeBlockData{
+			Fee:    common.Big256,
+			Expiry: uint64(time.Now().Unix()),
+			Input: encoding.TaikoL1BlockMetadataInput{
+				Proposer:        common.BytesToAddress(randomHash().Bytes()),
+				TxListHash:      randomHash(),
+				TxListByteStart: common.Big0,
+				TxListByteEnd:   common.Big0,
+				CacheTxListInfo: false,
+			},
+		},
+	))
+
+	testutils.AssertStatusAndBody(
+		s.T(), rec, http.StatusUnprocessableEntity, []string{`{"message":"timed out trying to get capacity"}`},
+	)
+}
+
 // randomHash generates a random blob of data and returns it as a hash.
 func randomHash() common.Hash {
 	var hash common.Hash
@@ -21,72 +67,4 @@ func randomHash() common.Hash {
 		panic(err)
 	}
 	return hash
-}
-func TestProposeBlock(t *testing.T) {
-	srv := newTestServer("")
-
-	tests := []struct {
-		name                  string
-		req                   *encoding.ProposeBlockData
-		chResponseFunc        func()
-		wantStatus            int
-		wantBodyRegexpMatches []string
-	}{
-		{
-			"success",
-			&encoding.ProposeBlockData{
-				Fee:    big.NewInt(1000),
-				Expiry: uint64(time.Now().Unix()),
-				Input: encoding.TaikoL1BlockMetadataInput{
-					Proposer:        common.BytesToAddress(randomHash().Bytes()),
-					TxListHash:      randomHash(),
-					TxListByteStart: common.Big0,
-					TxListByteEnd:   common.Big0,
-					CacheTxListInfo: false,
-				},
-			},
-			func() {
-				srv.receiveCurrentCapacityCh <- 100
-			},
-			http.StatusOK,
-			[]string{`"signedPayload"`},
-		},
-		{
-			"contextTimeout",
-			&encoding.ProposeBlockData{
-				Fee:    big.NewInt(1000),
-				Expiry: uint64(time.Now().Unix()),
-				Input: encoding.TaikoL1BlockMetadataInput{
-					Proposer:        common.BytesToAddress(randomHash().Bytes()),
-					TxListHash:      randomHash(),
-					TxListByteStart: common.Big0,
-					TxListByteEnd:   common.Big0,
-					CacheTxListInfo: false,
-				},
-			},
-			nil,
-			http.StatusUnprocessableEntity,
-			[]string{`{"message":"timed out trying to get capacity"}`},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.chResponseFunc != nil {
-				go tt.chResponseFunc()
-			}
-
-			req := testutils.NewUnauthenticatedRequest(
-				echo.POST,
-				"/proposeBlock",
-				tt.req,
-			)
-
-			rec := httptest.NewRecorder()
-
-			srv.ServeHTTP(rec, req)
-
-			testutils.AssertStatusAndBody(t, rec, tt.wantStatus, tt.wantBodyRegexpMatches)
-		})
-	}
 }
