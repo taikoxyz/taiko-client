@@ -40,7 +40,7 @@ func TestHealth(t *testing.T) {
 	srv.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Test_Health expected code %v, got %v", http.StatusOK, rec.Code)
+		t.Fatalf("TestHealth expected code %v, got %v", http.StatusOK, rec.Code)
 	}
 }
 
@@ -53,7 +53,7 @@ func TestRoot(t *testing.T) {
 	srv.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Test_Root expected code %v, got %v", http.StatusOK, rec.Code)
+		t.Fatalf("TestRoot expected code %v, got %v", http.StatusOK, rec.Code)
 	}
 }
 

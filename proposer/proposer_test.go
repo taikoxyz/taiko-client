@@ -213,7 +213,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }
 
-func (s *ProposerTestSuite) TestAssignProver_SuccessFirstRound() {
+func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
 	meta := &encoding.TaikoL1BlockMetadataInput{
 		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
 		TxListHash:      testutils.RandomHash(),

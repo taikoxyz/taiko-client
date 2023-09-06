@@ -17,7 +17,6 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/proposer"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
-	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -198,19 +197,10 @@ func (s *ProverTestSuite) TestCheckChainVerification() {
 }
 
 func (s *ProverTestSuite) TestStartClose() {
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
-
-	s.p.srv, _ = server.New(&server.NewProverServerOpts{
-		ProverPrivateKey: l1ProverPrivKey,
-	})
+	s.p.cfg.OracleProver = true
 	s.Nil(s.p.Start())
 	s.cancel()
 	s.NotPanics(func() { s.p.Close(context.Background()) })
-}
-
-func (s *ProverTestSuite) TearDownTest() {
-	s.Nil(s.p.srv.Shutdown(context.Background()))
 }
 
 func TestProverTestSuite(t *testing.T) {

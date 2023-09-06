@@ -22,7 +22,7 @@ func randomHash() common.Hash {
 	}
 	return hash
 }
-func Test_ProposeBlock(t *testing.T) {
+func TestProposeBlock(t *testing.T) {
 	srv := newTestServer("")
 
 	tests := []struct {
