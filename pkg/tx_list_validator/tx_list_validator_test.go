@@ -1,14 +1,15 @@
 package tx_list_validator
 
 import (
+	"crypto/rand"
 	"math/big"
-	"math/rand"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
@@ -132,6 +133,8 @@ func rlpEncodedTransactionBytes(l int, signed bool) []byte {
 
 func randBytes(l uint64) []byte {
 	b := make([]byte, l)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		log.Crit("Failed to generate random bytes", "error", err)
+	}
 	return b
 }

@@ -1,6 +1,7 @@
 package encoding
 
 import (
+	cryptoRand "crypto/rand"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -33,7 +34,7 @@ var (
 		BaseFee:     new(big.Int).SetUint64(rand.Uint64()),
 	}
 	testMetaInput = TaikoL1BlockMetadataInput{
-		Beneficiary:     common.BytesToAddress(randomHash().Bytes()),
+		Proposer:        common.BytesToAddress(randomHash().Bytes()),
 		TxListHash:      randomHash(),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
@@ -49,7 +50,7 @@ var (
 		TxListByteStart:   common.Big0,
 		TxListByteEnd:     common.Big256,
 		GasLimit:          rand.Uint32(),
-		Beneficiary:       common.BytesToAddress(randomHash().Bytes()),
+		Proposer:          common.BytesToAddress(randomHash().Bytes()),
 		DepositsProcessed: []bindings.TaikoDataEthDeposit{},
 	}
 )
@@ -122,7 +123,7 @@ func TestToExecutableData(t *testing.T) {
 // randomHash generates a random blob of data and returns it as a hash.
 func randomHash() common.Hash {
 	var hash common.Hash
-	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
+	if n, err := cryptoRand.Read(hash[:]); n != common.HashLength || err != nil {
 		panic(err)
 	}
 	return hash
@@ -131,7 +132,7 @@ func randomHash() common.Hash {
 // randomBytes generates a random bytes.
 func randomBytes(size int) (b []byte) {
 	b = make([]byte, size)
-	if _, err := rand.Read(b); err != nil {
+	if _, err := cryptoRand.Read(b); err != nil {
 		log.Crit("Generate random bytes error", "error", err)
 	}
 	return

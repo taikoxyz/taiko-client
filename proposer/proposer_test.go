@@ -2,7 +2,6 @@ package proposer
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"os"
 	"testing"
@@ -11,12 +10,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/prover/http"
+	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -24,13 +22,11 @@ type ProposerTestSuite struct {
 	testutils.ClientTestSuite
 	p      *Proposer
 	cancel context.CancelFunc
-	srv    *http.Server
+	srv    *server.ProverServer
 }
 
 func (s *ProposerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
-
-	port := testutils.RandomPort()
 
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -39,6 +35,7 @@ func (s *ProposerTestSuite) SetupTest() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
+
 	s.Nil(InitFromConfig(ctx, p, (&Config{
 		L1Endpoint:                          os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:                          os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
@@ -51,9 +48,9 @@ func (s *ProposerTestSuite) SetupTest() {
 		MaxProposedTxListsPerEpoch:          1,
 		ProposeBlockTxReplacementMultiplier: 2,
 		WaitReceiptTimeout:                  10 * time.Second,
-		ProverEndpoints:                     []string{fmt.Sprintf("http://localhost:%v", port)},
-		BlockProposalFee:                    big.NewInt(100000),
-		BlockProposalFeeIncreasePercentage:  10,
+		ProverEndpoints:                     s.ProverEndpoints,
+		BlockProposalFee:                    common.Big256,
+		BlockProposalFeeIncreasePercentage:  common.Big2,
 		BlockProposalFeeIterations:          3,
 	})))
 
@@ -61,33 +58,13 @@ func (s *ProposerTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	serverOpts := http.NewServerOpts{
-		ProverPrivateKey:         l1ProverPrivKey,
-		MinProofFee:              big.NewInt(1),
-		MaxCapacity:              10,
-		RequestCurrentCapacityCh: make(chan struct{}),
-		ReceiveCurrentCapacityCh: make(chan uint64),
+	serverOpts := &server.NewProverServerOpts{
+		ProverPrivateKey: l1ProverPrivKey,
+		MinProofFee:      common.Big1,
 	}
 
-	s.srv, err = http.NewServer(serverOpts)
+	s.srv, err = server.New(serverOpts)
 	s.Nil(err)
-
-	go func() {
-		for {
-			select {
-			case <-serverOpts.RequestCurrentCapacityCh:
-				serverOpts.ReceiveCurrentCapacityCh <- 100
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
-	go func() {
-		if err := s.srv.Start(fmt.Sprintf(":%v", port)); err != nil {
-			log.Crit("error starting prover http server", "error", err)
-		}
-	}()
 
 	s.p = p
 	s.cancel = cancel
@@ -141,7 +118,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	_, isPending, err := s.p.rpc.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
-	s.Equal(s.p.l2SuggestedFeeRecipient, event.Meta.Beneficiary)
+	s.Equal(s.p.l2SuggestedFeeRecipient, event.Meta.Proposer)
 
 	receipt, err := s.p.rpc.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
@@ -200,14 +177,14 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.Nil(err)
 
 	meta := &encoding.TaikoL1BlockMetadataInput{
-		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
+		Proposer:        s.p.L2SuggestedFeeRecipient(),
 		TxListHash:      crypto.Keccak256Hash(encoded),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
 		CacheTxListInfo: false,
 	}
 
-	assignment, fee, err := s.p.assignProver(context.Background(), meta)
+	assignment, fee, err := s.p.proverSelector.AssignProver(context.Background(), meta)
 	s.Nil(err)
 
 	newTx, err := s.p.sendProposeBlockTx(
@@ -223,9 +200,9 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }
 
-func (s *ProposerTestSuite) TestAssignProver_NoProvers() {
+func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
 	meta := &encoding.TaikoL1BlockMetadataInput{
-		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
+		Proposer:        s.p.L2SuggestedFeeRecipient(),
 		TxListHash:      testutils.RandomHash(),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
@@ -235,29 +212,10 @@ func (s *ProposerTestSuite) TestAssignProver_NoProvers() {
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	s.p.proverEndpoints = []string{}
-
-	_, _, err := s.p.assignProver(context.Background(), meta)
-
-	s.Equal(err, errUnableToFindProver)
-}
-
-func (s *ProposerTestSuite) TestAssignProver_SuccessFirstRound() {
-	meta := &encoding.TaikoL1BlockMetadataInput{
-		Beneficiary:     s.p.L2SuggestedFeeRecipient(),
-		TxListHash:      testutils.RandomHash(),
-		TxListByteStart: common.Big0,
-		TxListByteEnd:   common.Big0,
-		CacheTxListInfo: false,
-	}
-
-	s.SetL1Automine(false)
-	defer s.SetL1Automine(true)
-
-	_, fee, err := s.p.assignProver(context.Background(), meta)
+	_, fee, err := s.p.proverSelector.AssignProver(context.Background(), meta)
 
 	s.Nil(err)
-	s.Equal(fee.Uint64(), s.p.blockProposalFee.Uint64())
+	s.Equal(fee.Uint64(), s.p.cfg.BlockProposalFee.Uint64())
 }
 
 func (s *ProposerTestSuite) TestUpdateProposingTicker() {
@@ -274,22 +232,6 @@ func (s *ProposerTestSuite) TestStartClose() {
 	s.cancel()
 	s.NotPanics(func() { s.p.Close(context.Background()) })
 }
-
-// TODO: not working
-// func (s *ProposerTestSuite) TestEventLoopEmptyBlock() {
-// 	fiveSecs := 5 * time.Second
-// 	s.p.proposingInterval = &fiveSecs
-// 	s.p.proposeEmptyBlocksInterval = &fiveSecs
-// 	s.p.Start()
-// 	time.Sleep(30 * time.Second)
-// 	s.cancel()
-// 	s.p.Close()
-// 	// check if empty blocks have been proposed? query TaikoL1 contract?
-// 	block, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
-// 	s.Nil(err)
-// 	s.Equal(uint64(block.GasLimit()), uint64(21000))
-// 	s.Equal(block.TxHash(), common.Hash(crypto.Keccak256Hash([]byte{})))
-// }
 
 func TestProposerTestSuite(t *testing.T) {
 	suite.Run(t, new(ProposerTestSuite))

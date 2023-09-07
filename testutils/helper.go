@@ -3,12 +3,15 @@ package testutils
 import (
 	"context"
 	"crypto/ecdsa"
+	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
-	"math/rand"
-	"os"
+	"net/http"
+	"net/url"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -16,17 +19,19 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/go-resty/resty/v2"
 	"github.com/phayes/freeport"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/prover/http"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
+	"github.com/taikoxyz/taiko-client/prover/server"
 )
 
 func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
 	invalidTxListBytes := RandomBytes(256)
 
 	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
-		Beneficiary:     proposer.L2SuggestedFeeRecipient(),
+		Proposer:        proposer.L2SuggestedFeeRecipient(),
 		TxListHash:      crypto.Keccak256Hash(invalidTxListBytes),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(invalidTxListBytes))),
@@ -59,7 +64,7 @@ func ProposeAndInsertEmptyBlocks(
 	s.Nil(err)
 
 	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
-		Beneficiary:     proposer.L2SuggestedFeeRecipient(),
+		Proposer:        proposer.L2SuggestedFeeRecipient(),
 		TxListHash:      crypto.Keccak256Hash(encoded),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
@@ -179,43 +184,41 @@ func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey, re
 	}
 }
 
-// HTTPServer starts a new prover server that has channel listeners to respond and react
+// NewTestProverServer starts a new prover server that has channel listeners to respond and react
 // to requests for capacity, which provers can call.
-func HTTPServer(s *ClientTestSuite, port int) (*http.Server, func(), error) {
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+func NewTestProverServer(
+	s *ClientTestSuite,
+	proverPrivKey *ecdsa.PrivateKey,
+	capacityManager *capacity.CapacityManager,
+	url *url.URL,
+) *server.ProverServer {
+	srv, err := server.New(&server.NewProverServerOpts{
+		ProverPrivateKey: proverPrivKey,
+		MinProofFee:      common.Big1,
+		CapacityManager:  capacityManager,
+	})
 	s.Nil(err)
 
-	serverOpts := http.NewServerOpts{
-		ProverPrivateKey:         l1ProverPrivKey,
-		MinProofFee:              big.NewInt(1),
-		MaxCapacity:              10,
-		RequestCurrentCapacityCh: make(chan struct{}),
-		ReceiveCurrentCapacityCh: make(chan uint64),
-	}
-
-	srv, err := http.NewServer(serverOpts)
-	s.Nil(err)
-
-	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		for {
-			select {
-			case <-serverOpts.RequestCurrentCapacityCh:
-				serverOpts.ReceiveCurrentCapacityCh <- 100
-			case <-ctx.Done():
-				return
-			}
+		if err := srv.Start(fmt.Sprintf(":%v", url.Port())); !errors.Is(err, http.ErrServerClosed) {
+			log.Error("Failed to start prover server", "error", err)
 		}
 	}()
 
-	go func() {
-		_ = srv.Start(fmt.Sprintf(":%v", port))
-	}()
+	// Wait till the server fully started.
+	s.Nil(backoff.Retry(func() error {
+		res, err := resty.New().R().Get(url.String() + "/healthz")
+		if err != nil {
+			return err
+		}
+		if !res.IsSuccess() {
+			return fmt.Errorf("invalid response status code: %d", res.StatusCode())
+		}
 
-	return srv, func() {
-		cancel()
-		_ = srv.Shutdown(ctx)
-	}, err
+		return nil
+	}, backoff.NewExponentialBackOff()))
+
+	return srv
 }
 
 // RandomHash generates a random blob of data and returns it as a hash.
@@ -243,6 +246,18 @@ func RandomPort() int {
 		log.Crit("Failed to get local free random port", "err", err)
 	}
 	return port
+}
+
+// LocalRandomProverEndpoint returns a local free random prover endpoint.
+func LocalRandomProverEndpoint() *url.URL {
+	port := RandomPort()
+
+	proverEndpoint, err := url.Parse(fmt.Sprintf("http://localhost:%v", port))
+	if err != nil {
+		log.Crit("Failed to parse local prover endpoint", "err", err)
+	}
+
+	return proverEndpoint
 }
 
 // SignatureFromRSV creates the signature bytes from r,s,v.

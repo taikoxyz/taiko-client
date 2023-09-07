@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"net/url"
 	"strings"
 	"time"
 
@@ -33,9 +34,9 @@ type Config struct {
 	RPCTimeout                          *time.Duration
 	WaitReceiptTimeout                  time.Duration
 	ProposeBlockTxGasTipCap             *big.Int
-	ProverEndpoints                     []string
+	ProverEndpoints                     []*url.URL
 	BlockProposalFee                    *big.Int
-	BlockProposalFeeIncreasePercentage  uint64
+	BlockProposalFeeIncreasePercentage  *big.Int
 	BlockProposalFeeIterations          uint64
 }
 
@@ -108,9 +109,14 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proposeBlockTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProposeBlockTxGasTipCap.Name))
 	}
 
-	var proverEndpoints []string
-
-	proverEndpoints = append(proverEndpoints, strings.Split(c.String(flags.ProverEndpoints.Name), ",")...)
+	var proverEndpoints []*url.URL
+	for _, e := range strings.Split(c.String(flags.ProverEndpoints.Name), ",") {
+		endpoint, err := url.Parse(e)
+		if err != nil {
+			return nil, err
+		}
+		proverEndpoints = append(proverEndpoints, endpoint)
+	}
 
 	blockProposalFee, ok := new(big.Int).SetString(c.String(flags.BlockProposalFee.Name), 10)
 	if !ok {
@@ -138,7 +144,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProposeBlockTxGasTipCap:             proposeBlockTxGasTipCap,
 		ProverEndpoints:                     proverEndpoints,
 		BlockProposalFee:                    blockProposalFee,
-		BlockProposalFeeIncreasePercentage:  c.Uint64(flags.BlockProposalFeeIncreasePercentage.Name),
-		BlockProposalFeeIterations:          c.Uint64(flags.BlockProposalFeeIterations.Name),
+		BlockProposalFeeIncreasePercentage: new(big.Int).SetUint64(
+			c.Uint64(flags.BlockProposalFeeIncreasePercentage.Name),
+		),
+		BlockProposalFeeIterations: c.Uint64(flags.BlockProposalFeeIterations.Name),
 	}, nil
 }

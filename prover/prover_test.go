@@ -2,9 +2,9 @@ package prover
 
 import (
 	"context"
-	"fmt"
-	"math/big"
+	"net/url"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -16,7 +16,6 @@ import (
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/proposer"
-	"github.com/taikoxyz/taiko-client/prover/http"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
@@ -29,15 +28,15 @@ type ProverTestSuite struct {
 	proposer *proposer.Proposer
 }
 
-var (
-	port = testutils.RandomPort()
-)
-
 func (s *ProverTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
 	// Init prover
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	proverServerUrl := testutils.LocalRandomProverEndpoint()
+	port, err := strconv.Atoi(proverServerUrl.Port())
 	s.Nil(err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -56,15 +55,18 @@ func (s *ProverTestSuite) SetupTest() {
 		MaxConcurrentProvingJobs:        1,
 		CheckProofWindowExpiredInterval: 5 * time.Second,
 		ProveUnassignedBlocks:           true,
-		Capacity:                        100,
-		MinProofFee:                     big.NewInt(1),
+		Capacity:                        1024,
+		MinProofFee:                     common.Big1,
+		HTTPServerPort:                  uint64(port),
 	})))
+	p.srv = testutils.NewTestProverServer(
+		&s.ClientTestSuite,
+		l1ProverPrivKey,
+		p.capacityManager,
+		proverServerUrl,
+	)
 	s.p = p
 	s.cancel = cancel
-
-	go func() {
-		_ = s.p.srv.Start(fmt.Sprintf(":%v", port))
-	}()
 
 	// Init driver
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
@@ -90,24 +92,23 @@ func (s *ProverTestSuite) SetupTest() {
 
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
-		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L1ProposerPrivKey:          l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:            &proposeInterval, // No need to periodically propose transactions list in unit tests
-		MaxProposedTxListsPerEpoch: 1,
-		WaitReceiptTimeout:         10 * time.Second,
-		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
-		BlockProposalFee:           big.NewInt(1000),
-		BlockProposalFeeIterations: 3,
+		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                     common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:                  common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		L1ProposerPrivKey:                  l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:            common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		ProposeInterval:                    &proposeInterval,
+		MaxProposedTxListsPerEpoch:         1,
+		WaitReceiptTimeout:                 10 * time.Second,
+		ProverEndpoints:                    []*url.URL{proverServerUrl},
+		BlockProposalFee:                   common.Big256,
+		BlockProposalFeeIterations:         3,
+		BlockProposalFeeIncreasePercentage: common.Big2,
 	})))
 
 	s.proposer = prop
-
-	go s.p.watchCurrentCapacity()
 }
 
 func (s *ProverTestSuite) TestName() {
@@ -199,12 +200,7 @@ func (s *ProverTestSuite) TestCheckChainVerification() {
 }
 
 func (s *ProverTestSuite) TestStartClose() {
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
-
-	s.p.srv, _ = http.NewServer(http.NewServerOpts{
-		ProverPrivateKey: l1ProverPrivKey,
-	})
+	s.p.cfg.OracleProver = true
 	s.Nil(s.p.Start())
 	s.cancel()
 	s.NotPanics(func() { s.p.Close(context.Background()) })

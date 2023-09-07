@@ -100,7 +100,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	}
 
 	var taikoToken *bindings.TaikoToken
-	if cfg.TaikoTokenAddress.Hex() != zeroAddress.Hex() {
+	if cfg.TaikoTokenAddress.Hex() != ZeroAddress.Hex() {
 		taikoToken, err = bindings.NewTaikoToken(cfg.TaikoTokenAddress, l1RPC)
 		if err != nil {
 			return nil, err

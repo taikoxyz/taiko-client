@@ -19,9 +19,9 @@ import (
 )
 
 var (
+	ZeroAddress                = common.HexToAddress("0x0000000000000000000000000000000000000000")
 	waitReceiptPollingInterval = 3 * time.Second
 	defaultWaitReceiptTimeout  = 1 * time.Minute
-	zeroAddress                = common.HexToAddress("0x0000000000000000000000000000000000000000")
 )
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
@@ -195,7 +195,7 @@ func IsArchiveNode(ctx context.Context, client *EthClient, l2GenesisHeight uint6
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	if _, err := client.BalanceAt(ctxWithTimeout, zeroAddress, new(big.Int).SetUint64(l2GenesisHeight)); err != nil {
+	if _, err := client.BalanceAt(ctxWithTimeout, ZeroAddress, new(big.Int).SetUint64(l2GenesisHeight)); err != nil {
 		if strings.Contains(err.Error(), "missing trie node") {
 			return false, nil
 		}

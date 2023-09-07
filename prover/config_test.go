@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/urfave/cli/v2"
 )
@@ -22,11 +21,9 @@ var (
 	minProofFee    = "1024"
 )
 
-// TODO: fix this test
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 	app := s.SetupApp()
 	app.Action = func(ctx *cli.Context) error {
-		log.Info("ctx", "ctx", ctx.FlagNames(), "v", ctx.Args())
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
 		s.Equal(l1WsEndpoint, c.L1WsEndpoint)

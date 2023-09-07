@@ -1,16 +1,12 @@
 package proposer
 
 import (
-	"bytes"
 	"context"
 	"crypto/ecdsa"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math/big"
 	"math/rand"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -27,22 +23,18 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 )
 
 var (
 	errNoNewTxs                = errors.New("no new transactions")
-	errUnableToFindProver      = errors.New("unable to find prover")
 	maxSendProposeBlockTxRetry = 10
 	retryInterval              = 12 * time.Second
+	proverAssignmentTimeout    = 90 * time.Minute
 	requestProverServerTimeout = 12 * time.Second
 )
-
-type proposeBlockResponse struct {
-	SignedPayload []byte         `json:"signedPayload"`
-	Prover        common.Address `json:"prover"`
-}
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
 type Proposer struct {
@@ -64,14 +56,12 @@ type Proposer struct {
 	proposeBlockTxGasLimit     *uint64
 	txReplacementTipMultiplier uint64
 	proposeBlockTxGasTipCap    *big.Int
-	proverEndpoints            []string
+
+	// Prover selector
+	proverSelector selector.ProverSelector
 
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
-
-	// Block proposal fee configurations
-	blockProposalFee                   *big.Int
-	blockProposalFeeIncreasePercentage uint64
 
 	// Only for testing purposes
 	CustomProposeOpHook func() error
@@ -111,9 +101,6 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.proposeBlockTxGasTipCap = cfg.ProposeBlockTxGasTipCap
 	p.ctx = ctx
 	p.waitReceiptTimeout = cfg.WaitReceiptTimeout
-	p.proverEndpoints = cfg.ProverEndpoints
-	p.blockProposalFee = cfg.BlockProposalFee
-	p.blockProposalFeeIncreasePercentage = cfg.BlockProposalFeeIncreasePercentage
 	p.cfg = cfg
 
 	// RPC clients
@@ -137,6 +124,20 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.protocolConfigs = &protocolConfigs
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
+
+	if p.proverSelector, err = selector.NewETHFeeEOASelector(
+		&protocolConfigs,
+		p.rpc,
+		cfg.TaikoL1Address,
+		cfg.BlockProposalFee,
+		cfg.BlockProposalFeeIncreasePercentage,
+		cfg.ProverEndpoints,
+		cfg.BlockProposalFeeIterations,
+		proverAssignmentTimeout,
+		requestProverServerTimeout,
+	); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -304,7 +305,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 				txNonce := nonce + uint64(i)
 				if err := p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
-					Beneficiary:     p.l2SuggestedFeeRecipient,
+					Proposer:        p.l2SuggestedFeeRecipient,
 					TxListHash:      crypto.Keccak256Hash(txListBytes),
 					TxListByteStart: common.Big0,
 					TxListByteEnd:   new(big.Int).SetUint64(uint64(len(txListBytes))),
@@ -410,7 +411,7 @@ func (p *Proposer) ProposeTxList(
 	txNum uint,
 	nonce *uint64,
 ) error {
-	assignment, fee, err := p.assignProver(ctx, meta)
+	assignment, fee, err := p.proverSelector.AssignProver(ctx, meta)
 	if err != nil {
 		return err
 	}
@@ -469,7 +470,7 @@ func (p *Proposer) ProposeTxList(
 func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
 	return p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
 		TxListHash:      crypto.Keccak256Hash([]byte{}),
-		Beneficiary:     p.L2SuggestedFeeRecipient(),
+		Proposer:        p.L2SuggestedFeeRecipient(),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
 		CacheTxListInfo: false,
@@ -492,185 +493,6 @@ func (p *Proposer) updateProposingTicker() {
 	}
 
 	p.proposingTimer = time.NewTimer(duration)
-}
-
-// assignProver attempts to find a prover who wants to win the block.
-// if no provers want to do it for the price we set, we increase the price, and try again.
-func (p *Proposer) assignProver(
-	ctx context.Context,
-	meta *encoding.TaikoL1BlockMetadataInput,
-) ([]byte, *big.Int, error) {
-	initialFee := p.blockProposalFee
-
-	percentBig := big.NewInt(int64(p.blockProposalFeeIncreasePercentage))
-
-	// iterate over each configured endpoint, and see if someone wants to accept your block.
-	// if it is denied, we continue on to the next endpoint.
-	// if we do not find a prover, we can increase the fee up to a point, or give up.
-	// TODO(jeff): we loop 3 times, this should be a config var
-	for i := 0; i < int(p.cfg.BlockProposalFeeIterations); i++ {
-		fee := new(big.Int).Set(initialFee)
-
-		// increase fee on each failed loop
-		if i > 0 {
-			cumulativePercent := new(big.Int).Mul(percentBig, big.NewInt(int64(i)))
-			increase := new(big.Int).Mul(fee, cumulativePercent)
-			increase.Div(increase, big.NewInt(100))
-			fee.Add(fee, increase)
-		}
-
-		expiry := uint64(time.Now().Add(90 * time.Minute).Unix())
-
-		proposeBlockReq := &encoding.ProposeBlockData{
-			Expiry: expiry,
-			Input:  *meta,
-			Fee:    fee,
-		}
-
-		jsonBody, err := json.Marshal(proposeBlockReq)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		r := bytes.NewReader(jsonBody)
-
-		for _, endpoint := range p.proverEndpoints {
-			log.Info(
-				"Attempting to assign prover",
-				"endpoint", endpoint,
-				"fee", fee.String(),
-				"expiry", expiry,
-			)
-			client := &http.Client{Timeout: requestProverServerTimeout}
-
-			req, err := http.NewRequestWithContext(
-				ctx,
-				"POST",
-				fmt.Sprintf("%v/%v", endpoint, "proposeBlock"),
-				r,
-			)
-			if err != nil {
-				log.Error("Init http request error", "endpoint", endpoint, "err", err)
-				continue
-			}
-			req.Header.Add("Content-Type", "application/json")
-
-			res, err := client.Do(req)
-			if err != nil {
-				log.Error("Request prover server error", "endpoint", endpoint, "err", err)
-				continue
-			}
-
-			if res.StatusCode != http.StatusOK {
-				log.Info(
-					"Prover rejected request to assign block",
-					"endpoint", endpoint,
-					"fee", fee.String(),
-					"expiry", expiry,
-				)
-				continue
-			}
-
-			resBody, err := io.ReadAll(res.Body)
-			if err != nil {
-				log.Error("Read response body error", "endpoint", endpoint, "err", err)
-				continue
-			}
-
-			resp := &proposeBlockResponse{}
-			if err := json.Unmarshal(resBody, resp); err != nil {
-				log.Error("Unmarshal response body error", "endpoint", endpoint, "err", err)
-				continue
-			}
-
-			// ensure prover in response is the same as the one recovered
-			// from the signature
-			encodedBlockData, err := encoding.EncodeProposeBlockData(proposeBlockReq)
-			if err != nil {
-				log.Error("Encode block data error", "endpoint", endpoint, "error", err)
-				continue
-			}
-
-			pubKey, err := crypto.SigToPub(crypto.Keccak256Hash(encodedBlockData).Bytes(), resp.SignedPayload)
-			if err != nil {
-				log.Error("Failed to get public key from signature", "endpoint", endpoint, "error", err)
-				continue
-			}
-
-			if crypto.PubkeyToAddress(*pubKey).Hex() != resp.Prover.Hex() {
-				log.Info(
-					"Assigned prover signature did not recover to provided prover address",
-					"endpoint", endpoint,
-					"recoveredAddress", crypto.PubkeyToAddress(*pubKey).Hex(),
-					"providedProver", resp.Prover.Hex(),
-				)
-				continue
-			}
-
-			// make sure the prover has the necessary balance either in TaikoL1 token balances
-			// or, if not, check allowance, as contract will attempt to burn directly after
-			// if it doesnt have the available tokenbalance in-contract.
-			taikoTokenBalance, err := p.rpc.TaikoL1.GetTaikoTokenBalance(&bind.CallOpts{Context: ctx}, resp.Prover)
-			if err != nil {
-				log.Error(
-					"Get taiko token balance error",
-					"endpoint", endpoint,
-					"providedProver", resp.Prover.Hex(),
-					"error", err,
-				)
-				continue
-			}
-
-			if p.protocolConfigs.ProofBond.Cmp(taikoTokenBalance) > 0 {
-				// check allowance on taikotoken contract
-				allowance, err := p.rpc.TaikoToken.Allowance(&bind.CallOpts{Context: ctx}, resp.Prover, p.cfg.TaikoL1Address)
-				if err != nil {
-					log.Error(
-						"Get taiko token allowance error",
-						"endpoint", endpoint,
-						"providedProver", resp.Prover.Hex(),
-						"error", err,
-					)
-					continue
-				}
-
-				if p.protocolConfigs.ProofBond.Cmp(allowance) > 0 {
-					log.Info(
-						"Assigned prover does not have required on-chain token balance or allowance",
-						"endpoint", endpoint,
-						"providedProver", resp.Prover.Hex(),
-						"taikoTokenBalance", taikoTokenBalance.String(),
-						"allowance", allowance.String(),
-						"proofBond", p.protocolConfigs.ProofBond,
-						"requiredFee", fee.String(),
-					)
-					continue
-				}
-			}
-
-			// convert signature to one solidity can recover by adding 27 to 65th byte
-			resp.SignedPayload[64] = uint8(uint(resp.SignedPayload[64])) + 27
-
-			encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
-				Prover: resp.Prover,
-				Expiry: proposeBlockReq.Expiry,
-				Data:   resp.SignedPayload,
-			})
-			if err != nil {
-				return nil, nil, err
-			}
-
-			log.Info(
-				"Prover assigned for block",
-				"prover", resp.Prover.Hex(),
-				"signedPayload", common.Bytes2Hex(resp.SignedPayload),
-			)
-
-			return encoded, fee, nil
-		}
-	}
-
-	return nil, nil, errUnableToFindProver
 }
 
 // Name returns the application name.

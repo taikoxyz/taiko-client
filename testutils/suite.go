@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"math/big"
+	"net/url"
 	"os"
 
 	"github.com/cenkalti/backoff/v4"
@@ -14,6 +15,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
+	"github.com/taikoxyz/taiko-client/prover/server"
 )
 
 type ClientTestSuite struct {
@@ -22,6 +25,8 @@ type ClientTestSuite struct {
 	RpcClient           *rpc.Client
 	TestAddrPrivKey     *ecdsa.PrivateKey
 	TestAddr            common.Address
+	ProverEndpoints     []*url.URL
+	proverServer        *server.ProverServer
 }
 
 func (s *ClientTestSuite) SetupTest() {
@@ -68,6 +73,9 @@ func (s *ClientTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
+	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
+	s.proverServer = NewTestProverServer(s, l1ProverPrivKey, capacity.New(1024), s.ProverEndpoints[0])
+
 	tokenBalance, err := rpcCli.TaikoL1.GetTaikoTokenBalance(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
 	s.Nil(err)
 
@@ -98,6 +106,7 @@ func (s *ClientTestSuite) TearDownTest() {
 	s.True(revertRes)
 
 	s.Nil(rpc.SetHead(context.Background(), s.RpcClient.L2RawRPC, common.Big0))
+	s.Nil(s.proverServer.Shutdown(context.Background()))
 }
 
 func (s *ClientTestSuite) SetL1Automine(automine bool) {

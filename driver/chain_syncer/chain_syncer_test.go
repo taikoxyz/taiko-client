@@ -2,7 +2,6 @@ package chainSyncer
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	"os"
@@ -17,7 +16,6 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
-	"github.com/taikoxyz/taiko-client/prover/http"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -26,14 +24,10 @@ type ChainSyncerTestSuite struct {
 	s          *L2ChainSyncer
 	snapshotID string
 	p          testutils.Proposer
-	srv        *http.Server
-	cancel     func()
 }
 
 func (s *ChainSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
-
-	port := testutils.RandomPort()
 
 	state, err := state.New(context.Background(), s.RpcClient)
 	s.Nil(err)
@@ -53,27 +47,23 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
+
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
-		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L1ProposerPrivKey:          l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:            &proposeInterval,
-		MaxProposedTxListsPerEpoch: 1,
-		WaitReceiptTimeout:         10 * time.Second,
-		ProverEndpoints:            []string{fmt.Sprintf("http://localhost:%v", port)},
-		BlockProposalFee:           big.NewInt(1000),
-		BlockProposalFeeIterations: 3,
+		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                     common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:                  common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		L1ProposerPrivKey:                  l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:            common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		ProposeInterval:                    &proposeInterval,
+		MaxProposedTxListsPerEpoch:         1,
+		WaitReceiptTimeout:                 10 * time.Second,
+		ProverEndpoints:                    s.ProverEndpoints,
+		BlockProposalFee:                   big.NewInt(1000),
+		BlockProposalFeeIterations:         3,
+		BlockProposalFeeIncreasePercentage: common.Big2,
 	})))
-
-	srv, srvCancel, err := testutils.HTTPServer(&s.ClientTestSuite, port)
-	s.Nil(err)
-
-	s.srv = srv
-	s.cancel = srvCancel
 
 	s.p = prop
 }
@@ -95,7 +85,6 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s.calldataSyncer)
 
 	// NOTE: need to prove the proposed blocks to be verified, writing helper function
-
 	// generate transactopts to interact with TaikoL1 contract with.
 	privKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -108,10 +97,10 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	log.Info("L1HeaderByNumber head:", "number", head.Number)
+	log.Info("L1HeaderByNumber head", "number", head.Number)
 	// (equiv to s.state.GetL2Head().Number)
-	log.Info("L2HeaderByNumber head:", "number", l2Head.Number)
-	log.Info("LatestVerifiedBlock number:", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
+	log.Info("L2HeaderByNumber head", "number", l2Head.Number)
+	log.Info("LatestVerifiedBlock number", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
 
 	config, err := s.s.rpc.TaikoL1.GetConfig(&bind.CallOpts{})
 	s.Nil(err)
@@ -124,7 +113,7 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 		"evm_increaseTime",
 		config.ProofRegularCooldown.Uint64()))
 	s.NotNil(result)
-	log.Info("evm time increase:", "number", result)
+	log.Info("EVM time increase", "number", result)
 
 	// interact with TaikoL1 contract to allow for verification of L2 blocks
 	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, uint64(3))
@@ -137,9 +126,9 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	l2Head2, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	log.Info("L1HeaderByNumber head2:", "number", head2.Number)
-	log.Info("L2HeaderByNumber head:", "number", l2Head2.Number)
-	log.Info("LatestVerifiedBlock number:", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
+	log.Info("L1HeaderByNumber head2", "number", head2.Number)
+	log.Info("L2HeaderByNumber head", "number", l2Head2.Number)
+	log.Info("LatestVerifiedBlock number", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
 
 	s.RevertSnapshot()
 }
