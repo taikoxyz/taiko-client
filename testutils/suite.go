@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 )
 
@@ -73,7 +74,7 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 
 	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
-	s.proverServer = NewTestProverServer(s, l1ProverPrivKey, s.ProverEndpoints[0])
+	s.proverServer = NewTestProverServer(s, l1ProverPrivKey, capacity.New(1024), s.ProverEndpoints[0])
 
 	tokenBalance, err := rpcCli.TaikoL1.GetTaikoTokenBalance(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
 	s.Nil(err)

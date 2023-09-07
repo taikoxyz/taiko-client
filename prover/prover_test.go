@@ -59,7 +59,12 @@ func (s *ProverTestSuite) SetupTest() {
 		MinProofFee:                     common.Big1,
 		HTTPServerPort:                  uint64(port),
 	})))
-	p.srv = testutils.NewTestProverServer(&s.ClientTestSuite, l1ProverPrivKey, proverServerUrl)
+	p.srv = testutils.NewTestProverServer(
+		&s.ClientTestSuite,
+		l1ProverPrivKey,
+		p.capacityManager,
+		proverServerUrl,
+	)
 	s.p = p
 	s.cancel = cancel
 
@@ -104,8 +109,6 @@ func (s *ProverTestSuite) SetupTest() {
 	})))
 
 	s.proposer = prop
-
-	go s.p.watchCurrentCapacity()
 }
 
 func (s *ProverTestSuite) TestName() {

@@ -1,9 +1,7 @@
 package server
 
 import (
-	"context"
 	"net/http"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -23,50 +21,33 @@ type ProposeBlockResponse struct {
 // handle this block, and if so, returns a signed payload the proposer
 // can submit onchain.
 func (srv *ProverServer) ProposeBlock(c echo.Context) error {
-	r := &encoding.ProposeBlockData{}
-	if err := c.Bind(r); err != nil {
+	res := new(encoding.ProposeBlockData)
+	if err := c.Bind(res); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if r.Fee.Cmp(srv.minProofFee) < 0 {
+	if res.Fee.Cmp(srv.minProofFee) < 0 {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "proof fee too low")
 	}
 
-	srv.requestCurrentCapacityCh <- struct{}{}
-
-	ctx, cancel := context.WithTimeout(c.Request().Context(), 8*time.Second)
-	defer cancel()
-
-	for {
-		select {
-		case capacity := <-srv.receiveCurrentCapacityCh:
-			if capacity == 0 {
-				log.Warn("Prover does not have capacity")
-				return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
-			}
-
-			encoded, err := encoding.EncodeProposeBlockData(r)
-			if err != nil {
-				log.Error("Failed to encode proposeBlock data", "error", err)
-				return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
-			}
-
-			hashed := crypto.Keccak256Hash(encoded)
-
-			signed, err := crypto.Sign(hashed.Bytes(), srv.proverPrivateKey)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, err)
-			}
-
-			resp := &ProposeBlockResponse{
-				SignedPayload: signed,
-				Prover:        srv.proverAddress,
-			}
-
-			return c.JSON(http.StatusOK, resp)
-		case <-ctx.Done():
-			log.Info("timed out trying to get capacity")
-			return echo.NewHTTPError(http.StatusUnprocessableEntity, "timed out trying to get capacity")
-		}
+	if srv.capacityManager.ReadCapacity() == 0 {
+		log.Warn("Prover does not have capacity")
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
+
+	encoded, err := encoding.EncodeProposeBlockData(res)
+	if err != nil {
+		log.Error("Failed to encode proposeBlock data", "error", err)
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
+	}
+
+	signed, err := crypto.Sign(crypto.Keccak256Hash(encoded).Bytes(), srv.proverPrivateKey)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, &ProposeBlockResponse{
+		SignedPayload: signed,
+		Prover:        srv.proverAddress,
+	})
 }

@@ -27,11 +27,9 @@ func (s *ProverServerTestSuite) SetupTest() {
 	s.Nil(err)
 
 	srv := &ProverServer{
-		echo:                     echo.New(),
-		proverPrivateKey:         l1ProverPrivKey,
-		minProofFee:              common.Big1,
-		requestCurrentCapacityCh: make(chan struct{}, 1024),
-		receiveCurrentCapacityCh: make(chan uint64, 1024),
+		echo:             echo.New(),
+		proverPrivateKey: l1ProverPrivKey,
+		minProofFee:      common.Big1,
 	}
 
 	srv.configureMiddleware()
