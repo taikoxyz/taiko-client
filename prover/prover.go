@@ -604,7 +604,7 @@ func (p *Prover) onBlockProposed(
 		p.currentBlocksBeingProvenMutex.Unlock()
 
 		if !p.cfg.OracleProver {
-			if ok, _ := p.capacityManager.TakeOneCapacity(); !ok {
+			if _, ok := p.capacityManager.TakeOneCapacity(); !ok {
 				return errNoCapacity
 			}
 		}
@@ -1004,7 +1004,7 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 		}
 
 		if !p.cfg.OracleProver {
-			if ok, _ := p.capacityManager.TakeOneCapacity(); !ok {
+			if _, ok := p.capacityManager.TakeOneCapacity(); !ok {
 				return errNoCapacity
 			}
 		}

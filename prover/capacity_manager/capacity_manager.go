@@ -33,14 +33,14 @@ func (m *CapacityManager) ReleaseOneCapacity() uint64 {
 }
 
 // TakeOneCapacity takes one capacit·y.
-func (m *CapacityManager) TakeOneCapacity() (bool, uint64) {
+func (m *CapacityManager) TakeOneCapacity() (uint64, bool) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	if m.capacity == 0 {
-		return false, 0
+		return 0, false
 	}
 
 	m.capacity -= 1
-	return true, m.capacity
+	return m.capacity, true
 }
