@@ -46,10 +46,8 @@ func (srv *ProverServer) ProposeBlock(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	resp := &ProposeBlockResponse{
+	return c.JSON(http.StatusOK, &ProposeBlockResponse{
 		SignedPayload: signed,
 		Prover:        srv.proverAddress,
-	}
-
-	return c.JSON(http.StatusOK, resp)
+	})
 }
