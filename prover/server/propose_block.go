@@ -21,12 +21,12 @@ type ProposeBlockResponse struct {
 // handle this block, and if so, returns a signed payload the proposer
 // can submit onchain.
 func (srv *ProverServer) ProposeBlock(c echo.Context) error {
-	res := new(encoding.ProposeBlockData)
-	if err := c.Bind(res); err != nil {
+	req := new(encoding.ProposeBlockData)
+	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if res.Fee.Cmp(srv.minProofFee) < 0 {
+	if req.Fee.Cmp(srv.minProofFee) < 0 {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "proof fee too low")
 	}
 
@@ -35,7 +35,7 @@ func (srv *ProverServer) ProposeBlock(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
 
-	encoded, err := encoding.EncodeProposeBlockData(res)
+	encoded, err := encoding.EncodeProposeBlockData(req)
 	if err != nil {
 		log.Error("Failed to encode proposeBlock data", "error", err)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
