@@ -604,11 +604,9 @@ func (p *Prover) onBlockProposed(
 		p.currentBlocksBeingProvenMutex.Unlock()
 
 		if !p.cfg.OracleProver {
-			if p.capacityManager.ReadCapacity() == 0 {
+			if ok, _ := p.capacityManager.TakeOneCapacity(); !ok {
 				return errNoCapacity
 			}
-
-			p.capacityManager.TakeOneCapacity()
 		}
 
 		return p.validProofSubmitter.RequestProof(ctx, event)
@@ -892,7 +890,10 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 
 	if isExpired {
 		log.Debug(
-			"Block proof window is expired", "blockID", blockId, "l1Height", l1Height)
+			"Block proof window is expired",
+			"blockID", blockId,
+			"l1Height", l1Height,
+		)
 
 		// we should remove this block from being watched regardless of whether the block
 		// has a valid proof
@@ -918,13 +919,14 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 		if transition.Prover == rpc.ZeroAddress {
 			log.Info(
 				"Proof window for proof not assigned to us expired, requesting proof",
-				"blockID",
-				blockId,
-				"l1Height",
-				l1Height,
+				"blockID", blockId,
+				"l1Height", l1Height,
 			)
 			// we can generate the proof, no proof came in by proof window expiring
-			if err := p.requestProofForBlockId(new(big.Int).SetUint64(blockId), new(big.Int).SetUint64(l1Height)); err != nil {
+			if err := p.requestProofForBlockId(
+				new(big.Int).SetUint64(blockId),
+				new(big.Int).SetUint64(l1Height),
+			); err != nil {
 				return err
 			}
 		} else {
@@ -940,18 +942,17 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 			if block.Hash() != transition.BlockHash {
 				log.Info(
 					"Invalid proof detected while watching for proof window expiration, requesting proof",
-					"blockID",
-					blockId,
-					"l1Height",
-					l1Height,
-					"expectedBlockHash",
-					block.Hash(),
-					"transitionBlockHash",
-					common.Bytes2Hex(transition.BlockHash[:]),
+					"blockID", blockId,
+					"l1Height", l1Height,
+					"expectedBlockHash", block.Hash(),
+					"transitionBlockHash", common.Bytes2Hex(transition.BlockHash[:]),
 				)
 				// we can generate the proof, the proof is incorrect since blockHash does not match
 				// the correct one but parentHash/gasUsed are correct.
-				if err := p.requestProofForBlockId(new(big.Int).SetUint64(blockId), new(big.Int).SetUint64(l1Height)); err != nil {
+				if err := p.requestProofForBlockId(
+					new(big.Int).SetUint64(blockId),
+					new(big.Int).SetUint64(l1Height),
+				); err != nil {
 					return err
 				}
 			}
@@ -1003,7 +1004,9 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 		}
 
 		if !p.cfg.OracleProver {
-			p.capacityManager.TakeOneCapacity()
+			if ok, _ := p.capacityManager.TakeOneCapacity(); !ok {
+				return errNoCapacity
+			}
 		}
 
 		return nil

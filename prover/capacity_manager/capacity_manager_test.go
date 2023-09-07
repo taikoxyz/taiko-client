@@ -27,6 +27,8 @@ func (s *CapacityManagerTestSuite) TestReleaseOneCapacity() {
 }
 
 func (s *CapacityManagerTestSuite) TestTakeOneCapacity() {
-	s.Equal(testCapacity-1, s.m.TakeOneCapacity())
+	ok, capacity := s.m.TakeOneCapacity()
+	s.True(ok)
+	s.Equal(testCapacity-1, capacity)
 	s.Equal(testCapacity-1, s.m.ReadCapacity())
 }
