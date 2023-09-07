@@ -23,6 +23,7 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 )
 
@@ -188,9 +189,14 @@ func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey, re
 func NewTestProverServer(
 	s *ClientTestSuite,
 	proverPrivKey *ecdsa.PrivateKey,
+	capacityManager *capacity.CapacityManager,
 	url *url.URL,
 ) *server.ProverServer {
-	srv, err := server.New(&server.NewProverServerOpts{ProverPrivateKey: proverPrivKey, MinProofFee: common.Big1})
+	srv, err := server.New(&server.NewProverServerOpts{
+		ProverPrivateKey: proverPrivKey,
+		MinProofFee:      common.Big1,
+		CapacityManager:  capacityManager,
+	})
 	s.Nil(err)
 
 	go func() {

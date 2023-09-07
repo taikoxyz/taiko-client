@@ -1,7 +1,7 @@
 package capacity_manager
 
 import (
-	"github.com/taikoxyz/taiko-client/testutils"
+	"github.com/stretchr/testify/suite"
 )
 
 var (
@@ -9,7 +9,7 @@ var (
 )
 
 type CapacityManagerTestSuite struct {
-	testutils.ClientTestSuite
+	suite.Suite
 	m *CapacityManager
 }
 

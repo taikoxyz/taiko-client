@@ -132,6 +132,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		if p.srv, err = server.New(&server.NewProverServerOpts{
 			ProverPrivateKey: p.cfg.L1ProverPrivKey,
 			MinProofFee:      p.cfg.MinProofFee,
+			CapacityManager:  p.capacityManager,
 		}); err != nil {
 			return err
 		}
