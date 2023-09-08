@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -19,27 +20,27 @@ type ProverServer struct {
 	echo             *echo.Echo
 	proverPrivateKey *ecdsa.PrivateKey
 	proverAddress    common.Address
-
-	// capacity-related configs
-	capacityManager *capacity.CapacityManager
-	minProofFee     *big.Int
+	minProofFee      *big.Int
+	maxExpiry        time.Duration
+	capacityManager  *capacity.CapacityManager
 }
 
 // NewProverServerOpts contains all configurations for creating a prover server instance.
 type NewProverServerOpts struct {
 	ProverPrivateKey *ecdsa.PrivateKey
 	MinProofFee      *big.Int
+	MaxExpiry        time.Duration
 	CapacityManager  *capacity.CapacityManager
 }
 
 // New creates a new prover server instance.
 func New(opts *NewProverServerOpts) (*ProverServer, error) {
-	address := crypto.PubkeyToAddress(opts.ProverPrivateKey.PublicKey)
 	srv := &ProverServer{
 		proverPrivateKey: opts.ProverPrivateKey,
-		proverAddress:    address,
+		proverAddress:    crypto.PubkeyToAddress(opts.ProverPrivateKey.PublicKey),
 		echo:             echo.New(),
 		minProofFee:      opts.MinProofFee,
+		maxExpiry:        opts.MaxExpiry,
 		capacityManager:  opts.CapacityManager,
 	}
 
@@ -100,5 +101,6 @@ func (srv *ProverServer) configureMiddleware() {
 func (srv *ProverServer) configureRoutes() {
 	srv.echo.GET("/", srv.Health)
 	srv.echo.GET("/healthz", srv.Health)
+	srv.echo.GET("/status", srv.GetStatus)
 	srv.echo.POST("/proposeBlock", srv.ProposeBlock)
 }

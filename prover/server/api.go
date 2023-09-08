@@ -1,14 +1,32 @@
 package server
 
 import (
+	"math/big"
 	"net/http"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/gommon/log"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
+
+// Status represents the current prover server status.
+type Status struct {
+	MinProofFee     *big.Int      `json:"minProofFee"`
+	MaxExpiry       time.Duration `json:"maxExpiry"`
+	CurrentCapacity uint64        `json:"currentCapacity"`
+}
+
+// GetStatus handles a query to the current prover server status.
+func (srv *ProverServer) GetStatus(c echo.Context) error {
+	return c.JSON(http.StatusOK, &Status{
+		MinProofFee:     srv.minProofFee,
+		MaxExpiry:       srv.maxExpiry,
+		CurrentCapacity: srv.capacityManager.ReadCapacity(),
+	})
+}
 
 // ProposeBlockResponse represents the JSON response which will be returned by
 // the ProposeBlock request handler.
@@ -26,8 +44,14 @@ func (srv *ProverServer) ProposeBlock(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
+	log.Info("Propose block data", "fee", req.Fee, "expiry", req.Expiry)
+
 	if req.Fee.Cmp(srv.minProofFee) < 0 {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "proof fee too low")
+	}
+
+	if req.Expiry > uint64(time.Now().Add(srv.maxExpiry).Unix()) {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, "expiry too long")
 	}
 
 	if srv.capacityManager.ReadCapacity() == 0 {

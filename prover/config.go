@@ -44,6 +44,7 @@ type Config struct {
 	HTTPServerPort                  uint64
 	Capacity                        uint64
 	MinProofFee                     *big.Int
+	MaxExpiry                       time.Duration
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -158,5 +159,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		Capacity:              c.Uint64(flags.ProverCapacity.Name),
 		HTTPServerPort:        c.Uint64(flags.ProverHTTPServerPort.Name),
 		MinProofFee:           minProofFee,
+		MaxExpiry:             time.Duration(c.Uint64(flags.MaxExpiry.Name)) * time.Second,
 	}, nil
 }
