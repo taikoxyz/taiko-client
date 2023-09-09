@@ -174,7 +174,7 @@ func assignProver(
 		reqBody = &encoding.ProposeBlockData{Expiry: expiry, Input: *meta, Fee: fee}
 		result  = server.ProposeBlockResponse{}
 	)
-	requestUrl, err := url.JoinPath(endpoint.String(), "/proposeBlock")
+	requestUrl, err := url.JoinPath(endpoint.String(), "/assignment")
 	if err != nil {
 		return nil, common.Address{}, err
 	}

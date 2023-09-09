@@ -30,7 +30,7 @@ func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
 
 	s.srv.ServeHTTP(rec, testutils.NewUnauthenticatedRequest(
 		echo.POST,
-		"/proposeBlock",
+		"/assignment",
 		&encoding.ProposeBlockData{
 			Fee:    common.Big256,
 			Expiry: uint64(time.Now().Add(time.Minute).Unix()),

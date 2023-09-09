@@ -15,6 +15,18 @@ import (
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 )
 
+// @title Taiko Prover API
+// @version 1.0
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url https://community.taiko.xyz/
+// @contact.email info@taiko.xyz
+
+// @license.name MIT
+// @license.url hhttps://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md
+
+// @host prover-api.test.taiko.xyz
 // ProverServer represents a prover server instance.
 type ProverServer struct {
 	echo             *echo.Echo
@@ -102,5 +114,5 @@ func (srv *ProverServer) configureRoutes() {
 	srv.echo.GET("/", srv.Health)
 	srv.echo.GET("/healthz", srv.Health)
 	srv.echo.GET("/status", srv.GetStatus)
-	srv.echo.POST("/proposeBlock", srv.ProposeBlock)
+	srv.echo.POST("/assignment", srv.CreateAssignment)
 }

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"math/big"
 	"net/http"
 	"time"
 
@@ -14,16 +13,23 @@ import (
 
 // Status represents the current prover server status.
 type Status struct {
-	MinProofFee     *big.Int      `json:"minProofFee"`
-	MaxExpiry       time.Duration `json:"maxExpiry"`
-	CurrentCapacity uint64        `json:"currentCapacity"`
+	MinProofFee     uint64 `json:"minProofFee"`
+	MaxExpiry       uint64 `json:"maxExpiry"`
+	CurrentCapacity uint64 `json:"currentCapacity"`
 }
 
 // GetStatus handles a query to the current prover server status.
+//
+//	@Summary		Get current prover server status
+//	@ID			   	get-status
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object} Status
+//	@Router			/status [get]
 func (srv *ProverServer) GetStatus(c echo.Context) error {
 	return c.JSON(http.StatusOK, &Status{
-		MinProofFee:     srv.minProofFee,
-		MaxExpiry:       srv.maxExpiry,
+		MinProofFee:     srv.minProofFee.Uint64(),
+		MaxExpiry:       uint64(srv.maxExpiry.Seconds()),
 		CurrentCapacity: srv.capacityManager.ReadCapacity(),
 	})
 }
@@ -35,10 +41,20 @@ type ProposeBlockResponse struct {
 	Prover        common.Address `json:"prover"`
 }
 
-// ProposeBlock handles a propose block request, decides if this prover wants to
+// CreateAssignment handles a block proof assignment request, decides if this prover wants to
 // handle this block, and if so, returns a signed payload the proposer
 // can submit onchain.
-func (srv *ProverServer) ProposeBlock(c echo.Context) error {
+//
+//	@Summary		Try to accept a block proof assignment
+//	@ID			   	create-assignment
+//	@Accept			json
+//	@Produce		json
+//	@Success		200		{object} ProposeBlockResponse
+//	@Failure		422		{string} string	"proof fee too low"
+//	@Failure		422		{string} string "expiry too long"
+//	@Failure		422		{string} string "prover does not have capacity"
+//	@Router			/assignment [post]
+func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	req := new(encoding.ProposeBlockData)
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
