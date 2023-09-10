@@ -20,8 +20,8 @@ func (s *ProverServerTestSuite) TestGetStatusSuccess() {
 	status := new(Status)
 	s.Nil(json.Unmarshal(rec.Body.Bytes(), &status))
 
-	s.Equal(s.srv.minProofFee, status.MinProofFee)
-	s.Equal(s.srv.maxExpiry, status.MaxExpiry)
+	s.Equal(s.srv.minProofFee.Uint64(), status.MinProofFee)
+	s.Equal(uint64(s.srv.maxExpiry.Seconds()), status.MaxExpiry)
 	s.Greater(status.CurrentCapacity, uint64(0))
 }
 
