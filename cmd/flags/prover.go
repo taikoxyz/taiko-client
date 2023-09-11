@@ -1,6 +1,8 @@
 package flags
 
 import (
+	"time"
+
 	"github.com/urfave/cli/v2"
 )
 
@@ -115,6 +117,12 @@ var (
 		Usage:    "Capacity of prover, required if oracleProver is false",
 		Category: proverCategory,
 	}
+	MaxExpiry = &cli.Uint64Flag{
+		Name:     "prover.maxExpiry",
+		Usage:    "maximum accepted expiry in seconds for accepting proving a block",
+		Value:    uint64(time.Hour.Seconds()),
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -125,6 +133,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ZkEvmRpcdEndpoint,
 	ZkEvmRpcdParamsPath,
 	L1ProverPrivKey,
+	MinProofFee,
 	StartingBlockID,
 	MaxConcurrentProvingJobs,
 	Dummy,
@@ -139,5 +148,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProveBlockTxGasLimit,
 	ProverHTTPServerPort,
 	ProverCapacity,
-	MinProofFee,
+	MaxExpiry,
 })

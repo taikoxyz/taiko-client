@@ -7,14 +7,18 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"testing"
+	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-resty/resty/v2"
 	echo "github.com/labstack/echo/v4"
 	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/suite"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 )
 
 type ProverServerTestSuite struct {
@@ -30,8 +34,11 @@ func (s *ProverServerTestSuite) SetupTest() {
 		echo:             echo.New(),
 		proverPrivateKey: l1ProverPrivKey,
 		minProofFee:      common.Big1,
+		maxExpiry:        24 * time.Hour,
+		capacityManager:  capacity.New(1024),
 	}
 
+	srv.echo.HideBanner = true
 	srv.configureMiddleware()
 	srv.configureRoutes()
 
@@ -53,7 +60,11 @@ func (s *ProverServerTestSuite) TestStartShutdown() {
 	url, err := url.Parse(fmt.Sprintf("http://localhost:%v", port))
 	s.Nil(err)
 
-	go func() { s.Nil(s.srv.Start(fmt.Sprintf(":%v", port))) }()
+	go func() {
+		if err := s.srv.Start(fmt.Sprintf(":%v", port)); err != nil {
+			log.Error("Failed to start prover server", "error", err)
+		}
+	}()
 
 	// Wait till the server fully started.
 	s.Nil(backoff.Retry(func() error {
@@ -69,6 +80,14 @@ func (s *ProverServerTestSuite) TestStartShutdown() {
 	}, backoff.NewExponentialBackOff()))
 
 	s.Nil(s.srv.Shutdown(context.Background()))
+}
+
+func (s *ProverServerTestSuite) TearDownTest() {
+	s.Nil(s.srv.Shutdown(context.Background()))
+}
+
+func TestProverServerTestSuite(t *testing.T) {
+	suite.Run(t, new(ProverServerTestSuite))
 }
 
 func (s *ProverServerTestSuite) sendReq(path string) *httptest.ResponseRecorder {
