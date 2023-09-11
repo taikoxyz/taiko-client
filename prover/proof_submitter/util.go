@@ -113,7 +113,9 @@ func sendTxWithBackoff(
 		stateVars, err := cli.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 		if err != nil {
 			log.Warn("failed to fetch state vars",
-				"blockID", blockID)
+				"blockID", blockID,
+				"error", err,
+			)
 			return err
 		}
 
