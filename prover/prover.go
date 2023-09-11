@@ -128,14 +128,13 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// Prover server
-	if !p.cfg.OracleProver {
-		if p.srv, err = server.New(&server.NewProverServerOpts{
-			ProverPrivateKey: p.cfg.L1ProverPrivKey,
-			MinProofFee:      p.cfg.MinProofFee,
-			CapacityManager:  p.capacityManager,
-		}); err != nil {
-			return err
-		}
+	if p.srv, err = server.New(&server.NewProverServerOpts{
+		ProverPrivateKey: p.cfg.L1ProverPrivKey,
+		MinProofFee:      p.cfg.MinProofFee,
+		MaxExpiry:        p.cfg.MaxExpiry,
+		CapacityManager:  p.capacityManager,
+	}); err != nil {
+		return err
 	}
 
 	// Configs
@@ -222,13 +221,11 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 func (p *Prover) Start() error {
 	p.wg.Add(1)
 	p.initSubscription()
-	if !p.cfg.OracleProver {
-		go func() {
-			if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
-				log.Crit("Failed to start http server", "error", err)
-			}
-		}()
-	}
+	go func() {
+		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
+			log.Crit("Failed to start http server", "error", err)
+		}
+	}()
 	go p.eventLoop()
 
 	return nil

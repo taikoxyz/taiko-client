@@ -195,6 +195,7 @@ func NewTestProverServer(
 	srv, err := server.New(&server.NewProverServerOpts{
 		ProverPrivateKey: proverPrivKey,
 		MinProofFee:      common.Big1,
+		MaxExpiry:        24 * time.Hour,
 		CapacityManager:  capacityManager,
 	})
 	s.Nil(err)
