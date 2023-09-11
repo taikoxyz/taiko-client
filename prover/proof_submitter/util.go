@@ -110,7 +110,7 @@ func sendTxWithBackoff(
 		}
 
 		// check if latest verified head is ahead of this block proof
-		stateVars, err := cli.GetProtocolStateVariables()
+		stateVars, err := cli.GetProtocolStateVariables(nil)
 		if err != nil {
 			log.Warn("failed to fetch state vars",
 				"blockID", blockID)
