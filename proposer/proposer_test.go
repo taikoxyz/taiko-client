@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -22,7 +21,6 @@ type ProposerTestSuite struct {
 	testutils.ClientTestSuite
 	p      *Proposer
 	cancel context.CancelFunc
-	srv    *server.ProverServer
 }
 
 func (s *ProposerTestSuite) SetupTest() {
@@ -53,18 +51,6 @@ func (s *ProposerTestSuite) SetupTest() {
 		BlockProposalFeeIncreasePercentage:  common.Big2,
 		BlockProposalFeeIterations:          3,
 	})))
-
-	// Init prover
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
-
-	serverOpts := &server.NewProverServerOpts{
-		ProverPrivateKey: l1ProverPrivKey,
-		MinProofFee:      common.Big1,
-	}
-
-	s.srv, err = server.New(serverOpts)
-	s.Nil(err)
 
 	s.p = p
 	s.cancel = cancel

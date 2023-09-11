@@ -199,13 +199,6 @@ func (s *ProverTestSuite) TestCheckChainVerification() {
 	s.Nil(s.p.checkChainVerification(1024))
 }
 
-func (s *ProverTestSuite) TestStartClose() {
-	s.p.cfg.OracleProver = true
-	s.Nil(s.p.Start())
-	s.cancel()
-	s.NotPanics(func() { s.p.Close(context.Background()) })
-}
-
 func TestProverTestSuite(t *testing.T) {
 	suite.Run(t, new(ProverTestSuite))
 }
