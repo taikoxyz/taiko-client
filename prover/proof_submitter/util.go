@@ -109,6 +109,26 @@ func sendTxWithBackoff(
 			return nil
 		}
 
+		// check if latest verified head is ahead of this block proof
+		stateVars, err := cli.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
+		if err != nil {
+			log.Warn("failed to fetch state vars",
+				"blockID", blockID,
+				"error", err,
+			)
+			return err
+		}
+
+		latestVerifiedId := stateVars.LastVerifiedBlockId
+
+		if new(big.Int).SetUint64(latestVerifiedId).Cmp(blockID) >= 0 {
+			log.Warn("Block is already verified, skip current proof submission",
+				"blockID", blockID.Uint64(),
+				"latestVerifiedId", latestVerifiedId,
+			)
+			return nil
+		}
+
 		tx, err := sendTxFunc()
 		if err != nil {
 			err = encoding.TryParsingCustomError(err)
