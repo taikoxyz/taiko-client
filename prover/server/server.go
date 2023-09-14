@@ -73,11 +73,6 @@ func (srv *ProverServer) Shutdown(ctx context.Context) error {
 	return srv.echo.Shutdown(ctx)
 }
 
-// ServeHTTP implements the `http.Handler` interface which serves HTTP requests.
-func (srv *ProverServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	srv.echo.ServeHTTP(w, r)
-}
-
 // Health endpoints for probes.
 func (srv *ProverServer) Health(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
