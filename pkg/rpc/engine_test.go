@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestL2EngineBorbidden(t *testing.T) {
+func TestL2EngineForbidden(t *testing.T) {
 	c := newTestClient(t)
 
 	_, err := c.L2Engine.ForkchoiceUpdate(
