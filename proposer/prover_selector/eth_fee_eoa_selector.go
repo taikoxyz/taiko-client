@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"math/rand"
 	"net/url"
 	"time"
 
@@ -98,7 +99,7 @@ func (s *ETHFeeEOASelector) AssignProver(
 			increase.Div(increase, big.NewInt(100))
 			fee.Add(fee, increase)
 		}
-		for _, endpoint := range s.proverEndpoints {
+		for _, endpoint := range s.shuffleProverEndpoints() {
 			encodedAssignment, proverAddress, err := assignProver(ctx, meta, endpoint, fee, expiry, s.requestTimeout)
 			if err != nil {
 				log.Warn("Failed to assign prover", "endpoint", endpoint, "error", err)
@@ -150,6 +151,14 @@ func (s *ETHFeeEOASelector) checkProverBalance(ctx context.Context, prover commo
 	}
 
 	return true, nil
+}
+
+// shuffleProverEndpoints shuffles the current selector's prover endpoints.
+func (s *ETHFeeEOASelector) shuffleProverEndpoints() []*url.URL {
+	rand.Shuffle(len(s.proverEndpoints), func(i, j int) {
+		s.proverEndpoints[i], s.proverEndpoints[j] = s.proverEndpoints[j], s.proverEndpoints[i]
+	})
+	return s.proverEndpoints
 }
 
 // assignProver tries to assign a proof generation task to the given prover by HTTP API.
