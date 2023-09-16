@@ -8,13 +8,13 @@ import (
 var (
 	L2AuthEndpoint = &cli.StringFlag{
 		Name:     "l2.auth",
-		Usage:    "Authenticated HTTP RPC endpoint of a L2 taiko-geth execution engine",
+		Usage:    "Authenticated HTTP RPC endpoint `url` of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: driverCategory,
 	}
 	JWTSecret = &cli.StringFlag{
 		Name:     "jwtSecret",
-		Usage:    "Path to a JWT secret to use for authenticated RPC endpoints",
+		Usage:    "JWT secret `file` to use for authenticated RPC endpoints",
 		Required: true,
 		Category: driverCategory,
 	}
@@ -38,7 +38,7 @@ var (
 	}
 	CheckPointSyncUrl = &cli.StringFlag{
 		Name:     "p2p.checkPointSyncUrl",
-		Usage:    "HTTP RPC endpoint of another synced L2 execution engine node",
+		Usage:    "HTTP RPC endpoint `url` of another synced L2 execution engine node",
 		Category: driverCategory,
 	}
 )

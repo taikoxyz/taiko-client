@@ -8,18 +8,19 @@ import (
 var (
 	L1ProposerPrivKey = &cli.StringFlag{
 		Name:     "l1.proposerPrivKey",
-		Usage:    "Private key of the L1 proposer, who will send TaikoL1.proposeBlock transactions",
+		Usage:    "Private `key` of the L1 proposer, who will send TaikoL1.proposeBlock transactions",
 		Required: true,
 		Category: proposerCategory,
 	}
 	L2SuggestedFeeRecipient = &cli.StringFlag{
 		Name:     "l2.suggestedFeeRecipient",
-		Usage:    "Address of the proposed block's suggested fee recipient",
+		Usage:    "`Address` of the proposed block's suggested fee recipient",
 		Required: true,
 		Category: proposerCategory,
 	}
 	ProverEndpoints = &cli.StringFlag{
 		Name:     "proverEndpoints",
+		Usage:    "Comma-delineated list(`url1,url2`) of prover endpoints proposer should query when attempting to propose a block",
 		Required: true,
 		Category: proposerCategory,
 	}
@@ -31,7 +32,7 @@ var (
 	}
 	TaikoTokenAddress = &cli.StringFlag{
 		Name:     "taikoToken",
-		Usage:    "TaikoToken contract address",
+		Usage:    "TaikoToken contract `address`",
 		Required: true,
 		Category: proposerCategory,
 	}
@@ -41,12 +42,12 @@ var (
 var (
 	ProposeInterval = &cli.StringFlag{
 		Name:     "proposeInterval",
-		Usage:    "Time interval to propose L2 pending transactions",
+		Usage:    "Time `interval` to propose L2 pending transactions",
 		Category: proposerCategory,
 	}
 	TxPoolLocals = &cli.StringFlag{
 		Name:     "txpool.locals",
-		Usage:    "Comma separated accounts to treat as locals (priority inclusion)",
+		Usage:    "Comma separated `accounts` to treat as locals (priority inclusion)",
 		Category: proposerCategory,
 	}
 	TxPoolLocalsOnly = &cli.BoolFlag{

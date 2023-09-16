@@ -17,37 +17,37 @@ var (
 var (
 	L1WSEndpoint = &cli.StringFlag{
 		Name:     "l1.ws",
-		Usage:    "Websocket RPC endpoint of a L1 ethereum node",
+		Usage:    "Websocket RPC endpoint `url` of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
 	}
 	L2WSEndpoint = &cli.StringFlag{
 		Name:     "l2.ws",
-		Usage:    "Websocket RPC endpoint of a L2 taiko-geth execution engine",
+		Usage:    "Websocket RPC endpoint `url` of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
 	}
 	L1HTTPEndpoint = &cli.StringFlag{
 		Name:     "l1.http",
-		Usage:    "HTTP RPC endpoint of a L1 ethereum node",
+		Usage:    "HTTP RPC endpoint `url` of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
 	}
 	L2HTTPEndpoint = &cli.StringFlag{
 		Name:     "l2.http",
-		Usage:    "HTTP RPC endpoint of a L2 taiko-geth execution engine",
+		Usage:    "HTTP RPC endpoint `url` of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
 	}
 	TaikoL1Address = &cli.StringFlag{
 		Name:     "taikoL1",
-		Usage:    "TaikoL1 contract address",
+		Usage:    "TaikoL1 contract `address`",
 		Required: true,
 		Category: commonCategory,
 	}
 	TaikoL2Address = &cli.StringFlag{
 		Name:     "taikoL2",
-		Usage:    "TaikoL2 contract address",
+		Usage:    "TaikoL2 contract `address`",
 		Required: true,
 		Category: commonCategory,
 	}
@@ -55,7 +55,7 @@ var (
 	// Logging
 	Verbosity = &cli.IntFlag{
 		Name:     "verbosity",
-		Usage:    "Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail",
+		Usage:    "Logging verbosity `level`: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail",
 		Value:    3,
 		Category: loggingCategory,
 	}
@@ -73,13 +73,13 @@ var (
 	}
 	MetricsAddr = &cli.StringFlag{
 		Name:     "metrics.addr",
-		Usage:    "Metrics reporting server listening address",
+		Usage:    "Metrics reporting server listening `address`",
 		Category: metricsCategory,
 		Value:    "0.0.0.0",
 	}
 	MetricsPort = &cli.IntFlag{
 		Name:     "metrics.port",
-		Usage:    "Metrics reporting server listening port",
+		Usage:    "Metrics reporting server listening `port`",
 		Category: metricsCategory,
 		Value:    6060,
 	}

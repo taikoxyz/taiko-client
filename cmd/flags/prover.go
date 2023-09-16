@@ -10,19 +10,19 @@ import (
 var (
 	ZkEvmRpcdEndpoint = &cli.StringFlag{
 		Name:     "zkevmRpcdEndpoint",
-		Usage:    "RPC endpoint of a ZKEVM RPCD service",
+		Usage:    "RPC endpoint `url` of a ZKEVM RPCD service",
 		Required: true,
 		Category: proverCategory,
 	}
 	ZkEvmRpcdParamsPath = &cli.StringFlag{
 		Name:     "zkevmRpcdParamsPath",
-		Usage:    "Path of ZKEVM parameters file to use",
+		Usage:    "Path of ZKEVM parameters `file` to use",
 		Required: true,
 		Category: proverCategory,
 	}
 	L1ProverPrivKey = &cli.StringFlag{
 		Name: "l1.proverPrivKey",
-		Usage: "Private key of L1 prover, " +
+		Usage: "Private `key` of L1 prover, " +
 			"who will send TaikoL1.proveBlock / TaikoL1.proveBlockInvalid transactions",
 		Required: true,
 		Category: proverCategory,
@@ -39,12 +39,12 @@ var (
 var (
 	StartingBlockID = &cli.Uint64Flag{
 		Name:     "startingBlockID",
-		Usage:    "If set, prover will start proving blocks from the block with this ID",
+		Usage:    "If set, prover will start proving blocks from the block with this `ID`",
 		Category: proverCategory,
 	}
 	MaxConcurrentProvingJobs = &cli.UintFlag{
 		Name:     "maxConcurrentProvingJobs",
-		Usage:    "Limits the number of concurrent proving blocks jobs",
+		Usage:    "Limits the `number` of concurrent proving blocks jobs",
 		Value:    1,
 		Category: proverCategory,
 	}
@@ -57,7 +57,7 @@ var (
 	}
 	RandomDummyProofDelay = &cli.StringFlag{
 		Name: "randomDummyProofDelay",
-		Usage: "Set the random dummy proof delay between the bounds using the format: " +
+		Usage: "Set the random dummy proof `delay` between the bounds using the format: " +
 			"`lowerBound-upperBound` (e.g. `30m-1h`), testing purposes only",
 		Category: proverCategory,
 	}
@@ -68,12 +68,12 @@ var (
 	}
 	OracleProverPrivateKey = &cli.StringFlag{
 		Name:     "oracleProverPrivateKey",
-		Usage:    "Private key of oracle prover",
+		Usage:    "Private `key` of oracle prover",
 		Category: proverCategory,
 	}
 	OracleProofSubmissionDelay = &cli.Uint64Flag{
 		Name:     "oracleProofSubmissionDelay",
-		Usage:    "Oracle proof submission delay in seconds",
+		Usage:    "Oracle proof submission `delay` in seconds",
 		Value:    0,
 		Category: proverCategory,
 	}
@@ -85,7 +85,7 @@ var (
 	}
 	Graffiti = &cli.StringFlag{
 		Name:     "graffiti",
-		Usage:    "When string is passed, adds additional graffiti info to proof evidence",
+		Usage:    "When `string` is passed, adds additional graffiti info to proof evidence",
 		Category: proverCategory,
 		Value:    "",
 	}
@@ -108,7 +108,7 @@ var (
 	}
 	ProverHTTPServerPort = &cli.Uint64Flag{
 		Name:     "prover.httpServerPort",
-		Usage:    "Port to expose for http server",
+		Usage:    "`Port` to expose for http server",
 		Category: proverCategory,
 		Value:    9876,
 	}
