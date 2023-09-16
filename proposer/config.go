@@ -110,7 +110,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	var proverEndpoints []*url.URL
-	for _, e := range strings.Split(c.String(flags.ProverEndpoints.Name), ",") {
+	for _, e := range c.StringSlice(flags.ProverEndpoints.Name) {
 		endpoint, err := url.Parse(e)
 		if err != nil {
 			return nil, err

@@ -18,7 +18,7 @@ var (
 		Required: true,
 		Category: proposerCategory,
 	}
-	ProverEndpoints = &cli.StringFlag{
+	ProverEndpoints = &cli.StringSliceFlag{
 		Name:     "proverEndpoints",
 		Usage:    "Comma-delineated list(`url1,url2`) of prover endpoints proposer should query when attempting to propose a block",
 		Required: true,
