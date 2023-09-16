@@ -20,12 +20,13 @@ var (
 	}
 	ProverEndpoints = &cli.StringFlag{
 		Name:     "proverEndpoints",
-		Usage:    "Comma-delineated list of prover endpoints proposer should query when attempting to propose a block",
+		Required: true,
 		Category: proposerCategory,
 	}
 	BlockProposalFee = &cli.StringFlag{
 		Name:     "blockProposalFee",
 		Usage:    "Initial block proposal fee (in wei) paid on block proposing",
+		Required: true,
 		Category: proposerCategory,
 	}
 	TaikoTokenAddress = &cli.StringFlag{
