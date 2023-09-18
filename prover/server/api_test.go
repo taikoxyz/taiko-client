@@ -20,8 +20,8 @@ func (s *ProverServerTestSuite) TestGetStatusSuccess() {
 
 	defer resp.Body.Close()
 	b, err := io.ReadAll(resp.Body)
-	s.NoError(err)
-	s.NoError(json.Unmarshal(b, &status))
+	s.Nil(err)
+	s.Nil(json.Unmarshal(b, &status))
 
 	s.Equal(s.ps.minProofFee.Uint64(), status.MinProofFee)
 	s.Equal(uint64(s.ps.maxExpiry.Seconds()), status.MaxExpiry)
@@ -40,13 +40,13 @@ func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
 			CacheTxListInfo: false,
 		},
 	})
-	s.NoError(err)
+	s.Nil(err)
 	resp, err := http.Post(s.ws.URL+"/assignment", "application/json", strings.NewReader(string(data)))
-	s.NoError(err)
+	s.Nil(err)
 	s.Equal(http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	b, err := io.ReadAll(resp.Body)
-	s.NoError(err)
+	s.Nil(err)
 	s.Contains(string(b), "signedPayload")
 }
 

@@ -22,7 +22,7 @@ type ProverServerTestSuite struct {
 
 func (s *ProverServerTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.NoError(err)
+	s.Nil(err)
 
 	p := &ProverServer{
 		echo:             echo.New(),
@@ -57,6 +57,6 @@ func TestProverServerTestSuite(t *testing.T) {
 
 func (s *ProverServerTestSuite) sendReq(path string) *http.Response {
 	resp, err := http.Get(s.ws.URL + path)
-	s.NoError(err)
+	s.Nil(err)
 	return resp
 }
