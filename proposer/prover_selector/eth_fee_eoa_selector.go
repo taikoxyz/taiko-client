@@ -261,5 +261,13 @@ func assignProver(
 		return nil, common.Address{}, err
 	}
 
+	log.Info(
+		"Prover assigned",
+		"address", result.Prover,
+		"endpoint", endpoint,
+		"fee", fee.String(),
+		"expiry", expiry,
+	)
+
 	return encoded, result.Prover, nil
 }
