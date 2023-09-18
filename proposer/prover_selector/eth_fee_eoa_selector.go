@@ -122,13 +122,15 @@ func (s *ETHFeeEOASelector) AssignProver(
 				continue
 			}
 
-			ok, err := s.checkProverBalance(ctx, proverAddress)
-			if err != nil {
-				log.Warn("Failed to check prover balance", "endpoint", endpoint, "error", err)
-				continue
-			}
-			if !ok {
-				continue
+			if proverAddress != encoding.OracleProverAddress {
+				ok, err := s.checkProverBalance(ctx, proverAddress)
+				if err != nil {
+					log.Warn("Failed to check prover balance", "endpoint", endpoint, "error", err)
+					continue
+				}
+				if !ok {
+					continue
+				}
 			}
 
 			return encodedAssignment, fee, nil
