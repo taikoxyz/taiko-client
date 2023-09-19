@@ -248,7 +248,7 @@ func assignProver(
 	result.SignedPayload[64] = uint8(uint(result.SignedPayload[64])) + 27
 
 	// If this assignment is to oracle prover, change prover address in assignment to `LibUtils.ORACLE_PROVER`
-	if orcaleProverAddress != (common.Address{}) && result.Prover == orcaleProverAddress {
+	if oracleProverAddress != (common.Address{}) && result.Prover == oracleProverAddress {
 		result.Prover = encoding.OracleProverAddress
 	}
 
