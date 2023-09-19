@@ -65,7 +65,6 @@ jobs:
         name: Install pnpm
         id: pnpm-install
         with:
-          version: 8.4.0
           run_install: false
 
       - name: Get pnpm store directory
@@ -84,7 +83,7 @@ jobs:
 
       - name: Install protocol dependencies
         working-directory: ${{ env.TAIKO_MONO_DIR }}
-        run: cd ./packages/protocol && pnpm install --no-frozen-lockfile && ./script/download_solc.sh && forge install
+        run: cd ./packages/protocol && pnpm install && ./script/download_solc.sh && forge install
 
       - name: Build
         working-directory: ${{ env.CLIENT_DIR }}
