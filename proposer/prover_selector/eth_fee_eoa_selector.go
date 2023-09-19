@@ -83,6 +83,14 @@ func (s *ETHFeeEOASelector) AssignProver(
 	ctx context.Context,
 	meta *encoding.TaikoL1BlockMetadataInput,
 ) ([]byte, *big.Int, error) {
+	oracleProverAddress, err := s.rpc.TaikoL1.Resolve0(
+		&bind.CallOpts{Context: ctx},
+		rpc.StringToBytes32("oracle_prover"),
+		true,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
 	// Iterate over each configured endpoint, and see if someone wants to accept this block.
 	// If it is denied, we continue on to the next endpoint.
 	// If we do not find a prover, we can increase the fee up to a point, or give up.
@@ -100,19 +108,29 @@ func (s *ETHFeeEOASelector) AssignProver(
 			fee.Add(fee, increase)
 		}
 		for _, endpoint := range s.shuffleProverEndpoints() {
-			encodedAssignment, proverAddress, err := assignProver(ctx, meta, endpoint, fee, expiry, s.requestTimeout)
+			encodedAssignment, proverAddress, err := assignProver(
+				ctx,
+				meta,
+				endpoint,
+				fee,
+				expiry,
+				s.requestTimeout,
+				oracleProverAddress,
+			)
 			if err != nil {
 				log.Warn("Failed to assign prover", "endpoint", endpoint, "error", err)
 				continue
 			}
 
-			ok, err := s.checkProverBalance(ctx, proverAddress)
-			if err != nil {
-				log.Warn("Failed to check prover balance", "endpoint", endpoint, "error", err)
-				continue
-			}
-			if !ok {
-				continue
+			if proverAddress != encoding.OracleProverAddress {
+				ok, err := s.checkProverBalance(ctx, proverAddress)
+				if err != nil {
+					log.Warn("Failed to check prover balance", "endpoint", endpoint, "error", err)
+					continue
+				}
+				if !ok {
+					continue
+				}
 			}
 
 			return encodedAssignment, fee, nil
@@ -169,6 +187,7 @@ func assignProver(
 	fee *big.Int,
 	expiry uint64,
 	timeout time.Duration,
+	oracleProverAddress common.Address,
 ) ([]byte, common.Address, error) {
 	log.Info(
 		"Attempting to assign prover",
@@ -228,6 +247,11 @@ func assignProver(
 	// Convert signature to one solidity can recover by adding 27 to 65th byte
 	result.SignedPayload[64] = uint8(uint(result.SignedPayload[64])) + 27
 
+	// If this assignment is to oracle prover, change prover address in assignment to `LibUtils.ORACLE_PROVER`
+	if oracleProverAddress != (common.Address{}) && result.Prover == oracleProverAddress {
+		result.Prover = encoding.OracleProverAddress
+	}
+
 	encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
 		Prover: result.Prover,
 		Expiry: reqBody.Expiry,
@@ -236,6 +260,14 @@ func assignProver(
 	if err != nil {
 		return nil, common.Address{}, err
 	}
+
+	log.Info(
+		"Prover assigned",
+		"address", result.Prover,
+		"endpoint", endpoint,
+		"fee", fee.String(),
+		"expiry", expiry,
+	)
 
 	return encoded, result.Prover, nil
 }

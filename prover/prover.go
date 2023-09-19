@@ -127,16 +127,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		return err
 	}
 
-	// Prover server
-	if p.srv, err = server.New(&server.NewProverServerOpts{
-		ProverPrivateKey: p.cfg.L1ProverPrivKey,
-		MinProofFee:      p.cfg.MinProofFee,
-		MaxExpiry:        p.cfg.MaxExpiry,
-		CapacityManager:  p.capacityManager,
-	}); err != nil {
-		return err
-	}
-
 	// Configs
 	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
@@ -211,6 +201,20 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.WaitReceiptTimeout,
 		p.cfg.ProveBlockGasLimit,
 	); err != nil {
+		return err
+	}
+
+	// Prover server
+	proverServerOpts := &server.NewProverServerOpts{
+		ProverPrivateKey: p.cfg.L1ProverPrivKey,
+		MinProofFee:      p.cfg.MinProofFee,
+		MaxExpiry:        p.cfg.MaxExpiry,
+		CapacityManager:  p.capacityManager,
+	}
+	if p.cfg.OracleProver {
+		proverServerOpts.ProverPrivateKey = p.cfg.OracleProverPrivateKey
+	}
+	if p.srv, err = server.New(proverServerOpts); err != nil {
 		return err
 	}
 
@@ -537,7 +541,9 @@ func (p *Prover) onBlockProposed(
 			proofWindowExpiresAt := block.ProposedAt + uint64(p.protocolConfigs.ProofWindow)
 			proofWindowExpired := uint64(time.Now().Unix()) > proofWindowExpiresAt
 			// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
-			if block.Prover != p.proverAddress && !proofWindowExpired {
+			if block.Prover != p.proverAddress &&
+				!proofWindowExpired &&
+				!(block.Prover == encoding.OracleProverAddress && p.oracleProverAddress == p.proverAddress) {
 				log.Info(
 					"Proposed block not provable",
 					"blockID",
