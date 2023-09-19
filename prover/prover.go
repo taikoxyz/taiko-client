@@ -543,7 +543,7 @@ func (p *Prover) onBlockProposed(
 			// zero address means anyone can prove, proofWindowExpired means anyone can prove even if not zero address
 			if block.Prover != p.proverAddress &&
 				!proofWindowExpired &&
-				!(block.Prover == encoding.OracleProverAddress && p.oracleProverAddress == p.proverAddress) {
+				!(block.Prover == encoding.OracleProverAddress && p.cfg.OracleProver) {
 				log.Info(
 					"Proposed block not provable",
 					"blockID",
