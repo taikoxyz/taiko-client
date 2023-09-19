@@ -187,7 +187,7 @@ func assignProver(
 	fee *big.Int,
 	expiry uint64,
 	timeout time.Duration,
-	orcaleProverAddress common.Address,
+	oracleProverAddress common.Address,
 ) ([]byte, common.Address, error) {
 	log.Info(
 		"Attempting to assign prover",
