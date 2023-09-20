@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	httpScheme              = "http"
+	httpScheme              = map[string]bool{"http": true, "https": true}
 	errEmptyProverEndpoints = errors.New("empty prover endpoints")
 	errUnableToFindProver   = errors.New("unable to find prover")
 )
@@ -57,7 +57,7 @@ func NewETHFeeEOASelector(
 	}
 
 	for _, endpoint := range proverEndpoints {
-		if endpoint.Scheme != httpScheme {
+		if !httpScheme[endpoint.Scheme] {
 			return nil, fmt.Errorf("invalid prover endpoint %s", endpoint)
 		}
 	}
