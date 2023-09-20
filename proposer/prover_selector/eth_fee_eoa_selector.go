@@ -96,7 +96,7 @@ func (s *ETHFeeEOASelector) AssignProver(
 	// If we do not find a prover, we can increase the fee up to a point, or give up.
 	for i := 0; i < int(s.proposalFeeIterations); i++ {
 		var (
-			fee    = s.feeBase
+			fee    = new(big.Int).Set(s.feeBase)
 			expiry = uint64(time.Now().Add(s.proposalExpiry).Unix())
 		)
 
