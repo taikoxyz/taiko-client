@@ -30,12 +30,12 @@
       "type": "shell",
       "label": "startDevNet",
       "group": "test",
-      "command": "sh ${workspaceFolder}/integration_test/nodes/init.sh",
+      "command": "sh integration_test/nodes/init.sh",
       "options": {
         "env": {
-          "TESTNET_CONFIG": "${workspaceFolder}/integration_test/nodes/docker-compose.yml",
+          "TESTNET_CONFIG": "integration_test/nodes/docker-compose.yml",
           "COMPILE_PROTOCOL": "false",
-          "TAIKO_MONO_DIR": "${workspaceFolder}/../taiko-mono",
+          "TAIKO_MONO_DIR": "../taiko-mono",
           "PREMINT_TOKEN_AMOUNT": "92233720368547758070000000000000"
         }
       }

@@ -9,7 +9,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceFolder}/cmd/main.go",
+      "program": "cmd/main.go",
       "args": [
         "driver",
         "--verbosity=4",
@@ -26,7 +26,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceFolder}/cmd/main.go",
+      "program": "cmd/main.go",
       "args": [
         "proposer",
         "--verbosity=4",
@@ -38,7 +38,8 @@
         "--l1.proposerPrivKey=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
         "--l2.suggestedFeeRecipient=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
         "--proposeInterval=5s",
-        "--taikoToken=0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+        "--taikoToken=0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "--proverEndpoints=http://localhost:9876,http://localhost:1234"
       ]
     },
     {
@@ -46,7 +47,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceFolder}/cmd/main.go",
+      "program": "cmd/main.go",
       "args": [
         "prover",
         "--verbosity=4",
