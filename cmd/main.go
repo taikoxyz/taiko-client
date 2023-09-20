@@ -6,9 +6,6 @@ import (
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-client/cmd/utils"
-	"github.com/taikoxyz/taiko-client/driver"
-	"github.com/taikoxyz/taiko-client/proposer"
-	"github.com/taikoxyz/taiko-client/prover"
 	"github.com/taikoxyz/taiko-client/version"
 	"github.com/urfave/cli/v2"
 )
@@ -31,21 +28,21 @@ func main() {
 			Flags:       flags.DriverFlags,
 			Usage:       "Starts the driver software",
 			Description: "Taiko driver software",
-			Action:      utils.SubcommandAction(new(driver.Driver)),
+			Action:      utils.StartServer,
 		},
 		{
 			Name:        "proposer",
 			Flags:       flags.ProposerFlags,
 			Usage:       "Starts the proposer software",
 			Description: "Taiko proposer software",
-			Action:      utils.SubcommandAction(new(proposer.Proposer)),
+			Action:      utils.StartServer,
 		},
 		{
 			Name:        "prover",
 			Flags:       flags.ProverFlags,
 			Usage:       "Starts the prover software",
 			Description: "Taiko prover software",
-			Action:      utils.SubcommandAction(new(prover.Prover)),
+			Action:      utils.StartServer,
 		},
 	}
 
