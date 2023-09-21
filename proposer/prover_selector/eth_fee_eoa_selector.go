@@ -58,7 +58,7 @@ func NewETHFeeEOASelector(
 	}
 
 	for _, endpoint := range proverEndpoints {
-		if endpoint.Scheme != httpScheme || endpoint.Scheme != httpsScheme {
+		if endpoint.Scheme != httpScheme && endpoint.Scheme != httpsScheme {
 			return nil, fmt.Errorf("invalid prover endpoint %s", endpoint)
 		}
 	}
