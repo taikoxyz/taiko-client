@@ -9,9 +9,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/proposer"
 	"github.com/urfave/cli/v2"
 )
+
+const proposerCmd = "proposer"
+
+var proposerConf = &proposer.Config{}
 
 // Required flags used by proposer.
 var (
@@ -21,9 +26,7 @@ var (
 		Required: true,
 		Category: proposerCategory,
 		Action: func(c *cli.Context, v string) error {
-			k, err := crypto.ToECDSA(
-				common.Hex2Bytes(c.String(flags.L1ProposerPrivKey.Name)),
-			)
+			k, err := crypto.ToECDSA(common.Hex2Bytes(v))
 			if err != nil {
 				return fmt.Errorf("invalid L1 proposer private key: %w", err)
 			}
@@ -75,6 +78,7 @@ var (
 		Required: true,
 		Category: proposerCategory,
 		Action: func(c *cli.Context, v string) error {
+			proposerConf.TaikoTokenAddress = common.HexToAddress(v)
 			endpointConf.TaikoTokenAddress = common.HexToAddress(v)
 			return nil
 		},
@@ -204,3 +208,7 @@ var proposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	BlockProposalFeeIterations,
 	TaikoTokenAddress,
 })
+
+func prepareProposer(c *cli.Context, ep *rpc.Client) (p *proposer.Proposer, err error) {
+	return proposer.New(c.Context, ep, proposerConf)
+}

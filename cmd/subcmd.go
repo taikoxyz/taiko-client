@@ -13,15 +13,9 @@ import (
 	"github.com/taikoxyz/taiko-client/node"
 )
 
-const (
-	proposerCmd = "proposer"
-	driverCmd   = "driver"
-	proverCmd   = "prover"
-)
+var s node.Service
 
 func startServer(c *cli.Context) error {
-	initLogger(c)
-
 	ctx, ctxClose := context.WithCancel(context.Background())
 	defer func() { ctxClose() }()
 
@@ -32,7 +26,7 @@ func startServer(c *cli.Context) error {
 		return err
 	}
 
-	if err := metrics.Serve(ctx, c); err != nil {
+	if err := metrics.Serve(ctx, metricConf); err != nil {
 		log.Error("Starting metrics server error", "error", err)
 		return err
 	}
@@ -54,5 +48,3 @@ func startServer(c *cli.Context) error {
 
 	return nil
 }
-
-var s node.Service

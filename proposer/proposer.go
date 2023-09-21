@@ -186,18 +186,18 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	}
 
 	// Wait until L2 execution engine is synced at first.
-	if err := p.rpc.WaitTillL2ExecutionEngineSynced(ctx); err != nil {
+	if err := p.RPC.WaitTillL2ExecutionEngineSynced(ctx); err != nil {
 		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
 	}
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
-	l2Head, err := p.rpc.L2.HeaderByNumber(ctx, nil)
+	l2Head, err := p.RPC.L2.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	baseFee, err := p.rpc.TaikoL2.GetBasefee(
+	baseFee, err := p.RPC.TaikoL2.GetBasefee(
 		&bind.CallOpts{Context: ctx},
 		uint64(time.Now().Unix())-l2Head.Time,
 		uint32(l2Head.GasUsed),
@@ -208,7 +208,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Current base fee", "fee", baseFee)
 
-	txLists, err := p.rpc.GetPoolContent(
+	txLists, err := p.RPC.GetPoolContent(
 		ctx,
 		p.L2SuggestedFeeRecipient(),
 		baseFee,
@@ -224,7 +224,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	if p.localsOnly {
 		var (
 			localTxsLists []types.Transactions
-			signer        = types.LatestSignerForChainID(p.rpc.L2ChainID)
+			signer        = types.LatestSignerForChainID(p.RPC.L2ChainID)
 		)
 		for _, txs := range txLists {
 			var filtered types.Transactions
@@ -254,11 +254,11 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return errNoNewTxs
 	}
 
-	head, err := p.rpc.L1.BlockNumber(ctx)
+	head, err := p.RPC.L1.BlockNumber(ctx)
 	if err != nil {
 		return err
 	}
-	nonce, err := p.rpc.L1.NonceAt(
+	nonce, err := p.RPC.L1.NonceAt(
 		ctx,
 		crypto.PubkeyToAddress(p.l1ProposerPrivKey.PublicKey),
 		new(big.Int).SetUint64(head),
@@ -326,7 +326,7 @@ func (p *Proposer) sendProposeBlockTx(
 	if err != nil {
 		return nil, err
 	}
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID, fee)
+	opts, err := getTxOpts(ctx, p.RPC.L1, p.l1ProposerPrivKey, p.RPC.L1ChainID, fee)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func (p *Proposer) sendProposeBlockTx(
 	}
 	if isReplacement {
 		log.Info("Try replacing a transaction with same nonce", "sender", p.l1ProposerAddress, "nonce", nonce)
-		originalTx, err := rpc.GetPendingTxByNonce(ctx, p.rpc, p.l1ProposerAddress, *nonce)
+		originalTx, err := rpc.GetPendingTxByNonce(ctx, p.RPC, p.l1ProposerAddress, *nonce)
 		if err != nil || originalTx == nil {
 			log.Warn(
 				"Original transaction not found",
@@ -374,7 +374,7 @@ func (p *Proposer) sendProposeBlockTx(
 		}
 	}
 
-	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs, assignment, txListBytes)
+	proposeTx, err := p.RPC.TaikoL1.ProposeBlock(opts, inputs, assignment, txListBytes)
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
 	}
@@ -433,7 +433,7 @@ func (p *Proposer) ProposeTxList(
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, p.waitReceiptTimeout)
 	defer cancel()
 
-	if _, err := rpc.WaitReceipt(ctxWithTimeout, p.rpc.L1, tx); err != nil {
+	if _, err := rpc.WaitReceipt(ctxWithTimeout, p.RPC.L1, tx); err != nil {
 		return err
 	}
 
@@ -511,4 +511,16 @@ func getTxOpts(
 	opts.Value = fee
 
 	return opts, nil
+}
+
+func GetEndpointFromProposerConfig(ctx context.Context, cfg *Config) (*rpc.Client, error) {
+	return rpc.NewClient(ctx, &rpc.ClientConfig{
+		L1Endpoint:        cfg.L1Endpoint,
+		L2Endpoint:        cfg.L2Endpoint,
+		TaikoL1Address:    cfg.TaikoL1Address,
+		TaikoL2Address:    cfg.TaikoL2Address,
+		TaikoTokenAddress: cfg.TaikoTokenAddress,
+		RetryInterval:     cfg.BackOffRetryInterval,
+		Timeout:           cfg.RPCTimeout,
+	})
 }

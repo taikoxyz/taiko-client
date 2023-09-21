@@ -245,3 +245,17 @@ func (d *Driver) exchangeTransitionConfigLoop() {
 func (d *Driver) Name() string {
 	return "driver"
 }
+
+func GetEndpointFromDriverConfig(ctx context.Context, cfg *Config) (*rpc.Client, error) {
+	return rpc.NewClient(ctx, &rpc.ClientConfig{
+		L1Endpoint:       cfg.L1Endpoint,
+		L2Endpoint:       cfg.L2Endpoint,
+		L2CheckPoint:     cfg.L2CheckPoint,
+		TaikoL1Address:   cfg.TaikoL1Address,
+		TaikoL2Address:   cfg.TaikoL2Address,
+		L2EngineEndpoint: cfg.L2EngineEndpoint,
+		JwtSecret:        cfg.JwtSecret,
+		RetryInterval:    cfg.BackOffRetryInterval,
+		Timeout:          cfg.RPCTimeout,
+	})
+}

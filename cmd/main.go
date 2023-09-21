@@ -4,11 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/golang/gddo/log"
-	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/proposer"
-	"github.com/taikoxyz/taiko-client/prover"
 	"github.com/taikoxyz/taiko-client/version"
 	"github.com/urfave/cli/v2"
 )
@@ -59,13 +55,9 @@ func main() {
 		case driverCmd:
 			s, err = prepareDriver(c, ep)
 		case proposerCmd:
-			s = &proposer.Proposer{
-				RPC: ep,
-			}
+			s, err = prepareProposer(c, ep)
 		case proverCmd:
-			s = &prover.Prover{
-				RPC: ep,
-			}
+			s, err = prepareProver(c, ep)
 		default:
 			panic("Unknown command name")
 		}
@@ -75,26 +67,4 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-}
-
-func prepareDriver(c *cli.Context, ep *rpc.Client) (*driver.Driver, error) {
-	if err := driverConf.Check(); err != nil {
-		return nil, err
-	}
-	peers, err := ep.L2.PeerCount(c.Context)
-	if err != nil {
-		return nil, err
-	}
-	if driverConf.P2PSyncVerifiedBlocks && peers == 0 {
-		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
-	}
-	d, err := driver.New(c.Context, ep, driverConf)
-	if err != nil {
-		return nil, err
-	}
-	return d, nil
-}
-
-func prepareProposer(c *cli.Context, ep *rpc.Client) (*driver.Driver, error) {
-	return nil, nil
 }

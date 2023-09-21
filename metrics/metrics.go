@@ -2,15 +2,11 @@ package metrics
 
 import (
 	"context"
-	"net"
 	"net/http"
-	"strconv"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/metrics/prometheus"
-	"github.com/taikoxyz/taiko-client/cmd/flags"
-	"github.com/urfave/cli/v2"
 )
 
 // Metrics
@@ -47,18 +43,13 @@ var (
 
 // Serve starts the metrics server on the given address, will be closed when the given
 // context is cancelled.
-func Serve(ctx context.Context, c *cli.Context) error {
-	if !c.Bool(flags.MetricsEnabled.Name) {
+func Serve(ctx context.Context, conf *Config) error {
+	if !conf.Enabled {
 		return nil
 	}
 
-	address := net.JoinHostPort(
-		c.String(flags.MetricsAddr.Name),
-		strconv.Itoa(c.Int(flags.MetricsPort.Name)),
-	)
-
 	server := &http.Server{
-		Addr:    address,
+		Addr:    conf.Address,
 		Handler: prometheus.Handler(metrics.DefaultRegistry),
 	}
 
@@ -69,7 +60,12 @@ func Serve(ctx context.Context, c *cli.Context) error {
 		}
 	}()
 
-	log.Info("Starting metrics server", "address", address)
+	log.Info("Starting metrics server", "address", conf.Address)
 
 	return server.ListenAndServe()
+}
+
+type Config struct {
+	Enabled bool
+	Address string
 }

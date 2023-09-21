@@ -1,15 +1,20 @@
 package main
 
 import (
-	"encoding/hex"
-	"errors"
 	"fmt"
-	"strings"
 	"time"
 
-	"github.com/prysmaticlabs/prysm/v4/io/file"
+	"github.com/taikoxyz/taiko-client/driver"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
+
+const (
+	driverCmd = "driver"
+)
+
+var driverConf = &driver.Config{}
 
 // Flags used by driver.
 var (
@@ -19,6 +24,7 @@ var (
 		Required: true,
 		Category: driverCategory,
 		Action: func(c *cli.Context, v string) error {
+			driverConf.L2EngineEndpoint = v
 			endpointConf.L2EngineEndpoint = v
 			return nil
 		},
@@ -29,10 +35,11 @@ var (
 		Required: true,
 		Category: driverCategory,
 		Action: func(c *cli.Context, v string) error {
-			jwtSecret, err := parseSecretFromFile(v)
+			jwtSecret, err := jwt.ParseSecretFromFile(v)
 			if err != nil {
 				return err
 			}
+			driverConf.JwtSecret = string(jwtSecret)
 			endpointConf.JwtSecret = string(jwtSecret)
 			return nil
 		},
@@ -85,31 +92,20 @@ var driverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	CheckPointSyncUrl,
 })
 
-// Taken from: https://github.com/prysmaticlabs/prysm/blob/v2.1.4/cmd/beacon-chain/execution/options.go#L43
-// Parses a JWT secret from a file path. This secret is required when connecting to execution nodes
-// over HTTP, and must be the same one used in Prysm and the execution node server Prysm is connecting to.
-// The engine API specification here https://github.com/ethereum/execution-apis/blob/main/src/engine/authentication.md
-// Explains how we should validate this secret and the format of the file a user can specify.
-//
-// The secret must be stored as a hex-encoded string within a file in the filesystem.
-func parseSecretFromFile(jwtSecretFile string) ([]byte, error) {
-	if jwtSecretFile == "" {
-		return nil, nil
+func prepareDriver(c *cli.Context, ep *rpc.Client) (*driver.Driver, error) {
+	if err := driverConf.Check(); err != nil {
+		return nil, err
 	}
-	enc, err := file.ReadFileAsBytes(jwtSecretFile)
+	peers, err := ep.L2.PeerCount(c.Context)
 	if err != nil {
 		return nil, err
 	}
-	strData := strings.TrimSpace(string(enc))
-	if len(strData) == 0 {
-		return nil, fmt.Errorf("provided JWT secret in file %s cannot be empty", jwtSecretFile)
+	if driverConf.P2PSyncVerifiedBlocks && peers == 0 {
+		fmt.Printf("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
 	}
-	secret, err := hex.DecodeString(strings.TrimPrefix(strData, "0x"))
+	d, err := driver.New(c.Context, ep, driverConf)
 	if err != nil {
 		return nil, err
 	}
-	if len(secret) < 32 {
-		return nil, errors.New("provided JWT secret should be a hex string of at least 32 bytes")
-	}
-	return secret, nil
+	return d, nil
 }

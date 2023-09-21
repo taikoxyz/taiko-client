@@ -1,10 +1,15 @@
 package main
 
 import (
+	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/urfave/cli/v2"
+
+	"github.com/taikoxyz/taiko-client/metrics"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 var (
@@ -16,6 +21,11 @@ var (
 	proverCategory   = "PROVER"
 )
 
+var (
+	endpointConf = &rpc.ClientConfig{}
+	metricConf   = &metrics.Config{}
+)
+
 // Required flags used by all client softwares.
 var (
 	L1WSEndpoint = &cli.StringFlag{
@@ -24,6 +34,9 @@ var (
 		Required: true,
 		Category: commonCategory,
 		Action: func(c *cli.Context, v string) error {
+			proposerConf.L1Endpoint = v
+			proverConf.L1WsEndpoint = v
+			driverConf.L1Endpoint = v
 			endpointConf.L1Endpoint = v
 			return nil
 		},
@@ -34,6 +47,8 @@ var (
 		Required: true,
 		Category: commonCategory,
 		Action: func(c *cli.Context, v string) error {
+			proverConf.L2WsEndpoint = v
+			driverConf.L2Endpoint = v
 			endpointConf.L2Endpoint = v
 			return nil
 		},
@@ -44,6 +59,7 @@ var (
 		Required: true,
 		Category: commonCategory,
 		Action: func(c *cli.Context, v string) error {
+			proverConf.L1HttpEndpoint = v
 			endpointConf.L1Endpoint = v
 			return nil
 		},
@@ -54,6 +70,8 @@ var (
 		Required: true,
 		Category: commonCategory,
 		Action: func(c *cli.Context, v string) error {
+			proposerConf.L2Endpoint = v
+			proverConf.L2HttpEndpoint = v
 			endpointConf.L2Endpoint = v
 			return nil
 		},
@@ -64,6 +82,9 @@ var (
 		Required: true,
 		Category: commonCategory,
 		Action: func(c *cli.Context, v string) error {
+			proposerConf.TaikoL1Address = common.HexToAddress(v)
+			proverConf.TaikoL1Address = common.HexToAddress(v)
+			driverConf.TaikoL1Address = common.HexToAddress(v)
 			endpointConf.TaikoL1Address = common.HexToAddress(v)
 			return nil
 		},
@@ -74,6 +95,9 @@ var (
 		Required: true,
 		Category: commonCategory,
 		Action: func(c *cli.Context, v string) error {
+			proposerConf.TaikoL2Address = common.HexToAddress(v)
+			proverConf.TaikoL2Address = common.HexToAddress(v)
+			driverConf.TaikoL2Address = common.HexToAddress(v)
 			endpointConf.TaikoL2Address = common.HexToAddress(v)
 			return nil
 		},
@@ -90,6 +114,22 @@ var (
 		Name:     "log.json",
 		Usage:    "Format logs with JSON",
 		Category: loggingCategory,
+		Action: func(c *cli.Context, v bool) error {
+			var handler log.Handler
+			if v {
+				handler = log.LvlFilterHandler(
+					log.Lvl(c.Int(Verbosity.Name)),
+					log.StreamHandler(os.Stdout, log.JSONFormat()),
+				)
+			} else {
+				handler = log.LvlFilterHandler(
+					log.Lvl(c.Int(Verbosity.Name)),
+					log.StreamHandler(os.Stdout, log.TerminalFormat(true)),
+				)
+			}
+			log.Root().SetHandler(handler)
+			return nil
+		},
 	}
 	// Metrics
 	MetricsEnabled = &cli.BoolFlag{
@@ -97,24 +137,31 @@ var (
 		Usage:    "Enable metrics collection and reporting",
 		Category: metricsCategory,
 		Value:    false,
+		Action: func(c *cli.Context, v bool) error {
+			metricConf.Enabled = v
+			return nil
+		},
 	}
 	MetricsAddr = &cli.StringFlag{
 		Name:     "metrics.addr",
 		Usage:    "Metrics reporting server listening address",
 		Category: metricsCategory,
-		Value:    "0.0.0.0",
+		Value:    "0.0.0.0:60660",
+		Action: func(c *cli.Context, v string) error {
+			metricConf.Address = v
+			return nil
+		},
 	}
-	MetricsPort = &cli.IntFlag{
-		Name:     "metrics.port",
-		Usage:    "Metrics reporting server listening port",
-		Category: metricsCategory,
-		Value:    6060,
-	}
+
 	BackOffMaxRetrys = &cli.Uint64Flag{
 		Name:     "backoff.maxRetrys",
 		Usage:    "Max retry times when there is an error",
 		Category: commonCategory,
 		Value:    10,
+		Action: func(c *cli.Context, v uint64) error {
+			proverConf.BackOffMaxRetrys = v
+			return nil
+		},
 	}
 	BackOffRetryInterval = &cli.DurationFlag{
 		Name:     "backoff.retryInterval",
@@ -122,6 +169,9 @@ var (
 		Category: commonCategory,
 		Value:    12,
 		Action: func(c *cli.Context, v time.Duration) error {
+			proposerConf.BackOffRetryInterval = v
+			proverConf.BackOffRetryInterval = v
+			driverConf.BackOffRetryInterval = v
 			endpointConf.RetryInterval = v
 			return nil
 		},
@@ -131,6 +181,9 @@ var (
 		Usage:    "Timeout in `duration` for RPC calls",
 		Category: commonCategory,
 		Action: func(c *cli.Context, v time.Duration) error {
+			proposerConf.RPCTimeout = &v
+			proverConf.RPCTimeout = &v
+			driverConf.RPCTimeout = &v
 			endpointConf.Timeout = &v
 			return nil
 		},
@@ -141,6 +194,7 @@ var (
 		Category: commonCategory,
 		Value:    60,
 		Action: func(c *cli.Context, v time.Duration) error {
+			proverConf.WaitReceiptTimeout = v
 			proposerConf.WaitReceiptTimeout = v
 			return nil
 		},
@@ -158,7 +212,6 @@ var CommonFlags = []cli.Flag{
 	LogJson,
 	MetricsEnabled,
 	MetricsAddr,
-	MetricsPort,
 	BackOffMaxRetrys,
 	BackOffRetryInterval,
 	RPCTimeout,

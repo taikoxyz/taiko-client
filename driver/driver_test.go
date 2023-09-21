@@ -32,27 +32,25 @@ func (s *DriverTestSuite) SetupTest() {
 	s.Nil(err)
 	s.NotEmpty(jwtSecret)
 
-	d := new(Driver)
 	ctx, cancel := context.WithCancel(context.Background())
-	s.Nil(New(ctx, d, &Config{
+	cfg := &Config{
 		L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		L2EngineEndpoint: os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		JwtSecret:        string(jwtSecret),
-	}))
-	s.d = d
+	}
+	ep, err := GetEndpointFromDriverConfig(ctx, cfg)
+	s.NoError(err)
+	s.d, err = New(ctx, ep, cfg)
+	s.NoError(err)
 	s.cancel = cancel
 
-	// Init proposer
-	p := new(proposer.Proposer)
-
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	s.Nil(err)
-
+	s.NoError(err)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
-	s.Nil(proposer.New(context.Background(), p, (&proposer.Config{
+	pCfg := &proposer.Config{
 		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
@@ -67,8 +65,11 @@ func (s *DriverTestSuite) SetupTest() {
 		BlockProposalFee:                   big.NewInt(1000),
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,
-	})))
-	s.p = p
+	}
+	pep, err := proposer.GetEndpointFromProposerConfig(ctx, pCfg)
+	s.NoError(err)
+	s.p, err = proposer.New(ctx, pep, pCfg)
+	s.NoError(err)
 }
 
 func (s *DriverTestSuite) TestName() {
