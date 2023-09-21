@@ -24,7 +24,6 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
-	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -39,7 +38,7 @@ var (
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
 type Proposer struct {
 	// RPC clients
-	rpc *rpc.Client
+	RPC *rpc.Client
 
 	// Private keys and account addresses
 	l1ProposerPrivKey       *ecdsa.PrivateKey
@@ -75,20 +74,13 @@ type Proposer struct {
 	cfg *Config
 }
 
-// New initializes the given proposer instance based on the command line flags.
-func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
-	cfg, err := NewConfigFromCliContext(c)
-	if err != nil {
-		return err
+// New initializes the proposer instance based on the given configurations.
+func New(ctx context.Context, ep *rpc.Client, cfg *Config) (p *Proposer, err error) {
+	p = &Proposer{
+		RPC: ep,
 	}
-
-	return InitFromConfig(ctx, p, cfg)
-}
-
-// InitFromConfig initializes the proposer instance based on the given configurations.
-func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
-	p.l1ProposerAddress = crypto.PubkeyToAddress(cfg.L1ProposerPrivKey.PublicKey)
+	p.l1ProposerAddress = crypto.PubkeyToAddress(p.l1ProposerPrivKey.PublicKey)
 	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
 	p.proposingInterval = cfg.ProposeInterval
 	p.proposeEmptyBlocksInterval = cfg.ProposeEmptyBlocksInterval
@@ -103,23 +95,10 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	p.waitReceiptTimeout = cfg.WaitReceiptTimeout
 	p.cfg = cfg
 
-	// RPC clients
-	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
-		L1Endpoint:        cfg.L1Endpoint,
-		L2Endpoint:        cfg.L2Endpoint,
-		TaikoL1Address:    cfg.TaikoL1Address,
-		TaikoL2Address:    cfg.TaikoL2Address,
-		TaikoTokenAddress: cfg.TaikoTokenAddress,
-		RetryInterval:     cfg.BackOffRetryInterval,
-		Timeout:           cfg.RPCTimeout,
-	}); err != nil {
-		return fmt.Errorf("initialize rpc clients error: %w", err)
-	}
-
 	// Protocol configs
-	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
+	protocolConfigs, err := p.RPC.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
-		return fmt.Errorf("failed to get protocol configs: %w", err)
+		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
 	}
 	p.protocolConfigs = &protocolConfigs
 
@@ -127,7 +106,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 
 	if p.proverSelector, err = selector.NewETHFeeEOASelector(
 		&protocolConfigs,
-		p.rpc,
+		p.RPC,
 		cfg.TaikoL1Address,
 		cfg.BlockProposalFee,
 		cfg.BlockProposalFeeIncreasePercentage,
@@ -136,10 +115,10 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		proverAssignmentTimeout,
 		requestProverServerTimeout,
 	); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return p, nil
 }
 
 // Start starts the proposer's main loop.
@@ -156,7 +135,7 @@ func (p *Proposer) eventLoop() {
 		p.wg.Done()
 	}()
 
-	var lastNonEmptyBlockProposedAt = time.Now()
+	lastNonEmptyBlockProposedAt := time.Now()
 	for {
 		p.updateProposingTicker()
 

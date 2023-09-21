@@ -1,4 +1,4 @@
-package flags
+package main
 
 import (
 	"time"
@@ -126,7 +126,7 @@ var (
 )
 
 // All prover flags.
-var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
+var proverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L1HTTPEndpoint,
 	L2WSEndpoint,
 	L2HTTPEndpoint,

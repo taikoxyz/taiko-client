@@ -30,9 +30,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var (
-	errNoCapacity = errors.New("no prover capacity available")
-)
+var errNoCapacity = errors.New("no prover capacity available")
 
 type cancelFunc func()
 
@@ -44,7 +42,7 @@ type Prover struct {
 	oracleProverAddress common.Address
 
 	// Clients
-	rpc *rpc.Client
+	RPC *rpc.Client
 
 	// Prover Server
 	srv *server.ProverServer

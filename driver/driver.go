@@ -16,7 +16,6 @@ import (
 	chainSyncer "github.com/taikoxyz/taiko-client/driver/chain_syncer"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/urfave/cli/v2"
 )
 
 const (
@@ -27,7 +26,7 @@ const (
 // Driver keeps the L2 execution engine's local block chain in sync with the TaikoL1
 // contract.
 type Driver struct {
-	rpc           *rpc.Client
+	RPC           *rpc.Client
 	l2ChainSyncer *chainSyncer.L2ChainSyncer
 	state         *state.State
 
@@ -35,79 +34,52 @@ type Driver struct {
 	l1HeadSub  event.Subscription
 	syncNotify chan struct{}
 
-	backOffRetryInterval time.Duration
+	BackOffRetryInterval time.Duration
 	ctx                  context.Context
 	wg                   sync.WaitGroup
+
+	L2CheckPoint          string
+	P2PSyncVerifiedBlocks bool
+	P2PSyncTimeout        time.Duration
 }
 
-// New initializes the given driver instance based on the command line flags.
-func (d *Driver) InitFromCli(ctx context.Context, c *cli.Context) error {
-	cfg, err := NewConfigFromCliContext(c)
-	if err != nil {
-		return err
+// New initializes the driver instance based on the given configurations.
+func New(ctx context.Context, ep *rpc.Client, cfg *Config) (d *Driver, err error) {
+	d = &Driver{
+		RPC:        ep,
+		l1HeadCh:   make(chan *types.Header, 1024),
+		syncNotify: make(chan struct{}, 1),
+		wg:         sync.WaitGroup{},
+		ctx:        ctx,
 	}
 
-	return InitFromConfig(ctx, d, cfg)
-}
-
-// InitFromConfig initializes the driver instance based on the given configurations.
-func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
-	d.l1HeadCh = make(chan *types.Header, 1024)
-	d.wg = sync.WaitGroup{}
-	d.syncNotify = make(chan struct{}, 1)
-	d.ctx = ctx
-	d.backOffRetryInterval = cfg.BackOffRetryInterval
-
-	if d.rpc, err = rpc.NewClient(d.ctx, &rpc.ClientConfig{
-		L1Endpoint:       cfg.L1Endpoint,
-		L2Endpoint:       cfg.L2Endpoint,
-		L2CheckPoint:     cfg.L2CheckPoint,
-		TaikoL1Address:   cfg.TaikoL1Address,
-		TaikoL2Address:   cfg.TaikoL2Address,
-		L2EngineEndpoint: cfg.L2EngineEndpoint,
-		JwtSecret:        cfg.JwtSecret,
-		RetryInterval:    cfg.BackOffRetryInterval,
-		Timeout:          cfg.RPCTimeout,
-	}); err != nil {
-		return err
+	if d.state, err = state.New(d.ctx, d.RPC); err != nil {
+		return nil, err
 	}
 
-	if d.state, err = state.New(d.ctx, d.rpc); err != nil {
-		return err
-	}
-
-	peers, err := d.rpc.L2.PeerCount(d.ctx)
-	if err != nil {
-		return err
-	}
-
-	if cfg.P2PSyncVerifiedBlocks && peers == 0 {
-		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
-	}
-
-	signalServiceAddress, err := d.rpc.TaikoL1.Resolve0(
+	signalServiceAddress, err := d.RPC.TaikoL1.Resolve0(
 		&bind.CallOpts{Context: ctx},
 		rpc.StringToBytes32("signal_service"),
 		false,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if d.l2ChainSyncer, err = chainSyncer.New(
 		d.ctx,
-		d.rpc,
+		d.RPC,
 		d.state,
 		cfg.P2PSyncVerifiedBlocks,
 		cfg.P2PSyncTimeout,
 		signalServiceAddress,
 	); err != nil {
-		return err
+		return nil, err
 	}
 
 	d.l1HeadSub = d.state.SubL1HeadsFeed(d.l1HeadCh)
 
-	return nil
+	return d, nil
 }
 
 // Start starts the driver instance.
@@ -141,7 +113,7 @@ func (d *Driver) eventLoop() {
 
 	// doSyncWithBackoff performs a synchronising operation with a backoff strategy.
 	doSyncWithBackoff := func() {
-		if err := backoff.Retry(d.doSync, backoff.NewConstantBackOff(d.backOffRetryInterval)); err != nil {
+		if err := backoff.Retry(d.doSync, backoff.NewConstantBackOff(d.BackOffRetryInterval)); err != nil {
 			log.Error("Sync L2 execution engine's block chain error", "error", err)
 		}
 	}
@@ -200,7 +172,7 @@ func (d *Driver) reportProtocolStatus() {
 			if d.ctx.Err() != nil {
 				return nil
 			}
-			configs, err := d.rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: d.ctx})
+			configs, err := d.RPC.TaikoL1.GetConfig(&bind.CallOpts{Context: d.ctx})
 			if err != nil {
 				return err
 			}
@@ -208,7 +180,7 @@ func (d *Driver) reportProtocolStatus() {
 			maxNumBlocks = configs.BlockMaxProposals
 			return nil
 		},
-		backoff.NewConstantBackOff(d.backOffRetryInterval),
+		backoff.NewConstantBackOff(d.BackOffRetryInterval),
 	); err != nil {
 		log.Error("Failed to get protocol state variables", "error", err)
 		return
@@ -219,7 +191,7 @@ func (d *Driver) reportProtocolStatus() {
 		case <-d.ctx.Done():
 			return
 		case <-ticker.C:
-			vars, err := d.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: d.ctx})
+			vars, err := d.RPC.GetProtocolStateVariables(&bind.CallOpts{Context: d.ctx})
 			if err != nil {
 				log.Error("Failed to get protocol state variables", "error", err)
 				continue
@@ -250,7 +222,7 @@ func (d *Driver) exchangeTransitionConfigLoop() {
 			return
 		case <-ticker.C:
 			func() {
-				tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
+				tc, err := d.RPC.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
 					TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
 					TerminalBlockHash:       common.Hash{},
 					TerminalBlockNumber:     0,

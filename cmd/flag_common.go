@@ -1,6 +1,9 @@
-package flags
+package main
 
 import (
+	"time"
+
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli/v2"
 )
 
@@ -20,36 +23,60 @@ var (
 		Usage:    "Websocket RPC endpoint of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
+		Action: func(c *cli.Context, v string) error {
+			endpointConf.L1Endpoint = v
+			return nil
+		},
 	}
 	L2WSEndpoint = &cli.StringFlag{
 		Name:     "l2.ws",
 		Usage:    "Websocket RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
+		Action: func(c *cli.Context, v string) error {
+			endpointConf.L2Endpoint = v
+			return nil
+		},
 	}
 	L1HTTPEndpoint = &cli.StringFlag{
 		Name:     "l1.http",
 		Usage:    "HTTP RPC endpoint of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
+		Action: func(c *cli.Context, v string) error {
+			endpointConf.L1Endpoint = v
+			return nil
+		},
 	}
 	L2HTTPEndpoint = &cli.StringFlag{
 		Name:     "l2.http",
 		Usage:    "HTTP RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
+		Action: func(c *cli.Context, v string) error {
+			endpointConf.L2Endpoint = v
+			return nil
+		},
 	}
 	TaikoL1Address = &cli.StringFlag{
 		Name:     "taikoL1",
 		Usage:    "TaikoL1 contract address",
 		Required: true,
 		Category: commonCategory,
+		Action: func(c *cli.Context, v string) error {
+			endpointConf.TaikoL1Address = common.HexToAddress(v)
+			return nil
+		},
 	}
 	TaikoL2Address = &cli.StringFlag{
 		Name:     "taikoL2",
 		Usage:    "TaikoL2 contract address",
 		Required: true,
 		Category: commonCategory,
+		Action: func(c *cli.Context, v string) error {
+			endpointConf.TaikoL2Address = common.HexToAddress(v)
+			return nil
+		},
 	}
 	// Optional flags used by all client softwares.
 	// Logging
@@ -89,22 +116,34 @@ var (
 		Category: commonCategory,
 		Value:    10,
 	}
-	BackOffRetryInterval = &cli.Uint64Flag{
+	BackOffRetryInterval = &cli.DurationFlag{
 		Name:     "backoff.retryInterval",
-		Usage:    "Retry interval in seconds when there is an error",
+		Usage:    "Retry interval in `duration` when there is an error",
 		Category: commonCategory,
 		Value:    12,
+		Action: func(c *cli.Context, v time.Duration) error {
+			endpointConf.RetryInterval = v
+			return nil
+		},
 	}
-	RPCTimeout = &cli.Uint64Flag{
+	RPCTimeout = &cli.DurationFlag{
 		Name:     "rpc.timeout",
-		Usage:    "Timeout in seconds for RPC calls",
+		Usage:    "Timeout in `duration` for RPC calls",
 		Category: commonCategory,
+		Action: func(c *cli.Context, v time.Duration) error {
+			endpointConf.Timeout = &v
+			return nil
+		},
 	}
-	WaitReceiptTimeout = &cli.Uint64Flag{
+	WaitReceiptTimeout = &cli.DurationFlag{
 		Name:     "rpc.waitReceiptTimeout",
-		Usage:    "Timeout in seconds for wait for receipts for RPC transactions",
+		Usage:    "Timeout in `duration` for wait for receipts for RPC transactions",
 		Category: commonCategory,
 		Value:    60,
+		Action: func(c *cli.Context, v time.Duration) error {
+			proposerConf.WaitReceiptTimeout = v
+			return nil
+		},
 	}
 )
 

@@ -1,24 +1,23 @@
-package logger
+package main
 
 import (
 	"os"
 
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/urfave/cli/v2"
 )
 
-// InitLogger initializes the root logger with the command line flags.
-func InitLogger(c *cli.Context) {
+// initLogger initializes the root logger with the command line flags.
+func initLogger(c *cli.Context) {
 	var handler log.Handler
-	if c.Bool(flags.LogJson.Name) {
+	if c.Bool(LogJson.Name) {
 		handler = log.LvlFilterHandler(
-			log.Lvl(c.Int(flags.Verbosity.Name)),
+			log.Lvl(c.Int(Verbosity.Name)),
 			log.StreamHandler(os.Stdout, log.JSONFormat()),
 		)
 	} else {
 		handler = log.LvlFilterHandler(
-			log.Lvl(c.Int(flags.Verbosity.Name)),
+			log.Lvl(c.Int(Verbosity.Name)),
 			log.StreamHandler(os.Stdout, log.TerminalFormat(true)),
 		)
 	}

@@ -46,7 +46,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.Nil(err)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
-	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
+	s.Nil(proposer.New(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
@@ -65,6 +65,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 
 	s.p = prop
 }
+
 func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

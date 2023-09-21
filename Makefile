@@ -7,7 +7,7 @@ LD_FLAGS_ARGS +=-X github.com/taikoxyz/taiko-client/version.GitDate=$(GIT_DATE)
 LD_FLAGS := -ldflags "$(LD_FLAGS_ARGS)"
 
 build:
-	GO111MODULE=on go build -v $(LD_FLAGS) -o bin/taiko-client cmd/main.go
+	GO111MODULE=on go build -v $(LD_FLAGS) -o bin/taiko-client cmd/*.go
 
 clean:
 	@rm -rf bin/*

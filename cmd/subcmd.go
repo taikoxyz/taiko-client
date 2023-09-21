@@ -1,4 +1,4 @@
-package utils
+package main
 
 import (
 	"context"
@@ -7,25 +7,23 @@ import (
 	"syscall"
 
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikoxyz/taiko-client/cmd/logger"
-	"github.com/taikoxyz/taiko-client/driver"
+	"github.com/urfave/cli/v2"
+
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/node"
-	"github.com/taikoxyz/taiko-client/proposer"
-	"github.com/taikoxyz/taiko-client/prover"
-	"github.com/urfave/cli/v2"
 )
 
-func StartServer(c *cli.Context) error {
-	logger.InitLogger(c)
+const (
+	proposerCmd = "proposer"
+	driverCmd   = "driver"
+	proverCmd   = "prover"
+)
 
-	s := getServer(c)
+func startServer(c *cli.Context) error {
+	initLogger(c)
+
 	ctx, ctxClose := context.WithCancel(context.Background())
 	defer func() { ctxClose() }()
-
-	if err := s.InitFromCli(ctx, c); err != nil {
-		return err
-	}
 
 	log.Info("Starting Taiko client application", "name", s.Name())
 
@@ -57,16 +55,4 @@ func StartServer(c *cli.Context) error {
 	return nil
 }
 
-// getServer returns an instance of node.Server based on the command name provided in the cli.Context parameter.
-func getServer(ctx *cli.Context) node.Service {
-	switch ctx.Command.Name {
-	case "driver":
-		return new(driver.Driver)
-	case "proposer":
-		return new(proposer.Proposer)
-	case "prover":
-		return new(prover.Prover)
-	default:
-		panic("Unknown command name")
-	}
-}
+var s node.Service
