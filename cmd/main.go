@@ -46,8 +46,8 @@ func main() {
 	}
 
 	app.Before = func(c *cli.Context) error {
-		ctx := c.Context
-		ep, err := rpc.NewClient(ctx, endpointConf)
+		initLogger(logConf)
+		ep, err := rpc.NewClient(c.Context, endpointConf)
 		if err != nil {
 			return err
 		}

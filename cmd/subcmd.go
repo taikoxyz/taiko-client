@@ -22,7 +22,7 @@ type subCmd interface {
 var cmd subCmd
 
 func startSubCmd(c *cli.Context) error {
-	ctx, ctxClose := context.WithCancel(context.Background())
+	ctx, ctxClose := context.WithCancel(c.Context)
 	defer func() { ctxClose() }()
 
 	log.Info("Starting Taiko client application", "name", cmd.Name())

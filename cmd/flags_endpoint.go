@@ -1,15 +1,11 @@
 package main
 
 import (
-	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/urfave/cli/v2"
-
-	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -21,12 +17,9 @@ var (
 	proverCategory   = "PROVER"
 )
 
-var (
-	endpointConf = &rpc.ClientConfig{}
-	metricConf   = &metrics.Config{}
-)
+var endpointConf = &rpc.ClientConfig{}
 
-// Required flags used by all client softwares.
+// Required endpoint flags which are used by all client softwares.
 var (
 	L1WSEndpoint = &cli.StringFlag{
 		Name:     "l1.ws",
@@ -102,57 +95,10 @@ var (
 			return nil
 		},
 	}
-	// Optional flags used by all client softwares.
-	// Logging
-	Verbosity = &cli.IntFlag{
-		Name:     "verbosity",
-		Usage:    "Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail",
-		Value:    3,
-		Category: loggingCategory,
-	}
-	LogJson = &cli.BoolFlag{
-		Name:     "log.json",
-		Usage:    "Format logs with JSON",
-		Category: loggingCategory,
-		Action: func(c *cli.Context, v bool) error {
-			var handler log.Handler
-			if v {
-				handler = log.LvlFilterHandler(
-					log.Lvl(c.Int(Verbosity.Name)),
-					log.StreamHandler(os.Stdout, log.JSONFormat()),
-				)
-			} else {
-				handler = log.LvlFilterHandler(
-					log.Lvl(c.Int(Verbosity.Name)),
-					log.StreamHandler(os.Stdout, log.TerminalFormat(true)),
-				)
-			}
-			log.Root().SetHandler(handler)
-			return nil
-		},
-	}
-	// Metrics
-	MetricsEnabled = &cli.BoolFlag{
-		Name:     "metrics",
-		Usage:    "Enable metrics collection and reporting",
-		Category: metricsCategory,
-		Value:    false,
-		Action: func(c *cli.Context, v bool) error {
-			metricConf.Enabled = v
-			return nil
-		},
-	}
-	MetricsAddr = &cli.StringFlag{
-		Name:     "metrics.addr",
-		Usage:    "Metrics reporting server listening address",
-		Category: metricsCategory,
-		Value:    "0.0.0.0:60660",
-		Action: func(c *cli.Context, v string) error {
-			metricConf.Address = v
-			return nil
-		},
-	}
+)
 
+var (
+	// Required  flags which are used by all client softwares.
 	BackOffMaxRetrys = &cli.Uint64Flag{
 		Name:     "backoff.maxRetrys",
 		Usage:    "Max retry times when there is an error",
