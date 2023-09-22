@@ -838,6 +838,9 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 	if cancel, ok := p.currentBlocksBeingProven[blockID]; ok {
 		cancel()
 		delete(p.currentBlocksBeingProven, blockID)
+		if !p.cfg.OracleProver {
+			p.capacityManager.ReleaseOneCapacity()
+		}
 	}
 }
 
