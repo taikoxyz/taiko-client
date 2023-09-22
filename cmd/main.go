@@ -45,7 +45,7 @@ func main() {
 		},
 	}
 
-	app.Before = func(c *cli.Context) (err error) {
+	app.Before = func(c *cli.Context) error {
 		ctx := c.Context
 		ep, err := rpc.NewClient(ctx, endpointConf)
 		if err != nil {
@@ -53,15 +53,14 @@ func main() {
 		}
 		switch c.Command.Name {
 		case driverCmd:
-			s, err = prepareDriver(c, ep)
+			return configDriver(c, ep)
 		case proposerCmd:
-			s, err = prepareProposer(c, ep)
+			return configProposer(c, ep)
 		case proverCmd:
-			s, err = prepareProver(c, ep)
+			return configProver(c, ep)
 		default:
 			panic("Unknown command name")
 		}
-		return nil
 	}
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)

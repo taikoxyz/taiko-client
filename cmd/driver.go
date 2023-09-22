@@ -92,20 +92,21 @@ var driverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	CheckPointSyncUrl,
 })
 
-func prepareDriver(c *cli.Context, ep *rpc.Client) (*driver.Driver, error) {
+func configDriver(c *cli.Context, ep *rpc.Client) error {
 	if err := driverConf.Check(); err != nil {
-		return nil, err
+		return err
 	}
 	peers, err := ep.L2.PeerCount(c.Context)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if driverConf.P2PSyncVerifiedBlocks && peers == 0 {
 		fmt.Printf("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
 	}
 	d, err := driver.New(c.Context, ep, driverConf)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return d, nil
+	exec = d
+	return nil
 }

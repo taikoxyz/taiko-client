@@ -6,7 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/node"
 )
 
 type CalldataSyncer interface {
@@ -14,7 +13,6 @@ type CalldataSyncer interface {
 }
 
 type Proposer interface {
-	node.Service
 	ProposeOp(ctx context.Context) error
 	ProposeEmptyBlockOp(ctx context.Context) error
 	L2SuggestedFeeRecipient() common.Address

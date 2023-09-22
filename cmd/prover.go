@@ -270,9 +270,14 @@ var proverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxExpiry,
 })
 
-func prepareProver(c *cli.Context, ep *rpc.Client) (p *prover.Prover, err error) {
+func configProver(c *cli.Context, ep *rpc.Client) error {
 	if err := proverConf.Check(); err != nil {
-		return nil, err
+		return err
 	}
-	return prover.New(c.Context, ep, proverConf)
+	p, err := prover.New(c.Context, ep, proverConf)
+	if err != nil {
+		return err
+	}
+	exec = p
+	return nil
 }

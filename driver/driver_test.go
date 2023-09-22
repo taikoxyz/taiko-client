@@ -41,7 +41,7 @@ func (s *DriverTestSuite) SetupTest() {
 		TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		JwtSecret:        string(jwtSecret),
 	}
-	ep, err := GetEndpointFromDriverConfig(ctx, cfg)
+	ep, err := GetEndpointFromConfig(ctx, cfg)
 	s.NoError(err)
 	s.d, err = New(ctx, ep, cfg)
 	s.NoError(err)
@@ -66,7 +66,7 @@ func (s *DriverTestSuite) SetupTest() {
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,
 	}
-	pep, err := proposer.GetEndpointFromProposerConfig(ctx, pCfg)
+	pep, err := proposer.EndpointFromConfig(ctx, pCfg)
 	s.NoError(err)
 	s.p, err = proposer.New(ctx, pep, pCfg)
 	s.NoError(err)

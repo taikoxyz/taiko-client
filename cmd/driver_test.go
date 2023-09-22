@@ -83,8 +83,7 @@ func (s *DriverTestSuite) SetupApp() *cli.App {
 	app.Action = func(c *cli.Context) error {
 		ep, err := rpc.NewClient(c.Context, endpointConf)
 		s.NoError(err)
-		_, err = prepareDriver(c, ep)
-		s.NoError(err)
+		s.NoError(configDriver(c, ep))
 		return nil
 	}
 	return app

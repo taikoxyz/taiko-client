@@ -49,7 +49,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		BlockProposalFeeIncreasePercentage:  common.Big2,
 		BlockProposalFeeIterations:          3,
 	}
-	ep, err := GetEndpointFromProposerConfig(ctx, cfg)
+	ep, err := EndpointFromConfig(ctx, cfg)
 	s.NoError(err)
 	s.p, err = New(ctx, ep, cfg)
 	s.NoError(err)

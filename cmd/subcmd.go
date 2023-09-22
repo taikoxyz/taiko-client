@@ -10,19 +10,25 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/metrics"
-	"github.com/taikoxyz/taiko-client/node"
 )
 
-var s node.Service
+// application is the interface for the server that the node runs.
+type application interface {
+	Name() string
+	Start() error
+	Close(context.Context)
+}
+
+var exec application
 
 func startApp(c *cli.Context) error {
 	ctx, ctxClose := context.WithCancel(context.Background())
 	defer func() { ctxClose() }()
 
-	log.Info("Starting Taiko client application", "name", s.Name())
+	log.Info("Starting Taiko client application", "name", exec.Name())
 
-	if err := s.Start(); err != nil {
-		log.Error("Starting application error", "name", s.Name(), "error", err)
+	if err := exec.Start(); err != nil {
+		log.Error("Starting application error", "name", exec.Name(), "error", err)
 		return err
 	}
 
@@ -33,8 +39,8 @@ func startApp(c *cli.Context) error {
 
 	defer func() {
 		ctxClose()
-		s.Close(ctx)
-		log.Info("Application stopped", "name", s.Name())
+		exec.Close(ctx)
+		log.Info("Application stopped", "name", exec.Name())
 	}()
 
 	quitCh := make(chan os.Signal, 1)

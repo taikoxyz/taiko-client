@@ -205,8 +205,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		ep, err := rpc.NewClient(c.Context, endpointConf)
 		s.NoError(err)
 		s.RPC = ep
-		_, err = prepareProposer(c, ep)
-		s.NoError(err)
+		s.NoError(configProposer(c, ep))
 		return nil
 	}
 	return app

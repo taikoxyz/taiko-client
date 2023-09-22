@@ -246,7 +246,8 @@ func (d *Driver) Name() string {
 	return "driver"
 }
 
-func GetEndpointFromDriverConfig(ctx context.Context, cfg *Config) (*rpc.Client, error) {
+// EndpointFromConfig generates an RPC client from the given configuration.
+func GetEndpointFromConfig(ctx context.Context, cfg *Config) (*rpc.Client, error) {
 	return rpc.NewClient(ctx, &rpc.ClientConfig{
 		L1Endpoint:       cfg.L1Endpoint,
 		L2Endpoint:       cfg.L2Endpoint,

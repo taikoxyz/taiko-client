@@ -513,7 +513,8 @@ func getTxOpts(
 	return opts, nil
 }
 
-func GetEndpointFromProposerConfig(ctx context.Context, cfg *Config) (*rpc.Client, error) {
+// EndpointFromConfig generates an RPC client from a given configuration.
+func EndpointFromConfig(ctx context.Context, cfg *Config) (*rpc.Client, error) {
 	return rpc.NewClient(ctx, &rpc.ClientConfig{
 		L1Endpoint:        cfg.L1Endpoint,
 		L2Endpoint:        cfg.L2Endpoint,

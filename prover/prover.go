@@ -1029,7 +1029,8 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 	return nil
 }
 
-func GetEndpointFromProverConfig(ctx context.Context, cfg *Config) (*rpc.Client, error) {
+// EndpointFromConfig generates an RPC client from the given configuration.
+func EndpointFromConfig(ctx context.Context, cfg *Config) (*rpc.Client, error) {
 	return rpc.NewClient(ctx, &rpc.ClientConfig{
 		L1Endpoint:       cfg.L1WsEndpoint,
 		L2Endpoint:       cfg.L2WsEndpoint,

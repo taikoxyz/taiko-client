@@ -197,8 +197,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 	app.Action = func(c *cli.Context) error {
 		ep, err := rpc.NewClient(c.Context, endpointConf)
 		s.NoError(err)
-		_, err = prepareProver(c, ep)
-		s.NoError(err)
+		s.NoError(configProver(c, ep))
 		return nil
 	}
 	return app

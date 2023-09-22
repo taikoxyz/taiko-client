@@ -2,7 +2,6 @@ package prover
 
 import (
 	"context"
-	"math/big"
 	"net/url"
 	"os"
 	"strconv"
@@ -16,7 +15,6 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
@@ -35,11 +33,11 @@ func (s *ProverTestSuite) SetupTest() {
 
 	// Init prover
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
+	s.NoError(err)
 
 	proverServerUrl := testutils.LocalRandomProverEndpoint()
 	port, err := strconv.Atoi(proverServerUrl.Port())
-	s.Nil(err)
+	s.NoError(err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cfg := &Config{
@@ -60,15 +58,8 @@ func (s *ProverTestSuite) SetupTest() {
 		MinProofFee:                     common.Big1,
 		HTTPServerPort:                  uint64(port),
 	}
-	ep, err := rpc.NewClient(context.Background(), &rpc.ClientConfig{
-		L1Endpoint:       cfg.L1WsEndpoint,
-		L2Endpoint:       cfg.L2WsEndpoint,
-		TaikoL1Address:   cfg.TaikoL1Address,
-		TaikoL2Address:   cfg.TaikoL2Address,
-		RetryInterval:    cfg.BackOffRetryInterval,
-		Timeout:          cfg.RPCTimeout,
-		BackOffMaxRetrys: new(big.Int).SetUint64(cfg.BackOffMaxRetrys),
-	})
+	ep, err := EndpointFromConfig(ctx, cfg)
+	s.NoError(err)
 	p, err := New(ctx, ep, cfg)
 	s.NoError(err)
 	p.srv = testutils.NewTestProverServer(
@@ -93,7 +84,7 @@ func (s *ProverTestSuite) SetupTest() {
 		TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		JwtSecret:        string(jwtSecret),
 	}
-	dep, err := driver.GetEndpointFromDriverConfig(ctx, dCfg)
+	dep, err := driver.GetEndpointFromConfig(ctx, dCfg)
 	s.NoError(err)
 	s.d, err = driver.New(ctx, dep, dCfg)
 	s.NoError(err)
@@ -119,7 +110,8 @@ func (s *ProverTestSuite) SetupTest() {
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,
 	}
-	pep, err := proposer.GetEndpointFromProposerConfig(context.Background(), pCfg)
+	pep, err := proposer.EndpointFromConfig(context.Background(), pCfg)
+	s.NoError(err)
 	s.proposer, err = proposer.New(context.Background(), pep, pCfg)
 	s.NoError(err)
 }
@@ -149,7 +141,7 @@ func (s *ProverTestSuite) TestInitError() {
 		CheckProofWindowExpiredInterval: 5 * time.Second,
 		ProveUnassignedBlocks:           true,
 	}
-	_, err = GetEndpointFromProverConfig(ctx, cfg)
+	_, err = EndpointFromConfig(ctx, cfg)
 	s.ErrorContains(err, "dial tcp:")
 }
 

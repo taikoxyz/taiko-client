@@ -209,6 +209,11 @@ var proposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	TaikoTokenAddress,
 })
 
-func prepareProposer(c *cli.Context, ep *rpc.Client) (p *proposer.Proposer, err error) {
-	return proposer.New(c.Context, ep, proposerConf)
+func configProposer(c *cli.Context, ep *rpc.Client) error {
+	p, err := proposer.New(c.Context, ep, proposerConf)
+	if err != nil {
+		return err
+	}
+	exec = p
+	return nil
 }
