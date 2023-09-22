@@ -77,10 +77,6 @@ type Proposer struct {
 // New initializes the proposer instance based on the given configurations.
 func New(ctx context.Context, cfg *Config) (p *Proposer, err error) {
 	p = &Proposer{}
-	if p.rpc, err = EndpointFromConfig(ctx, cfg); err != nil {
-		return nil, err
-	}
-
 	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
 	p.l1ProposerAddress = crypto.PubkeyToAddress(p.l1ProposerPrivKey.PublicKey)
 	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
@@ -96,7 +92,9 @@ func New(ctx context.Context, cfg *Config) (p *Proposer, err error) {
 	p.ctx = ctx
 	p.waitReceiptTimeout = cfg.WaitReceiptTimeout
 	p.cfg = cfg
-
+	if p.rpc, err = EndpointFromConfig(ctx, cfg); err != nil {
+		return nil, err
+	}
 	// Protocol configs
 	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
