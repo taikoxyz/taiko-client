@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/urfave/cli/v2"
 )
 
@@ -41,6 +41,7 @@ func (s *driverCmdSuite) TestParseConfig() {
 		return nil
 	}
 	s.NoError(s.app.Run(flagsFromArgs(s.T(), s.args)))
+	s.app.After = nil
 }
 
 func (s *driverCmdSuite) TestJWTError() {
@@ -54,12 +55,12 @@ func (s *driverCmdSuite) TestEmptyL2CheckPoint() {
 }
 
 func (s *driverCmdSuite) SetupTest() {
+	driverConf = &driver.Config{}
 	s.app = cli.NewApp()
 	s.app.Flags = driverFlags
 	s.app.Action = func(ctx *cli.Context) error {
 		return driverConf.Validate(context.Background())
 	}
-	jwtPath, _ := filepath.Abs("../" + os.Getenv("JWT_SECRET"))
 	s.args = map[string]interface{}{
 		L1WSEndpointFlag.Name:       os.Getenv("L1_NODE_WS_ENDPOINT"),
 		TaikoL1AddressFlag.Name:     os.Getenv("TAIKO_L1_ADDRESS"),
@@ -74,7 +75,7 @@ func (s *driverCmdSuite) SetupTest() {
 
 		L2WSEndpointFlag.Name:          os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		L2AuthEndpointFlag.Name:        os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
-		JWTSecretFlag.Name:             jwtPath,
+		JWTSecretFlag.Name:             os.Getenv("JWT_SECRET"),
 		P2PSyncVerifiedBlocksFlag.Name: true,
 		P2PSyncTimeoutFlag.Name:        "120s",
 		CheckPointSyncUrlFlag.Name:     os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),

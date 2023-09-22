@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/proposer"
 	"github.com/urfave/cli/v2"
 )
 
@@ -40,17 +41,14 @@ func (s *proposerCmdSuite) TestFlags() {
 		for i, e := range strings.Split(proverEndpoints, ",") {
 			s.Equal(proposerConf.ProverEndpoints[i].String(), e)
 		}
-
 		fee, _ := new(big.Int).SetString(blockProposalFee, 10)
 		s.Equal(fee, proposerConf.BlockProposalFee)
-
 		s.Equal(uint64(10), proposerConf.BlockProposalFeeIncreasePercentage.Uint64())
 		s.Equal(uint64(100), proposerConf.BlockProposalFeeIterations)
-
 		return nil
 	}
-
 	s.NoError(s.app.Run(flagsFromArgs(s.T(), s.args)))
+	s.app.After = nil
 }
 
 func (s *proposerCmdSuite) TestPrivKeyErr() {
@@ -74,6 +72,7 @@ func (s *proposerCmdSuite) TestBlockTxReplacementMultiplier() {
 }
 
 func (s *proposerCmdSuite) SetupTest() {
+	proposerConf = &proposer.Config{}
 	s.app = cli.NewApp()
 	s.app.Flags = proposerFlags
 	s.app.Action = func(c *cli.Context) error {
@@ -92,11 +91,11 @@ func (s *proposerCmdSuite) SetupTest() {
 		RPCTimeoutFlag.Name:         rpcTimeout.String(),
 		WaitReceiptTimeoutFlag.Name: "10s",
 		// proposer flags
-		L2HTTPEndpoint.Name:                      os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		L2HTTPEndpointFlag.Name:                  os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
 		L1ProposerPrivKey.Name:                   os.Getenv("L1_PROPOSER_PRIVATE_KEY"),
 		L2SuggestedFeeRecipient.Name:             os.Getenv("L2_SUGGESTED_FEE_RECIPIENT"),
 		ProposeInterval.Name:                     proposeInterval,
-		TxPoolLocals.Name:                        os.Getenv("TX_POOL_LOCALS"),
+		TxPoolLocals.Name:                        "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
 		TxPoolLocalsOnly.Name:                    false,
 		ProposeEmptyBlocksInterval.Name:          proposeInterval,
 		MaxProposedTxListsPerEpoch.Name:          1,

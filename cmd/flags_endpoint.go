@@ -41,7 +41,7 @@ var (
 			return nil
 		},
 	}
-	L1HTTPEndpoint = &cli.StringFlag{
+	L1HTTPEndpointFlag = &cli.StringFlag{
 		Name:     "l1.http",
 		Usage:    "HTTP RPC endpoint of a L1 ethereum node",
 		Required: true,
@@ -51,7 +51,7 @@ var (
 			return nil
 		},
 	}
-	L2HTTPEndpoint = &cli.StringFlag{
+	L2HTTPEndpointFlag = &cli.StringFlag{
 		Name:     "l2.http",
 		Usage:    "HTTP RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,

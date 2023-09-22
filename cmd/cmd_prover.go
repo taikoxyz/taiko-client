@@ -18,7 +18,7 @@ var proverConf = &prover.Config{}
 
 // Required flags used by prover.
 var (
-	ZkEvmRpcdEndpoint = &cli.StringFlag{
+	ZkEvmRpcdEndpointFlag = &cli.StringFlag{
 		Name:     "zkevmRpcdEndpoint",
 		Usage:    "RPC endpoint of a ZKEVM RPCD service",
 		Required: true,
@@ -28,7 +28,7 @@ var (
 			return nil
 		},
 	}
-	ZkEvmRpcdParamsPath = &cli.StringFlag{
+	ZkEvmRpcdParamsPathFlag = &cli.StringFlag{
 		Name:     "zkevmRpcdParamsPath",
 		Usage:    "Path of ZKEVM parameters file to use",
 		Required: true,
@@ -38,7 +38,7 @@ var (
 			return nil
 		},
 	}
-	L1ProverPrivKey = &cli.StringFlag{
+	L1ProverPrivKeyFlag = &cli.StringFlag{
 		Name: "l1.proverPrivKey",
 		Usage: "Private key of L1 prover, " +
 			"who will send TaikoL1.proveBlock / TaikoL1.proveBlockInvalid transactions",
@@ -53,7 +53,7 @@ var (
 			return nil
 		},
 	}
-	MinProofFee = &cli.StringFlag{
+	MinProofFeeFlag = &cli.StringFlag{
 		Name:     "prover.minProofFee",
 		Usage:    "Minimum accepted fee for accepting proving a block",
 		Required: true,
@@ -71,7 +71,7 @@ var (
 
 // Optional flags used by prover.
 var (
-	StartingBlockID = &cli.Uint64Flag{
+	StartingBlockIDFlag = &cli.Uint64Flag{
 		Name:     "startingBlockID",
 		Usage:    "If set, prover will start proving blocks from the block with this ID",
 		Category: proverCategory,
@@ -80,7 +80,7 @@ var (
 			return nil
 		},
 	}
-	MaxConcurrentProvingJobs = &cli.UintFlag{
+	MaxConcurrentProvingJobsFlag = &cli.UintFlag{
 		Name:     "maxConcurrentProvingJobs",
 		Usage:    "Limits the number of concurrent proving blocks jobs",
 		Value:    1,
@@ -91,7 +91,7 @@ var (
 		},
 	}
 	// Special flags for testing.
-	Dummy = &cli.BoolFlag{
+	DummyFlag = &cli.BoolFlag{
 		Name:     "dummy",
 		Usage:    "Produce dummy proofs, testing purposes only",
 		Value:    false,
@@ -101,7 +101,7 @@ var (
 			return nil
 		},
 	}
-	RandomDummyProofDelay = &cli.StringFlag{
+	RandomDummyProofDelayFlag = &cli.StringFlag{
 		Name: "randomDummyProofDelay",
 		Usage: "Set the random dummy proof delay between the bounds using the format: " +
 			"`lowerBound-upperBound` (e.g. `30m,1h`), testing purposes only",
@@ -131,7 +131,7 @@ var (
 			return nil
 		},
 	}
-	OracleProver = &cli.BoolFlag{
+	OracleProverFlag = &cli.BoolFlag{
 		Name:     "oracleProver",
 		Usage:    "Set whether prover should use oracle prover or not",
 		Category: proverCategory,
@@ -140,7 +140,7 @@ var (
 			return nil
 		},
 	}
-	OracleProverPrivateKey = &cli.StringFlag{
+	OracleProverPrivateKeyFlag = &cli.StringFlag{
 		Name:     "oracleProverPrivateKey",
 		Usage:    "Private key of oracle prover",
 		Category: proverCategory,
@@ -153,7 +153,7 @@ var (
 			return nil
 		},
 	}
-	OracleProofSubmissionDelay = &cli.DurationFlag{
+	OracleProofSubmissionDelayFlag = &cli.DurationFlag{
 		Name:     "oracleProofSubmissionDelay",
 		Usage:    "Oracle proof submission delay in `duration`",
 		Value:    0,
@@ -163,7 +163,7 @@ var (
 			return nil
 		},
 	}
-	ProofSubmissionMaxRetry = &cli.Uint64Flag{
+	ProofSubmissionMaxRetryFlag = &cli.Uint64Flag{
 		Name:     "proofSubmissionMaxRetry",
 		Usage:    "Max retry counts for proof submission",
 		Value:    0,
@@ -173,7 +173,7 @@ var (
 			return nil
 		},
 	}
-	Graffiti = &cli.StringFlag{
+	GraffitiFlag = &cli.StringFlag{
 		Name:     "graffiti",
 		Usage:    "When string is passed, adds additional graffiti info to proof evidence",
 		Category: proverCategory,
@@ -183,7 +183,7 @@ var (
 			return nil
 		},
 	}
-	CheckProofWindowExpiredInterval = &cli.DurationFlag{
+	CheckProofWindowExpiredIntervalFlag = &cli.DurationFlag{
 		Name:     "prover.checkProofWindowExpiredInterval",
 		Usage:    "Interval in `duration` to check for expired proof windows from other provers",
 		Category: proverCategory,
@@ -193,7 +193,7 @@ var (
 			return nil
 		},
 	}
-	ProveUnassignedBlocks = &cli.BoolFlag{
+	ProveUnassignedBlocksFlag = &cli.BoolFlag{
 		Name:     "prover.proveUnassignedBlocks",
 		Usage:    "Whether you want to prove unassigned blocks, or only work on assigned proofs",
 		Category: proverCategory,
@@ -203,7 +203,7 @@ var (
 			return nil
 		},
 	}
-	ProveBlockTxGasLimit = &cli.Uint64Flag{
+	ProveBlockTxGasLimitFlag = &cli.Uint64Flag{
 		Name:     "prover.proveBlockTxGasLimit",
 		Usage:    "Gas limit will be used for TaikoL1.proveBlock transactions",
 		Category: proverCategory,
@@ -212,7 +212,7 @@ var (
 			return nil
 		},
 	}
-	ProverHTTPServerPort = &cli.Uint64Flag{
+	ProverHTTPServerPortFlag = &cli.Uint64Flag{
 		Name:     "prover.httpServerPort",
 		Usage:    "Port to expose for http server",
 		Category: proverCategory,
@@ -222,7 +222,7 @@ var (
 			return nil
 		},
 	}
-	ProverCapacity = &cli.Uint64Flag{
+	ProverCapacityFlag = &cli.Uint64Flag{
 		Name:     "prover.capacity",
 		Usage:    "Capacity of prover, required if oracleProver is false",
 		Category: proverCategory,
@@ -231,7 +231,7 @@ var (
 			return nil
 		},
 	}
-	MaxExpiry = &cli.DurationFlag{
+	MaxExpiryFlag = &cli.DurationFlag{
 		Name:     "prover.maxExpiry",
 		Usage:    "maximum accepted expiry in `duration` for accepting proving a block",
 		Value:    time.Hour,
@@ -245,28 +245,28 @@ var (
 
 // All prover flags.
 var proverFlags = MergeFlags(CommonFlags, []cli.Flag{
-	L1HTTPEndpoint,
+	L1HTTPEndpointFlag,
 	L2WSEndpointFlag,
-	L2HTTPEndpoint,
-	ZkEvmRpcdEndpoint,
-	ZkEvmRpcdParamsPath,
-	L1ProverPrivKey,
-	MinProofFee,
-	StartingBlockID,
-	MaxConcurrentProvingJobs,
-	Dummy,
-	RandomDummyProofDelay,
-	OracleProver,
-	OracleProverPrivateKey,
-	OracleProofSubmissionDelay,
-	ProofSubmissionMaxRetry,
-	Graffiti,
-	CheckProofWindowExpiredInterval,
-	ProveUnassignedBlocks,
-	ProveBlockTxGasLimit,
-	ProverHTTPServerPort,
-	ProverCapacity,
-	MaxExpiry,
+	L2HTTPEndpointFlag,
+	ZkEvmRpcdEndpointFlag,
+	ZkEvmRpcdParamsPathFlag,
+	L1ProverPrivKeyFlag,
+	MinProofFeeFlag,
+	StartingBlockIDFlag,
+	MaxConcurrentProvingJobsFlag,
+	DummyFlag,
+	RandomDummyProofDelayFlag,
+	OracleProverFlag,
+	OracleProverPrivateKeyFlag,
+	OracleProofSubmissionDelayFlag,
+	ProofSubmissionMaxRetryFlag,
+	GraffitiFlag,
+	CheckProofWindowExpiredIntervalFlag,
+	ProveUnassignedBlocksFlag,
+	ProveBlockTxGasLimitFlag,
+	ProverHTTPServerPortFlag,
+	ProverCapacityFlag,
+	MaxExpiryFlag,
 })
 
 func configProver(c *cli.Context) (*prover.Prover, error) {

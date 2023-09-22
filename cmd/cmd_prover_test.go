@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/prover"
 	"github.com/urfave/cli/v2"
 )
 
@@ -18,189 +18,116 @@ var (
 	minProofFee    = "1024"
 )
 
-type ProverCmdSuite struct {
-	suite.Suite
+type proverCmdSuite struct {
+	cmdSuit
 }
 
-func (s *ProverCmdSuite) TestNewConfigFromCliContext_OracleProver() {
-	app := s.SetupApp()
-	app.Action = func(ctx *cli.Context) error {
+func (s *proverCmdSuite) TestOracleProver() {
+	s.app.After = func(ctx *cli.Context) error {
 		s.Equal(l1WsEndpoint, proverConf.L1WsEndpoint)
 		s.Equal(l1HttpEndpoint, proverConf.L1HttpEndpoint)
 		s.Equal(l2WsEndpoint, proverConf.L2WsEndpoint)
 		s.Equal(l2HttpEndpoint, proverConf.L2HttpEndpoint)
 		s.Equal(taikoL1, proverConf.TaikoL1Address.String())
 		s.Equal(taikoL2, proverConf.TaikoL2Address.String())
-		s.Equal(
-			crypto.PubkeyToAddress(proverConf.L1ProverPrivKey.PublicKey),
-			crypto.PubkeyToAddress(proverConf.L1ProverPrivKey.PublicKey),
-		)
 		s.Equal(30*time.Minute, *proverConf.RandomDummyProofDelayLowerBound)
 		s.Equal(time.Hour, *proverConf.RandomDummyProofDelayUpperBound)
 		s.True(proverConf.Dummy)
 		s.True(proverConf.OracleProver)
-		s.Equal(
-			crypto.PubkeyToAddress(proverConf.OracleProverPrivateKey.PublicKey),
-			crypto.PubkeyToAddress(proverConf.OracleProverPrivateKey.PublicKey),
-		)
 		s.Equal("", proverConf.Graffiti)
 		s.Equal(30*time.Second, proverConf.CheckProofWindowExpiredInterval)
 		s.Equal(true, proverConf.ProveUnassignedBlocks)
 		s.Equal(rpcTimeout, *proverConf.RPCTimeout)
 		s.Equal(uint64(8), proverConf.Capacity)
 		s.Equal(minProofFee, proverConf.MinProofFee.String())
-
 		return nil
 	}
 
-	s.NoError(app.Run([]string{
-		"TestNewConfigFromCliContext_OracleProver",
-		"-" + L1WSEndpointFlag.Name, l1WsEndpoint,
-		"-" + L1HTTPEndpoint.Name, l1HttpEndpoint,
-		"-" + L2WSEndpointFlag.Name, l2WsEndpoint,
-		"-" + L2HTTPEndpoint.Name, l2HttpEndpoint,
-		"-" + TaikoL1AddressFlag.Name, taikoL1,
-		"-" + TaikoL2AddressFlag.Name, taikoL2,
-		"-" + L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + StartingBlockID.Name, "0",
-		"-" + RPCTimeoutFlag.Name, "5",
-		"-" + ProveBlockTxGasLimit.Name, "100000",
-		"-" + Dummy.Name,
-		"-" + RandomDummyProofDelay.Name, "30m-1h",
-		"-" + MinProofFee.Name, minProofFee,
-		"-" + ProverCapacity.Name, "8",
-		"-" + OracleProver.Name,
-		"-" + OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + Graffiti.Name, "",
-		"-" + CheckProofWindowExpiredInterval.Name, "30",
-		"-" + ProveUnassignedBlocks.Name, "true",
-	}))
+	s.NoError(s.app.Run(flagsFromArgs(s.T(), s.args)))
+	s.app.After = nil
 }
 
-func (s *ProverCmdSuite) TestNewConfigFromCliContext_OracleProverError() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"-" + L1WSEndpointFlag.Name, l1WsEndpoint,
-		"-" + L1HTTPEndpoint.Name, l1HttpEndpoint,
-		"-" + L2WSEndpointFlag.Name, l2WsEndpoint,
-		"-" + L2HTTPEndpoint.Name, l2HttpEndpoint,
-		"-" + TaikoL1AddressFlag.Name, taikoL1,
-		"-" + TaikoL2AddressFlag.Name, taikoL2,
-		"-" + L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + Dummy.Name,
-		"-" + RandomDummyProofDelay.Name, "30m-1h",
-		"-" + OracleProver.Name,
-		"-" + Graffiti.Name, "",
-		"-" + RPCTimeoutFlag.Name, "5",
-		"-" + MinProofFee.Name, minProofFee,
-	}), "oracleProver flag set without oracleProverPrivateKey set")
+func (s *proverCmdSuite) TestOracleProverError() {
+	s.args[OracleProverFlag.Name] = true
+	delete(s.args, OracleProverPrivateKeyFlag.Name)
+	s.ErrorContains(s.app.Run(flagsFromArgs(s.T(), s.args)), "oracleProver flag set without oracleProverPrivateKey set")
 }
 
-func (s *ProverCmdSuite) TestNewConfigFromCliContext_ProverKeyError() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"-" + L1ProverPrivKey.Name, "0x",
-	}), "invalid L1 prover private key")
+func (s *proverCmdSuite) TestProverKeyError() {
+	s.args[L1ProverPrivKeyFlag.Name] = "0x"
+	s.ErrorContains(s.app.Run(flagsFromArgs(s.T(), s.args)), "invalid L1 prover private key")
 }
 
-func (s *ProverCmdSuite) TestNewConfigFromCliContext_OracleProverKeyError() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"-" + L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + OracleProver.Name,
-		"-" + OracleProverPrivateKey.Name, "",
-	}), "invalid oracle private key")
+func (s *proverCmdSuite) TestOracleProverKeyError() {
+	s.args[OracleProverFlag.Name] = true
+	s.args[OracleProverPrivateKeyFlag.Name] = ""
+	s.ErrorContains(s.app.Run(flagsFromArgs(s.T(), s.args)), "invalid oracle private key")
 }
 
-func (s *ProverCmdSuite) TestNewConfigFromCliContext_RandomDelayError() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"-" + L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + OracleProver.Name,
-		"-" + RandomDummyProofDelay.Name, "130m",
-		"-" + MinProofFee.Name, minProofFee,
-	}), "invalid random dummy proof delay value")
+func (s *proverCmdSuite) TestNewConfigFromCliContext_RandomDelayError() {
+	s.args[RandomDummyProofDelayFlag.Name] = "130m"
+	s.ErrorContains(s.app.Run(flagsFromArgs(s.T(), s.args)), "invalid random dummy proof delay value")
 }
 
-func (s *ProverCmdSuite) TestNewConfigFromCliContext_RandomDelayErrorLower() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"-" + L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + OracleProver.Name,
-		"-" + RandomDummyProofDelay.Name, "30x-1h",
-		"-" + MinProofFee.Name, minProofFee,
-	}), "invalid random dummy proof delay value")
+func (s *proverCmdSuite) TestNewConfigFromCliContext_RandomDelayErrorLower() {
+	s.args[RandomDummyProofDelayFlag.Name] = "30x-1h"
+	s.ErrorContains(s.app.Run(flagsFromArgs(s.T(), s.args)), "invalid random dummy proof delay value")
 }
 
-func (s *ProverCmdSuite) TestNewConfigFromCliContext_RandomDelayErrorUpper() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"-" + L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + OracleProver.Name,
-		"-" + RandomDummyProofDelay.Name, "30m-1x",
-		"-" + MinProofFee.Name, minProofFee,
-	}), "invalid random dummy proof delay value")
+func (s *proverCmdSuite) TestRandomDelayErrorUpper() {
+	s.args[RandomDummyProofDelayFlag.Name] = "30m-1x"
+	s.ErrorContains(s.app.Run(flagsFromArgs(s.T(), s.args)), "invalid random dummy proof delay value")
 }
 
-func (s *ProverCmdSuite) TestNewConfigFromCliContext_RandomDelayErrorOrder() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"-" + L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + OracleProver.Name,
-		"-" + RandomDummyProofDelay.Name, "1h-30m",
-		"-" + MinProofFee.Name, minProofFee,
-	}), "invalid random dummy proof delay value (lower > upper)")
+func (s *proverCmdSuite) TestRandomDelayErrorOrder() {
+	s.args[RandomDummyProofDelayFlag.Name] = "1h-30m"
+	s.ErrorContains(s.app.Run(flagsFromArgs(s.T(), s.args)), "invalid random dummy proof delay value (lower > upper)")
 }
 
-func (s *ProverCmdSuite) SetupApp() *cli.App {
-	app := cli.NewApp()
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{Name: L1WSEndpointFlag.Name},
-		&cli.StringFlag{Name: L1HTTPEndpoint.Name},
-		&cli.StringFlag{Name: L2WSEndpointFlag.Name},
-		&cli.StringFlag{Name: L2HTTPEndpoint.Name},
-		&cli.StringFlag{Name: TaikoL1AddressFlag.Name},
-		&cli.StringFlag{Name: TaikoL2AddressFlag.Name},
-		&cli.StringFlag{Name: L1ProverPrivKey.Name},
-		&cli.Uint64Flag{Name: StartingBlockID.Name},
-		&cli.BoolFlag{Name: Dummy.Name},
-		&cli.StringFlag{Name: RandomDummyProofDelay.Name},
-		&cli.BoolFlag{Name: OracleProver.Name},
-		&cli.StringFlag{Name: OracleProverPrivateKey.Name},
-		&cli.StringFlag{Name: Graffiti.Name},
-		&cli.Uint64Flag{Name: CheckProofWindowExpiredInterval.Name},
-		&cli.BoolFlag{Name: ProveUnassignedBlocks.Name},
-		&cli.Uint64Flag{Name: RPCTimeoutFlag.Name},
-		&cli.Uint64Flag{Name: ProverCapacity.Name},
-		&cli.Uint64Flag{Name: MinProofFee.Name},
-		&cli.Uint64Flag{Name: ProveBlockTxGasLimit.Name},
+func (s *proverCmdSuite) SetupTest() {
+	proverConf = &prover.Config{}
+	s.app = cli.NewApp()
+	s.app.Flags = proverFlags
+	s.app.Action = func(c *cli.Context) error {
+		return proverConf.Validate()
 	}
-	app.Action = func(c *cli.Context) error {
-		_, err := configProver(c)
-		s.NoError(err)
-		return nil
+	s.args = map[string]interface{}{
+		// common flags
+		L1WSEndpointFlag.Name:       os.Getenv("L1_NODE_WS_ENDPOINT"),
+		TaikoL1AddressFlag.Name:     os.Getenv("TAIKO_L1_ADDRESS"),
+		TaikoL2AddressFlag.Name:     os.Getenv("TAIKO_L2_ADDRESS"),
+		VerbosityFlag.Name:          "0",
+		LogJsonFlag.Name:            "false",
+		MetricsEnabledFlag.Name:     "false",
+		MetricsAddrFlag.Name:        "",
+		BackOffMaxRetrysFlag.Name:   "10",
+		RPCTimeoutFlag.Name:         rpcTimeout.String(),
+		WaitReceiptTimeoutFlag.Name: "10s",
+		// 		// proposer flags
+		L1HTTPEndpointFlag.Name:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WSEndpointFlag.Name:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HTTPEndpointFlag.Name:                  os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		ZkEvmRpcdEndpointFlag.Name:               os.Getenv("ZK_EVM_RPCD_ENDPOINT"),
+		ZkEvmRpcdParamsPathFlag.Name:             os.Getenv("ZK_EVM_RPCD_PARAMS_PATH"),
+		L1ProverPrivKeyFlag.Name:                 os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		MinProofFeeFlag.Name:                     minProofFee,
+		StartingBlockIDFlag.Name:                 0,
+		MaxConcurrentProvingJobsFlag.Name:        1,
+		DummyFlag.Name:                           true,
+		RandomDummyProofDelayFlag.Name:           "30m-1h",
+		OracleProverFlag.Name:                    true,
+		OracleProverPrivateKeyFlag.Name:          os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		OracleProofSubmissionDelayFlag.Name:      "10s",
+		ProofSubmissionMaxRetryFlag.Name:         3,
+		GraffitiFlag.Name:                        "",
+		CheckProofWindowExpiredIntervalFlag.Name: "30s",
+		ProveUnassignedBlocksFlag.Name:           true,
+		ProveBlockTxGasLimitFlag.Name:            "100000",
+		ProverCapacityFlag.Name:                  8,
+		MaxExpiryFlag.Name:                       "30m",
 	}
-	return app
 }
 
 func TestProverCmdSuit(t *testing.T) {
-	suite.Run(t, new(ProverCmdSuite))
+	suite.Run(t, new(proverCmdSuite))
 }
