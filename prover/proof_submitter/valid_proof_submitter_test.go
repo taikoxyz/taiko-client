@@ -35,7 +35,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
+	s.NoError(err)
 
 	s.validProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
 	s.invalidProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
@@ -54,30 +54,29 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		10*time.Second,
 		nil,
 	)
-	s.Nil(err)
-
+	s.NoError(err)
+	ctx := context.Background()
 	// Init calldata syncer
-	testState, err := state.New(context.Background(), s.RpcClient)
-	s.Nil(err)
+	testState, err := state.New(ctx, s.RpcClient)
+	s.NoError(err)
 
 	tracker := beaconsync.NewSyncProgressTracker(s.RpcClient.L2, 30*time.Second)
 
 	s.calldataSyncer, err = calldata.NewSyncer(
-		context.Background(),
+		ctx,
 		s.RpcClient,
 		testState,
 		tracker,
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
-	s.Nil(err)
+	s.NoError(err)
 
 	// Init proposer
-	prop := new(proposer.Proposer)
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	s.Nil(err)
+	s.NoError(err)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
-	s.Nil(proposer.New(context.Background(), prop, (&proposer.Config{
+	cfg := &proposer.Config{
 		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
@@ -92,9 +91,11 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		BlockProposalFee:                   big.NewInt(1000),
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,
-	})))
-
-	s.proposer = prop
+	}
+	ep, err := proposer.GetEndpointFromProposerConfig(ctx, cfg)
+	s.NoError(err)
+	s.proposer, err = proposer.New(ctx, ep, cfg)
+	s.NoError(err)
 }
 
 func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofDeadlineExceeded() {

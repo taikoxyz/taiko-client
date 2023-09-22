@@ -132,7 +132,7 @@ func (s *ProverTestSuite) TestInitError() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
+	s.NoError(err)
 
 	// Error should be "context canceled", instead is "Dial ethclient error:"
 	cfg := &Config{
@@ -149,8 +149,7 @@ func (s *ProverTestSuite) TestInitError() {
 		CheckProofWindowExpiredInterval: 5 * time.Second,
 		ProveUnassignedBlocks:           true,
 	}
-	ep, err := GetEndpointFromProverConfig(ctx, cfg)
-	_, err = New(ctx, ep, cfg)
+	_, err = GetEndpointFromProverConfig(ctx, cfg)
 	s.ErrorContains(err, "dial tcp:")
 }
 

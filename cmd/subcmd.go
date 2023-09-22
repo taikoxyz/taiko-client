@@ -15,7 +15,7 @@ import (
 
 var s node.Service
 
-func startServer(c *cli.Context) error {
+func startApp(c *cli.Context) error {
 	ctx, ctxClose := context.WithCancel(context.Background())
 	defer func() { ctxClose() }()
 

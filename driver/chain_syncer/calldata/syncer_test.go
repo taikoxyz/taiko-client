@@ -27,26 +27,25 @@ type CalldataSyncerTestSuite struct {
 
 func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
-
-	state, err := state.New(context.Background(), s.RpcClient)
-	s.Nil(err)
+	ctx := context.Background()
+	state, err := state.New(ctx, s.RpcClient)
+	s.NoError(err)
 
 	syncer, err := NewSyncer(
-		context.Background(),
+		ctx,
 		s.RpcClient,
 		state,
 		beaconsync.NewSyncProgressTracker(s.RpcClient.L2, 1*time.Hour),
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
-	s.Nil(err)
+	s.NoError(err)
 	s.s = syncer
 
-	prop := new(proposer.Proposer)
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	s.Nil(err)
+	s.NoError(err)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
-	s.Nil(proposer.New(context.Background(), prop, (&proposer.Config{
+	cfg := &proposer.Config{
 		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
@@ -61,9 +60,11 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		BlockProposalFee:                   big.NewInt(1000),
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,
-	})))
-
-	s.p = prop
+	}
+	ep, err := proposer.GetEndpointFromProposerConfig(ctx, cfg)
+	s.NoError(err)
+	s.p, err = proposer.New(context.Background(), ep, cfg)
+	s.NoError(err)
 }
 
 func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
