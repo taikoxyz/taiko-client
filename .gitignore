@@ -17,7 +17,7 @@ coverage.out
 # vendor/
 
 # Editors
-.vscode
+# .vscode
 
 # Testing
 integration_test/nodes/deployments/mainnet.json
