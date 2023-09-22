@@ -9,16 +9,16 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "cmd/main.go",
+      "program": "cmd/",
       "args": [
         "driver",
         "--verbosity=4",
         "--l1.ws=ws://localhost:18546",
         "--l2.ws=ws://localhost:28546",
+        "--l2.auth=http://localhost:28551",
         "--taikoL1=0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "--taikoL2=0x1000777700000000000000000000000000000001",
-        "--jwtSecret=${workspaceFolder}/integration_test/nodes/jwt.hex",
-        "--l2.auth=http://localhost:28551"
+        "--jwtSecret=${workspaceFolder}/integration_test/nodes/jwt.hex"
       ]
     },
     {
@@ -26,7 +26,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "cmd/main.go",
+      "program": "cmd/",
       "args": [
         "proposer",
         "--verbosity=4",
@@ -47,13 +47,13 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "cmd/main.go",
+      "program": "cmd/",
       "args": [
         "prover",
         "--verbosity=4",
         "--l1.ws=ws://localhost:18546",
-        "--l1.http=http://localhost:18545",
         "--l2.ws=ws://localhost:28546",
+        "--l1.http=http://localhost:18545",
         "--l2.http=http://localhost:28545",
         "--taikoL1=0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "--taikoL2=0x1000777700000000000000000000000000000001",
