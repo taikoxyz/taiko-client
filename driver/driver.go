@@ -2,7 +2,6 @@ package driver
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -48,20 +47,19 @@ func New(ctx context.Context, cfg *Config) (d *Driver, err error) {
 	d.syncNotify = make(chan struct{}, 1)
 	d.ctx = ctx
 	d.backOffRetryInterval = cfg.BackOffRetryInterval
-	ep, err := EndpointFromConfig(ctx, cfg)
+	d.rpc, err = EndpointFromConfig(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
-	peers, err := ep.L2.PeerCount(ctx)
+	if d.state, err = state.New(d.ctx, d.rpc); err != nil {
+		return nil, err
+	}
+	peers, err := d.rpc.L2.PeerCount(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if cfg.P2PSyncVerifiedBlocks && peers == 0 {
-		fmt.Printf("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
-	}
-
-	if d.state, err = state.New(d.ctx, d.rpc); err != nil {
-		return nil, err
+		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
 	}
 
 	signalServiceAddress, err := d.rpc.TaikoL1.Resolve0(

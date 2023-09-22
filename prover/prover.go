@@ -41,7 +41,7 @@ type Prover struct {
 	oracleProverAddress common.Address
 
 	// Clients
-	RPC *rpc.Client
+	rpc *rpc.Client
 
 	// Prover Server
 	srv *server.ProverServer
@@ -102,13 +102,13 @@ func New(ctx context.Context, cfg *Config) (p *Prover, err error) {
 	p.currentBlocksWaitingForProofWindowMutex = new(sync.Mutex)
 	p.capacityManager = capacity.New(cfg.Capacity)
 
-	p.RPC, err = EndpointFromConfig(ctx, cfg)
+	p.rpc, err = EndpointFromConfig(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	// Configs
-	protocolConfigs, err := p.RPC.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
+	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
 	}
@@ -135,9 +135,9 @@ func New(ctx context.Context, cfg *Config) (p *Prover, err error) {
 
 	p.checkProofWindowExpiredInterval = p.cfg.CheckProofWindowExpiredInterval
 
-	oracleProverAddress, err := p.RPC.TaikoL1.Resolve(
+	oracleProverAddress, err := p.rpc.TaikoL1.Resolve(
 		&bind.CallOpts{Context: ctx},
-		p.RPC.L1ChainID,
+		p.rpc.L1ChainID,
 		rpc.StringToBytes32("oracle_prover"),
 		true,
 	)
@@ -168,7 +168,7 @@ func New(ctx context.Context, cfg *Config) (p *Prover, err error) {
 
 	// Proof submitter
 	if p.validProofSubmitter, err = proofSubmitter.NewValidProofSubmitter(
-		p.RPC,
+		p.rpc,
 		producer,
 		p.proofGenerationCh,
 		p.cfg.TaikoL2Address,
@@ -309,8 +309,8 @@ func (p *Prover) proveOp() error {
 		firstTry = false
 
 		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
-			Client:               p.RPC.L1,
-			TaikoL1:              p.RPC.TaikoL1,
+			Client:               p.rpc.L1,
+			TaikoL1:              p.rpc.TaikoL1,
 			StartHeight:          new(big.Int).SetUint64(p.l1Current.Number.Uint64()),
 			OnBlockProposedEvent: p.onBlockProposed,
 		})
@@ -338,12 +338,12 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
-	if _, err := p.RPC.WaitL1Origin(ctx, event.BlockId); err != nil {
+	if _, err := p.rpc.WaitL1Origin(ctx, event.BlockId); err != nil {
 		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
 	}
 
 	// Check whether the L2 EE's recorded L1 info, to see if the L1 chain has been reorged.
-	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.RPC.CheckL1ReorgFromL2EE(
+	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1ReorgFromL2EE(
 		ctx,
 		new(big.Int).Sub(event.BlockId, common.Big1),
 	)
@@ -353,7 +353,7 @@ func (p *Prover) onBlockProposed(
 
 	// then check the l1Current cursor at first, to see if the L1 chain has been reorged.
 	if !reorged {
-		if reorged, l1CurrentToReset, lastHandledBlockIDToReset, err = p.RPC.CheckL1ReorgFromL1Cursor(
+		if reorged, l1CurrentToReset, lastHandledBlockIDToReset, err = p.rpc.CheckL1ReorgFromL1Cursor(
 			ctx,
 			p.l1Current,
 			p.genesisHeightL1,
@@ -389,7 +389,7 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
-	currentL1OriginHeader, err := p.RPC.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
+	currentL1OriginHeader, err := p.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
 	if err != nil {
 		return fmt.Errorf("failed to get L1 header, height %d: %w", event.Meta.L1Height, err)
 	}
@@ -436,7 +436,7 @@ func (p *Prover) onBlockProposed(
 		if !p.cfg.OracleProver {
 			needNewProof, err := rpc.NeedNewProof(
 				p.ctx,
-				p.RPC,
+				p.rpc,
 				event.BlockId,
 				p.proverAddress,
 			)
@@ -455,7 +455,7 @@ func (p *Prover) onBlockProposed(
 			p.cancelProof(ctx, event.Meta.Id)
 		}
 
-		block, err := p.RPC.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId.Uint64())
+		block, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId.Uint64())
 		if err != nil {
 			return err
 		}
@@ -470,14 +470,14 @@ func (p *Prover) onBlockProposed(
 		var skipProofWindowExpiredCheck bool
 		if p.cfg.OracleProver {
 			shouldSkipProofWindowExpiredCheck := func() (bool, error) {
-				parent, err := p.RPC.L2ParentByBlockId(ctx, event.BlockId)
+				parent, err := p.rpc.L2ParentByBlockId(ctx, event.BlockId)
 				if err != nil {
 					return false, err
 				}
 
 				// check if an invalid proof has been submitted, if so, we can skip proofWindowExpired check below
 				// and always submit proof. otherwise, oracleProver follows same proof logic as regular.
-				transition, err := p.RPC.TaikoL1.GetTransition(
+				transition, err := p.rpc.TaikoL1.GetTransition(
 					&bind.CallOpts{Context: ctx},
 					event.BlockId.Uint64(),
 					parent.Hash(),
@@ -491,7 +491,7 @@ func (p *Prover) onBlockProposed(
 					}
 				}
 
-				block, err := p.RPC.L2.BlockByNumber(ctx, event.BlockId)
+				block, err := p.rpc.L2.BlockByNumber(ctx, event.BlockId)
 				if err != nil {
 					return false, err
 				}
@@ -597,7 +597,7 @@ func (p *Prover) onBlockProposed(
 
 	p.proposeConcurrencyGuard <- struct{}{}
 
-	newL1Current, err := p.RPC.L1.HeaderByHash(ctx, event.Raw.BlockHash)
+	newL1Current, err := p.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash)
 	if err != nil {
 		return err
 	}
@@ -711,11 +711,11 @@ func (p *Prover) Name() string {
 
 // initL1Current initializes prover's L1Current cursor.
 func (p *Prover) initL1Current(startingBlockID *big.Int) error {
-	if err := p.RPC.WaitTillL2ExecutionEngineSynced(p.ctx); err != nil {
+	if err := p.rpc.WaitTillL2ExecutionEngineSynced(p.ctx); err != nil {
 		return err
 	}
 
-	stateVars, err := p.RPC.GetProtocolStateVariables(&bind.CallOpts{Context: p.ctx})
+	stateVars, err := p.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: p.ctx})
 	if err != nil {
 		return err
 	}
@@ -723,7 +723,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 
 	if startingBlockID == nil {
 		if stateVars.LastVerifiedBlockId == 0 {
-			genesisL1Header, err := p.RPC.L1.HeaderByNumber(p.ctx, new(big.Int).SetUint64(stateVars.GenesisHeight))
+			genesisL1Header, err := p.rpc.L1.HeaderByNumber(p.ctx, new(big.Int).SetUint64(stateVars.GenesisHeight))
 			if err != nil {
 				return err
 			}
@@ -737,11 +737,11 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 
 	log.Info("Init L1Current cursor", "startingBlockID", startingBlockID)
 
-	latestVerifiedHeaderL1Origin, err := p.RPC.L2.L1OriginByID(p.ctx, startingBlockID)
+	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
 	if err != nil {
 		if err.Error() == ethereum.NotFound.Error() {
 			log.Warn("Failed to find L1Origin for blockID, use latest L1 head instead", "blockID", startingBlockID)
-			l1Head, err := p.RPC.L1.HeaderByNumber(p.ctx, nil)
+			l1Head, err := p.rpc.L1.HeaderByNumber(p.ctx, nil)
 			if err != nil {
 				return err
 			}
@@ -752,7 +752,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 		return err
 	}
 
-	if p.l1Current, err = p.RPC.L1.HeaderByHash(p.ctx, latestVerifiedHeaderL1Origin.L1BlockHash); err != nil {
+	if p.l1Current, err = p.rpc.L1.HeaderByHash(p.ctx, latestVerifiedHeaderL1Origin.L1BlockHash); err != nil {
 		return err
 	}
 
@@ -761,7 +761,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 
 // isBlockVerified checks whether the given block has been verified by other provers.
 func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
-	stateVars, err := p.RPC.GetProtocolStateVariables(&bind.CallOpts{Context: p.ctx})
+	stateVars, err := p.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: p.ctx})
 	if err != nil {
 		return false, err
 	}
@@ -771,9 +771,9 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 
 // initSubscription initializes all subscriptions in current prover instance.
 func (p *Prover) initSubscription() {
-	p.blockProposedSub = rpc.SubscribeBlockProposed(p.RPC.TaikoL1, p.blockProposedCh)
-	p.blockVerifiedSub = rpc.SubscribeBlockVerified(p.RPC.TaikoL1, p.blockVerifiedCh)
-	p.blockProvenSub = rpc.SubscribeBlockProven(p.RPC.TaikoL1, p.blockProvenCh)
+	p.blockProposedSub = rpc.SubscribeBlockProposed(p.rpc.TaikoL1, p.blockProposedCh)
+	p.blockVerifiedSub = rpc.SubscribeBlockVerified(p.rpc.TaikoL1, p.blockVerifiedCh)
+	p.blockProvenSub = rpc.SubscribeBlockProven(p.rpc.TaikoL1, p.blockProvenCh)
 }
 
 // closeSubscription closes all subscriptions.
@@ -795,7 +795,7 @@ func (p *Prover) checkChainVerification(lastLatestVerifiedL1Height uint64) error
 		"proofCooldownPeriod", p.protocolConfigs.ProofRegularCooldown,
 	)
 
-	stateVar, err := p.RPC.TaikoL1.GetStateVariables(&bind.CallOpts{Context: p.ctx})
+	stateVar, err := p.rpc.TaikoL1.GetStateVariables(&bind.CallOpts{Context: p.ctx})
 	if err != nil {
 		log.Error("Failed to get protocol state variables", "error", err)
 		return err
@@ -817,12 +817,12 @@ func (p *Prover) isValidProof(
 	parentHash common.Hash,
 	blockHash common.Hash,
 ) (bool, error) {
-	parent, err := p.RPC.L2ParentByBlockId(ctx, new(big.Int).SetUint64(blockID))
+	parent, err := p.rpc.L2ParentByBlockId(ctx, new(big.Int).SetUint64(blockID))
 	if err != nil {
 		return false, err
 	}
 
-	block, err := p.RPC.L2.BlockByNumber(ctx, new(big.Int).SetUint64(blockID))
+	block, err := p.rpc.L2.BlockByNumber(ctx, new(big.Int).SetUint64(blockID))
 	if err != nil {
 		return false, err
 	}
@@ -867,7 +867,7 @@ func (p *Prover) checkProofWindowsExpired(ctx context.Context) error {
 // checkProofWindowExpired checks a single instance of a block to see if its proof window has expired
 // and the proof is now able to be submitted by anyone, not just the blocks assigned prover.
 func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId uint64) error {
-	block, err := p.RPC.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, blockId)
+	block, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, blockId)
 	if err != nil {
 		return encoding.TryParsingCustomError(err)
 	}
@@ -887,12 +887,12 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 
 		// we can see if a fork choice with correct parentHash/gasUsed has come in.
 		// if it hasnt, we can start to generate a proof for this.
-		parent, err := p.RPC.L2ParentByBlockId(ctx, new(big.Int).SetUint64(blockId))
+		parent, err := p.rpc.L2ParentByBlockId(ctx, new(big.Int).SetUint64(blockId))
 		if err != nil {
 			return err
 		}
 
-		transition, err := p.RPC.TaikoL1.GetTransition(
+		transition, err := p.rpc.TaikoL1.GetTransition(
 			&bind.CallOpts{Context: ctx},
 			blockId,
 			parent.Hash(),
@@ -918,7 +918,7 @@ func (p *Prover) checkProofWindowExpired(ctx context.Context, l1Height, blockId 
 		} else {
 			// we need to check the block hash vs the proof's blockHash to see
 			// if the proof is valid or not
-			block, err := p.RPC.L2.BlockByNumber(ctx, new(big.Int).SetUint64(blockId))
+			block, err := p.rpc.L2.BlockByNumber(ctx, new(big.Int).SetUint64(blockId))
 			if err != nil {
 				return err
 			}
@@ -1002,8 +1002,8 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 		defer func() { <-p.proposeConcurrencyGuard }()
 
 		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
-			Client:               p.RPC.L1,
-			TaikoL1:              p.RPC.TaikoL1,
+			Client:               p.rpc.L1,
+			TaikoL1:              p.rpc.TaikoL1,
 			StartHeight:          l1Height,
 			EndHeight:            new(big.Int).Add(l1Height, common.Big1),
 			OnBlockProposedEvent: onBlockProposed,

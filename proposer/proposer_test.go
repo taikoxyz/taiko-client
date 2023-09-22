@@ -62,22 +62,22 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
-	sub, err := s.p.RPC.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
+	sub, err := s.p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
 	s.Nil(err)
 	defer func() {
 		sub.Unsubscribe()
 		close(sink)
 	}()
 
-	nonce, err := s.p.RPC.L2.PendingNonceAt(context.Background(), s.TestAddr)
+	nonce, err := s.p.rpc.L2.PendingNonceAt(context.Background(), s.TestAddr)
 	s.Nil(err)
 
 	gaslimit := 21000
 
-	parent, err := s.p.RPC.L2.BlockByNumber(context.Background(), nil)
+	parent, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	baseFee, err := s.p.RPC.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
+	baseFee, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
 	s.Nil(err)
 
 	to := common.BytesToAddress(testutils.RandomBytes(32))
@@ -91,20 +91,20 @@ func (s *ProposerTestSuite) TestProposeOp() {
 		Value:     common.Big1,
 	})
 
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.p.RPC.L2ChainID), s.TestAddrPrivKey)
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.p.rpc.L2ChainID), s.TestAddrPrivKey)
 	s.Nil(err)
-	s.Nil(s.p.RPC.L2.SendTransaction(context.Background(), signedTx))
+	s.Nil(s.p.rpc.L2.SendTransaction(context.Background(), signedTx))
 
 	s.Nil(s.p.ProposeOp(context.Background()))
 
 	event := <-sink
 
-	_, isPending, err := s.p.RPC.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
+	_, isPending, err := s.p.rpc.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
 	s.Equal(s.p.l2SuggestedFeeRecipient, event.Meta.Proposer)
 
-	receipt, err := s.p.RPC.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
+	receipt, err := s.p.rpc.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
 }
@@ -129,7 +129,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	fee := big.NewInt(10000)
 	opts, err := getTxOpts(
 		context.Background(),
-		s.p.RPC.L1,
+		s.p.rpc.L1,
 		s.p.l1ProposerPrivKey,
 		s.RpcClient.L1ChainID,
 		fee,

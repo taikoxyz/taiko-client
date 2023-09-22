@@ -37,8 +37,8 @@ var (
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
 type Proposer struct {
-	// RPC clients
-	RPC *rpc.Client
+	// rpc clients
+	rpc *rpc.Client
 
 	// Private keys and account addresses
 	l1ProposerPrivKey       *ecdsa.PrivateKey
@@ -76,13 +76,12 @@ type Proposer struct {
 
 // New initializes the proposer instance based on the given configurations.
 func New(ctx context.Context, cfg *Config) (p *Proposer, err error) {
-	ep, err := EndpointFromConfig(ctx, cfg)
+	p = &Proposer{}
+	p.rpc, err = EndpointFromConfig(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
-	p = &Proposer{
-		RPC: ep,
-	}
+
 	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
 	p.l1ProposerAddress = crypto.PubkeyToAddress(p.l1ProposerPrivKey.PublicKey)
 	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
@@ -100,7 +99,7 @@ func New(ctx context.Context, cfg *Config) (p *Proposer, err error) {
 	p.cfg = cfg
 
 	// Protocol configs
-	protocolConfigs, err := p.RPC.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
+	protocolConfigs, err := p.rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
 	}
@@ -110,7 +109,7 @@ func New(ctx context.Context, cfg *Config) (p *Proposer, err error) {
 
 	if p.proverSelector, err = selector.NewETHFeeEOASelector(
 		&protocolConfigs,
-		p.RPC,
+		p.rpc,
 		cfg.TaikoL1Address,
 		cfg.BlockProposalFee,
 		cfg.BlockProposalFeeIncreasePercentage,
@@ -190,18 +189,18 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	}
 
 	// Wait until L2 execution engine is synced at first.
-	if err := p.RPC.WaitTillL2ExecutionEngineSynced(ctx); err != nil {
+	if err := p.rpc.WaitTillL2ExecutionEngineSynced(ctx); err != nil {
 		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
 	}
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
-	l2Head, err := p.RPC.L2.HeaderByNumber(ctx, nil)
+	l2Head, err := p.rpc.L2.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	baseFee, err := p.RPC.TaikoL2.GetBasefee(
+	baseFee, err := p.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{Context: ctx},
 		uint64(time.Now().Unix())-l2Head.Time,
 		uint32(l2Head.GasUsed),
@@ -212,7 +211,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Current base fee", "fee", baseFee)
 
-	txLists, err := p.RPC.GetPoolContent(
+	txLists, err := p.rpc.GetPoolContent(
 		ctx,
 		p.L2SuggestedFeeRecipient(),
 		baseFee,
@@ -228,7 +227,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	if p.localsOnly {
 		var (
 			localTxsLists []types.Transactions
-			signer        = types.LatestSignerForChainID(p.RPC.L2ChainID)
+			signer        = types.LatestSignerForChainID(p.rpc.L2ChainID)
 		)
 		for _, txs := range txLists {
 			var filtered types.Transactions
@@ -258,11 +257,11 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return errNoNewTxs
 	}
 
-	head, err := p.RPC.L1.BlockNumber(ctx)
+	head, err := p.rpc.L1.BlockNumber(ctx)
 	if err != nil {
 		return err
 	}
-	nonce, err := p.RPC.L1.NonceAt(
+	nonce, err := p.rpc.L1.NonceAt(
 		ctx,
 		crypto.PubkeyToAddress(p.l1ProposerPrivKey.PublicKey),
 		new(big.Int).SetUint64(head),
@@ -330,7 +329,7 @@ func (p *Proposer) sendProposeBlockTx(
 	if err != nil {
 		return nil, err
 	}
-	opts, err := getTxOpts(ctx, p.RPC.L1, p.l1ProposerPrivKey, p.RPC.L1ChainID, fee)
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID, fee)
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +341,7 @@ func (p *Proposer) sendProposeBlockTx(
 	}
 	if isReplacement {
 		log.Info("Try replacing a transaction with same nonce", "sender", p.l1ProposerAddress, "nonce", nonce)
-		originalTx, err := rpc.GetPendingTxByNonce(ctx, p.RPC, p.l1ProposerAddress, *nonce)
+		originalTx, err := rpc.GetPendingTxByNonce(ctx, p.rpc, p.l1ProposerAddress, *nonce)
 		if err != nil || originalTx == nil {
 			log.Warn(
 				"Original transaction not found",
@@ -378,7 +377,7 @@ func (p *Proposer) sendProposeBlockTx(
 		}
 	}
 
-	proposeTx, err := p.RPC.TaikoL1.ProposeBlock(opts, inputs, assignment, txListBytes)
+	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs, assignment, txListBytes)
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
 	}
@@ -437,7 +436,7 @@ func (p *Proposer) ProposeTxList(
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, p.waitReceiptTimeout)
 	defer cancel()
 
-	if _, err := rpc.WaitReceipt(ctxWithTimeout, p.RPC.L1, tx); err != nil {
+	if _, err := rpc.WaitReceipt(ctxWithTimeout, p.rpc.L1, tx); err != nil {
 		return err
 	}
 
