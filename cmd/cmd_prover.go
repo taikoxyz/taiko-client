@@ -246,7 +246,7 @@ var (
 // All prover flags.
 var proverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L1HTTPEndpoint,
-	L2WSEndpoint,
+	L2WSEndpointFlag,
 	L2HTTPEndpoint,
 	ZkEvmRpcdEndpoint,
 	ZkEvmRpcdParamsPath,

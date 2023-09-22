@@ -9,7 +9,7 @@ var metricConf = &metrics.Config{}
 
 var (
 	// Metrics
-	MetricsEnabled = &cli.BoolFlag{
+	MetricsEnabledFlag = &cli.BoolFlag{
 		Name:     "metrics",
 		Usage:    "Enable metrics collection and reporting",
 		Category: metricsCategory,
@@ -19,7 +19,7 @@ var (
 			return nil
 		},
 	}
-	MetricsAddr = &cli.StringFlag{
+	MetricsAddrFlag = &cli.StringFlag{
 		Name:     "metrics.addr",
 		Usage:    "Metrics reporting server listening address",
 		Category: metricsCategory,

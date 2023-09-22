@@ -16,7 +16,7 @@ var logConf = &logConfig{}
 
 var (
 	// Optional flags for logging which are used by all client softwares.
-	Verbosity = &cli.IntFlag{
+	VerbosityFlag = &cli.IntFlag{
 		Name:     "verbosity",
 		Usage:    "Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail",
 		Value:    3,
@@ -26,7 +26,7 @@ var (
 			return nil
 		},
 	}
-	LogJson = &cli.BoolFlag{
+	LogJsonFlag = &cli.BoolFlag{
 		Name:     "log.json",
 		Usage:    "Format logs with JSON",
 		Category: loggingCategory,

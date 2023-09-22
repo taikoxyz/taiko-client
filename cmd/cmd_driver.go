@@ -17,7 +17,7 @@ var driverConf = &driver.Config{}
 
 // Flags used by driver.
 var (
-	L2AuthEndpoint = &cli.StringFlag{
+	L2AuthEndpointFlag = &cli.StringFlag{
 		Name:     "l2.auth",
 		Usage:    "Authenticated HTTP RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
@@ -27,7 +27,7 @@ var (
 			return nil
 		},
 	}
-	JWTSecret = &cli.StringFlag{
+	JWTSecretFlag = &cli.StringFlag{
 		Name:     "jwtSecret",
 		Usage:    "Path to a JWT secret to use for authenticated RPC endpoints",
 		Required: true,
@@ -45,7 +45,7 @@ var (
 
 // Optional flags used by driver.
 var (
-	P2PSyncVerifiedBlocks = &cli.BoolFlag{
+	P2PSyncVerifiedBlocksFlag = &cli.BoolFlag{
 		Name: "p2p.syncVerifiedBlocks",
 		Usage: "Try P2P syncing verified blocks between L2 execution engines, " +
 			"will be helpful to bring a new node online quickly",
@@ -56,7 +56,7 @@ var (
 			return nil
 		},
 	}
-	P2PSyncTimeout = &cli.DurationFlag{
+	P2PSyncTimeoutFlag = &cli.DurationFlag{
 		Name: "p2p.syncTimeout",
 		Usage: "P2P syncing timeout in `duration`, if no sync progress is made within this time span, " +
 			"driver will stop the P2P sync and insert all remaining L2 blocks one by one",
@@ -67,12 +67,12 @@ var (
 			return nil
 		},
 	}
-	CheckPointSyncUrl = &cli.StringFlag{
+	CheckPointSyncUrlFlag = &cli.StringFlag{
 		Name:     "p2p.checkPointSyncUrl",
 		Usage:    "HTTP RPC endpoint of another synced L2 execution engine node",
 		Category: driverCategory,
 		Action: func(ctx *cli.Context, s string) error {
-			driverConf.L2CheckPoint = s // 可能没用
+			driverConf.L2CheckPoint = s
 			return nil
 		},
 	}
@@ -80,12 +80,12 @@ var (
 
 // All driver flags.
 var driverFlags = MergeFlags(CommonFlags, []cli.Flag{
-	L2WSEndpoint,
-	L2AuthEndpoint,
-	JWTSecret,
-	P2PSyncVerifiedBlocks,
-	P2PSyncTimeout,
-	CheckPointSyncUrl,
+	L2WSEndpointFlag,
+	L2AuthEndpointFlag,
+	JWTSecretFlag,
+	P2PSyncVerifiedBlocksFlag,
+	P2PSyncTimeoutFlag,
+	CheckPointSyncUrlFlag,
 })
 
 func configDriver(c *cli.Context) (*driver.Driver, error) {

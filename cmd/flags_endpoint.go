@@ -18,7 +18,7 @@ var (
 
 // Required endpoint flags which are used by all client softwares.
 var (
-	L1WSEndpoint = &cli.StringFlag{
+	L1WSEndpointFlag = &cli.StringFlag{
 		Name:     "l1.ws",
 		Usage:    "Websocket RPC endpoint of a L1 ethereum node",
 		Required: true,
@@ -30,7 +30,7 @@ var (
 			return nil
 		},
 	}
-	L2WSEndpoint = &cli.StringFlag{
+	L2WSEndpointFlag = &cli.StringFlag{
 		Name:     "l2.ws",
 		Usage:    "Websocket RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
@@ -62,7 +62,7 @@ var (
 			return nil
 		},
 	}
-	TaikoL1Address = &cli.StringFlag{
+	TaikoL1AddressFlag = &cli.StringFlag{
 		Name:     "taikoL1",
 		Usage:    "TaikoL1 contract address",
 		Required: true,
@@ -74,7 +74,7 @@ var (
 			return nil
 		},
 	}
-	TaikoL2Address = &cli.StringFlag{
+	TaikoL2AddressFlag = &cli.StringFlag{
 		Name:     "taikoL2",
 		Usage:    "TaikoL2 contract address",
 		Required: true,
@@ -90,7 +90,7 @@ var (
 
 var (
 	// Required  flags which are used by all client softwares.
-	BackOffMaxRetrys = &cli.Uint64Flag{
+	BackOffMaxRetrysFlag = &cli.Uint64Flag{
 		Name:     "backoff.maxRetrys",
 		Usage:    "Max retry times when there is an error",
 		Category: commonCategory,
@@ -100,7 +100,7 @@ var (
 			return nil
 		},
 	}
-	BackOffRetryInterval = &cli.DurationFlag{
+	BackOffRetryIntervalFlag = &cli.DurationFlag{
 		Name:     "backoff.retryInterval",
 		Usage:    "Retry interval in `duration` when there is an error",
 		Category: commonCategory,
@@ -112,7 +112,7 @@ var (
 			return nil
 		},
 	}
-	RPCTimeout = &cli.DurationFlag{
+	RPCTimeoutFlag = &cli.DurationFlag{
 		Name:     "rpc.timeout",
 		Usage:    "Timeout in `duration` for RPC calls",
 		Category: commonCategory,
@@ -123,7 +123,7 @@ var (
 			return nil
 		},
 	}
-	WaitReceiptTimeout = &cli.DurationFlag{
+	WaitReceiptTimeoutFlag = &cli.DurationFlag{
 		Name:     "rpc.waitReceiptTimeout",
 		Usage:    "Timeout in `duration` for wait for receipts for RPC transactions",
 		Category: commonCategory,
@@ -139,18 +139,18 @@ var (
 // All common flags.
 var CommonFlags = []cli.Flag{
 	// Required
-	L1WSEndpoint,
-	TaikoL1Address,
-	TaikoL2Address,
+	L1WSEndpointFlag,
+	TaikoL1AddressFlag,
+	TaikoL2AddressFlag,
 	// Optional
-	Verbosity,
-	LogJson,
-	MetricsEnabled,
-	MetricsAddr,
-	BackOffMaxRetrys,
-	BackOffRetryInterval,
-	RPCTimeout,
-	WaitReceiptTimeout,
+	VerbosityFlag,
+	LogJsonFlag,
+	MetricsEnabledFlag,
+	MetricsAddrFlag,
+	BackOffMaxRetrysFlag,
+	BackOffRetryIntervalFlag,
+	RPCTimeoutFlag,
+	WaitReceiptTimeoutFlag,
 }
 
 // MergeFlags merges the given flag slices.
