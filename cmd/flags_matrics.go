@@ -8,7 +8,6 @@ import (
 var metricConf = &metrics.Config{}
 
 var (
-	// Metrics
 	MetricsEnabledFlag = &cli.BoolFlag{
 		Name:     "metrics",
 		Usage:    "Enable metrics collection and reporting",

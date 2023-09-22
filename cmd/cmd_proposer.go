@@ -19,7 +19,7 @@ var proposerConf = &proposer.Config{}
 
 // Required flags used by proposer.
 var (
-	L1ProposerPrivKey = &cli.StringFlag{
+	L1ProposerPrivKeyFlag = &cli.StringFlag{
 		Name:     "l1.proposerPrivKey",
 		Usage:    "Private key of the L1 proposer, who will send TaikoL1.proposeBlock transactions",
 		Required: true,
@@ -33,7 +33,7 @@ var (
 			return nil
 		},
 	}
-	L2SuggestedFeeRecipient = &cli.StringFlag{
+	L2SuggestedFeeRecipientFlag = &cli.StringFlag{
 		Name:     "l2.suggestedFeeRecipient",
 		Usage:    "Address of the proposed block's suggested fee recipient",
 		Required: true,
@@ -46,7 +46,7 @@ var (
 			return nil
 		},
 	}
-	ProverEndpoints = &cli.StringSliceFlag{
+	ProverEndpointsFlag = &cli.StringSliceFlag{
 		Name:     "proverEndpoints",
 		Usage:    "Comma-delineated list of prover endpoints proposer should query when attempting to propose a block",
 		Category: proposerCategory,
@@ -61,7 +61,7 @@ var (
 			return nil
 		},
 	}
-	BlockProposalFee = &cli.StringFlag{
+	BlockProposalFeeFlag = &cli.StringFlag{
 		Name:     "blockProposalFee",
 		Usage:    "Initial block proposal fee (in wei) paid on block proposing",
 		Category: proposerCategory,
@@ -74,7 +74,7 @@ var (
 			return nil
 		},
 	}
-	TaikoTokenAddress = &cli.StringFlag{
+	TaikoTokenAddressFlag = &cli.StringFlag{
 		Name:     "taikoToken",
 		Usage:    "TaikoToken contract address",
 		Required: true,
@@ -88,7 +88,7 @@ var (
 
 // Optional flags used by proposer.
 var (
-	ProposeInterval = &cli.DurationFlag{
+	ProposeIntervalFlag = &cli.DurationFlag{
 		Name:     "proposeInterval",
 		Usage:    "Time interval in `duration` to propose L2 pending transactions",
 		Category: proposerCategory,
@@ -97,7 +97,7 @@ var (
 			return nil
 		},
 	}
-	TxPoolLocals = &cli.StringSliceFlag{
+	TxPoolLocalsFlag = &cli.StringSliceFlag{
 		Name:     "txpool.locals",
 		Usage:    "Comma separated `accounts` to treat as locals (priority inclusion)",
 		Category: proposerCategory,
@@ -112,7 +112,7 @@ var (
 			return nil
 		},
 	}
-	TxPoolLocalsOnly = &cli.BoolFlag{
+	TxPoolLocalsOnlyFlag = &cli.BoolFlag{
 		Name:     "txpool.localsOnly",
 		Usage:    "If set to true, proposer will only propose transactions of local accounts",
 		Value:    false,
@@ -122,7 +122,7 @@ var (
 			return nil
 		},
 	}
-	ProposeEmptyBlocksInterval = &cli.DurationFlag{
+	ProposeEmptyBlocksIntervalFlag = &cli.DurationFlag{
 		Name:     "proposeEmptyBlockInterval",
 		Usage:    "Time interval in `duration` to propose empty blocks",
 		Category: proposerCategory,
@@ -131,7 +131,7 @@ var (
 			return nil
 		},
 	}
-	MaxProposedTxListsPerEpoch = &cli.Uint64Flag{
+	MaxProposedTxListsPerEpochFlag = &cli.Uint64Flag{
 		Name:     "maxProposedTxListsPerEpoch",
 		Value:    1,
 		Category: proposerCategory,
@@ -140,7 +140,7 @@ var (
 			return nil
 		},
 	}
-	ProposeBlockTxGasLimit = &cli.Uint64Flag{
+	ProposeBlockTxGasLimitFlag = &cli.Uint64Flag{
 		Name:     "proposeBlockTxGasLimit",
 		Usage:    "Gas limit will be used for TaikoL1.proposeBlock transactions",
 		Category: proposerCategory,
@@ -149,7 +149,7 @@ var (
 			return nil
 		},
 	}
-	ProposeBlockTxReplacementMultiplier = &cli.Uint64Flag{
+	ProposeBlockTxReplacementMultiplierFlag = &cli.Uint64Flag{
 		Name:     "proposeBlockTxReplacementMultiplier",
 		Value:    2,
 		Usage:    "Gas tip multiplier when replacing a TaikoL1.proposeBlock transaction with same nonce",
@@ -162,7 +162,7 @@ var (
 			return nil
 		},
 	}
-	ProposeBlockTxGasTipCap = &cli.Uint64Flag{
+	ProposeBlockTxGasTipCapFlag = &cli.Uint64Flag{
 		Name:     "proposeBlockTxGasTipCap",
 		Usage:    "Gas tip cap (in wei) for a TaikoL1.proposeBlock transaction when doing the transaction replacement",
 		Category: proposerCategory,
@@ -171,7 +171,7 @@ var (
 			return nil
 		},
 	}
-	BlockProposalFeeIncreasePercentage = &cli.Uint64Flag{
+	BlockProposalFeeIncreasePercentageFlag = &cli.Uint64Flag{
 		Name:     "blockProposalFeeIncreasePercentage",
 		Usage:    "Increase fee by what percentage when no prover wants to accept the block at initial fee",
 		Category: proposerCategory,
@@ -181,7 +181,7 @@ var (
 			return nil
 		},
 	}
-	BlockProposalFeeIterations = &cli.Uint64Flag{
+	BlockProposalFeeIterationsFlag = &cli.Uint64Flag{
 		Name:     "blockProposalFeeIterations",
 		Usage:    "If nobody accepts block at initial fee, how many iterations to increase fee before giving up",
 		Category: proposerCategory,
@@ -196,21 +196,21 @@ var (
 // All proposer flags.
 var proposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2HTTPEndpointFlag,
-	L1ProposerPrivKey,
-	L2SuggestedFeeRecipient,
-	ProposeInterval,
-	TxPoolLocals,
-	TxPoolLocalsOnly,
-	ProposeEmptyBlocksInterval,
-	MaxProposedTxListsPerEpoch,
-	ProposeBlockTxGasLimit,
-	ProposeBlockTxReplacementMultiplier,
-	ProposeBlockTxGasTipCap,
-	ProverEndpoints,
-	BlockProposalFee,
-	BlockProposalFeeIncreasePercentage,
-	BlockProposalFeeIterations,
-	TaikoTokenAddress,
+	L1ProposerPrivKeyFlag,
+	L2SuggestedFeeRecipientFlag,
+	ProposeIntervalFlag,
+	TxPoolLocalsFlag,
+	TxPoolLocalsOnlyFlag,
+	ProposeEmptyBlocksIntervalFlag,
+	MaxProposedTxListsPerEpochFlag,
+	ProposeBlockTxGasLimitFlag,
+	ProposeBlockTxReplacementMultiplierFlag,
+	ProposeBlockTxGasTipCapFlag,
+	ProverEndpointsFlag,
+	BlockProposalFeeFlag,
+	BlockProposalFeeIncreasePercentageFlag,
+	BlockProposalFeeIterationsFlag,
+	TaikoTokenAddressFlag,
 })
 
 func configProposer(c *cli.Context) (*proposer.Proposer, error) {
