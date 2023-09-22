@@ -107,6 +107,6 @@ func configDriver(c *cli.Context, ep *rpc.Client) error {
 	if err != nil {
 		return err
 	}
-	exec = d
+	cmd = d
 	return nil
 }

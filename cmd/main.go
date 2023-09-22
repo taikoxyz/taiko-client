@@ -27,21 +27,21 @@ func main() {
 			Flags:       driverFlags,
 			Usage:       "Starts the driver software",
 			Description: "Taiko driver software",
-			Action:      startApp,
+			Action:      startSubCmd,
 		},
 		{
 			Name:        proposerCmd,
 			Flags:       proposerFlags,
 			Usage:       "Starts the proposer software",
 			Description: "Taiko proposer software",
-			Action:      startApp,
+			Action:      startSubCmd,
 		},
 		{
 			Name:        proverCmd,
 			Flags:       proverFlags,
 			Usage:       "Starts the prover software",
 			Description: "Taiko prover software",
-			Action:      startApp,
+			Action:      startSubCmd,
 		},
 	}
 

@@ -12,23 +12,23 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 )
 
-// application is the interface for the server that the node runs.
-type application interface {
+// subCmd is the interface for the sub command.
+type subCmd interface {
 	Name() string
 	Start() error
 	Close(context.Context)
 }
 
-var exec application
+var cmd subCmd
 
-func startApp(c *cli.Context) error {
+func startSubCmd(c *cli.Context) error {
 	ctx, ctxClose := context.WithCancel(context.Background())
 	defer func() { ctxClose() }()
 
-	log.Info("Starting Taiko client application", "name", exec.Name())
+	log.Info("Starting Taiko client application", "name", cmd.Name())
 
-	if err := exec.Start(); err != nil {
-		log.Error("Starting application error", "name", exec.Name(), "error", err)
+	if err := cmd.Start(); err != nil {
+		log.Error("Starting application error", "name", cmd.Name(), "error", err)
 		return err
 	}
 
@@ -39,8 +39,8 @@ func startApp(c *cli.Context) error {
 
 	defer func() {
 		ctxClose()
-		exec.Close(ctx)
-		log.Info("Application stopped", "name", exec.Name())
+		cmd.Close(ctx)
+		log.Info("Application stopped", "name", cmd.Name())
 	}()
 
 	quitCh := make(chan os.Signal, 1)

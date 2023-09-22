@@ -214,6 +214,6 @@ func configProposer(c *cli.Context, ep *rpc.Client) error {
 	if err != nil {
 		return err
 	}
-	exec = p
+	cmd = p
 	return nil
 }
