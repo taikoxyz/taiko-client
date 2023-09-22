@@ -88,8 +88,8 @@ var (
 	}
 )
 
+// Required  flags which are used by all client softwares.
 var (
-	// Required  flags which are used by all client softwares.
 	BackOffMaxRetrysFlag = &cli.Uint64Flag{
 		Name:     "backoff.maxRetrys",
 		Usage:    "Max retry times when there is an error",

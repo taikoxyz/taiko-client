@@ -269,7 +269,7 @@ var proverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxExpiryFlag,
 })
 
-func configProver(c *cli.Context) (*prover.Prover, error) {
+func newProver(c *cli.Context) (*prover.Prover, error) {
 	if err := proverConf.Validate(); err != nil {
 		return nil, err
 	}

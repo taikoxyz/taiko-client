@@ -61,11 +61,11 @@ func startSubCmd(c *cli.Context) error {
 func cmdFromContext(c *cli.Context) (subCmd, error) {
 	switch c.Command.Name {
 	case driverCmd:
-		return configDriver(c)
+		return newDriver(c)
 	case proposerCmd:
-		return configProposer(c)
+		return newProposer(c)
 	case proverCmd:
-		return configProver(c)
+		return newProver(c)
 	default:
 		panic("Unknown command name")
 	}

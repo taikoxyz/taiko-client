@@ -13,7 +13,6 @@ import (
 )
 
 var (
-	l2EEHTTP         = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 	proverEndpoints  = "http://localhost:9876,http://localhost:1234"
 	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
@@ -29,7 +28,7 @@ type proposerCmdSuite struct {
 func (s *proposerCmdSuite) TestFlags() {
 	s.app.After = func(ctx *cli.Context) error {
 		s.Equal(l1WSEndpoint, proposerConf.L1Endpoint)
-		s.Equal(l2EEHTTP, proposerConf.L2Endpoint)
+		s.Equal(l2HttpEndpoint, proposerConf.L2Endpoint)
 		s.Equal(taikoL1, proposerConf.TaikoL1Address.String())
 		s.Equal(taikoL2, proposerConf.TaikoL2Address.String())
 		s.Equal(taikoToken, proposerConf.TaikoTokenAddress.String())

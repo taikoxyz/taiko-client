@@ -24,11 +24,12 @@ type cmdSuit struct {
 	app  *cli.App
 	args map[string]interface{}
 }
+
 type driverCmdSuite struct {
 	cmdSuit
 }
 
-func (s *driverCmdSuite) TestParseConfig() {
+func (s *driverCmdSuite) TestParseFlags() {
 	s.app.After = func(ctx *cli.Context) error {
 		s.Equal(l1WSEndpoint, driverConf.L1Endpoint)
 		s.Equal(l2WSEndpoint, driverConf.L2Endpoint)
@@ -62,6 +63,7 @@ func (s *driverCmdSuite) SetupTest() {
 		return driverConf.Validate(context.Background())
 	}
 	s.args = map[string]interface{}{
+		// common flags
 		L1WSEndpointFlag.Name:       os.Getenv("L1_NODE_WS_ENDPOINT"),
 		TaikoL1AddressFlag.Name:     os.Getenv("TAIKO_L1_ADDRESS"),
 		TaikoL2AddressFlag.Name:     os.Getenv("TAIKO_L2_ADDRESS"),
@@ -72,7 +74,7 @@ func (s *driverCmdSuite) SetupTest() {
 		BackOffMaxRetrysFlag.Name:   "10",
 		RPCTimeoutFlag.Name:         rpcTimeout.String(),
 		WaitReceiptTimeoutFlag.Name: "10s",
-
+		// driver flags
 		L2WSEndpointFlag.Name:          os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		L2AuthEndpointFlag.Name:        os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		JWTSecretFlag.Name:             os.Getenv("JWT_SECRET"),

@@ -213,7 +213,7 @@ var proposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	TaikoTokenAddressFlag,
 })
 
-func configProposer(c *cli.Context) (*proposer.Proposer, error) {
+func newProposer(c *cli.Context) (*proposer.Proposer, error) {
 	if err := proposerConf.Validate(); err != nil {
 		return nil, err
 	}

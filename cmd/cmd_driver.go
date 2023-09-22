@@ -15,7 +15,7 @@ const (
 
 var driverConf = &driver.Config{}
 
-// Flags used by driver.
+// Required flags used by driver.
 var (
 	L2AuthEndpointFlag = &cli.StringFlag{
 		Name:     "l2.auth",
@@ -88,7 +88,7 @@ var driverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	CheckPointSyncUrlFlag,
 })
 
-func configDriver(c *cli.Context) (*driver.Driver, error) {
+func newDriver(c *cli.Context) (*driver.Driver, error) {
 	if err := driverConf.Validate(c.Context); err != nil {
 		return nil, err
 	}
