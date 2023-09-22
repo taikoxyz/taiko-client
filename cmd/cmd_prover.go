@@ -273,6 +273,5 @@ func configProver(c *cli.Context) (*prover.Prover, error) {
 	if err := proverConf.Validate(); err != nil {
 		return nil, err
 	}
-
 	return prover.New(c.Context, proverConf)
 }

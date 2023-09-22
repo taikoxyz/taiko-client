@@ -27,10 +27,6 @@ type Config struct {
 }
 
 // Validate checks the configuration settings.
-//
-// It verifies the URL schemes for the L1Endpoint, L2Endpoint, and L2EngineEndpoint.
-// If P2PSyncVerifiedBlocks is true and L2CheckPoint is empty, it returns an error.
-// Returns nil if all checks pass.
 func (c *Config) Validate(ctx context.Context) error {
 	if err := rpc.CheckURLScheme(c.L1Endpoint, "ws"); err != nil {
 		return err

@@ -39,6 +39,9 @@ var (
 		Required: true,
 		Category: proposerCategory,
 		Action: func(c *cli.Context, v string) error {
+			if !common.IsHexAddress(v) {
+				return fmt.Errorf("invalid L2 suggested fee recipient address: %s", v)
+			}
 			proposerConf.L2SuggestedFeeRecipient = common.HexToAddress(v)
 			return nil
 		},
@@ -87,7 +90,7 @@ var (
 var (
 	ProposeInterval = &cli.DurationFlag{
 		Name:     "proposeInterval",
-		Usage:    "Time interval to propose L2 pending transactions",
+		Usage:    "Time interval in `duration` to propose L2 pending transactions",
 		Category: proposerCategory,
 		Action: func(c *cli.Context, v time.Duration) error {
 			proposerConf.ProposeInterval = &v
@@ -96,7 +99,7 @@ var (
 	}
 	TxPoolLocals = &cli.StringSliceFlag{
 		Name:     "txpool.locals",
-		Usage:    "Comma separated accounts to treat as locals (priority inclusion)",
+		Usage:    "Comma separated `accounts` to treat as locals (priority inclusion)",
 		Category: proposerCategory,
 		Action: func(c *cli.Context, v []string) error {
 			for _, account := range v {
@@ -121,7 +124,7 @@ var (
 	}
 	ProposeEmptyBlocksInterval = &cli.DurationFlag{
 		Name:     "proposeEmptyBlockInterval",
-		Usage:    "Time interval to propose empty blocks",
+		Usage:    "Time interval in `duration` to propose empty blocks",
 		Category: proposerCategory,
 		Action: func(c *cli.Context, v time.Duration) error {
 			proposerConf.ProposeEmptyBlocksInterval = &v

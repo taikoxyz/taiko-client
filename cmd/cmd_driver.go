@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/taikoxyz/taiko-client/driver"
@@ -34,7 +35,7 @@ var (
 		Action: func(c *cli.Context, v string) error {
 			jwtSecret, err := jwt.ParseSecretFromFile(v)
 			if err != nil {
-				return err
+				return fmt.Errorf("invalid JWT secret file: %w", err)
 			}
 			driverConf.JwtSecret = string(jwtSecret)
 			return nil
@@ -91,9 +92,5 @@ func configDriver(c *cli.Context) (*driver.Driver, error) {
 	if err := driverConf.Validate(c.Context); err != nil {
 		return nil, err
 	}
-	d, err := driver.New(c.Context, driverConf)
-	if err != nil {
-		return nil, err
-	}
-	return d, nil
+	return driver.New(c.Context, driverConf)
 }
