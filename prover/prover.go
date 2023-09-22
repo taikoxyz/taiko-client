@@ -102,8 +102,7 @@ func New(ctx context.Context, cfg *Config) (p *Prover, err error) {
 	p.currentBlocksWaitingForProofWindowMutex = new(sync.Mutex)
 	p.capacityManager = capacity.New(cfg.Capacity)
 
-	p.rpc, err = EndpointFromConfig(ctx, cfg)
-	if err != nil {
+	if p.rpc, err = EndpointFromConfig(ctx, cfg); err != nil {
 		return nil, err
 	}
 

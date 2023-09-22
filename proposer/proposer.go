@@ -37,7 +37,7 @@ var (
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
 type Proposer struct {
-	// rpc clients
+	// RPC clients
 	rpc *rpc.Client
 
 	// Private keys and account addresses
@@ -77,8 +77,7 @@ type Proposer struct {
 // New initializes the proposer instance based on the given configurations.
 func New(ctx context.Context, cfg *Config) (p *Proposer, err error) {
 	p = &Proposer{}
-	p.rpc, err = EndpointFromConfig(ctx, cfg)
-	if err != nil {
+	if p.rpc, err = EndpointFromConfig(ctx, cfg); err != nil {
 		return nil, err
 	}
 

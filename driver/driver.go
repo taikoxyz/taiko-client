@@ -47,8 +47,8 @@ func New(ctx context.Context, cfg *Config) (d *Driver, err error) {
 	d.syncNotify = make(chan struct{}, 1)
 	d.ctx = ctx
 	d.backOffRetryInterval = cfg.BackOffRetryInterval
-	d.rpc, err = EndpointFromConfig(ctx, cfg)
-	if err != nil {
+
+	if d.rpc, err = EndpointFromConfig(ctx, cfg); err != nil {
 		return nil, err
 	}
 	if d.state, err = state.New(d.ctx, d.rpc); err != nil {
