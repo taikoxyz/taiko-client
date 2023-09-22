@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/version"
 	"github.com/urfave/cli/v2"
 )
@@ -45,23 +44,6 @@ func main() {
 		},
 	}
 
-	app.Before = func(c *cli.Context) error {
-		initLogger(logConf)
-		ep, err := rpc.NewClient(c.Context, endpointConf)
-		if err != nil {
-			return err
-		}
-		switch c.Command.Name {
-		case driverCmd:
-			return configDriver(c, ep)
-		case proposerCmd:
-			return configProposer(c, ep)
-		case proverCmd:
-			return configProver(c, ep)
-		default:
-			panic("Unknown command name")
-		}
-	}
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

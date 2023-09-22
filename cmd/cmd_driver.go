@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
 
@@ -25,7 +23,6 @@ var (
 		Category: driverCategory,
 		Action: func(c *cli.Context, v string) error {
 			driverConf.L2EngineEndpoint = v
-			endpointConf.L2EngineEndpoint = v
 			return nil
 		},
 	}
@@ -40,7 +37,6 @@ var (
 				return err
 			}
 			driverConf.JwtSecret = string(jwtSecret)
-			endpointConf.JwtSecret = string(jwtSecret)
 			return nil
 		},
 	}
@@ -76,7 +72,6 @@ var (
 		Category: driverCategory,
 		Action: func(ctx *cli.Context, s string) error {
 			driverConf.L2CheckPoint = s // 可能没用
-			endpointConf.L2CheckPoint = s
 			return nil
 		},
 	}
@@ -92,21 +87,13 @@ var driverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	CheckPointSyncUrl,
 })
 
-func configDriver(c *cli.Context, ep *rpc.Client) error {
-	if err := driverConf.Check(); err != nil {
-		return err
+func configDriver(c *cli.Context) (*driver.Driver, error) {
+	if err := driverConf.Validate(c.Context); err != nil {
+		return nil, err
 	}
-	peers, err := ep.L2.PeerCount(c.Context)
+	d, err := driver.New(c.Context, driverConf)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if driverConf.P2PSyncVerifiedBlocks && peers == 0 {
-		fmt.Printf("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
-	}
-	d, err := driver.New(c.Context, ep, driverConf)
-	if err != nil {
-		return err
-	}
-	cmd = d
-	return nil
+	return d, nil
 }

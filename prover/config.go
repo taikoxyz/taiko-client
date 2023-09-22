@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // Config contains the configurations to initialize a Taiko prover.
@@ -43,7 +44,20 @@ type Config struct {
 	MaxExpiry                       time.Duration
 }
 
-func (c *Config) Check() error {
+func (c *Config) Validate() error {
+	if err := rpc.CheckURLScheme(c.L1WsEndpoint, "ws"); err != nil {
+		return err
+	}
+	if err := rpc.CheckURLScheme(c.L2WsEndpoint, "ws"); err != nil {
+		return err
+	}
+	if err := rpc.CheckURLScheme(c.L1HttpEndpoint, "http"); err != nil {
+		return err
+	}
+	if err := rpc.CheckURLScheme(c.L2HttpEndpoint, "http"); err != nil {
+		return err
+	}
+
 	if c.OracleProver {
 		if c.OracleProverPrivateKey == nil {
 			return fmt.Errorf("oracleProver flag set without oracleProverPrivateKey set")

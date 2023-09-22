@@ -58,9 +58,7 @@ func (s *ProverTestSuite) SetupTest() {
 		MinProofFee:                     common.Big1,
 		HTTPServerPort:                  uint64(port),
 	}
-	ep, err := EndpointFromConfig(ctx, cfg)
-	s.NoError(err)
-	p, err := New(ctx, ep, cfg)
+	p, err := New(ctx, cfg)
 	s.NoError(err)
 	p.srv = testutils.NewTestProverServer(
 		&s.ClientTestSuite,
@@ -84,9 +82,7 @@ func (s *ProverTestSuite) SetupTest() {
 		TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		JwtSecret:        string(jwtSecret),
 	}
-	dep, err := driver.GetEndpointFromConfig(ctx, dCfg)
-	s.NoError(err)
-	s.d, err = driver.New(ctx, dep, dCfg)
+	s.d, err = driver.New(ctx, dCfg)
 	s.NoError(err)
 
 	// Init proposer
@@ -110,9 +106,7 @@ func (s *ProverTestSuite) SetupTest() {
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,
 	}
-	pep, err := proposer.EndpointFromConfig(context.Background(), pCfg)
-	s.NoError(err)
-	s.proposer, err = proposer.New(context.Background(), pep, pCfg)
+	s.proposer, err = proposer.New(context.Background(), pCfg)
 	s.NoError(err)
 }
 

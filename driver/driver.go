@@ -44,7 +44,11 @@ type Driver struct {
 }
 
 // New initializes the driver instance based on the given configurations.
-func New(ctx context.Context, ep *rpc.Client, cfg *Config) (d *Driver, err error) {
+func New(ctx context.Context, cfg *Config) (d *Driver, err error) {
+	ep, err := EndpointFromConfig(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
 	d = &Driver{
 		RPC:        ep,
 		l1HeadCh:   make(chan *types.Header, 1024),
@@ -247,7 +251,7 @@ func (d *Driver) Name() string {
 }
 
 // EndpointFromConfig generates an RPC client from the given configuration.
-func GetEndpointFromConfig(ctx context.Context, cfg *Config) (*rpc.Client, error) {
+func EndpointFromConfig(ctx context.Context, cfg *Config) (*rpc.Client, error) {
 	return rpc.NewClient(ctx, &rpc.ClientConfig{
 		L1Endpoint:       cfg.L1Endpoint,
 		L2Endpoint:       cfg.L2Endpoint,

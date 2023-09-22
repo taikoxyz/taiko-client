@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
 
@@ -81,9 +80,8 @@ func (s *DriverTestSuite) SetupApp() *cli.App {
 		&cli.UintFlag{Name: RPCTimeout.Name},
 	}
 	app.Action = func(c *cli.Context) error {
-		ep, err := rpc.NewClient(c.Context, endpointConf)
+		_, err := configDriver(c)
 		s.NoError(err)
-		s.NoError(configDriver(c, ep))
 		return nil
 	}
 	return app

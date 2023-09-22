@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -219,4 +220,16 @@ func ctxWithTimeoutOrDefault(ctx context.Context, defaultTimeout time.Duration) 
 	}
 
 	return ctxWithTimeout, cancel
+}
+
+// CheckURLScheme checks the scheme of a given URL and returns an error if it doesn't match the expected scheme.
+func CheckURLScheme(rawURL, want string) error {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return err
+	}
+	if u.Scheme != want {
+		return fmt.Errorf("invalid URL scheme: %s, want %s", rawURL, want)
+	}
+	return nil
 }

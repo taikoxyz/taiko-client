@@ -92,9 +92,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,
 	}
-	ep, err := proposer.EndpointFromConfig(ctx, cfg)
-	s.NoError(err)
-	s.proposer, err = proposer.New(ctx, ep, cfg)
+	s.proposer, err = proposer.New(ctx, cfg)
 	s.NoError(err)
 }
 

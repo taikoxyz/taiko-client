@@ -61,9 +61,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,
 	}
-	ep, err := proposer.EndpointFromConfig(ctx, cfg)
-	s.NoError(err)
-	s.p, err = proposer.New(context.Background(), ep, cfg)
+	s.p, err = proposer.New(context.Background(), cfg)
 	s.NoError(err)
 }
 

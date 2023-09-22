@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
 
@@ -17,8 +16,6 @@ var (
 	proverCategory   = "PROVER"
 )
 
-var endpointConf = &rpc.ClientConfig{}
-
 // Required endpoint flags which are used by all client softwares.
 var (
 	L1WSEndpoint = &cli.StringFlag{
@@ -30,7 +27,6 @@ var (
 			proposerConf.L1Endpoint = v
 			proverConf.L1WsEndpoint = v
 			driverConf.L1Endpoint = v
-			endpointConf.L1Endpoint = v
 			return nil
 		},
 	}
@@ -42,7 +38,6 @@ var (
 		Action: func(c *cli.Context, v string) error {
 			proverConf.L2WsEndpoint = v
 			driverConf.L2Endpoint = v
-			endpointConf.L2Endpoint = v
 			return nil
 		},
 	}
@@ -53,7 +48,6 @@ var (
 		Category: commonCategory,
 		Action: func(c *cli.Context, v string) error {
 			proverConf.L1HttpEndpoint = v
-			endpointConf.L1Endpoint = v
 			return nil
 		},
 	}
@@ -65,7 +59,6 @@ var (
 		Action: func(c *cli.Context, v string) error {
 			proposerConf.L2Endpoint = v
 			proverConf.L2HttpEndpoint = v
-			endpointConf.L2Endpoint = v
 			return nil
 		},
 	}
@@ -78,7 +71,6 @@ var (
 			proposerConf.TaikoL1Address = common.HexToAddress(v)
 			proverConf.TaikoL1Address = common.HexToAddress(v)
 			driverConf.TaikoL1Address = common.HexToAddress(v)
-			endpointConf.TaikoL1Address = common.HexToAddress(v)
 			return nil
 		},
 	}
@@ -91,7 +83,6 @@ var (
 			proposerConf.TaikoL2Address = common.HexToAddress(v)
 			proverConf.TaikoL2Address = common.HexToAddress(v)
 			driverConf.TaikoL2Address = common.HexToAddress(v)
-			endpointConf.TaikoL2Address = common.HexToAddress(v)
 			return nil
 		},
 	}
@@ -118,7 +109,6 @@ var (
 			proposerConf.BackOffRetryInterval = v
 			proverConf.BackOffRetryInterval = v
 			driverConf.BackOffRetryInterval = v
-			endpointConf.RetryInterval = v
 			return nil
 		},
 	}
@@ -130,7 +120,6 @@ var (
 			proposerConf.RPCTimeout = &v
 			proverConf.RPCTimeout = &v
 			driverConf.RPCTimeout = &v
-			endpointConf.Timeout = &v
 			return nil
 		},
 	}

@@ -75,7 +75,11 @@ type Proposer struct {
 }
 
 // New initializes the proposer instance based on the given configurations.
-func New(ctx context.Context, ep *rpc.Client, cfg *Config) (p *Proposer, err error) {
+func New(ctx context.Context, cfg *Config) (p *Proposer, err error) {
+	ep, err := EndpointFromConfig(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
 	p = &Proposer{
 		RPC: ep,
 	}

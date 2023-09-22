@@ -8,7 +8,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/prover"
 	"github.com/urfave/cli/v2"
 )
@@ -270,14 +269,10 @@ var proverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxExpiry,
 })
 
-func configProver(c *cli.Context, ep *rpc.Client) error {
-	if err := proverConf.Check(); err != nil {
-		return err
+func configProver(c *cli.Context) (*prover.Prover, error) {
+	if err := proverConf.Validate(); err != nil {
+		return nil, err
 	}
-	p, err := prover.New(c.Context, ep, proverConf)
-	if err != nil {
-		return err
-	}
-	cmd = p
-	return nil
+
+	return prover.New(c.Context, proverConf)
 }

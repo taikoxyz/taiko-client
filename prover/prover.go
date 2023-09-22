@@ -92,7 +92,7 @@ type Prover struct {
 }
 
 // New initializes the prover instance based on the given configurations.
-func New(ctx context.Context, ep *rpc.Client, cfg *Config) (p *Prover, err error) {
+func New(ctx context.Context, cfg *Config) (p *Prover, err error) {
 	p = &Prover{}
 	p.cfg = cfg
 	p.ctx = ctx
@@ -101,7 +101,11 @@ func New(ctx context.Context, ep *rpc.Client, cfg *Config) (p *Prover, err error
 	p.currentBlocksWaitingForProofWindow = make(map[uint64]uint64, 0)
 	p.currentBlocksWaitingForProofWindowMutex = new(sync.Mutex)
 	p.capacityManager = capacity.New(cfg.Capacity)
-	p.RPC = ep
+
+	p.RPC, err = EndpointFromConfig(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	// Configs
 	protocolConfigs, err := p.RPC.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})

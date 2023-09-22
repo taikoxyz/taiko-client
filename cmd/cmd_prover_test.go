@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
 
@@ -195,9 +194,8 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: ProveBlockTxGasLimit.Name},
 	}
 	app.Action = func(c *cli.Context) error {
-		ep, err := rpc.NewClient(c.Context, endpointConf)
+		_, err := configProver(c)
 		s.NoError(err)
-		s.NoError(configProver(c, ep))
 		return nil
 	}
 	return app

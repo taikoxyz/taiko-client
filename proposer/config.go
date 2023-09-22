@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // Config contains all configurations to initialize a Taiko proposer.
@@ -33,4 +34,15 @@ type Config struct {
 	BlockProposalFee                    *big.Int
 	BlockProposalFeeIncreasePercentage  *big.Int
 	BlockProposalFeeIterations          uint64
+}
+
+// Validate checks if the provided configuration is valid.
+func (c *Config) Validate() error {
+	if err := rpc.CheckURLScheme(c.L1Endpoint, "ws"); err != nil {
+		return err
+	}
+	if err := rpc.CheckURLScheme(c.L2Endpoint, "http"); err != nil {
+		return err
+	}
+	return nil
 }

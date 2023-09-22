@@ -202,10 +202,8 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: BlockProposalFeeIterations.Name},
 	}
 	app.Action = func(c *cli.Context) error {
-		ep, err := rpc.NewClient(c.Context, endpointConf)
+		_, err := configProposer(c)
 		s.NoError(err)
-		s.RPC = ep
-		s.NoError(configProposer(c, ep))
 		return nil
 	}
 	return app

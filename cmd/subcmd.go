@@ -19,12 +19,15 @@ type subCmd interface {
 	Close(context.Context)
 }
 
-var cmd subCmd
-
 func startSubCmd(c *cli.Context) error {
 	ctx, ctxClose := context.WithCancel(c.Context)
 	defer func() { ctxClose() }()
 
+	initLogger(logConf)
+	cmd, err := cmdFromContext(c)
+	if err != nil {
+		return err
+	}
 	log.Info("Starting Taiko client application", "name", cmd.Name())
 
 	if err := cmd.Start(); err != nil {
@@ -53,4 +56,17 @@ func startSubCmd(c *cli.Context) error {
 	<-quitCh
 
 	return nil
+}
+
+func cmdFromContext(c *cli.Context) (subCmd, error) {
+	switch c.Command.Name {
+	case driverCmd:
+		return configDriver(c)
+	case proposerCmd:
+		return configProposer(c)
+	case proverCmd:
+		return configProver(c)
+	default:
+		panic("Unknown command name")
+	}
 }
