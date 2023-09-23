@@ -37,7 +37,7 @@ var (
 	}
 )
 
-func initLogger(conf *logConfig) {
+func initLog(conf *logConfig) {
 	var handler log.Handler
 	if conf.IsJsonFormat {
 		handler = log.LvlFilterHandler(

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -23,7 +24,7 @@ func startSubCmd(c *cli.Context) error {
 	ctx, ctxClose := context.WithCancel(c.Context)
 	defer func() { ctxClose() }()
 
-	initLogger(logConf)
+	initLog(logConf)
 	cmd, err := cmdFromContext(c)
 	if err != nil {
 		return err
@@ -67,6 +68,6 @@ func cmdFromContext(c *cli.Context) (subCmd, error) {
 	case proverCmd:
 		return newProver(c)
 	default:
-		panic("Unknown command name")
+		return nil, fmt.Errorf("unknown command name: %s", c.Command.Name)
 	}
 }
