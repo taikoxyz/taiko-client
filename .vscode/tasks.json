@@ -1,43 +1,82 @@
 {
   "version": "2.0.0",
   "tasks": [
+    // Launch L1 Execution Layer Node
     {
-      "type": "make",
-      "targetName": "lint",
-      "makeFileRelativePath": "Makefile",
-      "label": "make: lint",
-      "detail": "./Makefile"
-    },
-    {
-      "type": "make",
-      "targetName": "build",
-      "makeFileRelativePath": "Makefile",
-      "group": "build",
-      "problemMatcher": [],
-      "label": "make: build",
-      "detail": "./Makefile"
-    },
-    {
-      "type": "make",
-      "targetName": "test",
-      "makeFileRelativePath": "Makefile",
       "group": "test",
-      "problemMatcher": [],
-      "label": "make: test",
-      "detail": "./Makefile"
-    },
-    {
+      "label": "Prepare Development",
+      "dependsOn": ["Deploy TaikoL1"],
       "type": "shell",
-      "label": "startDevNet",
+      "command": "echo 'Prepare Development Done'",
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "echo": true,
+        "showReuseMessage": true,
+        "panel": "dedicated",
+        "clear": false,
+        "close": true
+      }
+    },
+    // Deploy TaikoL1
+    {
       "group": "test",
-      "command": "sh integration_test/nodes/init.sh",
+      "label": "Deploy TaikoL1",
+      "dependsOn": ["Launch L1 EL Node", "Wait for L1 EL Node"],
+      "type": "shell",
+      "command": ".vscode/deploy_taiko_l1.sh",
       "options": {
         "env": {
-          "TESTNET_CONFIG": "integration_test/nodes/docker-compose.yml",
           "COMPILE_PROTOCOL": "false",
           "TAIKO_MONO_DIR": "../taiko-mono",
           "PREMINT_TOKEN_AMOUNT": "92233720368547758070000000000000"
         }
+      },
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "echo": true,
+        "showReuseMessage": true,
+        "panel": "dedicated",
+        "clear": false,
+        "close": false
+      }
+    },
+    // Launch L1 EL Node
+    {
+      "group": "test",
+      "label": "Launch L1 EL Node",
+      "type": "shell",
+      "command": "docker run --rm --name=L1-Node -p 18545:8545 -p 18546:8545 ghcr.io/foundry-rs/foundry:latest 'anvil --host 0.0.0.0'",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "noproblem"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Available Accounts",
+          "endsPattern": "Listening on 0.0.0.0:8545"
+        }
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": false,
+        "close": true
+      }
+    },
+    // Wait for L1 EL Node
+    {
+      "group": "test",
+      "label": "Wait for L1 EL Node",
+      "type": "shell",
+      "command": "sleep 2",
+      "presentation": {
+        "close": true
       }
     }
   ]
