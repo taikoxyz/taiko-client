@@ -71,7 +71,10 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		}
 
 		if !ok {
-			log.Warn("Insufficient prover balance", "prover", srv.proverAddress)
+			log.Warn(
+				"Insufficient prover balance, please get more tokens or wait for verification of the blocks you proved",
+				"prover", srv.proverAddress,
+			)
 			return echo.NewHTTPError(http.StatusUnprocessableEntity, "insufficient prover balance")
 		}
 	}
