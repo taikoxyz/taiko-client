@@ -23,7 +23,7 @@ type subCmd interface {
 func startSubCmd(c *cli.Context) error {
 	ctx, ctxClose := context.WithCancel(c.Context)
 	defer func() { ctxClose() }()
-
+	parseMultiUsedFlags()
 	initLog(logConf)
 	cmd, err := cmdFromContext(c)
 	if err != nil {
