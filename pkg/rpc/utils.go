@@ -36,6 +36,53 @@ func GetProtocolStateVariables(
 	return &stateVars, nil
 }
 
+// CheckProverBalance checks if the prover has the necessary balance either in TaikoL1 token balances
+// or, if not, then check allowance, as contract will attempt to burn directly after
+// if it doesnt have the available token balance in-contract.
+func CheckProverBalance(
+	ctx context.Context,
+	rpc *Client,
+	prover common.Address,
+	taikoL1Address common.Address,
+	bond *big.Int,
+) (bool, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	depositedBalance, err := rpc.TaikoL1.GetTaikoTokenBalance(&bind.CallOpts{Context: ctxWithTimeout}, prover)
+	if err != nil {
+		return false, err
+	}
+
+	if bond.Cmp(depositedBalance) > 0 {
+		// Check allowance on taiko token contract
+		allowance, err := rpc.TaikoToken.Allowance(&bind.CallOpts{Context: ctxWithTimeout}, prover, taikoL1Address)
+		if err != nil {
+			return false, err
+		}
+
+		// Check prover's taiko token balance
+		balance, err := rpc.TaikoToken.BalanceOf(&bind.CallOpts{Context: ctxWithTimeout}, prover)
+		if err != nil {
+			return false, err
+		}
+
+		if bond.Cmp(allowance) > 0 || bond.Cmp(balance) > 0 {
+			log.Info(
+				"Assigned prover does not have required on-chain token balance or allowance",
+				"providedProver", prover.Hex(),
+				"depositedBalance", depositedBalance.String(),
+				"taikoTokenBalance", balance,
+				"allowance", allowance.String(),
+				"proofBond", bond,
+			)
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
 // WaitReceipt keeps waiting until the given transaction has an execution
 // receipt to know whether it was reverted or not.
 func WaitReceipt(
