@@ -113,10 +113,11 @@ var (
 		},
 	}
 	TxPoolLocalsOnlyFlag = &cli.BoolFlag{
-		Name:     "txpool.localsOnly",
-		Usage:    "If set to true, proposer will only propose transactions of local accounts",
-		Value:    false,
-		Category: proposerCategory,
+		Name:        "txpool.localsOnly",
+		Usage:       "If set to true, proposer will only propose transactions of local accounts",
+		Value:       false,
+		Category:    proposerCategory,
+		Destination: &proposerConf.LocalAddressesOnly,
 		Action: func(c *cli.Context, v bool) error {
 			proposerConf.LocalAddressesOnly = v
 			return nil
@@ -132,9 +133,10 @@ var (
 		},
 	}
 	MaxProposedTxListsPerEpochFlag = &cli.Uint64Flag{
-		Name:     "maxProposedTxListsPerEpoch",
-		Value:    1,
-		Category: proposerCategory,
+		Name:        "maxProposedTxListsPerEpoch",
+		Value:       1,
+		Category:    proposerCategory,
+		Destination: &proposerConf.MaxProposedTxListsPerEpoch,
 		Action: func(c *cli.Context, v uint64) error {
 			proposerConf.MaxProposedTxListsPerEpoch = v
 			return nil
@@ -150,10 +152,11 @@ var (
 		},
 	}
 	ProposeBlockTxReplacementMultiplierFlag = &cli.Uint64Flag{
-		Name:     "proposeBlockTxReplacementMultiplier",
-		Value:    2,
-		Usage:    "Gas tip multiplier when replacing a TaikoL1.proposeBlock transaction with same nonce",
-		Category: proposerCategory,
+		Name:        "proposeBlockTxReplacementMultiplier",
+		Value:       2,
+		Usage:       "Gas tip multiplier when replacing a TaikoL1.proposeBlock transaction with same nonce",
+		Category:    proposerCategory,
+		Destination: &proposerConf.ProposeBlockTxReplacementMultiplier,
 		Action: func(c *cli.Context, v uint64) error {
 			if v == 0 {
 				return fmt.Errorf("invalid --proposeBlockTxReplacementMultiplier value: %d", v)
@@ -172,20 +175,22 @@ var (
 		},
 	}
 	BlockProposalFeeIncreasePercentageFlag = &cli.Uint64Flag{
-		Name:     "blockProposalFeeIncreasePercentage",
-		Usage:    "Increase fee by what percentage when no prover wants to accept the block at initial fee",
-		Category: proposerCategory,
-		Value:    10,
+		Name:        "blockProposalFeeIncreasePercentage",
+		Usage:       "Increase fee by what percentage when no prover wants to accept the block at initial fee",
+		Category:    proposerCategory,
+		Value:       10,
+		Destination: &proposerConf.BlockProposalFeeIncreasePercentage,
 		Action: func(c *cli.Context, v uint64) error {
-			proposerConf.BlockProposalFeeIncreasePercentage = new(big.Int).SetUint64(v)
+			proposerConf.BlockProposalFeeIncreasePercentage = v
 			return nil
 		},
 	}
 	BlockProposalFeeIterationsFlag = &cli.Uint64Flag{
-		Name:     "blockProposalFeeIterations",
-		Usage:    "If nobody accepts block at initial fee, how many iterations to increase fee before giving up",
-		Category: proposerCategory,
-		Value:    3,
+		Name:        "blockProposalFeeIterations",
+		Usage:       "If nobody accepts block at initial fee, how many iterations to increase fee before giving up",
+		Category:    proposerCategory,
+		Value:       3,
+		Destination: &proposerConf.BlockProposalFeeIterations,
 		Action: func(c *cli.Context, v uint64) error {
 			proposerConf.BlockProposalFeeIterations = v
 			return nil

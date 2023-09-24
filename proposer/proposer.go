@@ -109,7 +109,7 @@ func New(ctx context.Context, cfg *Config) (p *Proposer, err error) {
 		p.rpc,
 		cfg.TaikoL1Address,
 		cfg.BlockProposalFee,
-		cfg.BlockProposalFeeIncreasePercentage,
+		new(big.Int).SetUint64(cfg.BlockProposalFeeIncreasePercentage),
 		cfg.ProverEndpoints,
 		cfg.BlockProposalFeeIterations,
 		proverAssignmentTimeout,

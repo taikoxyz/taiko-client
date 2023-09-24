@@ -91,24 +91,24 @@ var (
 // Required  flags which are used by all client softwares.
 var (
 	BackOffMaxRetrysFlag = &cli.Uint64Flag{
-		Name:     "backoff.maxRetrys",
-		Usage:    "Max retry times when there is an error",
-		Category: commonCategory,
-		Value:    10,
+		Name:        "backoff.maxRetrys",
+		Usage:       "Max retry times when there is an error",
+		Category:    commonCategory,
+		Value:       10,
+		Destination: &proverConf.BackOffMaxRetrys,
 		Action: func(c *cli.Context, v uint64) error {
 			proverConf.BackOffMaxRetrys = v
 			return nil
 		},
 	}
 	BackOffRetryIntervalFlag = &cli.DurationFlag{
-		Name:     "backoff.retryInterval",
-		Usage:    "Retry interval in `duration` when there is an error",
-		Category: commonCategory,
-		Value:    12,
+		Name:        "backoff.retryInterval",
+		Usage:       "Retry interval in `duration` when there is an error",
+		Category:    commonCategory,
+		Value:       12,
+		Destination: &backOffRetryInterval,
 		Action: func(c *cli.Context, v time.Duration) error {
-			proposerConf.BackOffRetryInterval = v
-			proverConf.BackOffRetryInterval = v
-			driverConf.BackOffRetryInterval = v
+			backOffRetryInterval = v
 			return nil
 		},
 	}
@@ -124,13 +124,13 @@ var (
 		},
 	}
 	WaitReceiptTimeoutFlag = &cli.DurationFlag{
-		Name:     "rpc.waitReceiptTimeout",
-		Usage:    "Timeout in `duration` for wait for receipts for RPC transactions",
-		Category: commonCategory,
-		Value:    60,
+		Name:        "rpc.waitReceiptTimeout",
+		Usage:       "Timeout in `duration` for wait for receipts for RPC transactions",
+		Category:    commonCategory,
+		Value:       60,
+		Destination: &waitReceiptTimeout,
 		Action: func(c *cli.Context, v time.Duration) error {
-			proverConf.WaitReceiptTimeout = v
-			proposerConf.WaitReceiptTimeout = v
+			waitReceiptTimeout = v
 			return nil
 		},
 	}
@@ -160,4 +160,18 @@ func MergeFlags(groups ...[]cli.Flag) []cli.Flag {
 		merged = append(merged, group...)
 	}
 	return merged
+}
+
+var (
+	waitReceiptTimeout   time.Duration
+	backOffRetryInterval time.Duration
+)
+
+func parseMultiUsedFlags() {
+	proverConf.WaitReceiptTimeout = waitReceiptTimeout
+	proposerConf.WaitReceiptTimeout = waitReceiptTimeout
+
+	proposerConf.BackOffRetryInterval = backOffRetryInterval
+	proverConf.BackOffRetryInterval = backOffRetryInterval
+	driverConf.BackOffRetryInterval = backOffRetryInterval
 }

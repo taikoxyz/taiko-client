@@ -81,10 +81,11 @@ var (
 		},
 	}
 	MaxConcurrentProvingJobsFlag = &cli.UintFlag{
-		Name:     "maxConcurrentProvingJobs",
-		Usage:    "Limits the number of concurrent proving blocks jobs",
-		Value:    1,
-		Category: proverCategory,
+		Name:        "maxConcurrentProvingJobs",
+		Usage:       "Limits the number of concurrent proving blocks jobs",
+		Value:       1,
+		Category:    proverCategory,
+		Destination: &proverConf.MaxConcurrentProvingJobs,
 		Action: func(c *cli.Context, v uint) error {
 			proverConf.MaxConcurrentProvingJobs = v
 			return nil
@@ -92,10 +93,11 @@ var (
 	}
 	// Special flags for testing.
 	DummyFlag = &cli.BoolFlag{
-		Name:     "dummy",
-		Usage:    "Produce dummy proofs, testing purposes only",
-		Value:    false,
-		Category: proverCategory,
+		Name:        "dummy",
+		Usage:       "Produce dummy proofs, testing purposes only",
+		Value:       false,
+		Category:    proverCategory,
+		Destination: &proverConf.Dummy,
 		Action: func(c *cli.Context, v bool) error {
 			proverConf.Dummy = v
 			return nil
@@ -154,50 +156,55 @@ var (
 		},
 	}
 	OracleProofSubmissionDelayFlag = &cli.DurationFlag{
-		Name:     "oracleProofSubmissionDelay",
-		Usage:    "Oracle proof submission delay in `duration`",
-		Value:    0,
-		Category: proverCategory,
+		Name:        "oracleProofSubmissionDelay",
+		Usage:       "Oracle proof submission delay in `duration`",
+		Value:       0,
+		Category:    proverCategory,
+		Destination: &proverConf.OracleProofSubmissionDelay,
 		Action: func(c *cli.Context, v time.Duration) error {
 			proverConf.OracleProofSubmissionDelay = v
 			return nil
 		},
 	}
 	ProofSubmissionMaxRetryFlag = &cli.Uint64Flag{
-		Name:     "proofSubmissionMaxRetry",
-		Usage:    "Max retry counts for proof submission",
-		Value:    0,
-		Category: proverCategory,
+		Name:        "proofSubmissionMaxRetry",
+		Usage:       "Max retry counts for proof submission",
+		Value:       0,
+		Category:    proverCategory,
+		Destination: &proverConf.ProofSubmissionMaxRetry,
 		Action: func(c *cli.Context, v uint64) error {
 			proverConf.ProofSubmissionMaxRetry = v
 			return nil
 		},
 	}
 	GraffitiFlag = &cli.StringFlag{
-		Name:     "graffiti",
-		Usage:    "When string is passed, adds additional graffiti info to proof evidence",
-		Category: proverCategory,
-		Value:    "",
+		Name:        "graffiti",
+		Usage:       "When string is passed, adds additional graffiti info to proof evidence",
+		Category:    proverCategory,
+		Value:       "",
+		Destination: &proverConf.Graffiti,
 		Action: func(c *cli.Context, v string) error {
 			proverConf.Graffiti = v
 			return nil
 		},
 	}
 	CheckProofWindowExpiredIntervalFlag = &cli.DurationFlag{
-		Name:     "prover.checkProofWindowExpiredInterval",
-		Usage:    "Interval in `duration` to check for expired proof windows from other provers",
-		Category: proverCategory,
-		Value:    15 * time.Second,
+		Name:        "prover.checkProofWindowExpiredInterval",
+		Usage:       "Interval in `duration` to check for expired proof windows from other provers",
+		Category:    proverCategory,
+		Value:       15 * time.Second,
+		Destination: &proverConf.CheckProofWindowExpiredInterval,
 		Action: func(c *cli.Context, v time.Duration) error {
 			proverConf.CheckProofWindowExpiredInterval = v
 			return nil
 		},
 	}
 	ProveUnassignedBlocksFlag = &cli.BoolFlag{
-		Name:     "prover.proveUnassignedBlocks",
-		Usage:    "Whether you want to prove unassigned blocks, or only work on assigned proofs",
-		Category: proverCategory,
-		Value:    false,
+		Name:        "prover.proveUnassignedBlocks",
+		Usage:       "Whether you want to prove unassigned blocks, or only work on assigned proofs",
+		Category:    proverCategory,
+		Value:       false,
+		Destination: &proverConf.ProveUnassignedBlocks,
 		Action: func(c *cli.Context, v bool) error {
 			proverConf.ProveUnassignedBlocks = v
 			return nil
@@ -213,10 +220,11 @@ var (
 		},
 	}
 	ProverHTTPServerPortFlag = &cli.Uint64Flag{
-		Name:     "prover.httpServerPort",
-		Usage:    "Port to expose for http server",
-		Category: proverCategory,
-		Value:    9876,
+		Name:        "prover.httpServerPort",
+		Usage:       "Port to expose for http server",
+		Category:    proverCategory,
+		Value:       9876,
+		Destination: &proverConf.HTTPServerPort,
 		Action: func(c *cli.Context, v uint64) error {
 			proverConf.HTTPServerPort = v
 			return nil
@@ -232,10 +240,11 @@ var (
 		},
 	}
 	MaxExpiryFlag = &cli.DurationFlag{
-		Name:     "prover.maxExpiry",
-		Usage:    "maximum accepted expiry in `duration` for accepting proving a block",
-		Value:    time.Hour,
-		Category: proverCategory,
+		Name:        "prover.maxExpiry",
+		Usage:       "maximum accepted expiry in `duration` for accepting proving a block",
+		Value:       time.Hour,
+		Category:    proverCategory,
+		Destination: &proverConf.MaxExpiry,
 		Action: func(c *cli.Context, v time.Duration) error {
 			proverConf.MaxExpiry = v
 			return nil

@@ -46,7 +46,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		WaitReceiptTimeout:                  10 * time.Second,
 		ProverEndpoints:                     s.ProverEndpoints,
 		BlockProposalFee:                    common.Big256,
-		BlockProposalFeeIncreasePercentage:  common.Big2,
+		BlockProposalFeeIncreasePercentage:  2,
 		BlockProposalFeeIterations:          3,
 	}
 	s.p, err = New(ctx, cfg)

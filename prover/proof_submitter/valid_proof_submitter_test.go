@@ -90,7 +90,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		ProverEndpoints:                    s.ProverEndpoints,
 		BlockProposalFee:                   big.NewInt(1000),
 		BlockProposalFeeIterations:         3,
-		BlockProposalFeeIncreasePercentage: common.Big2,
+		BlockProposalFeeIncreasePercentage: 2,
 	}
 	s.proposer, err = proposer.New(ctx, cfg)
 	s.NoError(err)

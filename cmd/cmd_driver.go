@@ -49,8 +49,9 @@ var (
 		Name: "p2p.syncVerifiedBlocks",
 		Usage: "Try P2P syncing verified blocks between L2 execution engines, " +
 			"will be helpful to bring a new node online quickly",
-		Value:    false,
-		Category: driverCategory,
+		Value:       false,
+		Category:    driverCategory,
+		Destination: &driverConf.P2PSyncVerifiedBlocks,
 		Action: func(c *cli.Context, v bool) error {
 			driverConf.P2PSyncVerifiedBlocks = v
 			return nil
@@ -60,8 +61,9 @@ var (
 		Name: "p2p.syncTimeout",
 		Usage: "P2P syncing timeout in `duration`, if no sync progress is made within this time span, " +
 			"driver will stop the P2P sync and insert all remaining L2 blocks one by one",
-		Value:    1800,
-		Category: driverCategory,
+		Value:       1800,
+		Category:    driverCategory,
+		Destination: &driverConf.P2PSyncTimeout,
 		Action: func(c *cli.Context, v time.Duration) error {
 			driverConf.P2PSyncTimeout = v
 			return nil

@@ -42,7 +42,7 @@ func (s *proposerCmdSuite) TestFlags() {
 		}
 		fee, _ := new(big.Int).SetString(blockProposalFee, 10)
 		s.Equal(fee, proposerConf.BlockProposalFee)
-		s.Equal(uint64(10), proposerConf.BlockProposalFeeIncreasePercentage.Uint64())
+		s.Equal(uint64(10), proposerConf.BlockProposalFeeIncreasePercentage)
 		s.Equal(uint64(100), proposerConf.BlockProposalFeeIterations)
 		return nil
 	}

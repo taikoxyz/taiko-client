@@ -32,7 +32,7 @@ type Config struct {
 	ProposeBlockTxGasTipCap             *big.Int
 	ProverEndpoints                     []*url.URL
 	BlockProposalFee                    *big.Int
-	BlockProposalFeeIncreasePercentage  *big.Int
+	BlockProposalFeeIncreasePercentage  uint64
 	BlockProposalFeeIterations          uint64
 }
 

@@ -104,7 +104,7 @@ func (s *ProverTestSuite) SetupTest() {
 		ProverEndpoints:                    []*url.URL{proverServerUrl},
 		BlockProposalFee:                   common.Big256,
 		BlockProposalFeeIterations:         3,
-		BlockProposalFeeIncreasePercentage: common.Big2,
+		BlockProposalFeeIncreasePercentage: 2,
 	}
 	s.proposer, err = proposer.New(context.Background(), pCfg)
 	s.NoError(err)

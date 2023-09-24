@@ -17,10 +17,11 @@ var logConf = &logConfig{}
 var (
 	// Optional flags for logging which are used by all client softwares.
 	VerbosityFlag = &cli.IntFlag{
-		Name:     "verbosity",
-		Usage:    "Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail",
-		Value:    3,
-		Category: loggingCategory,
+		Name:        "verbosity",
+		Usage:       "Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail",
+		Value:       3,
+		Category:    loggingCategory,
+		Destination: &logConf.Verbosity,
 		Action: func(c *cli.Context, v int) error {
 			logConf.Verbosity = v
 			return nil
