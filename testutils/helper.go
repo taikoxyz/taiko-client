@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -192,11 +193,18 @@ func NewTestProverServer(
 	capacityManager *capacity.CapacityManager,
 	url *url.URL,
 ) *server.ProverServer {
+	protocolConfig, err := s.RpcClient.TaikoL1.GetConfig(nil)
+	s.Nil(err)
+
 	srv, err := server.New(&server.NewProverServerOpts{
 		ProverPrivateKey: proverPrivKey,
 		MinProofFee:      common.Big1,
 		MaxExpiry:        24 * time.Hour,
 		CapacityManager:  capacityManager,
+		TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		Rpc:              s.RpcClient,
+		Bond:             protocolConfig.ProofBond,
+		IsOracle:         true,
 	})
 	s.Nil(err)
 

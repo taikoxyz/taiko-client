@@ -210,6 +210,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		MinProofFee:      p.cfg.MinProofFee,
 		MaxExpiry:        p.cfg.MaxExpiry,
 		CapacityManager:  p.capacityManager,
+		TaikoL1Address:   p.cfg.TaikoL1Address,
+		Rpc:              p.rpc,
+		Bond:             protocolConfigs.ProofBond,
+		IsOracle:         p.cfg.OracleProver,
 	}
 	if p.cfg.OracleProver {
 		proverServerOpts.ProverPrivateKey = p.cfg.OracleProverPrivateKey
