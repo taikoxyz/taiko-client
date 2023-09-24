@@ -21,8 +21,6 @@ type subCmd interface {
 }
 
 func startSubCmd(c *cli.Context) error {
-	ctx, ctxClose := context.WithCancel(c.Context)
-	defer func() { ctxClose() }()
 	parseMultiUsedFlags()
 	initLog(logConf)
 	cmd, err := cmdFromContext(c)
@@ -36,14 +34,13 @@ func startSubCmd(c *cli.Context) error {
 		return err
 	}
 
-	if err := metrics.Serve(ctx, metricConf); err != nil {
+	if err := metrics.Serve(c.Context, metricConf); err != nil {
 		log.Error("Starting metrics server error", "error", err)
 		return err
 	}
 
 	defer func() {
-		ctxClose()
-		cmd.Close(ctx)
+		cmd.Close(c.Context)
 		log.Info("Application stopped", "name", cmd.Name())
 	}()
 

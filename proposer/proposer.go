@@ -290,7 +290,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 					TxListByteEnd:   new(big.Int).SetUint64(uint64(len(txListBytes))),
 					CacheTxListInfo: false,
 				}, txListBytes, uint(txs.Len()), &txNonce); err != nil {
-					return fmt.Errorf("failed to propose transactions: %w", err)
+					return err
 				}
 
 				return nil

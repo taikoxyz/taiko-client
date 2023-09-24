@@ -105,7 +105,7 @@ var (
 		Name:        "backoff.retryInterval",
 		Usage:       "Retry interval in `duration` when there is an error",
 		Category:    commonCategory,
-		Value:       12,
+		Value:       12 * time.Second,
 		Destination: &backOffRetryInterval,
 		Action: func(c *cli.Context, v time.Duration) error {
 			backOffRetryInterval = v
@@ -127,7 +127,7 @@ var (
 		Name:        "rpc.waitReceiptTimeout",
 		Usage:       "Timeout in `duration` for wait for receipts for RPC transactions",
 		Category:    commonCategory,
-		Value:       60,
+		Value:       60 * time.Second,
 		Destination: &waitReceiptTimeout,
 		Action: func(c *cli.Context, v time.Duration) error {
 			waitReceiptTimeout = v

@@ -158,7 +158,7 @@ var (
 	OracleProofSubmissionDelayFlag = &cli.DurationFlag{
 		Name:        "oracleProofSubmissionDelay",
 		Usage:       "Oracle proof submission delay in `duration`",
-		Value:       0,
+		Value:       0 * time.Second,
 		Category:    proverCategory,
 		Destination: &proverConf.OracleProofSubmissionDelay,
 		Action: func(c *cli.Context, v time.Duration) error {

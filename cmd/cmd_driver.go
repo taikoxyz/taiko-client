@@ -61,7 +61,7 @@ var (
 		Name: "p2p.syncTimeout",
 		Usage: "P2P syncing timeout in `duration`, if no sync progress is made within this time span, " +
 			"driver will stop the P2P sync and insert all remaining L2 blocks one by one",
-		Value:       1800,
+		Value:       1800 * time.Second,
 		Category:    driverCategory,
 		Destination: &driverConf.P2PSyncTimeout,
 		Action: func(c *cli.Context, v time.Duration) error {
