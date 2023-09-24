@@ -1,7 +1,6 @@
 package selector
 
 import (
-	"context"
 	"net/url"
 	"os"
 	"testing"
@@ -41,12 +40,6 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 		1*time.Minute,
 	)
 	s.Nil(err)
-}
-
-func (s *ProverSelectorTestSuite) TestCheckProverBalance() {
-	ok, err := s.s.checkProverBalance(context.Background(), s.proverAddress)
-	s.Nil(err)
-	s.True(ok)
 }
 
 func TestProverSelectorTestSuite(t *testing.T) {

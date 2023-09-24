@@ -124,7 +124,7 @@ func (s *ETHFeeEOASelector) AssignProver(
 			}
 
 			if proverAddress != encoding.OracleProverAddress {
-				ok, err := s.checkProverBalance(ctx, proverAddress)
+				ok, err := rpc.CheckProverBalance(ctx, s.rpc, proverAddress, s.taikoL1Address, s.protocolConfigs.ProofBond)
 				if err != nil {
 					log.Warn("Failed to check prover balance", "endpoint", endpoint, "error", err)
 					continue
@@ -139,44 +139,6 @@ func (s *ETHFeeEOASelector) AssignProver(
 	}
 
 	return nil, nil, errUnableToFindProver
-}
-
-// checkProverBalance checks if the prover has the necessary balance either in TaikoL1 token balances
-// or, if not, then check allowance, as contract will attempt to burn directly after
-// if it doesnt have the available token balance in-contract.
-func (s *ETHFeeEOASelector) checkProverBalance(ctx context.Context, prover common.Address) (bool, error) {
-	depositedBalance, err := s.rpc.TaikoL1.GetTaikoTokenBalance(&bind.CallOpts{Context: ctx}, prover)
-	if err != nil {
-		return false, err
-	}
-
-	if s.protocolConfigs.ProofBond.Cmp(depositedBalance) > 0 {
-		// Check allowance on taiko token contract
-		allowance, err := s.rpc.TaikoToken.Allowance(&bind.CallOpts{Context: ctx}, prover, s.taikoL1Address)
-		if err != nil {
-			return false, err
-		}
-
-		// Check prover's taiko token balance
-		balance, err := s.rpc.TaikoToken.BalanceOf(&bind.CallOpts{Context: ctx}, prover)
-		if err != nil {
-			return false, err
-		}
-
-		if s.protocolConfigs.ProofBond.Cmp(allowance) > 0 || s.protocolConfigs.ProofBond.Cmp(balance) > 0 {
-			log.Info(
-				"Assigned prover does not have required on-chain token balance or allowance",
-				"providedProver", prover.Hex(),
-				"depositedBalance", depositedBalance.String(),
-				"taikoTokenBalance", balance,
-				"allowance", allowance.String(),
-				"proofBond", s.protocolConfigs.ProofBond,
-			)
-			return false, nil
-		}
-	}
-
-	return true, nil
 }
 
 // shuffleProverEndpoints shuffles the current selector's prover endpoints.
