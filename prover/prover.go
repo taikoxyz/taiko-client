@@ -648,14 +648,14 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 			p.currentBlocksBeingProvenMutex.Lock()
 			delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
 			p.currentBlocksBeingProvenMutex.Unlock()
+
+			if !p.cfg.OracleProver {
+				p.capacityManager.ReleaseOneCapacity()
+			}
 		}()
 
 		if err := backoff.Retry(
 			func() error {
-				if !p.cfg.OracleProver {
-					p.capacityManager.ReleaseOneCapacity()
-				}
-
 				err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader)
 				if err != nil {
 					log.Error("Submit proof error", "error", err)
