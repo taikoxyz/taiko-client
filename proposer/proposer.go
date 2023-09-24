@@ -487,8 +487,8 @@ func (p *Proposer) updateProposingTicker() {
 	if p.proposingInterval != nil {
 		duration = *p.proposingInterval
 	} else {
-		// Random number between 12 - 120
-		randomSeconds := rand.Intn(120-11) + 12
+		// Random number between 72 - 360
+		randomSeconds := rand.Intn(360-71) + 72
 		duration = time.Duration(randomSeconds) * time.Second
 	}
 
