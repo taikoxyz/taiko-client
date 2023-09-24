@@ -642,13 +642,14 @@ func (p *Prover) onBlockProposed(
 // submitProofOp performs a proof submission operation.
 func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader) {
 	p.submitProofConcurrencyGuard <- struct{}{}
+
 	go func() {
+		p.currentBlocksBeingProvenMutex.Lock()
+		delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
+		p.currentBlocksBeingProvenMutex.Unlock()
+
 		defer func() {
 			<-p.submitProofConcurrencyGuard
-			p.currentBlocksBeingProvenMutex.Lock()
-			delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
-			p.currentBlocksBeingProvenMutex.Unlock()
-
 			if !p.cfg.OracleProver {
 				p.capacityManager.ReleaseOneCapacity()
 			}
