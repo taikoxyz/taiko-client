@@ -145,23 +145,30 @@ func (s *ETHFeeEOASelector) AssignProver(
 // or, if not, then check allowance, as contract will attempt to burn directly after
 // if it doesnt have the available token balance in-contract.
 func (s *ETHFeeEOASelector) checkProverBalance(ctx context.Context, prover common.Address) (bool, error) {
-	taikoTokenBalance, err := s.rpc.TaikoL1.GetTaikoTokenBalance(&bind.CallOpts{Context: ctx}, prover)
+	depositedBalance, err := s.rpc.TaikoL1.GetTaikoTokenBalance(&bind.CallOpts{Context: ctx}, prover)
 	if err != nil {
 		return false, err
 	}
 
-	if s.protocolConfigs.ProofBond.Cmp(taikoTokenBalance) > 0 {
+	if s.protocolConfigs.ProofBond.Cmp(depositedBalance) > 0 {
 		// Check allowance on taiko token contract
 		allowance, err := s.rpc.TaikoToken.Allowance(&bind.CallOpts{Context: ctx}, prover, s.taikoL1Address)
 		if err != nil {
 			return false, err
 		}
 
-		if s.protocolConfigs.ProofBond.Cmp(allowance) > 0 {
+		// Check prover's taiko token balance
+		balance, err := s.rpc.TaikoToken.BalanceOf(&bind.CallOpts{Context: ctx}, prover)
+		if err != nil {
+			return false, err
+		}
+
+		if s.protocolConfigs.ProofBond.Cmp(allowance) > 0 || s.protocolConfigs.ProofBond.Cmp(balance) > 0 {
 			log.Info(
 				"Assigned prover does not have required on-chain token balance or allowance",
 				"providedProver", prover.Hex(),
-				"taikoTokenBalance", taikoTokenBalance.String(),
+				"depositedBalance", depositedBalance.String(),
+				"taikoTokenBalance", balance,
 				"allowance", allowance.String(),
 				"proofBond", s.protocolConfigs.ProofBond,
 			)
