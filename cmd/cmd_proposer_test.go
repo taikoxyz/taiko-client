@@ -75,6 +75,7 @@ func (s *proposerCmdSuite) SetupTest() {
 	s.app = cli.NewApp()
 	s.app.Flags = proposerFlags
 	s.app.Action = func(c *cli.Context) error {
+		parseMultiUsedFlags()
 		return proposerConf.Validate()
 	}
 	s.args = map[string]interface{}{
