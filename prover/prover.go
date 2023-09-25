@@ -210,6 +210,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		MinProofFee:      p.cfg.MinProofFee,
 		MaxExpiry:        p.cfg.MaxExpiry,
 		CapacityManager:  p.capacityManager,
+		TaikoL1Address:   p.cfg.TaikoL1Address,
+		Rpc:              p.rpc,
+		Bond:             protocolConfigs.ProofBond,
+		IsOracle:         p.cfg.OracleProver,
 	}
 	if p.cfg.OracleProver {
 		proverServerOpts.ProverPrivateKey = p.cfg.OracleProverPrivateKey
@@ -642,20 +646,21 @@ func (p *Prover) onBlockProposed(
 // submitProofOp performs a proof submission operation.
 func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader) {
 	p.submitProofConcurrencyGuard <- struct{}{}
+
 	go func() {
+		p.currentBlocksBeingProvenMutex.Lock()
+		delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
+		p.currentBlocksBeingProvenMutex.Unlock()
+
 		defer func() {
 			<-p.submitProofConcurrencyGuard
-			p.currentBlocksBeingProvenMutex.Lock()
-			delete(p.currentBlocksBeingProven, proofWithHeader.Meta.Id)
-			p.currentBlocksBeingProvenMutex.Unlock()
+			if !p.cfg.OracleProver {
+				p.capacityManager.ReleaseOneCapacity()
+			}
 		}()
 
 		if err := backoff.Retry(
 			func() error {
-				if !p.cfg.OracleProver {
-					p.capacityManager.ReleaseOneCapacity()
-				}
-
 				err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader)
 				if err != nil {
 					log.Error("Submit proof error", "error", err)
@@ -862,6 +867,9 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 	if cancel, ok := p.currentBlocksBeingProven[blockID]; ok {
 		cancel()
 		delete(p.currentBlocksBeingProven, blockID)
+		if !p.cfg.OracleProver {
+			p.capacityManager.ReleaseOneCapacity()
+		}
 	}
 }
 
