@@ -51,12 +51,6 @@ var (
 		Required: true,
 		Category: commonCategory,
 	}
-	TaikoTokenAddress = &cli.StringFlag{
-		Name:     "taikoToken",
-		Usage:    "TaikoToken contract address",
-		Required: true,
-		Category: commonCategory,
-	}
 	// Optional flags used by all client softwares.
 	// Logging
 	Verbosity = &cli.IntFlag{
@@ -120,7 +114,6 @@ var CommonFlags = []cli.Flag{
 	L1WSEndpoint,
 	TaikoL1Address,
 	TaikoL2Address,
-	TaikoTokenAddress,
 	// Optional
 	Verbosity,
 	LogJson,

@@ -28,6 +28,12 @@ var (
 		Usage:    "Initial block proposal fee (in wei) paid on block proposing",
 		Category: proposerCategory,
 	}
+	TaikoTokenAddress = &cli.StringFlag{
+		Name:     "taikoToken",
+		Usage:    "TaikoToken contract address",
+		Required: true,
+		Category: proposerCategory,
+	}
 )
 
 // Optional flags used by proposer.
@@ -105,4 +111,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	BlockProposalFee,
 	BlockProposalFeeIncreasePercentage,
 	BlockProposalFeeIterations,
+	TaikoTokenAddress,
 })
