@@ -45,6 +45,8 @@ func (m *CapacityManager) TakeOneCapacity() (uint64, bool) {
 	defer m.mutex.Unlock()
 
 	if m.capacity == 0 {
+		log.Info("could not take one capacity", "capacity", m.capacity)
+
 		return 0, false
 	}
 
