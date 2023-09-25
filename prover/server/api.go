@@ -80,10 +80,12 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	}
 
 	if req.Fee.Cmp(srv.minProofFee) < 0 {
+		log.Warn("Proof fee too low", "reqFee", req.Fee.String(), "srvMinProofFee", srv.minProofFee.String())
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "proof fee too low")
 	}
 
 	if req.Expiry > uint64(time.Now().Add(srv.maxExpiry).Unix()) {
+		log.Warn("Expiry too long", "requestExpiry", req.Expiry, "srvMaxExpiry", srv.maxExpiry)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "expiry too long")
 	}
 
