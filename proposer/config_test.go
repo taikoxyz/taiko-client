@@ -66,24 +66,24 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 
 	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"-" + flags.L1WSEndpoint.Name, l1Endpoint,
-		"-" + flags.L2HTTPEndpoint.Name, l2Endpoint,
-		"-" + flags.TaikoL1Address.Name, taikoL1,
-		"-" + flags.TaikoL2Address.Name, taikoL2,
-		"-" + flags.TaikoTokenAddress.Name, taikoToken,
-		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
-		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
-		"-" + flags.ProposeInterval.Name, proposeInterval,
-		"-" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
-		"-" + flags.ProposeBlockTxReplacementMultiplier.Name, "5",
-		"-" + flags.RPCTimeout.Name, "5",
-		"-" + flags.WaitReceiptTimeout.Name, "10",
-		"-" + flags.ProposeBlockTxGasTipCap.Name, "100000",
-		"-" + flags.ProposeBlockTxGasLimit.Name, "100000",
-		"-" + flags.ProverEndpoints.Name, proverEndpoints,
-		"-" + flags.BlockProposalFee.Name, blockProposalFee,
-		"-" + flags.BlockProposalFeeIncreasePercentage.Name, "15",
-		"-" + flags.BlockProposalFeeIterations.Name, "5",
+		"--" + flags.L1WSEndpoint.Name, l1Endpoint,
+		"--" + flags.L2HTTPEndpoint.Name, l2Endpoint,
+		"--" + flags.TaikoL1Address.Name, taikoL1,
+		"--" + flags.TaikoL2Address.Name, taikoL2,
+		"--" + flags.TaikoTokenAddress.Name, taikoToken,
+		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"--" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
+		"--" + flags.ProposeInterval.Name, proposeInterval,
+		"--" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
+		"--" + flags.ProposeBlockTxReplacementMultiplier.Name, "5",
+		"--" + flags.RPCTimeout.Name, "5",
+		"--" + flags.WaitReceiptTimeout.Name, "10",
+		"--" + flags.ProposeBlockTxGasTipCap.Name, "100000",
+		"--" + flags.ProposeBlockTxGasLimit.Name, "100000",
+		"--" + flags.ProverEndpoints.Name, proverEndpoints,
+		"--" + flags.BlockProposalFee.Name, blockProposalFee,
+		"--" + flags.BlockProposalFeeIncreasePercentage.Name, "15",
+		"--" + flags.BlockProposalFeeIterations.Name, "5",
 	}))
 }
 
@@ -92,7 +92,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextPrivKeyErr() {
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextPrivKeyErr",
-		"-" + flags.L1ProposerPrivKey.Name, string(common.FromHex("0x")),
+		"--" + flags.L1ProposerPrivKey.Name, string(common.FromHex("0x")),
 	}), "invalid L1 proposer private key")
 }
 
@@ -104,8 +104,8 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextPropIntervalErr() {
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextProposeIntervalErr",
-		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
-		"-" + flags.ProposeInterval.Name, "",
+		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"--" + flags.ProposeInterval.Name, "",
 	}), "invalid proposing interval")
 }
 
@@ -117,9 +117,9 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextEmptyPropoIntervalErr() {
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextEmptyProposalIntervalErr",
-		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
-		"-" + flags.ProposeInterval.Name, proposeInterval,
-		"-" + flags.ProposeEmptyBlocksInterval.Name, "",
+		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"--" + flags.ProposeInterval.Name, proposeInterval,
+		"--" + flags.ProposeEmptyBlocksInterval.Name, "",
 	}), "invalid proposing empty blocks interval")
 }
 
@@ -131,10 +131,10 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextL2RecipErr() {
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextL2RecipErr",
-		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
-		"-" + flags.ProposeInterval.Name, proposeInterval,
-		"-" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
-		"-" + flags.L2SuggestedFeeRecipient.Name, "notAnAddress",
+		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"--" + flags.ProposeInterval.Name, proposeInterval,
+		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
+		"--" + flags.L2SuggestedFeeRecipient.Name, "notAnAddress",
 	}), "invalid L2 suggested fee recipient address")
 }
 
@@ -149,11 +149,11 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextTxPoolLocalsErr",
-		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
-		"-" + flags.ProposeInterval.Name, proposeInterval,
-		"-" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
-		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
-		"-" + flags.TxPoolLocals.Name, "notAnAddress",
+		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"--" + flags.ProposeInterval.Name, proposeInterval,
+		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
+		"--" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
+		"--" + flags.TxPoolLocals.Name, "notAnAddress",
 	}), "invalid account in --txpool.locals")
 }
 
@@ -168,12 +168,12 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextReplMultErr",
-		"-" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
-		"-" + flags.ProposeInterval.Name, proposeInterval,
-		"-" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
-		"-" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
-		"-" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
-		"-" + flags.ProposeBlockTxReplacementMultiplier.Name, "0",
+		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"--" + flags.ProposeInterval.Name, proposeInterval,
+		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
+		"--" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
+		"--" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
+		"--" + flags.ProposeBlockTxReplacementMultiplier.Name, "0",
 	}), "invalid --proposeBlockTxReplacementMultiplier value")
 }
 

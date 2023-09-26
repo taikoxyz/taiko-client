@@ -41,16 +41,16 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 
 	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"-" + flags.L1WSEndpoint.Name, l1Endpoint,
-		"-" + flags.L2WSEndpoint.Name, l2Endpoint,
-		"-" + flags.L2AuthEndpoint.Name, l2EngineEndpoint,
-		"-" + flags.TaikoL1Address.Name, taikoL1,
-		"-" + flags.TaikoL2Address.Name, taikoL2,
-		"-" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
-		"-" + flags.P2PSyncTimeout.Name, "120",
-		"-" + flags.RPCTimeout.Name, "5",
+		"--" + flags.L1WSEndpoint.Name, l1Endpoint,
+		"--" + flags.L2WSEndpoint.Name, l2Endpoint,
+		"--" + flags.L2AuthEndpoint.Name, l2EngineEndpoint,
+		"--" + flags.TaikoL1Address.Name, taikoL1,
+		"--" + flags.TaikoL2Address.Name, taikoL2,
+		"--" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
+		"--" + flags.P2PSyncTimeout.Name, "120",
+		"--" + flags.RPCTimeout.Name, "5",
 		"--" + flags.P2PSyncVerifiedBlocks.Name,
-		"-" + flags.CheckPointSyncUrl.Name, "http://localhost:8545",
+		"--" + flags.CheckPointSyncUrl.Name, "http://localhost:8545",
 	}))
 }
 
@@ -58,7 +58,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContextJWTError() {
 	app := s.SetupApp()
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"-" + flags.JWTSecret.Name, "wrongsecretfile.txt",
+		"--" + flags.JWTSecret.Name, "wrongsecretfile.txt",
 	}), "invalid JWT secret file")
 }
 
@@ -66,9 +66,9 @@ func (s *DriverTestSuite) TestNewConfigFromCliContextEmptyL2CheckPoint() {
 	app := s.SetupApp()
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"-" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
+		"--" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
 		"--" + flags.P2PSyncVerifiedBlocks.Name,
-		"-" + flags.L2WSEndpoint.Name, "",
+		"--" + flags.L2WSEndpoint.Name, "",
 	}), "empty L2 check point URL")
 }
 
