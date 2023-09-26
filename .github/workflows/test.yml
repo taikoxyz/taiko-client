@@ -45,7 +45,6 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
-          ref: alpha-5
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
@@ -90,7 +89,7 @@ jobs:
       - name: Test
         working-directory: ${{ env.CLIENT_DIR }}
         run: |
-          TAIKO_MONO_DIR=${GITHUB_WORKSPACE}/${TAIKO_MONO_DIR} COMPILE_PROTOCOL=true make test
+          TAIKO_MONO_DIR=${GITHUB_WORKSPACE}/${TAIKO_MONO_DIR} make test
 
       - name: Codecov.io
         uses: codecov/codecov-action@v3
