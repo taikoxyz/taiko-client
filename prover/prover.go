@@ -202,7 +202,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.WaitReceiptTimeout,
 		p.cfg.ProveBlockGasLimit,
 		p.cfg.ProveBlockTxReplacementMultiplier,
-		p.cfg.ProveBlockTxGasTipCap,
+		p.cfg.ProveBlockMaxTxGasTipCap,
 	); err != nil {
 		return err
 	}

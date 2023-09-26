@@ -51,7 +51,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		s.Equal(uint64(8), c.Capacity)
 		s.Equal(minProofFee, c.MinProofFee.String())
 		s.Equal(uint64(3), c.ProveBlockTxReplacementMultiplier)
-		s.Equal(uint64(256), c.ProveBlockTxGasTipCap.Uint64())
+		s.Equal(uint64(256), c.ProveBlockMaxTxGasTipCap.Uint64())
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 		s.True(c.ProveUnassignedBlocks)
 
@@ -76,7 +76,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"--" + flags.ProverCapacity.Name, "8",
 		"--" + flags.OracleProver.Name,
 		"--" + flags.ProveBlockTxReplacementMultiplier.Name, "3",
-		"--" + flags.ProveBlockTxGasTipCap.Name, "256",
+		"--" + flags.ProveBlockMaxTxGasTipCap.Name, "256",
 		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.CheckProofWindowExpiredInterval.Name, "30",
@@ -196,7 +196,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.CheckProofWindowExpiredInterval.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxReplacementMultiplier.Name},
-		&cli.Uint64Flag{Name: flags.ProveBlockTxGasTipCap.Name},
+		&cli.Uint64Flag{Name: flags.ProveBlockMaxTxGasTipCap.Name},
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
 		&cli.Uint64Flag{Name: flags.ProverCapacity.Name},
 		&cli.Uint64Flag{Name: flags.MinProofFee.Name},

@@ -208,7 +208,7 @@ func IncreaseGasTipCap(
 	opts *bind.TransactOpts,
 	address common.Address,
 	txReplacementTipMultiplier *big.Int,
-	gasTipCap *big.Int,
+	maxGasTipCap *big.Int,
 ) (*bind.TransactOpts, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
@@ -237,12 +237,12 @@ func IncreaseGasTipCap(
 		opts.GasTipCap = new(big.Int).Mul(originalTx.GasTipCap(), txReplacementTipMultiplier)
 	}
 
-	if gasTipCap != nil && opts.GasTipCap.Cmp(gasTipCap) > 0 {
+	if maxGasTipCap != nil && opts.GasTipCap.Cmp(maxGasTipCap) > 0 {
 		log.Info(
 			"New gasTipCap exceeds limit, keep waiting",
 			"multiplier", txReplacementTipMultiplier,
 			"newGasTipCap", opts.GasTipCap,
-			"maxTipCap", gasTipCap,
+			"maxTipCap", maxGasTipCap,
 		)
 		return nil, txpool.ErrReplaceUnderpriced
 	}

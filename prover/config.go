@@ -43,7 +43,7 @@ type Config struct {
 	WaitReceiptTimeout                time.Duration
 	ProveBlockGasLimit                *uint64
 	ProveBlockTxReplacementMultiplier uint64
-	ProveBlockTxGasTipCap             *big.Int
+	ProveBlockMaxTxGasTipCap          *big.Int
 	HTTPServerPort                    uint64
 	Capacity                          uint64
 	MinProofFee                       *big.Int
@@ -136,9 +136,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		)
 	}
 
-	var proveBlockTxGasTipCap *big.Int
-	if c.IsSet(flags.ProveBlockTxGasTipCap.Name) {
-		proveBlockTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProveBlockTxGasTipCap.Name))
+	var proveBlockMaxTxGasTipCap *big.Int
+	if c.IsSet(flags.ProveBlockMaxTxGasTipCap.Name) {
+		proveBlockMaxTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProveBlockMaxTxGasTipCap.Name))
 	}
 
 	return &Config{
@@ -173,7 +173,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProveBlockGasLimit:                proveBlockTxGasLimit,
 		Capacity:                          c.Uint64(flags.ProverCapacity.Name),
 		ProveBlockTxReplacementMultiplier: proveBlockTxReplacementMultiplier,
-		ProveBlockTxGasTipCap:             proveBlockTxGasTipCap,
+		ProveBlockMaxTxGasTipCap:          proveBlockMaxTxGasTipCap,
 		HTTPServerPort:                    c.Uint64(flags.ProverHTTPServerPort.Name),
 		MinProofFee:                       minProofFee,
 		MaxExpiry:                         time.Duration(c.Uint64(flags.MaxExpiry.Name)) * time.Second,

@@ -112,8 +112,8 @@ var (
 		Usage:    "Gas tip multiplier when replacing a TaikoL1.proveBlock transaction with same nonce",
 		Category: proverCategory,
 	}
-	ProveBlockTxGasTipCap = &cli.Uint64Flag{
-		Name:     "proveBlockTxGasTipCap",
+	ProveBlockMaxTxGasTipCap = &cli.Uint64Flag{
+		Name:     "proveBlockMaxTxGasTipCap",
 		Usage:    "Gas tip cap (in wei) for a TaikoL1.proveBlock transaction when doing the transaction replacement",
 		Category: proverCategory,
 	}
@@ -154,7 +154,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	OracleProofSubmissionDelay,
 	ProofSubmissionMaxRetry,
 	ProveBlockTxReplacementMultiplier,
-	ProveBlockTxGasTipCap,
+	ProveBlockMaxTxGasTipCap,
 	Graffiti,
 	CheckProofWindowExpiredInterval,
 	ProveUnassignedBlocks,

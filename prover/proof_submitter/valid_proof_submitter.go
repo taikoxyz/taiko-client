@@ -45,7 +45,7 @@ type ValidProofSubmitter struct {
 	waitReceiptTimeout         time.Duration
 	proveBlockTxGasLimit       *uint64
 	txReplacementTipMultiplier uint64
-	proveBlockTxGasTipCap      *big.Int
+	proveBlockMaxTxGasTipCap   *big.Int
 }
 
 // NewValidProofSubmitter creates a new ValidProofSubmitter instance.
@@ -63,7 +63,7 @@ func NewValidProofSubmitter(
 	waitReceiptTimeout time.Duration,
 	proveBlockTxGasLimit *uint64,
 	txReplacementTipMultiplier uint64,
-	proveBlockTxGasTipCap *big.Int,
+	proveBlockMaxTxGasTipCap *big.Int,
 ) (*ValidProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
 	if err != nil {
@@ -98,7 +98,7 @@ func NewValidProofSubmitter(
 		waitReceiptTimeout:         waitReceiptTimeout,
 		proveBlockTxGasLimit:       proveBlockTxGasLimit,
 		txReplacementTipMultiplier: txReplacementTipMultiplier,
-		proveBlockTxGasTipCap:      proveBlockTxGasTipCap,
+		proveBlockMaxTxGasTipCap:   proveBlockMaxTxGasTipCap,
 	}, nil
 }
 
@@ -276,7 +276,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 				txOpts,
 				s.proverAddress,
 				new(big.Int).SetUint64(s.txReplacementTipMultiplier),
-				s.proveBlockTxGasTipCap,
+				s.proveBlockMaxTxGasTipCap,
 			); err != nil {
 				return nil, err
 			}
