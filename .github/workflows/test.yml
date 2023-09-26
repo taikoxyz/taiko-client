@@ -86,10 +86,10 @@ jobs:
         working-directory: ${{ env.TAIKO_MONO_DIR }}
         run: cd ./packages/protocol && pnpm install && ./script/download_solc.sh && forge install
 
-      # - name: Test
-      #   working-directory: ${{ env.CLIENT_DIR }}
-      #   run: |
-      #     TAIKO_MONO_DIR=${GITHUB_WORKSPACE}/${TAIKO_MONO_DIR} make test
+      - name: Test
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: |
+          TAIKO_MONO_DIR=${GITHUB_WORKSPACE}/${TAIKO_MONO_DIR} make test
 
       - name: Codecov.io
         uses: codecov/codecov-action@v3
