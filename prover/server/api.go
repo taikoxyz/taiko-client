@@ -80,7 +80,8 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	}
 
 	if req.Fee.Cmp(srv.minProofFee) < 0 {
-		log.Warn("Proof fee too low",
+		log.Warn(
+			"Proof fee too low",
 			"reqFee", req.Fee.String(),
 			"srvMinProofFee", srv.minProofFee.String(),
 			"proposerIP", c.RealIP(),
@@ -89,7 +90,8 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	}
 
 	if req.Expiry > uint64(time.Now().Add(srv.maxExpiry).Unix()) {
-		log.Warn("Expiry too long",
+		log.Warn(
+			"Expiry too long",
 			"requestExpiry", req.Expiry,
 			"srvMaxExpiry", srv.maxExpiry,
 			"proposerIP", c.RealIP(),

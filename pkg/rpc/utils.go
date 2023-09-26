@@ -54,7 +54,7 @@ func CheckProverBalance(
 		return false, err
 	}
 
-	log.Info("prover's deposited taikoTokenBalance", "balance", depositedBalance.String(), "address", prover.Hex())
+	log.Info("Prover's deposited taikoTokenBalance", "balance", depositedBalance.String(), "address", prover.Hex())
 
 	if bond.Cmp(depositedBalance) > 0 {
 		// Check allowance on taiko token contract
@@ -63,7 +63,7 @@ func CheckProverBalance(
 			return false, err
 		}
 
-		log.Info("prover allowance for TaikoL1 contract", "allowance", allowance.String(), "address", prover.Hex())
+		log.Info("Prover allowance for TaikoL1 contract", "allowance", allowance.String(), "address", prover.Hex())
 
 		// Check prover's taiko token balance
 		balance, err := rpc.TaikoToken.BalanceOf(&bind.CallOpts{Context: ctxWithTimeout}, prover)
@@ -71,7 +71,7 @@ func CheckProverBalance(
 			return false, err
 		}
 
-		log.Info("prover's wallet taiko token balance", "balance", balance.String(), "address", prover.Hex())
+		log.Info("Prover's wallet taiko token balance", "balance", balance.String(), "address", prover.Hex())
 
 		if bond.Cmp(allowance) > 0 || bond.Cmp(balance) > 0 {
 			log.Info(

@@ -22,7 +22,7 @@ func (m *CapacityManager) ReadCapacity() uint64 {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	log.Info("reading capacity", "capacity", m.capacity)
+	log.Info("Reading capacity", "capacity", m.capacity)
 
 	return m.capacity
 }
@@ -34,7 +34,7 @@ func (m *CapacityManager) ReleaseOneCapacity() uint64 {
 
 	m.capacity += 1
 
-	log.Info("released capacity", "capacityAfterRelease", m.capacity)
+	log.Info("Released capacity", "capacityAfterRelease", m.capacity)
 
 	return m.capacity
 }
@@ -45,14 +45,13 @@ func (m *CapacityManager) TakeOneCapacity() (uint64, bool) {
 	defer m.mutex.Unlock()
 
 	if m.capacity == 0 {
-		log.Info("could not take one capacity", "capacity", m.capacity)
-
+		log.Info("Could not take one capacity", "capacity", m.capacity)
 		return 0, false
 	}
 
 	m.capacity -= 1
 
-	log.Info("took one capacity", "capacityAfterTaking", m.capacity)
+	log.Info("Took one capacity", "capacityAfterTaking", m.capacity)
 
 	return m.capacity, true
 }
