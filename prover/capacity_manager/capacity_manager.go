@@ -8,13 +8,14 @@ import (
 
 // CapacityManager manages the prover capacity concurrent-safely.
 type CapacityManager struct {
-	capacity uint64
-	mutex    sync.RWMutex
+	capacity    uint64
+	maxCapacity uint64
+	mutex       sync.RWMutex
 }
 
 // New creates a new CapacityManager instance.
 func New(capacity uint64) *CapacityManager {
-	return &CapacityManager{capacity: capacity}
+	return &CapacityManager{capacity: capacity, maxCapacity: capacity}
 }
 
 // ReadCapacity reads the current capacity.
@@ -27,16 +28,21 @@ func (m *CapacityManager) ReadCapacity() uint64 {
 	return m.capacity
 }
 
-// ReleaseCapacity releases one capacity.
-func (m *CapacityManager) ReleaseOneCapacity() uint64 {
+// ReleaseOneCapacity releases one capacity.
+func (m *CapacityManager) ReleaseOneCapacity() (uint64, bool) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
+
+	if m.capacity+1 > m.maxCapacity {
+		log.Info("Can not release capacity", "currentCapacity", m.capacity, "maxCapacity", m.maxCapacity)
+		return m.capacity, false
+	}
 
 	m.capacity += 1
 
 	log.Info("Released capacity", "capacityAfterRelease", m.capacity)
 
-	return m.capacity
+	return m.capacity, true
 }
 
 // TakeOneCapacity takes one capacity.
