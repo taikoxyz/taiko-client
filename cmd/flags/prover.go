@@ -149,4 +149,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProverHTTPServerPort,
 	ProverCapacity,
 	MaxExpiry,
+	TaikoTokenAddress,
 })
