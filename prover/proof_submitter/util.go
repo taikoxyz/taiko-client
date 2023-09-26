@@ -68,13 +68,14 @@ func sendTxWithBackoff(
 	eventL1Hash common.Hash,
 	proposedAt uint64,
 	meta *bindings.TaikoDataBlockMetadata,
-	sendTxFunc func() (*types.Transaction, error),
+	sendTxFunc func(*big.Int) (*types.Transaction, error),
 	retryInterval time.Duration,
 	maxRetry *uint64,
 	waitReceiptTimeout time.Duration,
 ) error {
 	var (
 		isUnretryableError bool
+		nonce              *big.Int
 		backOffPolicy      backoff.BackOff = backoff.NewConstantBackOff(retryInterval)
 	)
 
@@ -112,7 +113,8 @@ func sendTxWithBackoff(
 		// check if latest verified head is ahead of this block proof
 		stateVars, err := cli.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 		if err != nil {
-			log.Warn("failed to fetch state vars",
+			log.Warn(
+				"Failed to fetch state variables",
 				"blockID", blockID,
 				"error", err,
 			)
@@ -120,16 +122,16 @@ func sendTxWithBackoff(
 		}
 
 		latestVerifiedId := stateVars.LastVerifiedBlockId
-
 		if new(big.Int).SetUint64(latestVerifiedId).Cmp(blockID) >= 0 {
-			log.Warn("Block is already verified, skip current proof submission",
+			log.Warn(
+				"Block is already verified, skip current proof submission",
 				"blockID", blockID.Uint64(),
 				"latestVerifiedId", latestVerifiedId,
 			)
 			return nil
 		}
 
-		tx, err := sendTxFunc()
+		tx, err := sendTxFunc(nonce)
 		if err != nil {
 			err = encoding.TryParsingCustomError(err)
 			if isSubmitProofTxErrorRetryable(err, blockID) {
@@ -141,17 +143,26 @@ func sendTxWithBackoff(
 			return nil
 		}
 
+		nonce = new(big.Int).SetUint64(tx.Nonce())
 		ctxWithTimeout, cancel := context.WithTimeout(ctx, waitReceiptTimeout)
 		defer cancel()
 
 		if _, err := rpc.WaitReceipt(ctxWithTimeout, cli.L1, tx); err != nil {
-			log.Warn("Failed to wait till transaction executed", "blockID", blockID, "txHash", tx.Hash(), "error", err)
+			log.Warn(
+				"Failed to wait till transaction executed",
+				"blockID", blockID,
+				"txHash", tx.Hash(),
+				"nonce", nonce,
+				"error", err,
+			)
 			return err
 		}
 
 		log.Info(
 			"💰 Your block proof was accepted",
 			"blockID", blockID,
+			"txHash", tx.Hash(),
+			"nonce", nonce,
 			"proposedAt", proposedAt,
 		)
 

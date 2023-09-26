@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/txpool"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/log"
@@ -198,6 +199,55 @@ func ContentFrom(
 		"txpool_contentFrom",
 		address,
 	)
+}
+
+// IncreaseGasTipCap tries to increase the given transaction's gasTipCap.
+func IncreaseGasTipCap(
+	ctx context.Context,
+	cli *Client,
+	opts *bind.TransactOpts,
+	address common.Address,
+	txReplacementTipMultiplier *big.Int,
+	gasTipCap *big.Int,
+) (*bind.TransactOpts, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	log.Info("Try replacing a transaction with same nonce", "sender", address, "nonce", opts.Nonce)
+
+	originalTx, err := GetPendingTxByNonce(ctxWithTimeout, cli, address, opts.Nonce.Uint64())
+	if err != nil || originalTx == nil {
+		log.Warn(
+			"Original transaction not found",
+			"sender", address,
+			"nonce", opts.Nonce,
+			"error", err,
+		)
+
+		opts.GasTipCap = new(big.Int).Mul(opts.GasTipCap, txReplacementTipMultiplier)
+	} else {
+		log.Info(
+			"Original transaction to replace",
+			"sender", address,
+			"nonce", opts.Nonce,
+			"gasTipCap", originalTx.GasTipCap(),
+			"gasFeeCap", originalTx.GasFeeCap(),
+		)
+
+		opts.GasTipCap = new(big.Int).Mul(originalTx.GasTipCap(), txReplacementTipMultiplier)
+	}
+
+	if gasTipCap != nil && opts.GasTipCap.Cmp(gasTipCap) > 0 {
+		log.Info(
+			"New gasTipCap exceeds limit, keep waiting",
+			"multiplier", txReplacementTipMultiplier,
+			"newGasTipCap", opts.GasTipCap,
+			"maxTipCap", gasTipCap,
+		)
+		return nil, txpool.ErrReplaceUnderpriced
+	}
+
+	return opts, nil
 }
 
 // GetPendingTxByNonce tries to retrieve a pending transaction with a given nonce in a node's mempool.

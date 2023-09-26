@@ -358,40 +358,15 @@ func (p *Proposer) sendProposeBlockTx(
 		opts.GasLimit = *p.proposeBlockTxGasLimit
 	}
 	if isReplacement {
-		log.Info("Try replacing a transaction with same nonce", "sender", p.l1ProposerAddress, "nonce", nonce)
-		originalTx, err := rpc.GetPendingTxByNonce(ctx, p.rpc, p.l1ProposerAddress, *nonce)
-		if err != nil || originalTx == nil {
-			log.Warn(
-				"Original transaction not found",
-				"sender", p.l1ProposerAddress,
-				"nonce", nonce,
-				"error", err,
-			)
-
-			opts.GasTipCap = new(big.Int).Mul(opts.GasTipCap, new(big.Int).SetUint64(p.txReplacementTipMultiplier))
-		} else {
-			log.Info(
-				"Original transaction to replace",
-				"sender", p.l1ProposerAddress,
-				"nonce", nonce,
-				"gasTipCap", originalTx.GasTipCap(),
-				"gasFeeCap", originalTx.GasFeeCap(),
-			)
-
-			opts.GasTipCap = new(big.Int).Mul(
-				originalTx.GasTipCap(),
-				new(big.Int).SetUint64(p.txReplacementTipMultiplier),
-			)
-		}
-
-		if p.proposeBlockTxGasTipCap != nil && opts.GasTipCap.Cmp(p.proposeBlockTxGasTipCap) > 0 {
-			log.Info(
-				"New gasTipCap exceeds limit, keep waiting",
-				"multiplier", p.txReplacementTipMultiplier,
-				"newGasTipCap", opts.GasTipCap,
-				"maxTipCap", p.proposeBlockTxGasTipCap,
-			)
-			return nil, txpool.ErrReplaceUnderpriced
+		if opts, err = rpc.IncreaseGasTipCap(
+			ctx,
+			p.rpc,
+			opts,
+			p.l1ProposerAddress,
+			new(big.Int).SetUint64(p.txReplacementTipMultiplier),
+			p.proposeBlockTxGasTipCap,
+		); err != nil {
+			return nil, err
 		}
 	}
 

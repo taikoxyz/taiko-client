@@ -48,7 +48,7 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		l1Head.Hash(),
 		0,
 		meta,
-		func() (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
+		func(nonce *big.Int) (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
 		12*time.Second,
 		&testMaxRetry,
 		5*time.Second,
@@ -61,7 +61,7 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 		l1Head.Hash(),
 		0,
 		meta,
-		func() (*types.Transaction, error) {
+		func(nonce *big.Int) (*types.Transaction, error) {
 			height, err := s.RpcClient.L1.BlockNumber(context.Background())
 			s.Nil(err)
 
