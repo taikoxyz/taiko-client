@@ -46,4 +46,5 @@ cd $TAIKO_MONO_DIR/packages/protocol &&
         --broadcast \
         --ffi \
         -vvvvv \
+        --gas-limit 100000000 \
         --block-gas-limit 100000000
