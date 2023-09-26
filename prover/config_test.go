@@ -51,6 +51,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		s.Equal(uint64(8), c.Capacity)
 		s.Equal(minProofFee, c.MinProofFee.String())
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
+		s.True(c.ProveUnassignedBlocks)
 
 		return err
 	}
@@ -67,15 +68,15 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"-" + flags.StartingBlockID.Name, "0",
 		"-" + flags.RPCTimeout.Name, "5",
 		"-" + flags.ProveBlockTxGasLimit.Name, "100000",
-		"-" + flags.Dummy.Name,
+		"--" + flags.Dummy.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"-" + flags.MinProofFee.Name, minProofFee,
 		"-" + flags.ProverCapacity.Name, "8",
-		"-" + flags.OracleProver.Name,
+		"--" + flags.OracleProver.Name,
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.CheckProofWindowExpiredInterval.Name, "30",
-		"-" + flags.ProveUnassignedBlocks.Name, "true",
+		"--" + flags.ProveUnassignedBlocks.Name,
 	}))
 }
 
@@ -91,9 +92,9 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"-" + flags.TaikoL1Address.Name, taikoL1,
 		"-" + flags.TaikoL2Address.Name, taikoL2,
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + flags.Dummy.Name,
+		"--" + flags.Dummy.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
-		"-" + flags.OracleProver.Name,
+		"--" + flags.OracleProver.Name,
 		"-" + flags.Graffiti.Name, "",
 		"-" + flags.RPCTimeout.Name, "5",
 		"-" + flags.MinProofFee.Name, minProofFee,
@@ -115,7 +116,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverKeyError() {
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + flags.OracleProver.Name,
+		"--" + flags.OracleProver.Name,
 		"-" + flags.OracleProverPrivateKey.Name, "",
 	}), "invalid oracle private key")
 }
@@ -127,7 +128,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayError() {
 		"TestNewConfigFromCliContext",
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + flags.OracleProver.Name,
+		"--" + flags.OracleProver.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "130m",
 		"-" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value")
@@ -140,7 +141,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorLower() {
 		"TestNewConfigFromCliContext",
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + flags.OracleProver.Name,
+		"--" + flags.OracleProver.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30x-1h",
 		"-" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value")
@@ -153,7 +154,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorUpper() {
 		"TestNewConfigFromCliContext",
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + flags.OracleProver.Name,
+		"--" + flags.OracleProver.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "30m-1x",
 		"-" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value")
@@ -166,7 +167,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorOrder() {
 		"TestNewConfigFromCliContext",
 		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + flags.OracleProver.Name,
+		"--" + flags.OracleProver.Name,
 		"-" + flags.RandomDummyProofDelay.Name, "1h-30m",
 		"-" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value (lower > upper)")

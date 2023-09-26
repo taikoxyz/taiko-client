@@ -33,6 +33,8 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(rpcTimeout, *c.RPCTimeout)
 		s.NotEmpty(c.JwtSecret)
 		s.Nil(new(Driver).InitFromCli(context.Background(), ctx))
+		s.True(c.P2PSyncVerifiedBlocks)
+		s.Equal("http://localhost:8545", c.L2CheckPoint)
 
 		return err
 	}
@@ -47,6 +49,8 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		"-" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
 		"-" + flags.P2PSyncTimeout.Name, "120",
 		"-" + flags.RPCTimeout.Name, "5",
+		"--" + flags.P2PSyncVerifiedBlocks.Name,
+		"-" + flags.CheckPointSyncUrl.Name, "http://localhost:8545",
 	}))
 }
 
@@ -63,7 +67,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContextEmptyL2CheckPoint() {
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"-" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
-		"-" + flags.P2PSyncVerifiedBlocks.Name, "true",
+		"--" + flags.P2PSyncVerifiedBlocks.Name,
 		"-" + flags.L2WSEndpoint.Name, "",
 	}), "empty L2 check point URL")
 }
@@ -80,6 +84,7 @@ func (s *DriverTestSuite) SetupApp() *cli.App {
 		&cli.BoolFlag{Name: flags.P2PSyncVerifiedBlocks.Name},
 		&cli.UintFlag{Name: flags.P2PSyncTimeout.Name},
 		&cli.UintFlag{Name: flags.RPCTimeout.Name},
+		&cli.StringFlag{Name: flags.CheckPointSyncUrl.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
