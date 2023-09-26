@@ -12,6 +12,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -136,6 +137,10 @@ func sendTxWithBackoff(
 			err = encoding.TryParsingCustomError(err)
 			if isSubmitProofTxErrorRetryable(err, blockID) {
 				log.Info("Retry sending TaikoL1.proveBlock transaction", "blockID", blockID, "reason", err)
+				if strings.Contains(err.Error(), core.ErrNonceTooLow.Error()) {
+					nonce = nil
+				}
+
 				return err
 			}
 

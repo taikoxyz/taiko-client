@@ -14,6 +14,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/txpool"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -401,7 +402,10 @@ func (p *Proposer) ProposeTxList(
 				return nil
 			}
 			if tx, err = p.sendProposeBlockTx(ctx, meta, txListBytes, nonce, assignment, fee, isReplacement); err != nil {
-				log.Warn("Failed to send propose block transaction, retrying", "error", encoding.TryParsingCustomError(err))
+				log.Warn("Failed to send propose block transaction", "error", encoding.TryParsingCustomError(err))
+				if strings.Contains(err.Error(), core.ErrNonceTooLow.Error()) {
+					return nil
+				}
 				if strings.Contains(err.Error(), txpool.ErrReplaceUnderpriced.Error()) {
 					isReplacement = true
 				} else {
