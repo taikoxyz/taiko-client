@@ -50,6 +50,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		s.Equal(rpcTimeout, *c.RPCTimeout)
 		s.Equal(uint64(8), c.Capacity)
 		s.Equal(minProofFee, c.MinProofFee.String())
+		s.Equal(uint64(3), c.ProveBlockTxReplacementMultiplier)
+		s.Equal(uint64(256), c.ProveBlockMaxTxGasTipCap.Uint64())
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -57,25 +59,27 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 
 	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext_OracleProver",
-		"-" + flags.L1WSEndpoint.Name, l1WsEndpoint,
-		"-" + flags.L1HTTPEndpoint.Name, l1HttpEndpoint,
-		"-" + flags.L2WSEndpoint.Name, l2WsEndpoint,
-		"-" + flags.L2HTTPEndpoint.Name, l2HttpEndpoint,
-		"-" + flags.TaikoL1Address.Name, taikoL1,
-		"-" + flags.TaikoL2Address.Name, taikoL2,
-		"-" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + flags.StartingBlockID.Name, "0",
-		"-" + flags.RPCTimeout.Name, "5",
-		"-" + flags.ProveBlockTxGasLimit.Name, "100000",
-		"-" + flags.Dummy.Name,
-		"-" + flags.RandomDummyProofDelay.Name, "30m-1h",
-		"-" + flags.MinProofFee.Name, minProofFee,
-		"-" + flags.ProverCapacity.Name, "8",
-		"-" + flags.OracleProver.Name,
-		"-" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"-" + flags.Graffiti.Name, "",
-		"-" + flags.CheckProofWindowExpiredInterval.Name, "30",
-		"-" + flags.ProveUnassignedBlocks.Name, "true",
+		"--" + flags.L1WSEndpoint.Name, l1WsEndpoint,
+		"--" + flags.L1HTTPEndpoint.Name, l1HttpEndpoint,
+		"--" + flags.L2WSEndpoint.Name, l2WsEndpoint,
+		"--" + flags.L2HTTPEndpoint.Name, l2HttpEndpoint,
+		"--" + flags.TaikoL1Address.Name, taikoL1,
+		"--" + flags.TaikoL2Address.Name, taikoL2,
+		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.StartingBlockID.Name, "0",
+		"--" + flags.RPCTimeout.Name, "5",
+		"--" + flags.ProveBlockTxGasLimit.Name, "100000",
+		"--" + flags.Dummy.Name,
+		"--" + flags.RandomDummyProofDelay.Name, "30m-1h",
+		"--" + flags.MinProofFee.Name, minProofFee,
+		"--" + flags.ProverCapacity.Name, "8",
+		"--" + flags.OracleProver.Name,
+		"--" + flags.ProveBlockTxReplacementMultiplier.Name, "3",
+		"--" + flags.ProveBlockMaxTxGasTipCap.Name, "256",
+		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.Graffiti.Name, "",
+		"--" + flags.CheckProofWindowExpiredInterval.Name, "30",
+		"--" + flags.ProveUnassignedBlocks.Name,
 	}))
 }
 
@@ -190,6 +194,8 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.Graffiti.Name},
 		&cli.Uint64Flag{Name: flags.CheckProofWindowExpiredInterval.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
+		&cli.Uint64Flag{Name: flags.ProveBlockTxReplacementMultiplier.Name},
+		&cli.Uint64Flag{Name: flags.ProveBlockMaxTxGasTipCap.Name},
 		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
 		&cli.Uint64Flag{Name: flags.ProverCapacity.Name},
 		&cli.Uint64Flag{Name: flags.MinProofFee.Name},
