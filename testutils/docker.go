@@ -1,207 +1,380 @@
 package testutils
 
 import (
+	"bufio"
 	"context"
-	"errors"
 	"fmt"
-	"os"
+	"math/big"
 	"os/exec"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	gethHttpPort       uint64 = 8545
+	gethWSPort         uint64 = 8546
+	gethAuthPort       uint64 = 8551
+	premintTokenAmount        = "92233720368547758070000000000000"
+	anvilReady                = "Listening on 0.0.0.0:8545"
+	gethReady                 = "HTTP server started"
+)
+
 var (
-	composeFile            = "integration_test/nodes/docker-compose.yml"
-	l1ContainerName        = "l1_node-1"
-	gethHttpPort    uint64 = 8545
-	gethWSPort      uint64 = 8546
-	gethAuthPort    uint64 = 8551
-	counter         uint64
-	counterLock     sync.Mutex
+	jwtFile     string
+	l1ImageID   string
+	counter     uint64
+	counterLock sync.Mutex
 )
 
 type ExampleTestSuite struct {
 	suite.Suite
-	dockerCli *client.Client
-	l1ImageID string
+	l1ContainerConf *nodeConfig
+	l2ContainerConf *nodeConfig
 }
 
 func (s *ExampleTestSuite) SetupSuite() {
-	c, err := client.NewClientWithOpts()
-	s.NoError(err)
-	s.dockerCli = c
-	// s.NoError(s.startDevNet())
-	id, err := s.l1ContainerID()
-	s.NoError(err)
+	packageID := incrCounter()
+
 	ctx := context.Background()
-	s.l1ImageID, err = s.buildL1Image(ctx, id)
-	s.NoError(err)
-	s.T().Logf("l1ImageID: %s\n", s.l1ImageID)
+	s.l1ContainerConf = l1Config(packageID)
+	s.NoError(startGethContainer(ctx, s.l1ContainerConf, anvilReady))
+
+	s.l2ContainerConf = l2Config(packageID)
+	s.NoError(startGethContainer(ctx, s.l2ContainerConf, gethReady))
 }
 
 func (s *ExampleTestSuite) TearDownSuite() {
-	s.dockerCli.Close()
+	stopContainer(context.Background(), s.l1ContainerConf.ContainerID)
+	stopContainer(context.Background(), s.l2ContainerConf.ContainerID)
 }
 
-func (s *ExampleTestSuite) compose(action string) error {
-	return exec.Command("docker-compose", action, "-f "+composeFile).Run()
+type endpointPorts struct {
+	HTTP uint64
+	WS   uint64
+	Auth uint64
 }
 
-func (s *ExampleTestSuite) startDevNet() error {
-	// cmd := exec.Command("make", "dev_net")
-	// cmd.Env = []string{
-	// 	"TAIKO_MONO_DIR=../taiko-mono", "COMPILE_PROTOCOL=false",
-	// }
-	// return cmd.Run()
+func (e *endpointPorts) HttpEndpoint() string {
+	return fmt.Sprintf("http://localhost:%d", e.HTTP)
+}
 
-	cmd := exec.Command("pwd")
-	cmd.Stderr = os.Stderr
+func (e *endpointPorts) WsEndpoint() string {
+	return fmt.Sprintf("ws://localhost:%d", e.WS)
+}
 
-	if err := cmd.Run(); err != nil {
+func (e *endpointPorts) AuthEndpoint() string {
+	return fmt.Sprintf("ws://localhost:%d", e.Auth)
+}
+
+func getL1Ports(testID uint64) *endpointPorts {
+	return &endpointPorts{
+		HTTP: 11545 + testID,
+		WS:   12546 + testID,
+		Auth: 13551 + testID,
+	}
+}
+
+func getL2Ports(testID uint64) *endpointPorts {
+	return &endpointPorts{
+		HTTP: 21545 + testID,
+		WS:   22546 + testID,
+		Auth: 23551 + testID,
+	}
+}
+
+func l1Config(id uint64) *nodeConfig {
+	p := getL1Ports(id)
+	nc := &nodeConfig{
+		ContainerName: fmt.Sprintf("L1_%d", id),
+		ContainerConfig: &container.Config{
+			Image: l1ImageID,
+		},
+		Ports: p,
+		HostConfig: &container.HostConfig{
+			AutoRemove: true,
+			PortBindings: map[nat.Port][]nat.PortBinding{
+				nat.Port(tcpPortString(gethHttpPort)): {
+					{
+						HostIP:   "0.0.0.0",
+						HostPort: strconv.FormatUint(p.HTTP, 10),
+					},
+				},
+				nat.Port(tcpPortString(gethWSPort)): {
+					{
+						HostIP:   "0.0.0.0",
+						HostPort: strconv.FormatUint(p.WS, 10),
+					},
+				},
+			},
+		},
+	}
+	return nc
+}
+
+func l2Config(id uint64) *nodeConfig {
+	p := getL2Ports(id)
+	nc := &nodeConfig{
+		ContainerName: fmt.Sprintf("L2_%d", id),
+		Ports:         p,
+		ContainerConfig: &container.Config{
+			Image: "gcr.io/evmchain/taiko-geth:taiko",
+			Cmd: []string{
+				"--nodiscover",
+				"--gcmode",
+				"archive",
+				"--syncmode",
+				"full",
+				"--datadir",
+				"/data/taiko-geth",
+				"--networkid",
+				"167001",
+				"--metrics",
+				"--metrics.expensive",
+				"--metrics.addr",
+				"0.0.0.0",
+				"--http",
+				"--http.addr",
+				"0.0.0.0",
+				"--http.vhosts",
+				"*",
+				"--http.corsdomain",
+				"*",
+				"--ws",
+				"--ws.addr",
+				"0.0.0.0",
+				"--ws.origins",
+				"*",
+				"--authrpc.addr",
+				"0.0.0.0",
+				"--authrpc.port",
+				"8551",
+				"--authrpc.vhosts",
+				"*",
+				"--authrpc.jwtsecret",
+				"/host/jwt.hex",
+				"--allow-insecure-unlock",
+				"--http.api",
+				"admin,debug,eth,net,web3,txpool,miner,taiko",
+				"--ws.api",
+				"admin,debug,eth,net,web3,txpool,miner,taiko",
+				"--taiko",
+			},
+		},
+		HostConfig: &container.HostConfig{
+			Binds: []string{fmt.Sprintf("%s:/host/jwt.hex", jwtFile)},
+			PortBindings: map[nat.Port][]nat.PortBinding{
+				nat.Port(tcpPortString(gethHttpPort)): {
+					{
+						HostIP:   "0.0.0.0",
+						HostPort: strconv.FormatUint(p.HTTP, 10),
+					},
+				},
+				nat.Port(tcpPortString(gethWSPort)): {
+					{
+						HostIP:   "0.0.0.0",
+						HostPort: strconv.FormatUint(p.WS, 10),
+					},
+				},
+				nat.Port(tcpPortString(gethAuthPort)): {
+					{
+						HostIP:   "0.0.0.0",
+						HostPort: strconv.FormatUint(p.Auth, 10),
+					},
+				},
+			},
+			AutoRemove: true,
+		},
+	}
+	return nc
+}
+
+func tcpPortString(port uint64) string {
+	return fmt.Sprintf("%d/tcp", port)
+}
+
+type nodeConfig struct {
+	ContainerName   string
+	ContainerID     string
+	Ports           *endpointPorts
+	ContainerConfig *container.Config
+	HostConfig      *container.HostConfig
+}
+
+func startGethContainer(ctx context.Context, conf *nodeConfig, message string) error {
+	cli, err := client.NewClientWithOpts()
+	if err != nil {
 		return err
 	}
-	d, err := cmd.Output()
-	fmt.Print(d)
-	return err
-}
-
-func (s *ExampleTestSuite) l1ContainerID() (string, error) {
-	containers, err := s.dockerCli.ContainerList(context.Background(), types.ContainerListOptions{})
+	defer cli.Close()
+	c, err := cli.ContainerCreate(ctx, conf.ContainerConfig, conf.HostConfig, nil, nil, conf.ContainerName)
 	if err != nil {
-		return "", err
+		return err
 	}
-	for _, c := range containers {
-		for _, n := range c.Names {
-			if n == l1ContainerName {
-				return c.ID, nil
-			}
+	if err := cli.ContainerStart(ctx, c.ID, types.ContainerStartOptions{}); err != nil {
+		return err
+	}
+	conf.ContainerID = c.ID
+	r, err := cli.ContainerAttach(ctx, c.ID, types.ContainerAttachOptions{Stream: true, Stderr: true, Stdout: true})
+	if err != nil {
+		return err
+	}
+	defer r.Conn.Close()
+	scanner := bufio.NewScanner(r.Reader)
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), message) {
+			break
 		}
 	}
-	return "", errors.New("not found")
+	return nil
 }
 
-func (s *ExampleTestSuite) buildL1Image(ctx context.Context, containerID string) (string, error) {
-	resp, err := s.dockerCli.ContainerCommit(ctx, containerID, types.ContainerCommitOptions{})
+func stopContainer(ctx context.Context, containerID string) error {
+	cli, err := client.NewClientWithOpts()
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+	return cli.ContainerStop(ctx, containerID, container.StopOptions{})
+}
+
+func buildL1Image() (string, error) {
+	cli, err := client.NewClientWithOpts()
 	if err != nil {
 		return "", err
 	}
-	return resp.ID, nil
+	defer cli.Close()
+	ctx := context.Background()
+	nc := AnvilContainerConf()
+	if err := startGethContainer(ctx, nc, anvilReady); err != nil {
+		return "", err
+	}
+	if err := deployTaikoL1(); err != nil {
+		return "", err
+	}
+	r, err := cli.ContainerCommit(ctx, nc.ContainerID, types.ContainerCommitOptions{})
+	if err != nil {
+		return "", err
+	}
+	if err := cli.ContainerStop(ctx, nc.ContainerID, container.StopOptions{}); err != nil {
+		return "", err
+	}
+	return r.ID, nil
 }
 
-func (s *ExampleTestSuite) Counter() uint64 {
+func AnvilContainerConf() *nodeConfig {
+	p := &endpointPorts{
+		HTTP: gethHttpPort,
+	}
+	nc := &nodeConfig{
+		ContainerName: "anvil",
+		Ports:         p,
+		ContainerConfig: &container.Config{
+			Image: "ghcr.io/foundry-rs/foundry:latest",
+			ExposedPorts: map[nat.Port]struct{}{
+				nat.Port(tcpPortString(gethHttpPort)): {},
+			},
+			Entrypoint: []string{"anvil", "--host", "0.0.0.0"},
+		},
+		HostConfig: &container.HostConfig{
+			AutoRemove: true,
+			PortBindings: map[nat.Port][]nat.PortBinding{
+				nat.Port(tcpPortString(gethHttpPort)): {
+					{
+						HostIP:   "0.0.0.0",
+						HostPort: strconv.FormatUint(p.HTTP, 10),
+					},
+				},
+			},
+		},
+	}
+	return nc
+}
+
+func getL2GenesisHash() (string, error) {
+	ctx, l2ContainerConf := context.Background(), l2Config(0)
+	if err := startGethContainer(ctx, l2ContainerConf, gethReady); err != nil {
+		return "", err
+	}
+	cli, err := ethclient.DialContext(ctx, l2ContainerConf.Ports.HttpEndpoint())
+	if err != nil {
+		return "", err
+	}
+	defer cli.Close()
+	genesis, err := cli.BlockByNumber(ctx, big.NewInt(0))
+	if err != nil {
+		return "", err
+	}
+	if err := stopContainer(ctx, l2ContainerConf.ContainerID); err != nil {
+		return "", err
+	}
+	return genesis.Hash().String(), nil
+}
+
+func deployTaikoL1() error {
+	l2GenesisHash, err := getL2GenesisHash()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command("forge",
+		"script",
+		"script/DeployOnL1.s.sol:DeployOnL1",
+		"--fork-url",
+		"http://localhost:8545",
+		"--broadcast",
+		"--ffi",
+		"-vvvvv",
+		"--block-gas-limit",
+		"100000000",
+	)
+	cmd.Env = []string{
+		"PRIVATE_KEY=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+		"ORACLE_PROVER=0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+		"OWNER=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+		"TAIKO_L2_ADDRESS=0x1000777700000000000000000000000000000001",
+		"L2_SIGNAL_SERVICE=0x1000777700000000000000000000000000000007",
+		"SHARED_SIGNAL_SERVICE=0x0000000000000000000000000000000000000000",
+		"TAIKO_TOKEN_PREMINT_RECIPIENTS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266,0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+		fmt.Sprintf("TAIKO_TOKEN_PREMINT_AMOUNTS=%s,%s", premintTokenAmount, premintTokenAmount),
+		fmt.Sprintf("L2_GENESIS_HASH=%s", l2GenesisHash),
+	}
+	monoPath, err := filepath.Abs("../../taiko-mono/packages/protocol")
+	if err != nil {
+		return err
+	}
+	cmd.Dir = monoPath
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(out))
+		return fmt.Errorf("out=%s,err=%v", string(out), err)
+	}
+	return nil
+}
+
+func incrCounter() uint64 {
 	counterLock.Lock()
 	defer counterLock.Unlock()
 	counter++
 	return counter
 }
 
-type EndpointPorts struct {
-	L1HTTP   uint64
-	L1WS     uint64
-	L2HTTP   uint64
-	L2WSPort uint64
-	L2Auth   uint64
-}
-
-func (s *ExampleTestSuite) eePorts(testID uint64) *EndpointPorts {
-	return &EndpointPorts{
-		L1HTTP:   18545 + testID,
-		L1WS:     28546 + testID,
-		L2HTTP:   38545 + testID,
-		L2WSPort: 48546 + testID,
-		L2Auth:   58551 + testID,
-	}
-}
-
-func (s *ExampleTestSuite) l1ContainerConfig(p *EndpointPorts) (*container.Config, *container.HostConfig) {
-	config := &container.Config{
-		Image: s.l1ImageID,
-	}
-	hConfig := &container.HostConfig{
-		AutoRemove: true,
-		PortBindings: map[nat.Port][]nat.PortBinding{
-			nat.Port(strconv.FormatUint(gethHttpPort, 10)): {
-				{
-					HostIP:   "localhost",
-					HostPort: strconv.FormatUint(p.L1HTTP, 10),
-				},
-			},
-			nat.Port(strconv.FormatUint(gethWSPort, 10)): {
-				{
-					HostIP:   "localhost",
-					HostPort: strconv.FormatUint(p.L1WS, 10),
-				},
-			},
-		},
-	}
-	return config, hConfig
-}
-
-func (s *ExampleTestSuite) l2ContainerConfig(p *EndpointPorts) (*container.Config, *container.HostConfig) {
-	config := &container.Config{
-		Image: "gcr.io/evmchain/taiko-geth:taiko",
-	}
-	hConfig := &container.HostConfig{
-		AutoRemove: true,
-		PortBindings: map[nat.Port][]nat.PortBinding{
-			nat.Port(strconv.FormatUint(gethHttpPort, 10)): {
-				{
-					HostIP:   "localhost",
-					HostPort: strconv.FormatUint(p.L2HTTP, 10),
-				},
-			},
-			nat.Port(strconv.FormatUint(gethWSPort, 10)): {
-				{
-					HostIP:   "localhost",
-					HostPort: strconv.FormatUint(p.L2WSPort, 10),
-				},
-			},
-			nat.Port(strconv.FormatUint(gethAuthPort, 10)): {
-				{
-					HostIP:   "localhost",
-					HostPort: strconv.FormatUint(p.L2Auth, 10),
-				},
-			},
-		},
-	}
-	return config, hConfig
-}
-
-func (s *ExampleTestSuite) StartL1L2(ctx context.Context, testID uint64) (string, string, error) {
-	ports := s.eePorts(testID)
-	config, hConfig := s.l1ContainerConfig(ports)
-	name := fmt.Sprintf("l1_%d", testID)
-	l1ID, err := s.startContainer(ctx, name, config, hConfig)
+func init() {
+	f, err := filepath.Abs("../integration_test/nodes/jwt.hex")
 	if err != nil {
-		return "", "", err
+		panic(err)
 	}
+	jwtFile = f
 
-	config, hConfig = s.l2ContainerConfig(ports)
-	name = fmt.Sprintf("l2_%d", testID)
-	l2ID, err := s.startContainer(ctx, name, config, hConfig)
+	l1ImageID, err = buildL1Image()
 	if err != nil {
-		return "", "", err
+		panic(err)
 	}
-	return l1ID, l2ID, nil
-}
-
-func (s *ExampleTestSuite) startContainer(ctx context.Context, name string, config *container.Config, hConfig *container.HostConfig) (string, error) {
-	l1, err := s.dockerCli.ContainerCreate(ctx, config, hConfig, nil, nil, name)
-	if err != nil {
-		return "", err
-	}
-	if err := s.dockerCli.ContainerStart(ctx, l1.ID, types.ContainerStartOptions{}); err != nil {
-		return "", err
-	}
-	return l1.ID, nil
-}
-
-func (s *ExampleTestSuite) stopContainer(ctx context.Context, containerID string) error {
-	return s.dockerCli.ContainerStop(ctx, containerID, container.StopOptions{})
 }
