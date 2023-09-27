@@ -116,13 +116,14 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
-		L1Endpoint:       cfg.L1WsEndpoint,
-		L2Endpoint:       cfg.L2WsEndpoint,
-		TaikoL1Address:   cfg.TaikoL1Address,
-		TaikoL2Address:   cfg.TaikoL2Address,
-		RetryInterval:    cfg.BackOffRetryInterval,
-		Timeout:          cfg.RPCTimeout,
-		BackOffMaxRetrys: new(big.Int).SetUint64(p.cfg.BackOffMaxRetrys),
+		L1Endpoint:        cfg.L1WsEndpoint,
+		L2Endpoint:        cfg.L2WsEndpoint,
+		TaikoL1Address:    cfg.TaikoL1Address,
+		TaikoL2Address:    cfg.TaikoL2Address,
+		TaikoTokenAddress: cfg.TaikoTokenAddress,
+		RetryInterval:     cfg.BackOffRetryInterval,
+		Timeout:           cfg.RPCTimeout,
+		BackOffMaxRetrys:  new(big.Int).SetUint64(p.cfg.BackOffMaxRetrys),
 	}); err != nil {
 		return err
 	}
@@ -200,6 +201,8 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.BackOffRetryInterval,
 		p.cfg.WaitReceiptTimeout,
 		p.cfg.ProveBlockGasLimit,
+		p.cfg.ProveBlockTxReplacementMultiplier,
+		p.cfg.ProveBlockMaxTxGasTipCap,
 	); err != nil {
 		return err
 	}
@@ -600,6 +603,12 @@ func (p *Prover) onBlockProposed(
 			metrics.ProverProofsAssigned.Inc(1)
 		}
 
+		if !p.cfg.OracleProver {
+			if _, ok := p.capacityManager.TakeOneCapacity(); !ok {
+				return errNoCapacity
+			}
+		}
+
 		ctx, cancelCtx := context.WithCancel(ctx)
 		p.currentBlocksBeingProvenMutex.Lock()
 		p.currentBlocksBeingProven[event.BlockId.Uint64()] = cancelFunc(func() {
@@ -609,12 +618,6 @@ func (p *Prover) onBlockProposed(
 			}
 		})
 		p.currentBlocksBeingProvenMutex.Unlock()
-
-		if !p.cfg.OracleProver {
-			if _, ok := p.capacityManager.TakeOneCapacity(); !ok {
-				return errNoCapacity
-			}
-		}
 
 		return p.validProofSubmitter.RequestProof(ctx, event)
 	}
@@ -655,7 +658,10 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 		defer func() {
 			<-p.submitProofConcurrencyGuard
 			if !p.cfg.OracleProver {
-				p.capacityManager.ReleaseOneCapacity()
+				_, released := p.capacityManager.ReleaseOneCapacity()
+				if !released {
+					log.Error("unable to release capacity")
+				}
 			}
 		}()
 
@@ -865,10 +871,15 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 	defer p.currentBlocksBeingProvenMutex.Unlock()
 
 	if cancel, ok := p.currentBlocksBeingProven[blockID]; ok {
+		log.Info("cancelling proof", "blockID", blockID)
+
 		cancel()
 		delete(p.currentBlocksBeingProven, blockID)
 		if !p.cfg.OracleProver {
-			p.capacityManager.ReleaseOneCapacity()
+			capacity, released := p.capacityManager.ReleaseOneCapacity()
+			if !released {
+				log.Error("unable to release capacity while cancelling proof", "capacity", capacity)
+			}
 		}
 	}
 }
@@ -998,6 +1009,13 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 			return nil
 		}
 
+		// make sure to takea capacity before requesting proof
+		if !p.cfg.OracleProver {
+			if _, ok := p.capacityManager.TakeOneCapacity(); !ok {
+				return errNoCapacity
+			}
+		}
+
 		ctx, cancelCtx := context.WithCancel(ctx)
 		p.currentBlocksBeingProvenMutex.Lock()
 		p.currentBlocksBeingProven[event.BlockId.Uint64()] = cancelFunc(func() {
@@ -1012,12 +1030,6 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 
 		if err := p.validProofSubmitter.RequestProof(ctx, event); err != nil {
 			return err
-		}
-
-		if !p.cfg.OracleProver {
-			if _, ok := p.capacityManager.TakeOneCapacity(); !ok {
-				return errNoCapacity
-			}
 		}
 
 		return nil
