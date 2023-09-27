@@ -20,7 +20,7 @@ var (
 	}
 	ProverEndpoints = &cli.StringSliceFlag{
 		Name:     "proverEndpoints",
-		Usage:    "Comma-delineated `URL` of prover endpoints proposer should query when attempting to propose a block",
+		Usage:    "Comma-delineated list of prover endpoint `URLs` proposer should query when attempting to propose a block",
 		Required: true,
 		Category: proposerCategory,
 	}
