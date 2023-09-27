@@ -189,7 +189,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
 		&cli.StringFlag{Name: flags.ProposeEmptyBlocksInterval.Name},
 		&cli.StringFlag{Name: flags.ProposeInterval.Name},
-		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
+		&cli.StringSliceFlag{Name: flags.TxPoolLocals.Name},
 		&cli.StringSliceFlag{Name: flags.ProverEndpoints.Name},
 		&cli.Uint64Flag{Name: flags.BlockProposalFee.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},

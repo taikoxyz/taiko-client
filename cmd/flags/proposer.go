@@ -45,7 +45,7 @@ var (
 		Usage:    "Time `interval` to propose L2 pending transactions",
 		Category: proposerCategory,
 	}
-	TxPoolLocals = &cli.StringFlag{
+	TxPoolLocals = &cli.StringSliceFlag{
 		Name:     "txpool.locals",
 		Usage:    "Comma separated `accounts` to treat as locals (priority inclusion)",
 		Category: proposerCategory,
