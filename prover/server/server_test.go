@@ -18,6 +18,7 @@ import (
 	echo "github.com/labstack/echo/v4"
 	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 )
 
@@ -31,12 +32,30 @@ func (s *ProverServerTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
+	timeout := 5 * time.Second
+	rpcClient, err := rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		L2EngineEndpoint:  os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
+		JwtSecret:         os.Getenv("JWT_SECRET"),
+		RetryInterval:     backoff.DefaultMaxInterval,
+		Timeout:           &timeout,
+	})
+	s.Nil(err)
+
 	p := &ProverServer{
 		echo:             echo.New(),
 		proverPrivateKey: l1ProverPrivKey,
 		minProofFee:      common.Big1,
 		maxExpiry:        24 * time.Hour,
 		capacityManager:  capacity.New(1024),
+		taikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		rpc:              rpcClient,
+		bond:             common.Big0,
+		isOracle:         false,
 	}
 
 	p.echo.HideBanner = true

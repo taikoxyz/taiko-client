@@ -124,18 +124,19 @@ func (s *ProverTestSuite) TestInitError() {
 	p := new(Prover)
 	// Error should be "context canceled", instead is "Dial ethclient error:"
 	s.ErrorContains(InitFromConfig(ctx, p, (&Config{
-		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
-		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2HttpEndpoint:                  os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:                  common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                  common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		L1ProverPrivKey:                 l1ProverPrivKey,
-		OracleProverPrivateKey:          l1ProverPrivKey,
-		Dummy:                           true,
-		MaxConcurrentProvingJobs:        1,
-		CheckProofWindowExpiredInterval: 5 * time.Second,
-		ProveUnassignedBlocks:           true,
+		L1WsEndpoint:                      os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:                    os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:                      os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:                    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1ProverPrivKey:                   l1ProverPrivKey,
+		OracleProverPrivateKey:            l1ProverPrivKey,
+		Dummy:                             true,
+		MaxConcurrentProvingJobs:          1,
+		CheckProofWindowExpiredInterval:   5 * time.Second,
+		ProveUnassignedBlocks:             true,
+		ProveBlockTxReplacementMultiplier: 2,
 	})), "dial tcp:")
 }
 

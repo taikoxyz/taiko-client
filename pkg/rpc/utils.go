@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/txpool"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/log"
@@ -34,6 +35,59 @@ func GetProtocolStateVariables(
 		return nil, err
 	}
 	return &stateVars, nil
+}
+
+// CheckProverBalance checks if the prover has the necessary balance either in TaikoL1 token balances
+// or, if not, then check allowance, as contract will attempt to burn directly after
+// if it doesnt have the available token balance in-contract.
+func CheckProverBalance(
+	ctx context.Context,
+	rpc *Client,
+	prover common.Address,
+	taikoL1Address common.Address,
+	bond *big.Int,
+) (bool, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	depositedBalance, err := rpc.TaikoL1.GetTaikoTokenBalance(&bind.CallOpts{Context: ctxWithTimeout}, prover)
+	if err != nil {
+		return false, err
+	}
+
+	log.Info("Prover's deposited taikoTokenBalance", "balance", depositedBalance.String(), "address", prover.Hex())
+
+	if bond.Cmp(depositedBalance) > 0 {
+		// Check allowance on taiko token contract
+		allowance, err := rpc.TaikoToken.Allowance(&bind.CallOpts{Context: ctxWithTimeout}, prover, taikoL1Address)
+		if err != nil {
+			return false, err
+		}
+
+		log.Info("Prover allowance for TaikoL1 contract", "allowance", allowance.String(), "address", prover.Hex())
+
+		// Check prover's taiko token balance
+		balance, err := rpc.TaikoToken.BalanceOf(&bind.CallOpts{Context: ctxWithTimeout}, prover)
+		if err != nil {
+			return false, err
+		}
+
+		log.Info("Prover's wallet taiko token balance", "balance", balance.String(), "address", prover.Hex())
+
+		if bond.Cmp(allowance) > 0 || bond.Cmp(balance) > 0 {
+			log.Info(
+				"Assigned prover does not have required on-chain token balance or allowance",
+				"providedProver", prover.Hex(),
+				"depositedBalance", depositedBalance.String(),
+				"taikoTokenBalance", balance,
+				"allowance", allowance.String(),
+				"proofBond", bond,
+			)
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 // WaitReceipt keeps waiting until the given transaction has an execution
@@ -145,6 +199,55 @@ func ContentFrom(
 		"txpool_contentFrom",
 		address,
 	)
+}
+
+// IncreaseGasTipCap tries to increase the given transaction's gasTipCap.
+func IncreaseGasTipCap(
+	ctx context.Context,
+	cli *Client,
+	opts *bind.TransactOpts,
+	address common.Address,
+	txReplacementTipMultiplier *big.Int,
+	maxGasTipCap *big.Int,
+) (*bind.TransactOpts, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	log.Info("Try replacing a transaction with same nonce", "sender", address, "nonce", opts.Nonce)
+
+	originalTx, err := GetPendingTxByNonce(ctxWithTimeout, cli, address, opts.Nonce.Uint64())
+	if err != nil || originalTx == nil {
+		log.Warn(
+			"Original transaction not found",
+			"sender", address,
+			"nonce", opts.Nonce,
+			"error", err,
+		)
+
+		opts.GasTipCap = new(big.Int).Mul(opts.GasTipCap, txReplacementTipMultiplier)
+	} else {
+		log.Info(
+			"Original transaction to replace",
+			"sender", address,
+			"nonce", opts.Nonce,
+			"gasTipCap", originalTx.GasTipCap(),
+			"gasFeeCap", originalTx.GasFeeCap(),
+		)
+
+		opts.GasTipCap = new(big.Int).Mul(originalTx.GasTipCap(), txReplacementTipMultiplier)
+	}
+
+	if maxGasTipCap != nil && opts.GasTipCap.Cmp(maxGasTipCap) > 0 {
+		log.Info(
+			"New gasTipCap exceeds limit, keep waiting",
+			"multiplier", txReplacementTipMultiplier,
+			"newGasTipCap", opts.GasTipCap,
+			"maxTipCap", maxGasTipCap,
+		)
+		return nil, txpool.ErrReplaceUnderpriced
+	}
+
+	return opts, nil
 }
 
 // GetPendingTxByNonce tries to retrieve a pending transaction with a given nonce in a node's mempool.

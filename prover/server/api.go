@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/labstack/echo/v4"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // Status represents the current prover server status.
@@ -50,6 +51,7 @@ type ProposeBlockResponse struct {
 //	@Accept			json
 //	@Produce		json
 //	@Success		200		{object} ProposeBlockResponse
+//	@Failure		422		{string} string	"insufficient prover balance"
 //	@Failure		422		{string} string	"proof fee too low"
 //	@Failure		422		{string} string "expiry too long"
 //	@Failure		422		{string} string "prover does not have capacity"
@@ -62,16 +64,43 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 
 	log.Info("Propose block data", "fee", req.Fee, "expiry", req.Expiry)
 
+	if !srv.isOracle {
+		ok, err := rpc.CheckProverBalance(c.Request().Context(), srv.rpc, srv.proverAddress, srv.taikoL1Address, srv.bond)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+
+		if !ok {
+			log.Warn(
+				"Insufficient prover balance, please get more tokens or wait for verification of the blocks you proved",
+				"prover", srv.proverAddress,
+			)
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, "insufficient prover balance")
+		}
+	}
+
 	if req.Fee.Cmp(srv.minProofFee) < 0 {
+		log.Warn(
+			"Proof fee too low",
+			"reqFee", req.Fee.String(),
+			"srvMinProofFee", srv.minProofFee.String(),
+			"proposerIP", c.RealIP(),
+		)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "proof fee too low")
 	}
 
 	if req.Expiry > uint64(time.Now().Add(srv.maxExpiry).Unix()) {
+		log.Warn(
+			"Expiry too long",
+			"requestExpiry", req.Expiry,
+			"srvMaxExpiry", srv.maxExpiry,
+			"proposerIP", c.RealIP(),
+		)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "expiry too long")
 	}
 
 	if srv.capacityManager.ReadCapacity() == 0 {
-		log.Warn("Prover does not have capacity")
+		log.Warn("Prover does not have capacity", "proposerIP", c.RealIP())
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
 

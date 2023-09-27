@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 )
 
@@ -35,6 +36,10 @@ type ProverServer struct {
 	minProofFee      *big.Int
 	maxExpiry        time.Duration
 	capacityManager  *capacity.CapacityManager
+	taikoL1Address   common.Address
+	rpc              *rpc.Client
+	bond             *big.Int
+	isOracle         bool
 }
 
 // NewProverServerOpts contains all configurations for creating a prover server instance.
@@ -43,6 +48,10 @@ type NewProverServerOpts struct {
 	MinProofFee      *big.Int
 	MaxExpiry        time.Duration
 	CapacityManager  *capacity.CapacityManager
+	TaikoL1Address   common.Address
+	Rpc              *rpc.Client
+	Bond             *big.Int
+	IsOracle         bool
 }
 
 // New creates a new prover server instance.
@@ -54,6 +63,10 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		minProofFee:      opts.MinProofFee,
 		maxExpiry:        opts.MaxExpiry,
 		capacityManager:  opts.CapacityManager,
+		taikoL1Address:   opts.TaikoL1Address,
+		rpc:              opts.Rpc,
+		bond:             opts.Bond,
+		isOracle:         opts.IsOracle,
 	}
 
 	srv.echo.HideBanner = true
