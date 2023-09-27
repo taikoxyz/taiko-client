@@ -14,7 +14,7 @@ var (
 	}
 	JWTSecret = &cli.StringFlag{
 		Name:     "jwtSecret",
-		Usage:    "JWT secret `file` to use for authenticated RPC endpoints",
+		Usage:    "Path to a JWT secret `file` to use for authenticated RPC endpoints",
 		Required: true,
 		Category: driverCategory,
 	}
