@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -74,7 +75,7 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 
 	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
-	s.proverServer = NewTestProverServer(s, l1ProverPrivKey, capacity.New(1024), s.ProverEndpoints[0])
+	s.proverServer = NewTestProverServer(s, l1ProverPrivKey, capacity.New(1024, 100*time.Second), s.ProverEndpoints[0])
 
 	tokenBalance, err := rpcCli.TaikoL1.GetTaikoTokenBalance(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
 	s.Nil(err)
