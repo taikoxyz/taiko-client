@@ -24,7 +24,8 @@ import (
 
 type ProverServerTestSuite struct {
 	suite.Suite
-	srv *ProverServer
+	ps *ProverServer
+	ws *httptest.Server // web server
 }
 
 func (s *ProverServerTestSuite) SetupTest() {
@@ -45,7 +46,7 @@ func (s *ProverServerTestSuite) SetupTest() {
 	})
 	s.Nil(err)
 
-	srv := &ProverServer{
+	p := &ProverServer{
 		echo:             echo.New(),
 		proverPrivateKey: l1ProverPrivKey,
 		minProofFee:      common.Big1,
@@ -57,19 +58,19 @@ func (s *ProverServerTestSuite) SetupTest() {
 		isOracle:         false,
 	}
 
-	srv.echo.HideBanner = true
-	srv.configureMiddleware()
-	srv.configureRoutes()
-
-	s.srv = srv
+	p.echo.HideBanner = true
+	p.configureMiddleware()
+	p.configureRoutes()
+	s.ps = p
+	s.ws = httptest.NewServer(p.echo)
 }
 
 func (s *ProverServerTestSuite) TestHealth() {
-	s.Equal(http.StatusOK, s.sendReq("/healthz").Code)
+	s.Equal(http.StatusOK, s.sendReq("/healthz").StatusCode)
 }
 
 func (s *ProverServerTestSuite) TestRoot() {
-	s.Equal(http.StatusOK, s.sendReq("/").Code)
+	s.Equal(http.StatusOK, s.sendReq("/").StatusCode)
 }
 
 func (s *ProverServerTestSuite) TestStartShutdown() {
@@ -80,7 +81,7 @@ func (s *ProverServerTestSuite) TestStartShutdown() {
 	s.Nil(err)
 
 	go func() {
-		if err := s.srv.Start(fmt.Sprintf(":%v", port)); err != nil {
+		if err := s.ps.Start(fmt.Sprintf(":%v", port)); err != nil {
 			log.Error("Failed to start prover server", "error", err)
 		}
 	}()
@@ -98,23 +99,19 @@ func (s *ProverServerTestSuite) TestStartShutdown() {
 		return nil
 	}, backoff.NewExponentialBackOff()))
 
-	s.Nil(s.srv.Shutdown(context.Background()))
+	s.Nil(s.ps.Shutdown(context.Background()))
 }
 
 func (s *ProverServerTestSuite) TearDownTest() {
-	s.Nil(s.srv.Shutdown(context.Background()))
+	s.ws.Close()
 }
 
 func TestProverServerTestSuite(t *testing.T) {
 	suite.Run(t, new(ProverServerTestSuite))
 }
 
-func (s *ProverServerTestSuite) sendReq(path string) *httptest.ResponseRecorder {
-	req, err := http.NewRequest(echo.GET, path, nil)
+func (s *ProverServerTestSuite) sendReq(path string) *http.Response {
+	resp, err := http.Get(s.ws.URL + path)
 	s.Nil(err)
-	rec := httptest.NewRecorder()
-
-	s.srv.ServeHTTP(rec, req)
-
-	return rec
+	return resp
 }

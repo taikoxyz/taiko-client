@@ -3,48 +3,51 @@ package server
 import (
 	"crypto/rand"
 	"encoding/json"
+	"io"
 	"net/http"
-	"net/http/httptest"
+	"strings"
 	"time"
 
-	"github.com/cyberhorsey/webutils/testutils"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/labstack/echo/v4"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 func (s *ProverServerTestSuite) TestGetStatusSuccess() {
-	rec := s.sendReq("/status")
-	s.Equal(http.StatusOK, rec.Code)
+	resp := s.sendReq("/status")
+	s.Equal(http.StatusOK, resp.StatusCode)
 
 	status := new(Status)
-	s.Nil(json.Unmarshal(rec.Body.Bytes(), &status))
 
-	s.Equal(s.srv.minProofFee.Uint64(), status.MinProofFee)
-	s.Equal(uint64(s.srv.maxExpiry.Seconds()), status.MaxExpiry)
+	defer resp.Body.Close()
+	b, err := io.ReadAll(resp.Body)
+	s.Nil(err)
+	s.Nil(json.Unmarshal(b, &status))
+
+	s.Equal(s.ps.minProofFee.Uint64(), status.MinProofFee)
+	s.Equal(uint64(s.ps.maxExpiry.Seconds()), status.MaxExpiry)
 	s.Greater(status.CurrentCapacity, uint64(0))
 }
 
 func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
-	rec := httptest.NewRecorder()
-
-	s.srv.ServeHTTP(rec, testutils.NewUnauthenticatedRequest(
-		echo.POST,
-		"/assignment",
-		&encoding.ProposeBlockData{
-			Fee:    common.Big256,
-			Expiry: uint64(time.Now().Add(time.Minute).Unix()),
-			Input: encoding.TaikoL1BlockMetadataInput{
-				Proposer:        common.BytesToAddress(randomHash().Bytes()),
-				TxListHash:      randomHash(),
-				TxListByteStart: common.Big0,
-				TxListByteEnd:   common.Big0,
-				CacheTxListInfo: false,
-			},
+	data, err := json.Marshal(encoding.ProposeBlockData{
+		Fee:    common.Big256,
+		Expiry: uint64(time.Now().Add(time.Minute).Unix()),
+		Input: encoding.TaikoL1BlockMetadataInput{
+			Proposer:        common.BytesToAddress(randomHash().Bytes()),
+			TxListHash:      randomHash(),
+			TxListByteStart: common.Big0,
+			TxListByteEnd:   common.Big0,
+			CacheTxListInfo: false,
 		},
-	))
-
-	testutils.AssertStatusAndBody(s.T(), rec, http.StatusOK, []string{"signedPayload"})
+	})
+	s.Nil(err)
+	resp, err := http.Post(s.ws.URL+"/assignment", "application/json", strings.NewReader(string(data)))
+	s.Nil(err)
+	s.Equal(http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+	b, err := io.ReadAll(resp.Body)
+	s.Nil(err)
+	s.Contains(string(b), "signedPayload")
 }
 
 // randomHash generates a random blob of data and returns it as a hash.
