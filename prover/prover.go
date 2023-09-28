@@ -460,20 +460,18 @@ func (p *Prover) onBlockProposed(
 		}
 
 		// Check whether the block's proof is still needed.
-		if !p.cfg.OracleProver {
-			needNewProof, err := rpc.NeedNewProof(
-				p.ctx,
-				p.rpc,
-				event.BlockId,
-				p.proverAddress,
-			)
-			if err != nil {
-				return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
-			}
+		needNewProof, err := rpc.NeedNewProof(
+			p.ctx,
+			p.rpc,
+			event.BlockId,
+			p.proverAddress,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
+		}
 
-			if !needNewProof {
-				return nil
-			}
+		if !needNewProof {
+			return nil
 		}
 
 		// Check if the current prover has seen this block ID before, there was probably
