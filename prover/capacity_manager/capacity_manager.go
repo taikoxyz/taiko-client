@@ -2,15 +2,21 @@ package capacity_manager
 
 import (
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/log"
 )
 
+type tempCapacity struct {
+	createdAt time.Time
+}
+
 // CapacityManager manages the prover capacity concurrent-safely.
 type CapacityManager struct {
-	capacity    map[uint64]bool
-	maxCapacity uint64
-	mutex       sync.RWMutex
+	capacity     map[uint64]bool
+	tempCapacity []tempCapacity
+	maxCapacity  uint64
+	mutex        sync.RWMutex
 }
 
 // New creates a new CapacityManager instance.
@@ -40,7 +46,7 @@ func (m *CapacityManager) ReleaseOneCapacity(blockID uint64) (uint64, bool) {
 
 	delete(m.capacity, blockID)
 
-	log.Info("Released capacity", "capacityAfterRelease", len(m.capacity))
+	log.Info("Released capacity", "blockID", blockID, "capacityAfterRelease", len(m.capacity))
 
 	return uint64(len(m.capacity)), true
 }
@@ -51,7 +57,7 @@ func (m *CapacityManager) TakeOneCapacity(blockID uint64) (uint64, bool) {
 	defer m.mutex.Unlock()
 
 	if len(m.capacity) == int(m.maxCapacity) {
-		log.Info("Could not take one capacity", "capacity", len(m.capacity))
+		log.Info("Could not take one capacity", "blockID", blockID, "capacity", len(m.capacity))
 		return 0, false
 	}
 
