@@ -15,37 +15,40 @@ import (
 
 // Config contains the configurations to initialize a Taiko prover.
 type Config struct {
-	L1WsEndpoint                    string
-	L1HttpEndpoint                  string
-	L2WsEndpoint                    string
-	L2HttpEndpoint                  string
-	TaikoL1Address                  common.Address
-	TaikoL2Address                  common.Address
-	TaikoTokenAddress               common.Address
-	L1ProverPrivKey                 *ecdsa.PrivateKey
-	ZKEvmRpcdEndpoint               string
-	ZkEvmRpcdParamsPath             string
-	StartingBlockID                 *big.Int
-	MaxConcurrentProvingJobs        uint
-	Dummy                           bool
-	OracleProver                    bool
-	OracleProverPrivateKey          *ecdsa.PrivateKey
-	OracleProofSubmissionDelay      time.Duration
-	ProofSubmissionMaxRetry         uint64
-	Graffiti                        string
-	RandomDummyProofDelayLowerBound *time.Duration
-	RandomDummyProofDelayUpperBound *time.Duration
-	BackOffMaxRetrys                uint64
-	BackOffRetryInterval            time.Duration
-	CheckProofWindowExpiredInterval time.Duration
-	ProveUnassignedBlocks           bool
-	RPCTimeout                      *time.Duration
-	WaitReceiptTimeout              time.Duration
-	ProveBlockGasLimit              *uint64
-	HTTPServerPort                  uint64
-	Capacity                        uint64
-	MinProofFee                     *big.Int
-	MaxExpiry                       time.Duration
+	L1WsEndpoint                      string
+	L1HttpEndpoint                    string
+	L2WsEndpoint                      string
+	L2HttpEndpoint                    string
+	TaikoL1Address                    common.Address
+	TaikoL2Address                    common.Address
+	TaikoTokenAddress                 common.Address
+	L1ProverPrivKey                   *ecdsa.PrivateKey
+	ZKEvmRpcdEndpoint                 string
+	ZkEvmRpcdParamsPath               string
+	StartingBlockID                   *big.Int
+	MaxConcurrentProvingJobs          uint
+	Dummy                             bool
+	OracleProver                      bool
+	OracleProverPrivateKey            *ecdsa.PrivateKey
+	OracleProofSubmissionDelay        time.Duration
+	ProofSubmissionMaxRetry           uint64
+	Graffiti                          string
+	RandomDummyProofDelayLowerBound   *time.Duration
+	RandomDummyProofDelayUpperBound   *time.Duration
+	BackOffMaxRetrys                  uint64
+	BackOffRetryInterval              time.Duration
+	CheckProofWindowExpiredInterval   time.Duration
+	ProveUnassignedBlocks             bool
+	RPCTimeout                        *time.Duration
+	WaitReceiptTimeout                time.Duration
+	ProveBlockGasLimit                *uint64
+	ProveBlockTxReplacementMultiplier uint64
+	ProveBlockMaxTxGasTipCap          *big.Int
+	HTTPServerPort                    uint64
+	Capacity                          uint64
+	TempCapacityExpiresAt             time.Duration
+	MinProofFee                       *big.Int
+	MaxExpiry                         time.Duration
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -65,9 +68,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			return nil, fmt.Errorf("oracleProver flag set without oracleProverPrivateKey set")
 		}
 
-		oracleProverPrivKeyStr := c.String(flags.OracleProverPrivateKey.Name)
-
-		oracleProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(oracleProverPrivKeyStr))
+		oracleProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(c.String(flags.OracleProverPrivateKey.Name)))
 		if err != nil {
 			return nil, fmt.Errorf("invalid oracle private key: %w", err)
 		}
@@ -128,6 +129,19 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, fmt.Errorf("invalid minProofFee: %v", minProofFee)
 	}
 
+	proveBlockTxReplacementMultiplier := c.Uint64(flags.ProveBlockTxReplacementMultiplier.Name)
+	if proveBlockTxReplacementMultiplier == 0 {
+		return nil, fmt.Errorf(
+			"invalid --proveBlockTxReplacementMultiplier value: %d",
+			proveBlockTxReplacementMultiplier,
+		)
+	}
+
+	var proveBlockMaxTxGasTipCap *big.Int
+	if c.IsSet(flags.ProveBlockMaxTxGasTipCap.Name) {
+		proveBlockMaxTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProveBlockMaxTxGasTipCap.Name))
+	}
+
 	return &Config{
 		L1WsEndpoint:                    c.String(flags.L1WSEndpoint.Name),
 		L1HttpEndpoint:                  c.String(flags.L1HTTPEndpoint.Name),
@@ -154,13 +168,16 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		CheckProofWindowExpiredInterval: time.Duration(
 			c.Uint64(flags.CheckProofWindowExpiredInterval.Name),
 		) * time.Second,
-		ProveUnassignedBlocks: c.Bool(flags.ProveUnassignedBlocks.Name),
-		RPCTimeout:            timeout,
-		WaitReceiptTimeout:    time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
-		ProveBlockGasLimit:    proveBlockTxGasLimit,
-		Capacity:              c.Uint64(flags.ProverCapacity.Name),
-		HTTPServerPort:        c.Uint64(flags.ProverHTTPServerPort.Name),
-		MinProofFee:           minProofFee,
-		MaxExpiry:             time.Duration(c.Uint64(flags.MaxExpiry.Name)) * time.Second,
+		ProveUnassignedBlocks:             c.Bool(flags.ProveUnassignedBlocks.Name),
+		RPCTimeout:                        timeout,
+		WaitReceiptTimeout:                time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
+		ProveBlockGasLimit:                proveBlockTxGasLimit,
+		Capacity:                          c.Uint64(flags.ProverCapacity.Name),
+		TempCapacityExpiresAt:             c.Duration(flags.TempCapacityExpiresAt.Name),
+		ProveBlockTxReplacementMultiplier: proveBlockTxReplacementMultiplier,
+		ProveBlockMaxTxGasTipCap:          proveBlockMaxTxGasTipCap,
+		HTTPServerPort:                    c.Uint64(flags.ProverHTTPServerPort.Name),
+		MinProofFee:                       minProofFee,
+		MaxExpiry:                         time.Duration(c.Uint64(flags.MaxExpiry.Name)) * time.Second,
 	}, nil
 }

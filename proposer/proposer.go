@@ -14,6 +14,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/txpool"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -358,40 +359,15 @@ func (p *Proposer) sendProposeBlockTx(
 		opts.GasLimit = *p.proposeBlockTxGasLimit
 	}
 	if isReplacement {
-		log.Info("Try replacing a transaction with same nonce", "sender", p.l1ProposerAddress, "nonce", nonce)
-		originalTx, err := rpc.GetPendingTxByNonce(ctx, p.rpc, p.l1ProposerAddress, *nonce)
-		if err != nil || originalTx == nil {
-			log.Warn(
-				"Original transaction not found",
-				"sender", p.l1ProposerAddress,
-				"nonce", nonce,
-				"error", err,
-			)
-
-			opts.GasTipCap = new(big.Int).Mul(opts.GasTipCap, new(big.Int).SetUint64(p.txReplacementTipMultiplier))
-		} else {
-			log.Info(
-				"Original transaction to replace",
-				"sender", p.l1ProposerAddress,
-				"nonce", nonce,
-				"gasTipCap", originalTx.GasTipCap(),
-				"gasFeeCap", originalTx.GasFeeCap(),
-			)
-
-			opts.GasTipCap = new(big.Int).Mul(
-				originalTx.GasTipCap(),
-				new(big.Int).SetUint64(p.txReplacementTipMultiplier),
-			)
-		}
-
-		if p.proposeBlockTxGasTipCap != nil && opts.GasTipCap.Cmp(p.proposeBlockTxGasTipCap) > 0 {
-			log.Info(
-				"New gasTipCap exceeds limit, keep waiting",
-				"multiplier", p.txReplacementTipMultiplier,
-				"newGasTipCap", opts.GasTipCap,
-				"maxTipCap", p.proposeBlockTxGasTipCap,
-			)
-			return nil, txpool.ErrReplaceUnderpriced
+		if opts, err = rpc.IncreaseGasTipCap(
+			ctx,
+			p.rpc,
+			opts,
+			p.l1ProposerAddress,
+			new(big.Int).SetUint64(p.txReplacementTipMultiplier),
+			p.proposeBlockTxGasTipCap,
+		); err != nil {
+			return nil, err
 		}
 	}
 
@@ -426,7 +402,10 @@ func (p *Proposer) ProposeTxList(
 				return nil
 			}
 			if tx, err = p.sendProposeBlockTx(ctx, meta, txListBytes, nonce, assignment, fee, isReplacement); err != nil {
-				log.Warn("Failed to send propose block transaction, retrying", "error", encoding.TryParsingCustomError(err))
+				log.Warn("Failed to send propose block transaction", "error", encoding.TryParsingCustomError(err))
+				if strings.Contains(err.Error(), core.ErrNonceTooLow.Error()) {
+					return nil
+				}
 				if strings.Contains(err.Error(), txpool.ErrReplaceUnderpriced.Error()) {
 					isReplacement = true
 				} else {
