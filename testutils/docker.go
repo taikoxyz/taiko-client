@@ -28,9 +28,12 @@ var (
 	gethHttpNatPort = natTcpPort(gethHttpPort)
 	gethWSNatPort   = natTcpPort(gethWSPort)
 	gethAuthNatPort = natTcpPort(gethAuthPort)
-	jwtFile         string
-	monoPath        string
 	l1BaseContainer = baseContainer{delExisted: true}
+)
+
+var (
+	JwtSecretFile string
+	protocolPath  string
 )
 
 type ClientSuite struct {
@@ -157,7 +160,7 @@ func newL2Container(name string) (*gethContainer, error) {
 	}
 	hc := &container.HostConfig{
 		AutoRemove: true,
-		Binds:      []string{fmt.Sprintf("%s:/host/jwt.hex", jwtFile)},
+		Binds:      []string{fmt.Sprintf("%s:/host/jwt.hex", JwtSecretFile)},
 		PortBindings: map[nat.Port][]nat.PortBinding{
 			gethHttpNatPort: {
 				{
@@ -213,7 +216,7 @@ func delExistedBaseContainer(ctx context.Context) error {
 	return nil
 }
 
-func deployL1(ctx context.Context) (err error) {
+func startBaseContainer(ctx context.Context) (err error) {
 	if l1BaseContainer.delExisted {
 		if err := delExistedBaseContainer(ctx); err != nil {
 			return err
@@ -313,7 +316,7 @@ func deployTaikoL1(endpoint string) error {
 		fmt.Sprintf("TAIKO_TOKEN_PREMINT_AMOUNTS=%s,%s", premintTokenAmount, premintTokenAmount),
 		fmt.Sprintf("L2_GENESIS_HASH=%s", l2GenesisHash),
 	}
-	cmd.Dir = monoPath
+	cmd.Dir = protocolPath
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("out=%s,err=%w", string(out), err)
@@ -324,14 +327,18 @@ func deployTaikoL1(endpoint string) error {
 func init() {
 	initJwtFile()
 	initMonoPath()
-	if err := deployL1(context.Background()); err != nil {
+	if err := startBaseContainer(context.Background()); err != nil {
 		panic(err)
 	}
 }
 
 func initJwtFile() {
 	var err error
-	jwtFile, err = filepath.Abs("../integration_test/nodes/jwt.hex")
+	path := os.Getenv("JWT_SECRET")
+	if path == "" {
+		path = "../integration_test/nodes/jwt.hex"
+	}
+	JwtSecretFile, err = filepath.Abs(path)
 	if err != nil {
 		panic(err)
 	}
@@ -343,7 +350,7 @@ func initMonoPath() {
 	if path == "" {
 		path = "../../taiko-mono/packages/protocol"
 	}
-	monoPath, err = filepath.Abs(path)
+	protocolPath, err = filepath.Abs(path)
 	if err != nil {
 		panic(err)
 	}
