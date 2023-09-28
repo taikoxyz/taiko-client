@@ -60,7 +60,7 @@ func (m *CapacityManager) TakeOneCapacity(blockID uint64) (uint64, bool) {
 
 	m.capacity[blockID] = true
 
-	log.Info("Took one capacity", "blockID", blockID, "capacityAfterTaking", m.capacity)
+	log.Info("Took one capacity", "blockID", blockID, "capacityAfterTaking", len(m.capacity))
 
 	return uint64(len(m.capacity)), true
 }
