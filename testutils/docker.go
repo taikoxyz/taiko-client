@@ -2,18 +2,33 @@ package testutils
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
+	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils/docker"
 )
 
@@ -22,36 +37,104 @@ const (
 	gethWSPort          uint64 = 8546
 	gethAuthPort        uint64 = 8551
 	l1BaseContainerName        = "L1Base"
+	premintTokenAmount         = "92233720368547758070000000000000"
 )
 
 var (
-	gethHttpNatPort = natTcpPort(gethHttpPort)
-	gethWSNatPort   = natTcpPort(gethWSPort)
-	gethAuthNatPort = natTcpPort(gethAuthPort)
-	l1BaseContainer = baseContainer{delExisted: true}
+	gethHttpNatPort   = natTcpPort(gethHttpPort)
+	gethWSNatPort     = natTcpPort(gethWSPort)
+	gethAuthNatPort   = natTcpPort(gethAuthPort)
+	l1BaseContainer   = baseContainer{delExisted: true}
+	taikoL2Address    = common.HexToAddress("0x1000777700000000000000000000000000000001")
+	TaikoL1Address    common.Address
+	TaikoTokenAddress common.Address
 )
 
 var (
+	jwtSecret     []byte
 	JwtSecretFile string
-	protocolPath  string
+	monoPath      string
 )
 
 type ClientSuite struct {
 	suite.Suite
-	l1Container *gethContainer
-	l2Container *gethContainer
+	l1Container     *gethContainer
+	l2Container     *gethContainer
+	RpcClient       *rpc.Client
+	ProverEndpoints []*url.URL
+	proverServer    *server.ProverServer
 }
 
-func (s *ClientSuite) SetupSuite() {
+func (s *ClientSuite) SetupTest() {
 	var err error
-	s.l1Container, err = newL1Container("L1_" + s.T().Name())
+	name := strings.ReplaceAll(s.T().Name(), "/", "_")
+	s.l1Container, err = newL1Container("L1_" + name)
 	s.NoError(err)
 
-	s.l2Container, err = newL2Container("L2_" + s.T().Name())
+	s.l2Container, err = newL2Container("L2_" + name)
 	s.NoError(err)
+
+	s.RpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        s.l1Container.WsEndpoint(),
+		L2Endpoint:        s.l2Container.WsEndpoint(),
+		TaikoL1Address:    TaikoL1Address,
+		TaikoTokenAddress: TaikoTokenAddress,
+		TaikoL2Address:    taikoL2Address,
+		L2EngineEndpoint:  s.l2Container.AuthEndpoint(),
+		JwtSecret:         string(jwtSecret),
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
+	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
+	s.proverServer = fakeProverServer(s, ProverPrivKey, capacity.New(1024, 100*time.Second), s.ProverEndpoints[0])
 }
 
-func (s *ClientSuite) TearDownSuite() {
+// fakeProverServer starts a new prover server that has channel listeners to respond and react
+// to requests for capacity, which provers can call.
+func fakeProverServer(
+	s *ClientSuite,
+	proverPrivKey *ecdsa.PrivateKey,
+	capacityManager *capacity.CapacityManager,
+	url *url.URL,
+) *server.ProverServer {
+	protocolConfig, err := s.RpcClient.TaikoL1.GetConfig(nil)
+	s.Nil(err)
+
+	srv, err := server.New(&server.NewProverServerOpts{
+		ProverPrivateKey: proverPrivKey,
+		MinProofFee:      common.Big1,
+		MaxExpiry:        24 * time.Hour,
+		CapacityManager:  capacityManager,
+		TaikoL1Address:   TaikoL1Address,
+		Rpc:              s.RpcClient,
+		Bond:             protocolConfig.ProofBond,
+		IsOracle:         true,
+	})
+	s.NoError(err)
+
+	go func() {
+		if err := srv.Start(fmt.Sprintf(":%v", url.Port())); !errors.Is(err, http.ErrServerClosed) {
+			log.Error("Failed to start prover server", "error", err)
+		}
+	}()
+
+	// Wait till the server fully started.
+	s.Nil(backoff.Retry(func() error {
+		res, err := resty.New().R().Get(url.String() + "/healthz")
+		if err != nil {
+			return err
+		}
+		if !res.IsSuccess() {
+			return fmt.Errorf("invalid response status code: %d", res.StatusCode())
+		}
+
+		return nil
+	}, backoff.NewExponentialBackOff()))
+
+	return srv
+}
+
+func (s *ClientSuite) TearDownTest() {
 	s.NoError(s.l1Container.Stop())
 	s.NoError(s.l2Container.Stop())
 }
@@ -303,7 +386,7 @@ func deployTaikoL1(endpoint string) error {
 		"--block-gas-limit",
 		"100000000",
 	)
-	premintTokenAmount := "92233720368547758070000000000000"
+
 	cmd.Env = []string{
 		"PRIVATE_KEY=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
 		"ORACLE_PROVER=0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
@@ -316,20 +399,25 @@ func deployTaikoL1(endpoint string) error {
 		fmt.Sprintf("TAIKO_TOKEN_PREMINT_AMOUNTS=%s,%s", premintTokenAmount, premintTokenAmount),
 		fmt.Sprintf("L2_GENESIS_HASH=%s", l2GenesisHash),
 	}
-	cmd.Dir = protocolPath
+	cmd.Dir = monoPath + "/packages/protocol"
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("out=%s,err=%w", string(out), err)
 	}
-	return nil
-}
-
-func init() {
-	initJwtFile()
-	initMonoPath()
-	if err := startBaseContainer(context.Background()); err != nil {
-		panic(err)
+	data, err := os.ReadFile(monoPath + "/packages/protocol/deployments/deploy_l1.json")
+	if err != nil {
+		return err
 	}
+	v := struct {
+		TaikoL1    string `json:"taiko"`
+		TaikoToken string `json:"taiko_token"`
+	}{}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	TaikoL1Address = common.HexToAddress(v.TaikoL1)
+	TaikoTokenAddress = common.HexToAddress(v.TaikoToken)
+	return nil
 }
 
 func initJwtFile() {
@@ -342,15 +430,18 @@ func initJwtFile() {
 	if err != nil {
 		panic(err)
 	}
+	if jwtSecret, err = jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET")); err != nil {
+		panic(err)
+	}
 }
 
 func initMonoPath() {
 	var err error
 	path := os.Getenv("TAIKO_MONO")
 	if path == "" {
-		path = "../../taiko-mono/packages/protocol"
+		path = "../../taiko-mono/"
 	}
-	protocolPath, err = filepath.Abs(path)
+	monoPath, err = filepath.Abs(path)
 	if err != nil {
 		panic(err)
 	}
