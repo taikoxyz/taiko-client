@@ -33,7 +33,7 @@ func (m *CapacityManager) ReadCapacity() uint64 {
 
 	log.Info("Reading capacity", "capacity", len(m.capacity))
 
-	return uint64(len(m.capacity))
+	return m.maxCapacity - uint64((len(m.capacity)))
 }
 
 // ReleaseOneCapacity releases one capacity.
@@ -53,7 +53,7 @@ func (m *CapacityManager) ReleaseOneCapacity(blockID uint64) (uint64, bool) {
 
 	log.Info("Released capacity", "blockID", blockID, "capacityAfterRelease", len(m.capacity))
 
-	return uint64(len(m.capacity)), true
+	return m.maxCapacity - uint64(len(m.capacity)), true
 }
 
 // TakeOneCapacity takes one capacity.
@@ -70,7 +70,7 @@ func (m *CapacityManager) TakeOneCapacity(blockID uint64) (uint64, bool) {
 
 	log.Info("Took one capacity", "blockID", blockID, "capacityAfterTaking", len(m.capacity))
 
-	return uint64(len(m.capacity)), true
+	return m.maxCapacity - uint64((len(m.capacity))), true
 }
 
 func (m *CapacityManager) TakeOneTempCapacity() (uint64, bool) {
@@ -88,7 +88,7 @@ func (m *CapacityManager) TakeOneTempCapacity() (uint64, bool) {
 
 	m.tempCapacity = append(m.tempCapacity, time.Now().UTC())
 
-	return uint64(len(m.tempCapacity)), true
+	return m.maxCapacity - uint64(len(m.capacity)) - uint64((len(m.tempCapacity))), true
 }
 
 func (m *CapacityManager) clearExpiredTempCapacities() {
