@@ -52,6 +52,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		s.Equal(minProofFee, c.MinProofFee.String())
 		s.Equal(uint64(3), c.ProveBlockTxReplacementMultiplier)
 		s.Equal(uint64(256), c.ProveBlockMaxTxGasTipCap.Uint64())
+		s.Equal(15*time.Second, c.TempCapacityExpiresAt)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 		s.True(c.ProveUnassignedBlocks)
 
@@ -80,6 +81,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.CheckProofWindowExpiredInterval.Name, "30",
+		"--" + flags.TempCapacityExpiresAt.Name, "15s",
 		"--" + flags.ProveUnassignedBlocks.Name,
 	}))
 }

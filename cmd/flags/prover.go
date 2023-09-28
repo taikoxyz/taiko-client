@@ -134,6 +134,12 @@ var (
 		Value:    uint64(time.Hour.Seconds()),
 		Category: proverCategory,
 	}
+	TempCapacityExpiresAt = &cli.DurationFlag{
+		Name:     "prover.tempCapacityExpiresAt",
+		Usage:    "time in seconds temporary capacity lives for, format: 12s",
+		Value:    12 * time.Second,
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -163,4 +169,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProverCapacity,
 	MaxExpiry,
 	TaikoTokenAddress,
+	TempCapacityExpiresAt,
 })

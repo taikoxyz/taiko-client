@@ -2,20 +2,28 @@ package capacity_manager
 
 import (
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/log"
 )
 
 // CapacityManager manages the prover capacity concurrent-safely.
 type CapacityManager struct {
-	capacity    map[uint64]bool
-	maxCapacity uint64
-	mutex       sync.RWMutex
+	capacity              map[uint64]bool
+	tempCapacity          []time.Time
+	tempCapacityExpiresAt time.Duration
+	maxCapacity           uint64
+	mutex                 sync.RWMutex
 }
 
 // New creates a new CapacityManager instance.
-func New(capacity uint64) *CapacityManager {
-	return &CapacityManager{capacity: make(map[uint64]bool), maxCapacity: capacity}
+func New(capacity uint64, tempCapacityExpiresAt time.Duration) *CapacityManager {
+	return &CapacityManager{
+		capacity:              make(map[uint64]bool),
+		maxCapacity:           capacity,
+		tempCapacity:          make([]time.Time, 0),
+		tempCapacityExpiresAt: tempCapacityExpiresAt,
+	}
 }
 
 // ReadCapacity reads the current capacity.
@@ -63,4 +71,30 @@ func (m *CapacityManager) TakeOneCapacity(blockID uint64) (uint64, bool) {
 	log.Info("Took one capacity", "blockID", blockID, "capacityAfterTaking", len(m.capacity))
 
 	return uint64(len(m.capacity)), true
+}
+
+func (m *CapacityManager) TakeOneTempCapacity() (uint64, bool) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	// clear expired tempCapacities
+
+	m.clearExpiredTempCapacities()
+
+	if len(m.capacity)+len(m.tempCapacity) >= int(m.maxCapacity) {
+		log.Info("Could not take one temp capacity", "capacity", len(m.capacity), "tempCapacity", len(m.tempCapacity))
+		return 0, false
+	}
+
+	m.tempCapacity = append(m.tempCapacity, time.Now().UTC())
+
+	return uint64(len(m.tempCapacity)), true
+}
+
+func (m *CapacityManager) clearExpiredTempCapacities() {
+	for i, c := range m.tempCapacity {
+		if time.Now().UTC().Sub(c) > m.tempCapacityExpiresAt {
+			m.tempCapacity = append(m.tempCapacity[:i], m.tempCapacity[i+1:]...)
+		}
+	}
 }

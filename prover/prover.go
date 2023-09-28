@@ -112,7 +112,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.currentBlocksBeingProvenMutex = new(sync.Mutex)
 	p.currentBlocksWaitingForProofWindow = make(map[uint64]uint64, 0)
 	p.currentBlocksWaitingForProofWindowMutex = new(sync.Mutex)
-	p.capacityManager = capacity.New(cfg.Capacity)
+	p.capacityManager = capacity.New(cfg.Capacity, cfg.TempCapacityExpiresAt)
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
