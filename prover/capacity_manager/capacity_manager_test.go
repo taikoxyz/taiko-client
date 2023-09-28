@@ -23,14 +23,14 @@ func (s *CapacityManagerTestSuite) TestReadCapacity() {
 
 func (s *CapacityManagerTestSuite) TestReleaseOneCapacity() {
 	var blockID uint64 = 1
-	capacity, released := s.m.ReleaseOneCapacity(blockID)
+	_, released := s.m.ReleaseOneCapacity(blockID)
 	s.Equal(false, released)
 
-	capacity, ok := s.m.TakeOneCapacity(blockID)
+	_, ok := s.m.TakeOneCapacity(blockID)
 
 	s.Equal(true, ok)
 
-	capacity, released = s.m.ReleaseOneCapacity(blockID)
+	capacity, released := s.m.ReleaseOneCapacity(blockID)
 	s.Equal(true, released)
 
 	s.Equal(testCapacity+1, capacity)
