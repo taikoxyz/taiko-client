@@ -99,8 +99,8 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "expiry too long")
 	}
 
-	if srv.capacityManager.ReadCapacity() == 0 {
-		log.Warn("Prover does not have capacity", "proposerIP", c.RealIP())
+	if _, ok := srv.capacityManager.TakeOneTempCapacity(); !ok {
+		log.Warn("Prover unable to take a temporary capacity", "proposerIP", c.RealIP())
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
 
