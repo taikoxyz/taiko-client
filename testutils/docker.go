@@ -1,15 +1,13 @@
 package testutils
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"fmt"
 	"math/big"
+	"os"
 	"os/exec"
 	"path/filepath"
 
-	"github.com/cloudflare/cfssl/log"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -281,7 +279,7 @@ func getL2GenesisHash() (string, error) {
 		return "", err
 	}
 	if err := c.Stop(); err != nil {
-		log.Warning("Can not stop genesis container: %v", err)
+		fmt.Printf("Can not stop genesis container: %v", err)
 	}
 	return genesis.Hash().String(), nil
 }
@@ -320,27 +318,33 @@ func deployTaikoL1(endpoint string) error {
 	if err != nil {
 		return fmt.Errorf("out=%s,err=%w", string(out), err)
 	}
-	scanner := bufio.NewScanner(bytes.NewReader(out))
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-	}
-
 	return nil
 }
 
 func init() {
+	initJwtFile()
+	initMonoPath()
+	if err := deployL1(context.Background()); err != nil {
+		panic(err)
+	}
+}
+
+func initJwtFile() {
 	var err error
 	jwtFile, err = filepath.Abs("../integration_test/nodes/jwt.hex")
 	if err != nil {
 		panic(err)
 	}
+}
 
-	monoPath, err = filepath.Abs("../../taiko-mono/packages/protocol")
-	if err != nil {
-		panic(err)
+func initMonoPath() {
+	var err error
+	path := os.Getenv("TAIKO_MONO")
+	if path == "" {
+		path = "../../taiko-mono/packages/protocol"
 	}
-
-	if err := deployL1(context.Background()); err != nil {
+	monoPath, err = filepath.Abs(path)
+	if err != nil {
 		panic(err)
 	}
 }
