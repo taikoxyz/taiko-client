@@ -50,7 +50,7 @@ func (s *ProverServerTestSuite) SetupTest() {
 		proverPrivateKey: l1ProverPrivKey,
 		minProofFee:      common.Big1,
 		maxExpiry:        24 * time.Hour,
-		capacityManager:  capacity.New(1024),
+		capacityManager:  capacity.New(1024, 100*time.Second),
 		taikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		rpc:              rpcClient,
 		bond:             common.Big0,

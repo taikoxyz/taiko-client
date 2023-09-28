@@ -112,7 +112,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.currentBlocksBeingProvenMutex = new(sync.Mutex)
 	p.currentBlocksWaitingForProofWindow = make(map[uint64]uint64, 0)
 	p.currentBlocksWaitingForProofWindowMutex = new(sync.Mutex)
-	p.capacityManager = capacity.New(cfg.Capacity)
+	p.capacityManager = capacity.New(cfg.Capacity, cfg.TempCapacityExpiresAt)
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -604,7 +604,7 @@ func (p *Prover) onBlockProposed(
 		}
 
 		if !p.cfg.OracleProver {
-			if _, ok := p.capacityManager.TakeOneCapacity(); !ok {
+			if _, ok := p.capacityManager.TakeOneCapacity(event.BlockId.Uint64()); !ok {
 				return errNoCapacity
 			}
 		}
@@ -658,7 +658,7 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 		defer func() {
 			<-p.submitProofConcurrencyGuard
 			if !p.cfg.OracleProver {
-				_, released := p.capacityManager.ReleaseOneCapacity()
+				_, released := p.capacityManager.ReleaseOneCapacity(proofWithHeader.Meta.Id)
 				if !released {
 					log.Error("unable to release capacity")
 				}
@@ -876,9 +876,12 @@ func (p *Prover) cancelProof(ctx context.Context, blockID uint64) {
 		cancel()
 		delete(p.currentBlocksBeingProven, blockID)
 		if !p.cfg.OracleProver {
-			capacity, released := p.capacityManager.ReleaseOneCapacity()
+			capacity, released := p.capacityManager.ReleaseOneCapacity(blockID)
 			if !released {
-				log.Error("unable to release capacity while cancelling proof", "capacity", capacity)
+				log.Error("unable to release capacity while cancelling proof",
+					"capacity", capacity,
+					"blockID", blockID,
+				)
 			}
 		}
 	}
@@ -1011,7 +1014,7 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 
 		// make sure to takea capacity before requesting proof
 		if !p.cfg.OracleProver {
-			if _, ok := p.capacityManager.TakeOneCapacity(); !ok {
+			if _, ok := p.capacityManager.TakeOneCapacity(event.BlockId.Uint64()); !ok {
 				return errNoCapacity
 			}
 		}
