@@ -34,7 +34,10 @@ func (m *CapacityManager) ReleaseOneCapacity(blockID uint64) (uint64, bool) {
 	defer m.mutex.Unlock()
 
 	if _, ok := m.capacity[blockID]; !ok {
-		log.Info("Can not release capacity", "blockID", blockID, "currentCapacity", m.capacity, "maxCapacity", m.maxCapacity)
+		log.Info("Can not release capacity",
+			"blockID", blockID,
+			"currentCapacity", len(m.capacity),
+			"maxCapacity", m.maxCapacity)
 		return uint64(len(m.capacity)), false
 	}
 
