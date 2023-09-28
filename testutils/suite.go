@@ -6,10 +6,8 @@ import (
 	"math/big"
 	"net/url"
 	"os"
-	"sync"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/docker/docker/client"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -29,10 +27,6 @@ type ClientTestSuite struct {
 	TestAddr            common.Address
 	ProverEndpoints     []*url.URL
 	proverServer        *server.ProverServer
-	dockerCli           *client.Client
-	taikoL1ImageID      string
-	testCounterLock     sync.Mutex
-	testCounter         uint64
 }
 
 func (s *ClientTestSuite) SetupTest() {
