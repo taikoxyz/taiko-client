@@ -44,7 +44,7 @@ func (m *CapacityManager) ReleaseOneCapacity(blockID uint64) (uint64, bool) {
 	if _, ok := m.capacity[blockID]; !ok {
 		log.Info("Can not release capacity",
 			"blockID", blockID,
-			"currentCapacity", len(m.capacity),
+			"currentCapacity", m.maxCapacity-uint64(len(m.capacity)),
 			"maxCapacity", m.maxCapacity)
 		return uint64(len(m.capacity)), false
 	}
@@ -62,13 +62,17 @@ func (m *CapacityManager) TakeOneCapacity(blockID uint64) (uint64, bool) {
 	defer m.mutex.Unlock()
 
 	if len(m.capacity) == int(m.maxCapacity) {
-		log.Info("Could not take one capacity", "blockID", blockID, "capacity", len(m.capacity))
+		log.Info("Could not take one capacity",
+			"blockID", blockID,
+			"currentCapacity", m.maxCapacity-uint64(len(m.capacity)))
 		return 0, false
 	}
 
 	m.capacity[blockID] = true
 
-	log.Info("Took one capacity", "blockID", blockID, "capacityAfterTaking", len(m.capacity))
+	log.Info("Took one capacity",
+		"blockID", blockID,
+		"capacityAfterTaking", m.maxCapacity-uint64(len(m.capacity)))
 
 	return m.maxCapacity - uint64((len(m.capacity))), true
 }
@@ -82,7 +86,9 @@ func (m *CapacityManager) TakeOneTempCapacity() (uint64, bool) {
 	m.clearExpiredTempCapacities()
 
 	if len(m.capacity)+len(m.tempCapacity) >= int(m.maxCapacity) {
-		log.Info("Could not take one temp capacity", "capacity", len(m.capacity), "tempCapacity", len(m.tempCapacity))
+		log.Info("Could not take one temp capacity",
+			"capacity", m.maxCapacity-uint64(len(m.capacity)),
+			"tempCapacity", len(m.tempCapacity))
 		return 0, false
 	}
 
