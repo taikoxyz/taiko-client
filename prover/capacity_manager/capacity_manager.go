@@ -2,21 +2,15 @@ package capacity_manager
 
 import (
 	"sync"
-	"time"
 
 	"github.com/ethereum/go-ethereum/log"
 )
 
-type tempCapacity struct {
-	createdAt time.Time
-}
-
 // CapacityManager manages the prover capacity concurrent-safely.
 type CapacityManager struct {
-	capacity     map[uint64]bool
-	tempCapacity []tempCapacity
-	maxCapacity  uint64
-	mutex        sync.RWMutex
+	capacity    map[uint64]bool
+	maxCapacity uint64
+	mutex       sync.RWMutex
 }
 
 // New creates a new CapacityManager instance.
