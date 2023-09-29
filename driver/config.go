@@ -46,7 +46,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	var timeout *time.Duration
 
 	if c.IsSet(flags.RPCTimeout.Name) {
-		duration := time.Duration(c.Uint64(flags.RPCTimeout.Name)) * time.Second
+		duration := c.Duration(flags.RPCTimeout.Name)
 		timeout = &duration
 	}
 
@@ -59,8 +59,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		TaikoL2Address:        common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		JwtSecret:             string(jwtSecret),
 		P2PSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
-		P2PSyncTimeout:        time.Duration(int64(time.Second) * int64(c.Uint(flags.P2PSyncTimeout.Name))),
-		BackOffRetryInterval:  time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
+		P2PSyncTimeout:        c.Duration(flags.P2PSyncTimeout.Name),
+		BackOffRetryInterval:  c.Duration(flags.BackOffRetryInterval.Name),
 		RPCTimeout:            timeout,
 	}, nil
 }

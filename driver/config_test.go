@@ -47,8 +47,8 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.TaikoL1Address.Name, taikoL1,
 		"--" + flags.TaikoL2Address.Name, taikoL2,
 		"--" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
-		"--" + flags.P2PSyncTimeout.Name, "120",
-		"--" + flags.RPCTimeout.Name, "5",
+		"--" + flags.P2PSyncTimeout.Name, "120s",
+		"--" + flags.RPCTimeout.Name, "5s",
 		"--" + flags.P2PSyncVerifiedBlocks.Name,
 		"--" + flags.CheckPointSyncUrl.Name, "http://localhost:8545",
 	}))
@@ -82,8 +82,8 @@ func (s *DriverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
 		&cli.StringFlag{Name: flags.JWTSecret.Name},
 		&cli.BoolFlag{Name: flags.P2PSyncVerifiedBlocks.Name},
-		&cli.UintFlag{Name: flags.P2PSyncTimeout.Name},
-		&cli.UintFlag{Name: flags.RPCTimeout.Name},
+		&cli.DurationFlag{Name: flags.P2PSyncTimeout.Name},
+		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
 		&cli.StringFlag{Name: flags.CheckPointSyncUrl.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {

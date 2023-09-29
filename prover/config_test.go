@@ -36,8 +36,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 			crypto.PubkeyToAddress(s.p.cfg.L1ProverPrivKey.PublicKey),
 			crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey),
 		)
-		s.Equal(30*time.Minute, *c.RandomDummyProofDelayLowerBound)
-		s.Equal(time.Hour, *c.RandomDummyProofDelayUpperBound)
 		s.True(c.Dummy)
 		s.True(c.OracleProver)
 		s.Equal(
@@ -69,10 +67,9 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"--" + flags.TaikoL2Address.Name, taikoL2,
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.StartingBlockID.Name, "0",
-		"--" + flags.RPCTimeout.Name, "5",
+		"--" + flags.RPCTimeout.Name, "5s",
 		"--" + flags.ProveBlockTxGasLimit.Name, "100000",
 		"--" + flags.Dummy.Name,
-		"--" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"--" + flags.MinProofFee.Name, minProofFee,
 		"--" + flags.ProverCapacity.Name, "8",
 		"--" + flags.OracleProver.Name,
@@ -80,7 +77,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"--" + flags.ProveBlockMaxTxGasTipCap.Name, "256",
 		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.Graffiti.Name, "",
-		"--" + flags.CheckProofWindowExpiredInterval.Name, "30",
+		"--" + flags.CheckProofWindowExpiredInterval.Name, "30s",
 		"--" + flags.TempCapacityExpiresAt.Name, "15s",
 		"--" + flags.ProveUnassignedBlocks.Name,
 	}))
@@ -99,10 +96,9 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"--" + flags.TaikoL2Address.Name, taikoL2,
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.Dummy.Name,
-		"--" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"--" + flags.OracleProver.Name,
 		"--" + flags.Graffiti.Name, "",
-		"--" + flags.RPCTimeout.Name, "5",
+		"--" + flags.RPCTimeout.Name, "5s",
 		"--" + flags.MinProofFee.Name, minProofFee,
 	}), "oracleProver flag set without oracleProverPrivateKey set")
 }
@@ -135,7 +131,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayError() {
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.OracleProver.Name,
-		"--" + flags.RandomDummyProofDelay.Name, "130m",
 		"--" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value")
 }
@@ -148,7 +143,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorLower() {
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.OracleProver.Name,
-		"--" + flags.RandomDummyProofDelay.Name, "30x-1h",
 		"--" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value")
 }
@@ -161,7 +155,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorUpper() {
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.OracleProver.Name,
-		"--" + flags.RandomDummyProofDelay.Name, "30m-1x",
 		"--" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value")
 }
@@ -174,7 +167,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorOrder() {
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.OracleProver.Name,
-		"--" + flags.RandomDummyProofDelay.Name, "1h-30m",
 		"--" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value (lower > upper)")
 }
@@ -191,16 +183,15 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
 		&cli.Uint64Flag{Name: flags.StartingBlockID.Name},
 		&cli.BoolFlag{Name: flags.Dummy.Name},
-		&cli.StringFlag{Name: flags.RandomDummyProofDelay.Name},
 		&cli.BoolFlag{Name: flags.OracleProver.Name},
 		&cli.StringFlag{Name: flags.OracleProverPrivateKey.Name},
 		&cli.StringFlag{Name: flags.Graffiti.Name},
-		&cli.Uint64Flag{Name: flags.CheckProofWindowExpiredInterval.Name},
+		&cli.DurationFlag{Name: flags.CheckProofWindowExpiredInterval.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxReplacementMultiplier.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockMaxTxGasTipCap.Name},
-		&cli.Uint64Flag{Name: flags.RPCTimeout.Name},
-		&cli.Uint64Flag{Name: flags.ProverCapacity.Name},
+		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
+		&cli.DurationFlag{Name: flags.ProverCapacity.Name},
 		&cli.Uint64Flag{Name: flags.MinProofFee.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxGasLimit.Name},
 		&cli.DurationFlag{Name: flags.TempCapacityExpiresAt.Name},

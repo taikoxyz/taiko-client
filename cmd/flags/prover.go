@@ -32,6 +32,12 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
+	ProverCapacity = &cli.Uint64Flag{
+		Name:     "prover.capacity",
+		Usage:    "Capacity of prover, required if oracleProver is false",
+		Required: true,
+		Category: proverCategory,
+	}
 )
 
 // Optional flags used by prover.
@@ -109,11 +115,6 @@ var (
 		Category: proverCategory,
 		Value:    9876,
 	}
-	ProverCapacity = &cli.Uint64Flag{
-		Name:     "prover.capacity",
-		Usage:    "Capacity of prover, required if oracleProver is false",
-		Category: proverCategory,
-	}
 	MaxExpiry = &cli.DurationFlag{
 		Name:     "prover.maxExpiry",
 		Usage:    "maximum accepted expiry in seconds for accepting proving a block",
@@ -133,12 +134,6 @@ var (
 		Value:    false,
 		Category: proverCategory,
 	}
-	RandomDummyProofDelay = &cli.StringFlag{
-		Name: "randomDummyProofDelay",
-		Usage: "Set the random dummy proof delay between the bounds using the format: " +
-			"`lowerBound-upperBound` (e.g. `30m-1h`), testing purposes only",
-		Category: proverCategory,
-	}
 )
 
 // All prover flags.
@@ -153,7 +148,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	StartingBlockID,
 	MaxConcurrentProvingJobs,
 	Dummy,
-	RandomDummyProofDelay,
 	OracleProver,
 	OracleProverPrivateKey,
 	OracleProofSubmissionDelay,

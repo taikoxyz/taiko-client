@@ -23,6 +23,7 @@ type Config struct {
 	TaikoTokenAddress                   common.Address
 	L1ProposerPrivKey                   *ecdsa.PrivateKey
 	L2SuggestedFeeRecipient             common.Address
+	ExtraData                           string
 	ProposeInterval                     *time.Duration
 	LocalAddresses                      []common.Address
 	LocalAddressesOnly                  bool
@@ -53,18 +54,13 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	// Proposing configuration
 	var proposingInterval *time.Duration
 	if c.IsSet(flags.ProposeInterval.Name) {
-		interval, err := time.ParseDuration(c.String(flags.ProposeInterval.Name))
-		if err != nil {
-			return nil, fmt.Errorf("invalid proposing interval: %w", err)
-		}
+		interval := c.Duration(flags.ProposeInterval.Name)
 		proposingInterval = &interval
 	}
+
 	var proposeEmptyBlocksInterval *time.Duration
 	if c.IsSet(flags.ProposeEmptyBlocksInterval.Name) {
-		interval, err := time.ParseDuration(c.String(flags.ProposeEmptyBlocksInterval.Name))
-		if err != nil {
-			return nil, fmt.Errorf("invalid proposing empty blocks interval: %w", err)
-		}
+		interval := c.Duration(flags.ProposeEmptyBlocksInterval.Name)
 		proposeEmptyBlocksInterval = &interval
 	}
 
@@ -100,7 +96,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 
 	var timeout *time.Duration
 	if c.IsSet(flags.RPCTimeout.Name) {
-		duration := time.Duration(c.Uint64(flags.RPCTimeout.Name)) * time.Second
+		duration := c.Duration(flags.RPCTimeout.Name)
 		timeout = &duration
 	}
 
@@ -131,16 +127,17 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		TaikoTokenAddress:                   common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:             common.HexToAddress(l2SuggestedFeeRecipient),
+		ExtraData:                           c.String(flags.ExtraData.Name),
 		ProposeInterval:                     proposingInterval,
 		LocalAddresses:                      localAddresses,
 		LocalAddressesOnly:                  c.Bool(flags.TxPoolLocalsOnly.Name),
 		ProposeEmptyBlocksInterval:          proposeEmptyBlocksInterval,
 		MaxProposedTxListsPerEpoch:          c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
 		ProposeBlockTxGasLimit:              proposeBlockTxGasLimit,
-		BackOffRetryInterval:                time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
+		BackOffRetryInterval:                c.Duration(flags.BackOffRetryInterval.Name),
 		ProposeBlockTxReplacementMultiplier: proposeBlockTxReplacementMultiplier,
 		RPCTimeout:                          timeout,
-		WaitReceiptTimeout:                  time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
+		WaitReceiptTimeout:                  c.Duration(flags.WaitReceiptTimeout.Name),
 		ProposeBlockTxGasTipCap:             proposeBlockTxGasTipCap,
 		ProverEndpoints:                     proverEndpoints,
 		BlockProposalFee:                    blockProposalFee,

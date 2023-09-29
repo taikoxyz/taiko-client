@@ -1,6 +1,8 @@
 package flags
 
 import (
+	"time"
+
 	"github.com/urfave/cli/v2"
 )
 
@@ -89,22 +91,22 @@ var (
 		Category: commonCategory,
 		Value:    10,
 	}
-	BackOffRetryInterval = &cli.Uint64Flag{
+	BackOffRetryInterval = &cli.DurationFlag{
 		Name:     "backoff.retryInterval",
 		Usage:    "Retry interval in seconds when there is an error",
 		Category: commonCategory,
-		Value:    12,
+		Value:    12 * time.Second,
 	}
-	RPCTimeout = &cli.Uint64Flag{
+	RPCTimeout = &cli.DurationFlag{
 		Name:     "rpc.timeout",
 		Usage:    "Timeout in seconds for RPC calls",
 		Category: commonCategory,
 	}
-	WaitReceiptTimeout = &cli.Uint64Flag{
+	WaitReceiptTimeout = &cli.DurationFlag{
 		Name:     "rpc.waitReceiptTimeout",
-		Usage:    "Timeout in seconds for wait for receipts for RPC transactions",
+		Usage:    "Timeout for wait for receipts for RPC transactions",
 		Category: commonCategory,
-		Value:    60,
+		Value:    1 * time.Minute,
 	}
 )
 
