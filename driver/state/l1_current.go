@@ -61,7 +61,7 @@ func (s *State) ResetL1Current(
 		}
 		targetHash := header.Hash()
 
-		iter, err := eventIterator.NewBlockProvenIterator(
+		iter, err := eventIterator.NewTransitionProvedIterator(
 			ctx,
 			&eventIterator.TransitionProvenIteratorConfig{
 				Client:      s.rpc.L1,
@@ -72,8 +72,8 @@ func (s *State) ResetL1Current(
 				Reverse:     true,
 				OnTransitionProved: func(
 					ctx context.Context,
-					e *bindings.TaikoL1ClientBlockProven,
-					end eventIterator.EndBlockProvenEventIterFunc,
+					e *bindings.TaikoL1ClientTransitionProved,
+					end eventIterator.EndTransitionProvedEventIterFunc,
 				) error {
 					log.Debug("Filtered BlockProven event", "ID", e.BlockId, "hash", common.Hash(e.BlockHash))
 					if e.BlockHash == targetHash {

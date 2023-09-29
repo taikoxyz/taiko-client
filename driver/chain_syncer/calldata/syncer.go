@@ -421,16 +421,16 @@ func (s *Syncer) createExecutionPayloads(
 	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parentHash}
 	attributes := &engine.PayloadAttributes{
 		Timestamp:             event.Meta.Timestamp,
-		Random:                event.Meta.MixHash,
-		SuggestedFeeRecipient: event.Meta.Proposer,
+		Random:                event.Meta.Difficulty,
+		SuggestedFeeRecipient: event.Meta.Coinbase,
 		Withdrawals:           withdrawals,
 		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
-			Beneficiary:    event.Meta.Proposer,
+			Beneficiary:    event.Meta.Coinbase,
 			GasLimit:       uint64(event.Meta.GasLimit) + s.anchorConstructor.GasLimit(),
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
-			MixHash:        event.Meta.MixHash,
+			MixHash:        event.Meta.Difficulty,
 		},
 		BaseFeePerGas: baseFee,
 		L1Origin:      l1Origin,
