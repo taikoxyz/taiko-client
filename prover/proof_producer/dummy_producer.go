@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"math/big"
-	"math/rand"
-	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
@@ -13,10 +11,7 @@ import (
 )
 
 // DummyProofProducer always returns a dummy proof.
-type DummyProofProducer struct {
-	RandomDummyProofDelayLowerBound *time.Duration
-	RandomDummyProofDelayUpperBound *time.Duration
-}
+type DummyProofProducer struct{}
 
 // RequestProof implements the ProofProducer interface.
 func (d *DummyProofProducer) RequestProof(
@@ -30,42 +25,21 @@ func (d *DummyProofProducer) RequestProof(
 	log.Info(
 		"Request dummy proof",
 		"blockID", blockID,
-		"proposer", meta.Proposer,
+		"coinbase", meta.Coinbase,
 		"height", header.Number,
 		"hash", header.Hash(),
 	)
 
-	time.AfterFunc(d.proofDelay(), func() {
-		resultCh <- &ProofWithHeader{
-			BlockID: blockID,
-			Meta:    meta,
-			Header:  header,
-			ZkProof: bytes.Repeat([]byte{0xff}, 100),
-			Degree:  CircuitsIdx,
-			Opts:    opts,
-		}
-	})
-
-	return nil
-}
-
-// proofDelay calculates a random proof delay between the bounds.
-func (d *DummyProofProducer) proofDelay() time.Duration {
-	if d.RandomDummyProofDelayLowerBound == nil ||
-		d.RandomDummyProofDelayUpperBound == nil ||
-		*d.RandomDummyProofDelayUpperBound == time.Duration(0) {
-		return time.Duration(0)
+	resultCh <- &ProofWithHeader{
+		BlockID: blockID,
+		Meta:    meta,
+		Header:  header,
+		ZkProof: bytes.Repeat([]byte{0xff}, 100),
+		Degree:  CircuitsIdx,
+		Opts:    opts,
 	}
 
-	lowerSeconds := int(d.RandomDummyProofDelayLowerBound.Seconds())
-	upperSeconds := int(d.RandomDummyProofDelayUpperBound.Seconds())
-
-	randomDurationSeconds := rand.Intn((upperSeconds - lowerSeconds)) + lowerSeconds
-	delay := time.Duration(randomDurationSeconds) * time.Second
-
-	log.Info("Random dummy proof delay", "delay", delay)
-
-	return delay
+	return nil
 }
 
 // Cancel cancels an existing proof generation.

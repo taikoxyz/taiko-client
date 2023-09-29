@@ -45,7 +45,7 @@ func (p *ZkevmCmdProducer) RequestProof(
 	log.Info(
 		"Request proof from ZKEVM CMD",
 		"blockID", blockID,
-		"proposer", meta.Proposer,
+		"coinbase", meta.Coinbase,
 		"height", header.Number,
 		"hash", header.Hash(),
 		"cmd", p.CmdPath,

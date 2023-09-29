@@ -63,13 +63,13 @@ type Prover struct {
 	validProofSubmitter proofSubmitter.ProofSubmitter
 
 	// Subscriptions
-	blockProposedCh  chan *bindings.TaikoL1ClientBlockProposed
-	blockProposedSub event.Subscription
-	blockProvenCh    chan *bindings.TaikoL1ClientBlockProven
-	blockProvenSub   event.Subscription
-	blockVerifiedCh  chan *bindings.TaikoL1ClientBlockVerified
-	blockVerifiedSub event.Subscription
-	proveNotify      chan struct{}
+	blockProposedCh    chan *bindings.TaikoL1ClientBlockProposed
+	blockProposedSub   event.Subscription
+	transitionProvenCh chan *bindings.TaikoL1ClientTransitionProved
+	blockProvenSub     event.Subscription
+	blockVerifiedCh    chan *bindings.TaikoL1ClientBlockVerified
+	blockVerifiedSub   event.Subscription
+	proveNotify        chan struct{}
 
 	// Proof related
 	proofGenerationCh chan *proofProducer.ProofWithHeader
@@ -143,7 +143,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	chBufferSize := p.protocolConfigs.BlockMaxProposals
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
-	p.blockProvenCh = make(chan *bindings.TaikoL1ClientBlockProven, chBufferSize)
+	p.transitionProvenCh = make(chan *bindings.TaikoL1ClientTransitionProved, chBufferSize)
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
@@ -170,10 +170,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	var producer proofProducer.ProofProducer
 	if cfg.Dummy {
-		producer = &proofProducer.DummyProofProducer{
-			RandomDummyProofDelayLowerBound: p.cfg.RandomDummyProofDelayLowerBound,
-			RandomDummyProofDelayUpperBound: p.cfg.RandomDummyProofDelayUpperBound,
-		}
+		producer = &proofProducer.DummyProofProducer{}
 	} else {
 		if producer, err = proofProducer.NewZkevmRpcdProducer(
 			cfg.ZKEvmRpcdEndpoint,
@@ -215,7 +212,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		CapacityManager:  p.capacityManager,
 		TaikoL1Address:   p.cfg.TaikoL1Address,
 		Rpc:              p.rpc,
-		Bond:             protocolConfigs.ProofBond,
+		Bond:             protocolConfigs.LivenessBond,
 		IsOracle:         p.cfg.OracleProver,
 	}
 	if p.cfg.OracleProver {
@@ -307,7 +304,7 @@ func (p *Prover) eventLoop() {
 			if err := p.onBlockVerified(p.ctx, e); err != nil {
 				log.Error("Handle BlockVerified event error", "error", err)
 			}
-		case e := <-p.blockProvenCh:
+		case e := <-p.transitionProvenCh:
 			if err := p.onBlockProven(p.ctx, e); err != nil {
 				log.Error("Handle BlockProven event error", "error", err)
 			}
@@ -802,7 +799,7 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 func (p *Prover) initSubscription() {
 	p.blockProposedSub = rpc.SubscribeBlockProposed(p.rpc.TaikoL1, p.blockProposedCh)
 	p.blockVerifiedSub = rpc.SubscribeBlockVerified(p.rpc.TaikoL1, p.blockVerifiedCh)
-	p.blockProvenSub = rpc.SubscribeBlockProven(p.rpc.TaikoL1, p.blockProvenCh)
+	p.blockProvenSub = rpc.SubscribeBlockProven(p.rpc.TaikoL1, p.transitionProvenCh)
 }
 
 // closeSubscription closes all subscriptions.

@@ -131,7 +131,7 @@ func (p *ZkevmRpcdProducer) RequestProof(
 	log.Info(
 		"Request proof from zkevm-chain proverd service",
 		"blockID", blockID,
-		"proposer", meta.Proposer,
+		"coinbase", meta.Coinbase,
 		"height", header.Number,
 		"hash", header.Hash(),
 	)
