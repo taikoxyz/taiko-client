@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"context"
-	"net/url"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/rpc"
@@ -15,9 +14,8 @@ const (
 
 type ClientSuite struct {
 	suite.Suite
-	L1              *gethContainer
-	L2              *gethContainer
-	ProverEndpoints []*url.URL
+	L1 *gethContainer
+	L2 *gethContainer
 }
 
 func (s *ClientSuite) SetupSuite() {
@@ -28,7 +26,6 @@ func (s *ClientSuite) TearDownSuite() {
 
 func (s *ClientSuite) SetupTest() {
 	s.Reset()
-	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
 }
 
 func (s *ClientSuite) Reset() {

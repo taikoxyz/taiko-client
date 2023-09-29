@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 	"math/rand"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -18,14 +19,19 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
+	"github.com/taikoxyz/taiko-client/prover"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
+	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type CalldataSyncerTestSuite struct {
 	testutils.ClientSuite
-	s         *Syncer
-	p         testutils.Proposer
-	rpcClient *rpc.Client
+	s               *Syncer
+	p               testutils.Proposer
+	rpcClient       *rpc.Client
+	proverEndpoints []*url.URL
+	proverServer    *server.ProverServer
 }
 
 func (s *CalldataSyncerTestSuite) SetupTest() {
@@ -59,6 +65,9 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	prop := new(proposer.Proposer)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
+	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
+	s.proverServer = prover.FakeProverServer(&s.ClientSuite, testutils.ProverPrivKey, capacity.New(1024), s.proverEndpoints[0])
+
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                         s.L1.WsEndpoint(),
 		L2Endpoint:                         s.L2.WsEndpoint(),
@@ -70,7 +79,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
-		ProverEndpoints:                    s.ProverEndpoints,
+		ProverEndpoints:                    s.proverEndpoints,
 		BlockProposalFee:                   big.NewInt(1000),
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,

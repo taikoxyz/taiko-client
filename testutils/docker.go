@@ -436,7 +436,7 @@ func findTaikoL1Address() error {
 func initJwtSecret() (err error) {
 	path := os.Getenv("JWT_SECRET")
 	if path == "" {
-		path = "/Users/lsl/go/src/github/taikoxyz/taiko-client/integration_test/nodes/jwt.hex"
+		path = "/Users/liushangliang/go/src/github.com/taikochain/taiko-client/integration_test/nodes/jwt.hex"
 	}
 	JwtSecretFile, err = filepath.Abs(path)
 	if err != nil {
@@ -448,7 +448,7 @@ func initJwtSecret() (err error) {
 func initMonoPath() (err error) {
 	path := os.Getenv("TAIKO_MONO")
 	if path == "" {
-		path = "/Users/lsl/go/src/github/taikoxyz/taiko-mono"
+		path = "/Users/liushangliang/go/src/github.com/taikochain/taiko-mono"
 	}
 	monoPath, err = filepath.Abs(path)
 	if err != nil {

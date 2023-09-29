@@ -48,7 +48,6 @@ func (s *DriverStateTestSuite) TearDownTest() {
 
 func (s *DriverStateTestSuite) TestVerifyL2Block() {
 	head, err := s.rpcClient.L2.HeaderByNumber(context.Background(), nil)
-
 	s.Nil(err)
 	s.Nil(s.s.VerifyL2Block(context.Background(), head.Number, head.Hash()))
 }
