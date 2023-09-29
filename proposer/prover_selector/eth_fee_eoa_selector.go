@@ -82,15 +82,16 @@ func (s *ETHFeeEOASelector) ProverEndpoints() []*url.URL { return s.proverEndpoi
 // AssignProver tries to pick a prover through the registered prover endpoints.
 func (s *ETHFeeEOASelector) AssignProver(
 	ctx context.Context,
-	meta *encoding.TaikoL1BlockMetadataInput,
-) ([]byte, *big.Int, error) {
+	tierFees []*encoding.TierFee,
+	txListHash common.Hash,
+) ([]byte, common.Address, *big.Int, error) {
 	oracleProverAddress, err := s.rpc.TaikoL1.Resolve0(
 		&bind.CallOpts{Context: ctx},
 		rpc.StringToBytes32("oracle_prover"),
 		true,
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, common.Address{}, nil, err
 	}
 	// Iterate over each configured endpoint, and see if someone wants to accept this block.
 	// If it is denied, we continue on to the next endpoint.
@@ -111,10 +112,11 @@ func (s *ETHFeeEOASelector) AssignProver(
 		for _, endpoint := range s.shuffleProverEndpoints() {
 			encodedAssignment, proverAddress, err := assignProver(
 				ctx,
-				meta,
 				endpoint,
 				fee,
 				expiry,
+				tierFees,
+				txListHash,
 				s.requestTimeout,
 				oracleProverAddress,
 			)
@@ -123,22 +125,20 @@ func (s *ETHFeeEOASelector) AssignProver(
 				continue
 			}
 
-			if proverAddress != encoding.OracleProverAddress {
-				ok, err := rpc.CheckProverBalance(ctx, s.rpc, proverAddress, s.taikoL1Address, s.protocolConfigs.ProofBond)
-				if err != nil {
-					log.Warn("Failed to check prover balance", "endpoint", endpoint, "error", err)
-					continue
-				}
-				if !ok {
-					continue
-				}
+			ok, err := rpc.CheckProverBalance(ctx, s.rpc, proverAddress, s.taikoL1Address, s.protocolConfigs.LivenessBond)
+			if err != nil {
+				log.Warn("Failed to check prover balance", "endpoint", endpoint, "error", err)
+				continue
+			}
+			if !ok {
+				continue
 			}
 
-			return encodedAssignment, fee, nil
+			return encodedAssignment, proverAddress, fee, nil
 		}
 	}
 
-	return nil, nil, errUnableToFindProver
+	return nil, common.Address{}, nil, errUnableToFindProver
 }
 
 // shuffleProverEndpoints shuffles the current selector's prover endpoints.
@@ -152,10 +152,11 @@ func (s *ETHFeeEOASelector) shuffleProverEndpoints() []*url.URL {
 // assignProver tries to assign a proof generation task to the given prover by HTTP API.
 func assignProver(
 	ctx context.Context,
-	meta *encoding.TaikoL1BlockMetadataInput,
 	endpoint *url.URL,
 	fee *big.Int,
 	expiry uint64,
+	tierFees []*encoding.TierFee,
+	txListHash common.Hash,
 	timeout time.Duration,
 	oracleProverAddress common.Address,
 ) ([]byte, common.Address, error) {
@@ -164,13 +165,19 @@ func assignProver(
 		"endpoint", endpoint,
 		"fee", fee.String(),
 		"expiry", expiry,
+		"txListHash", txListHash,
 	)
 
 	// Send the HTTP request
 	var (
 		client  = resty.New()
-		reqBody = &encoding.ProposeBlockData{Expiry: expiry, Input: *meta, Fee: fee}
-		result  = server.ProposeBlockResponse{}
+		reqBody = &server.CreateAssignmentRequestBody{
+			FeeToken:   (common.Address{}),
+			TierFees:   tierFees,
+			Expiry:     expiry,
+			TxListHash: txListHash,
+		}
+		result = server.ProposeBlockResponse{}
 	)
 	requestUrl, err := url.JoinPath(endpoint.String(), "/assignment")
 	if err != nil {
@@ -196,12 +203,12 @@ func assignProver(
 
 	// Ensure prover in response is the same as the one recovered
 	// from the signature
-	encodedBlockData, err := encoding.EncodeProposeBlockData(reqBody)
+	payload, err := encoding.EncodeProverAssignmentPayload(txListHash, common.Address{}, expiry, tierFees)
 	if err != nil {
 		return nil, common.Address{}, err
 	}
 
-	pubKey, err := crypto.SigToPub(crypto.Keccak256Hash(encodedBlockData).Bytes(), result.SignedPayload)
+	pubKey, err := crypto.SigToPub(crypto.Keccak256Hash(payload).Bytes(), result.SignedPayload)
 	if err != nil {
 		return nil, common.Address{}, err
 	}
@@ -217,15 +224,12 @@ func assignProver(
 	// Convert signature to one solidity can recover by adding 27 to 65th byte
 	result.SignedPayload[64] = uint8(uint(result.SignedPayload[64])) + 27
 
-	// If this assignment is to oracle prover, change prover address in assignment to `LibUtils.ORACLE_PROVER`
-	if oracleProverAddress != (common.Address{}) && result.Prover == oracleProverAddress {
-		result.Prover = encoding.OracleProverAddress
-	}
-
 	encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
-		Prover: result.Prover,
-		Expiry: reqBody.Expiry,
-		Data:   result.SignedPayload,
+		Prover:    result.Prover,
+		FeeToken:  common.Address{},
+		TierFees:  []*encoding.TierFee{}, // TODO: update tier fees
+		Expiry:    reqBody.Expiry,
+		Signature: result.SignedPayload,
 	})
 	if err != nil {
 		return nil, common.Address{}, err

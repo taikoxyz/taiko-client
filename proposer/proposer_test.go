@@ -104,7 +104,6 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	_, isPending, err := s.p.rpc.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
-	s.Equal(s.p.l2SuggestedFeeRecipient, event.Meta.Proposer)
 
 	receipt, err := s.p.rpc.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
@@ -132,14 +131,14 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	opts, err := getTxOpts(
 		context.Background(),
 		s.p.rpc.L1,
-		s.p.l1ProposerPrivKey,
+		s.p.proposerPrivKey,
 		s.RpcClient.L1ChainID,
 		fee,
 	)
 	s.Nil(err)
 	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
 
-	nonce, err := s.RpcClient.L1.PendingNonceAt(context.Background(), s.p.l1ProposerAddress)
+	nonce, err := s.RpcClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
 	s.Nil(err)
 
 	tx := types.NewTransaction(
@@ -154,7 +153,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RpcClient.L1ChainID), s.p.l1ProposerPrivKey)
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RpcClient.L1ChainID), s.p.proposerPrivKey)
 	s.Nil(err)
 	s.Nil(s.RpcClient.L1.SendTransaction(context.Background(), signedTx))
 
@@ -162,23 +161,24 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	meta := &encoding.TaikoL1BlockMetadataInput{
-		Proposer:        s.p.L2SuggestedFeeRecipient(),
-		TxListHash:      crypto.Keccak256Hash(encoded),
-		TxListByteStart: common.Big0,
-		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
-		CacheTxListInfo: false,
-	}
-
-	assignment, fee, err := s.p.proverSelector.AssignProver(context.Background(), meta)
+	signature, prover, fee, err := s.p.proverSelector.AssignProver(
+		context.Background(),
+		[]*encoding.TierFee{},
+		testutils.RandomHash(),
+	)
 	s.Nil(err)
 
 	newTx, err := s.p.sendProposeBlockTx(
 		context.Background(),
-		meta,
 		encoded,
 		&nonce,
-		assignment,
+		&encoding.ProverAssignment{
+			Prover:    prover,
+			FeeToken:  common.Address{},
+			TierFees:  []*encoding.TierFee{},
+			Expiry:    uint64(proverAssignmentTimeout.Seconds()),
+			Signature: signature,
+		},
 		fee,
 		true,
 	)
@@ -187,18 +187,10 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 }
 
 func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
-	meta := &encoding.TaikoL1BlockMetadataInput{
-		Proposer:        s.p.L2SuggestedFeeRecipient(),
-		TxListHash:      testutils.RandomHash(),
-		TxListByteStart: common.Big0,
-		TxListByteEnd:   common.Big0,
-		CacheTxListInfo: false,
-	}
-
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	_, fee, err := s.p.proverSelector.AssignProver(context.Background(), meta)
+	_, _, fee, err := s.p.proverSelector.AssignProver(context.Background(), []*encoding.TierFee{}, testutils.RandomHash())
 
 	s.Nil(err)
 	s.Equal(fee.Uint64(), s.p.cfg.BlockProposalFee.Uint64())
