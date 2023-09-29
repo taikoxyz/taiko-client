@@ -3,6 +3,7 @@ package testutils
 import (
 	"context"
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 	"os"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -24,50 +26,56 @@ var (
 )
 
 func init() {
-	initLog()
-	initJwtFile()
-	initMonoPath()
+	// Don't change the following initialization order
+	var g errgroup.Group
+	g.Go(initLog)
+	g.Go(initMonoPath)
+	g.Go(initJwtSecret)
+	g.Go(initTestAccount)
+	g.Go(initProverAccount)
+	if err := g.Wait(); err != nil {
+		panic(err)
+	}
 	if err := startBaseContainer(context.Background()); err != nil {
 		panic(err)
 	}
-	initTestAccount()
-	initProverAccount()
-}
-
-func initLog() {
-	log.Root().SetHandler(
-		log.LvlFilterHandler(log.LvlInfo, log.StreamHandler(os.Stdout, log.TerminalFormat(true))),
-	)
-	if os.Getenv("LOG_LEVEL") != "" {
-		level, err := log.LvlFromString(os.Getenv("LOG_LEVEL"))
-		if err != nil {
-			log.Crit("Invalid log level", "level", os.Getenv("LOG_LEVEL"))
-		}
-		log.Root().SetHandler(
-			log.LvlFilterHandler(level, log.StreamHandler(os.Stdout, log.TerminalFormat(true))),
-		)
+	if err := ensureProverBalance(); err != nil {
+		panic(err)
 	}
 }
 
-func initTestAccount() {
-	var err error
+func initLog() (err error) {
+	level := log.LvlInfo
+	if os.Getenv("LOG_LEVEL") != "" {
+		level, err = log.LvlFromString(os.Getenv("LOG_LEVEL"))
+		if err != nil {
+			return fmt.Errorf("invalid log level: %v", os.Getenv("LOG_LEVEL"))
+		}
+	}
+	log.Root().SetHandler(
+		log.LvlFilterHandler(level, log.StreamHandler(os.Stdout, log.TerminalFormat(true))),
+	)
+	return nil
+}
+
+func initTestAccount() (err error) {
 	TestPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(proposerPrivKey))
 	if err != nil {
 		panic(err)
 	}
 	TestAddr = crypto.PubkeyToAddress(TestPrivKey.PublicKey)
+	log.Info("TestAccount:", "privateKey", TestPrivKey, "address", TestAddr)
+	return nil
 }
 
-func initProverAccount() {
-	var err error
+func initProverAccount() (err error) {
 	ProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(proverPrivKey))
 	if err != nil {
-		panic(err)
+		return err
 	}
 	ProverAddr = crypto.PubkeyToAddress(ProverPrivKey.PublicKey)
-	if err := ensureProverBalance(); err != nil {
-		panic(err)
-	}
+	log.Info("Prover Account:", "privateKey", ProverPrivKey, "address", ProverAddr)
+	return nil
 }
 
 func ensureProverBalance() error {
@@ -83,12 +91,12 @@ func ensureProverBalance() error {
 	if err != nil {
 		return err
 	}
+	if tokenBalance.Cmp(common.Big0) > 0 {
+		return nil
+	}
 	chainID, err := cli.ChainID(context.Background())
 	if err != nil {
 		return err
-	}
-	if tokenBalance.Cmp(common.Big0) > 0 {
-		return nil
 	}
 	opts, err := bind.NewKeyedTransactorWithChainID(TestPrivKey, chainID)
 	if err != nil {
@@ -107,6 +115,6 @@ func ensureProverBalance() error {
 	if err != nil {
 		return err
 	}
-	log.Debug("DepositTaikoToken tx: %s", tx.Hash().Hex())
+	log.Debug("DepositTaikoToken for prover ", "tx", tx.Hash().Hex())
 	return nil
 }

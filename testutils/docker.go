@@ -420,29 +420,29 @@ func deployTaikoL1(endpoint string) error {
 	return nil
 }
 
-func initJwtFile() {
-	var err error
+func initJwtSecret() (err error) {
 	path := os.Getenv("JWT_SECRET")
 	if path == "" {
 		path = "../integration_test/nodes/jwt.hex"
 	}
 	JwtSecretFile, err = filepath.Abs(path)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	if jwtSecret, err = jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET")); err != nil {
-		panic(err)
+	if jwtSecret, err = jwt.ParseSecretFromFile(path); err != nil {
+		return err
 	}
+	return nil
 }
 
-func initMonoPath() {
-	var err error
+func initMonoPath() (err error) {
 	path := os.Getenv("TAIKO_MONO")
 	if path == "" {
 		path = "../../taiko-mono/"
 	}
 	monoPath, err = filepath.Abs(path)
 	if err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
