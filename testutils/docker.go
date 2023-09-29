@@ -1,143 +1,49 @@
 package testutils
 
 import (
+	"bufio"
 	"context"
-	"crypto/ecdsa"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
-	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/go-resty/resty/v2"
-	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
-	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils/docker"
 )
 
 const (
-	gethHttpPort        uint64 = 8545
-	gethWSPort          uint64 = 8546
-	gethAuthPort        uint64 = 8551
-	l1BaseContainerName        = "L1Base"
-	premintTokenAmount         = "92233720368547758070000000000000"
+	gethHttpPort      uint64 = 8545
+	gethWSPort        uint64 = 8546
+	gethAuthPort      uint64 = 8551
+	baseContainerName        = "L1Base"
+	showDeployLog            = false
 )
 
 var (
-	gethHttpNatPort   = natTcpPort(gethHttpPort)
-	gethWSNatPort     = natTcpPort(gethWSPort)
-	gethAuthNatPort   = natTcpPort(gethAuthPort)
+	gethHttpNatPort = natTcpPort(gethHttpPort)
+	gethWSNatPort   = natTcpPort(gethWSPort)
+	gethAuthNatPort = natTcpPort(gethAuthPort)
+)
+
+// variables need to be initialized
+var (
+	jwtSecret         []byte
+	JwtSecretFile     string
+	monoPath          string
 	l1BaseContainer   = baseContainer{delExisted: true}
-	taikoL2Address    = common.HexToAddress("0x1000777700000000000000000000000000000001")
 	TaikoL1Address    common.Address
 	TaikoTokenAddress common.Address
 )
-
-var (
-	jwtSecret     []byte
-	JwtSecretFile string
-	monoPath      string
-)
-
-type ClientSuite struct {
-	suite.Suite
-	l1Container     *gethContainer
-	l2Container     *gethContainer
-	RpcClient       *rpc.Client
-	ProverEndpoints []*url.URL
-	proverServer    *server.ProverServer
-}
-
-func (s *ClientSuite) SetupTest() {
-	var err error
-	name := strings.ReplaceAll(s.T().Name(), "/", "_")
-	s.l1Container, err = newL1Container("L1_" + name)
-	s.NoError(err)
-
-	s.l2Container, err = newL2Container("L2_" + name)
-	s.NoError(err)
-
-	s.RpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
-		L1Endpoint:        s.l1Container.WsEndpoint(),
-		L2Endpoint:        s.l2Container.WsEndpoint(),
-		TaikoL1Address:    TaikoL1Address,
-		TaikoTokenAddress: TaikoTokenAddress,
-		TaikoL2Address:    taikoL2Address,
-		L2EngineEndpoint:  s.l2Container.AuthEndpoint(),
-		JwtSecret:         string(jwtSecret),
-		RetryInterval:     backoff.DefaultMaxInterval,
-	})
-	s.NoError(err)
-	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
-	s.proverServer = fakeProverServer(s, ProverPrivKey, capacity.New(1024, 100*time.Second), s.ProverEndpoints[0])
-}
-
-// fakeProverServer starts a new prover server that has channel listeners to respond and react
-// to requests for capacity, which provers can call.
-func fakeProverServer(
-	s *ClientSuite,
-	proverPrivKey *ecdsa.PrivateKey,
-	capacityManager *capacity.CapacityManager,
-	url *url.URL,
-) *server.ProverServer {
-	protocolConfig, err := s.RpcClient.TaikoL1.GetConfig(nil)
-	s.Nil(err)
-
-	srv, err := server.New(&server.NewProverServerOpts{
-		ProverPrivateKey: proverPrivKey,
-		MinProofFee:      common.Big1,
-		MaxExpiry:        24 * time.Hour,
-		CapacityManager:  capacityManager,
-		TaikoL1Address:   TaikoL1Address,
-		Rpc:              s.RpcClient,
-		Bond:             protocolConfig.ProofBond,
-		IsOracle:         true,
-	})
-	s.NoError(err)
-
-	go func() {
-		if err := srv.Start(fmt.Sprintf(":%v", url.Port())); !errors.Is(err, http.ErrServerClosed) {
-			log.Error("Failed to start prover server", "error", err)
-		}
-	}()
-
-	// Wait till the server fully started.
-	s.Nil(backoff.Retry(func() error {
-		res, err := resty.New().R().Get(url.String() + "/healthz")
-		if err != nil {
-			return err
-		}
-		if !res.IsSuccess() {
-			return fmt.Errorf("invalid response status code: %d", res.StatusCode())
-		}
-
-		return nil
-	}, backoff.NewExponentialBackOff()))
-
-	return srv
-}
-
-func (s *ClientSuite) TearDownTest() {
-	s.NoError(s.l1Container.Stop())
-	s.NoError(s.l2Container.Stop())
-}
 
 type gethContainer struct {
 	*docker.ReadyContainer
@@ -200,7 +106,6 @@ func newL2Container(name string) (*gethContainer, error) {
 	cc := &container.Config{
 		Image: "gcr.io/evmchain/taiko-geth:taiko",
 		Cmd: []string{
-			"--nodiscover",
 			"--gcmode",
 			"archive",
 			"--syncmode",
@@ -288,7 +193,7 @@ func delExistedBaseContainer(ctx context.Context) error {
 	}
 	for _, c := range containers {
 		for _, n := range c.Names {
-			if n[1:] == l1BaseContainerName {
+			if n[1:] == baseContainerName {
 				if err := cli.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 					return err
 				}
@@ -305,7 +210,7 @@ func startBaseContainer(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	l1BaseContainer.gethContainer, err = newAnvilContainer(ctx, true, l1BaseContainerName)
+	l1BaseContainer.gethContainer, err = newAnvilContainer(ctx, true, baseContainerName)
 	if err != nil {
 		return err
 	}
@@ -388,14 +293,13 @@ func deployTaikoL1(endpoint string) error {
 	)
 
 	cmd.Env = []string{
-		"PRIVATE_KEY=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-		"ORACLE_PROVER=0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+		fmt.Sprintf("PRIVATE_KEY=%s", proposerPrivKey),
+		fmt.Sprintf("ORACLE_PROVER=%s", oracleProverAddress.Hex()),
 		"OWNER=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-		"TAIKO_L2_ADDRESS=0x1000777700000000000000000000000000000001",
+		fmt.Sprintf("TAIKO_L2_ADDRESS=%s", taikoL2Address.Hex()),
 		"L2_SIGNAL_SERVICE=0x1000777700000000000000000000000000000007",
 		"SHARED_SIGNAL_SERVICE=0x0000000000000000000000000000000000000000",
-		"TAIKO_TOKEN_PREMINT_RECIPIENTS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266," +
-			"0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+		fmt.Sprintf("TAIKO_TOKEN_PREMINT_RECIPIENTS=%s,%s", TestAddr.Hex(), oracleProverAddress.Hex()),
 		fmt.Sprintf("TAIKO_TOKEN_PREMINT_AMOUNTS=%s,%s", premintTokenAmount, premintTokenAmount),
 		fmt.Sprintf("L2_GENESIS_HASH=%s", l2GenesisHash),
 	}
@@ -404,6 +308,16 @@ func deployTaikoL1(endpoint string) error {
 	if err != nil {
 		return fmt.Errorf("out=%s,err=%w", string(out), err)
 	}
+	if showDeployLog {
+		scanner := bufio.NewScanner(strings.NewReader(string(out)))
+		for scanner.Scan() {
+			fmt.Println(scanner.Text())
+		}
+	}
+	return taikoL1DeployAddress()
+}
+
+func taikoL1DeployAddress() error {
 	data, err := os.ReadFile(monoPath + "/packages/protocol/deployments/deploy_l1.json")
 	if err != nil {
 		return err
