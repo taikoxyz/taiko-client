@@ -166,6 +166,20 @@ func NeedNewProof(
 		return true, nil
 	}
 
+	l1Origin, err := cli.WaitL1Origin(ctxWithTimeout, id)
+	if err != nil {
+		return false, err
+	}
+
+	if l1Origin.L2BlockHash != transition.BlockHash {
+		log.Info(
+			"Different blockhash detected, try submitting a proof",
+			"local", common.BytesToHash(l1Origin.L2BlockHash[:]),
+			"protocol", common.BytesToHash(transition.BlockHash[:]),
+		)
+		return true, nil
+	}
+
 	if proverAddress == transition.Prover {
 		log.Info("📬 Block's proof has already been submitted by current prover", "blockID", id)
 		return false, nil
