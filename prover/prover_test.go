@@ -194,12 +194,6 @@ func (s *ProverTestSuite) TestStartSubscription() {
 	s.NotPanics(s.p.closeSubscription)
 }
 
-func (s *ProverTestSuite) TestCheckChainVerification() {
-	s.Nil(s.p.checkChainVerification(0))
-	s.p.latestVerifiedL1Height = 1024
-	s.Nil(s.p.checkChainVerification(1024))
-}
-
 func TestProverTestSuite(t *testing.T) {
 	suite.Run(t, new(ProverTestSuite))
 }
