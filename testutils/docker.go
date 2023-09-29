@@ -391,12 +391,12 @@ func deployTaikoL1(endpoint string) error {
 
 	cmd.Env = []string{
 		fmt.Sprintf("PRIVATE_KEY=%s", ProposerPrivateKey),
-		fmt.Sprintf("ORACLE_PROVER=%s", oracleProverAddress.Hex()),
+		fmt.Sprintf("ORACLE_PROVER=%s", OracleProverAddress.Hex()),
 		"OWNER=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
 		fmt.Sprintf("TAIKO_L2_ADDRESS=%s", TaikoL2Address.Hex()),
 		"L2_SIGNAL_SERVICE=0x1000777700000000000000000000000000000007",
 		"SHARED_SIGNAL_SERVICE=0x0000000000000000000000000000000000000000",
-		fmt.Sprintf("TAIKO_TOKEN_PREMINT_RECIPIENTS=%s,%s", ProposerAddress.Hex(), oracleProverAddress.Hex()),
+		fmt.Sprintf("TAIKO_TOKEN_PREMINT_RECIPIENTS=%s,%s", ProposerAddress.Hex(), OracleProverAddress.Hex()),
 		fmt.Sprintf("TAIKO_TOKEN_PREMINT_AMOUNTS=%s,%s", premintTokenAmount, premintTokenAmount),
 		fmt.Sprintf("L2_GENESIS_HASH=%s", l2GenesisHash),
 	}
