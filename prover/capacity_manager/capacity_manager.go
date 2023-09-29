@@ -31,7 +31,10 @@ func (m *CapacityManager) ReadCapacity() uint64 {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	log.Info("Reading capacity", "capacity", len(m.capacity))
+	log.Info("Reading capacity usage",
+		 "maxCapacity", m.maxCapacity,
+		 "usedCapacity", len(m.capacity),
+		)
 
 	return m.maxCapacity - uint64((len(m.capacity)))
 }
