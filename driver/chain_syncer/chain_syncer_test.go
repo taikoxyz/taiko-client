@@ -3,6 +3,7 @@ package chainSyncer
 import (
 	"context"
 	"math/big"
+	"net/url"
 	"testing"
 	"time"
 
@@ -15,15 +16,20 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
+	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
+	"github.com/taikoxyz/taiko-client/testutils/fakeprover"
 )
 
 type ChainSyncerTestSuite struct {
 	testutils.ClientSuite
-	s          *L2ChainSyncer
-	snapshotID string
-	p          testutils.Proposer
-	rpcClient  *rpc.Client
+	s               *L2ChainSyncer
+	snapshotID      string
+	p               testutils.Proposer
+	rpcClient       *rpc.Client
+	proverEndpoints []*url.URL
+	proverServer    *server.ProverServer
 }
 
 func (s *ChainSyncerTestSuite) SetupTest() {
@@ -59,6 +65,12 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 	l1ProposerPrivKey := testutils.ProposerPrivKey
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
+	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
+	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
+	s.NoError(err)
+	s.proverServer, err = fakeprover.New(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.NoError(err)
+
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                         s.L1.WsEndpoint(),
 		L2Endpoint:                         s.L2.WsEndpoint(),
@@ -70,7 +82,7 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
-		ProverEndpoints:                    s.ProverEndpoints,
+		ProverEndpoints:                    s.proverEndpoints,
 		BlockProposalFee:                   big.NewInt(1000),
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,

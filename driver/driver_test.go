@@ -3,6 +3,7 @@ package driver
 import (
 	"context"
 	"math/big"
+	"net/url"
 	"testing"
 	"time"
 
@@ -14,15 +15,20 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
+	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
+	"github.com/taikoxyz/taiko-client/testutils/fakeprover"
 )
 
 type DriverTestSuite struct {
 	testutils.ClientSuite
-	cancel    context.CancelFunc
-	p         *proposer.Proposer
-	d         *Driver
-	rpcClient *rpc.Client
+	cancel          context.CancelFunc
+	p               *proposer.Proposer
+	d               *Driver
+	rpcClient       *rpc.Client
+	proverEndpoints []*url.URL
+	proverServer    *server.ProverServer
 }
 
 func (s *DriverTestSuite) SetupTest() {
@@ -54,7 +60,11 @@ func (s *DriverTestSuite) SetupTest() {
 	}))
 	s.d = d
 	s.cancel = cancel
-
+	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
+	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
+	s.NoError(err)
+	s.proverServer, err = fakeprover.New(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.NoError(err)
 	// Init proposer
 	p := new(proposer.Proposer)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
@@ -69,7 +79,7 @@ func (s *DriverTestSuite) SetupTest() {
 		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
-		ProverEndpoints:                    s.ProverEndpoints,
+		ProverEndpoints:                    s.proverEndpoints,
 		BlockProposalFee:                   big.NewInt(1000),
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,

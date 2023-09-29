@@ -21,10 +21,10 @@ var (
 )
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
-	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	goldenTouchAddress, err := s.rpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)
 
-	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	goldenTouchPrivKey, err := s.rpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
 	s.Nil(err)
 
 	app := s.SetupApp()
@@ -91,7 +91,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextPrivKeyErr() {
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextPropIntervalErr() {
-	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	goldenTouchPrivKey, err := s.rpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
 	s.Nil(err)
 
 	app := s.SetupApp()
@@ -104,7 +104,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextPropIntervalErr() {
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextEmptyPropoIntervalErr() {
-	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	goldenTouchPrivKey, err := s.rpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
 	s.Nil(err)
 
 	app := s.SetupApp()
@@ -118,7 +118,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextEmptyPropoIntervalErr() {
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextL2RecipErr() {
-	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	goldenTouchPrivKey, err := s.rpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
 	s.Nil(err)
 
 	app := s.SetupApp()
@@ -133,10 +133,10 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextL2RecipErr() {
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
-	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	goldenTouchAddress, err := s.rpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)
 
-	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	goldenTouchPrivKey, err := s.rpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
 	s.Nil(err)
 
 	app := s.SetupApp()
@@ -152,10 +152,10 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
-	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	goldenTouchAddress, err := s.rpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)
 
-	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	goldenTouchPrivKey, err := s.rpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
 	s.Nil(err)
 
 	app := s.SetupApp()

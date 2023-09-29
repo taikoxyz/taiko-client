@@ -12,14 +12,19 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
+	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
+	"github.com/taikoxyz/taiko-client/testutils/fakeprover"
 )
 
 type ProverSelectorTestSuite struct {
 	testutils.ClientSuite
-	s             *ETHFeeEOASelector
-	proverAddress common.Address
-	rpcClient     *rpc.Client
+	s               *ETHFeeEOASelector
+	proverAddress   common.Address
+	rpcClient       *rpc.Client
+	proverEndpoints []*url.URL
+	proverServer    *server.ProverServer
 }
 
 func (s *ProverSelectorTestSuite) SetupTest() {
@@ -42,14 +47,16 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 
 	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
-
+	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
+	s.proverServer, err = fakeprover.New(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.NoError(err)
 	s.s, err = NewETHFeeEOASelector(
 		&protocolConfigs,
 		s.rpcClient,
 		testutils.TaikoL1Address,
 		common.Big256,
 		common.Big2,
-		[]*url.URL{s.ProverEndpoints[0]},
+		[]*url.URL{s.proverEndpoints[0]},
 		32,
 		1*time.Minute,
 		1*time.Minute,

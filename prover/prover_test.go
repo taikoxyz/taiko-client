@@ -7,15 +7,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
+	"github.com/taikoxyz/taiko-client/testutils/fakeprover"
 )
 
 type ProverTestSuite struct {
@@ -56,19 +59,28 @@ func (s *ProverTestSuite) SetupTest() {
 		MinProofFee:                     common.Big1,
 		HTTPServerPort:                  uint64(port),
 	})))
-	p.srv = FakeProverServer(
-		&s.ClientSuite,
-		l1ProverPrivKey,
-		p.capacityManager,
-		proverServerUrl,
-	)
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	s.NotEmpty(jwtSecret)
+	rpcClient, err := rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         string(jwtSecret),
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
+	protocolConfigs, err := rpcClient.TaikoL1.GetConfig(nil)
+	s.NoError(err)
+	p.srv, err = fakeprover.New(&protocolConfigs, jwtSecret, rpcClient, l1ProverPrivKey, p.capacityManager, proverServerUrl)
+	s.NoError(err)
 	s.p = p
 	s.cancel = cancel
 
 	// Init driver
-	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
-	s.Nil(err)
-	s.NotEmpty(jwtSecret)
 
 	d := new(driver.Driver)
 	s.Nil(driver.InitFromConfig(context.Background(), d, &driver.Config{

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"math/big"
+	"net/url"
 	"sync"
 	"testing"
 	"time"
@@ -19,8 +20,11 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
+	"github.com/taikoxyz/taiko-client/testutils/fakeprover"
 )
 
 type ProofSubmitterTestSuite struct {
@@ -31,6 +35,8 @@ type ProofSubmitterTestSuite struct {
 	validProofCh        chan *proofProducer.ProofWithHeader
 	invalidProofCh      chan *proofProducer.ProofWithHeader
 	rpcClient           *rpc.Client
+	proverEndpoints     []*url.URL
+	proverServer        *server.ProverServer
 }
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
@@ -88,7 +94,11 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	// Init proposer
 	prop := new(proposer.Proposer)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
-
+	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
+	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
+	s.NoError(err)
+	s.proverServer, err = fakeprover.New(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.NoError(err)
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                         s.L1.WsEndpoint(),
 		L2Endpoint:                         s.L2.WsEndpoint(),
@@ -100,7 +110,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
-		ProverEndpoints:                    s.ProverEndpoints,
+		ProverEndpoints:                    s.proverEndpoints,
 		BlockProposalFee:                   big.NewInt(1000),
 		BlockProposalFeeIterations:         3,
 		BlockProposalFeeIncreasePercentage: common.Big2,

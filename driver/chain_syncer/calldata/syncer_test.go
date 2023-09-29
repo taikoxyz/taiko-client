@@ -5,7 +5,6 @@ import (
 	"math/big"
 	"math/rand"
 	"net/url"
-	"os"
 	"testing"
 	"time"
 
@@ -19,10 +18,10 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
-	"github.com/taikoxyz/taiko-client/prover"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
+	"github.com/taikoxyz/taiko-client/testutils/fakeprover"
 )
 
 type CalldataSyncerTestSuite struct {
@@ -66,8 +65,10 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
 	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
-	s.proverServer = prover.FakeProverServer(&s.ClientSuite, testutils.ProverPrivKey, capacity.New(1024), s.proverEndpoints[0])
-
+	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
+	s.NoError(err)
+	s.proverServer, err = fakeprover.New(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.NoError(err)
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                         s.L1.WsEndpoint(),
 		L2Endpoint:                         s.L2.WsEndpoint(),
@@ -166,7 +167,7 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 }
 
 func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
-	treasury := common.HexToAddress(os.Getenv("TREASURY"))
+	treasury := testutils.TreasuryAddress
 	s.NotZero(treasury.Big().Uint64())
 
 	balance, err := s.rpcClient.L2.BalanceAt(context.Background(), treasury, nil)
@@ -188,7 +189,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
 }
 
 func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
-	treasury := common.HexToAddress(os.Getenv("TREASURY"))
+	treasury := testutils.TreasuryAddress
 	s.NotZero(treasury.Big().Uint64())
 
 	balance, err := s.rpcClient.L2.BalanceAt(context.Background(), treasury, nil)
