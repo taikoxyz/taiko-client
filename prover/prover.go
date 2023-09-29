@@ -361,6 +361,8 @@ func (p *Prover) onBlockProposed(
 ) error {
 	// If there is newly generated proofs, we need to submit them as soon as possible.
 	if len(p.proofGenerationCh) > 0 {
+		log.Info("onBlockProposed early return", "proofGenerationChannelLength", len(p.proofGenerationCh))
+
 		end()
 		return nil
 	}
