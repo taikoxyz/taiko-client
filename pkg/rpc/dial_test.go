@@ -3,54 +3,53 @@ package rpc
 import (
 	"context"
 	"math/big"
-	"os"
-	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/testutils"
 )
 
-func TestDialEngineClientWithBackoff(t *testing.T) {
-	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
-
-	require.Nil(t, err)
-	require.NotEmpty(t, jwtSecret)
+func (s *RpcTestSuite) TestDialEngineClientWithBackoff() {
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	s.NotEmpty(jwtSecret)
 
 	client, err := DialEngineClientWithBackoff(
 		context.Background(),
-		os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
+		s.L2.AuthEndpoint(),
 		string(jwtSecret),
 		12*time.Second,
 		new(big.Int).SetUint64(10),
 	)
 
-	require.Nil(t, err)
+	s.NoError(err)
 
 	var result engine.ExecutableData
 	err = client.CallContext(context.Background(), &result, "engine_getPayloadV1", engine.PayloadID{})
 
-	require.Equal(t, engine.UnknownPayload.Error(), err.Error())
+	s.Equal(engine.UnknownPayload.Error(), err.Error())
+	client.Close()
 }
 
-func TestDialClientWithBackoff(t *testing.T) {
+func (s *RpcTestSuite) TestDialClientWithBackoff() {
 	client, err := DialClientWithBackoff(
 		context.Background(),
-		os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		s.L2.WsEndpoint(),
 		12*time.Second,
 		new(big.Int).SetUint64(10),
 	)
-	require.Nil(t, err)
+	s.NoError(err)
 
 	genesis, err := client.HeaderByNumber(context.Background(), common.Big0)
-	require.Nil(t, err)
+	s.NoError(err)
 
-	require.Equal(t, common.Big0.Uint64(), genesis.Number.Uint64())
+	s.Equal(common.Big0.Uint64(), genesis.Number.Uint64())
+	client.Close()
 }
 
-func TestDialClientWithBackoff_CtxError(t *testing.T) {
+func (s *RpcTestSuite) TestDialClientWithBackoff_CtxError() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	_, err := DialClientWithBackoff(
@@ -59,16 +58,16 @@ func TestDialClientWithBackoff_CtxError(t *testing.T) {
 		-1,
 		new(big.Int).SetUint64(10),
 	)
-	require.NotNil(t, err)
+	s.Error(err)
 }
 
-func TestDialEngineClientWithBackoff_CtxError(t *testing.T) {
+func (s *RpcTestSuite) TestDialEngineClientWithBackoff_CtxError() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
-	require.Nil(t, err)
-	require.NotEmpty(t, jwtSecret)
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	s.NotEmpty(jwtSecret)
 
 	_, err2 := DialEngineClientWithBackoff(
 		ctx,
@@ -77,10 +76,10 @@ func TestDialEngineClientWithBackoff_CtxError(t *testing.T) {
 		-1,
 		new(big.Int).SetUint64(10),
 	)
-	require.NotNil(t, err2)
+	s.Error(err2)
 }
 
-func TestDialEngineClient_UrlError(t *testing.T) {
+func (s *RpcTestSuite) TestDialEngineClient_UrlError() {
 	_, err := DialEngineClient(context.Background(), "invalid", "invalid")
-	require.NotNil(t, err)
+	s.Error(err)
 }

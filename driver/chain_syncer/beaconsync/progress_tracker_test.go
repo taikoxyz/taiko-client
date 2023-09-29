@@ -5,21 +5,42 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type BeaconSyncProgressTrackerTestSuite struct {
-	testutils.ClientTestSuite
-	t *SyncProgressTracker
+	testutils.ClientSuite
+	t         *SyncProgressTracker
+	rpcClient *rpc.Client
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) SetupTest() {
-	s.ClientTestSuite.SetupTest()
+	s.ClientSuite.SetupTest()
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         string(jwtSecret),
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
+	s.t = NewSyncProgressTracker(s.rpcClient.L2, 30*time.Second)
+}
 
-	s.t = NewSyncProgressTracker(s.RpcClient.L2, 30*time.Second)
+func (s *BeaconSyncProgressTrackerTestSuite) TearDownTest() {
+	s.rpcClient.Close()
+	s.ClientSuite.TearDownTest()
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestSyncProgressed() {

@@ -3,35 +3,57 @@ package anchorTxConstructor
 import (
 	"context"
 	"math/big"
-	"os"
 	"testing"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type AnchorTxConstructorTestSuite struct {
-	testutils.ClientTestSuite
-	l1Height *big.Int
-	l1Hash   common.Hash
-	c        *AnchorTxConstructor
+	testutils.ClientSuite
+	l1Height  *big.Int
+	l1Hash    common.Hash
+	c         *AnchorTxConstructor
+	rpcClient *rpc.Client
 }
 
 func (s *AnchorTxConstructorTestSuite) SetupTest() {
-	s.ClientTestSuite.SetupTest()
+	s.ClientSuite.SetupTest()
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         string(jwtSecret),
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
+
 	c, err := New(
-		s.RpcClient,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
+		s.rpcClient,
+		testutils.TaikoL1SignalService,
 	)
 	s.Nil(err)
-	head, err := s.RpcClient.L1.BlockByNumber(context.Background(), nil)
+	head, err := s.rpcClient.L1.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.l1Height = head.Number()
 	s.l1Hash = head.Hash()
 	s.c = c
+}
+
+func (s *AnchorTxConstructorTestSuite) TearDownTest() {
+	s.rpcClient.Close()
+	s.ClientSuite.TearDownTest()
 }
 
 func (s *AnchorTxConstructorTestSuite) TestGasLimit() {
@@ -45,13 +67,10 @@ func (s *AnchorTxConstructorTestSuite) TestAssembleAnchorTx() {
 }
 
 func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
-	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	goldenTouchAddress, err := s.rpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)
 
-	c, err := New(
-		s.RpcClient,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
-	)
+	c, err := New(s.rpcClient, testutils.TaikoL1SignalService)
 	s.Nil(err)
 
 	opts, err := c.transactOpts(context.Background(), common.Big1, common.Big256)

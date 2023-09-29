@@ -2,49 +2,62 @@ package rpc
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/testutils"
 )
 
-func newTestClient(t *testing.T) *Client {
-	client, err := NewClient(context.Background(), &ClientConfig{
-		L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L2EngineEndpoint:  os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
-		JwtSecret:         os.Getenv("JWT_SECRET"),
-		RetryInterval:     backoff.DefaultMaxInterval,
-	})
-
-	require.Nil(t, err)
-	require.NotNil(t, client)
-
-	return client
+type RpcTestSuite struct {
+	testutils.ClientSuite
 }
 
-func newTestClientWithTimeout(t *testing.T) *Client {
+func (s *RpcTestSuite) SetupTest() {
+	s.ClientSuite.SetupTest()
+}
+
+func (s *RpcTestSuite) TearDownTest() {
+	s.ClientSuite.TearDownTest()
+}
+
+func (s *RpcTestSuite) newTestClient() *Client {
+	cli, err := NewClient(context.Background(), &ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         testutils.JwtSecretFile,
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
+	s.NotNil(cli)
+	return cli
+}
+
+func (s *RpcTestSuite) newTestClientWithTimeout() *Client {
 	timeout := 5 * time.Second
-	client, err := NewClient(context.Background(), &ClientConfig{
-		L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L2EngineEndpoint:  os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
-		JwtSecret:         os.Getenv("JWT_SECRET"),
+	cli, err := NewClient(context.Background(), &ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         testutils.JwtSecretFile,
 		RetryInterval:     backoff.DefaultMaxInterval,
 		Timeout:           &timeout,
 	})
 
-	require.Nil(t, err)
-	require.NotNil(t, client)
+	s.NoError(err)
+	s.NotNil(cli)
 
-	return client
+	return cli
+}
+
+func TestRPCTestSuite(t *testing.T) {
+	suite.Run(t, new(RpcTestSuite))
 }

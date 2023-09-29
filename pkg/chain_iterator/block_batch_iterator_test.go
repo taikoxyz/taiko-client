@@ -6,27 +6,53 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type BlockBatchIteratorTestSuite struct {
-	testutils.ClientTestSuite
+	testutils.ClientSuite
+	rpcClient *rpc.Client
+}
+
+func (s *BlockBatchIteratorTestSuite) SetupTest() {
+	s.ClientSuite.SetupTest()
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         string(jwtSecret),
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
+}
+
+func (s *BlockBatchIteratorTestSuite) TearDownTest() {
+	s.rpcClient.Close()
+	s.ClientSuite.TearDownTest()
 }
 
 func (s *BlockBatchIteratorTestSuite) TestIter() {
 	var maxBlocksReadPerEpoch uint64 = 2
 
-	headHeight, err := s.RpcClient.L1.BlockNumber(context.Background())
+	headHeight, err := s.rpcClient.L1.BlockNumber(context.Background())
 	s.Nil(err)
 	s.Greater(headHeight, uint64(0))
 
 	lastEnd := common.Big0
 
 	iter, err := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client:                s.RpcClient.L1,
+		Client:                s.rpcClient.L1,
 		MaxBlocksReadPerEpoch: &maxBlocksReadPerEpoch,
 		StartHeight:           common.Big0,
 		EndHeight:             new(big.Int).SetUint64(headHeight),
@@ -53,14 +79,14 @@ func (s *BlockBatchIteratorTestSuite) TestIterReverse() {
 		startHeight           uint64 = 0
 	)
 
-	headHeight, err := s.RpcClient.L1.BlockNumber(context.Background())
+	headHeight, err := s.rpcClient.L1.BlockNumber(context.Background())
 	s.Nil(err)
 	s.Greater(headHeight, startHeight)
 
 	lastStart := new(big.Int).SetUint64(headHeight)
 
 	iter, err := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client:                s.RpcClient.L1,
+		Client:                s.rpcClient.L1,
 		MaxBlocksReadPerEpoch: &maxBlocksReadPerEpoch,
 		StartHeight:           new(big.Int).SetUint64(startHeight),
 		EndHeight:             new(big.Int).SetUint64(headHeight),
@@ -85,14 +111,14 @@ func (s *BlockBatchIteratorTestSuite) TestIterReverse() {
 func (s *BlockBatchIteratorTestSuite) TestIterEndFunc() {
 	var maxBlocksReadPerEpoch uint64 = 2
 
-	headHeight, err := s.RpcClient.L1.BlockNumber(context.Background())
+	headHeight, err := s.rpcClient.L1.BlockNumber(context.Background())
 	s.Nil(err)
 	s.Greater(headHeight, maxBlocksReadPerEpoch)
 
 	lastEnd := common.Big0
 
 	iter, err := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client:                s.RpcClient.L1,
+		Client:                s.rpcClient.L1,
 		MaxBlocksReadPerEpoch: &maxBlocksReadPerEpoch,
 		StartHeight:           common.Big0,
 		EndHeight:             new(big.Int).SetUint64(headHeight),
@@ -116,13 +142,13 @@ func (s *BlockBatchIteratorTestSuite) TestIterEndFunc() {
 
 func (s *BlockBatchIteratorTestSuite) TestIterCtxCancel() {
 	lastEnd := common.Big0
-	headHeight, err := s.RpcClient.L1.BlockNumber(context.Background())
+	headHeight, err := s.rpcClient.L1.BlockNumber(context.Background())
 	s.Nil(err)
 	ctx, cancel := context.WithCancel(context.Background())
 	retry := 5 * time.Second
 
 	itr, err := NewBlockBatchIterator(ctx, &BlockBatchIteratorConfig{
-		Client:                s.RpcClient.L1,
+		Client:                s.rpcClient.L1,
 		MaxBlocksReadPerEpoch: nil,
 		RetryInterval:         &retry,
 		StartHeight:           common.Big0,
@@ -154,14 +180,14 @@ func (s *BlockBatchIteratorTestSuite) TestBlockBatchIteratorConfig() {
 	s.ErrorContains(err, "invalid RPC client")
 
 	_, err2 := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client:   s.RpcClient.L1,
+		Client:   s.rpcClient.L1,
 		OnBlocks: nil,
 	})
 	s.ErrorContains(err2, "invalid callback")
 
 	lastEnd := common.Big0
 	_, err3 := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client: s.RpcClient.L1,
+		Client: s.rpcClient.L1,
 		OnBlocks: func(
 			ctx context.Context,
 			start, end *types.Header,
@@ -178,7 +204,7 @@ func (s *BlockBatchIteratorTestSuite) TestBlockBatchIteratorConfig() {
 	s.ErrorContains(err3, "invalid start height")
 
 	_, err4 := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client: s.RpcClient.L1,
+		Client: s.rpcClient.L1,
 		OnBlocks: func(
 			ctx context.Context,
 			start, end *types.Header,
@@ -196,7 +222,7 @@ func (s *BlockBatchIteratorTestSuite) TestBlockBatchIteratorConfig() {
 	s.ErrorContains(err4, "start height (2) > end height (0)")
 
 	_, err5 := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client: s.RpcClient.L1,
+		Client: s.rpcClient.L1,
 		OnBlocks: func(
 			ctx context.Context,
 			start, end *types.Header,
@@ -215,7 +241,7 @@ func (s *BlockBatchIteratorTestSuite) TestBlockBatchIteratorConfig() {
 	s.ErrorContains(err5, "missing end height")
 
 	_, err6 := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client: s.RpcClient.L1,
+		Client: s.rpcClient.L1,
 		OnBlocks: func(
 			ctx context.Context,
 			start, end *types.Header,
@@ -233,7 +259,7 @@ func (s *BlockBatchIteratorTestSuite) TestBlockBatchIteratorConfig() {
 	s.ErrorContains(err6, "failed to get start header")
 
 	_, err7 := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client: s.RpcClient.L1,
+		Client: s.rpcClient.L1,
 		OnBlocks: func(
 			ctx context.Context,
 			start, end *types.Header,

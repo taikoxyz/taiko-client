@@ -1,37 +1,52 @@
 package selector
 
 import (
+	"context"
 	"net/url"
-	"os"
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type ProverSelectorTestSuite struct {
-	testutils.ClientTestSuite
+	testutils.ClientSuite
 	s             *ETHFeeEOASelector
 	proverAddress common.Address
+	rpcClient     *rpc.Client
 }
 
 func (s *ProverSelectorTestSuite) SetupTest() {
-	s.ClientTestSuite.SetupTest()
-
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
+	s.ClientSuite.SetupTest()
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         string(jwtSecret),
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
+	l1ProverPrivKey := testutils.ProverPrivKey
 	s.proverAddress = crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey)
 
-	protocolConfigs, err := s.RpcClient.TaikoL1.GetConfig(nil)
+	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
 
 	s.s, err = NewETHFeeEOASelector(
 		&protocolConfigs,
-		s.RpcClient,
-		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		s.rpcClient,
+		testutils.TaikoL1Address,
 		common.Big256,
 		common.Big2,
 		[]*url.URL{s.ProverEndpoints[0]},
@@ -40,6 +55,11 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 		1*time.Minute,
 	)
 	s.Nil(err)
+}
+
+func (s *ProverSelectorTestSuite) TearDownTest() {
+	s.rpcClient.Close()
+	s.ClientSuite.TearDownTest()
 }
 
 func TestProverSelectorTestSuite(t *testing.T) {
