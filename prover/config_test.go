@@ -2,23 +2,17 @@ package prover
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/testutils"
 	"github.com/urfave/cli/v2"
 )
 
 var (
-	l1WsEndpoint   = os.Getenv("L1_NODE_WS_ENDPOINT")
-	l1HttpEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
-	l2WsEndpoint   = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
-	l2HttpEndpoint = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
-	taikoL1        = os.Getenv("TAIKO_L1_ADDRESS")
-	taikoL2        = os.Getenv("TAIKO_L2_ADDRESS")
-	rpcTimeout     = 5 * time.Second
-	minProofFee    = "1024"
+	rpcTimeout  = 5 * time.Second
+	minProofFee = "1024"
 )
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
@@ -26,12 +20,10 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
-		s.Equal(l1WsEndpoint, c.L1WsEndpoint)
-		s.Equal(l1HttpEndpoint, c.L1HttpEndpoint)
-		s.Equal(l2WsEndpoint, c.L2WsEndpoint)
-		s.Equal(l2HttpEndpoint, c.L2HttpEndpoint)
-		s.Equal(taikoL1, c.TaikoL1Address.String())
-		s.Equal(taikoL2, c.TaikoL2Address.String())
+		s.Equal(s.L1.HttpEndpoint(), c.L1HttpEndpoint)
+		s.Equal(s.L2.HttpEndpoint(), c.L2HttpEndpoint)
+		s.Equal(testutils.TaikoL1Address, c.TaikoL1Address.String())
+		s.Equal(testutils.TaikoL2Address, c.TaikoL2Address.String())
 		s.Equal(
 			crypto.PubkeyToAddress(s.p.cfg.L1ProverPrivKey.PublicKey),
 			crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey),
@@ -61,13 +53,13 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 
 	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext_OracleProver",
-		"--" + flags.L1WSEndpoint.Name, l1WsEndpoint,
-		"--" + flags.L1HTTPEndpoint.Name, l1HttpEndpoint,
-		"--" + flags.L2WSEndpoint.Name, l2WsEndpoint,
-		"--" + flags.L2HTTPEndpoint.Name, l2HttpEndpoint,
-		"--" + flags.TaikoL1Address.Name, taikoL1,
-		"--" + flags.TaikoL2Address.Name, taikoL2,
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.L1WSEndpoint.Name, s.L1.WsEndpoint(),
+		"--" + flags.L1HTTPEndpoint.Name, s.L1.HttpEndpoint(),
+		"--" + flags.L2WSEndpoint.Name, s.L2.WsEndpoint(),
+		"--" + flags.L2HTTPEndpoint.Name, s.L2.HttpEndpoint(),
+		"--" + flags.TaikoL1Address.Name, testutils.TaikoL1Address.Hex(),
+		"--" + flags.TaikoL2Address.Name, testutils.TaikoL2Address.Hex(),
+		"--" + flags.L1ProverPrivKey.Name, testutils.ProposerPrivateKey,
 		"--" + flags.StartingBlockID.Name, "0",
 		"--" + flags.RPCTimeout.Name, "5",
 		"--" + flags.ProveBlockTxGasLimit.Name, "100000",
@@ -78,7 +70,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"--" + flags.OracleProver.Name,
 		"--" + flags.ProveBlockTxReplacementMultiplier.Name, "3",
 		"--" + flags.ProveBlockMaxTxGasTipCap.Name, "256",
-		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.OracleProverPrivateKey.Name, testutils.ProverPrivateKey,
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.CheckProofWindowExpiredInterval.Name, "30",
 		"--" + flags.TempCapacityExpiresAt.Name, "15s",
@@ -91,13 +83,13 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"--" + flags.L1WSEndpoint.Name, l1WsEndpoint,
-		"--" + flags.L1HTTPEndpoint.Name, l1HttpEndpoint,
-		"--" + flags.L2WSEndpoint.Name, l2WsEndpoint,
-		"--" + flags.L2HTTPEndpoint.Name, l2HttpEndpoint,
-		"--" + flags.TaikoL1Address.Name, taikoL1,
-		"--" + flags.TaikoL2Address.Name, taikoL2,
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.L1WSEndpoint.Name, s.L1.WsEndpoint(),
+		"--" + flags.L1HTTPEndpoint.Name, s.L1.HttpEndpoint(),
+		"--" + flags.L2WSEndpoint.Name, s.L2.WsEndpoint(),
+		"--" + flags.L2HTTPEndpoint.Name, s.L2.HttpEndpoint(),
+		"--" + flags.TaikoL1Address.Name, testutils.TaikoL1Address.Hex(),
+		"--" + flags.TaikoL2Address.Name, testutils.TaikoL2Address.Hex(),
+		"--" + flags.L1ProverPrivKey.Name, testutils.ProposerPrivateKey,
 		"--" + flags.Dummy.Name,
 		"--" + flags.RandomDummyProofDelay.Name, "30m-1h",
 		"--" + flags.OracleProver.Name,
@@ -121,7 +113,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverKeyError() {
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.L1ProverPrivKey.Name, testutils.ProposerPrivateKey,
 		"--" + flags.OracleProver.Name,
 		"--" + flags.OracleProverPrivateKey.Name, "",
 	}), "invalid oracle private key")
@@ -132,8 +124,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayError() {
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.L1ProverPrivKey.Name, testutils.ProposerPrivateKey,
+		"--" + flags.OracleProverPrivateKey.Name, testutils.ProverPrivateKey,
 		"--" + flags.OracleProver.Name,
 		"--" + flags.RandomDummyProofDelay.Name, "130m",
 		"--" + flags.MinProofFee.Name, minProofFee,
@@ -145,8 +137,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorLower() {
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.L1ProverPrivKey.Name, testutils.ProposerPrivateKey,
+		"--" + flags.OracleProverPrivateKey.Name, testutils.ProverPrivateKey,
 		"--" + flags.OracleProver.Name,
 		"--" + flags.RandomDummyProofDelay.Name, "30x-1h",
 		"--" + flags.MinProofFee.Name, minProofFee,
@@ -158,8 +150,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorUpper() {
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.L1ProverPrivKey.Name, testutils.ProposerPrivateKey,
+		"--" + flags.OracleProverPrivateKey.Name, testutils.ProverPrivateKey,
 		"--" + flags.OracleProver.Name,
 		"--" + flags.RandomDummyProofDelay.Name, "30m-1x",
 		"--" + flags.MinProofFee.Name, minProofFee,
@@ -171,8 +163,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorOrder() {
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.L1ProverPrivKey.Name, testutils.ProposerPrivateKey,
+		"--" + flags.OracleProverPrivateKey.Name, testutils.ProverPrivateKey,
 		"--" + flags.OracleProver.Name,
 		"--" + flags.RandomDummyProofDelay.Name, "1h-30m",
 		"--" + flags.MinProofFee.Name, minProofFee,

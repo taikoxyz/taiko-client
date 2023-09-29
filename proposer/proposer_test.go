@@ -3,10 +3,10 @@ package proposer
 import (
 	"context"
 	"math/big"
-	"os"
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -14,19 +14,34 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type ProposerTestSuite struct {
-	testutils.ClientTestSuite
-	p      *Proposer
-	cancel context.CancelFunc
+	testutils.ClientSuite
+	p         *Proposer
+	cancel    context.CancelFunc
+	RpcClient *rpc.Client
 }
 
 func (s *ProposerTestSuite) SetupTest() {
-	s.ClientTestSuite.SetupTest()
-
-	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	s.ClientSuite.SetupTest()
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	s.RpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         string(jwtSecret),
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
+	l1ProposerPrivKey := testutils.ProposerPrivKey
 	s.Nil(err)
 
 	p := new(Proposer)
@@ -35,13 +50,13 @@ func (s *ProposerTestSuite) SetupTest() {
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
 	s.Nil(InitFromConfig(ctx, p, (&Config{
-		L1Endpoint:                          os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                          os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:                      common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                      common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:                   common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		L1Endpoint:                          s.L1.WsEndpoint(),
+		L2Endpoint:                          s.L2.HttpEndpoint(),
+		TaikoL1Address:                      testutils.TaikoL1Address,
+		TaikoL2Address:                      testutils.TaikoL2Address,
+		TaikoTokenAddress:                   testutils.TaikoL1TokenAddress,
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:             common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		L2SuggestedFeeRecipient:             testutils.ProposerAddress,
 		ProposeInterval:                     &proposeInterval,
 		MaxProposedTxListsPerEpoch:          1,
 		ProposeBlockTxReplacementMultiplier: 2,
@@ -54,6 +69,11 @@ func (s *ProposerTestSuite) SetupTest() {
 
 	s.p = p
 	s.cancel = cancel
+}
+
+func (s *ProposerTestSuite) TearDownTest() {
+	s.RpcClient.Close()
+	s.ClientSuite.TearDownTest()
 }
 
 func (s *ProposerTestSuite) TestName() {
@@ -71,7 +91,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 		close(sink)
 	}()
 
-	nonce, err := s.p.rpc.L2.PendingNonceAt(context.Background(), s.TestAddr)
+	nonce, err := s.p.rpc.L2.PendingNonceAt(context.Background(), testutils.ProposerAddress)
 	s.Nil(err)
 
 	gaslimit := 21000
@@ -93,7 +113,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 		Value:     common.Big1,
 	})
 
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.p.rpc.L2ChainID), s.TestAddrPrivKey)
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.p.rpc.L2ChainID), testutils.ProposerPrivKey)
 	s.Nil(err)
 	s.Nil(s.p.rpc.L2.SendTransaction(context.Background(), signedTx))
 

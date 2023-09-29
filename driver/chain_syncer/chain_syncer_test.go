@@ -3,59 +3,70 @@ package chainSyncer
 import (
 	"context"
 	"math/big"
-
-	"os"
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/driver/state"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type ChainSyncerTestSuite struct {
-	testutils.ClientTestSuite
+	testutils.ClientSuite
 	s          *L2ChainSyncer
 	snapshotID string
 	p          testutils.Proposer
+	rpcClient  *rpc.Client
 }
 
 func (s *ChainSyncerTestSuite) SetupTest() {
-	s.ClientTestSuite.SetupTest()
-
-	state, err := state.New(context.Background(), s.RpcClient)
+	s.ClientSuite.SetupTest()
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         string(jwtSecret),
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
+	state, err := state.New(context.Background(), s.rpcClient)
 	s.Nil(err)
 
 	syncer, err := New(
 		context.Background(),
-		s.RpcClient,
+		s.rpcClient,
 		state,
 		false,
 		1*time.Hour,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
+		testutils.TaikoL1SignalService,
 	)
 	s.Nil(err)
 	s.s = syncer
 
 	prop := new(proposer.Proposer)
-	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	s.Nil(err)
+	l1ProposerPrivKey := testutils.ProposerPrivKey
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
-		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                     common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:                  common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		L1Endpoint:                         s.L1.WsEndpoint(),
+		L2Endpoint:                         s.L2.WsEndpoint(),
+		TaikoL1Address:                     testutils.TaikoL1Address,
+		TaikoL2Address:                     testutils.TaikoL2Address,
+		TaikoTokenAddress:                  testutils.TaikoL1TokenAddress,
 		L1ProposerPrivKey:                  l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:            common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		L2SuggestedFeeRecipient:            testutils.ProposerAddress,
 		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
@@ -68,13 +79,18 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 	s.p = prop
 }
 
+func (s *ChainSyncerTestSuite) TearDownTest() {
+	s.rpcClient.Close()
+	s.ClientSuite.TearDownTest()
+}
+
 func (s *ChainSyncerTestSuite) TestGetInnerSyncers() {
 	s.NotNil(s.s.BeaconSyncer())
 	s.NotNil(s.s.CalldataSyncer())
 }
 
 func (s *ChainSyncerTestSuite) TestSync() {
-	head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	head, err := s.rpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Nil(s.s.Sync(head))
 }
@@ -82,19 +98,18 @@ func (s *ChainSyncerTestSuite) TestSync() {
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	s.TakeSnapshot()
 	// propose a couple blocks
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s.calldataSyncer)
+	proposer.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s.calldataSyncer)
 
 	// NOTE: need to prove the proposed blocks to be verified, writing helper function
 	// generate transactopts to interact with TaikoL1 contract with.
-	privKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
-	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.RpcClient.L1ChainID)
-	s.Nil(err)
-
-	head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	privKey := testutils.ProverPrivKey
+	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.rpcClient.L1ChainID)
 	s.Nil(err)
 
-	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
+	head, err := s.rpcClient.L1.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+
+	l2Head, err := s.rpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	log.Info("L1HeaderByNumber head", "number", head.Number)
@@ -107,7 +122,7 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 
 	// increase evm time to make blocks verifiable.
 	var result uint64
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(
+	s.Nil(s.rpcClient.L1RawRPC.CallContext(
 		context.Background(),
 		&result,
 		"evm_increaseTime",
@@ -120,10 +135,10 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	s.Nil(err)
 	s.NotNil(tx)
 
-	head2, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	head2, err := s.rpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	l2Head2, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
+	l2Head2, err := s.rpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	log.Info("L1HeaderByNumber head2", "number", head2.Number)
@@ -139,15 +154,15 @@ func TestChainSyncerTestSuite(t *testing.T) {
 
 func (s *ChainSyncerTestSuite) TakeSnapshot() {
 	// record snapshot state to revert to before changes
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &s.snapshotID, "evm_snapshot"))
+	s.Nil(s.rpcClient.L1RawRPC.CallContext(context.Background(), &s.snapshotID, "evm_snapshot"))
 }
 
 func (s *ChainSyncerTestSuite) RevertSnapshot() {
 	// revert to the snapshot state so protocol configs are unaffected
 	var revertRes bool
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", s.snapshotID))
+	s.Nil(s.rpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", s.snapshotID))
 	s.True(revertRes)
-	s.Nil(rpc.SetHead(context.Background(), s.RpcClient.L2RawRPC, common.Big0))
+	s.Nil(rpc.SetHead(context.Background(), s.rpcClient.L2RawRPC, common.Big0))
 }
 
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead() {

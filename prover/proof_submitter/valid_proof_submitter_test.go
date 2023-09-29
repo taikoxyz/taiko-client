@@ -4,48 +4,60 @@ import (
 	"bytes"
 	"context"
 	"math/big"
-	"os"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
 	"github.com/taikoxyz/taiko-client/driver/state"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type ProofSubmitterTestSuite struct {
-	testutils.ClientTestSuite
+	testutils.ClientSuite
 	validProofSubmitter *ValidProofSubmitter
 	calldataSyncer      *calldata.Syncer
 	proposer            *proposer.Proposer
 	validProofCh        chan *proofProducer.ProofWithHeader
 	invalidProofCh      chan *proofProducer.ProofWithHeader
+	rpcClient           *rpc.Client
 }
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
-	s.ClientTestSuite.SetupTest()
-
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
+	s.ClientSuite.SetupTest()
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         string(jwtSecret),
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
 
 	s.validProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
 	s.invalidProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
 
 	s.validProofSubmitter, err = NewValidProofSubmitter(
-		s.RpcClient,
+		s.rpcClient,
 		&proofProducer.DummyProofProducer{},
 		s.validProofCh,
-		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		l1ProverPrivKey,
+		testutils.TaikoL2Address,
+		testutils.ProverPrivKey,
 		&sync.Mutex{},
 		false,
 		"test",
@@ -59,34 +71,32 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.Nil(err)
 
 	// Init calldata syncer
-	testState, err := state.New(context.Background(), s.RpcClient)
+	testState, err := state.New(context.Background(), s.rpcClient)
 	s.Nil(err)
 
-	tracker := beaconsync.NewSyncProgressTracker(s.RpcClient.L2, 30*time.Second)
+	tracker := beaconsync.NewSyncProgressTracker(s.rpcClient.L2, 30*time.Second)
 
 	s.calldataSyncer, err = calldata.NewSyncer(
 		context.Background(),
-		s.RpcClient,
+		s.rpcClient,
 		testState,
 		tracker,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
+		testutils.TaikoL1SignalService,
 	)
 	s.Nil(err)
 
 	// Init proposer
 	prop := new(proposer.Proposer)
-	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	s.Nil(err)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
-		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                     common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:                  common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L1ProposerPrivKey:                  l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:            common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		L1Endpoint:                         s.L1.WsEndpoint(),
+		L2Endpoint:                         s.L2.WsEndpoint(),
+		TaikoL1Address:                     testutils.TaikoL1Address,
+		TaikoL2Address:                     testutils.TaikoL2Address,
+		TaikoTokenAddress:                  testutils.TaikoL1TokenAddress,
+		L1ProposerPrivKey:                  testutils.ProposerPrivKey,
+		L2SuggestedFeeRecipient:            testutils.ProposerAddress,
 		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
@@ -97,6 +107,11 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	})))
 
 	s.proposer = prop
+}
+
+func (s *ProofSubmitterTestSuite) TearDownTest() {
+	s.rpcClient.Close()
+	s.ClientSuite.TearDownTest()
 }
 
 func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofDeadlineExceeded() {
@@ -123,7 +138,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotF
 }
 
 func (s *ProofSubmitterTestSuite) TestValidSubmitProofs() {
-	events := testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.proposer, s.calldataSyncer)
+	events := proposer.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.proposer, s.calldataSyncer)
 
 	for _, e := range events {
 		s.Nil(s.validProofSubmitter.RequestProof(context.Background(), e))

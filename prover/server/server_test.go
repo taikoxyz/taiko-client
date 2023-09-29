@@ -6,13 +6,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-resty/resty/v2"
 	echo "github.com/labstack/echo/v4"
@@ -20,27 +18,27 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
+	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type ProverServerTestSuite struct {
-	suite.Suite
+	testutils.ClientSuite
 	ps *ProverServer
 	ws *httptest.Server // web server
 }
 
 func (s *ProverServerTestSuite) SetupTest() {
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
+	l1ProverPrivKey := testutils.ProverPrivKey
 
 	timeout := 5 * time.Second
 	rpcClient, err := rpc.NewClient(context.Background(), &rpc.ClientConfig{
-		L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L2EngineEndpoint:  os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
-		JwtSecret:         os.Getenv("JWT_SECRET"),
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         testutils.JwtSecretFile,
 		RetryInterval:     backoff.DefaultMaxInterval,
 		Timeout:           &timeout,
 	})
@@ -52,7 +50,7 @@ func (s *ProverServerTestSuite) SetupTest() {
 		minProofFee:      common.Big1,
 		maxExpiry:        24 * time.Hour,
 		capacityManager:  capacity.New(1024, 100*time.Second),
-		taikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		taikoL1Address:   testutils.TaikoL1Address,
 		rpc:              rpcClient,
 		bond:             common.Big0,
 		isOracle:         false,
@@ -104,6 +102,7 @@ func (s *ProverServerTestSuite) TestStartShutdown() {
 
 func (s *ProverServerTestSuite) TearDownTest() {
 	s.ws.Close()
+	s.ClientSuite.TearDownTest()
 }
 
 func TestProverServerTestSuite(t *testing.T) {

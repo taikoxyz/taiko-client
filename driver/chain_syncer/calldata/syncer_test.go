@@ -8,52 +8,65 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type CalldataSyncerTestSuite struct {
-	testutils.ClientTestSuite
-	s *Syncer
-	p testutils.Proposer
+	testutils.ClientSuite
+	s         *Syncer
+	p         testutils.Proposer
+	rpcClient *rpc.Client
 }
 
 func (s *CalldataSyncerTestSuite) SetupTest() {
-	s.ClientTestSuite.SetupTest()
-
-	state, err := state.New(context.Background(), s.RpcClient)
+	s.ClientSuite.SetupTest()
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         string(jwtSecret),
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
+	state, err := state.New(context.Background(), s.rpcClient)
 	s.Nil(err)
 
 	syncer, err := NewSyncer(
 		context.Background(),
-		s.RpcClient,
+		s.rpcClient,
 		state,
-		beaconsync.NewSyncProgressTracker(s.RpcClient.L2, 1*time.Hour),
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
+		beaconsync.NewSyncProgressTracker(s.rpcClient.L2, 1*time.Hour),
+		testutils.TaikoL1SignalService,
 	)
 	s.Nil(err)
 	s.s = syncer
 
 	prop := new(proposer.Proposer)
-	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	s.Nil(err)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
-		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                     common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:                  common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L1ProposerPrivKey:                  l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:            common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		L1Endpoint:                         s.L1.WsEndpoint(),
+		L2Endpoint:                         s.L2.WsEndpoint(),
+		TaikoL1Address:                     testutils.TaikoL1Address,
+		TaikoL2Address:                     testutils.TaikoL2Address,
+		TaikoTokenAddress:                  testutils.TaikoL1TokenAddress,
+		L1ProposerPrivKey:                  testutils.ProposerPrivKey,
+		L2SuggestedFeeRecipient:            testutils.ProposerAddress,
 		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
@@ -65,15 +78,21 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 
 	s.p = prop
 }
+
+func (s *CalldataSyncerTestSuite) TearDownTest() {
+	s.rpcClient.Close()
+	s.ClientSuite.TearDownTest()
+}
+
 func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	syncer, err := NewSyncer(
 		ctx,
-		s.RpcClient,
+		s.rpcClient,
 		s.s.state,
 		s.s.progressTracker,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
+		testutils.TaikoL1SignalService,
 	)
 	s.Nil(syncer)
 	s.NotNil(err)
@@ -87,7 +106,7 @@ func (s *CalldataSyncerTestSuite) TestProcessL1Blocks() {
 
 func (s *CalldataSyncerTestSuite) TestProcessL1BlocksReorg() {
 	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
+	proposer.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s)
 	s.Nil(err)
 	s.Nil(s.s.ProcessL1Blocks(context.Background(), head))
 }
@@ -141,18 +160,18 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())
 
-	balance, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
+	balance, err := s.rpcClient.L2.BalanceAt(context.Background(), treasury, nil)
 	s.Nil(err)
 
-	headBefore, err := s.RpcClient.L2.BlockNumber(context.Background())
+	headBefore, err := s.rpcClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
+	proposer.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s)
 
-	headAfter, err := s.RpcClient.L2.BlockNumber(context.Background())
+	headAfter, err := s.rpcClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
-	balanceAfter, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
+	balanceAfter, err := s.rpcClient.L2.BalanceAt(context.Background(), treasury, nil)
 	s.Nil(err)
 
 	s.Greater(headAfter, headBefore)
@@ -163,19 +182,19 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())
 
-	balance, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
+	balance, err := s.rpcClient.L2.BalanceAt(context.Background(), treasury, nil)
 	s.Nil(err)
 
-	headBefore, err := s.RpcClient.L2.BlockNumber(context.Background())
+	headBefore, err := s.rpcClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.s)
+	proposer.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s)
+	proposer.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.s)
 
-	headAfter, err := s.RpcClient.L2.BlockNumber(context.Background())
+	headAfter, err := s.rpcClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
-	balanceAfter, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
+	balanceAfter, err := s.rpcClient.L2.BalanceAt(context.Background(), treasury, nil)
 	s.Nil(err)
 
 	s.Greater(headAfter, headBefore)
@@ -183,7 +202,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 
 	var hasNoneAnchorTxs bool
 	for i := headBefore + 1; i <= headAfter; i++ {
-		block, err := s.RpcClient.L2.BlockByNumber(context.Background(), new(big.Int).SetUint64(i))
+		block, err := s.rpcClient.L2.BlockByNumber(context.Background(), new(big.Int).SetUint64(i))
 		s.Nil(err)
 		s.GreaterOrEqual(block.Transactions().Len(), 1)
 		s.Greater(block.BaseFee().Uint64(), uint64(0))
@@ -194,7 +213,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 			}
 
 			hasNoneAnchorTxs = true
-			receipt, err := s.RpcClient.L2.TransactionReceipt(context.Background(), tx.Hash())
+			receipt, err := s.rpcClient.L2.TransactionReceipt(context.Background(), tx.Hash())
 			s.Nil(err)
 
 			fee := new(big.Int).Mul(block.BaseFee(), new(big.Int).SetUint64(receipt.GasUsed))

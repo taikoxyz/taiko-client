@@ -3,43 +3,53 @@ package driver
 import (
 	"context"
 	"math/big"
-	"os"
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type DriverTestSuite struct {
-	testutils.ClientTestSuite
-	cancel context.CancelFunc
-	p      *proposer.Proposer
-	d      *Driver
+	testutils.ClientSuite
+	cancel    context.CancelFunc
+	p         *proposer.Proposer
+	d         *Driver
+	rpcClient *rpc.Client
 }
 
 func (s *DriverTestSuite) SetupTest() {
-	s.ClientTestSuite.SetupTest()
-
+	s.ClientSuite.SetupTest()
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         string(jwtSecret),
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
 	// Init driver
-	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
-	s.Nil(err)
-	s.NotEmpty(jwtSecret)
 
 	d := new(Driver)
 	ctx, cancel := context.WithCancel(context.Background())
 	s.Nil(InitFromConfig(ctx, d, &Config{
-		L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2EngineEndpoint: os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
-		TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1Endpoint:       s.L1.WsEndpoint(),
+		L2Endpoint:       s.L2.WsEndpoint(),
+		L2EngineEndpoint: s.L2.AuthEndpoint(),
+		TaikoL1Address:   testutils.TaikoL1Address,
+		TaikoL2Address:   testutils.TaikoL2Address,
 		JwtSecret:        string(jwtSecret),
 	}))
 	s.d = d
@@ -47,19 +57,15 @@ func (s *DriverTestSuite) SetupTest() {
 
 	// Init proposer
 	p := new(proposer.Proposer)
-
-	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	s.Nil(err)
-
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(proposer.InitFromConfig(context.Background(), p, (&proposer.Config{
-		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                     common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:                  common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L1ProposerPrivKey:                  l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:            common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		L1Endpoint:                         s.L1.WsEndpoint(),
+		L2Endpoint:                         s.L2.WsEndpoint(),
+		TaikoL1Address:                     testutils.TaikoL1Address,
+		TaikoL2Address:                     testutils.TaikoL2Address,
+		TaikoTokenAddress:                  testutils.TaikoL1TokenAddress,
+		L1ProposerPrivKey:                  testutils.ProposerPrivKey,
+		L2SuggestedFeeRecipient:            testutils.L2SuggestedFeeRecipient,
 		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
@@ -69,6 +75,11 @@ func (s *DriverTestSuite) SetupTest() {
 		BlockProposalFeeIncreasePercentage: common.Big2,
 	})))
 	s.p = p
+}
+
+func (s *DriverTestSuite) TearDownTest() {
+	s.rpcClient.Close()
+	s.ClientSuite.TearDownTest()
 }
 
 func (s *DriverTestSuite) TestName() {
@@ -85,7 +96,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head1))
 
 	// Propose a valid L2 block
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	proposer.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l2Head2, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -93,7 +104,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 
 	// Empty blocks
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	proposer.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(err)
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
@@ -120,7 +131,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 
 func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	var testnetL1SnapshotID string
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
+	s.Nil(s.rpcClient.L1RawRPC.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(testnetL1SnapshotID)
 
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -129,8 +140,8 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	proposer.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	proposer.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -139,13 +150,13 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
 
-	reorged, _, _, err := s.RpcClient.CheckL1ReorgFromL2EE(context.Background(), l2Head2.Number)
+	reorged, _, _, err := s.rpcClient.CheckL1ReorgFromL2EE(context.Background(), l2Head2.Number)
 	s.Nil(err)
 	s.False(reorged)
 
 	// Reorg back to l2Head1
 	var revertRes bool
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
+	s.Nil(s.rpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
 	s.True(revertRes)
 
 	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -155,7 +166,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 	// Propose ten blocks on another fork
 	for i := 0; i < 10; i++ {
-		testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+		proposer.ProposeInvalidTxListBytes(&s.ClientSuite, s.p)
 	}
 
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -178,7 +189,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	var testnetL1SnapshotID string
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
+	s.Nil(s.rpcClient.L1RawRPC.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(testnetL1SnapshotID)
 
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -187,9 +198,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	proposer.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 	time.Sleep(3 * time.Second)
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	proposer.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -198,13 +209,13 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
 
-	reorged, _, _, err := s.RpcClient.CheckL1ReorgFromL2EE(context.Background(), l2Head2.Number)
+	reorged, _, _, err := s.rpcClient.CheckL1ReorgFromL2EE(context.Background(), l2Head2.Number)
 	s.Nil(err)
 	s.False(reorged)
 
 	// Reorg back to l2Head1
 	var revertRes bool
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
+	s.Nil(s.rpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
 	s.True(revertRes)
 
 	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -213,7 +224,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
 	// Propose one blocks on another fork
-	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+	proposer.ProposeInvalidTxListBytes(&s.ClientSuite, s.p)
 
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -234,7 +245,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 
 func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	var testnetL1SnapshotID string
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
+	s.Nil(s.rpcClient.L1RawRPC.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(testnetL1SnapshotID)
 
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -243,9 +254,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	proposer.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 	time.Sleep(3 * time.Second)
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	proposer.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -254,13 +265,13 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
 
-	reorged, _, _, err := s.RpcClient.CheckL1ReorgFromL2EE(context.Background(), l2Head2.Number)
+	reorged, _, _, err := s.rpcClient.CheckL1ReorgFromL2EE(context.Background(), l2Head2.Number)
 	s.Nil(err)
 	s.False(reorged)
 
 	// Reorg back to l2Head1
 	var revertRes bool
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
+	s.Nil(s.rpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
 	s.True(revertRes)
 
 	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -269,9 +280,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
 	// Propose two blocks on another fork
-	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+	proposer.ProposeInvalidTxListBytes(&s.ClientSuite, s.p)
 	time.Sleep(3 * time.Second)
-	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+	proposer.ProposeInvalidTxListBytes(&s.ClientSuite, s.p)
 
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -303,7 +314,7 @@ func (s *DriverTestSuite) TestStartClose() {
 
 func (s *DriverTestSuite) TestL1Current() {
 	// propose and insert a block
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	proposer.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 	// reset L1 current with increased height
 	_, id, err := s.d.state.ResetL1Current(s.d.ctx, &state.HeightOrID{ID: common.Big1})
 	s.Equal(common.Big1, id)

@@ -2,33 +2,26 @@ package driver
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/testutils"
 	"github.com/urfave/cli/v2"
 )
 
-var (
-	l1Endpoint       = os.Getenv("L1_NODE_WS_ENDPOINT")
-	l2Endpoint       = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
-	l2EngineEndpoint = os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
-	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
-	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
-	rpcTimeout       = 5 * time.Second
-)
+var rpcTimeout = 5 * time.Second
 
 func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 	app := s.SetupApp()
 
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
-		s.Nil(err)
-		s.Equal(l1Endpoint, c.L1Endpoint)
-		s.Equal(l2Endpoint, c.L2Endpoint)
-		s.Equal(l2EngineEndpoint, c.L2EngineEndpoint)
-		s.Equal(taikoL1, c.TaikoL1Address.String())
-		s.Equal(taikoL2, c.TaikoL2Address.String())
+		s.NoError(err)
+		s.Equal(s.L1.WsEndpoint(), c.L1Endpoint)
+		s.Equal(s.L1.WsEndpoint(), c.L2Endpoint)
+		s.Equal(s.L2.AuthEndpoint(), c.L2EngineEndpoint)
+		s.Equal(testutils.TaikoL1Address, c.TaikoL1Address.String())
+		s.Equal(testutils.TaikoL2Address, c.TaikoL2Address.String())
 		s.Equal(120*time.Second, c.P2PSyncTimeout)
 		s.Equal(rpcTimeout, *c.RPCTimeout)
 		s.NotEmpty(c.JwtSecret)
@@ -41,12 +34,12 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 
 	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"--" + flags.L1WSEndpoint.Name, l1Endpoint,
-		"--" + flags.L2WSEndpoint.Name, l2Endpoint,
-		"--" + flags.L2AuthEndpoint.Name, l2EngineEndpoint,
-		"--" + flags.TaikoL1Address.Name, taikoL1,
-		"--" + flags.TaikoL2Address.Name, taikoL2,
-		"--" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
+		"--" + flags.L1WSEndpoint.Name, s.L1.WsEndpoint(),
+		"--" + flags.L2WSEndpoint.Name, s.L2.WsEndpoint(),
+		"--" + flags.L2AuthEndpoint.Name, s.L2.AuthEndpoint(),
+		"--" + flags.TaikoL1Address.Name, testutils.TaikoL1Address.Hex(),
+		"--" + flags.TaikoL2Address.Name, testutils.TaikoL2Address.Hex(),
+		"--" + flags.JWTSecret.Name, testutils.JwtSecretFile,
 		"--" + flags.P2PSyncTimeout.Name, "120",
 		"--" + flags.RPCTimeout.Name, "5",
 		"--" + flags.P2PSyncVerifiedBlocks.Name,
@@ -66,7 +59,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContextEmptyL2CheckPoint() {
 	app := s.SetupApp()
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"--" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
+		"--" + flags.JWTSecret.Name, testutils.JwtSecretFile,
 		"--" + flags.P2PSyncVerifiedBlocks.Name,
 		"--" + flags.L2WSEndpoint.Name, "",
 	}), "empty L2 check point URL")

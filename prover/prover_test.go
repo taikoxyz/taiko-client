@@ -2,26 +2,35 @@ package prover
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"errors"
+	"fmt"
+	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
+	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type ProverTestSuite struct {
-	testutils.ClientTestSuite
+	testutils.ClientSuite
 	p        *Prover
 	cancel   context.CancelFunc
 	d        *driver.Driver
@@ -29,11 +38,10 @@ type ProverTestSuite struct {
 }
 
 func (s *ProverTestSuite) SetupTest() {
-	s.ClientTestSuite.SetupTest()
+	s.ClientSuite.SetupTest()
 
 	// Init prover
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
+	l1ProverPrivKey := testutils.ProverPrivKey
 
 	proverServerUrl := testutils.LocalRandomProverEndpoint()
 	port, err := strconv.Atoi(proverServerUrl.Port())
@@ -42,12 +50,12 @@ func (s *ProverTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
 	s.Nil(InitFromConfig(ctx, p, (&Config{
-		L1WsEndpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L1HttpEndpoint:                  os.Getenv("L1_NODE_HTTP_ENDPOINT"),
-		L2WsEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2HttpEndpoint:                  os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:                  common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                  common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1WsEndpoint:                    s.L1.WsEndpoint(),
+		L1HttpEndpoint:                  s.L1.HttpEndpoint(),
+		L2WsEndpoint:                    s.L2.WsEndpoint(),
+		L2HttpEndpoint:                  s.L2.HttpEndpoint(),
+		TaikoL1Address:                  testutils.TaikoL1Address,
+		TaikoL2Address:                  testutils.TaikoL2Address,
 		L1ProverPrivKey:                 l1ProverPrivKey,
 		OracleProverPrivateKey:          l1ProverPrivKey,
 		OracleProver:                    false,
@@ -59,8 +67,8 @@ func (s *ProverTestSuite) SetupTest() {
 		MinProofFee:                     common.Big1,
 		HTTPServerPort:                  uint64(port),
 	})))
-	p.srv = testutils.NewTestProverServer(
-		&s.ClientTestSuite,
+	p.srv = FakeProverServer(
+		&s.ClientSuite,
 		l1ProverPrivKey,
 		p.capacityManager,
 		proverServerUrl,
@@ -69,36 +77,36 @@ func (s *ProverTestSuite) SetupTest() {
 	s.cancel = cancel
 
 	// Init driver
-	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
 	s.Nil(err)
 	s.NotEmpty(jwtSecret)
 
 	d := new(driver.Driver)
 	s.Nil(driver.InitFromConfig(context.Background(), d, &driver.Config{
-		L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2EngineEndpoint: os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
-		TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1Endpoint:       s.L1.WsEndpoint(),
+		L2Endpoint:       s.L2.WsEndpoint(),
+		L2EngineEndpoint: s.L2.AuthEndpoint(),
+		TaikoL1Address:   testutils.TaikoL1Address,
+		TaikoL2Address:   testutils.TaikoL2Address,
 		JwtSecret:        string(jwtSecret),
 	}))
 	s.d = d
 
 	// Init proposer
-	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	l1ProposerPrivKey := testutils.ProposerPrivKey
 	s.Nil(err)
 
 	prop := new(proposer.Proposer)
 
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
-		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                     common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:                  common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		L1Endpoint:                         s.L1.WsEndpoint(),
+		L2Endpoint:                         s.L2.WsEndpoint(),
+		TaikoL1Address:                     testutils.TaikoL1Address,
+		TaikoL2Address:                     testutils.TaikoL2Address,
+		TaikoTokenAddress:                  testutils.TaikoL1TokenAddress,
 		L1ProposerPrivKey:                  l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:            common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		L2SuggestedFeeRecipient:            testutils.ProposerAddress,
 		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
@@ -118,18 +126,17 @@ func (s *ProverTestSuite) TestName() {
 func (s *ProverTestSuite) TestInitError() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
+	l1ProverPrivKey := testutils.ProverPrivKey
 
 	p := new(Prover)
 	// Error should be "context canceled", instead is "Dial ethclient error:"
 	s.ErrorContains(InitFromConfig(ctx, p, (&Config{
-		L1WsEndpoint:                      os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L1HttpEndpoint:                    os.Getenv("L1_NODE_HTTP_ENDPOINT"),
-		L2WsEndpoint:                      os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2HttpEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:                    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		L1WsEndpoint:                      s.L1.WsEndpoint(),
+		L1HttpEndpoint:                    s.L1.HttpEndpoint(),
+		L2WsEndpoint:                      s.L2.WsEndpoint(),
+		L2HttpEndpoint:                   s.L2.HttpEndpoint(),
+		TaikoL1Address:                    testutils.TaikoL1Address,
+		TaikoL2Address:                    testutils.TaikoL2Address,
 		L1ProverPrivKey:                   l1ProverPrivKey,
 		OracleProverPrivateKey:            l1ProverPrivKey,
 		Dummy:                             true,
@@ -143,17 +150,16 @@ func (s *ProverTestSuite) TestInitError() {
 func (s *ProverTestSuite) TestOnBlockProposed() {
 	s.p.cfg.OracleProver = true
 	// Init prover
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
+	l1ProverPrivKey := testutils.ProverPrivKey
 	s.p.cfg.OracleProverPrivateKey = l1ProverPrivKey
 	// Valid block
-	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	e := proposer.ProposeAndInsertValidBlock(&s.ClientSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.validProofSubmitter.SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	// Empty blocks
-	for _, e = range testutils.ProposeAndInsertEmptyBlocks(
-		&s.ClientTestSuite,
+	for _, e = range proposer.ProposeAndInsertEmptyBlocks(
+		&s.ClientSuite,
 		s.proposer,
 		s.d.ChainSyncer().CalldataSyncer(),
 	) {
@@ -166,7 +172,8 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 	s.Nil(s.p.onBlockVerified(context.Background(), &bindings.TaikoL1ClientBlockVerified{
 		BlockId:   common.Big1,
-		BlockHash: common.Hash{}},
+		BlockHash: common.Hash{},
+	},
 	))
 }
 
@@ -202,4 +209,65 @@ func (s *ProverTestSuite) TestCheckChainVerification() {
 
 func TestProverTestSuite(t *testing.T) {
 	suite.Run(t, new(ProverTestSuite))
+}
+
+// FakeProverServer starts a new prover server that has channel listeners to respond and react
+// to requests for capacity, which provers can call.
+func FakeProverServer(
+	s *testutils.ClientSuite,
+	proverPrivKey *ecdsa.PrivateKey,
+	capacityManager *capacity.CapacityManager,
+	url *url.URL,
+) *server.ProverServer {
+	cli, err := ethclient.Dial(s.L1.WsEndpoint())
+	s.NoError(err)
+	taikoL1, err := bindings.NewTaikoL1Client(testutils.TaikoL1Address, cli)
+	s.NoError(err)
+	protocolConfig, err := taikoL1.GetConfig(nil)
+	s.Nil(err)
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.NoError(err)
+	rpcClient, err := rpc.NewClient(context.Background(), &rpc.ClientConfig{
+		L1Endpoint:        s.L1.WsEndpoint(),
+		L2Endpoint:        s.L2.WsEndpoint(),
+		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL2Address:    testutils.TaikoL2Address,
+		L2EngineEndpoint:  s.L2.AuthEndpoint(),
+		JwtSecret:         string(jwtSecret),
+		RetryInterval:     backoff.DefaultMaxInterval,
+	})
+	s.NoError(err)
+	srv, err := server.New(&server.NewProverServerOpts{
+		ProverPrivateKey: proverPrivKey,
+		MinProofFee:      common.Big1,
+		MaxExpiry:        24 * time.Hour,
+		CapacityManager:  capacityManager,
+		TaikoL1Address:   testutils.TaikoL1Address,
+		Rpc:              rpcClient,
+		Bond:             protocolConfig.ProofBond,
+		IsOracle:         true,
+	})
+	s.NoError(err)
+
+	go func() {
+		if err := srv.Start(fmt.Sprintf(":%v", url.Port())); !errors.Is(err, http.ErrServerClosed) {
+			log.Error("Failed to start prover server", "error", err)
+		}
+	}()
+
+	// Wait till the server fully started.
+	s.Nil(backoff.Retry(func() error {
+		res, err := resty.New().R().Get(url.String() + "/healthz")
+		if err != nil {
+			return err
+		}
+		if !res.IsSuccess() {
+			return fmt.Errorf("invalid response status code: %d", res.StatusCode())
+		}
+
+		return nil
+	}, backoff.NewExponentialBackOff()))
+
+	return srv
 }

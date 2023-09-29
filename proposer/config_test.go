@@ -3,23 +3,18 @@ package proposer
 import (
 	"context"
 	"math/big"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/testutils"
 	"github.com/urfave/cli/v2"
 )
 
 var (
-	l1Endpoint       = os.Getenv("L1_NODE_WS_ENDPOINT")
-	l2Endpoint       = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 	proverEndpoints  = "http://localhost:9876,http://localhost:1234"
-	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
-	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
-	taikoToken       = os.Getenv("TAIKO_TOKEN_ADDRESS")
 	blockProposalFee = "10000000000"
 	proposeInterval  = "10s"
 	rpcTimeout       = 5 * time.Second
@@ -37,11 +32,10 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
-		s.Equal(l1Endpoint, c.L1Endpoint)
-		s.Equal(l2Endpoint, c.L2Endpoint)
-		s.Equal(taikoL1, c.TaikoL1Address.String())
-		s.Equal(taikoL2, c.TaikoL2Address.String())
-		s.Equal(taikoToken, c.TaikoTokenAddress.String())
+		s.Equal(s.L2.HttpEndpoint(), c.L2Endpoint)
+		s.Equal(testutils.TaikoL1Address, c.TaikoL1Address.String())
+		s.Equal(testutils.TaikoL2Address, c.TaikoL2Address.String())
+		s.Equal(testutils.TaikoL1TokenAddress, c.TaikoTokenAddress.String())
 		s.Equal(goldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
 		s.Equal(goldenTouchAddress, c.L2SuggestedFeeRecipient)
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
@@ -66,11 +60,11 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 
 	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"--" + flags.L1WSEndpoint.Name, l1Endpoint,
-		"--" + flags.L2HTTPEndpoint.Name, l2Endpoint,
-		"--" + flags.TaikoL1Address.Name, taikoL1,
-		"--" + flags.TaikoL2Address.Name, taikoL2,
-		"--" + flags.TaikoTokenAddress.Name, taikoToken,
+		"--" + flags.L1WSEndpoint.Name, s.L1.WsEndpoint(),
+		"--" + flags.L2HTTPEndpoint.Name, s.L2.HttpEndpoint(),
+		"--" + flags.TaikoL1Address.Name, testutils.TaikoL1Address.Hex(),
+		"--" + flags.TaikoL2Address.Name, testutils.TaikoL2Address.Hex(),
+		"--" + flags.TaikoTokenAddress.Name, testutils.TaikoL1TokenAddress.Hex(),
 		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
 		"--" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"--" + flags.ProposeInterval.Name, proposeInterval,
