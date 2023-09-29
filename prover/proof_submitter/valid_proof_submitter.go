@@ -177,7 +177,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 	log.Info(
 		"New valid block proof",
 		"blockID", proofWithHeader.BlockID,
-		"proposer", proofWithHeader.Meta.Proposer,
+		"proposer", proofWithHeader.Meta.Coinbase,
 		"hash", proofWithHeader.Header.Hash(),
 		"proof", common.Bytes2Hex(proofWithHeader.ZkProof),
 		"graffiti", common.Bytes2Hex(s.graffiti[:]),
@@ -221,34 +221,23 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
-	evidence := &encoding.TaikoL1Evidence{
+	evidence := &encoding.BlockEvidence{
 		MetaHash:   proofWithHeader.Opts.MetaHash,
 		ParentHash: proofWithHeader.Opts.ParentHash,
 		BlockHash:  proofWithHeader.Opts.BlockHash,
 		SignalRoot: proofWithHeader.Opts.SignalRoot,
 		Graffiti:   s.graffiti,
+		Tier:       0, // TODO: update tier
 		Proofs:     zkProof,
 	}
 
-	var circuitsIdx uint16
-	var prover common.Address
-
-	if s.isOracleProver {
-		prover = encoding.OracleProverAddress
-
-		circuitsIdx = uint16(0)
-	} else {
-		prover = s.proverAddress
-
-		circuitsIdx, err = proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
-		if err != nil {
-			return err
-		}
+	circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
+	if err != nil {
+		return err
 	}
 	evidence.Proofs = append(uint16ToBytes(circuitsIdx), evidence.Proofs...)
-	evidence.Prover = prover
 
-	input, err := encoding.EncodeProveBlockInput(evidence)
+	input, err := encoding.EncodeEvidence(evidence)
 	if err != nil {
 		return fmt.Errorf("failed to encode TaikoL1.proveBlock inputs: %w", err)
 	}

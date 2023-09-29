@@ -560,3 +560,31 @@ func (c *Client) IsJustSyncedByP2P(ctx context.Context) (bool, error) {
 
 	return false, nil
 }
+
+// TierProviderTierWithID wraps protocol ITierProviderTier struct with an ID.
+type TierProviderTierWithID struct {
+	ID uint16
+	bindings.ITierProviderTier
+}
+
+// GetTiers fetches all protocol supported tiers.
+func (c *Client) GetTiers(ctx context.Context) ([]*TierProviderTierWithID, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	ids, err := c.TaikoL1.GetTierIds(&bind.CallOpts{Context: ctxWithTimeout})
+	if err != nil {
+		return nil, err
+	}
+
+	var tiers []*TierProviderTierWithID
+	for _, id := range ids {
+		tier, err := c.TaikoL1.GetTier(&bind.CallOpts{Context: ctxWithTimeout}, id)
+		if err != nil {
+			return nil, err
+		}
+		tiers = append(tiers, &TierProviderTierWithID{ID: id, ITierProviderTier: tier})
+	}
+
+	return tiers, nil
+}
