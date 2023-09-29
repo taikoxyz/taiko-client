@@ -24,8 +24,8 @@ import (
 
 type ProverServerTestSuite struct {
 	suite.Suite
-	ps *ProverServer
-	ws *httptest.Server // web server
+	s          *ProverServer
+	testServer *httptest.Server
 }
 
 func (s *ProverServerTestSuite) SetupTest() {
@@ -61,8 +61,8 @@ func (s *ProverServerTestSuite) SetupTest() {
 	p.echo.HideBanner = true
 	p.configureMiddleware()
 	p.configureRoutes()
-	s.ps = p
-	s.ws = httptest.NewServer(p.echo)
+	s.s = p
+	s.testServer = httptest.NewServer(p.echo)
 }
 
 func (s *ProverServerTestSuite) TestHealth() {
@@ -81,7 +81,7 @@ func (s *ProverServerTestSuite) TestStartShutdown() {
 	s.Nil(err)
 
 	go func() {
-		if err := s.ps.Start(fmt.Sprintf(":%v", port)); err != nil {
+		if err := s.s.Start(fmt.Sprintf(":%v", port)); err != nil {
 			log.Error("Failed to start prover server", "error", err)
 		}
 	}()
@@ -99,11 +99,11 @@ func (s *ProverServerTestSuite) TestStartShutdown() {
 		return nil
 	}, backoff.NewExponentialBackOff()))
 
-	s.Nil(s.ps.Shutdown(context.Background()))
+	s.Nil(s.s.Shutdown(context.Background()))
 }
 
 func (s *ProverServerTestSuite) TearDownTest() {
-	s.ws.Close()
+	s.testServer.Close()
 }
 
 func TestProverServerTestSuite(t *testing.T) {
@@ -111,7 +111,7 @@ func TestProverServerTestSuite(t *testing.T) {
 }
 
 func (s *ProverServerTestSuite) sendReq(path string) *http.Response {
-	resp, err := http.Get(s.ws.URL + path)
+	res, err := http.Get(s.testServer.URL + path)
 	s.Nil(err)
-	return resp
+	return res
 }

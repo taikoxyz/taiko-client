@@ -13,18 +13,18 @@ import (
 )
 
 func (s *ProverServerTestSuite) TestGetStatusSuccess() {
-	resp := s.sendReq("/status")
-	s.Equal(http.StatusOK, resp.StatusCode)
+	res := s.sendReq("/status")
+	s.Equal(http.StatusOK, res.StatusCode)
 
 	status := new(Status)
 
-	defer resp.Body.Close()
-	b, err := io.ReadAll(resp.Body)
+	defer res.Body.Close()
+	b, err := io.ReadAll(res.Body)
 	s.Nil(err)
 	s.Nil(json.Unmarshal(b, &status))
 
-	s.Equal(s.ps.minProofFee.Uint64(), status.MinProofFee)
-	s.Equal(uint64(s.ps.maxExpiry.Seconds()), status.MaxExpiry)
+	s.Equal(s.s.minProofFee.Uint64(), status.MinProofFee)
+	s.Equal(uint64(s.s.maxExpiry.Seconds()), status.MaxExpiry)
 	s.Greater(status.CurrentCapacity, uint64(0))
 }
 
@@ -36,11 +36,11 @@ func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
 		TxListHash: common.BigToHash(common.Big1),
 	})
 	s.Nil(err)
-	resp, err := http.Post(s.ws.URL+"/assignment", "application/json", strings.NewReader(string(data)))
+	res, err := http.Post(s.testServer.URL+"/assignment", "application/json", strings.NewReader(string(data)))
 	s.Nil(err)
-	s.Equal(http.StatusOK, resp.StatusCode)
-	defer resp.Body.Close()
-	b, err := io.ReadAll(resp.Body)
+	s.Equal(http.StatusOK, res.StatusCode)
+	defer res.Body.Close()
+	b, err := io.ReadAll(res.Body)
 	s.Nil(err)
 	s.Contains(string(b), "signedPayload")
 }
