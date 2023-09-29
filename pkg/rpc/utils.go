@@ -189,7 +189,7 @@ func NeedNewProof(
 		"📬 Block's proof has already been submitted by another prover",
 		"blockID", id,
 		"prover", transition.Prover,
-		"provenAt", transition.ProvenAt,
+		"timestamp", transition.Timestamp,
 	)
 
 	return false, nil

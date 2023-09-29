@@ -63,14 +63,14 @@ func (s *State) ResetL1Current(
 
 		iter, err := eventIterator.NewBlockProvenIterator(
 			ctx,
-			&eventIterator.BlockProvenIteratorConfig{
+			&eventIterator.TransitionProvenIteratorConfig{
 				Client:      s.rpc.L1,
 				TaikoL1:     s.rpc.TaikoL1,
 				StartHeight: s.GenesisL1Height,
 				EndHeight:   s.GetL1Head().Number,
 				FilterQuery: []*big.Int{},
 				Reverse:     true,
-				OnBlockProvenEvent: func(
+				OnTransitionProved: func(
 					ctx context.Context,
 					e *bindings.TaikoL1ClientBlockProven,
 					end eventIterator.EndBlockProvenEventIterFunc,

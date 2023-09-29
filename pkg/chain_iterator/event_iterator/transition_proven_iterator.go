@@ -12,16 +12,20 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-// EndBlockProvenEventIterFunc ends the current iteration.
-type EndBlockProvenEventIterFunc func()
+// EndTransitionProvedEventIterFunc ends the current iteration.
+type EndTransitionProvedEventIterFunc func()
 
-// OnBlockProvenEvent represents the callback function which will be called when a TaikoL1.BlockProven event is
+// OnTransitionProved represents the callback function which will be called when a TaikoL1.TransitionProved event is
 // iterated.
-type OnBlockProvenEvent func(context.Context, *bindings.TaikoL1ClientBlockProven, EndBlockProvenEventIterFunc) error
+type OnTransitionProved func(
+	context.Context,
+	*bindings.TaikoL1ClientTransitionProved,
+	EndTransitionProvedEventIterFunc,
+) error
 
-// BlockProvenIterator iterates the emitted TaikoL1.BlockProven events in the chain,
+// TransitionProvedIterator iterates the emitted TaikoL1.TransitionProved events in the chain,
 // with the awareness of reorganization.
-type BlockProvenIterator struct {
+type TransitionProvedIterator struct {
 	ctx                context.Context
 	taikoL1            *bindings.TaikoL1Client
 	blockBatchIterator *chainIterator.BlockBatchIterator
@@ -29,8 +33,8 @@ type BlockProvenIterator struct {
 	isEnd              bool
 }
 
-// BlockProvenIteratorConfig represents the configs of a BlockProven event iterator.
-type BlockProvenIteratorConfig struct {
+// TransitionProvenIteratorConfig represents the configs of a TransitionProved event iterator.
+type TransitionProvenIteratorConfig struct {
 	Client                *rpc.EthClient
 	TaikoL1               *bindings.TaikoL1Client
 	MaxBlocksReadPerEpoch *uint64
@@ -38,16 +42,19 @@ type BlockProvenIteratorConfig struct {
 	EndHeight             *big.Int
 	FilterQuery           []*big.Int
 	Reverse               bool
-	OnBlockProvenEvent    OnBlockProvenEvent
+	OnTransitionProved    OnTransitionProved
 }
 
-// NewBlockProvenIterator creates a new instance of BlockProven event iterator.
-func NewBlockProvenIterator(ctx context.Context, cfg *BlockProvenIteratorConfig) (*BlockProvenIterator, error) {
-	if cfg.OnBlockProvenEvent == nil {
+// NewTransitionProvedIterator creates a new instance of TransitionProved event iterator.
+func NewTransitionProvedIterator(
+	ctx context.Context,
+	cfg *TransitionProvenIteratorConfig,
+) (*TransitionProvedIterator, error) {
+	if cfg.OnTransitionProved == nil {
 		return nil, errors.New("invalid callback")
 	}
 
-	iterator := &BlockProvenIterator{
+	iterator := &TransitionProvedIterator{
 		ctx:         ctx,
 		taikoL1:     cfg.TaikoL1,
 		filterQuery: cfg.FilterQuery,
@@ -60,11 +67,11 @@ func NewBlockProvenIterator(ctx context.Context, cfg *BlockProvenIteratorConfig)
 		StartHeight:           cfg.StartHeight,
 		EndHeight:             cfg.EndHeight,
 		Reverse:               cfg.Reverse,
-		OnBlocks: assembleBlockProvenIteratorCallback(
+		OnBlocks: assembleTransitionProvedIteratorCallback(
 			cfg.Client,
 			cfg.TaikoL1,
 			cfg.FilterQuery,
-			cfg.OnBlockProvenEvent,
+			cfg.OnTransitionProved,
 			iterator,
 		),
 	})
@@ -78,24 +85,24 @@ func NewBlockProvenIterator(ctx context.Context, cfg *BlockProvenIteratorConfig)
 }
 
 // Iter iterates the given chain between the given start and end heights,
-// will call the callback when a BlockProven event is iterated.
-func (i *BlockProvenIterator) Iter() error {
+// will call the callback when a TransitionProved event is iterated.
+func (i *TransitionProvedIterator) Iter() error {
 	return i.blockBatchIterator.Iter()
 }
 
 // end ends the current iteration.
-func (i *BlockProvenIterator) end() {
+func (i *TransitionProvedIterator) end() {
 	i.isEnd = true
 }
 
-// assembleBlockProvenIteratorCallback assembles the callback which will be used
+// assembleTransitionProvedIteratorCallback assembles the callback which will be used
 // by a event iterator's inner block iterator.
-func assembleBlockProvenIteratorCallback(
+func assembleTransitionProvedIteratorCallback(
 	client *rpc.EthClient,
 	taikoL1Client *bindings.TaikoL1Client,
 	filterQuery []*big.Int,
-	callback OnBlockProvenEvent,
-	eventIter *BlockProvenIterator,
+	callback OnTransitionProved,
+	eventIter *TransitionProvedIterator,
 ) chainIterator.OnBlocksFunc {
 	return func(
 		ctx context.Context,
@@ -104,7 +111,7 @@ func assembleBlockProvenIteratorCallback(
 		endFunc chainIterator.EndIterFunc,
 	) error {
 		endHeight := end.Number.Uint64()
-		iter, err := taikoL1Client.FilterBlockProven(
+		iter, err := taikoL1Client.FilterTransitionProved(
 			&bind.FilterOpts{Start: start.Number.Uint64(), End: &endHeight, Context: ctx},
 			filterQuery,
 		)
