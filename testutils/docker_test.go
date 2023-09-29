@@ -12,7 +12,7 @@ import (
 
 func (s *ClientSuite) TestDocker() {
 	ctx := context.Background()
-	endpoint := s.l1Container.HttpEndpoint()
+	endpoint := s.L1.HttpEndpoint()
 	cli, err := ethclient.DialContext(ctx, endpoint)
 	s.NoError(err)
 	defer cli.Close()

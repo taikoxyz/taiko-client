@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,7 +16,6 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/testutils/docker"
 )
 
@@ -25,24 +23,27 @@ const (
 	gethHttpPort      uint64 = 8545
 	gethWSPort        uint64 = 8546
 	gethAuthPort      uint64 = 8551
+	gethDiscoveryPort uint64 = 30303
 	baseContainerName        = "L1Base"
 	showDeployLog            = false
 )
 
 var (
-	gethHttpNatPort = natTcpPort(gethHttpPort)
-	gethWSNatPort   = natTcpPort(gethWSPort)
-	gethAuthNatPort = natTcpPort(gethAuthPort)
+	gethHttpNatPort         = natTcpPort(gethHttpPort)
+	gethWSNatPort           = natTcpPort(gethWSPort)
+	gethAuthNatPort         = natTcpPort(gethAuthPort)
+	gethDiscoveryNatPort    = natTcpPort(gethDiscoveryPort)
+	gethDiscoveryUdpNatPort = natUdpPort(gethDiscoveryPort)
 )
 
 // variables need to be initialized
 var (
-	jwtSecret         []byte
-	JwtSecretFile     string
-	monoPath          string
-	l1BaseContainer   = baseContainer{delExisted: true}
-	TaikoL1Address    common.Address
-	TaikoTokenAddress common.Address
+	JwtSecretFile        string
+	monoPath             string
+	l1BaseContainer      = &baseContainer{delExisted: false}
+	TaikoL1Address       common.Address
+	TaikoL1TokenAddress  common.Address
+	TaikoL1SignalService common.Address
 )
 
 type gethContainer struct {
@@ -57,6 +58,10 @@ type baseContainer struct {
 
 func natTcpPort(p uint64) nat.Port {
 	return nat.Port(fmt.Sprintf("%d/tcp", p))
+}
+
+func natUdpPort(p uint64) nat.Port {
+	return nat.Port(fmt.Sprintf("%d/udp", p))
 }
 
 func (e *gethContainer) HttpEndpoint() string {
@@ -145,6 +150,11 @@ func newL2Container(name string) (*gethContainer, error) {
 			"admin,debug,eth,net,web3,txpool,miner,taiko",
 			"--taiko",
 		},
+		ExposedPorts: map[nat.Port]struct{}{
+			gethHttpNatPort: {},
+			gethWSNatPort:   {},
+			gethAuthNatPort: {},
+		},
 	}
 	hc := &container.HostConfig{
 		AutoRemove: true,
@@ -156,13 +166,25 @@ func newL2Container(name string) (*gethContainer, error) {
 					HostPort: "0",
 				},
 			},
-			natTcpPort(gethWSPort): {
+			gethWSNatPort: {
 				{
 					HostIP:   "0.0.0.0",
 					HostPort: "0",
 				},
 			},
 			gethAuthNatPort: {
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: "0",
+				},
+			},
+			gethDiscoveryNatPort: {
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: "0",
+				},
+			},
+			gethDiscoveryUdpNatPort: {
 				{
 					HostIP:   "0.0.0.0",
 					HostPort: "0",
@@ -187,34 +209,109 @@ func delExistedBaseContainer(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
+	id, err := findContainerID(ctx, baseContainerName)
 	if err != nil {
 		return err
 	}
+	if id == "" {
+		return nil
+	}
+	if err := cli.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true}); err != nil {
+		return err
+	}
+	return cli.Close()
+}
+
+func findContainerID(ctx context.Context, containerName string) (string, error) {
+	cli, err := client.NewClientWithOpts()
+	if err != nil {
+		return "", err
+	}
+	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
+	if err != nil {
+		return "", err
+	}
+	var containerID string
 	for _, c := range containers {
 		for _, n := range c.Names {
-			if n[1:] == baseContainerName {
-				if err := cli.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
-					return err
-				}
+			if n[1:] == containerName {
+				containerID = c.ID
 				break
 			}
 		}
 	}
-	return nil
+	return containerID, cli.Close()
+}
+
+func findGethContainer(ctx context.Context, containerName string) (*gethContainer, error) {
+	c := &gethContainer{
+		ReadyContainer: &docker.ReadyContainer{},
+	}
+	id, err := findContainerID(ctx, baseContainerName)
+	if err != nil {
+		return nil, err
+	}
+	if id == "" {
+		return nil, nil
+	}
+	c.ID = id
+	c.Name = containerName
+	cli, err := client.NewClientWithOpts()
+	if err != nil {
+		return nil, err
+	}
+	defer cli.Close()
+	c.IPAddress, c.PortMap, err = docker.GetContainerInfo(ctx, cli, id)
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 func startBaseContainer(ctx context.Context) (err error) {
-	if l1BaseContainer.delExisted {
-		if err := delExistedBaseContainer(ctx); err != nil {
+	if !l1BaseContainer.delExisted {
+		l1BaseContainer, err = findRunningL1BaseContainer(ctx)
+		if err != nil {
 			return err
 		}
+		if err := findTaikoL1Address(); err != nil {
+			return err
+		}
+		return nil
+	}
+	if err := delExistedBaseContainer(ctx); err != nil {
+		return err
 	}
 	l1BaseContainer.gethContainer, err = newAnvilContainer(ctx, true, baseContainerName)
 	if err != nil {
 		return err
 	}
-	return deployTaikoL1(l1BaseContainer.HttpEndpoint())
+	if err := deployTaikoL1(l1BaseContainer.HttpEndpoint()); err != nil {
+		return err
+	}
+	if err := findTaikoL1Address(); err != nil {
+		return err
+	}
+	if ensureProverBalance(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func findRunningL1BaseContainer(ctx context.Context) (*baseContainer, error) {
+	c, err := findGethContainer(ctx, baseContainerName)
+	if err != nil {
+		return nil, err
+	}
+	if c == nil {
+		return nil, fmt.Errorf("base container %s not found, need to regenerate", baseContainerName)
+	}
+	c.isAnvil = true
+	bc := &baseContainer{
+		gethContainer: c,
+		delExisted:    false,
+	}
+	return bc, nil
 }
 
 func newAnvilContainer(ctx context.Context, isBase bool, name string) (*gethContainer, error) {
@@ -265,7 +362,7 @@ func getL2GenesisHash() (string, error) {
 		return "", err
 	}
 	defer cli.Close()
-	genesis, err := cli.BlockByNumber(ctx, big.NewInt(0))
+	genesis, err := cli.HeaderByNumber(ctx, common.Big0)
 	if err != nil {
 		return "", err
 	}
@@ -293,13 +390,13 @@ func deployTaikoL1(endpoint string) error {
 	)
 
 	cmd.Env = []string{
-		fmt.Sprintf("PRIVATE_KEY=%s", proposerPrivKey),
+		fmt.Sprintf("PRIVATE_KEY=%s", ProposerPrivateKey),
 		fmt.Sprintf("ORACLE_PROVER=%s", oracleProverAddress.Hex()),
 		"OWNER=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-		fmt.Sprintf("TAIKO_L2_ADDRESS=%s", taikoL2Address.Hex()),
+		fmt.Sprintf("TAIKO_L2_ADDRESS=%s", TaikoL2Address.Hex()),
 		"L2_SIGNAL_SERVICE=0x1000777700000000000000000000000000000007",
 		"SHARED_SIGNAL_SERVICE=0x0000000000000000000000000000000000000000",
-		fmt.Sprintf("TAIKO_TOKEN_PREMINT_RECIPIENTS=%s,%s", TestAddr.Hex(), oracleProverAddress.Hex()),
+		fmt.Sprintf("TAIKO_TOKEN_PREMINT_RECIPIENTS=%s,%s", ProposerAddress.Hex(), oracleProverAddress.Hex()),
 		fmt.Sprintf("TAIKO_TOKEN_PREMINT_AMOUNTS=%s,%s", premintTokenAmount, premintTokenAmount),
 		fmt.Sprintf("L2_GENESIS_HASH=%s", l2GenesisHash),
 	}
@@ -314,36 +411,35 @@ func deployTaikoL1(endpoint string) error {
 			fmt.Println(scanner.Text())
 		}
 	}
-	return taikoL1DeployAddress()
+	return nil
 }
 
-func taikoL1DeployAddress() error {
+func findTaikoL1Address() error {
 	data, err := os.ReadFile(monoPath + "/packages/protocol/deployments/deploy_l1.json")
 	if err != nil {
 		return err
 	}
 	v := struct {
-		TaikoL1    string `json:"taiko"`
-		TaikoToken string `json:"taiko_token"`
+		TaikoL1       string `json:"taiko"`
+		TaikoToken    string `json:"taiko_token"`
+		SignalService string `json:"signal_service"`
 	}{}
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
 	}
 	TaikoL1Address = common.HexToAddress(v.TaikoL1)
-	TaikoTokenAddress = common.HexToAddress(v.TaikoToken)
+	TaikoL1TokenAddress = common.HexToAddress(v.TaikoToken)
+	TaikoL1SignalService = common.HexToAddress(v.SignalService)
 	return nil
 }
 
 func initJwtSecret() (err error) {
 	path := os.Getenv("JWT_SECRET")
 	if path == "" {
-		path = "../integration_test/nodes/jwt.hex"
+		path = "/Users/lsl/go/src/github/taikoxyz/taiko-client/integration_test/nodes/jwt.hex"
 	}
 	JwtSecretFile, err = filepath.Abs(path)
 	if err != nil {
-		return err
-	}
-	if jwtSecret, err = jwt.ParseSecretFromFile(path); err != nil {
 		return err
 	}
 	return nil
@@ -352,7 +448,7 @@ func initJwtSecret() (err error) {
 func initMonoPath() (err error) {
 	path := os.Getenv("TAIKO_MONO")
 	if path == "" {
-		path = "../../taiko-mono/"
+		path = "/Users/lsl/go/src/github/taikoxyz/taiko-mono"
 	}
 	monoPath, err = filepath.Abs(path)
 	if err != nil {

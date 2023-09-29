@@ -13,11 +13,10 @@ import (
 
 type ReadyContainer struct {
 	ID              string
-	name            string
+	Name            string
 	containerConfig *container.Config
 	hostConfig      *container.HostConfig
 	readyHint       string
-	cli             *client.Client
 	IPAddress       string
 	PortMap         nat.PortMap
 }
@@ -25,29 +24,28 @@ type ReadyContainer struct {
 func NewReadyContainer(name string, cc *container.Config,
 	hc *container.HostConfig, hint string,
 ) (*ReadyContainer, error) {
-	cli, err := client.NewClientWithOpts()
-	if err != nil {
-		return nil, err
-	}
 	return &ReadyContainer{
-		name:            name,
+		Name:            name,
 		containerConfig: cc,
 		hostConfig:      hc,
 		readyHint:       hint,
-		cli:             cli,
 	}, nil
 }
 
 func (c *ReadyContainer) Start(ctx context.Context) error {
-	r, err := c.cli.ContainerCreate(ctx, c.containerConfig, c.hostConfig, nil, nil, c.name)
+	cli, err := client.NewClientWithOpts()
 	if err != nil {
 		return err
 	}
-	if err := c.cli.ContainerStart(ctx, r.ID, types.ContainerStartOptions{}); err != nil {
+	r, err := cli.ContainerCreate(ctx, c.containerConfig, c.hostConfig, nil, nil, c.Name)
+	if err != nil {
+		return err
+	}
+	if err := cli.ContainerStart(ctx, r.ID, types.ContainerStartOptions{}); err != nil {
 		return err
 	}
 	c.ID = r.ID
-	resp, err := c.cli.ContainerAttach(ctx, r.ID, types.ContainerAttachOptions{Stream: true, Stderr: true, Stdout: true})
+	resp, err := cli.ContainerAttach(ctx, r.ID, types.ContainerAttachOptions{Stream: true, Stderr: true, Stdout: true})
 	if err != nil {
 		return err
 	}
@@ -58,21 +56,31 @@ func (c *ReadyContainer) Start(ctx context.Context) error {
 			break
 		}
 	}
-	info, err := c.cli.ContainerInspect(ctx, c.ID)
+	c.IPAddress, c.PortMap, err = GetContainerInfo(ctx, cli, c.ID)
 	if err != nil {
 		return err
 	}
-	c.IPAddress = info.NetworkSettings.IPAddress
-	c.PortMap = info.NetworkSettings.Ports
-	return nil
+	return cli.Close()
+}
+
+func GetContainerInfo(ctx context.Context, cli *client.Client, containerID string) (string, nat.PortMap, error) {
+	info, err := cli.ContainerInspect(ctx, containerID)
+	if err != nil {
+		return "", nil, err
+	}
+	return info.NetworkSettings.IPAddress, info.NetworkSettings.Ports, nil
 }
 
 func (c *ReadyContainer) Stop() error {
-	if err := c.cli.ContainerStop(context.Background(), c.ID, container.StopOptions{}); err != nil {
+	cli, err := client.NewClientWithOpts()
+	if err != nil {
 		return err
 	}
-	if err := c.cli.Close(); err != nil {
+	if err := cli.ContainerStop(context.Background(), c.ID, container.StopOptions{}); err != nil {
 		return err
 	}
-	return nil
+	if err := cli.Close(); err != nil {
+		return err
+	}
+	return cli.Close()
 }
