@@ -21,9 +21,8 @@ var (
 		Category: proverCategory,
 	}
 	L1ProverPrivKey = &cli.StringFlag{
-		Name: "l1.proverPrivKey",
-		Usage: "Private key of L1 prover, " +
-			"who will send TaikoL1.proveBlock / TaikoL1.proveBlockInvalid transactions",
+		Name:     "l1.proverPrivKey",
+		Usage:    "Private key of L1 prover, who will send TaikoL1.proveBlock transactions",
 		Required: true,
 		Category: proverCategory,
 	}
@@ -48,19 +47,6 @@ var (
 		Value:    1,
 		Category: proverCategory,
 	}
-	// Special flags for testing.
-	Dummy = &cli.BoolFlag{
-		Name:     "dummy",
-		Usage:    "Produce dummy proofs, testing purposes only",
-		Value:    false,
-		Category: proverCategory,
-	}
-	RandomDummyProofDelay = &cli.StringFlag{
-		Name: "randomDummyProofDelay",
-		Usage: "Set the random dummy proof delay between the bounds using the format: " +
-			"`lowerBound-upperBound` (e.g. `30m-1h`), testing purposes only",
-		Category: proverCategory,
-	}
 	OracleProver = &cli.BoolFlag{
 		Name:     "oracleProver",
 		Usage:    "Set whether prover should use oracle prover or not",
@@ -71,10 +57,10 @@ var (
 		Usage:    "Private key of oracle prover",
 		Category: proverCategory,
 	}
-	OracleProofSubmissionDelay = &cli.Uint64Flag{
+	OracleProofSubmissionDelay = &cli.DurationFlag{
 		Name:     "oracleProofSubmissionDelay",
-		Usage:    "Oracle proof submission delay in seconds",
-		Value:    0,
+		Usage:    "Oracle proof submission delay",
+		Value:    0 * time.Second,
 		Category: proverCategory,
 	}
 	ProofSubmissionMaxRetry = &cli.Uint64Flag{
@@ -89,11 +75,11 @@ var (
 		Category: proverCategory,
 		Value:    "",
 	}
-	CheckProofWindowExpiredInterval = &cli.Uint64Flag{
+	CheckProofWindowExpiredInterval = &cli.DurationFlag{
 		Name:     "prover.checkProofWindowExpiredInterval",
-		Usage:    "Interval in seconds to check for expired proof windows from other provers",
+		Usage:    "Interval to check for expired proof windows from other provers",
 		Category: proverCategory,
-		Value:    15,
+		Value:    15 * time.Second,
 	}
 	ProveUnassignedBlocks = &cli.BoolFlag{
 		Name:     "prover.proveUnassignedBlocks",
@@ -128,16 +114,29 @@ var (
 		Usage:    "Capacity of prover, required if oracleProver is false",
 		Category: proverCategory,
 	}
-	MaxExpiry = &cli.Uint64Flag{
+	MaxExpiry = &cli.DurationFlag{
 		Name:     "prover.maxExpiry",
 		Usage:    "maximum accepted expiry in seconds for accepting proving a block",
-		Value:    uint64(time.Hour.Seconds()),
+		Value:    1 * time.Hour,
 		Category: proverCategory,
 	}
 	TempCapacityExpiresAt = &cli.DurationFlag{
 		Name:     "prover.tempCapacityExpiresAt",
-		Usage:    "time in seconds temporary capacity lives for, format: 36s",
+		Usage:    "time in seconds temporary capacity lives for (format: 36s)",
 		Value:    36 * time.Second,
+		Category: proverCategory,
+	}
+	// Special flags for testing.
+	Dummy = &cli.BoolFlag{
+		Name:     "dummy",
+		Usage:    "Produce dummy proofs, testing purposes only",
+		Value:    false,
+		Category: proverCategory,
+	}
+	RandomDummyProofDelay = &cli.StringFlag{
+		Name: "randomDummyProofDelay",
+		Usage: "Set the random dummy proof delay between the bounds using the format: " +
+			"`lowerBound-upperBound` (e.g. `30m-1h`), testing purposes only",
 		Category: proverCategory,
 	}
 )

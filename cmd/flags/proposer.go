@@ -21,11 +21,13 @@ var (
 	ProverEndpoints = &cli.StringFlag{
 		Name:     "proverEndpoints",
 		Usage:    "Comma-delineated list of prover endpoints proposer should query when attempting to propose a block",
+		Required: true,
 		Category: proposerCategory,
 	}
 	BlockProposalFee = &cli.StringFlag{
 		Name:     "blockProposalFee",
 		Usage:    "Initial block proposal fee (in wei) paid on block proposing",
+		Required: true,
 		Category: proposerCategory,
 	}
 	TaikoTokenAddress = &cli.StringFlag{
@@ -38,12 +40,18 @@ var (
 
 // Optional flags used by proposer.
 var (
-	ProposeInterval = &cli.StringFlag{
+	ExtraData = &cli.StringFlag{
+		Name:     "extraData",
+		Usage:    "Block extra data set by the proposer",
+		Value:    "",
+		Category: proposerCategory,
+	}
+	ProposeInterval = &cli.DurationFlag{
 		Name:     "proposeInterval",
 		Usage:    "Time interval to propose L2 pending transactions",
 		Category: proposerCategory,
 	}
-	TxPoolLocals = &cli.StringFlag{
+	TxPoolLocals = &cli.StringSliceFlag{
 		Name:     "txpool.locals",
 		Usage:    "Comma separated accounts to treat as locals (priority inclusion)",
 		Category: proposerCategory,
@@ -54,7 +62,7 @@ var (
 		Value:    false,
 		Category: proposerCategory,
 	}
-	ProposeEmptyBlocksInterval = &cli.StringFlag{
+	ProposeEmptyBlocksInterval = &cli.DurationFlag{
 		Name:     "proposeEmptyBlockInterval",
 		Usage:    "Time interval to propose empty blocks",
 		Category: proposerCategory,
@@ -102,6 +110,7 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProposeInterval,
 	TxPoolLocals,
 	TxPoolLocalsOnly,
+	ExtraData,
 	ProposeEmptyBlocksInterval,
 	MaxProposedTxListsPerEpoch,
 	ProposeBlockTxGasLimit,
