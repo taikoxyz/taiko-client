@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
@@ -118,6 +119,17 @@ func EncodeEvidence(e *BlockEvidence) ([]byte, error) {
 		return nil, fmt.Errorf("failed to abi.encode evidence, %w", err)
 	}
 	return b, nil
+}
+
+// EncodeProverAssignmentPayload performs the solidity `abi.encode` for the given proverAssignment payload.
+func EncodeProverAssignmentPayload(
+	txListHash common.Hash,
+	feeToken common.Address,
+	expiry uint64,
+	tierFees []*TierFee,
+) ([]byte, error) {
+	// TODO: implement this function.
+	return nil, nil
 }
 
 // UnpackTxListBytes unpacks the input data of a TaikoL1.proposeBlock transaction, and returns the txList bytes.

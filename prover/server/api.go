@@ -12,6 +12,14 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+// CreateAssignmentRequestBody represents a request body when handling assignment creation request.
+type CreateAssignmentRequestBody struct {
+	FeeToken   common.Address
+	TierFees   []*encoding.TierFee
+	Expiry     uint64
+	TxListHash common.Hash
+}
+
 // Status represents the current prover server status.
 type Status struct {
 	MinProofFee     uint64 `json:"minProofFee"`
@@ -51,18 +59,34 @@ type ProposeBlockResponse struct {
 //	@Accept			json
 //	@Produce		json
 //	@Success		200		{object} ProposeBlockResponse
+//	@Failure		422		{string} string	"invalid txList hash"
+//	@Failure		422		{string} string	"only receive ETH"
 //	@Failure		422		{string} string	"insufficient prover balance"
 //	@Failure		422		{string} string	"proof fee too low"
 //	@Failure		422		{string} string "expiry too long"
 //	@Failure		422		{string} string "prover does not have capacity"
 //	@Router			/assignment [post]
 func (srv *ProverServer) CreateAssignment(c echo.Context) error {
-	req := new(encoding.ProposeBlockData)
+	req := new(CreateAssignmentRequestBody)
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	log.Info("Propose block data", "fee", req.Fee, "expiry", req.Expiry)
+	log.Info(
+		"Propose block data",
+		"feeToken", req.FeeToken,
+		"expiry", req.Expiry,
+		"tierFees", req.TierFees,
+		"txListHash", req.TxListHash,
+	)
+
+	if req.TxListHash == (common.Hash{}) {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, "invalid txList hash")
+	}
+
+	if req.FeeToken != (common.Address{}) {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, "only receive ETH")
+	}
 
 	if !srv.isOracle {
 		ok, err := rpc.CheckProverBalance(c.Request().Context(), srv.rpc, srv.proverAddress, srv.taikoL1Address, srv.bond)
@@ -79,14 +103,17 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		}
 	}
 
-	if req.Fee.Cmp(srv.minProofFee) < 0 {
-		log.Warn(
-			"Proof fee too low",
-			"reqFee", req.Fee.String(),
-			"srvMinProofFee", srv.minProofFee.String(),
-			"proposerIP", c.RealIP(),
-		)
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, "proof fee too low")
+	for _, tier := range req.TierFees {
+		if tier.Fee.Cmp(srv.minProofFee) < 0 {
+			log.Warn(
+				"Proof fee too low",
+				"tier", tier.Tier,
+				"fee", tier.Fee,
+				"srvMinProofFee", srv.minProofFee.String(),
+				"proposerIP", c.RealIP(),
+			)
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, "proof fee too low")
+		}
 	}
 
 	if req.Expiry > uint64(time.Now().Add(srv.maxExpiry).Unix()) {
@@ -104,9 +131,9 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
 
-	encoded, err := encoding.EncodeProposeBlockData(req)
+	encoded, err := encoding.EncodeProverAssignmentPayload(req.TxListHash, req.FeeToken, req.Expiry, req.TierFees)
 	if err != nil {
-		log.Error("Failed to encode proposeBlock data", "error", err)
+		log.Error("Failed to encode proverAssignment payload data", "error", err)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
 	}
 

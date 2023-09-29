@@ -382,7 +382,6 @@ func (p *Proposer) sendProposeBlockTx(
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
-	meta *encoding.TaikoL1BlockMetadataInput,
 	txListBytes []byte,
 	txNum uint,
 	nonce *uint64,

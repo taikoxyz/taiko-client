@@ -29,16 +29,11 @@ func (s *ProverServerTestSuite) TestGetStatusSuccess() {
 }
 
 func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
-	data, err := json.Marshal(encoding.ProposeBlockData{
-		Fee:    common.Big256,
-		Expiry: uint64(time.Now().Add(time.Minute).Unix()),
-		Input: encoding.TaikoL1BlockMetadataInput{
-			Proposer:        common.BytesToAddress(randomHash().Bytes()),
-			TxListHash:      randomHash(),
-			TxListByteStart: common.Big0,
-			TxListByteEnd:   common.Big0,
-			CacheTxListInfo: false,
-		},
+	data, err := json.Marshal(CreateAssignmentRequestBody{
+		FeeToken:   (common.Address{}),
+		TierFees:   []*encoding.TierFee{{Tier: 0, Fee: common.Big256}},
+		Expiry:     uint64(time.Now().Add(time.Minute).Unix()),
+		TxListHash: common.BigToHash(common.Big1),
 	})
 	s.Nil(err)
 	resp, err := http.Post(s.ws.URL+"/assignment", "application/json", strings.NewReader(string(data)))
