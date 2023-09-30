@@ -38,12 +38,9 @@ var (
 
 // variables need to be initialized
 var (
-	JwtSecretFile        string
-	monoPath             string
-	l1BaseContainer      = &baseContainer{delExisted: false}
-	TaikoL1Address       common.Address
-	TaikoL1TokenAddress  common.Address
-	TaikoL1SignalService common.Address
+	JwtSecretFile   string
+	monoPath        string
+	l1BaseContainer = &baseContainer{alwaysReset: false}
 )
 
 type gethContainer struct {
@@ -53,7 +50,7 @@ type gethContainer struct {
 
 type baseContainer struct {
 	*gethContainer
-	delExisted bool
+	alwaysReset bool
 }
 
 func natTcpPort(p uint64) nat.Port {
@@ -269,19 +266,23 @@ func findGethContainer(ctx context.Context, containerName string) (*gethContaine
 }
 
 func startBaseContainer(ctx context.Context) (err error) {
-	if !l1BaseContainer.delExisted {
-		l1BaseContainer, err = findRunningL1BaseContainer(ctx)
-		if err != nil {
-			return err
-		}
-		if err := findTaikoL1Address(); err != nil {
-			return err
-		}
-		return nil
-	}
-	if err := delExistedBaseContainer(ctx); err != nil {
+	c, err := findRunningL1BaseContainer(ctx)
+	if err != nil {
 		return err
 	}
+	if c != nil {
+		if !l1BaseContainer.alwaysReset {
+			l1BaseContainer = c
+			if err := findL1ContractAddress(); err != nil {
+				return err
+			}
+			return nil
+		}
+		if err := delExistedBaseContainer(ctx); err != nil {
+			return err
+		}
+	}
+
 	l1BaseContainer.gethContainer, err = newAnvilContainer(ctx, true, baseContainerName)
 	if err != nil {
 		return err
@@ -289,7 +290,7 @@ func startBaseContainer(ctx context.Context) (err error) {
 	if err := deployTaikoL1(l1BaseContainer.HttpEndpoint()); err != nil {
 		return err
 	}
-	if err := findTaikoL1Address(); err != nil {
+	if err := findL1ContractAddress(); err != nil {
 		return err
 	}
 	if ensureProverBalance(); err != nil {
@@ -303,15 +304,15 @@ func findRunningL1BaseContainer(ctx context.Context) (*baseContainer, error) {
 	if err != nil {
 		return nil, err
 	}
-	if c == nil {
-		return nil, fmt.Errorf("base container %s not found, need to regenerate", baseContainerName)
+	if c != nil {
+		c.isAnvil = true
+		bc := &baseContainer{
+			gethContainer: c,
+			alwaysReset:   false,
+		}
+		return bc, nil
 	}
-	c.isAnvil = true
-	bc := &baseContainer{
-		gethContainer: c,
-		delExisted:    false,
-	}
-	return bc, nil
+	return nil, nil
 }
 
 func newAnvilContainer(ctx context.Context, isBase bool, name string) (*gethContainer, error) {
@@ -414,8 +415,9 @@ func deployTaikoL1(endpoint string) error {
 	return nil
 }
 
-func findTaikoL1Address() error {
-	data, err := os.ReadFile(monoPath + "/packages/protocol/deployments/deploy_l1.json")
+func findL1ContractAddress() error {
+	deployPath := monoPath + "/packages/protocol/deployments/deploy_l1.json"
+	data, err := os.ReadFile(deployPath)
 	if err != nil {
 		return err
 	}
@@ -436,7 +438,7 @@ func findTaikoL1Address() error {
 func initJwtSecret() (err error) {
 	path := os.Getenv("JWT_SECRET")
 	if path == "" {
-		path = "/Users/liushangliang/go/src/github.com/taikochain/taiko-client/integration_test/nodes/jwt.hex"
+		path = "/Users/lsl/go/src/github/taikoxyz/taiko-client/integration_test/nodes/jwt.hex"
 	}
 	JwtSecretFile, err = filepath.Abs(path)
 	if err != nil {
@@ -448,7 +450,7 @@ func initJwtSecret() (err error) {
 func initMonoPath() (err error) {
 	path := os.Getenv("TAIKO_MONO")
 	if path == "" {
-		path = "/Users/liushangliang/go/src/github.com/taikochain/taiko-mono"
+		path = "/Users/lsl/go/src/github/taikoxyz/taiko-mono"
 	}
 	monoPath, err = filepath.Abs(path)
 	if err != nil {

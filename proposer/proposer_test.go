@@ -20,7 +20,7 @@ import (
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
-	"github.com/taikoxyz/taiko-client/testutils/fakeprover"
+	"github.com/taikoxyz/taiko-client/testutils/helper"
 )
 
 type ProposerTestSuite struct {
@@ -57,7 +57,7 @@ func (s *ProposerTestSuite) SetupTest() {
 	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
 	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.NoError(err)
-	s.proverServer, err = fakeprover.New(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.proverServer, err = helper.NewFakeProver(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
 	s.NoError(err)
 	s.Nil(InitFromConfig(ctx, p, (&Config{
 		L1Endpoint:                          s.L1.WsEndpoint(),

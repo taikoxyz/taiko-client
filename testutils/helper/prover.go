@@ -1,4 +1,4 @@
-package fakeprover
+package helper
 
 import (
 	"crypto/ecdsa"
@@ -10,8 +10,8 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-resty/resty/v2"
-	"github.com/labstack/gommon/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
@@ -19,9 +19,9 @@ import (
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
-// New starts a new prover server that has channel listeners to respond and react
+// NewFakeProver starts a new prover server that has channel listeners to respond and react
 // to requests for capacity, which provers can call.
-func New(
+func NewFakeProver(
 	protocolConfig *bindings.TaikoDataConfig,
 	jwtSecret []byte,
 	rpcClient *rpc.Client,
@@ -58,7 +58,6 @@ func New(
 		if !res.IsSuccess() {
 			return fmt.Errorf("invalid response status code: %d", res.StatusCode())
 		}
-
 		return nil
 	}, backoff.NewExponentialBackOff()); err != nil {
 		return nil, err

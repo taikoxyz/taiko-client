@@ -157,7 +157,7 @@ func (p *Proposer) eventLoop() {
 		p.wg.Done()
 	}()
 
-	var lastNonEmptyBlockProposedAt = time.Now()
+	lastNonEmptyBlockProposedAt := time.Now()
 	for {
 		p.updateProposingTicker()
 
@@ -197,6 +197,7 @@ func (p *Proposer) eventLoop() {
 // Close closes the proposer instance.
 func (p *Proposer) Close(ctx context.Context) {
 	p.wg.Wait()
+	p.rpc.Close()
 }
 
 // ProposeOp performs a proposing operation, fetching transactions

@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/stretchr/testify/suite"
@@ -21,7 +20,7 @@ import (
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
-	"github.com/taikoxyz/taiko-client/testutils/fakeprover"
+	"github.com/taikoxyz/taiko-client/testutils/helper"
 )
 
 type CalldataSyncerTestSuite struct {
@@ -37,17 +36,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.ClientSuite.SetupTest()
 	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
 	s.NoError(err)
-	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
-		L1Endpoint:        s.L1.WsEndpoint(),
-		L2Endpoint:        s.L2.WsEndpoint(),
-		TaikoL1Address:    testutils.TaikoL1Address,
-		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
-		TaikoL2Address:    testutils.TaikoL2Address,
-		L2EngineEndpoint:  s.L2.AuthEndpoint(),
-		JwtSecret:         string(jwtSecret),
-		RetryInterval:     backoff.DefaultMaxInterval,
-	})
-	s.NoError(err)
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
 	state, err := state.New(context.Background(), s.rpcClient)
 	s.Nil(err)
 
@@ -67,7 +56,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
 	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.NoError(err)
-	s.proverServer, err = fakeprover.New(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.proverServer, err = helper.NewFakeProver(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
 	s.NoError(err)
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                         s.L1.WsEndpoint(),
@@ -90,6 +79,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 }
 
 func (s *CalldataSyncerTestSuite) TearDownTest() {
+	s.p.Close(context.Background())
 	s.rpcClient.Close()
 	s.ClientSuite.TearDownTest()
 }
@@ -116,9 +106,9 @@ func (s *CalldataSyncerTestSuite) TestProcessL1Blocks() {
 
 func (s *CalldataSyncerTestSuite) TestProcessL1BlocksReorg() {
 	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
-	proposer.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s)
-	s.Nil(err)
-	s.Nil(s.s.ProcessL1Blocks(context.Background(), head))
+	helper.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s)
+	s.NoError(err)
+	s.NoError(s.s.ProcessL1Blocks(context.Background(), head))
 }
 
 func (s *CalldataSyncerTestSuite) TestOnBlockProposed() {
@@ -176,7 +166,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
 	headBefore, err := s.rpcClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
-	proposer.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s)
+	helper.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s)
 
 	headAfter, err := s.rpcClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
@@ -198,8 +188,8 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 	headBefore, err := s.rpcClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
-	proposer.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s)
-	proposer.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.s)
+	helper.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s)
+	helper.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.s)
 
 	headAfter, err := s.rpcClient.L2.BlockNumber(context.Background())
 	s.Nil(err)

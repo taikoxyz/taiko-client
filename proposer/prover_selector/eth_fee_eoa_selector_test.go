@@ -15,7 +15,7 @@ import (
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
-	"github.com/taikoxyz/taiko-client/testutils/fakeprover"
+	"github.com/taikoxyz/taiko-client/testutils/helper"
 )
 
 type ProverSelectorTestSuite struct {
@@ -48,7 +48,7 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
 	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
-	s.proverServer, err = fakeprover.New(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.proverServer, err = helper.NewFakeProver(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
 	s.NoError(err)
 	s.s, err = NewETHFeeEOASelector(
 		&protocolConfigs,

@@ -124,6 +124,7 @@ func (d *Driver) Start() error {
 func (d *Driver) Close(ctx context.Context) {
 	d.state.Close()
 	d.wg.Wait()
+	d.rpc.Close()
 }
 
 // eventLoop starts the main loop of a L2 execution engine's driver.

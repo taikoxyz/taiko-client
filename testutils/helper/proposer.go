@@ -1,4 +1,4 @@
-package proposer
+package helper
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -14,8 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/pkg/jwt"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -36,23 +33,11 @@ func ProposeAndInsertEmptyBlocks(
 	proposer testutils.Proposer,
 	calldataSyncer testutils.CalldataSyncer,
 ) []*bindings.TaikoL1ClientBlockProposed {
-	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
-	s.NoError(err)
 	var events []*bindings.TaikoL1ClientBlockProposed
-	rpcClient, err := rpc.NewClient(context.Background(), &rpc.ClientConfig{
-		L1Endpoint:        s.L1.WsEndpoint(),
-		L2Endpoint:        s.L2.WsEndpoint(),
-		TaikoL1Address:    testutils.TaikoL1Address,
-		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
-		TaikoL2Address:    testutils.TaikoL2Address,
-		L2EngineEndpoint:  s.L2.AuthEndpoint(),
-		JwtSecret:         string(jwtSecret),
-		RetryInterval:     backoff.DefaultMaxInterval,
-	})
-	s.NoError(err)
+	rpcClient := NewWsRpcClient(s)
 	defer rpcClient.Close()
 	l1Head, err := rpcClient.L1.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
+	s.NoError(err)
 
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
@@ -67,7 +52,7 @@ func ProposeAndInsertEmptyBlocks(
 	var emptyTxs []types.Transaction
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
-
+	// 1. Propose empty tx list
 	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
 		Proposer:        proposer.L2SuggestedFeeRecipient(),
 		TxListHash:      crypto.Keccak256Hash(encoded),
@@ -75,10 +60,10 @@ func ProposeAndInsertEmptyBlocks(
 		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
 		CacheTxListInfo: false,
 	}, encoded, 0, nil))
-
+	// 2. Propose invalidate tx list
 	ProposeInvalidTxListBytes(s, proposer)
 
-	// Zero byte txList
+	// 3. Propose empty block (Zero byte txList)
 	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
 
 	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
@@ -109,19 +94,7 @@ func ProposeAndInsertValidBlock(
 	proposer testutils.Proposer,
 	calldataSyncer testutils.CalldataSyncer,
 ) *bindings.TaikoL1ClientBlockProposed {
-	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
-	s.NoError(err)
-	rpcClient, err := rpc.NewClient(context.Background(), &rpc.ClientConfig{
-		L1Endpoint:        s.L1.WsEndpoint(),
-		L2Endpoint:        s.L2.WsEndpoint(),
-		TaikoL1Address:    testutils.TaikoL1Address,
-		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
-		TaikoL2Address:    testutils.TaikoL2Address,
-		L2EngineEndpoint:  s.L2.AuthEndpoint(),
-		JwtSecret:         string(jwtSecret),
-		RetryInterval:     backoff.DefaultMaxInterval,
-	})
-	s.NoError(err)
+	rpcClient := NewWsRpcClient(s)
 	defer rpcClient.Close()
 	l1Head, err := rpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -188,19 +161,7 @@ func ProposeAndInsertValidBlock(
 }
 
 func DepositEtherToL2(s *testutils.ClientSuite, depositerPrivKey *ecdsa.PrivateKey, recipient common.Address) {
-	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
-	s.NoError(err)
-	rpcClient, err := rpc.NewClient(context.Background(), &rpc.ClientConfig{
-		L1Endpoint:        s.L1.WsEndpoint(),
-		L2Endpoint:        s.L2.WsEndpoint(),
-		TaikoL1Address:    testutils.TaikoL1Address,
-		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
-		TaikoL2Address:    testutils.TaikoL2Address,
-		L2EngineEndpoint:  s.L2.AuthEndpoint(),
-		JwtSecret:         string(jwtSecret),
-		RetryInterval:     backoff.DefaultMaxInterval,
-	})
-	s.NoError(err)
+	rpcClient := NewWsRpcClient(s)
 	defer rpcClient.Close()
 	config, err := rpcClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)

@@ -30,9 +30,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var (
-	errNoCapacity = errors.New("no prover capacity available")
-)
+var errNoCapacity = errors.New("no prover capacity available")
 
 type cancelFunc func()
 
@@ -324,6 +322,7 @@ func (p *Prover) Close(ctx context.Context) {
 		log.Error("Error shutting down http server", "error", err)
 	}
 	p.wg.Wait()
+	p.rpc.Close()
 }
 
 // proveOp performs a proving operation, find current unproven blocks, then

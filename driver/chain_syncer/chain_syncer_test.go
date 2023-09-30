@@ -19,7 +19,7 @@ import (
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
-	"github.com/taikoxyz/taiko-client/testutils/fakeprover"
+	"github.com/taikoxyz/taiko-client/testutils/helper"
 )
 
 type ChainSyncerTestSuite struct {
@@ -68,7 +68,7 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
 	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.NoError(err)
-	s.proverServer, err = fakeprover.New(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.proverServer, err = helper.NewFakeProver(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
 	s.NoError(err)
 
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
@@ -110,7 +110,7 @@ func (s *ChainSyncerTestSuite) TestSync() {
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	s.TakeSnapshot()
 	// propose a couple blocks
-	proposer.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s.calldataSyncer)
+	helper.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s.calldataSyncer)
 
 	// NOTE: need to prove the proposed blocks to be verified, writing helper function
 	// generate transactopts to interact with TaikoL1 contract with.

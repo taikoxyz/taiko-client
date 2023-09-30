@@ -24,7 +24,7 @@ import (
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
-	"github.com/taikoxyz/taiko-client/testutils/fakeprover"
+	"github.com/taikoxyz/taiko-client/testutils/helper"
 )
 
 type ProofSubmitterTestSuite struct {
@@ -97,7 +97,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
 	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.NoError(err)
-	s.proverServer, err = fakeprover.New(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.proverServer, err = helper.NewFakeProver(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
 	s.NoError(err)
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                         s.L1.WsEndpoint(),
@@ -148,7 +148,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotF
 }
 
 func (s *ProofSubmitterTestSuite) TestValidSubmitProofs() {
-	events := proposer.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.proposer, s.calldataSyncer)
+	events := helper.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.proposer, s.calldataSyncer)
 
 	for _, e := range events {
 		s.Nil(s.validProofSubmitter.RequestProof(context.Background(), e))

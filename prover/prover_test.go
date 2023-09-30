@@ -18,7 +18,7 @@ import (
 	"github.com/taikoxyz/taiko-client/proposer"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
-	"github.com/taikoxyz/taiko-client/testutils/fakeprover"
+	"github.com/taikoxyz/taiko-client/testutils/helper"
 )
 
 type ProverTestSuite struct {
@@ -75,7 +75,7 @@ func (s *ProverTestSuite) SetupTest() {
 	s.NoError(err)
 	protocolConfigs, err := rpcClient.TaikoL1.GetConfig(nil)
 	s.NoError(err)
-	p.srv, err = fakeprover.New(&protocolConfigs, jwtSecret, rpcClient, l1ProverPrivKey, p.capacityManager, proverServerUrl)
+	p.srv, err = helper.NewFakeProver(&protocolConfigs, jwtSecret, rpcClient, l1ProverPrivKey, p.capacityManager, proverServerUrl)
 	s.NoError(err)
 	s.p = p
 	s.cancel = cancel
@@ -154,12 +154,12 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	l1ProverPrivKey := testutils.ProverPrivKey
 	s.p.cfg.OracleProverPrivateKey = l1ProverPrivKey
 	// Valid block
-	e := proposer.ProposeAndInsertValidBlock(&s.ClientSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	e := helper.ProposeAndInsertValidBlock(&s.ClientSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.validProofSubmitter.SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	// Empty blocks
-	for _, e = range proposer.ProposeAndInsertEmptyBlocks(
+	for _, e = range helper.ProposeAndInsertEmptyBlocks(
 		&s.ClientSuite,
 		s.proposer,
 		s.d.ChainSyncer().CalldataSyncer(),
