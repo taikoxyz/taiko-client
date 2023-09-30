@@ -120,6 +120,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 }
 
 func (s *ProofSubmitterTestSuite) TearDownTest() {
+	s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
 	s.ClientSuite.TearDownTest()
 }

@@ -65,6 +65,7 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 }
 
 func (s *ProverSelectorTestSuite) TearDownTest() {
+	s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
 	s.ClientSuite.TearDownTest()
 }

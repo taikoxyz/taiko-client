@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
@@ -23,10 +22,11 @@ import (
 
 type ProverTestSuite struct {
 	testutils.ClientSuite
-	p        *Prover
-	cancel   context.CancelFunc
-	d        *driver.Driver
-	proposer *proposer.Proposer
+	p         *Prover
+	cancel    context.CancelFunc
+	d         *driver.Driver
+	rpcClient *rpc.Client
+	proposer  *proposer.Proposer
 }
 
 func (s *ProverTestSuite) SetupTest() {
@@ -62,20 +62,11 @@ func (s *ProverTestSuite) SetupTest() {
 	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
 	s.NoError(err)
 	s.NotEmpty(jwtSecret)
-	rpcClient, err := rpc.NewClient(context.Background(), &rpc.ClientConfig{
-		L1Endpoint:        s.L1.WsEndpoint(),
-		L2Endpoint:        s.L2.WsEndpoint(),
-		TaikoL1Address:    testutils.TaikoL1Address,
-		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
-		TaikoL2Address:    testutils.TaikoL2Address,
-		L2EngineEndpoint:  s.L2.AuthEndpoint(),
-		JwtSecret:         string(jwtSecret),
-		RetryInterval:     backoff.DefaultMaxInterval,
-	})
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
 	s.NoError(err)
-	protocolConfigs, err := rpcClient.TaikoL1.GetConfig(nil)
+	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.NoError(err)
-	p.srv, err = helper.NewFakeProver(&protocolConfigs, jwtSecret, rpcClient, l1ProverPrivKey, p.capacityManager, proverServerUrl)
+	p.srv, err = helper.NewFakeProver(&protocolConfigs, jwtSecret, s.rpcClient, l1ProverPrivKey, p.capacityManager, proverServerUrl)
 	s.NoError(err)
 	s.p = p
 	s.cancel = cancel
@@ -118,6 +109,13 @@ func (s *ProverTestSuite) SetupTest() {
 	})))
 
 	s.proposer = prop
+}
+
+func (s *ProverTestSuite) TearDownTest() {
+	s.rpcClient.Close()
+	s.p.srv.Shutdown(context.Background())
+	s.proposer.Close(context.Background())
+	s.ClientSuite.TearDownTest()
 }
 
 func (s *ProverTestSuite) TestName() {

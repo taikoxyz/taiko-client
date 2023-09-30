@@ -88,6 +88,7 @@ func (s *DriverTestSuite) SetupTest() {
 }
 
 func (s *DriverTestSuite) TearDownTest() {
+	s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
 	s.ClientSuite.TearDownTest()
 }
