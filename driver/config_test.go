@@ -20,7 +20,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(s.L1.WsEndpoint(), c.L1Endpoint)
 		s.Equal(s.L1.WsEndpoint(), c.L2Endpoint)
 		s.Equal(s.L2.AuthEndpoint(), c.L2EngineEndpoint)
-		s.Equal(testutils.TaikoL1Address, c.TaikoL1Address.String())
+		s.Equal(s.L1.TaikoL1Address, c.TaikoL1Address.String())
 		s.Equal(testutils.TaikoL2Address, c.TaikoL2Address.String())
 		s.Equal(120*time.Second, c.P2PSyncTimeout)
 		s.Equal(rpcTimeout, *c.RPCTimeout)
@@ -37,7 +37,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.L1WSEndpoint.Name, s.L1.WsEndpoint(),
 		"--" + flags.L2WSEndpoint.Name, s.L2.WsEndpoint(),
 		"--" + flags.L2AuthEndpoint.Name, s.L2.AuthEndpoint(),
-		"--" + flags.TaikoL1Address.Name, testutils.TaikoL1Address.Hex(),
+		"--" + flags.TaikoL1Address.Name, s.L1.TaikoL1Address.Hex(),
 		"--" + flags.TaikoL2Address.Name, testutils.TaikoL2Address.Hex(),
 		"--" + flags.JWTSecret.Name, testutils.JwtSecretFile,
 		"--" + flags.P2PSyncTimeout.Name, "120",

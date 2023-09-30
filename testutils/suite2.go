@@ -14,42 +14,38 @@ const (
 
 type ClientSuite struct {
 	suite.Suite
-	L1 *gethContainer
-	L2 *gethContainer
+	testnetL1SnapshotID string
+	L1                  *gethContainer
+	L2                  *gethContainer
+	rpcCliL1            *rpc.Client
 }
 
 func (s *ClientSuite) SetupSuite() {
+	s.L1 = s.NewL1(s.getTestName())
+	s.L2 = s.NewL2(s.getTestName())
+	var err error
+	s.rpcCliL1, err = rpc.DialContext(context.Background(), s.L1.HttpEndpoint())
+	s.NoError(err)
 }
 
 func (s *ClientSuite) TearDownSuite() {
+	s.StopL1()
+	s.StopL2()
 }
 
 func (s *ClientSuite) SetupTest() {
-	s.Reset()
-}
-
-func (s *ClientSuite) Reset() {
-	s.ResetL1()
-	s.ResetL2()
-}
-
-func (s *ClientSuite) ResetL1() {
-	if s.L1 != nil {
-		s.NoError(s.L1.Stop())
-	}
-	s.L1 = s.NewL1()
-}
-
-func (s *ClientSuite) ResetL2() {
-	if s.L2 != nil {
-		s.NoError(s.L2.Stop())
-	}
-	s.L2 = s.NewL2()
+	s.NoError(s.rpcCliL1.CallContext(context.Background(), &s.testnetL1SnapshotID, "evm_snapshot"))
+	s.NotEmpty(s.testnetL1SnapshotID)
 }
 
 func (s *ClientSuite) TearDownTest() {
-	s.StopL1()
-	s.StopL2()
+	var revertRes bool
+	s.Nil(s.rpcCliL1.CallContext(context.Background(), &revertRes, "evm_revert", s.testnetL1SnapshotID))
+	s.True(revertRes)
+}
+
+func (s *ClientSuite) getTestName() string {
+	return strings.ReplaceAll(s.T().Name(), "/", "_")
 }
 
 func (s *ClientSuite) StopL1() {
@@ -62,15 +58,13 @@ func (s *ClientSuite) StopL2() {
 	s.L2 = nil
 }
 
-func (s *ClientSuite) NewL1() *gethContainer {
-	name := strings.ReplaceAll(s.T().Name(), "/", "_")
+func (s *ClientSuite) NewL1(name string) *gethContainer {
 	c, err := newL1Container("L1_" + name)
 	s.NoError(err)
 	return c
 }
 
-func (s *ClientSuite) NewL2() *gethContainer {
-	name := strings.ReplaceAll(s.T().Name(), "/", "_")
+func (s *ClientSuite) NewL2(name string) *gethContainer {
 	c, err := newL2Container("L2_" + name)
 	s.NoError(err)
 	return c

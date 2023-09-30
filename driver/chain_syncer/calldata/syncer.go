@@ -243,6 +243,7 @@ func (s *Syncer) onBlockProposed(
 	log.Info(
 		"Validate transactions list",
 		"blockID", event.BlockId,
+		"L1Height", event.Meta.L1Height,
 		"hint", hint,
 		"invalidTxIndex", invalidTxIndex,
 	)

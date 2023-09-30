@@ -46,8 +46,8 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
 		L1Endpoint:        s.L1.WsEndpoint(),
 		L2Endpoint:        s.L2.WsEndpoint(),
-		TaikoL1Address:    testutils.TaikoL1Address,
-		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL1Address:    s.L1.TaikoL1Address,
+		TaikoTokenAddress: s.L1.TaikoL1TokenAddress,
 		TaikoL2Address:    testutils.TaikoL2Address,
 		L2EngineEndpoint:  s.L2.AuthEndpoint(),
 		JwtSecret:         string(jwtSecret),
@@ -87,7 +87,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		s.rpcClient,
 		testState,
 		tracker,
-		testutils.TaikoL1SignalService,
+		s.L1.TaikoL1SignalService,
 	)
 	s.Nil(err)
 
@@ -97,14 +97,15 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
 	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.NoError(err)
-	s.proverServer, err = helper.NewFakeProver(&protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.proverServer, err = helper.NewFakeProver(s.L1.TaikoL1Address, &protocolConfigs, jwtSecret,
+		s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
 	s.NoError(err)
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                         s.L1.WsEndpoint(),
 		L2Endpoint:                         s.L2.WsEndpoint(),
-		TaikoL1Address:                     testutils.TaikoL1Address,
+		TaikoL1Address:                     s.L1.TaikoL1Address,
 		TaikoL2Address:                     testutils.TaikoL2Address,
-		TaikoTokenAddress:                  testutils.TaikoL1TokenAddress,
+		TaikoTokenAddress:                  s.L1.TaikoL1TokenAddress,
 		L1ProposerPrivKey:                  testutils.ProposerPrivKey,
 		L2SuggestedFeeRecipient:            testutils.ProposerAddress,
 		ProposeInterval:                    &proposeInterval,

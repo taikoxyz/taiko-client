@@ -3,19 +3,16 @@ package testutils
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
+	"regexp"
 	"strings"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/testutils/docker"
 )
 
@@ -24,8 +21,7 @@ const (
 	gethWSPort        uint64 = 8546
 	gethAuthPort      uint64 = 8551
 	gethDiscoveryPort uint64 = 30303
-	baseContainerName        = "L1Base"
-	showDeployLog            = false
+	showDeployLog            = true
 )
 
 var (
@@ -36,21 +32,12 @@ var (
 	gethDiscoveryUdpNatPort = natUdpPort(gethDiscoveryPort)
 )
 
-// variables need to be initialized
-var (
-	JwtSecretFile   string
-	monoPath        string
-	l1BaseContainer = &baseContainer{alwaysReset: false}
-)
-
 type gethContainer struct {
 	*docker.ReadyContainer
-	isAnvil bool
-}
-
-type baseContainer struct {
-	*gethContainer
-	alwaysReset bool
+	isAnvil              bool
+	TaikoL1Address       common.Address
+	TaikoL1TokenAddress  common.Address
+	TaikoL1SignalService common.Address
 }
 
 func natTcpPort(p uint64) nat.Port {
@@ -94,6 +81,51 @@ func (e *gethContainer) AuthEndpoint() string {
 		}
 	}
 	return ""
+}
+
+func (e *gethContainer) deployTaikoL1() error {
+	l2GenesisHash, err := getL2GenesisHash()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command("forge",
+		"script",
+		"script/DeployOnL1.s.sol:DeployOnL1",
+		"--fork-url",
+		e.HttpEndpoint(),
+		"--broadcast",
+		"--ffi",
+		"-vvvvv",
+		"--block-gas-limit",
+		"100000000",
+	)
+
+	cmd.Env = []string{
+		fmt.Sprintf("PRIVATE_KEY=%s", ProposerPrivateKey),
+		fmt.Sprintf("ORACLE_PROVER=%s", OracleProverAddress.Hex()),
+		"OWNER=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+		fmt.Sprintf("TAIKO_L2_ADDRESS=%s", TaikoL2Address.Hex()),
+		"L2_SIGNAL_SERVICE=0x1000777700000000000000000000000000000007",
+		"SHARED_SIGNAL_SERVICE=0x0000000000000000000000000000000000000000",
+		fmt.Sprintf("TAIKO_TOKEN_PREMINT_RECIPIENTS=%s,%s", ProposerAddress.Hex(), OracleProverAddress.Hex()),
+		fmt.Sprintf("TAIKO_TOKEN_PREMINT_AMOUNTS=%s,%s", premintTokenAmount, premintTokenAmount),
+		fmt.Sprintf("L2_GENESIS_HASH=%s", l2GenesisHash),
+	}
+	cmd.Dir = monoPath + "/packages/protocol"
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("out=%s,err=%w", string(out), err)
+	}
+	if showDeployLog {
+		scanner := bufio.NewScanner(strings.NewReader(string(out)))
+		for scanner.Scan() {
+			fmt.Println(scanner.Text())
+		}
+	}
+	if err := e.initL1ContractAddress(out); err != nil {
+		return err
+	}
+	return nil
 }
 
 func newL1Container(name string) (*gethContainer, error) {
@@ -201,120 +233,6 @@ func newL2Container(name string) (*gethContainer, error) {
 	}, nil
 }
 
-func delExistedBaseContainer(ctx context.Context) error {
-	cli, err := client.NewClientWithOpts()
-	if err != nil {
-		return err
-	}
-	id, err := findContainerID(ctx, baseContainerName)
-	if err != nil {
-		return err
-	}
-	if id == "" {
-		return nil
-	}
-	if err := cli.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true}); err != nil {
-		return err
-	}
-	return cli.Close()
-}
-
-func findContainerID(ctx context.Context, containerName string) (string, error) {
-	cli, err := client.NewClientWithOpts()
-	if err != nil {
-		return "", err
-	}
-	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
-	if err != nil {
-		return "", err
-	}
-	var containerID string
-	for _, c := range containers {
-		for _, n := range c.Names {
-			if n[1:] == containerName {
-				containerID = c.ID
-				break
-			}
-		}
-	}
-	return containerID, cli.Close()
-}
-
-func findGethContainer(ctx context.Context, containerName string) (*gethContainer, error) {
-	c := &gethContainer{
-		ReadyContainer: &docker.ReadyContainer{},
-	}
-	id, err := findContainerID(ctx, baseContainerName)
-	if err != nil {
-		return nil, err
-	}
-	if id == "" {
-		return nil, nil
-	}
-	c.ID = id
-	c.Name = containerName
-	cli, err := client.NewClientWithOpts()
-	if err != nil {
-		return nil, err
-	}
-	defer cli.Close()
-	c.IPAddress, c.PortMap, err = docker.GetContainerInfo(ctx, cli, id)
-	if err != nil {
-		return nil, err
-	}
-	return c, nil
-}
-
-func startBaseContainer(ctx context.Context) (err error) {
-	c, err := findRunningL1BaseContainer(ctx)
-	if err != nil {
-		return err
-	}
-	if c != nil {
-		if !l1BaseContainer.alwaysReset {
-			l1BaseContainer = c
-			if err := findL1ContractAddress(); err != nil {
-				return err
-			}
-			return nil
-		}
-		if err := delExistedBaseContainer(ctx); err != nil {
-			return err
-		}
-	}
-
-	l1BaseContainer.gethContainer, err = newAnvilContainer(ctx, true, baseContainerName)
-	if err != nil {
-		return err
-	}
-	if err := deployTaikoL1(l1BaseContainer.HttpEndpoint()); err != nil {
-		return err
-	}
-	if err := findL1ContractAddress(); err != nil {
-		return err
-	}
-	if ensureProverBalance(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func findRunningL1BaseContainer(ctx context.Context) (*baseContainer, error) {
-	c, err := findGethContainer(ctx, baseContainerName)
-	if err != nil {
-		return nil, err
-	}
-	if c != nil {
-		c.isAnvil = true
-		bc := &baseContainer{
-			gethContainer: c,
-			alwaysReset:   false,
-		}
-		return bc, nil
-	}
-	return nil, nil
-}
-
 func newAnvilContainer(ctx context.Context, isBase bool, name string) (*gethContainer, error) {
 	cc := &container.Config{
 		Image: "ghcr.io/foundry-rs/foundry:latest",
@@ -323,11 +241,9 @@ func newAnvilContainer(ctx context.Context, isBase bool, name string) (*gethCont
 		},
 		Entrypoint: []string{"anvil", "--host", "0.0.0.0"},
 	}
-	if !isBase {
-		cc.Entrypoint = append(cc.Entrypoint, "--fork-url", l1BaseContainer.InnerHttpEndpoint())
-	}
 	hc := &container.HostConfig{
 		AutoRemove: true,
+		Binds:      []string{fmt.Sprintf("%s:/host/state.json", stateFile)},
 		PortBindings: map[nat.Port][]nat.PortBinding{
 			gethHttpNatPort: {
 				{
@@ -348,8 +264,14 @@ func newAnvilContainer(ctx context.Context, isBase bool, name string) (*gethCont
 	if err := c.Start(ctx); err != nil {
 		return nil, err
 	}
-
-	return &gethContainer{ReadyContainer: c, isAnvil: true}, nil
+	gc := &gethContainer{ReadyContainer: c, isAnvil: true}
+	if err := gc.deployTaikoL1(); err != nil {
+		return nil, err
+	}
+	if ensureProverBalance(gc); err != nil {
+		return nil, err
+	}
+	return gc, nil
 }
 
 func getL2GenesisHash() (string, error) {
@@ -373,88 +295,28 @@ func getL2GenesisHash() (string, error) {
 	return genesis.Hash().String(), nil
 }
 
-func deployTaikoL1(endpoint string) error {
-	l2GenesisHash, err := getL2GenesisHash()
-	if err != nil {
-		return err
-	}
-	cmd := exec.Command("forge",
-		"script",
-		"script/DeployOnL1.s.sol:DeployOnL1",
-		"--fork-url",
-		endpoint,
-		"--broadcast",
-		"--ffi",
-		"-vvvvv",
-		"--block-gas-limit",
-		"100000000",
-	)
-
-	cmd.Env = []string{
-		fmt.Sprintf("PRIVATE_KEY=%s", ProposerPrivateKey),
-		fmt.Sprintf("ORACLE_PROVER=%s", OracleProverAddress.Hex()),
-		"OWNER=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-		fmt.Sprintf("TAIKO_L2_ADDRESS=%s", TaikoL2Address.Hex()),
-		"L2_SIGNAL_SERVICE=0x1000777700000000000000000000000000000007",
-		"SHARED_SIGNAL_SERVICE=0x0000000000000000000000000000000000000000",
-		fmt.Sprintf("TAIKO_TOKEN_PREMINT_RECIPIENTS=%s,%s", ProposerAddress.Hex(), OracleProverAddress.Hex()),
-		fmt.Sprintf("TAIKO_TOKEN_PREMINT_AMOUNTS=%s,%s", premintTokenAmount, premintTokenAmount),
-		fmt.Sprintf("L2_GENESIS_HASH=%s", l2GenesisHash),
-	}
-	cmd.Dir = monoPath + "/packages/protocol"
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("out=%s,err=%w", string(out), err)
-	}
-	if showDeployLog {
-		scanner := bufio.NewScanner(strings.NewReader(string(out)))
-		for scanner.Scan() {
-			fmt.Println(scanner.Text())
+func (gc *gethContainer) initL1ContractAddress(output []byte) error {
+	re := regexp.MustCompile(`(\w+) \((\w+)\) -> (\w+)`)
+	scanner := bufio.NewScanner(strings.NewReader(string(output)))
+	for scanner.Scan() {
+		text := scanner.Text()
+		matches := re.FindStringSubmatch(text)
+		if len(matches) != 4 {
+			continue
+		}
+		switch {
+		case matches[1] == "taiko" && matches[2] == "proxy":
+			gc.TaikoL1Address = common.HexToAddress(matches[3])
+		case matches[1] == "taiko_token" && matches[2] == "proxy":
+			gc.TaikoL1TokenAddress = common.HexToAddress(matches[3])
+		case matches[1] == "signal_service" && matches[2] == "proxy":
+			gc.TaikoL1SignalService = common.HexToAddress(matches[3])
+		default:
+			continue
 		}
 	}
-	return nil
-}
-
-func findL1ContractAddress() error {
-	deployPath := monoPath + "/packages/protocol/deployments/deploy_l1.json"
-	data, err := os.ReadFile(deployPath)
-	if err != nil {
-		return err
-	}
-	v := struct {
-		TaikoL1       string `json:"taiko"`
-		TaikoToken    string `json:"taiko_token"`
-		SignalService string `json:"signal_service"`
-	}{}
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	TaikoL1Address = common.HexToAddress(v.TaikoL1)
-	TaikoL1TokenAddress = common.HexToAddress(v.TaikoToken)
-	TaikoL1SignalService = common.HexToAddress(v.SignalService)
-	return nil
-}
-
-func initJwtSecret() (err error) {
-	path := os.Getenv("JWT_SECRET")
-	if path == "" {
-		path = "/Users/lsl/go/src/github/taikoxyz/taiko-client/integration_test/nodes/jwt.hex"
-	}
-	JwtSecretFile, err = filepath.Abs(path)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func initMonoPath() (err error) {
-	path := os.Getenv("TAIKO_MONO")
-	if path == "" {
-		path = "/Users/lsl/go/src/github/taikoxyz/taiko-mono"
-	}
-	monoPath, err = filepath.Abs(path)
-	if err != nil {
-		return err
-	}
+	log.Info("Init", "taikoL1 address", gc.TaikoL1Address.Hex())
+	log.Info("Init", "taikoL1Token address", gc.TaikoL1TokenAddress.Hex())
+	log.Info("Init", "taikoL1SignalService address", gc.TaikoL1SignalService.Hex())
 	return nil
 }

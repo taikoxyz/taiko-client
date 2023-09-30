@@ -26,9 +26,9 @@ func (s *RpcTestSuite) newTestClient() *Client {
 	cli, err := NewClient(context.Background(), &ClientConfig{
 		L1Endpoint:        s.L1.WsEndpoint(),
 		L2Endpoint:        s.L2.WsEndpoint(),
-		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoL1Address:    s.L1.TaikoL1Address,
 		TaikoL2Address:    testutils.TaikoL2Address,
-		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoTokenAddress: s.L1.TaikoL1TokenAddress,
 		L2EngineEndpoint:  s.L2.AuthEndpoint(),
 		JwtSecret:         testutils.JwtSecretFile,
 		RetryInterval:     backoff.DefaultMaxInterval,
@@ -43,9 +43,9 @@ func (s *RpcTestSuite) newTestClientWithTimeout() *Client {
 	cli, err := NewClient(context.Background(), &ClientConfig{
 		L1Endpoint:        s.L1.WsEndpoint(),
 		L2Endpoint:        s.L2.WsEndpoint(),
-		TaikoL1Address:    testutils.TaikoL1Address,
+		TaikoL1Address:    s.L1.TaikoL1Address,
 		TaikoL2Address:    testutils.TaikoL2Address,
-		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoTokenAddress: s.L1.TaikoL1TokenAddress,
 		L2EngineEndpoint:  s.L2.AuthEndpoint(),
 		JwtSecret:         testutils.JwtSecretFile,
 		RetryInterval:     backoff.DefaultMaxInterval,

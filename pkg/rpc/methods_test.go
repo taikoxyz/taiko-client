@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 var testAddress = common.HexToAddress("0x98f86166571FE624778203d87A8eD6fd84695B79")
@@ -148,7 +147,7 @@ func (s *RpcTestSuite) TestGetStorageRootNewestBlock() {
 	_, err := client.GetStorageRoot(
 		context.Background(),
 		client.L1GethClient,
-		testutils.TaikoL1SignalService,
+		s.L1.TaikoL1SignalService,
 		nil)
 	s.NoError(err)
 }

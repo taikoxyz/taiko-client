@@ -30,8 +30,8 @@ func (s *AnchorTxConstructorTestSuite) SetupTest() {
 	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
 		L1Endpoint:        s.L1.WsEndpoint(),
 		L2Endpoint:        s.L2.WsEndpoint(),
-		TaikoL1Address:    testutils.TaikoL1Address,
-		TaikoTokenAddress: testutils.TaikoL1TokenAddress,
+		TaikoL1Address:    s.L1.TaikoL1Address,
+		TaikoTokenAddress: s.L1.TaikoL1TokenAddress,
 		TaikoL2Address:    testutils.TaikoL2Address,
 		L2EngineEndpoint:  s.L2.AuthEndpoint(),
 		JwtSecret:         string(jwtSecret),
@@ -41,7 +41,7 @@ func (s *AnchorTxConstructorTestSuite) SetupTest() {
 
 	c, err := New(
 		s.rpcClient,
-		testutils.TaikoL1SignalService,
+		s.L1.TaikoL1SignalService,
 	)
 	s.Nil(err)
 	head, err := s.rpcClient.L1.BlockByNumber(context.Background(), nil)
@@ -70,7 +70,7 @@ func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
 	goldenTouchAddress, err := s.rpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)
 
-	c, err := New(s.rpcClient, testutils.TaikoL1SignalService)
+	c, err := New(s.rpcClient, s.L1.TaikoL1SignalService)
 	s.Nil(err)
 
 	opts, err := c.transactOpts(context.Background(), common.Big1, common.Big256)

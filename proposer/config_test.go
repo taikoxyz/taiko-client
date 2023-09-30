@@ -33,9 +33,9 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
 		s.Equal(s.L2.HttpEndpoint(), c.L2Endpoint)
-		s.Equal(testutils.TaikoL1Address, c.TaikoL1Address.String())
+		s.Equal(s.L1.TaikoL1Address, c.TaikoL1Address.String())
 		s.Equal(testutils.TaikoL2Address, c.TaikoL2Address.String())
-		s.Equal(testutils.TaikoL1TokenAddress, c.TaikoTokenAddress.String())
+		s.Equal(s.L1.TaikoL1TokenAddress, c.TaikoTokenAddress.String())
 		s.Equal(goldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
 		s.Equal(goldenTouchAddress, c.L2SuggestedFeeRecipient)
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
@@ -62,9 +62,9 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"TestNewConfigFromCliContext",
 		"--" + flags.L1WSEndpoint.Name, s.L1.WsEndpoint(),
 		"--" + flags.L2HTTPEndpoint.Name, s.L2.HttpEndpoint(),
-		"--" + flags.TaikoL1Address.Name, testutils.TaikoL1Address.Hex(),
+		"--" + flags.TaikoL1Address.Name, s.L1.TaikoL1Address.Hex(),
 		"--" + flags.TaikoL2Address.Name, testutils.TaikoL2Address.Hex(),
-		"--" + flags.TaikoTokenAddress.Name, testutils.TaikoL1TokenAddress.Hex(),
+		"--" + flags.TaikoTokenAddress.Name, s.L1.TaikoL1TokenAddress.Hex(),
 		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
 		"--" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"--" + flags.ProposeInterval.Name, proposeInterval,

@@ -48,12 +48,12 @@ func initProverAccount() (err error) {
 	return nil
 }
 
-func ensureProverBalance() error {
-	cli, err := ethclient.Dial(l1BaseContainer.HttpEndpoint())
+func ensureProverBalance(c *gethContainer) error {
+	cli, err := ethclient.Dial(c.HttpEndpoint())
 	if err != nil {
 		return err
 	}
-	taikoL1, err := bindings.NewTaikoL1Client(TaikoL1Address, cli)
+	taikoL1, err := bindings.NewTaikoL1Client(c.TaikoL1Address, cli)
 	if err != nil {
 		return err
 	}
@@ -73,11 +73,11 @@ func ensureProverBalance() error {
 		return err
 	}
 	premintAmount, _ := new(big.Int).SetString(premintTokenAmount, 10)
-	taikoToken, err := bindings.NewTaikoToken(TaikoL1TokenAddress, cli)
+	taikoToken, err := bindings.NewTaikoToken(c.TaikoL1TokenAddress, cli)
 	if err != nil {
 		return err
 	}
-	if _, err = taikoToken.Approve(opts, TaikoL1Address, premintAmount); err != nil {
+	if _, err = taikoToken.Approve(opts, c.TaikoL1Address, premintAmount); err != nil {
 		return err
 	}
 

@@ -46,7 +46,7 @@ func (s *ProverTestSuite) SetupTest() {
 		L1HttpEndpoint:                  s.L1.HttpEndpoint(),
 		L2WsEndpoint:                    s.L2.WsEndpoint(),
 		L2HttpEndpoint:                  s.L2.HttpEndpoint(),
-		TaikoL1Address:                  testutils.TaikoL1Address,
+		TaikoL1Address:                  s.L1.TaikoL1Address,
 		TaikoL2Address:                  testutils.TaikoL2Address,
 		L1ProverPrivKey:                 l1ProverPrivKey,
 		OracleProverPrivateKey:          l1ProverPrivKey,
@@ -66,7 +66,8 @@ func (s *ProverTestSuite) SetupTest() {
 	s.NoError(err)
 	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.NoError(err)
-	p.srv, err = helper.NewFakeProver(&protocolConfigs, jwtSecret, s.rpcClient, l1ProverPrivKey, p.capacityManager, proverServerUrl)
+	p.srv, err = helper.NewFakeProver(s.L1.TaikoL1Address, &protocolConfigs, jwtSecret,
+		s.rpcClient, l1ProverPrivKey, p.capacityManager, proverServerUrl)
 	s.NoError(err)
 	s.p = p
 	s.cancel = cancel
@@ -78,7 +79,7 @@ func (s *ProverTestSuite) SetupTest() {
 		L1Endpoint:       s.L1.WsEndpoint(),
 		L2Endpoint:       s.L2.WsEndpoint(),
 		L2EngineEndpoint: s.L2.AuthEndpoint(),
-		TaikoL1Address:   testutils.TaikoL1Address,
+		TaikoL1Address:   s.L1.TaikoL1Address,
 		TaikoL2Address:   testutils.TaikoL2Address,
 		JwtSecret:        string(jwtSecret),
 	}))
@@ -94,9 +95,9 @@ func (s *ProverTestSuite) SetupTest() {
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                         s.L1.WsEndpoint(),
 		L2Endpoint:                         s.L2.WsEndpoint(),
-		TaikoL1Address:                     testutils.TaikoL1Address,
+		TaikoL1Address:                     s.L1.TaikoL1Address,
 		TaikoL2Address:                     testutils.TaikoL2Address,
-		TaikoTokenAddress:                  testutils.TaikoL1TokenAddress,
+		TaikoTokenAddress:                  s.L1.TaikoL1TokenAddress,
 		L1ProposerPrivKey:                  l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:            testutils.ProposerAddress,
 		ProposeInterval:                    &proposeInterval,
@@ -134,7 +135,7 @@ func (s *ProverTestSuite) TestInitError() {
 		L1HttpEndpoint:                    s.L1.HttpEndpoint(),
 		L2WsEndpoint:                      s.L2.WsEndpoint(),
 		L2HttpEndpoint:                    s.L2.HttpEndpoint(),
-		TaikoL1Address:                    testutils.TaikoL1Address,
+		TaikoL1Address:                    s.L1.TaikoL1Address,
 		TaikoL2Address:                    testutils.TaikoL2Address,
 		L1ProverPrivKey:                   l1ProverPrivKey,
 		OracleProverPrivateKey:            l1ProverPrivKey,

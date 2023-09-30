@@ -22,7 +22,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		s.Nil(err)
 		s.Equal(s.L1.HttpEndpoint(), c.L1HttpEndpoint)
 		s.Equal(s.L2.HttpEndpoint(), c.L2HttpEndpoint)
-		s.Equal(testutils.TaikoL1Address, c.TaikoL1Address.String())
+		s.Equal(s.L1.TaikoL1Address, c.TaikoL1Address.String())
 		s.Equal(testutils.TaikoL2Address, c.TaikoL2Address.String())
 		s.Equal(
 			crypto.PubkeyToAddress(s.p.cfg.L1ProverPrivKey.PublicKey),
@@ -57,7 +57,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"--" + flags.L1HTTPEndpoint.Name, s.L1.HttpEndpoint(),
 		"--" + flags.L2WSEndpoint.Name, s.L2.WsEndpoint(),
 		"--" + flags.L2HTTPEndpoint.Name, s.L2.HttpEndpoint(),
-		"--" + flags.TaikoL1Address.Name, testutils.TaikoL1Address.Hex(),
+		"--" + flags.TaikoL1Address.Name, s.L1.TaikoL1Address.Hex(),
 		"--" + flags.TaikoL2Address.Name, testutils.TaikoL2Address.Hex(),
 		"--" + flags.L1ProverPrivKey.Name, testutils.ProposerPrivateKey,
 		"--" + flags.StartingBlockID.Name, "0",
@@ -87,7 +87,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"--" + flags.L1HTTPEndpoint.Name, s.L1.HttpEndpoint(),
 		"--" + flags.L2WSEndpoint.Name, s.L2.WsEndpoint(),
 		"--" + flags.L2HTTPEndpoint.Name, s.L2.HttpEndpoint(),
-		"--" + flags.TaikoL1Address.Name, testutils.TaikoL1Address.Hex(),
+		"--" + flags.TaikoL1Address.Name, s.L1.TaikoL1Address.Hex(),
 		"--" + flags.TaikoL2Address.Name, testutils.TaikoL2Address.Hex(),
 		"--" + flags.L1ProverPrivKey.Name, testutils.ProposerPrivateKey,
 		"--" + flags.Dummy.Name,

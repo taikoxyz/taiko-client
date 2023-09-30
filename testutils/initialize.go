@@ -1,7 +1,6 @@
 package testutils
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -19,9 +18,6 @@ func init() {
 	g.Go(initProverAccount)
 	if err := g.Wait(); err != nil {
 		panic(err)
-	}
-	if err := startBaseContainer(context.Background()); err != nil {
-		panic(fmt.Errorf("startBaseContainer: %v", err))
 	}
 }
 

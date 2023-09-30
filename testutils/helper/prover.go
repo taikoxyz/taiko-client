@@ -16,12 +16,12 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
-	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 // NewFakeProver starts a new prover server that has channel listeners to respond and react
 // to requests for capacity, which provers can call.
 func NewFakeProver(
+	taikoL1Address common.Address,
 	protocolConfig *bindings.TaikoDataConfig,
 	jwtSecret []byte,
 	rpcClient *rpc.Client,
@@ -34,7 +34,7 @@ func NewFakeProver(
 		MinProofFee:      common.Big1,
 		MaxExpiry:        24 * time.Hour,
 		CapacityManager:  capacityManager,
-		TaikoL1Address:   testutils.TaikoL1Address,
+		TaikoL1Address:   taikoL1Address,
 		Rpc:              rpcClient,
 		Bond:             protocolConfig.ProofBond,
 		IsOracle:         true,
