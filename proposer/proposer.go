@@ -409,7 +409,7 @@ func (p *Proposer) ProposeTxList(
 				&encoding.ProverAssignment{
 					Prover:    prover,
 					FeeToken:  common.Address{},
-					TierFees:  []*encoding.TierFee{}, // TODO: update tier fees
+					TierFees:  []encoding.TierFee{}, // TODO: update tier fees
 					Expiry:    uint64(proverAssignmentTimeout.Seconds()),
 					Signature: signature,
 				},

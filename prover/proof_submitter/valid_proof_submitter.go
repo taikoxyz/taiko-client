@@ -228,14 +228,14 @@ func (s *ValidProofSubmitter) SubmitProof(
 		SignalRoot: proofWithHeader.Opts.SignalRoot,
 		Graffiti:   s.graffiti,
 		Tier:       0, // TODO: update tier
-		Proofs:     zkProof,
+		Proof:      zkProof,
 	}
 
 	circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
 	if err != nil {
 		return err
 	}
-	evidence.Proofs = append(uint16ToBytes(circuitsIdx), evidence.Proofs...)
+	evidence.Proof = append(uint16ToBytes(circuitsIdx), evidence.Proof...)
 
 	input, err := encoding.EncodeEvidence(evidence)
 	if err != nil {

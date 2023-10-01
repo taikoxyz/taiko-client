@@ -461,16 +461,11 @@ func (p *Prover) onBlockProposed(
 			p.cancelProof(ctx, event.Meta.Id)
 		}
 
-		block, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId.Uint64())
-		if err != nil {
-			return err
-		}
-
 		log.Info(
 			"Proposed block information",
 			"blockID", event.BlockId,
-			"assignedProver", block.AssignedProver,
-			"proposedAt", block.ProposedAt,
+			"assignedProver", event.AssignedProver,
+			"minTier", event.MinTier,
 		)
 
 		// TODO: add this back

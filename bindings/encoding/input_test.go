@@ -18,7 +18,7 @@ func TestEncodeEvidence(t *testing.T) {
 		SignalRoot: randomHash(),
 		Graffiti:   randomHash(),
 		Tier:       uint16(rand.Uint64()),
-		Proofs:     randomHash().Big().Bytes(),
+		Proof:      randomHash().Big().Bytes(),
 	}
 
 	b, err := EncodeEvidence(evidence)
@@ -32,7 +32,7 @@ func TestEncodeProverAssignment(t *testing.T) {
 		&ProverAssignment{
 			Prover:    common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
 			FeeToken:  common.Address{},
-			TierFees:  []*TierFee{},
+			TierFees:  []TierFee{{Tier: 0, Fee: common.Big1}},
 			Signature: randomHash().Big().Bytes(),
 			Expiry:    1024,
 		},

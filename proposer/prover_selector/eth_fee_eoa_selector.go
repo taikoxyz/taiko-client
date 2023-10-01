@@ -227,7 +227,7 @@ func assignProver(
 	encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
 		Prover:    result.Prover,
 		FeeToken:  common.Address{},
-		TierFees:  []*encoding.TierFee{}, // TODO: update tier fees
+		TierFees:  []encoding.TierFee{}, // TODO: update tier fees
 		Expiry:    reqBody.Expiry,
 		Signature: result.SignedPayload,
 	})

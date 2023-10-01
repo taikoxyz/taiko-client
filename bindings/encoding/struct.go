@@ -36,7 +36,7 @@ type BlockEvidence struct {
 	SignalRoot [32]byte
 	Graffiti   [32]byte
 	Tier       uint16
-	Proofs     []byte
+	Proof      []byte
 }
 
 // TierFee should be same with TaikoData.TierFee.
@@ -49,7 +49,7 @@ type TierFee struct {
 type ProverAssignment struct {
 	Prover    common.Address
 	FeeToken  common.Address
-	TierFees  []*TierFee
+	TierFees  []TierFee
 	Expiry    uint64
 	Signature []byte
 }

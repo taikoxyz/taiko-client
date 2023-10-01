@@ -175,7 +175,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		&encoding.ProverAssignment{
 			Prover:    prover,
 			FeeToken:  common.Address{},
-			TierFees:  []*encoding.TierFee{},
+			TierFees:  []encoding.TierFee{},
 			Expiry:    uint64(proverAssignmentTimeout.Seconds()),
 			Signature: signature,
 		},

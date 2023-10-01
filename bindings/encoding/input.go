@@ -57,7 +57,7 @@ var (
 			Components: []abi.ArgumentMarshaling{
 				{
 					Name: "tier",
-					Type: "uint64",
+					Type: "uint16",
 				},
 				{
 					Name: "fee",
