@@ -806,8 +806,12 @@ func (p *Prover) initSubscription() {
 
 // closeSubscription closes all subscriptions.
 func (p *Prover) closeSubscription() {
-	p.blockVerifiedSub.Unsubscribe()
-	p.blockProposedSub.Unsubscribe()
+	if p.blockVerifiedSub != nil {
+		p.blockVerifiedSub.Unsubscribe()
+	}
+	if p.blockProposedSub != nil {
+		p.blockProposedSub.Unsubscribe()
+	}
 }
 
 // checkChainVerification checks if there is no new block verification in protocol, if so,

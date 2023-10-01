@@ -63,7 +63,6 @@ func (s *ProverTestSuite) SetupTest() {
 	s.NoError(err)
 	s.NotEmpty(jwtSecret)
 	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
-	s.NoError(err)
 	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.NoError(err)
 	p.srv, err = helper.NewFakeProver(s.L1.TaikoL1Address, &protocolConfigs, jwtSecret,
@@ -113,9 +112,10 @@ func (s *ProverTestSuite) SetupTest() {
 }
 
 func (s *ProverTestSuite) TearDownTest() {
-	s.rpcClient.Close()
-	s.p.srv.Shutdown(context.Background())
 	s.proposer.Close(context.Background())
+	s.d.Close(context.Background())
+	s.p.Close(context.Background())
+	s.rpcClient.Close()
 	s.ClientSuite.TearDownTest()
 }
 

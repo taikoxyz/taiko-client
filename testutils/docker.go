@@ -84,7 +84,7 @@ func (e *gethContainer) AuthEndpoint() string {
 }
 
 func (e *gethContainer) deployTaikoL1() error {
-	l2GenesisHash, err := getL2GenesisHash()
+	l2GenesisHash, err := e.getL2GenesisHash()
 	if err != nil {
 		return err
 	}
@@ -103,10 +103,10 @@ func (e *gethContainer) deployTaikoL1() error {
 	cmd.Env = []string{
 		fmt.Sprintf("PRIVATE_KEY=%s", ProposerPrivateKey),
 		fmt.Sprintf("ORACLE_PROVER=%s", OracleProverAddress.Hex()),
-		"OWNER=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+		fmt.Sprintf("OWNER=%s", ownerAddress),
 		fmt.Sprintf("TAIKO_L2_ADDRESS=%s", TaikoL2Address.Hex()),
-		"L2_SIGNAL_SERVICE=0x1000777700000000000000000000000000000007",
-		"SHARED_SIGNAL_SERVICE=0x0000000000000000000000000000000000000000",
+		fmt.Sprintf("L2_SIGNAL_SERVICE=%s", l2SignalService.Hex()),
+		fmt.Sprintf("SHARED_SIGNAL_SERVICE=%s", sharedSignalService.Hex()),
 		fmt.Sprintf("TAIKO_TOKEN_PREMINT_RECIPIENTS=%s,%s", ProposerAddress.Hex(), OracleProverAddress.Hex()),
 		fmt.Sprintf("TAIKO_TOKEN_PREMINT_AMOUNTS=%s,%s", premintTokenAmount, premintTokenAmount),
 		fmt.Sprintf("L2_GENESIS_HASH=%s", l2GenesisHash),
@@ -274,8 +274,8 @@ func newAnvilContainer(ctx context.Context, isBase bool, name string) (*gethCont
 	return gc, nil
 }
 
-func getL2GenesisHash() (string, error) {
-	c, err := newL2Container("genesis")
+func (gc *gethContainer) getL2GenesisHash() (string, error) {
+	c, err := newL2Container("genesis_" + gc.Name)
 	if err != nil {
 		return "", err
 	}
@@ -290,9 +290,10 @@ func getL2GenesisHash() (string, error) {
 		return "", err
 	}
 	if err := c.Stop(); err != nil {
-		fmt.Printf("Can not stop genesis container: %v", err)
+		log.Warn("Can not stop genesis container: %v", err)
 	}
-	return genesis.Hash().String(), nil
+
+	return genesis.Hash().Hex(), nil
 }
 
 func (gc *gethContainer) initL1ContractAddress(output []byte) error {

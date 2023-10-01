@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
@@ -43,17 +42,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.ClientSuite.SetupTest()
 	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
 	s.NoError(err)
-	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
-		L1Endpoint:        s.L1.WsEndpoint(),
-		L2Endpoint:        s.L2.WsEndpoint(),
-		TaikoL1Address:    s.L1.TaikoL1Address,
-		TaikoTokenAddress: s.L1.TaikoL1TokenAddress,
-		TaikoL2Address:    testutils.TaikoL2Address,
-		L2EngineEndpoint:  s.L2.AuthEndpoint(),
-		JwtSecret:         string(jwtSecret),
-		RetryInterval:     backoff.DefaultMaxInterval,
-	})
-	s.NoError(err)
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
 
 	s.validProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
 	s.invalidProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
@@ -121,6 +110,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 }
 
 func (s *ProofSubmitterTestSuite) TearDownTest() {
+	s.proposer.Close(context.Background())
 	s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
 	s.ClientSuite.TearDownTest()

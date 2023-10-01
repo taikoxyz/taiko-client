@@ -22,8 +22,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		s.Nil(err)
 		s.Equal(s.L1.HttpEndpoint(), c.L1HttpEndpoint)
 		s.Equal(s.L2.HttpEndpoint(), c.L2HttpEndpoint)
-		s.Equal(s.L1.TaikoL1Address, c.TaikoL1Address.String())
-		s.Equal(testutils.TaikoL2Address, c.TaikoL2Address.String())
+		s.Equal(s.L1.TaikoL1Address, c.TaikoL1Address)
+		s.Equal(testutils.TaikoL2Address, c.TaikoL2Address)
 		s.Equal(
 			crypto.PubkeyToAddress(s.p.cfg.L1ProverPrivKey.PublicKey),
 			crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey),
@@ -59,7 +59,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"--" + flags.L2HTTPEndpoint.Name, s.L2.HttpEndpoint(),
 		"--" + flags.TaikoL1Address.Name, s.L1.TaikoL1Address.Hex(),
 		"--" + flags.TaikoL2Address.Name, testutils.TaikoL2Address.Hex(),
-		"--" + flags.L1ProverPrivKey.Name, testutils.ProposerPrivateKey,
+		"--" + flags.L1ProverPrivKey.Name, testutils.ProverPrivateKey,
 		"--" + flags.StartingBlockID.Name, "0",
 		"--" + flags.RPCTimeout.Name, "5",
 		"--" + flags.ProveBlockTxGasLimit.Name, "100000",

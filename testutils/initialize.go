@@ -22,7 +22,7 @@ func init() {
 }
 
 func initLog() (err error) {
-	level := log.LvlDebug
+	level := log.LvlInfo
 	if os.Getenv("LOG_LEVEL") != "" {
 		level, err = log.LvlFromString(os.Getenv("LOG_LEVEL"))
 		if err != nil {

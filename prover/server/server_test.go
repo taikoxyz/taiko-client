@@ -23,15 +23,17 @@ import (
 
 type ProverServerTestSuite struct {
 	testutils.ClientSuite
-	ps *ProverServer
-	ws *httptest.Server // web server
+	ps        *ProverServer
+	ws        *httptest.Server // web server
+	rpcClient *rpc.Client
 }
 
 func (s *ProverServerTestSuite) SetupTest() {
+	s.ClientSuite.SetupTest()
 	l1ProverPrivKey := testutils.ProverPrivKey
-
+	var err error
 	timeout := 5 * time.Second
-	rpcClient, err := rpc.NewClient(context.Background(), &rpc.ClientConfig{
+	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
 		L1Endpoint:        s.L1.WsEndpoint(),
 		L2Endpoint:        s.L2.WsEndpoint(),
 		TaikoL1Address:    s.L1.TaikoL1Address,
@@ -51,7 +53,7 @@ func (s *ProverServerTestSuite) SetupTest() {
 		maxExpiry:        24 * time.Hour,
 		capacityManager:  capacity.New(1024, 100*time.Second),
 		taikoL1Address:   s.L1.TaikoL1Address,
-		rpc:              rpcClient,
+		rpc:              s.rpcClient,
 		bond:             common.Big0,
 		isOracle:         false,
 	}
@@ -61,6 +63,12 @@ func (s *ProverServerTestSuite) SetupTest() {
 	p.configureRoutes()
 	s.ps = p
 	s.ws = httptest.NewServer(p.echo)
+}
+
+func (s *ProverServerTestSuite) TearDownTest() {
+	s.rpcClient.Close()
+	s.ws.Close()
+	s.ClientSuite.TearDownTest()
 }
 
 func (s *ProverServerTestSuite) TestHealth() {
@@ -98,11 +106,6 @@ func (s *ProverServerTestSuite) TestStartShutdown() {
 	}, backoff.NewExponentialBackOff()))
 
 	s.Nil(s.ps.Shutdown(context.Background()))
-}
-
-func (s *ProverServerTestSuite) TearDownTest() {
-	s.ws.Close()
-	s.ClientSuite.TearDownTest()
 }
 
 func TestProverServerTestSuite(t *testing.T) {

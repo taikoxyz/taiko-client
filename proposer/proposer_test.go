@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -36,17 +35,7 @@ func (s *ProposerTestSuite) SetupTest() {
 	s.ClientSuite.SetupTest()
 	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
 	s.NoError(err)
-	s.rpcClient, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
-		L1Endpoint:        s.L1.WsEndpoint(),
-		L2Endpoint:        s.L2.WsEndpoint(),
-		TaikoL1Address:    s.L1.TaikoL1Address,
-		TaikoTokenAddress: s.L1.TaikoL1TokenAddress,
-		TaikoL2Address:    testutils.TaikoL2Address,
-		L2EngineEndpoint:  s.L2.AuthEndpoint(),
-		JwtSecret:         string(jwtSecret),
-		RetryInterval:     backoff.DefaultMaxInterval,
-	})
-	s.NoError(err)
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
 	l1ProposerPrivKey := testutils.ProposerPrivKey
 	s.Nil(err)
 
@@ -83,6 +72,7 @@ func (s *ProposerTestSuite) SetupTest() {
 }
 
 func (s *ProposerTestSuite) TearDownTest() {
+	s.p.Close(context.Background())
 	s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
 	s.ClientSuite.TearDownTest()

@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/suite"
 )
@@ -40,8 +42,12 @@ func (s *ClientSuite) SetupTest() {
 
 func (s *ClientSuite) TearDownTest() {
 	var revertRes bool
-	s.Nil(s.rpcCliL1.CallContext(context.Background(), &revertRes, "evm_revert", s.testnetL1SnapshotID))
+	s.NoError(s.rpcCliL1.CallContext(context.Background(), &revertRes, "evm_revert", s.testnetL1SnapshotID))
 	s.True(revertRes)
+	rpcCli, err := rpc.Dial(s.L2.HttpEndpoint())
+	s.NoError(err)
+	defer rpcCli.Close()
+	s.NoError(gethclient.New(rpcCli).SetHead(context.Background(), common.Big0))
 }
 
 func (s *ClientSuite) getTestName() string {
