@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/taikoxyz/taiko-client/metrics"
 	"io"
 	"math/big"
 	"net/http"
@@ -165,9 +166,10 @@ func (p *ZkevmRpcdProducer) RequestProof(
 // callProverDaemon keeps polling the proverd service to get the requested proof.
 func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofRequestOptions) ([]byte, uint64, error) {
 	var (
-		proof  []byte
-		degree uint64
-		start  = time.Now()
+		proof               []byte
+		degree              uint64
+		start               = time.Now()
+		proofGenerationTime time.Duration
 	)
 	if err := backoff.Retry(func() error {
 		if ctx.Err() != nil {
@@ -194,11 +196,13 @@ func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 
 		proof = common.Hex2Bytes(proofOutput)
 		degree = output.Aggregation.Degree
-		log.Info("Proof generated", "height", opts.Height, "degree", degree, "time", time.Since(start))
+		proofGenerationTime = time.Since(start)
+		log.Info("Proof generated", "height", opts.Height, "degree", degree, "time", proofGenerationTime)
 		return nil
 	}, backoff.NewConstantBackOff(proofPollingInterval)); err != nil {
 		return nil, 0, err
 	}
+	metrics.ProofGenerationTime.Update(proofGenerationTime.Nanoseconds())
 	return proof, degree, nil
 }
 
