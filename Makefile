@@ -17,7 +17,9 @@ lint:
 	&& golangci-lint run
 
 test:
-	go test ./... -coverprofile=coverage.out -covermode=atomic -timeout=300s
+	docker pull ghcr.io/foundry-rs/foundry:latest  \
+	&& docker pull gcr.io/evmchain/taiko-geth:taiko  \
+	&& go test ./... -coverprofile=coverage.out -covermode=atomic -timeout=300s
 
 dev_net:
 	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \
