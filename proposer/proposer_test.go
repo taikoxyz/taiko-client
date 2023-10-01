@@ -14,16 +14,14 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
 	"github.com/taikoxyz/taiko-client/testutils/helper"
 )
 
 type ProposerTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	p               *Proposer
 	cancel          context.CancelFunc
 	rpcClient       *rpc.Client
@@ -32,30 +30,23 @@ type ProposerTestSuite struct {
 }
 
 func (s *ProposerTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
-	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	s.ClientTestSuite.SetupTest()
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientTestSuite)
+	var err error
+	s.proverEndpoints, s.proverServer, err = helper.DefaultFakeProver(&s.ClientTestSuite, s.rpcClient)
 	s.NoError(err)
-	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
-	l1ProposerPrivKey := testutils.ProposerPrivKey
-	s.Nil(err)
 
 	p := new(Proposer)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
-	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
-	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
-	s.NoError(err)
-	s.proverServer, err = helper.NewFakeProver(s.L1.TaikoL1Address, &protocolConfigs, jwtSecret,
-		s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
-	s.NoError(err)
+
 	s.Nil(InitFromConfig(ctx, p, (&Config{
 		L1Endpoint:                          s.L1.WsEndpoint(),
 		L2Endpoint:                          s.L2.HttpEndpoint(),
 		TaikoL1Address:                      s.L1.TaikoL1Address,
 		TaikoL2Address:                      testutils.TaikoL2Address,
 		TaikoTokenAddress:                   s.L1.TaikoL1TokenAddress,
-		L1ProposerPrivKey:                   l1ProposerPrivKey,
+		L1ProposerPrivKey:                   testutils.ProposerPrivKey,
 		L2SuggestedFeeRecipient:             testutils.ProposerAddress,
 		ProposeInterval:                     &proposeInterval,
 		MaxProposedTxListsPerEpoch:          1,
@@ -75,7 +66,7 @@ func (s *ProposerTestSuite) TearDownTest() {
 	s.p.Close(context.Background())
 	s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func (s *ProposerTestSuite) TestName() {
@@ -104,7 +95,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	baseFee, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
 	s.Nil(err)
 
-	to := common.BytesToAddress(testutils.RandomBytes(32))
+	to := common.BytesToAddress(helper.RandomBytes(32))
 	tx := types.NewTx(&types.DynamicFeeTx{
 		ChainID:   s.rpcClient.L2ChainID,
 		Nonce:     nonce,
@@ -211,7 +202,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
 	meta := &encoding.TaikoL1BlockMetadataInput{
 		Proposer:        s.p.L2SuggestedFeeRecipient(),
-		TxListHash:      testutils.RandomHash(),
+		TxListHash:      helper.RandomHash(),
 		TxListByteStart: common.Big0,
 		TxListByteEnd:   common.Big0,
 		CacheTxListInfo: false,

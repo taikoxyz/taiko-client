@@ -12,17 +12,15 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
-	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
 	"github.com/taikoxyz/taiko-client/testutils/helper"
 )
 
 type ChainSyncerTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	s               *L2ChainSyncer
 	snapshotID      string
 	p               testutils.Proposer
@@ -32,10 +30,8 @@ type ChainSyncerTestSuite struct {
 }
 
 func (s *ChainSyncerTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
-	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
-	s.NoError(err)
-	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
+	s.ClientTestSuite.SetupTest()
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientTestSuite)
 	state, err := state.New(context.Background(), s.rpcClient)
 	s.Nil(err)
 
@@ -54,11 +50,7 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 	l1ProposerPrivKey := testutils.ProposerPrivKey
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
-	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
-	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
-	s.NoError(err)
-	s.proverServer, err = helper.NewFakeProver(s.L1.TaikoL1Address, &protocolConfigs, jwtSecret,
-		s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.proverEndpoints, s.proverServer, err = helper.DefaultFakeProver(&s.ClientTestSuite, s.rpcClient)
 	s.NoError(err)
 
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
@@ -68,7 +60,7 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		TaikoL2Address:                     testutils.TaikoL2Address,
 		TaikoTokenAddress:                  s.L1.TaikoL1TokenAddress,
 		L1ProposerPrivKey:                  l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:            testutils.ProposerAddress,
+		L2SuggestedFeeRecipient:            testutils.L2SuggestedFeeRecipient,
 		ProposeInterval:                    &proposeInterval,
 		MaxProposedTxListsPerEpoch:         1,
 		WaitReceiptTimeout:                 10 * time.Second,
@@ -84,7 +76,7 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 func (s *ChainSyncerTestSuite) TearDownTest() {
 	s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func (s *ChainSyncerTestSuite) TestGetInnerSyncers() {
@@ -101,7 +93,7 @@ func (s *ChainSyncerTestSuite) TestSync() {
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	s.TakeSnapshot()
 	// propose a couple blocks
-	helper.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s.calldataSyncer)
+	helper.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s.calldataSyncer)
 
 	// NOTE: need to prove the proposed blocks to be verified, writing helper function
 	// generate transactopts to interact with TaikoL1 contract with.

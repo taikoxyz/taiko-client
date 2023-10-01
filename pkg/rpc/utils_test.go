@@ -12,15 +12,11 @@ import (
 )
 
 func (s *RpcTestSuite) TestWaitReceiptTimeout() {
-	client := s.newTestClient()
-	defer client.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-
 	_, err := WaitReceipt(
-		ctx, client.L1, types.NewTransaction(0, common.Address{}, common.Big0, 0, common.Big0, []byte{}),
+		ctx, s.cli.L1, types.NewTransaction(0, common.Address{}, common.Big0, 0, common.Big0, []byte{}),
 	)
-
 	s.ErrorContains(err, "context deadline exceeded")
 }
 
@@ -64,9 +60,7 @@ func (s *RpcTestSuite) TestWaitReceiptTimeout() {
 // }
 
 func (s *RpcTestSuite) TestSetHead() {
-	client := s.newTestClient()
-	defer client.Close()
-	s.Nil(SetHead(context.Background(), client.L2RawRPC, common.Big0))
+	s.Nil(SetHead(context.Background(), s.cli.L2RawRPC, common.Big0))
 }
 
 func (s *RpcTestSuite) TestStringToBytes32() {
@@ -75,19 +69,17 @@ func (s *RpcTestSuite) TestStringToBytes32() {
 }
 
 func (s *RpcTestSuite) TestL1ContentFrom() {
-	client := s.newTestClient()
-	defer client.Close()
-	l2Head, err := client.L2.HeaderByNumber(context.Background(), nil)
+	l2Head, err := s.cli.L2.HeaderByNumber(context.Background(), nil)
 	s.NoError(err)
 
-	baseFee, err := client.TaikoL2.GetBasefee(nil, 0, uint32(l2Head.GasUsed))
+	baseFee, err := s.cli.TaikoL2.GetBasefee(nil, 0, uint32(l2Head.GasUsed))
 	s.NoError(err)
 
 	testAddrPrivKey := testutils.ProposerPrivKey
 
 	testAddr := crypto.PubkeyToAddress(testAddrPrivKey.PublicKey)
 
-	nonce, err := client.L2.PendingNonceAt(context.Background(), testAddr)
+	nonce, err := s.cli.L2.PendingNonceAt(context.Background(), testAddr)
 	s.NoError(err)
 
 	tx := types.NewTransaction(
@@ -98,11 +90,11 @@ func (s *RpcTestSuite) TestL1ContentFrom() {
 		baseFee,
 		[]byte{},
 	)
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(client.L2ChainID), testAddrPrivKey)
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.cli.L2ChainID), testAddrPrivKey)
 	s.NoError(err)
-	s.Nil(client.L2.SendTransaction(context.Background(), signedTx))
+	s.Nil(s.cli.L2.SendTransaction(context.Background(), signedTx))
 
-	content, err := ContentFrom(context.Background(), client.L2RawRPC, testAddr)
+	content, err := ContentFrom(context.Background(), s.cli.L2RawRPC, testAddr)
 	s.NoError(err)
 
 	s.NotZero(len(content["pending"]))

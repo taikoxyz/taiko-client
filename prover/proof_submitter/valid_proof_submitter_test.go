@@ -16,10 +16,8 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
-	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
@@ -27,7 +25,7 @@ import (
 )
 
 type ProofSubmitterTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	validProofSubmitter *ValidProofSubmitter
 	calldataSyncer      *calldata.Syncer
 	proposer            *proposer.Proposer
@@ -39,14 +37,11 @@ type ProofSubmitterTestSuite struct {
 }
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
-	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
-	s.NoError(err)
-	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
-
+	s.ClientTestSuite.SetupTest()
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientTestSuite)
 	s.validProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
 	s.invalidProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
-
+	var err error
 	s.validProofSubmitter, err = NewValidProofSubmitter(
 		s.rpcClient,
 		&proofProducer.DummyProofProducer{},
@@ -83,11 +78,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	// Init proposer
 	prop := new(proposer.Proposer)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
-	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
-	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
-	s.NoError(err)
-	s.proverServer, err = helper.NewFakeProver(s.L1.TaikoL1Address, &protocolConfigs, jwtSecret,
-		s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.proverEndpoints, s.proverServer, err = helper.DefaultFakeProver(&s.ClientTestSuite, s.rpcClient)
 	s.NoError(err)
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                         s.L1.WsEndpoint(),
@@ -113,7 +104,7 @@ func (s *ProofSubmitterTestSuite) TearDownTest() {
 	s.proposer.Close(context.Background())
 	s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofDeadlineExceeded() {
@@ -140,7 +131,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotF
 }
 
 func (s *ProofSubmitterTestSuite) TestValidSubmitProofs() {
-	events := helper.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.proposer, s.calldataSyncer)
+	events := helper.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.proposer, s.calldataSyncer)
 
 	for _, e := range events {
 		s.Nil(s.validProofSubmitter.RequestProof(context.Background(), e))

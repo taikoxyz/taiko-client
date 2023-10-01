@@ -68,14 +68,11 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 ) (*types.Transaction, error) {
 	opts, err := c.transactOpts(ctx, l2Height, baseFee)
 	if err != nil {
-		log.Debug("Failed to create transact opts", "err", err)
 		return nil, err
 	}
 
-	log.Debug("try to get storage root", "err", err, "signalServiceAddress", c.signalServiceAddress.Hex(), "l1Height", l1Height)
 	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L1GethClient, c.signalServiceAddress, l1Height)
 	if err != nil {
-		log.Debug("Failed to get storage root", "err", err, "signalServiceAddress", c.signalServiceAddress.Hex(), "l1Height", l1Height)
 		return nil, err
 	}
 

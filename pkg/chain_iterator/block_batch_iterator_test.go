@@ -15,18 +15,18 @@ import (
 )
 
 type BlockBatchIteratorTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	rpcClient *rpc.Client
 }
 
 func (s *BlockBatchIteratorTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
-	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
+	s.ClientTestSuite.SetupTest()
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientTestSuite)
 }
 
 func (s *BlockBatchIteratorTestSuite) TearDownTest() {
 	s.rpcClient.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func (s *BlockBatchIteratorTestSuite) TestIter() {

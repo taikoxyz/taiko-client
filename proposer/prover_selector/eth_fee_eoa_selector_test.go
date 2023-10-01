@@ -9,16 +9,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
-	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
 	"github.com/taikoxyz/taiko-client/testutils/helper"
 )
 
 type ProverSelectorTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	s               *ETHFeeEOASelector
 	proverAddress   common.Address
 	rpcClient       *rpc.Client
@@ -27,18 +25,12 @@ type ProverSelectorTestSuite struct {
 }
 
 func (s *ProverSelectorTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
-	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
-	s.NoError(err)
-	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
-	l1ProverPrivKey := testutils.ProverPrivKey
-	s.proverAddress = crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey)
-
+	s.ClientTestSuite.SetupTest()
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientTestSuite)
+	s.proverAddress = crypto.PubkeyToAddress(testutils.ProverPrivKey.PublicKey)
 	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
-	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
-	s.proverServer, err = helper.NewFakeProver(s.L1.TaikoL1Address, &protocolConfigs, jwtSecret,
-		s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.proverEndpoints, s.proverServer, err = helper.DefaultFakeProver(&s.ClientTestSuite, s.rpcClient)
 	s.NoError(err)
 	s.s, err = NewETHFeeEOASelector(
 		&protocolConfigs,
@@ -57,7 +49,7 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 func (s *ProverSelectorTestSuite) TearDownTest() {
 	s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func TestProverSelectorTestSuite(t *testing.T) {

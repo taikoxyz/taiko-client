@@ -20,7 +20,9 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
+		s.Equal(s.L1.WsEndpoint(), c.L1WsEndpoint)
 		s.Equal(s.L1.HttpEndpoint(), c.L1HttpEndpoint)
+		s.Equal(s.L2.WsEndpoint(), c.L2WsEndpoint)
 		s.Equal(s.L2.HttpEndpoint(), c.L2HttpEndpoint)
 		s.Equal(s.L1.TaikoL1Address, c.TaikoL1Address)
 		s.Equal(testutils.TaikoL2Address, c.TaikoL2Address)

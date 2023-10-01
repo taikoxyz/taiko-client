@@ -17,11 +17,7 @@ lint:
 	&& golangci-lint run
 
 test:
-	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \
-	COMPILE_PROTOCOL=${COMPILE_PROTOCOL} \
-	PACKAGE=${PACKAGE} \
-	RUN_TESTS=true \
-		./integration_test/entrypoint.sh
+	go test ./... -coverprofile=coverage.out -covermode=atomic -timeout=300s
 
 dev_net:
 	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \

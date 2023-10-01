@@ -32,6 +32,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
+		s.Equal(s.L1.WsEndpoint(), c.L1Endpoint)
 		s.Equal(s.L2.HttpEndpoint(), c.L2Endpoint)
 		s.Equal(s.L1.TaikoL1Address, c.TaikoL1Address)
 		s.Equal(testutils.TaikoL2Address, c.TaikoL2Address)

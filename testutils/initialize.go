@@ -9,9 +9,10 @@ import (
 )
 
 func init() {
-	// Don't change the following initialization order
+	if err := initLog(); err != nil {
+		panic(err)
+	}
 	var g errgroup.Group
-	g.Go(initLog)
 	g.Go(initMonoPath)
 	g.Go(initJwtSecret)
 	g.Go(initTestAccount)

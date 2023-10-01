@@ -14,14 +14,14 @@ import (
 )
 
 type AnchorTxValidatorTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	v         *AnchorTxValidator
 	rpcClient *rpc.Client
 }
 
 func (s *AnchorTxValidatorTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
-	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
+	s.ClientTestSuite.SetupTest()
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientTestSuite)
 	validator, err := New(testutils.TaikoL2Address, s.rpcClient.L2ChainID, s.rpcClient)
 	s.Nil(err)
 	s.v = validator
@@ -29,7 +29,7 @@ func (s *AnchorTxValidatorTestSuite) SetupTest() {
 
 func (s *AnchorTxValidatorTestSuite) TearDownTest() {
 	s.rpcClient.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func (s *AnchorTxValidatorTestSuite) TestValidateAnchorTx() {
@@ -46,7 +46,7 @@ func (s *AnchorTxValidatorTestSuite) TestValidateAnchorTx() {
 	// invalid To
 	tx := types.NewTransaction(
 		0,
-		common.BytesToAddress(testutils.RandomBytes(1024)), common.Big0, 0, common.Big0, []byte{},
+		common.BytesToAddress(helper.RandomBytes(1024)), common.Big0, 0, common.Big0, []byte{},
 	)
 	s.ErrorContains(s.v.ValidateAnchorTx(context.Background(), tx), "invalid TaikoL2.anchor transaction to")
 
@@ -78,7 +78,7 @@ func (s *AnchorTxValidatorTestSuite) TestValidateAnchorTx() {
 func (s *AnchorTxValidatorTestSuite) TestGetAndValidateAnchorTxReceipt() {
 	tx := types.NewTransaction(
 		100,
-		common.BytesToAddress(testutils.RandomBytes(32)),
+		common.BytesToAddress(helper.RandomBytes(32)),
 		common.Big1,
 		100000,
 		common.Big1,

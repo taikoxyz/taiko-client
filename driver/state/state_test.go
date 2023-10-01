@@ -15,14 +15,14 @@ import (
 )
 
 type DriverStateTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	s         *State
 	rpcClient *rpc.Client
 }
 
 func (s *DriverStateTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
-	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
+	s.ClientTestSuite.SetupTest()
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientTestSuite)
 	state, err := New(context.Background(), s.rpcClient)
 	s.Nil(err)
 	s.s = state
@@ -31,7 +31,7 @@ func (s *DriverStateTestSuite) SetupTest() {
 func (s *DriverStateTestSuite) TearDownTest() {
 	s.s.Close()
 	s.rpcClient.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func (s *DriverStateTestSuite) TestVerifyL2Block() {

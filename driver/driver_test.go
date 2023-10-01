@@ -14,14 +14,13 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
-	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
 	"github.com/taikoxyz/taiko-client/testutils/helper"
 )
 
 type DriverTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	cancel          context.CancelFunc
 	p               *proposer.Proposer
 	d               *Driver
@@ -31,10 +30,10 @@ type DriverTestSuite struct {
 }
 
 func (s *DriverTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
+	s.ClientTestSuite.SetupTest()
 	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
 	s.NoError(err)
-	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientTestSuite)
 	// Init driver
 
 	d := new(Driver)
@@ -49,11 +48,7 @@ func (s *DriverTestSuite) SetupTest() {
 	}))
 	s.d = d
 	s.cancel = cancel
-	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
-	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
-	s.NoError(err)
-	s.proverServer, err = helper.NewFakeProver(s.L1.TaikoL1Address, &protocolConfigs,
-		jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.proverEndpoints, s.proverServer, err = helper.DefaultFakeProver(&s.ClientTestSuite, s.rpcClient)
 	s.NoError(err)
 	// Init proposer
 	p := new(proposer.Proposer)
@@ -82,7 +77,7 @@ func (s *DriverTestSuite) TearDownTest() {
 	s.p.Close(context.Background())
 	s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func (s *DriverTestSuite) TestName() {
@@ -99,7 +94,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head1))
 
 	// Propose a valid L2 block
-	helper.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	helper.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l2Head2, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -107,7 +102,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 
 	// Empty blocks
-	helper.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	helper.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(err)
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
@@ -143,8 +138,8 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	helper.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
-	helper.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	helper.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	helper.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -169,7 +164,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 	// Propose ten blocks on another fork
 	for i := 0; i < 10; i++ {
-		helper.ProposeInvalidTxListBytes(&s.ClientSuite, s.p)
+		helper.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 	}
 
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -201,9 +196,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	helper.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	helper.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 	time.Sleep(3 * time.Second)
-	helper.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	helper.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -227,7 +222,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
 	// Propose one blocks on another fork
-	helper.ProposeInvalidTxListBytes(&s.ClientSuite, s.p)
+	helper.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -257,9 +252,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	helper.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	helper.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 	time.Sleep(3 * time.Second)
-	helper.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	helper.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -283,9 +278,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
 	// Propose two blocks on another fork
-	helper.ProposeInvalidTxListBytes(&s.ClientSuite, s.p)
+	helper.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 	time.Sleep(3 * time.Second)
-	helper.ProposeInvalidTxListBytes(&s.ClientSuite, s.p)
+	helper.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -317,7 +312,7 @@ func (s *DriverTestSuite) TestStartClose() {
 
 func (s *DriverTestSuite) TestL1Current() {
 	// propose and insert a block
-	helper.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	helper.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 	// reset L1 current with increased height
 	_, id, err := s.d.state.ResetL1Current(s.d.ctx, &state.HeightOrID{ID: common.Big1})
 	s.Equal(common.Big1, id)

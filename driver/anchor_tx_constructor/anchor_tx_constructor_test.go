@@ -15,7 +15,7 @@ import (
 )
 
 type AnchorTxConstructorTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	l1Height  *big.Int
 	l1Hash    common.Hash
 	c         *AnchorTxConstructor
@@ -23,8 +23,8 @@ type AnchorTxConstructorTestSuite struct {
 }
 
 func (s *AnchorTxConstructorTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
-	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
+	s.ClientTestSuite.SetupTest()
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientTestSuite)
 
 	c, err := New(
 		s.rpcClient,
@@ -40,7 +40,7 @@ func (s *AnchorTxConstructorTestSuite) SetupTest() {
 
 func (s *AnchorTxConstructorTestSuite) TearDownTest() {
 	s.rpcClient.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func (s *AnchorTxConstructorTestSuite) TestGasLimit() {
@@ -80,7 +80,7 @@ func (s *AnchorTxConstructorTestSuite) TestCancelCtxTransactOpts() {
 func (s *AnchorTxConstructorTestSuite) TestSign() {
 	// Payload 1
 	hash := hexutil.MustDecode("0x44943399d1507f3ce7525e9be2f987c3db9136dc759cb7f92f742154196868b9")
-	signatureBytes := testutils.SignatureFromRSV(
+	signatureBytes := helper.SignatureFromRSV(
 		"0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
 		"0x782a1e70872ecc1a9f740dd445664543f8b7598c94582720bca9a8c48d6a4766",
 		1,
@@ -95,7 +95,7 @@ func (s *AnchorTxConstructorTestSuite) TestSign() {
 
 	// Payload 2
 	hash = hexutil.MustDecode("0x663d210fa6dba171546498489de1ba024b89db49e21662f91bf83cdffe788820")
-	signatureBytes = testutils.SignatureFromRSV(
+	signatureBytes = helper.SignatureFromRSV(
 		"0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
 		"0x568130fab1a3a9e63261d4278a7e130588beb51f27de7c20d0258d38a85a27ff",
 		1,
@@ -110,7 +110,7 @@ func (s *AnchorTxConstructorTestSuite) TestSign() {
 }
 
 func (s *AnchorTxConstructorTestSuite) TestSignShortHash() {
-	rand := testutils.RandomHash().Bytes()
+	rand := helper.RandomHash().Bytes()
 	hash := rand[:len(rand)-2]
 	_, err := s.c.signTxPayload(hash)
 	s.ErrorContains(err, "hash is required to be exactly 32 bytes")

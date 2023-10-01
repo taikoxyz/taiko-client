@@ -15,46 +15,36 @@ func (s *RpcTestSuite) TestSubscribeEvent() {
 }
 
 func (s *RpcTestSuite) TestSubscribeBlockVerified() {
-	client := s.newTestClient()
-	defer client.Close()
 	s.NotNil(SubscribeBlockVerified(
-		client.TaikoL1,
+		s.cli.TaikoL1,
 		make(chan *bindings.TaikoL1ClientBlockVerified, 1024)),
 	)
 }
 
 func (s *RpcTestSuite) TestSubscribeBlockProposed() {
-	client := s.newTestClient()
-	defer client.Close()
 	s.NotNil(SubscribeBlockProposed(
-		client.TaikoL1,
+		s.cli.TaikoL1,
 		make(chan *bindings.TaikoL1ClientBlockProposed, 1024)),
 	)
 }
 
 func (s *RpcTestSuite) TestSubscribeSubscribeXchainSynced() {
-	client := s.newTestClient()
-	defer client.Close()
 	s.NotNil(SubscribeXchainSynced(
-		client.TaikoL1,
+		s.cli.TaikoL1,
 		make(chan *bindings.TaikoL1ClientCrossChainSynced, 1024)),
 	)
 }
 
 func (s *RpcTestSuite) TestSubscribeBlockProven() {
-	client := s.newTestClient()
-	defer client.Close()
 	s.NotNil(SubscribeBlockProven(
-		client.TaikoL1,
+		s.cli.TaikoL1,
 		make(chan *bindings.TaikoL1ClientBlockProven, 1024)),
 	)
 }
 
 func (s *RpcTestSuite) TestSubscribeChainHead() {
-	client := s.newTestClient()
-	defer client.Close()
 	s.NotNil(SubscribeChainHead(
-		client.L1,
+		s.cli.L1,
 		make(chan *types.Header, 1024)),
 	)
 }

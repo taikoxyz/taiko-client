@@ -5,7 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/taikoxyz/taiko-client/testutils"
+	"github.com/taikoxyz/taiko-client/testutils/helper"
 )
 
 func (s *DriverStateTestSuite) TestGetL1Current() {
@@ -13,7 +13,7 @@ func (s *DriverStateTestSuite) TestGetL1Current() {
 }
 
 func (s *DriverStateTestSuite) TestSetL1Current() {
-	h := &types.Header{ParentHash: testutils.RandomHash()}
+	h := &types.Header{ParentHash: helper.RandomHash()}
 	s.s.SetL1Current(h)
 	s.Equal(h.Hash(), s.s.GetL1Current().Hash())
 

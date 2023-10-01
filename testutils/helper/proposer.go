@@ -16,8 +16,8 @@ import (
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
-func ProposeInvalidTxListBytes(s *testutils.ClientSuite, proposer testutils.Proposer) {
-	invalidTxListBytes := testutils.RandomBytes(256)
+func ProposeInvalidTxListBytes(s *testutils.ClientTestSuite, proposer testutils.Proposer) {
+	invalidTxListBytes := RandomBytes(256)
 
 	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
 		Proposer:        proposer.L2SuggestedFeeRecipient(),
@@ -29,7 +29,7 @@ func ProposeInvalidTxListBytes(s *testutils.ClientSuite, proposer testutils.Prop
 }
 
 func ProposeAndInsertEmptyBlocks(
-	s *testutils.ClientSuite,
+	s *testutils.ClientTestSuite,
 	proposer testutils.Proposer,
 	calldataSyncer testutils.CalldataSyncer,
 ) []*bindings.TaikoL1ClientBlockProposed {
@@ -90,7 +90,7 @@ func ProposeAndInsertEmptyBlocks(
 // ProposeAndInsertValidBlock proposes an valid tx list and then insert it
 // into L2 execution engine's local chain.
 func ProposeAndInsertValidBlock(
-	s *testutils.ClientSuite,
+	s *testutils.ClientTestSuite,
 	proposer testutils.Proposer,
 	calldataSyncer testutils.CalldataSyncer,
 ) *bindings.TaikoL1ClientBlockProposed {
@@ -120,7 +120,7 @@ func ProposeAndInsertValidBlock(
 
 	tx := types.NewTransaction(
 		nonce,
-		common.BytesToAddress(testutils.RandomBytes(32)),
+		common.BytesToAddress(RandomBytes(32)),
 		common.Big1,
 		100000,
 		baseFee,
@@ -160,7 +160,7 @@ func ProposeAndInsertValidBlock(
 	return event
 }
 
-func DepositEtherToL2(s *testutils.ClientSuite, depositerPrivKey *ecdsa.PrivateKey, recipient common.Address) {
+func DepositEtherToL2(s *testutils.ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey, recipient common.Address) {
 	rpcClient := NewWsRpcClient(s)
 	defer rpcClient.Close()
 	config, err := rpcClient.TaikoL1.GetConfig(nil)

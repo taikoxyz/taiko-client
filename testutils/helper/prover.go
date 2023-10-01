@@ -13,9 +13,11 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-resty/resty/v2"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
+	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 // NewFakeProver starts a new prover server that has channel listeners to respond and react
@@ -63,4 +65,22 @@ func NewFakeProver(
 		return nil, err
 	}
 	return srv, nil
+}
+
+func DefaultFakeProver(s *testutils.ClientTestSuite, rpcClient *rpc.Client) ([]*url.URL, *server.ProverServer, error) {
+	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
+	if err != nil {
+		return nil, nil, err
+	}
+	proverEndpoints := []*url.URL{LocalRandomProverEndpoint()}
+	protocolConfigs, err := rpcClient.TaikoL1.GetConfig(nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	proverServer, err := NewFakeProver(s.L1.TaikoL1Address, &protocolConfigs, jwtSecret,
+		rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), proverEndpoints[0])
+	if err != nil {
+		return nil, nil, err
+	}
+	return proverEndpoints, proverServer, nil
 }

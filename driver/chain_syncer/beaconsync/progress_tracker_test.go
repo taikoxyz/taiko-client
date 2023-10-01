@@ -14,20 +14,20 @@ import (
 )
 
 type BeaconSyncProgressTrackerTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	t         *SyncProgressTracker
 	rpcClient *rpc.Client
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
-	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
+	s.ClientTestSuite.SetupTest()
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientTestSuite)
 	s.t = NewSyncProgressTracker(s.rpcClient.L2, 30*time.Second)
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TearDownTest() {
 	s.rpcClient.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestSyncProgressed() {
@@ -66,7 +66,7 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestTrack() {
 
 	// Triggered
 	ctx, cancel = context.WithCancel(context.Background())
-	s.t.UpdateMeta(common.Big256, common.Big256, testutils.RandomHash())
+	s.t.UpdateMeta(common.Big256, common.Big256, helper.RandomHash())
 	go s.t.Track(ctx)
 	time.Sleep(syncProgressCheckInterval + 5*time.Second)
 	cancel()
@@ -109,7 +109,7 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestLastSyncedVerifiedBlockHash() {
 		common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
 		s.t.LastSyncedVerifiedBlockHash(),
 	)
-	randomHash := testutils.RandomHash()
+	randomHash := helper.RandomHash()
 	s.t.lastSyncedVerifiedBlockHash = randomHash
 	s.Equal(randomHash, s.t.LastSyncedVerifiedBlockHash())
 }

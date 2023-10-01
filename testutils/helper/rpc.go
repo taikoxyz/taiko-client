@@ -2,6 +2,7 @@ package helper
 
 import (
 	"context"
+	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
@@ -9,7 +10,8 @@ import (
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
-func NewWsRpcClientConfig(s *testutils.ClientSuite) *rpc.ClientConfig {
+func NewWsRpcClientConfig(s *testutils.ClientTestSuite) *rpc.ClientConfig {
+	timeout := 5 * time.Second
 	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
 	s.NoError(err)
 	return &rpc.ClientConfig{
@@ -21,10 +23,11 @@ func NewWsRpcClientConfig(s *testutils.ClientSuite) *rpc.ClientConfig {
 		L2EngineEndpoint:  s.L2.AuthEndpoint(),
 		JwtSecret:         string(jwtSecret),
 		RetryInterval:     backoff.DefaultMaxInterval,
+		Timeout:           &timeout,
 	}
 }
 
-func NewWsRpcClient(s *testutils.ClientSuite) *rpc.Client {
+func NewWsRpcClient(s *testutils.ClientTestSuite) *rpc.Client {
 	cli, err := rpc.NewClient(context.Background(), NewWsRpcClientConfig(s))
 	s.NoError(err)
 	return cli

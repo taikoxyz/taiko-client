@@ -14,17 +14,15 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
-	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	"github.com/taikoxyz/taiko-client/testutils"
 	"github.com/taikoxyz/taiko-client/testutils/helper"
 )
 
 type CalldataSyncerTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	s               *Syncer
 	p               testutils.Proposer
 	rpcClient       *rpc.Client
@@ -33,10 +31,8 @@ type CalldataSyncerTestSuite struct {
 }
 
 func (s *CalldataSyncerTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
-	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
-	s.NoError(err)
-	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
+	s.ClientTestSuite.SetupTest()
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientTestSuite)
 	state, err := state.New(context.Background(), s.rpcClient)
 	s.Nil(err)
 
@@ -53,10 +49,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	prop := new(proposer.Proposer)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
-	s.proverEndpoints = []*url.URL{testutils.LocalRandomProverEndpoint()}
-	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
-	s.NoError(err)
-	s.proverServer, err = helper.NewFakeProver(s.L1.TaikoL1Address, &protocolConfigs, jwtSecret, s.rpcClient, testutils.ProverPrivKey, capacity.New(1024, 100*time.Second), s.proverEndpoints[0])
+	s.proverEndpoints, s.proverServer, err = helper.DefaultFakeProver(&s.ClientTestSuite, s.rpcClient)
 	s.NoError(err)
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
 		L1Endpoint:                         s.L1.WsEndpoint(),
@@ -82,7 +75,7 @@ func (s *CalldataSyncerTestSuite) TearDownTest() {
 	s.proverServer.Shutdown(context.Background())
 	s.p.Close(context.Background())
 	s.rpcClient.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
@@ -107,7 +100,7 @@ func (s *CalldataSyncerTestSuite) TestProcessL1Blocks() {
 
 func (s *CalldataSyncerTestSuite) TestProcessL1BlocksReorg() {
 	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
-	helper.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s)
+	helper.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
 	s.NoError(err)
 	s.NoError(s.s.ProcessL1Blocks(context.Background(), head))
 }
@@ -138,9 +131,9 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 				Id:         1,
 				L1Height:   l1Head.NumberU64(),
 				L1Hash:     l1Head.Hash(),
-				Proposer:   common.BytesToAddress(testutils.RandomBytes(1024)),
-				TxListHash: testutils.RandomHash(),
-				MixHash:    testutils.RandomHash(),
+				Proposer:   common.BytesToAddress(helper.RandomBytes(1024)),
+				TxListHash: helper.RandomHash(),
+				MixHash:    helper.RandomHash(),
 				GasLimit:   rand.Uint32(),
 				Timestamp:  uint64(time.Now().Unix()),
 			},
@@ -151,7 +144,7 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 		&rawdb.L1Origin{
 			BlockID:       common.Big1,
 			L1BlockHeight: common.Big1,
-			L1BlockHash:   testutils.RandomHash(),
+			L1BlockHash:   helper.RandomHash(),
 		},
 	)
 	s.Nil(err)
@@ -167,7 +160,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
 	headBefore, err := s.rpcClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
-	helper.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s)
+	helper.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
 
 	headAfter, err := s.rpcClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
@@ -189,8 +182,8 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 	headBefore, err := s.rpcClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
-	helper.ProposeAndInsertEmptyBlocks(&s.ClientSuite, s.p, s.s)
-	helper.ProposeAndInsertValidBlock(&s.ClientSuite, s.p, s.s)
+	helper.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
+	helper.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.s)
 
 	headAfter, err := s.rpcClient.L2.BlockNumber(context.Background())
 	s.Nil(err)

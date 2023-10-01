@@ -21,7 +21,7 @@ const (
 	gethWSPort        uint64 = 8546
 	gethAuthPort      uint64 = 8551
 	gethDiscoveryPort uint64 = 30303
-	showDeployLog            = true
+	showDeployLog            = false
 )
 
 var (
@@ -243,7 +243,6 @@ func newAnvilContainer(ctx context.Context, isBase bool, name string) (*gethCont
 	}
 	hc := &container.HostConfig{
 		AutoRemove: true,
-		Binds:      []string{fmt.Sprintf("%s:/host/state.json", stateFile)},
 		PortBindings: map[nat.Port][]nat.PortBinding{
 			gethHttpNatPort: {
 				{

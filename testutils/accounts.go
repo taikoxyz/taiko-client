@@ -34,7 +34,7 @@ func initTestAccount() (err error) {
 		panic(err)
 	}
 	ProposerAddress = crypto.PubkeyToAddress(ProposerPrivKey.PublicKey)
-	log.Info("Test Account:", "address", ProposerAddress.Hex())
+	log.Info("Proposer Account:", "address", ProposerAddress.Hex())
 	L2SuggestedFeeRecipient = ProposerAddress
 	return nil
 }

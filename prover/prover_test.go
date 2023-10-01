@@ -21,7 +21,7 @@ import (
 )
 
 type ProverTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	p         *Prover
 	cancel    context.CancelFunc
 	d         *driver.Driver
@@ -30,12 +30,12 @@ type ProverTestSuite struct {
 }
 
 func (s *ProverTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
+	s.ClientTestSuite.SetupTest()
 
 	// Init prover
 	l1ProverPrivKey := testutils.ProverPrivKey
 
-	proverServerUrl := testutils.LocalRandomProverEndpoint()
+	proverServerUrl := helper.LocalRandomProverEndpoint()
 	port, err := strconv.Atoi(proverServerUrl.Port())
 	s.Nil(err)
 
@@ -62,7 +62,7 @@ func (s *ProverTestSuite) SetupTest() {
 	jwtSecret, err := jwt.ParseSecretFromFile(testutils.JwtSecretFile)
 	s.NoError(err)
 	s.NotEmpty(jwtSecret)
-	s.rpcClient = helper.NewWsRpcClient(&s.ClientSuite)
+	s.rpcClient = helper.NewWsRpcClient(&s.ClientTestSuite)
 	protocolConfigs, err := s.rpcClient.TaikoL1.GetConfig(nil)
 	s.NoError(err)
 	p.srv, err = helper.NewFakeProver(s.L1.TaikoL1Address, &protocolConfigs, jwtSecret,
@@ -116,7 +116,7 @@ func (s *ProverTestSuite) TearDownTest() {
 	s.d.Close(context.Background())
 	s.p.Close(context.Background())
 	s.rpcClient.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func (s *ProverTestSuite) TestName() {
@@ -153,13 +153,13 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	l1ProverPrivKey := testutils.ProverPrivKey
 	s.p.cfg.OracleProverPrivateKey = l1ProverPrivKey
 	// Valid block
-	e := helper.ProposeAndInsertValidBlock(&s.ClientSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	e := helper.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 	s.Nil(s.p.validProofSubmitter.SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	// Empty blocks
 	for _, e = range helper.ProposeAndInsertEmptyBlocks(
-		&s.ClientSuite,
+		&s.ClientTestSuite,
 		s.proposer,
 		s.d.ChainSyncer().CalldataSyncer(),
 	) {

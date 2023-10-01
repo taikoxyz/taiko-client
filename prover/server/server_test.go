@@ -22,14 +22,14 @@ import (
 )
 
 type ProverServerTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
 	ps        *ProverServer
 	ws        *httptest.Server // web server
 	rpcClient *rpc.Client
 }
 
 func (s *ProverServerTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
+	s.ClientTestSuite.SetupTest()
 	l1ProverPrivKey := testutils.ProverPrivKey
 	var err error
 	timeout := 5 * time.Second
@@ -68,7 +68,7 @@ func (s *ProverServerTestSuite) SetupTest() {
 func (s *ProverServerTestSuite) TearDownTest() {
 	s.rpcClient.Close()
 	s.ws.Close()
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func (s *ProverServerTestSuite) TestHealth() {

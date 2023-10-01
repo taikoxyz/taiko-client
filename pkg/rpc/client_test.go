@@ -11,15 +11,18 @@ import (
 )
 
 type RpcTestSuite struct {
-	testutils.ClientSuite
+	testutils.ClientTestSuite
+	cli *Client
 }
 
 func (s *RpcTestSuite) SetupTest() {
-	s.ClientSuite.SetupTest()
+	s.ClientTestSuite.SetupTest()
+	s.cli = s.newTestClient()
 }
 
 func (s *RpcTestSuite) TearDownTest() {
-	s.ClientSuite.TearDownTest()
+	s.ClientTestSuite.TearDownTest()
+	s.cli.Close()
 }
 
 func (s *RpcTestSuite) newTestClient() *Client {
