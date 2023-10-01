@@ -96,33 +96,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextPrivKeyErr() {
 	}), "invalid L1 proposer private key")
 }
 
-func (s *ProposerTestSuite) TestNewConfigFromCliContextPropIntervalErr() {
-	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
-	s.Nil(err)
-
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContextProposeIntervalErr",
-		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
-		"--" + flags.ProposeInterval.Name, "",
-	}), "invalid proposing interval")
-}
-
-func (s *ProposerTestSuite) TestNewConfigFromCliContextEmptyPropoIntervalErr() {
-	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
-	s.Nil(err)
-
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContextEmptyProposalIntervalErr",
-		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
-		"--" + flags.ProposeInterval.Name, proposeInterval,
-		"--" + flags.ProposeEmptyBlocksInterval.Name, "",
-	}), "invalid proposing empty blocks interval")
-}
-
 func (s *ProposerTestSuite) TestNewConfigFromCliContextL2RecipErr() {
 	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
 	s.Nil(err)

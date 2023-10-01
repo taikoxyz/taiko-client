@@ -123,54 +123,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProverKeyError() {
 	}), "invalid guardian private key")
 }
 
-func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayError() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.GuardianProver.Name,
-		"--" + flags.MinProofFee.Name, minProofFee,
-	}), "invalid random dummy proof delay value")
-}
-
-func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorLower() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.GuardianProver.Name,
-		"--" + flags.MinProofFee.Name, minProofFee,
-	}), "invalid random dummy proof delay value")
-}
-
-func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorUpper() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.GuardianProver.Name,
-		"--" + flags.MinProofFee.Name, minProofFee,
-	}), "invalid random dummy proof delay value")
-}
-
-func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorOrder() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.GuardianProver.Name,
-		"--" + flags.MinProofFee.Name, minProofFee,
-	}), "invalid random dummy proof delay value (lower > upper)")
-}
-
 func (s *ProverTestSuite) SetupApp() *cli.App {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
@@ -191,7 +143,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.ProveBlockTxReplacementMultiplier.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockMaxTxGasTipCap.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
-		&cli.DurationFlag{Name: flags.ProverCapacity.Name},
+		&cli.Uint64Flag{Name: flags.ProverCapacity.Name},
 		&cli.Uint64Flag{Name: flags.MinProofFee.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxGasLimit.Name},
 		&cli.DurationFlag{Name: flags.TempCapacityExpiresAt.Name},

@@ -220,9 +220,7 @@ func assignProver(
 	}
 
 	// Convert signature to one solidity can recover by adding 27 to 65th byte
-	log.Info("Prover signature", "signature", result.SignedPayload, "len", len(result.SignedPayload))
 	result.SignedPayload[64] = uint8(uint(result.SignedPayload[64])) + 27
-	log.Info("Prover signature2", "signature", result.SignedPayload, "len", len(result.SignedPayload))
 
 	encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
 		Prover:    result.Prover,

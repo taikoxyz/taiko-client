@@ -1,7 +1,6 @@
 package server
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -43,13 +42,4 @@ func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
 	b, err := io.ReadAll(res.Body)
 	s.Nil(err)
 	s.Contains(string(b), "signedPayload")
-}
-
-// randomHash generates a random blob of data and returns it as a hash.
-func randomHash() common.Hash {
-	var hash common.Hash
-	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
-		panic(err)
-	}
-	return hash
 }

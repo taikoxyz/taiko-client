@@ -520,7 +520,6 @@ func getTxOpts(
 	}
 
 	opts.GasTipCap = gasTipCap
-
 	opts.Value = fee
 
 	return opts, nil

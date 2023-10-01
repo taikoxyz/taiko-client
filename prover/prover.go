@@ -850,14 +850,3 @@ func (p *Prover) requestProofForBlockId(blockId *big.Int, l1Height *big.Int) err
 
 	return nil
 }
-
-// provingWindow returns the provingWindow of the given tier.
-func provingWindow(tiers []*rpc.TierProviderTierWithID, id uint16) (time.Duration, error) {
-	for _, tier := range tiers {
-		if tier.ID == id {
-			return time.Duration(tier.ProvingWindow) * time.Second, nil
-		}
-	}
-
-	return 0, fmt.Errorf("tier id not found: %d", id)
-}

@@ -163,7 +163,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	signedAssignment, fee, err := s.p.proverSelector.AssignProver(
 		context.Background(),
 		s.p.tierFees,
-		testutils.RandomHash(),
+		crypto.Keccak256Hash(encoded),
 	)
 	s.Nil(err)
 
