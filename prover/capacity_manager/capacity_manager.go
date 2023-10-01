@@ -31,7 +31,12 @@ func (m *CapacityManager) ReadCapacity() uint64 {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	log.Info("Reading capacity", "capacity", len(m.capacity))
+	log.Info("Reading capacity",
+		"maxCapacity", m.maxCapacity,
+		"currentCapacity", m.maxCapacity-uint64(len(m.capacity)),
+		"currentUsage", len(m.capacity),
+		"currentTempCapacityUsage", len(m.tempCapacity),
+	)
 
 	return m.maxCapacity - uint64((len(m.capacity)))
 }
@@ -44,14 +49,21 @@ func (m *CapacityManager) ReleaseOneCapacity(blockID uint64) (uint64, bool) {
 	if _, ok := m.capacity[blockID]; !ok {
 		log.Info("Can not release capacity",
 			"blockID", blockID,
+			"maxCapacity", m.maxCapacity,
 			"currentCapacity", m.maxCapacity-uint64(len(m.capacity)),
-			"maxCapacity", m.maxCapacity)
+			"currentUsage", len(m.capacity),
+		)
 		return uint64(len(m.capacity)), false
 	}
 
 	delete(m.capacity, blockID)
 
-	log.Info("Released capacity", "blockID", blockID, "capacityAfterRelease", len(m.capacity))
+	log.Info("Released capacity",
+		"blockID", blockID,
+		"maxCapacity", m.maxCapacity,
+		"currentCapacityAfterRelease", m.maxCapacity-uint64(len(m.capacity)),
+		"currentUsageAfterRelease", len(m.capacity),
+	)
 
 	return m.maxCapacity - uint64(len(m.capacity)), true
 }
@@ -64,7 +76,10 @@ func (m *CapacityManager) TakeOneCapacity(blockID uint64) (uint64, bool) {
 	if len(m.capacity) == int(m.maxCapacity) {
 		log.Info("Could not take one capacity",
 			"blockID", blockID,
-			"currentCapacity", m.maxCapacity-uint64(len(m.capacity)))
+			"maxCapacity", m.maxCapacity,
+			"currentCapacity", m.maxCapacity-uint64(len(m.capacity)),
+			"currentUsage", len(m.capacity),
+		)
 		return 0, false
 	}
 
@@ -72,7 +87,10 @@ func (m *CapacityManager) TakeOneCapacity(blockID uint64) (uint64, bool) {
 
 	log.Info("Took one capacity",
 		"blockID", blockID,
-		"capacityAfterTaking", m.maxCapacity-uint64(len(m.capacity)))
+		"maxCapacity", m.maxCapacity,
+		"currentCapacityAfterTaking", m.maxCapacity-uint64(len(m.capacity)),
+		"currentUsageAfterTaking", len(m.capacity),
+	)
 
 	return m.maxCapacity - uint64((len(m.capacity))), true
 }
@@ -87,8 +105,12 @@ func (m *CapacityManager) TakeOneTempCapacity() (uint64, bool) {
 
 	if len(m.capacity)+len(m.tempCapacity) >= int(m.maxCapacity) {
 		log.Info("Could not take one temp capacity",
-			"capacity", m.maxCapacity-uint64(len(m.capacity)),
-			"tempCapacity", len(m.tempCapacity))
+			"maxCapacity", m.maxCapacity,
+			"currentCapacityAfterTaking", m.maxCapacity-uint64(len(m.capacity)),
+			"currentUsageAfterTaking", len(m.capacity),
+			"tempCapacity", m.maxCapacity-uint64(len((m.tempCapacity))),
+			"tempCapacityUsage", len(m.tempCapacity),
+		)
 		return 0, false
 	}
 
@@ -101,6 +123,13 @@ func (m *CapacityManager) clearExpiredTempCapacities() {
 	for i, c := range m.tempCapacity {
 		if time.Now().UTC().Sub(c) > m.tempCapacityExpiresAt {
 			m.tempCapacity = append(m.tempCapacity[:i], m.tempCapacity[i+1:]...)
+			log.Info("Cleared one temp capacity",
+				"maxCapacity", m.maxCapacity,
+				"currentCapacityAfterClearing", m.maxCapacity-uint64(len(m.capacity)),
+				"currentUsageAfterClearing", len(m.capacity),
+				"tempCapacity", m.maxCapacity-uint64(len((m.tempCapacity))),
+				"tempCapacityUsage", len(m.tempCapacity),
+			)
 		}
 	}
 }
