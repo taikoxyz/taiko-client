@@ -130,10 +130,18 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		return err
 	}
 
-	log.Info("Protocol tiers", "tiers", p.tiers)
-
 	// TODO: use flags to set tier fees
 	for _, tier := range p.tiers {
+		log.Info(
+			"Protocol tier",
+			"id", tier.ID,
+			"name", string(tier.VerifierName[:]),
+			"validityBond", tier.ValidityBond,
+			"contestBond", tier.ContestBond,
+			"provingWindow", tier.ProvingWindow,
+			"cooldownWindow", tier.CooldownWindow,
+		)
+
 		p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: common.Big256})
 	}
 
@@ -343,7 +351,7 @@ func (p *Proposer) sendProposeBlockTx(
 	ctx context.Context,
 	txListBytes []byte,
 	nonce *uint64,
-	assignment *encoding.ProverAssignment,
+	signedAssignment []byte,
 	fee *big.Int,
 	isReplacement bool,
 ) (*types.Transaction, error) {
@@ -371,16 +379,11 @@ func (p *Proposer) sendProposeBlockTx(
 		}
 	}
 
-	encodedssignment, err := encoding.EncodeProverAssignment(assignment)
-	if err != nil {
-		return nil, err
-	}
-
 	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(
 		opts,
 		crypto.Keccak256Hash(txListBytes),
 		rpc.StringToBytes32(p.cfg.ExtraData),
-		encodedssignment,
+		signedAssignment,
 		txListBytes,
 	)
 	if err != nil {
@@ -397,7 +400,7 @@ func (p *Proposer) ProposeTxList(
 	txNum uint,
 	nonce *uint64,
 ) error {
-	signature, prover, fee, err := p.proverSelector.AssignProver(
+	signedAssignment, fee, err := p.proverSelector.AssignProver(
 		ctx,
 		p.tierFees,
 		crypto.Keccak256Hash(txListBytes),
@@ -419,13 +422,7 @@ func (p *Proposer) ProposeTxList(
 				ctx,
 				txListBytes,
 				nonce,
-				&encoding.ProverAssignment{
-					Prover:    prover,
-					FeeToken:  common.Address{},
-					TierFees:  p.tierFees,
-					Expiry:    uint64(proverAssignmentTimeout.Seconds()),
-					Signature: signature,
-				},
+				signedAssignment,
 				fee,
 				isReplacement,
 			); err != nil {

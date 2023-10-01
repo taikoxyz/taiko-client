@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -161,7 +160,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	signature, prover, fee, err := s.p.proverSelector.AssignProver(
+	signedAssignment, fee, err := s.p.proverSelector.AssignProver(
 		context.Background(),
 		s.p.tierFees,
 		testutils.RandomHash(),
@@ -172,13 +171,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		context.Background(),
 		encoded,
 		&nonce,
-		&encoding.ProverAssignment{
-			Prover:    prover,
-			FeeToken:  common.Address{},
-			TierFees:  s.p.tierFees,
-			Expiry:    uint64(proverAssignmentTimeout.Seconds()),
-			Signature: signature,
-		},
+		signedAssignment,
 		fee,
 		true,
 	)
@@ -190,7 +183,7 @@ func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	_, _, fee, err := s.p.proverSelector.AssignProver(context.Background(), s.p.tierFees, testutils.RandomHash())
+	_, fee, err := s.p.proverSelector.AssignProver(context.Background(), s.p.tierFees, testutils.RandomHash())
 
 	s.Nil(err)
 	s.Equal(fee.Uint64(), s.p.cfg.BlockProposalFee.Uint64())

@@ -14,6 +14,6 @@ type ProverSelector interface {
 		ctx context.Context,
 		tierFees []encoding.TierFee,
 		txListHash common.Hash,
-	) (signedPayload []byte, prover common.Address, fee *big.Int, err error)
+	) (signedPayload []byte, fee *big.Int, err error)
 	ProverEndpoints() []*url.URL
 }

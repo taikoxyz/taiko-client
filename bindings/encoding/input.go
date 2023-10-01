@@ -78,11 +78,37 @@ var (
 
 var (
 	// Evidence
-	EvidenceType, _ = abi.NewType("tuple", "TaikoData.BlockEvidence", evidenceComponents)
-	EvidenceArgs    = abi.Arguments{{Name: "Evidence", Type: EvidenceType}}
+	evidenceType, _ = abi.NewType("tuple", "TaikoData.BlockEvidence", evidenceComponents)
+	evidenceArgs    = abi.Arguments{{Name: "Evidence", Type: evidenceType}}
 	// ProverAssignment
 	proverAssignmentType, _ = abi.NewType("tuple", "ProverAssignment", proverAssignmentComponents)
 	proverAssignmentArgs    = abi.Arguments{{Name: "ProverAssignment", Type: proverAssignmentType}}
+	// ProverAssignmentPayload
+	stringType, _   = abi.NewType("string", "", nil)
+	bytes32Type, _  = abi.NewType("bytes32", "", nil)
+	addressType, _  = abi.NewType("address", "", nil)
+	uint64Type, _   = abi.NewType("uint64", "", nil)
+	tierFeesType, _ = abi.NewType(
+		"tuple[]",
+		"",
+		[]abi.ArgumentMarshaling{
+			{
+				Name: "tier",
+				Type: "uint16",
+			},
+			{
+				Name: "fee",
+				Type: "uint256",
+			},
+		},
+	)
+	proverAssignmentPayloadArgs = abi.Arguments{
+		{Name: "PROVER_ASSIGNMENT", Type: stringType},
+		{Name: "txListHash", Type: bytes32Type},
+		{Name: "assignment.feeToken", Type: addressType},
+		{Name: "assignment.expiry", Type: uint64Type},
+		{Name: "assignment.tierFees", Type: tierFeesType},
+	}
 )
 
 // Contract ABIs.
@@ -114,7 +140,7 @@ func EncodeProverAssignment(assignment *ProverAssignment) ([]byte, error) {
 
 // EncodeEvidence performs the solidity `abi.encode` for the given evidence.
 func EncodeEvidence(e *BlockEvidence) ([]byte, error) {
-	b, err := EvidenceArgs.Pack(e)
+	b, err := evidenceArgs.Pack(e)
 	if err != nil {
 		return nil, fmt.Errorf("failed to abi.encode evidence, %w", err)
 	}
@@ -128,8 +154,11 @@ func EncodeProverAssignmentPayload(
 	expiry uint64,
 	tierFees []TierFee,
 ) ([]byte, error) {
-	// TODO: implement this function.
-	return nil, nil
+	b, err := proverAssignmentPayloadArgs.Pack("PROVER_ASSIGNMENT", txListHash, feeToken, expiry, tierFees)
+	if err != nil {
+		return nil, fmt.Errorf("failed to abi.encode prover assignment hash payload, %w", err)
+	}
+	return b, nil
 }
 
 // UnpackTxListBytes unpacks the input data of a TaikoL1.proposeBlock transaction, and returns the txList bytes.

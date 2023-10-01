@@ -84,14 +84,14 @@ func (s *ETHFeeEOASelector) AssignProver(
 	ctx context.Context,
 	tierFees []encoding.TierFee,
 	txListHash common.Hash,
-) ([]byte, common.Address, *big.Int, error) {
+) ([]byte, *big.Int, error) {
 	guardianProverAddress, err := s.rpc.TaikoL1.Resolve0(
 		&bind.CallOpts{Context: ctx},
 		rpc.StringToBytes32("guardian"),
 		true,
 	)
 	if err != nil {
-		return nil, common.Address{}, nil, err
+		return nil, nil, err
 	}
 	// Iterate over each configured endpoint, and see if someone wants to accept this block.
 	// If it is denied, we continue on to the next endpoint.
@@ -134,11 +134,11 @@ func (s *ETHFeeEOASelector) AssignProver(
 			}
 
 			// TODO: fix fee value
-			return encodedAssignment, proverAddress, common.Big1, nil
+			return encodedAssignment, common.Big256, nil
 		}
 	}
 
-	return nil, common.Address{}, nil, errUnableToFindProver
+	return nil, nil, errUnableToFindProver
 }
 
 // shuffleProverEndpoints shuffles the current selector's prover endpoints.
@@ -220,7 +220,9 @@ func assignProver(
 	}
 
 	// Convert signature to one solidity can recover by adding 27 to 65th byte
+	log.Info("Prover signature", "signature", result.SignedPayload, "len", len(result.SignedPayload))
 	result.SignedPayload[64] = uint8(uint(result.SignedPayload[64])) + 27
+	log.Info("Prover signature2", "signature", result.SignedPayload, "len", len(result.SignedPayload))
 
 	encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
 		Prover:    result.Prover,
