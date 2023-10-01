@@ -267,7 +267,7 @@ func newAnvilContainer(ctx context.Context, isBase bool, name string) (*gethCont
 	if err := gc.deployTaikoL1(); err != nil {
 		return nil, err
 	}
-	if ensureProverBalance(gc); err != nil {
+	if err := ensureProverBalance(gc); err != nil {
 		return nil, err
 	}
 	return gc, nil

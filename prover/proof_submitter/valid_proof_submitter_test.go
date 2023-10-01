@@ -102,7 +102,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 
 func (s *ProofSubmitterTestSuite) TearDownTest() {
 	s.proposer.Close(context.Background())
-	s.proverServer.Shutdown(context.Background())
+	_ = s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
 	s.ClientTestSuite.TearDownTest()
 }

@@ -47,7 +47,7 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 }
 
 func (s *ProverSelectorTestSuite) TearDownTest() {
-	s.proverServer.Shutdown(context.Background())
+	_ = s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
 	s.ClientTestSuite.TearDownTest()
 }

@@ -75,7 +75,7 @@ func (s *DriverTestSuite) SetupTest() {
 func (s *DriverTestSuite) TearDownTest() {
 	s.d.Close(context.Background())
 	s.p.Close(context.Background())
-	s.proverServer.Shutdown(context.Background())
+	_ = s.proverServer.Shutdown(context.Background())
 	s.rpcClient.Close()
 	s.ClientTestSuite.TearDownTest()
 }

@@ -27,11 +27,13 @@ func (s *ProofSubmitterTestSuite) TestIsSubmitProofTxErrorRetryable() {
 }
 
 func (s *ProofSubmitterTestSuite) TestGetProveBlocksTxOpts() {
-	optsL1, err := getProveBlocksTxOpts(context.Background(), s.rpcClient.L1, s.rpcClient.L1ChainID, testutils.ProposerPrivKey)
+	optsL1, err := getProveBlocksTxOpts(context.Background(),
+		s.rpcClient.L1, s.rpcClient.L1ChainID, testutils.ProposerPrivKey)
 	s.Nil(err)
 	s.Greater(optsL1.GasTipCap.Uint64(), uint64(0))
 
-	optsL2, err := getProveBlocksTxOpts(context.Background(), s.rpcClient.L2, s.rpcClient.L2ChainID, testutils.ProposerPrivKey)
+	optsL2, err := getProveBlocksTxOpts(context.Background(),
+		s.rpcClient.L2, s.rpcClient.L2ChainID, testutils.ProposerPrivKey)
 	s.Nil(err)
 	s.Greater(optsL2.GasTipCap.Uint64(), uint64(0))
 }

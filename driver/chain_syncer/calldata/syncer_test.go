@@ -72,7 +72,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 }
 
 func (s *CalldataSyncerTestSuite) TearDownTest() {
-	s.proverServer.Shutdown(context.Background())
+	_ = s.proverServer.Shutdown(context.Background())
 	s.p.Close(context.Background())
 	s.rpcClient.Close()
 	s.ClientTestSuite.TearDownTest()
