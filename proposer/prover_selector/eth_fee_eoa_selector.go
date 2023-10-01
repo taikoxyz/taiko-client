@@ -33,7 +33,7 @@ type ETHFeeEOASelector struct {
 	protocolConfigs       *bindings.TaikoDataConfig
 	rpc                   *rpc.Client
 	taikoL1Address        common.Address
-	feeBase               *big.Int
+	tiersFee              []encoding.TierFee
 	feeIncreasePercentage *big.Int
 	proverEndpoints       []*url.URL
 	proposalFeeIterations uint64
@@ -46,7 +46,7 @@ func NewETHFeeEOASelector(
 	protocolConfigs *bindings.TaikoDataConfig,
 	rpc *rpc.Client,
 	taikoL1Address common.Address,
-	feeBase *big.Int,
+	tiersFee []encoding.TierFee,
 	feeIncreasePercentage *big.Int,
 	proverEndpoints []*url.URL,
 	proposalFeeIterations uint64,
@@ -67,7 +67,7 @@ func NewETHFeeEOASelector(
 		protocolConfigs,
 		rpc,
 		taikoL1Address,
-		feeBase,
+		tiersFee,
 		feeIncreasePercentage,
 		proverEndpoints,
 		proposalFeeIterations,
@@ -82,12 +82,12 @@ func (s *ETHFeeEOASelector) ProverEndpoints() []*url.URL { return s.proverEndpoi
 // AssignProver tries to pick a prover through the registered prover endpoints.
 func (s *ETHFeeEOASelector) AssignProver(
 	ctx context.Context,
-	tierFees []*encoding.TierFee,
+	tierFees []encoding.TierFee,
 	txListHash common.Hash,
 ) ([]byte, common.Address, *big.Int, error) {
-	oracleProverAddress, err := s.rpc.TaikoL1.Resolve0(
+	guardianProverAddress, err := s.rpc.TaikoL1.Resolve0(
 		&bind.CallOpts{Context: ctx},
-		rpc.StringToBytes32("oracle_prover"),
+		rpc.StringToBytes32("guardian"),
 		true,
 	)
 	if err != nil {
@@ -98,27 +98,26 @@ func (s *ETHFeeEOASelector) AssignProver(
 	// If we do not find a prover, we can increase the fee up to a point, or give up.
 	for i := 0; i < int(s.proposalFeeIterations); i++ {
 		var (
-			fee    = new(big.Int).Set(s.feeBase)
 			expiry = uint64(time.Now().Add(s.proposalExpiry).Unix())
 		)
 
 		// Increase fee on each failed loop
-		if i > 0 {
-			cumulativePercent := new(big.Int).Mul(s.feeIncreasePercentage, big.NewInt(int64(i)))
-			increase := new(big.Int).Mul(fee, cumulativePercent)
-			increase.Div(increase, big.NewInt(100))
-			fee.Add(fee, increase)
-		}
+		// TODO: fix this
+		// if i > 0 {
+		// 	cumulativePercent := new(big.Int).Mul(s.feeIncreasePercentage, big.NewInt(int64(i)))
+		// 	increase := new(big.Int).Mul(fee, cumulativePercent)
+		// 	increase.Div(increase, big.NewInt(100))
+		// 	fee.Add(fee, increase)
+		// }
 		for _, endpoint := range s.shuffleProverEndpoints() {
 			encodedAssignment, proverAddress, err := assignProver(
 				ctx,
 				endpoint,
-				fee,
 				expiry,
 				tierFees,
 				txListHash,
 				s.requestTimeout,
-				oracleProverAddress,
+				guardianProverAddress,
 			)
 			if err != nil {
 				log.Warn("Failed to assign prover", "endpoint", endpoint, "error", err)
@@ -134,7 +133,8 @@ func (s *ETHFeeEOASelector) AssignProver(
 				continue
 			}
 
-			return encodedAssignment, proverAddress, fee, nil
+			// TODO: fix fee value
+			return encodedAssignment, proverAddress, common.Big1, nil
 		}
 	}
 
@@ -153,17 +153,15 @@ func (s *ETHFeeEOASelector) shuffleProverEndpoints() []*url.URL {
 func assignProver(
 	ctx context.Context,
 	endpoint *url.URL,
-	fee *big.Int,
 	expiry uint64,
-	tierFees []*encoding.TierFee,
+	tierFees []encoding.TierFee,
 	txListHash common.Hash,
 	timeout time.Duration,
-	oracleProverAddress common.Address,
+	guardianProverAddress common.Address,
 ) ([]byte, common.Address, error) {
 	log.Info(
 		"Attempting to assign prover",
 		"endpoint", endpoint,
-		"fee", fee.String(),
 		"expiry", expiry,
 		"txListHash", txListHash,
 	)
@@ -227,7 +225,7 @@ func assignProver(
 	encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
 		Prover:    result.Prover,
 		FeeToken:  common.Address{},
-		TierFees:  []encoding.TierFee{}, // TODO: update tier fees
+		TierFees:  tierFees,
 		Expiry:    reqBody.Expiry,
 		Signature: result.SignedPayload,
 	})
@@ -239,7 +237,6 @@ func assignProver(
 		"Prover assigned",
 		"address", result.Prover,
 		"endpoint", endpoint,
-		"fee", fee.String(),
 		"expiry", expiry,
 	)
 

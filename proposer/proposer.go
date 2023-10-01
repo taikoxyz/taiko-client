@@ -56,6 +56,8 @@ type Proposer struct {
 	proposeBlockTxGasLimit     *uint64
 	txReplacementTipMultiplier uint64
 	proposeBlockTxGasTipCap    *big.Int
+	tiers                      []*rpc.TierProviderTierWithID
+	tierFees                   []encoding.TierFee
 
 	// Prover selector
 	proverSelector selector.ProverSelector
@@ -124,11 +126,22 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
+	if p.tiers, err = p.rpc.GetTiers(ctx); err != nil {
+		return err
+	}
+
+	log.Info("Protocol tiers", "tiers", p.tiers)
+
+	// TODO: use flags to set tier fees
+	for _, tier := range p.tiers {
+		p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: common.Big256})
+	}
+
 	if p.proverSelector, err = selector.NewETHFeeEOASelector(
 		&protocolConfigs,
 		p.rpc,
 		cfg.TaikoL1Address,
-		cfg.BlockProposalFee,
+		p.tierFees,
 		cfg.BlockProposalFeeIncreasePercentage,
 		cfg.ProverEndpoints,
 		cfg.BlockProposalFeeIterations,
@@ -386,7 +399,7 @@ func (p *Proposer) ProposeTxList(
 ) error {
 	signature, prover, fee, err := p.proverSelector.AssignProver(
 		ctx,
-		[]*encoding.TierFee{}, // TODO: update tier fees
+		p.tierFees,
 		crypto.Keccak256Hash(txListBytes),
 	)
 	if err != nil {
@@ -409,7 +422,7 @@ func (p *Proposer) ProposeTxList(
 				&encoding.ProverAssignment{
 					Prover:    prover,
 					FeeToken:  common.Address{},
-					TierFees:  []encoding.TierFee{}, // TODO: update tier fees
+					TierFees:  p.tierFees,
 					Expiry:    uint64(proverAssignmentTimeout.Seconds()),
 					Signature: signature,
 				},

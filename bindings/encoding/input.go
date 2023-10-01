@@ -126,7 +126,7 @@ func EncodeProverAssignmentPayload(
 	txListHash common.Hash,
 	feeToken common.Address,
 	expiry uint64,
-	tierFees []*TierFee,
+	tierFees []TierFee,
 ) ([]byte, error) {
 	// TODO: implement this function.
 	return nil, nil

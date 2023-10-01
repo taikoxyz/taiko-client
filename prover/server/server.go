@@ -39,7 +39,7 @@ type ProverServer struct {
 	taikoL1Address   common.Address
 	rpc              *rpc.Client
 	bond             *big.Int
-	isOracle         bool
+	isGuardian       bool
 }
 
 // NewProverServerOpts contains all configurations for creating a prover server instance.
@@ -51,7 +51,7 @@ type NewProverServerOpts struct {
 	TaikoL1Address   common.Address
 	Rpc              *rpc.Client
 	Bond             *big.Int
-	IsOracle         bool
+	IsGuardian       bool
 }
 
 // New creates a new prover server instance.
@@ -66,7 +66,7 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		taikoL1Address:   opts.TaikoL1Address,
 		rpc:              opts.Rpc,
 		bond:             opts.Bond,
-		isOracle:         opts.IsOracle,
+		isGuardian:       opts.IsGuardian,
 	}
 
 	srv.echo.HideBanner = true

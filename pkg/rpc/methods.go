@@ -22,7 +22,8 @@ import (
 
 var (
 	// errSyncing is returned when the L2 execution engine is syncing.
-	errSyncing = errors.New("syncing")
+	errSyncing        = errors.New("syncing")
+	errEmptyTiersList = errors.New("empty proof tiers list in protocol")
 	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
 	// if the previous check failed.
 	syncProgressRecheckDelay       = 12 * time.Second
@@ -575,6 +576,9 @@ func (c *Client) GetTiers(ctx context.Context) ([]*TierProviderTierWithID, error
 	ids, err := c.TaikoL1.GetTierIds(&bind.CallOpts{Context: ctxWithTimeout})
 	if err != nil {
 		return nil, err
+	}
+	if len(ids) == 0 {
+		return nil, errEmptyTiersList
 	}
 
 	var tiers []*TierProviderTierWithID

@@ -31,7 +31,7 @@ func (s *ProverServerTestSuite) TestGetStatusSuccess() {
 func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
 	data, err := json.Marshal(CreateAssignmentRequestBody{
 		FeeToken:   (common.Address{}),
-		TierFees:   []*encoding.TierFee{{Tier: 0, Fee: common.Big256}},
+		TierFees:   []encoding.TierFee{{Tier: 0, Fee: common.Big256}},
 		Expiry:     uint64(time.Now().Add(time.Minute).Unix()),
 		TxListHash: common.BigToHash(common.Big1),
 	})

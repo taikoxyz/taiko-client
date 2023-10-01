@@ -12,7 +12,7 @@ import (
 type ProverSelector interface {
 	AssignProver(
 		ctx context.Context,
-		tierFees []*encoding.TierFee,
+		tierFees []encoding.TierFee,
 		txListHash common.Hash,
 	) (signedPayload []byte, prover common.Address, fee *big.Int, err error)
 	ProverEndpoints() []*url.URL

@@ -55,7 +55,7 @@ func (s *ProverServerTestSuite) SetupTest() {
 		taikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		rpc:              rpcClient,
 		bond:             common.Big0,
-		isOracle:         false,
+		isGuardian:       false,
 	}
 
 	p.echo.HideBanner = true

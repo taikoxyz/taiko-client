@@ -163,7 +163,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 
 	signature, prover, fee, err := s.p.proverSelector.AssignProver(
 		context.Background(),
-		[]*encoding.TierFee{},
+		s.p.tierFees,
 		testutils.RandomHash(),
 	)
 	s.Nil(err)
@@ -175,7 +175,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		&encoding.ProverAssignment{
 			Prover:    prover,
 			FeeToken:  common.Address{},
-			TierFees:  []encoding.TierFee{},
+			TierFees:  s.p.tierFees,
 			Expiry:    uint64(proverAssignmentTimeout.Seconds()),
 			Signature: signature,
 		},
@@ -190,7 +190,7 @@ func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	_, _, fee, err := s.p.proverSelector.AssignProver(context.Background(), []*encoding.TierFee{}, testutils.RandomHash())
+	_, _, fee, err := s.p.proverSelector.AssignProver(context.Background(), s.p.tierFees, testutils.RandomHash())
 
 	s.Nil(err)
 	s.Equal(fee.Uint64(), s.p.cfg.BlockProposalFee.Uint64())

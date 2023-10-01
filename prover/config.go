@@ -27,9 +27,9 @@ type Config struct {
 	StartingBlockID                   *big.Int
 	MaxConcurrentProvingJobs          uint
 	Dummy                             bool
-	OracleProver                      bool
-	OracleProverPrivateKey            *ecdsa.PrivateKey
-	OracleProofSubmissionDelay        time.Duration
+	GuardianProver                    bool
+	GuardianProverPrivateKey          *ecdsa.PrivateKey
+	GuardianProofSubmissionDelay      time.Duration
 	ProofSubmissionMaxRetry           uint64
 	Graffiti                          string
 	BackOffMaxRetrys                  uint64
@@ -57,15 +57,15 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
 	}
 
-	var oracleProverPrivKey *ecdsa.PrivateKey
-	if c.IsSet(flags.OracleProver.Name) {
-		if !c.IsSet(flags.OracleProverPrivateKey.Name) {
-			return nil, fmt.Errorf("oracleProver flag set without oracleProverPrivateKey set")
+	var guardianProverPrivKey *ecdsa.PrivateKey
+	if c.IsSet(flags.GuardianProver.Name) {
+		if !c.IsSet(flags.GuardianProverPrivateKey.Name) {
+			return nil, fmt.Errorf("guardianProver flag set without guardianProverPrivateKey set")
 		}
 
-		oracleProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(c.String(flags.OracleProverPrivateKey.Name)))
+		guardianProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(c.String(flags.GuardianProverPrivateKey.Name)))
 		if err != nil {
-			return nil, fmt.Errorf("invalid oracle private key: %w", err)
+			return nil, fmt.Errorf("invalid guardian private key: %w", err)
 		}
 	}
 
@@ -118,9 +118,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		StartingBlockID:                   startingBlockID,
 		MaxConcurrentProvingJobs:          c.Uint(flags.MaxConcurrentProvingJobs.Name),
 		Dummy:                             c.Bool(flags.Dummy.Name),
-		OracleProver:                      c.Bool(flags.OracleProver.Name),
-		OracleProverPrivateKey:            oracleProverPrivKey,
-		OracleProofSubmissionDelay:        c.Duration(flags.OracleProofSubmissionDelay.Name),
+		GuardianProver:                    c.Bool(flags.GuardianProver.Name),
+		GuardianProverPrivateKey:          guardianProverPrivKey,
+		GuardianProofSubmissionDelay:      c.Duration(flags.GuardianProofSubmissionDelay.Name),
 		ProofSubmissionMaxRetry:           c.Uint64(flags.ProofSubmissionMaxRetry.Name),
 		Graffiti:                          c.String(flags.Graffiti.Name),
 		BackOffMaxRetrys:                  c.Uint64(flags.BackOffMaxRetrys.Name),

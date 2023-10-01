@@ -34,7 +34,7 @@ var (
 	}
 	ProverCapacity = &cli.Uint64Flag{
 		Name:     "prover.capacity",
-		Usage:    "Capacity of prover, required if oracleProver is false",
+		Usage:    "Capacity of prover",
 		Required: true,
 		Category: proverCategory,
 	}
@@ -53,19 +53,19 @@ var (
 		Value:    1,
 		Category: proverCategory,
 	}
-	OracleProver = &cli.BoolFlag{
-		Name:     "oracleProver",
-		Usage:    "Set whether prover should use oracle prover or not",
+	GuardianProver = &cli.BoolFlag{
+		Name:     "guardianProver",
+		Usage:    "Set whether prover should use guardian prover or not",
 		Category: proverCategory,
 	}
-	OracleProverPrivateKey = &cli.StringFlag{
-		Name:     "oracleProverPrivateKey",
-		Usage:    "Private key of oracle prover",
+	GuardianProverPrivateKey = &cli.StringFlag{
+		Name:     "guardianProverPrivateKey",
+		Usage:    "Private key of guardian prover",
 		Category: proverCategory,
 	}
-	OracleProofSubmissionDelay = &cli.DurationFlag{
-		Name:     "oracleProofSubmissionDelay",
-		Usage:    "Oracle proof submission delay",
+	GuardianProofSubmissionDelay = &cli.DurationFlag{
+		Name:     "guardianProofSubmissionDelay",
+		Usage:    "Guardian proof submission delay",
 		Value:    0 * time.Second,
 		Category: proverCategory,
 	}
@@ -148,9 +148,9 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	StartingBlockID,
 	MaxConcurrentProvingJobs,
 	Dummy,
-	OracleProver,
-	OracleProverPrivateKey,
-	OracleProofSubmissionDelay,
+	GuardianProver,
+	GuardianProverPrivateKey,
+	GuardianProofSubmissionDelay,
 	ProofSubmissionMaxRetry,
 	ProveBlockTxReplacementMultiplier,
 	ProveBlockMaxTxGasTipCap,

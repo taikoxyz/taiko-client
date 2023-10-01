@@ -38,7 +38,7 @@ type ValidProofSubmitter struct {
 	l1SignalService            common.Address
 	l2SignalService            common.Address
 	mutex                      *sync.Mutex
-	isOracleProver             bool
+	isGuardianProver           bool
 	graffiti                   [32]byte
 	submissionMaxRetry         uint64
 	retryInterval              time.Duration
@@ -56,7 +56,7 @@ func NewValidProofSubmitter(
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
 	mutex *sync.Mutex,
-	isOracleProver bool,
+	isGuardianProver bool,
 	graffiti string,
 	submissionMaxRetry uint64,
 	retryInterval time.Duration,
@@ -91,7 +91,7 @@ func NewValidProofSubmitter(
 		l2SignalService:            l2SignalService,
 		taikoL2Address:             taikoL2Address,
 		mutex:                      mutex,
-		isOracleProver:             isOracleProver,
+		isGuardianProver:           isGuardianProver,
 		graffiti:                   rpc.StringToBytes32(graffiti),
 		submissionMaxRetry:         submissionMaxRetry,
 		retryInterval:              retryInterval,
@@ -275,7 +275,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 	}
 
 	maxRetry := &s.submissionMaxRetry
-	if s.isOracleProver {
+	if s.isGuardianProver {
 		maxRetry = nil
 	}
 

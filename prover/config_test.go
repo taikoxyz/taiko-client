@@ -21,7 +21,7 @@ var (
 	minProofFee    = "1024"
 )
 
-func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
+func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 	app := s.SetupApp()
 	app.Action = func(ctx *cli.Context) error {
 		c, err := NewConfigFromCliContext(ctx)
@@ -37,10 +37,10 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 			crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey),
 		)
 		s.True(c.Dummy)
-		s.True(c.OracleProver)
+		s.True(c.GuardianProver)
 		s.Equal(
-			crypto.PubkeyToAddress(s.p.cfg.OracleProverPrivateKey.PublicKey),
-			crypto.PubkeyToAddress(c.OracleProverPrivateKey.PublicKey),
+			crypto.PubkeyToAddress(s.p.cfg.GuardianProverPrivateKey.PublicKey),
+			crypto.PubkeyToAddress(c.GuardianProverPrivateKey.PublicKey),
 		)
 		s.Equal("", c.Graffiti)
 		s.Equal(30*time.Second, c.CheckProofWindowExpiredInterval)
@@ -58,7 +58,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 	}
 
 	s.Nil(app.Run([]string{
-		"TestNewConfigFromCliContext_OracleProver",
+		"TestNewConfigFromCliContextGuardianProver",
 		"--" + flags.L1WSEndpoint.Name, l1WsEndpoint,
 		"--" + flags.L1HTTPEndpoint.Name, l1HttpEndpoint,
 		"--" + flags.L2WSEndpoint.Name, l2WsEndpoint,
@@ -72,10 +72,10 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 		"--" + flags.Dummy.Name,
 		"--" + flags.MinProofFee.Name, minProofFee,
 		"--" + flags.ProverCapacity.Name, "8",
-		"--" + flags.OracleProver.Name,
+		"--" + flags.GuardianProver.Name,
 		"--" + flags.ProveBlockTxReplacementMultiplier.Name, "3",
 		"--" + flags.ProveBlockMaxTxGasTipCap.Name, "256",
-		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.CheckProofWindowExpiredInterval.Name, "30s",
 		"--" + flags.TempCapacityExpiresAt.Name, "15s",
@@ -83,7 +83,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProver() {
 	}))
 }
 
-func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
+func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProverError() {
 	app := s.SetupApp()
 
 	s.ErrorContains(app.Run([]string{
@@ -96,11 +96,11 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverError() {
 		"--" + flags.TaikoL2Address.Name, taikoL2,
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.Dummy.Name,
-		"--" + flags.OracleProver.Name,
+		"--" + flags.GuardianProver.Name,
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.RPCTimeout.Name, "5s",
 		"--" + flags.MinProofFee.Name, minProofFee,
-	}), "oracleProver flag set without oracleProverPrivateKey set")
+	}), "guardianProver flag set without guardianProverPrivateKey set")
 }
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_ProverKeyError() {
@@ -112,15 +112,15 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_ProverKeyError() {
 	}), "invalid L1 prover private key")
 }
 
-func (s *ProverTestSuite) TestNewConfigFromCliContext_OracleProverKeyError() {
+func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProverKeyError() {
 	app := s.SetupApp()
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProver.Name,
-		"--" + flags.OracleProverPrivateKey.Name, "",
-	}), "invalid oracle private key")
+		"--" + flags.GuardianProver.Name,
+		"--" + flags.GuardianProverPrivateKey.Name, "",
+	}), "invalid guardian private key")
 }
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayError() {
@@ -129,8 +129,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayError() {
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProver.Name,
+		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.GuardianProver.Name,
 		"--" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value")
 }
@@ -141,8 +141,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorLower() {
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProver.Name,
+		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.GuardianProver.Name,
 		"--" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value")
 }
@@ -153,8 +153,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorUpper() {
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProver.Name,
+		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.GuardianProver.Name,
 		"--" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value")
 }
@@ -165,8 +165,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_RandomDelayErrorOrder() {
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.OracleProver.Name,
+		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
+		"--" + flags.GuardianProver.Name,
 		"--" + flags.MinProofFee.Name, minProofFee,
 	}), "invalid random dummy proof delay value (lower > upper)")
 }
@@ -183,8 +183,8 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
 		&cli.Uint64Flag{Name: flags.StartingBlockID.Name},
 		&cli.BoolFlag{Name: flags.Dummy.Name},
-		&cli.BoolFlag{Name: flags.OracleProver.Name},
-		&cli.StringFlag{Name: flags.OracleProverPrivateKey.Name},
+		&cli.BoolFlag{Name: flags.GuardianProver.Name},
+		&cli.StringFlag{Name: flags.GuardianProverPrivateKey.Name},
 		&cli.StringFlag{Name: flags.Graffiti.Name},
 		&cli.DurationFlag{Name: flags.CheckProofWindowExpiredInterval.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},

@@ -15,7 +15,7 @@ import (
 // CreateAssignmentRequestBody represents a request body when handling assignment creation request.
 type CreateAssignmentRequestBody struct {
 	FeeToken   common.Address
-	TierFees   []*encoding.TierFee
+	TierFees   []encoding.TierFee
 	Expiry     uint64
 	TxListHash common.Hash
 }
@@ -88,7 +88,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "only receive ETH")
 	}
 
-	if !srv.isOracle {
+	if !srv.isGuardian {
 		ok, err := rpc.CheckProverBalance(c.Request().Context(), srv.rpc, srv.proverAddress, srv.taikoL1Address, srv.bond)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err)
