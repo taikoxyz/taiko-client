@@ -19,7 +19,7 @@ lint:
 test:
 	docker pull ghcr.io/foundry-rs/foundry:latest  \
 	&& docker pull gcr.io/evmchain/taiko-geth:taiko  \
-	&& go test -p 1 ./... -coverprofile=coverage.out -covermode=atomic -timeout=300s
+	&& go test ./... -coverprofile=coverage.out -covermode=atomic -timeout=300s
 
 dev_net:
 	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \
