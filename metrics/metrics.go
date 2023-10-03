@@ -44,7 +44,7 @@ var (
 	ProverReceivedProposedBlockGauge  = metrics.NewRegisteredGauge("prover/proposed/received", nil)
 	ProverReceivedProvenBlockGauge    = metrics.NewRegisteredGauge("prover/proven/received", nil)
 
-	ProofGenerationTime = metrics.NewRegisteredHistogram(
+	ProverProofGenerationTime = metrics.NewRegisteredHistogram(
 		"prover/proof/generation/time",
 		nil,
 		metrics.NewExpDecaySample(128, 0.015),

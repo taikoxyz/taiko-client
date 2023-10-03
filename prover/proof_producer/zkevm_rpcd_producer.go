@@ -202,7 +202,7 @@ func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 	}, backoff.NewConstantBackOff(proofPollingInterval)); err != nil {
 		return nil, 0, err
 	}
-	metrics.ProofGenerationTime.Update(proofGenerationTime.Nanoseconds())
+	metrics.ProverProofGenerationTime.Update(proofGenerationTime.Nanoseconds())
 	return proof, degree, nil
 }
 
