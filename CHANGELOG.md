@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.16.0](https://github.com/taikoxyz/taiko-client/compare/v0.15.0...v0.16.0) (2023-09-30)
+
+
+### Features
+
+* **all:** some client optimizations ([#376](https://github.com/taikoxyz/taiko-client/issues/376)) ([91bba90](https://github.com/taikoxyz/taiko-client/commit/91bba902febbf6ce8d4fd37dfb2b0fe7c181191d))
+* **bindings:** update contract bindings ([#394](https://github.com/taikoxyz/taiko-client/issues/394)) ([5b9346b](https://github.com/taikoxyz/taiko-client/commit/5b9346b9587c155372cede757f048e2c9faea4a2))
+* **flag:** fix some typo ([#391](https://github.com/taikoxyz/taiko-client/issues/391)) ([5f7f1dd](https://github.com/taikoxyz/taiko-client/commit/5f7f1dd8248a204d8451e0c5fd37ede870fa7f07))
+* **proposer:** shuffle prover endpoints before assigning proof tasks ([#390](https://github.com/taikoxyz/taiko-client/issues/390)) ([96488d0](https://github.com/taikoxyz/taiko-client/commit/96488d0f7045174b227a20bc51b241d25f683098))
+* **proposer:** update oracle proof assignment ([#393](https://github.com/taikoxyz/taiko-client/issues/393)) ([29c2d4b](https://github.com/taikoxyz/taiko-client/commit/29c2d4ba23e2d2d9d1d8389b68679b851a3fd33e))
+* **proposer:** update prover endpoint scheme check ([#400](https://github.com/taikoxyz/taiko-client/issues/400)) ([ce8bd1d](https://github.com/taikoxyz/taiko-client/commit/ce8bd1d78002209227d283a89c08775fa06bc431))
+* **prover_selector:** check prover's token balance ([#406](https://github.com/taikoxyz/taiko-client/issues/406)) ([834c0ea](https://github.com/taikoxyz/taiko-client/commit/834c0ea62353a5a92245ac5412b7d8714d92c4da))
+* **prover:** add more capacity related logs ([#408](https://github.com/taikoxyz/taiko-client/issues/408)) ([22014b2](https://github.com/taikoxyz/taiko-client/commit/22014b2f2b9bf4f35590273c64b888920ce82ffc))
+* **prover:** always use the oracle prover private key when an oracle prover starting a server ([#395](https://github.com/taikoxyz/taiko-client/issues/395)) ([cc28d63](https://github.com/taikoxyz/taiko-client/commit/cc28d631cb3c6ba0365034f0a9cbe3d6ce44492a))
+* **prover:** check `transition.blockHash` before proof generation ([#415](https://github.com/taikoxyz/taiko-client/issues/415)) ([dd77f7a](https://github.com/taikoxyz/taiko-client/commit/dd77f7a07b56abb2724a7a46113b9f39e922a13b))
+* **prover:** increase `gasTipCap` when resending `TaikoL1.proveBlock` transactions ([#411](https://github.com/taikoxyz/taiko-client/issues/411)) ([f192e0a](https://github.com/taikoxyz/taiko-client/commit/f192e0a6b8237fa5cbcdc80d91f4333e76a1afc3))
+* **prover:** release capacity when the corresponding local proof generation is canceled ([#402](https://github.com/taikoxyz/taiko-client/issues/402)) ([1eab54d](https://github.com/taikoxyz/taiko-client/commit/1eab54deb024baa1e5c46a725153172ed289b9f8))
+* **prover:** tie capacity to a specific block id ([#413](https://github.com/taikoxyz/taiko-client/issues/413)) ([bdca930](https://github.com/taikoxyz/taiko-client/commit/bdca930f47f7efd2e3661d57a3507eae09db339d))
+* **prover:** update APIs && integrate swagger docs ([#386](https://github.com/taikoxyz/taiko-client/issues/386)) ([ebdb3da](https://github.com/taikoxyz/taiko-client/commit/ebdb3daba25921b572578fca2f5c981e4e014e54))
+* **prover:** use `httptest.Server` to simplify the prover server tests ([#389](https://github.com/taikoxyz/taiko-client/issues/389)) ([84eedae](https://github.com/taikoxyz/taiko-client/commit/84eedaedfe01e736d7c6a8523e68c4fad878e8c4))
+
+
+### Bug Fixes
+
+* **ci:** fix workflow errors ([#410](https://github.com/taikoxyz/taiko-client/issues/410)) ([5a3b655](https://github.com/taikoxyz/taiko-client/commit/5a3b6551458ebe6212c2ad7dee0a9291be42fd86))
+* **proposer:** fix proposing fee initialization ([#396](https://github.com/taikoxyz/taiko-client/issues/396)) ([2f2007d](https://github.com/taikoxyz/taiko-client/commit/2f2007d5810b8994172a59cb88052b9b8b8acb87))
+* **prover:** capacity needs to be taken before generating proof ([#412](https://github.com/taikoxyz/taiko-client/issues/412)) ([7d9c244](https://github.com/taikoxyz/taiko-client/commit/7d9c2446a45f3d338c222ea5bd269ea49fcb135b))
+* **prover:** check latest verified ID on proof submission ([#387](https://github.com/taikoxyz/taiko-client/issues/387)) ([8157550](https://github.com/taikoxyz/taiko-client/commit/81575502e88f06f34a2f36baa6bad66d0fa12884))
+* **prover:** fix a capacity release issue ([#405](https://github.com/taikoxyz/taiko-client/issues/405)) ([4ab061f](https://github.com/taikoxyz/taiko-client/commit/4ab061f9f2c6fecfdcc164ade398e0acbacbf8cd))
+* **prover:** prover rpc didnt have taiko token address ([#407](https://github.com/taikoxyz/taiko-client/issues/407)) ([4e0e390](https://github.com/taikoxyz/taiko-client/commit/4e0e390abebbd8ec3b56f0fe729a7573c26e1fdd))
+* **test:** fix flags related tests ([#409](https://github.com/taikoxyz/taiko-client/issues/409)) ([4f0a602](https://github.com/taikoxyz/taiko-client/commit/4f0a6020b22473c83743450197f68393410adf2d))
+
 ## [0.15.0](https://github.com/taikoxyz/taiko-client/compare/v0.14.0...v0.15.0) (2023-09-04)
 
 
