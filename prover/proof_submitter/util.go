@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -32,6 +33,7 @@ func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
 	}
 
 	log.Warn("🤷 Unretryable proof submission error", "error", err, "blockID", blockID)
+	metrics.ProverValidProofSubmissionError.Inc(1)
 	return false
 }
 
