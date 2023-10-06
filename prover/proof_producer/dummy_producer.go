@@ -7,15 +7,19 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 // DummyProofProducer always returns a dummy proof.
 type DummyProofProducer struct {
 	RandomDummyProofDelayLowerBound *time.Duration
 	RandomDummyProofDelayUpperBound *time.Duration
+	OracleProofSubmissionDelay      time.Duration
+	OracleProverAddress             common.Address
 }
 
 // RequestProof implements the ProofProducer interface.
@@ -34,6 +38,38 @@ func (d *DummyProofProducer) RequestProof(
 		"height", header.Number,
 		"hash", header.Hash(),
 	)
+
+	if opts.AssignedProver != encoding.OracleProverAddress && d.OracleProofSubmissionDelay != 0 {
+		var delay time.Duration
+		if time.Now().Unix()-int64(header.Time) >= int64(d.OracleProofSubmissionDelay.Seconds()) {
+			delay = 0
+		} else {
+			delay = time.Duration(
+				int64(d.OracleProofSubmissionDelay.Seconds())-(time.Now().Unix()-int64(header.Time)),
+			) * time.Second
+		}
+
+		log.Info(
+			"Oracle proof submission delay",
+			"blockID", blockID,
+			"proposer", meta.Proposer,
+			"assignedProver", opts.AssignedProver,
+			"delay", delay,
+		)
+
+		time.AfterFunc(delay, func() {
+			resultCh <- &ProofWithHeader{
+				BlockID: blockID,
+				Meta:    meta,
+				Header:  header,
+				ZkProof: bytes.Repeat([]byte{0xff}, 100),
+				Degree:  CircuitsIdx,
+				Opts:    opts,
+			}
+		})
+
+		return nil
+	}
 
 	time.AfterFunc(d.proofDelay(), func() {
 		resultCh <- &ProofWithHeader{

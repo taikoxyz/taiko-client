@@ -141,6 +141,7 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 		ProposeBlockTxHash: event.Raw.TxHash,
 		L1SignalService:    s.l1SignalService,
 		L2SignalService:    s.l2SignalService,
+		AssignedProver:     event.Prover,
 		TaikoL2:            s.taikoL2Address,
 		MetaHash:           blockInfo.MetaHash,
 		BlockHash:          block.Hash(),

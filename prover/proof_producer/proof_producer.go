@@ -21,6 +21,7 @@ type ProofRequestOptions struct {
 	L1SignalService    common.Address
 	L2SignalService    common.Address
 	TaikoL2            common.Address
+	AssignedProver     common.Address
 	MetaHash           common.Hash
 	BlockHash          common.Hash
 	ParentHash         common.Hash
