@@ -330,25 +330,21 @@ func (s *Syncer) insertNewHead(
 		}
 	}
 
-	parentTimestamp, err := s.rpc.TaikoL2.ParentTimestamp(&bind.CallOpts{BlockNumber: parent.Number, Context: ctx})
-	if err != nil {
-		return nil, err
-	}
-
 	// Get L2 baseFee
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{BlockNumber: parent.Number, Context: ctx},
-		event.Meta.Timestamp-parentTimestamp,
+		event.Meta.L1Height,
 		uint32(parent.GasUsed),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
 	}
 
-	log.Debug(
-		"GetBasefee",
+	log.Info(
+		"L2 baseFee",
+		"blockID", event.BlockId,
 		"baseFee", baseFee,
-		"timeSinceParent", uint32(event.Meta.Timestamp-parentTimestamp),
+		"syncedL1Height", event.Meta.L1Height,
 		"parentGasUsed", parent.GasUsed,
 	)
 
