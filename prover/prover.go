@@ -728,7 +728,11 @@ func (p *Prover) onBlockProven(ctx context.Context, event *bindings.TaikoL1Clien
 	} else {
 		// generate oracle proof if oracle prover, proof is invalid
 		if p.cfg.OracleProver {
-			return p.requestProofForBlockId(event.BlockId, new(big.Int).SetUint64(event.Raw.BlockNumber))
+			l1Height, err := p.rpc.TaikoL2.LatestSyncedL1Height(&bind.CallOpts{Context: ctx, BlockNumber: event.BlockId})
+			if err != nil {
+				return err
+			}
+			return p.requestProofForBlockId(event.BlockId, new(big.Int).SetUint64(l1Height))
 		}
 	}
 
