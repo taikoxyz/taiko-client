@@ -271,6 +271,10 @@ func (p *Prover) eventLoop() {
 			if err := p.onTransitionProved(p.ctx, e); err != nil {
 				log.Error("Handle TransitionProved event error", "error", err)
 			}
+		case e := <-p.proofWindowExpiredCh:
+			if err := p.onProvingWindowExpired(p.ctx, e); err != nil {
+				log.Error("Handle provingWindow expired event error", "error", err)
+			}
 		case <-p.blockProposedCh:
 			reqProving()
 		case <-forceProvingTicker.C:
@@ -762,6 +766,22 @@ func (p *Prover) requestProofByBlockID(blockId *big.Int, l1Height *big.Int) erro
 	}()
 
 	return nil
+}
+
+// onProvingWindowExpired tries to submit a proof for an expired block.
+func (p *Prover) onProvingWindowExpired(ctx context.Context, e *bindings.TaikoL1ClientBlockProposed) error {
+	log.Info("Block proving window is expired", "blockID", e.BlockId, "l1Height", e.Raw.BlockNumber)
+
+	needNewProof, err := rpc.NeedNewProof(ctx, p.rpc, e.BlockId, p.proverAddress)
+	if err != nil {
+		return err
+	}
+
+	if !needNewProof {
+		return nil
+	}
+
+	return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(e.Raw.BlockNumber))
 }
 
 // getProvingWindow returns the provingWindow of the given proposed block.
