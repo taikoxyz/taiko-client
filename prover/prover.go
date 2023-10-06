@@ -174,6 +174,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			RandomDummyProofDelayLowerBound: p.cfg.RandomDummyProofDelayLowerBound,
 			RandomDummyProofDelayUpperBound: p.cfg.RandomDummyProofDelayUpperBound,
 			OracleProofSubmissionDelay:      p.cfg.OracleProofSubmissionDelay,
+			ProofWindow:                     p.protocolConfigs.ProofWindow,
 		}
 	} else {
 		if producer, err = proofProducer.NewZkevmRpcdProducer(

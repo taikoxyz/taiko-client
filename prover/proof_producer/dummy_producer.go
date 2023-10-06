@@ -20,6 +20,7 @@ type DummyProofProducer struct {
 	RandomDummyProofDelayUpperBound *time.Duration
 	OracleProofSubmissionDelay      time.Duration
 	OracleProverAddress             common.Address
+	ProofWindow                     uint16
 }
 
 // RequestProof implements the ProofProducer interface.
@@ -41,11 +42,11 @@ func (d *DummyProofProducer) RequestProof(
 
 	if opts.AssignedProver != encoding.OracleProverAddress && d.OracleProofSubmissionDelay != 0 {
 		var delay time.Duration
-		if time.Now().Unix()-int64(header.Time) >= int64(d.OracleProofSubmissionDelay.Seconds()) {
+		if time.Now().Unix()-int64(header.Time+uint64(d.ProofWindow)) >= int64(d.OracleProofSubmissionDelay.Seconds()) {
 			delay = 0
 		} else {
 			delay = time.Duration(
-				int64(d.OracleProofSubmissionDelay.Seconds())-(time.Now().Unix()-int64(header.Time)),
+				int64(d.OracleProofSubmissionDelay.Seconds())-(time.Now().Unix()-int64(header.Time+uint64(d.ProofWindow))),
 			) * time.Second
 		}
 
