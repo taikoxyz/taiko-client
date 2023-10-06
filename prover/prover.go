@@ -29,7 +29,8 @@ import (
 )
 
 var (
-	errNoCapacity = errors.New("no prover capacity available")
+	errNoCapacity   = errors.New("no prover capacity available")
+	errTierNotFound = errors.New("tier not found")
 )
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
@@ -60,13 +61,14 @@ type Prover struct {
 	validProofSubmitter proofSubmitter.ProofSubmitter
 
 	// Subscriptions
-	blockProposedCh     chan *bindings.TaikoL1ClientBlockProposed
-	blockProposedSub    event.Subscription
-	transitionProvedCh  chan *bindings.TaikoL1ClientTransitionProved
-	transitionProvedSub event.Subscription
-	blockVerifiedCh     chan *bindings.TaikoL1ClientBlockVerified
-	blockVerifiedSub    event.Subscription
-	proveNotify         chan struct{}
+	blockProposedCh      chan *bindings.TaikoL1ClientBlockProposed
+	blockProposedSub     event.Subscription
+	transitionProvedCh   chan *bindings.TaikoL1ClientTransitionProved
+	transitionProvedSub  event.Subscription
+	blockVerifiedCh      chan *bindings.TaikoL1ClientBlockVerified
+	blockVerifiedSub     event.Subscription
+	proofWindowExpiredCh chan *bindings.TaikoL1ClientBlockProposed
+	proveNotify          chan struct{}
 
 	// Proof related
 	proofGenerationCh chan *proofProducer.ProofWithHeader
@@ -130,6 +132,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	p.transitionProvedCh = make(chan *bindings.TaikoL1ClientTransitionProved, chBufferSize)
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
+	p.proofWindowExpiredCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
@@ -442,55 +445,49 @@ func (p *Prover) onBlockProposed(
 			"minTier", event.MinTier,
 		)
 
-		// TODO: add this back
-		// if p.cfg.GuardianProver {
-		// 	shouldSkipProofWindowExpiredCheck := func() (bool, error) {
-		// 		parent, err := p.rpc.L2ParentByBlockId(ctx, event.BlockId)
-		// 		if err != nil {
-		// 			return false, err
-		// 		}
+		provingWindow, err := p.getProvingWindow(event)
+		if err != nil {
+			return fmt.Errorf("failed to get proving window: %w", err)
+		}
 
-		// 		// check if an invalid proof has been submitted, if so, we can skip proofWindowExpired check below
-		// 		// and always submit proof. otherwise, guardianProver follows same proof logic as regular.
-		// 		transition, err := p.rpc.TaikoL1.GetTransition(
-		// 			&bind.CallOpts{Context: ctx},
-		// 			event.BlockId.Uint64(),
-		// 			parent.Hash(),
-		// 		)
-		// 		if err != nil {
-		// 			if strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_TRANSITION_NOT_FOUND") {
-		// 				// proof hasnt been submitted
-		// 				return false, nil
-		// 			} else {
-		// 				return false, err
-		// 			}
-		// 		}
+		var (
+			now                    = uint64(time.Now().Unix())
+			provingWindowExpiresAt = currentL1OriginHeader.Time + uint64(provingWindow.Seconds())
+			provingWindowExpired   = now > provingWindowExpiresAt
+			timeToExpire           = time.Duration(provingWindowExpiresAt-now) * time.Second
+		)
+		if event.AssignedProver != p.proverAddress && !provingWindowExpired {
+			log.Info(
+				"Proposed block is not provable",
+				"blockID", event.BlockId,
+				"prover", event.AssignedProver,
+				"expiresAt", provingWindowExpiresAt,
+				"timeToExpire", timeToExpire,
+			)
 
-		// 		block, err := p.rpc.L2.BlockByNumber(ctx, event.BlockId)
-		// 		if err != nil {
-		// 			return false, err
-		// 		}
+			if p.cfg.ProveUnassignedBlocks {
+				log.Info("Add proposed block to wait for proof window expiration", "blockID", event.BlockId)
+				time.AfterFunc(timeToExpire, func() { p.proofWindowExpiredCh <- event })
+			}
 
-		// 		// proof is invalid but has correct parents, guardian prover should skip
-		// 		// checking proofWindow expired, and simply force prove.
-		// 		if transition.BlockHash != block.Hash() {
-		// 			log.Info(
-		// 				"Guardian prover forcing prove block due to invalid proof",
-		// 				"blockID", event.BlockId,
-		// 				"transitionBlockHash", common.BytesToHash(transition.BlockHash[:]).Hex(),
-		// 				"expectedBlockHash", block.Hash().Hex(),
-		// 			)
+			return nil
+		}
 
-		// 			return true, nil
-		// 		}
+		// If set not to prove unassigned blocks, this block is still not provable
+		// by us even though its open proving.
+		if provingWindowExpired && !p.cfg.ProveUnassignedBlocks {
+			log.Info("Skip proving expired blocks", "blockID", event.BlockId)
+			return nil
+		}
 
-		// 		return false, nil
-		// 	}
+		log.Info(
+			"Proposed block is provable",
+			"blockID", event.BlockId,
+			"prover", event.AssignedProver,
+			"expiresAt", provingWindowExpiresAt,
+		)
 
-		// 	if skipProofWindowExpiredCheck, err = shouldSkipProofWindowExpiredCheck(); err != nil {
-		// 		return err
-		// 	}
-		// }
+		metrics.ProverProofsAssigned.Inc(1)
 
 		if !p.cfg.GuardianProver {
 			if _, ok := p.capacityManager.TakeOneCapacity(event.BlockId.Uint64()); !ok {
@@ -649,8 +646,7 @@ func (p *Prover) closeSubscription() {
 	p.blockProposedSub.Unsubscribe()
 }
 
-// isValidProof cancels proof only if the parentGasUsed and parentHash in the proof match what
-// is expected
+// isValidProof checks if the given proof is a valid one.
 func (p *Prover) isValidProof(
 	ctx context.Context,
 	blockID uint64,
@@ -726,7 +722,7 @@ func (p *Prover) requestProofByBlockID(blockId *big.Int, l1Height *big.Int) erro
 			return nil
 		}
 
-		// make sure to takea capacity before requesting proof
+		// Make sure to take a capacity before requesting proof
 		if !p.cfg.GuardianProver {
 			if _, ok := p.capacityManager.TakeOneCapacity(event.BlockId.Uint64()); !ok {
 				return errNoCapacity
@@ -766,4 +762,15 @@ func (p *Prover) requestProofByBlockID(blockId *big.Int, l1Height *big.Int) erro
 	}()
 
 	return nil
+}
+
+// getProvingWindow returns the provingWindow of the given proposed block.
+func (p *Prover) getProvingWindow(e *bindings.TaikoL1ClientBlockProposed) (time.Duration, error) {
+	for _, t := range p.tiers {
+		if e.MinTier == t.ID {
+			return time.Duration(t.ProvingWindow) * time.Second, nil
+		}
+	}
+
+	return 0, errTierNotFound
 }
