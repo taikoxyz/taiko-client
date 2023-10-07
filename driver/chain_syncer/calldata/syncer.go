@@ -427,6 +427,7 @@ func (s *Syncer) createExecutionPayloads(
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.Difficulty,
+			ExtraData:      event.Meta.ExtraData[:],
 		},
 		BaseFeePerGas: baseFee,
 		L1Origin:      l1Origin,
@@ -444,6 +445,7 @@ func (s *Syncer) createExecutionPayloads(
 		"timestamp", attributes.BlockMetadata.Timestamp,
 		"mixHash", attributes.BlockMetadata.MixHash,
 		"baseFee", attributes.BaseFeePerGas,
+		"extraData", string(attributes.BlockMetadata.ExtraData),
 		"l1OriginHeight", attributes.L1Origin.L1BlockHeight,
 		"l1OriginHash", attributes.L1Origin.L1BlockHash,
 	)
