@@ -107,17 +107,17 @@ func (s *ETHFeeEOASelector) AssignProver(
 	// If we do not find a prover, we can increase the fee up to a point, or give up.
 	for i := 0; i < int(s.maxTierFeePriceBumpIterations); i++ {
 		// Bump tier fee on each failed loop
-		if i > 0 {
-			cumulativeBumpPercent := new(big.Int).Mul(s.tierFeePriceBump, new(big.Int).SetUint64(uint64(i)))
-			for idx := range fees {
+		cumulativeBumpPercent := new(big.Int).Mul(s.tierFeePriceBump, new(big.Int).SetUint64(uint64(i)))
+		for idx := range fees {
+			if i > 0 {
 				fee := new(big.Int).Mul(fees[idx].Fee, cumulativeBumpPercent)
 				fees[idx].Fee = fees[idx].Fee.Add(fees[idx].Fee, fee.Div(fee, big100))
-
-				if fees[idx].Fee.Cmp(maxProverFee) > 0 {
-					maxProverFee = fees[idx].Fee
-				}
+			}
+			if fees[idx].Fee.Cmp(maxProverFee) > 0 {
+				maxProverFee = fees[idx].Fee
 			}
 		}
+
 		for _, endpoint := range s.shuffleProverEndpoints() {
 			encodedAssignment, proverAddress, err := assignProver(
 				ctx,
@@ -245,6 +245,7 @@ func assignProver(
 		"Prover assigned",
 		"address", result.Prover,
 		"endpoint", endpoint,
+		"tierFees", tierFees,
 		"expiry", expiry,
 	)
 

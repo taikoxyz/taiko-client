@@ -104,7 +104,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	}
 
 	for _, tier := range req.TierFees {
-		if tier.Fee.Cmp(srv.minProofFee) < 0 {
+		if tier.Tier != encoding.TierGuardianID && tier.Fee.Cmp(srv.minProofFee) < 0 {
 			log.Warn(
 				"Proof fee too low",
 				"tier", tier.Tier,

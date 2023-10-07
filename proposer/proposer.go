@@ -129,7 +129,9 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	if p.tiers, err = p.rpc.GetTiers(ctx); err != nil {
 		return err
 	}
-	p.initTierFees()
+	if err := p.initTierFees(); err != nil {
+		return err
+	}
 
 	if p.proverSelector, err = selector.NewETHFeeEOASelector(
 		&protocolConfigs,
@@ -483,7 +485,7 @@ func (p *Proposer) Name() string {
 	return "proposer"
 }
 
-func (p *Proposer) initTierFees() {
+func (p *Proposer) initTierFees() error {
 	for _, tier := range p.tiers {
 		log.Info(
 			"Protocol tier",
@@ -503,11 +505,14 @@ func (p *Proposer) initTierFees() {
 		case encoding.TierPseZkevmID:
 			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.cfg.PseZkevmTierFee})
 		case encoding.TierGuardianID:
+			// Guardian prover should not charge any fee.
 			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: common.Big0})
 		default:
-			log.Warn("Unknown tier", "id", tier.ID, "name", string(tier.VerifierName[:]))
+			return fmt.Errorf("unknown tier: %d", tier.ID)
 		}
 	}
+
+	return nil
 }
 
 // getTxOpts creates a bind.TransactOpts instance using the given private key.

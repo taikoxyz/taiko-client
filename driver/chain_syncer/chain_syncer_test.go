@@ -2,7 +2,6 @@ package chainSyncer
 
 import (
 	"context"
-	"math/big"
 
 	"os"
 	"testing"
@@ -60,7 +59,9 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		MaxProposedTxListsPerEpoch:    1,
 		WaitReceiptTimeout:            10 * time.Second,
 		ProverEndpoints:               s.ProverEndpoints,
-		OptimisticTierFee:             big.NewInt(1000),
+		OptimisticTierFee:             common.Big256,
+		SgxTierFee:                    common.Big256,
+		PseZkevmTierFee:               common.Big256,
 		MaxTierFeePriceBumpIterations: 3,
 		TierFeePriceBump:              common.Big2,
 	})))

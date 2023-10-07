@@ -34,7 +34,6 @@ type Config struct {
 	Graffiti                          string
 	BackOffMaxRetrys                  uint64
 	BackOffRetryInterval              time.Duration
-	CheckProofWindowExpiredInterval   time.Duration
 	ProveUnassignedBlocks             bool
 	RPCTimeout                        *time.Duration
 	WaitReceiptTimeout                time.Duration

@@ -47,6 +47,8 @@ func (s *ProposerTestSuite) SetupTest() {
 		WaitReceiptTimeout:                  10 * time.Second,
 		ProverEndpoints:                     s.ProverEndpoints,
 		OptimisticTierFee:                   common.Big256,
+		SgxTierFee:                          common.Big256,
+		PseZkevmTierFee:                     common.Big256,
 		TierFeePriceBump:                    common.Big2,
 		MaxTierFeePriceBumpIterations:       3,
 	})))

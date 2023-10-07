@@ -2,7 +2,7 @@ package proposer
 
 import (
 	"context"
-	"math/big"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -14,15 +14,15 @@ import (
 )
 
 var (
-	l1Endpoint       = os.Getenv("L1_NODE_WS_ENDPOINT")
-	l2Endpoint       = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
-	proverEndpoints  = "http://localhost:9876,http://localhost:1234"
-	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
-	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
-	taikoToken       = os.Getenv("TAIKO_TOKEN_ADDRESS")
-	blockProposalFee = "10000000000"
-	proposeInterval  = "10s"
-	rpcTimeout       = 5 * time.Second
+	l1Endpoint      = os.Getenv("L1_NODE_WS_ENDPOINT")
+	l2Endpoint      = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+	taikoL1         = os.Getenv("TAIKO_L1_ADDRESS")
+	taikoL2         = os.Getenv("TAIKO_L2_ADDRESS")
+	taikoToken      = os.Getenv("TAIKO_TOKEN_ADDRESS")
+	proverEndpoints = "http://localhost:9876,http://localhost:1234"
+	tierFee         = 102400000000
+	proposeInterval = "10s"
+	rpcTimeout      = "5s"
 )
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
@@ -48,20 +48,20 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(1, len(c.LocalAddresses))
 		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
 		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
-		s.Equal(rpcTimeout, *c.RPCTimeout)
+		s.Equal(5*time.Second, *c.RPCTimeout)
 		s.Equal(10*time.Second, c.WaitReceiptTimeout)
+		s.Equal(uint64(tierFee), c.OptimisticTierFee.Uint64())
+		s.Equal(uint64(tierFee), c.SgxTierFee.Uint64())
+		s.Equal(uint64(tierFee), c.PseZkevmTierFee.Uint64())
+		s.Equal(uint64(15), c.TierFeePriceBump.Uint64())
+		s.Equal(uint64(5), c.MaxTierFeePriceBumpIterations)
+
 		for i, e := range strings.Split(proverEndpoints, ",") {
 			s.Equal(c.ProverEndpoints[i].String(), e)
 		}
 
-		fee, _ := new(big.Int).SetString(blockProposalFee, 10)
-		s.Equal(fee, c.OptimisticTierFee)
-
-		s.Equal(uint64(15), c.TierFeePriceBump.Uint64())
-		s.Equal(uint64(5), c.MaxTierFeePriceBumpIterations)
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
-
-		return err
+		return nil
 	}
 
 	s.Nil(app.Run([]string{
@@ -76,12 +76,14 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.ProposeInterval.Name, proposeInterval,
 		"--" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
 		"--" + flags.ProposeBlockTxReplacementMultiplier.Name, "5",
-		"--" + flags.RPCTimeout.Name, "5s",
+		"--" + flags.RPCTimeout.Name, rpcTimeout,
 		"--" + flags.WaitReceiptTimeout.Name, "10s",
 		"--" + flags.ProposeBlockTxGasTipCap.Name, "100000",
 		"--" + flags.ProposeBlockTxGasLimit.Name, "100000",
 		"--" + flags.ProverEndpoints.Name, proverEndpoints,
-		"--" + flags.OptimisticTierFee.Name, blockProposalFee,
+		"--" + flags.OptimisticTierFee.Name, fmt.Sprint(tierFee),
+		"--" + flags.SgxTierFee.Name, fmt.Sprint(tierFee),
+		"--" + flags.PseZkevmTierFee.Name, fmt.Sprint(tierFee),
 		"--" + flags.TierFeePriceBump.Name, "15",
 		"--" + flags.MaxTierFeePriceBumpIterations.Name, "5",
 	}))
@@ -165,6 +167,8 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
 		&cli.StringFlag{Name: flags.ProverEndpoints.Name},
 		&cli.Uint64Flag{Name: flags.OptimisticTierFee.Name},
+		&cli.Uint64Flag{Name: flags.SgxTierFee.Name},
+		&cli.Uint64Flag{Name: flags.PseZkevmTierFee.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
 		&cli.DurationFlag{Name: flags.WaitReceiptTimeout.Name},
