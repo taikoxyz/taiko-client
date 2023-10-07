@@ -125,7 +125,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		Graffiti:                          c.String(flags.Graffiti.Name),
 		BackOffMaxRetrys:                  c.Uint64(flags.BackOffMaxRetrys.Name),
 		BackOffRetryInterval:              c.Duration(flags.BackOffRetryInterval.Name),
-		CheckProofWindowExpiredInterval:   c.Duration(flags.CheckProofWindowExpiredInterval.Name),
 		ProveUnassignedBlocks:             c.Bool(flags.ProveUnassignedBlocks.Name),
 		RPCTimeout:                        timeout,
 		WaitReceiptTimeout:                c.Duration(flags.WaitReceiptTimeout.Name),

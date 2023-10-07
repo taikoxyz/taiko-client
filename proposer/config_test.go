@@ -55,10 +55,10 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		}
 
 		fee, _ := new(big.Int).SetString(blockProposalFee, 10)
-		s.Equal(fee, c.BlockProposalFee)
+		s.Equal(fee, c.OptimisticTierFee)
 
-		s.Equal(uint64(15), c.BlockProposalFeeIncreasePercentage.Uint64())
-		s.Equal(uint64(5), c.BlockProposalFeeIterations)
+		s.Equal(uint64(15), c.TierFeePriceBump.Uint64())
+		s.Equal(uint64(5), c.MaxTierFeePriceBumpIterations)
 		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
 
 		return err
@@ -81,9 +81,9 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.ProposeBlockTxGasTipCap.Name, "100000",
 		"--" + flags.ProposeBlockTxGasLimit.Name, "100000",
 		"--" + flags.ProverEndpoints.Name, proverEndpoints,
-		"--" + flags.BlockProposalFee.Name, blockProposalFee,
-		"--" + flags.BlockProposalFeeIncreasePercentage.Name, "15",
-		"--" + flags.BlockProposalFeeIterations.Name, "5",
+		"--" + flags.OptimisticTierFee.Name, blockProposalFee,
+		"--" + flags.TierFeePriceBump.Name, "15",
+		"--" + flags.MaxTierFeePriceBumpIterations.Name, "5",
 	}))
 }
 
@@ -164,14 +164,14 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.DurationFlag{Name: flags.ProposeInterval.Name},
 		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
 		&cli.StringFlag{Name: flags.ProverEndpoints.Name},
-		&cli.Uint64Flag{Name: flags.BlockProposalFee.Name},
+		&cli.Uint64Flag{Name: flags.OptimisticTierFee.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
 		&cli.DurationFlag{Name: flags.WaitReceiptTimeout.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasTipCap.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasLimit.Name},
-		&cli.Uint64Flag{Name: flags.BlockProposalFeeIncreasePercentage.Name},
-		&cli.Uint64Flag{Name: flags.BlockProposalFeeIterations.Name},
+		&cli.Uint64Flag{Name: flags.TierFeePriceBump.Name},
+		&cli.Uint64Flag{Name: flags.MaxTierFeePriceBumpIterations.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

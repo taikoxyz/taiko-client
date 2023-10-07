@@ -30,15 +30,15 @@ var (
 // ETHFeeEOASelector is a prover selector implementation which use ETHs as prover fee and
 // all provers selected must be EOA accounts.
 type ETHFeeEOASelector struct {
-	protocolConfigs       *bindings.TaikoDataConfig
-	rpc                   *rpc.Client
-	taikoL1Address        common.Address
-	tiersFee              []encoding.TierFee
-	feeIncreasePercentage *big.Int
-	proverEndpoints       []*url.URL
-	proposalFeeIterations uint64
-	proposalExpiry        time.Duration
-	requestTimeout        time.Duration
+	protocolConfigs               *bindings.TaikoDataConfig
+	rpc                           *rpc.Client
+	taikoL1Address                common.Address
+	tiersFee                      []encoding.TierFee
+	tierFeePriceBump              *big.Int
+	proverEndpoints               []*url.URL
+	maxTierFeePriceBumpIterations uint64
+	proposalExpiry                time.Duration
+	requestTimeout                time.Duration
 }
 
 // NewETHFeeEOASelector creates a new ETHFeeEOASelector instance.
@@ -47,9 +47,9 @@ func NewETHFeeEOASelector(
 	rpc *rpc.Client,
 	taikoL1Address common.Address,
 	tiersFee []encoding.TierFee,
-	feeIncreasePercentage *big.Int,
+	tierFeePriceBump *big.Int,
 	proverEndpoints []*url.URL,
-	proposalFeeIterations uint64,
+	maxTierFeePriceBumpIterations uint64,
 	proposalExpiry time.Duration,
 	requestTimeout time.Duration,
 ) (*ETHFeeEOASelector, error) {
@@ -68,9 +68,9 @@ func NewETHFeeEOASelector(
 		rpc,
 		taikoL1Address,
 		tiersFee,
-		feeIncreasePercentage,
+		tierFeePriceBump,
 		proverEndpoints,
-		proposalFeeIterations,
+		maxTierFeePriceBumpIterations,
 		proposalExpiry,
 		requestTimeout,
 	}, nil
@@ -93,22 +93,31 @@ func (s *ETHFeeEOASelector) AssignProver(
 	if err != nil {
 		return nil, nil, err
 	}
+
+	var (
+		expiry       = uint64(time.Now().Add(s.proposalExpiry).Unix())
+		fees         = make([]encoding.TierFee, len(tierFees))
+		big100       = new(big.Int).SetUint64(uint64(100))
+		maxProverFee = common.Big0
+	)
+	copy(fees, tierFees)
+
 	// Iterate over each configured endpoint, and see if someone wants to accept this block.
 	// If it is denied, we continue on to the next endpoint.
 	// If we do not find a prover, we can increase the fee up to a point, or give up.
-	for i := 0; i < int(s.proposalFeeIterations); i++ {
-		var (
-			expiry = uint64(time.Now().Add(s.proposalExpiry).Unix())
-		)
+	for i := 0; i < int(s.maxTierFeePriceBumpIterations); i++ {
+		// Bump tier fee on each failed loop
+		if i > 0 {
+			cumulativeBumpPercent := new(big.Int).Mul(s.tierFeePriceBump, new(big.Int).SetUint64(uint64(i)))
+			for idx := range fees {
+				fee := new(big.Int).Mul(fees[idx].Fee, cumulativeBumpPercent)
+				fees[idx].Fee = fees[idx].Fee.Add(fees[idx].Fee, fee.Div(fee, big100))
 
-		// Increase fee on each failed loop
-		// TODO: fix this
-		// if i > 0 {
-		// 	cumulativePercent := new(big.Int).Mul(s.feeIncreasePercentage, big.NewInt(int64(i)))
-		// 	increase := new(big.Int).Mul(fee, cumulativePercent)
-		// 	increase.Div(increase, big.NewInt(100))
-		// 	fee.Add(fee, increase)
-		// }
+				if fees[idx].Fee.Cmp(maxProverFee) > 0 {
+					maxProverFee = fees[idx].Fee
+				}
+			}
+		}
 		for _, endpoint := range s.shuffleProverEndpoints() {
 			encodedAssignment, proverAddress, err := assignProver(
 				ctx,
@@ -133,8 +142,7 @@ func (s *ETHFeeEOASelector) AssignProver(
 				continue
 			}
 
-			// TODO: fix fee value
-			return encodedAssignment, common.Big256, nil
+			return encodedAssignment, maxProverFee, nil
 		}
 	}
 

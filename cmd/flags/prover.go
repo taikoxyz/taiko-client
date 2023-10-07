@@ -72,7 +72,7 @@ var (
 	ProofSubmissionMaxRetry = &cli.Uint64Flag{
 		Name:     "proofSubmissionMaxRetry",
 		Usage:    "Max retry counts for proof submission",
-		Value:    0,
+		Value:    3,
 		Category: proverCategory,
 	}
 	Graffiti = &cli.StringFlag{
@@ -80,12 +80,6 @@ var (
 		Usage:    "When string is passed, adds additional graffiti info to proof evidence",
 		Category: proverCategory,
 		Value:    "",
-	}
-	CheckProofWindowExpiredInterval = &cli.DurationFlag{
-		Name:     "prover.checkProofWindowExpiredInterval",
-		Usage:    "Interval to check for expired proof windows from other provers",
-		Category: proverCategory,
-		Value:    15 * time.Second,
 	}
 	ProveUnassignedBlocks = &cli.BoolFlag{
 		Name:     "prover.proveUnassignedBlocks",
@@ -155,7 +149,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProveBlockTxReplacementMultiplier,
 	ProveBlockMaxTxGasTipCap,
 	Graffiti,
-	CheckProofWindowExpiredInterval,
 	ProveUnassignedBlocks,
 	ProveBlockTxGasLimit,
 	ProverHTTPServerPort,

@@ -8,6 +8,14 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+// Tier IDs defined in protocol.
+const (
+	TierOptimisticID = 100
+	TierSgxID        = 200
+	TierPseZkevmID   = 300
+	TierGuardianID   = 1000
+)
+
 // BlockHeader represents an Ethereum block header.
 type BlockHeader struct {
 	ParentHash       [32]byte

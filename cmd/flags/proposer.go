@@ -24,12 +24,6 @@ var (
 		Required: true,
 		Category: proposerCategory,
 	}
-	BlockProposalFee = &cli.StringFlag{
-		Name:     "blockProposalFee",
-		Usage:    "Initial block proposal fee (in wei) paid on block proposing",
-		Required: true,
-		Category: proposerCategory,
-	}
 	TaikoTokenAddress = &cli.StringFlag{
 		Name:     "taikoToken",
 		Usage:    "TaikoToken contract address",
@@ -45,6 +39,33 @@ var (
 		Usage:    "Block extra data set by the proposer",
 		Value:    "",
 		Category: proposerCategory,
+	}
+	OptimisticTierFee = &cli.Uint64Flag{
+		Name:     "tierFee.optimistic",
+		Usage:    "Initial tier fee (in wei) paid to prover to generate an optimistic proofs",
+		Category: proposerCategory,
+	}
+	SgxTierFee = &cli.Uint64Flag{
+		Name:     "tierFee.sgx",
+		Usage:    "Initial tier fee (in wei) paid to prover to generate a SGX proofs",
+		Category: proposerCategory,
+	}
+	PseZkevmTierFee = &cli.Uint64Flag{
+		Name:     "tierFee.pseZKEvm",
+		Usage:    "Initial tier fee (in wei) paid to prover to generate a PSE zkEVM proofs",
+		Category: proposerCategory,
+	}
+	TierFeePriceBump = &cli.Uint64Flag{
+		Name:     "tierFee.pricebump",
+		Usage:    "Price bump percentage when no prover wants to accept the block at initial fee",
+		Value:    10,
+		Category: proposerCategory,
+	}
+	MaxTierFeePriceBumpIterations = &cli.Uint64Flag{
+		Name:     "tierFee.maxPriceBumpIterations",
+		Usage:    "If nobody accepts block at initial tier fee, how many iterations to increase tier fee before giving up",
+		Category: proposerCategory,
+		Value:    3,
 	}
 	ProposeInterval = &cli.DurationFlag{
 		Name:     "proposeInterval",
@@ -88,23 +109,12 @@ var (
 		Usage:    "Gas tip cap (in wei) for a TaikoL1.proposeBlock transaction when doing the transaction replacement",
 		Category: proposerCategory,
 	}
-	BlockProposalFeeIncreasePercentage = &cli.Uint64Flag{
-		Name:     "blockProposalFeeIncreasePercentage",
-		Usage:    "Increase fee by what percentage when no prover wants to accept the block at initial fee",
-		Category: proposerCategory,
-		Value:    10,
-	}
-	BlockProposalFeeIterations = &cli.Uint64Flag{
-		Name:     "blockProposalFeeIterations",
-		Usage:    "If nobody accepts block at initial fee, how many iterations to increase fee before giving up",
-		Category: proposerCategory,
-		Value:    3,
-	}
 )
 
 // All proposer flags.
 var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2HTTPEndpoint,
+	TaikoTokenAddress,
 	L1ProposerPrivKey,
 	L2SuggestedFeeRecipient,
 	ProposeInterval,
@@ -117,8 +127,9 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProposeBlockTxReplacementMultiplier,
 	ProposeBlockTxGasTipCap,
 	ProverEndpoints,
-	BlockProposalFee,
-	BlockProposalFeeIncreasePercentage,
-	BlockProposalFeeIterations,
-	TaikoTokenAddress,
+	OptimisticTierFee,
+	SgxTierFee,
+	PseZkevmTierFee,
+	TierFeePriceBump,
+	MaxTierFeePriceBumpIterations,
 })

@@ -129,30 +129,16 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 	if p.tiers, err = p.rpc.GetTiers(ctx); err != nil {
 		return err
 	}
-
-	// TODO: use flags to set tier fees
-	for _, tier := range p.tiers {
-		log.Info(
-			"Protocol tier",
-			"id", tier.ID,
-			"name", string(tier.VerifierName[:]),
-			"validityBond", tier.ValidityBond,
-			"contestBond", tier.ContestBond,
-			"provingWindow", tier.ProvingWindow,
-			"cooldownWindow", tier.CooldownWindow,
-		)
-
-		p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: common.Big256})
-	}
+	p.initTierFees()
 
 	if p.proverSelector, err = selector.NewETHFeeEOASelector(
 		&protocolConfigs,
 		p.rpc,
 		cfg.TaikoL1Address,
 		p.tierFees,
-		cfg.BlockProposalFeeIncreasePercentage,
+		cfg.TierFeePriceBump,
 		cfg.ProverEndpoints,
-		cfg.BlockProposalFeeIterations,
+		cfg.MaxTierFeePriceBumpIterations,
 		proverAssignmentTimeout,
 		requestProverServerTimeout,
 	); err != nil {
@@ -352,11 +338,11 @@ func (p *Proposer) sendProposeBlockTx(
 	txListBytes []byte,
 	nonce *uint64,
 	signedAssignment []byte,
-	fee *big.Int,
+	maxFee *big.Int,
 	isReplacement bool,
 ) (*types.Transaction, error) {
 	// Propose the transactions list
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.proposerPrivKey, p.rpc.L1ChainID, fee)
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.proposerPrivKey, p.rpc.L1ChainID, maxFee)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +386,7 @@ func (p *Proposer) ProposeTxList(
 	txNum uint,
 	nonce *uint64,
 ) error {
-	signedAssignment, fee, err := p.proverSelector.AssignProver(
+	signedAssignment, maxFee, err := p.proverSelector.AssignProver(
 		ctx,
 		p.tierFees,
 		crypto.Keccak256Hash(txListBytes),
@@ -423,7 +409,7 @@ func (p *Proposer) ProposeTxList(
 				txListBytes,
 				nonce,
 				signedAssignment,
-				fee,
+				maxFee,
 				isReplacement,
 			); err != nil {
 				log.Warn("Failed to send propose block transaction", "error", encoding.TryParsingCustomError(err))
@@ -495,6 +481,33 @@ func (p *Proposer) updateProposingTicker() {
 // Name returns the application name.
 func (p *Proposer) Name() string {
 	return "proposer"
+}
+
+func (p *Proposer) initTierFees() {
+	for _, tier := range p.tiers {
+		log.Info(
+			"Protocol tier",
+			"id", tier.ID,
+			"name", string(tier.VerifierName[:]),
+			"validityBond", tier.ValidityBond,
+			"contestBond", tier.ContestBond,
+			"provingWindow", tier.ProvingWindow,
+			"cooldownWindow", tier.CooldownWindow,
+		)
+
+		switch tier.ID {
+		case encoding.TierOptimisticID:
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.cfg.OptimisticTierFee})
+		case encoding.TierSgxID:
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.cfg.SgxTierFee})
+		case encoding.TierPseZkevmID:
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.cfg.PseZkevmTierFee})
+		case encoding.TierGuardianID:
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: common.Big0})
+		default:
+			log.Warn("Unknown tier", "id", tier.ID, "name", string(tier.VerifierName[:]))
+		}
+	}
 }
 
 // getTxOpts creates a bind.TransactOpts instance using the given private key.

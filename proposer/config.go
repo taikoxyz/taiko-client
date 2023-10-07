@@ -36,9 +36,11 @@ type Config struct {
 	WaitReceiptTimeout                  time.Duration
 	ProposeBlockTxGasTipCap             *big.Int
 	ProverEndpoints                     []*url.URL
-	BlockProposalFee                    *big.Int
-	BlockProposalFeeIncreasePercentage  *big.Int
-	BlockProposalFeeIterations          uint64
+	OptimisticTierFee                   *big.Int
+	SgxTierFee                          *big.Int
+	PseZkevmTierFee                     *big.Int
+	TierFeePriceBump                    *big.Int
+	MaxTierFeePriceBumpIterations       uint64
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -114,11 +116,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proverEndpoints = append(proverEndpoints, endpoint)
 	}
 
-	blockProposalFee, ok := new(big.Int).SetString(c.String(flags.BlockProposalFee.Name), 10)
-	if !ok {
-		return nil, fmt.Errorf("invalid blockProposalFee: %v", c.String(flags.BlockProposalFee.Name))
-	}
-
 	return &Config{
 		L1Endpoint:                          c.String(flags.L1WSEndpoint.Name),
 		L2Endpoint:                          c.String(flags.L2HTTPEndpoint.Name),
@@ -140,10 +137,10 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		WaitReceiptTimeout:                  c.Duration(flags.WaitReceiptTimeout.Name),
 		ProposeBlockTxGasTipCap:             proposeBlockTxGasTipCap,
 		ProverEndpoints:                     proverEndpoints,
-		BlockProposalFee:                    blockProposalFee,
-		BlockProposalFeeIncreasePercentage: new(big.Int).SetUint64(
-			c.Uint64(flags.BlockProposalFeeIncreasePercentage.Name),
-		),
-		BlockProposalFeeIterations: c.Uint64(flags.BlockProposalFeeIterations.Name),
+		OptimisticTierFee:                   new(big.Int).SetUint64(c.Uint64(flags.OptimisticTierFee.Name)),
+		SgxTierFee:                          new(big.Int).SetUint64(c.Uint64(flags.SgxTierFee.Name)),
+		PseZkevmTierFee:                     new(big.Int).SetUint64(c.Uint64(flags.PseZkevmTierFee.Name)),
+		TierFeePriceBump:                    new(big.Int).SetUint64(c.Uint64(flags.TierFeePriceBump.Name)),
+		MaxTierFeePriceBumpIterations:       c.Uint64(flags.MaxTierFeePriceBumpIterations.Name),
 	}, nil
 }

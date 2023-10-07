@@ -77,7 +77,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.ProveBlockMaxTxGasTipCap.Name, "256",
 		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.Graffiti.Name, "",
-		"--" + flags.CheckProofWindowExpiredInterval.Name, "30s",
 		"--" + flags.TempCapacityExpiresAt.Name, "15s",
 		"--" + flags.ProveUnassignedBlocks.Name,
 	}))
@@ -138,7 +137,6 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.BoolFlag{Name: flags.GuardianProver.Name},
 		&cli.StringFlag{Name: flags.GuardianProverPrivateKey.Name},
 		&cli.StringFlag{Name: flags.Graffiti.Name},
-		&cli.DurationFlag{Name: flags.CheckProofWindowExpiredInterval.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxReplacementMultiplier.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockMaxTxGasTipCap.Name},

@@ -46,9 +46,9 @@ func (s *ProposerTestSuite) SetupTest() {
 		ProposeBlockTxReplacementMultiplier: 2,
 		WaitReceiptTimeout:                  10 * time.Second,
 		ProverEndpoints:                     s.ProverEndpoints,
-		BlockProposalFee:                    common.Big256,
-		BlockProposalFeeIncreasePercentage:  common.Big2,
-		BlockProposalFeeIterations:          3,
+		OptimisticTierFee:                   common.Big256,
+		TierFeePriceBump:                    common.Big2,
+		MaxTierFeePriceBumpIterations:       3,
 	})))
 
 	s.p = p
@@ -186,7 +186,7 @@ func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
 	_, fee, err := s.p.proverSelector.AssignProver(context.Background(), s.p.tierFees, testutils.RandomHash())
 
 	s.Nil(err)
-	s.Equal(fee.Uint64(), s.p.cfg.BlockProposalFee.Uint64())
+	s.Equal(fee.Uint64(), s.p.cfg.OptimisticTierFee.Uint64())
 }
 
 func (s *ProposerTestSuite) TestUpdateProposingTicker() {
