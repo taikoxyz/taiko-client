@@ -26,12 +26,6 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
-	MinProofFee = &cli.StringFlag{
-		Name:     "prover.minProofFee",
-		Usage:    "Minimum accepted fee for accepting proving a block",
-		Required: true,
-		Category: proverCategory,
-	}
 	ProverCapacity = &cli.Uint64Flag{
 		Name:     "prover.capacity",
 		Usage:    "Capacity of prover",
@@ -42,6 +36,21 @@ var (
 
 // Optional flags used by prover.
 var (
+	MinOptimisticTierFee = &cli.Uint64Flag{
+		Name:     "minTierFee.optimistic",
+		Usage:    "Minimum accepted fee for generating an optimistic proof",
+		Category: proverCategory,
+	}
+	MinSgxTierFee = &cli.Uint64Flag{
+		Name:     "minTierFee.sgx",
+		Usage:    "Minimum accepted fee for generating a SGX proof",
+		Category: proverCategory,
+	}
+	MinPseZkevmTierFee = &cli.Uint64Flag{
+		Name:     "minTierFee.pseZKEvm",
+		Usage:    "Minimum accepted fee for generating a PSE zkEVM proof",
+		Category: proverCategory,
+	}
 	StartingBlockID = &cli.Uint64Flag{
 		Name:     "startingBlockID",
 		Usage:    "If set, prover will start proving blocks from the block with this ID",
@@ -138,7 +147,9 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ZkEvmRpcdEndpoint,
 	ZkEvmRpcdParamsPath,
 	L1ProverPrivKey,
-	MinProofFee,
+	MinOptimisticTierFee,
+	MinSgxTierFee,
+	MinPseZkevmTierFee,
 	StartingBlockID,
 	MaxConcurrentProvingJobs,
 	Dummy,

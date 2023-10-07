@@ -221,13 +221,18 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
+	tier := encoding.TierPseZkevmID
+	if s.isGuardianProver {
+		tier = encoding.TierGuardianID
+	}
+
 	evidence := &encoding.BlockEvidence{
 		MetaHash:   proofWithHeader.Opts.MetaHash,
 		ParentHash: proofWithHeader.Opts.ParentHash,
 		BlockHash:  proofWithHeader.Opts.BlockHash,
 		SignalRoot: proofWithHeader.Opts.SignalRoot,
 		Graffiti:   s.graffiti,
-		Tier:       0, // TODO: update tier
+		Tier:       tier,
 		Proof:      zkProof,
 	}
 

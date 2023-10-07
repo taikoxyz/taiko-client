@@ -43,7 +43,9 @@ type Config struct {
 	HTTPServerPort                    uint64
 	Capacity                          uint64
 	TempCapacityExpiresAt             time.Duration
-	MinProofFee                       *big.Int
+	MinOptimisticTierFee              *big.Int
+	MinSgxTierFee                     *big.Int
+	MinPseZkevmTierFee                *big.Int
 	MaxExpiry                         time.Duration
 }
 
@@ -83,11 +85,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	if c.IsSet(flags.ProveBlockTxGasLimit.Name) {
 		gasLimit := c.Uint64(flags.ProveBlockTxGasLimit.Name)
 		proveBlockTxGasLimit = &gasLimit
-	}
-
-	minProofFee, ok := new(big.Int).SetString(c.String(flags.MinProofFee.Name), 10)
-	if !ok {
-		return nil, fmt.Errorf("invalid minProofFee: %v", minProofFee)
 	}
 
 	proveBlockTxReplacementMultiplier := c.Uint64(flags.ProveBlockTxReplacementMultiplier.Name)
@@ -133,7 +130,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProveBlockTxReplacementMultiplier: proveBlockTxReplacementMultiplier,
 		ProveBlockMaxTxGasTipCap:          proveBlockMaxTxGasTipCap,
 		HTTPServerPort:                    c.Uint64(flags.ProverHTTPServerPort.Name),
-		MinProofFee:                       minProofFee,
+		MinOptimisticTierFee:              new(big.Int).SetUint64(c.Uint64(flags.MinOptimisticTierFee.Name)),
+		MinSgxTierFee:                     new(big.Int).SetUint64(c.Uint64(flags.MinSgxTierFee.Name)),
+		MinPseZkevmTierFee:                new(big.Int).SetUint64(c.Uint64(flags.MinPseZkevmTierFee.Name)),
 		MaxExpiry:                         c.Duration(flags.MaxExpiry.Name),
 	}, nil
 }

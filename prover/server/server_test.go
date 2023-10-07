@@ -47,15 +47,17 @@ func (s *ProverServerTestSuite) SetupTest() {
 	s.Nil(err)
 
 	p := &ProverServer{
-		echo:             echo.New(),
-		proverPrivateKey: l1ProverPrivKey,
-		minProofFee:      common.Big1,
-		maxExpiry:        24 * time.Hour,
-		capacityManager:  capacity.New(1024, 100*time.Second),
-		taikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		rpc:              rpcClient,
-		bond:             common.Big0,
-		isGuardian:       false,
+		echo:                 echo.New(),
+		proverPrivateKey:     l1ProverPrivKey,
+		minOptimisticTierFee: common.Big1,
+		minSgxTierFee:        common.Big1,
+		minPseZkevmTierFee:   common.Big1,
+		maxExpiry:            24 * time.Hour,
+		capacityManager:      capacity.New(1024, 100*time.Second),
+		taikoL1Address:       common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		rpc:                  rpcClient,
+		bond:                 common.Big0,
+		isGuardian:           false,
 	}
 
 	p.echo.HideBanner = true

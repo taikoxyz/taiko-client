@@ -1,6 +1,7 @@
 package server
 
 import (
+	"math/big"
 	"net/http"
 	"time"
 
@@ -22,9 +23,11 @@ type CreateAssignmentRequestBody struct {
 
 // Status represents the current prover server status.
 type Status struct {
-	MinProofFee     uint64 `json:"minProofFee"`
-	MaxExpiry       uint64 `json:"maxExpiry"`
-	CurrentCapacity uint64 `json:"currentCapacity"`
+	MinOptimisticTierFee uint64 `json:"minOptimisticTierFee"`
+	MinSgxTierFee        uint64 `json:"minSgxTierFee"`
+	MinPseZkevmTierFee   uint64 `json:"minPseZkevmTierFee"`
+	MaxExpiry            uint64 `json:"maxExpiry"`
+	CurrentCapacity      uint64 `json:"currentCapacity"`
 }
 
 // GetStatus handles a query to the current prover server status.
@@ -37,9 +40,11 @@ type Status struct {
 //	@Router			/status [get]
 func (srv *ProverServer) GetStatus(c echo.Context) error {
 	return c.JSON(http.StatusOK, &Status{
-		MinProofFee:     srv.minProofFee.Uint64(),
-		MaxExpiry:       uint64(srv.maxExpiry.Seconds()),
-		CurrentCapacity: srv.capacityManager.ReadCapacity(),
+		MinOptimisticTierFee: srv.minOptimisticTierFee.Uint64(),
+		MinSgxTierFee:        srv.minSgxTierFee.Uint64(),
+		MinPseZkevmTierFee:   srv.minPseZkevmTierFee.Uint64(),
+		MaxExpiry:            uint64(srv.maxExpiry.Seconds()),
+		CurrentCapacity:      srv.capacityManager.ReadCapacity(),
 	})
 }
 
@@ -104,12 +109,28 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	}
 
 	for _, tier := range req.TierFees {
-		if tier.Tier != encoding.TierGuardianID && tier.Fee.Cmp(srv.minProofFee) < 0 {
+		if tier.Tier == encoding.TierGuardianID {
+			continue
+		}
+
+		var minTierFee *big.Int
+		switch tier.Tier {
+		case encoding.TierOptimisticID:
+			minTierFee = srv.minOptimisticTierFee
+		case encoding.TierSgxID:
+			minTierFee = srv.minSgxTierFee
+		case encoding.TierPseZkevmID:
+			minTierFee = srv.minPseZkevmTierFee
+		default:
+			log.Warn("Unknown tier", "tier", tier.Tier, "fee", tier.Fee, "proposerIP", c.RealIP())
+		}
+
+		if tier.Fee.Cmp(minTierFee) < 0 {
 			log.Warn(
 				"Proof fee too low",
 				"tier", tier.Tier,
 				"fee", tier.Fee,
-				"srvMinProofFee", srv.minProofFee.String(),
+				"minTierFee", minTierFee,
 				"proposerIP", c.RealIP(),
 			)
 			return echo.NewHTTPError(http.StatusUnprocessableEntity, "proof fee too low")

@@ -2,6 +2,7 @@ package prover
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -18,7 +19,7 @@ var (
 	taikoL1        = os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2        = os.Getenv("TAIKO_L2_ADDRESS")
 	rpcTimeout     = 5 * time.Second
-	minProofFee    = "1024"
+	minTierFee     = 1024
 )
 
 func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
@@ -46,7 +47,9 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal(true, c.ProveUnassignedBlocks)
 		s.Equal(rpcTimeout, *c.RPCTimeout)
 		s.Equal(uint64(8), c.Capacity)
-		s.Equal(minProofFee, c.MinProofFee.String())
+		s.Equal(uint64(minTierFee), c.MinOptimisticTierFee.Uint64())
+		s.Equal(uint64(minTierFee), c.MinSgxTierFee.Uint64())
+		s.Equal(uint64(minTierFee), c.MinPseZkevmTierFee.Uint64())
 		s.Equal(uint64(3), c.ProveBlockTxReplacementMultiplier)
 		s.Equal(uint64(256), c.ProveBlockMaxTxGasTipCap.Uint64())
 		s.Equal(15*time.Second, c.TempCapacityExpiresAt)
@@ -69,7 +72,9 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.RPCTimeout.Name, "5s",
 		"--" + flags.ProveBlockTxGasLimit.Name, "100000",
 		"--" + flags.Dummy.Name,
-		"--" + flags.MinProofFee.Name, minProofFee,
+		"--" + flags.MinOptimisticTierFee.Name, fmt.Sprint(minTierFee),
+		"--" + flags.MinSgxTierFee.Name, fmt.Sprint(minTierFee),
+		"--" + flags.MinPseZkevmTierFee.Name, fmt.Sprint(minTierFee),
 		"--" + flags.ProverCapacity.Name, "8",
 		"--" + flags.GuardianProver.Name,
 		"--" + flags.ProveBlockTxReplacementMultiplier.Name, "3",
@@ -97,7 +102,9 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProverError() {
 		"--" + flags.GuardianProver.Name,
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.RPCTimeout.Name, "5s",
-		"--" + flags.MinProofFee.Name, minProofFee,
+		"--" + flags.MinOptimisticTierFee.Name, fmt.Sprint(minTierFee),
+		"--" + flags.MinSgxTierFee.Name, fmt.Sprint(minTierFee),
+		"--" + flags.MinPseZkevmTierFee.Name, fmt.Sprint(minTierFee),
 	}), "guardianProver flag set without guardianProverPrivateKey set")
 }
 
@@ -141,7 +148,9 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.ProveBlockMaxTxGasTipCap.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
 		&cli.Uint64Flag{Name: flags.ProverCapacity.Name},
-		&cli.Uint64Flag{Name: flags.MinProofFee.Name},
+		&cli.Uint64Flag{Name: flags.MinOptimisticTierFee.Name},
+		&cli.Uint64Flag{Name: flags.MinSgxTierFee.Name},
+		&cli.Uint64Flag{Name: flags.MinPseZkevmTierFee.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxGasLimit.Name},
 		&cli.DurationFlag{Name: flags.TempCapacityExpiresAt.Name},
 	}

@@ -196,14 +196,16 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	// Prover server
 	proverServerOpts := &server.NewProverServerOpts{
-		ProverPrivateKey: p.cfg.L1ProverPrivKey,
-		MinProofFee:      p.cfg.MinProofFee,
-		MaxExpiry:        p.cfg.MaxExpiry,
-		CapacityManager:  p.capacityManager,
-		TaikoL1Address:   p.cfg.TaikoL1Address,
-		Rpc:              p.rpc,
-		Bond:             protocolConfigs.LivenessBond,
-		IsGuardian:       p.cfg.GuardianProver,
+		ProverPrivateKey:     p.cfg.L1ProverPrivKey,
+		MinOptimisticTierFee: p.cfg.MinOptimisticTierFee,
+		MinSgxTierFee:        p.cfg.MinSgxTierFee,
+		MinPseZkevmTierFee:   p.cfg.MinPseZkevmTierFee,
+		MaxExpiry:            p.cfg.MaxExpiry,
+		CapacityManager:      p.capacityManager,
+		TaikoL1Address:       p.cfg.TaikoL1Address,
+		Rpc:                  p.rpc,
+		Bond:                 protocolConfigs.LivenessBond,
+		IsGuardian:           p.cfg.GuardianProver,
 	}
 	if p.cfg.GuardianProver {
 		proverServerOpts.ProverPrivateKey = p.cfg.GuardianProverPrivateKey

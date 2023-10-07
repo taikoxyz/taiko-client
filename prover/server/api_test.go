@@ -22,15 +22,21 @@ func (s *ProverServerTestSuite) TestGetStatusSuccess() {
 	s.Nil(err)
 	s.Nil(json.Unmarshal(b, &status))
 
-	s.Equal(s.s.minProofFee.Uint64(), status.MinProofFee)
+	s.Equal(s.s.minOptimisticTierFee.Uint64(), status.MinOptimisticTierFee)
+	s.Equal(s.s.minSgxTierFee.Uint64(), status.MinSgxTierFee)
+	s.Equal(s.s.minPseZkevmTierFee.Uint64(), status.MinPseZkevmTierFee)
 	s.Equal(uint64(s.s.maxExpiry.Seconds()), status.MaxExpiry)
 	s.Greater(status.CurrentCapacity, uint64(0))
 }
 
 func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
 	data, err := json.Marshal(CreateAssignmentRequestBody{
-		FeeToken:   (common.Address{}),
-		TierFees:   []encoding.TierFee{{Tier: 0, Fee: common.Big256}},
+		FeeToken: (common.Address{}),
+		TierFees: []encoding.TierFee{
+			{Tier: encoding.TierOptimisticID, Fee: common.Big256},
+			{Tier: encoding.TierSgxID, Fee: common.Big256},
+			{Tier: encoding.TierPseZkevmID, Fee: common.Big256},
+		},
 		Expiry:     uint64(time.Now().Add(time.Minute).Unix()),
 		TxListHash: common.BigToHash(common.Big1),
 	})

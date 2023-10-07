@@ -182,14 +182,16 @@ func NewTestProverServer(
 	s.Nil(err)
 
 	srv, err := server.New(&server.NewProverServerOpts{
-		ProverPrivateKey: proverPrivKey,
-		MinProofFee:      common.Big1,
-		MaxExpiry:        24 * time.Hour,
-		CapacityManager:  capacityManager,
-		TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		Rpc:              s.RpcClient,
-		Bond:             protocolConfig.LivenessBond,
-		IsGuardian:       true,
+		ProverPrivateKey:     proverPrivKey,
+		MinOptimisticTierFee: common.Big1,
+		MinSgxTierFee:        common.Big1,
+		MinPseZkevmTierFee:   common.Big1,
+		MaxExpiry:            24 * time.Hour,
+		CapacityManager:      capacityManager,
+		TaikoL1Address:       common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		Rpc:                  s.RpcClient,
+		Bond:                 protocolConfig.LivenessBond,
+		IsGuardian:           true,
 	})
 	s.Nil(err)
 

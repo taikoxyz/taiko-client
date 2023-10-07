@@ -55,7 +55,9 @@ func (s *ProverTestSuite) SetupTest() {
 		MaxConcurrentProvingJobs: 1,
 		ProveUnassignedBlocks:    true,
 		Capacity:                 1024,
-		MinProofFee:              common.Big1,
+		MinOptimisticTierFee:     common.Big1,
+		MinSgxTierFee:            common.Big1,
+		MinPseZkevmTierFee:       common.Big1,
 		HTTPServerPort:           uint64(port),
 	})))
 	p.srv = testutils.NewTestProverServer(
