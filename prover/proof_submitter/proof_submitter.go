@@ -175,15 +175,17 @@ func (s *ProofSubmitter) SubmitProof(
 		"proposer", proofWithHeader.Meta.Coinbase,
 		"hash", proofWithHeader.Header.Hash(),
 		"proof", common.Bytes2Hex(proofWithHeader.Proof),
+		"tier", s.proofProducer.Tier(),
 		"graffiti", common.Bytes2Hex(s.graffiti[:]),
-	)
-	var (
-		blockID = proofWithHeader.BlockID
-		header  = proofWithHeader.Header
-		zkProof = proofWithHeader.Proof
 	)
 
 	metrics.ProverReceivedProofCounter.Inc(1)
+
+	var (
+		blockID = proofWithHeader.BlockID
+		header  = proofWithHeader.Header
+		proof   = proofWithHeader.Proof
+	)
 
 	// Get the corresponding L2 block.
 	block, err := s.rpc.L2.BlockByHash(ctx, header.Hash())
@@ -210,8 +212,7 @@ func (s *ProofSubmitter) SubmitProof(
 	}
 
 	// Get and validate this anchor transaction's receipt.
-	_, err = s.anchorTxValidator.GetAndValidateAnchorTxReceipt(ctx, anchorTx)
-	if err != nil {
+	if _, err = s.anchorTxValidator.GetAndValidateAnchorTxReceipt(ctx, anchorTx); err != nil {
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
@@ -222,14 +223,16 @@ func (s *ProofSubmitter) SubmitProof(
 		SignalRoot: proofWithHeader.Opts.SignalRoot,
 		Graffiti:   s.graffiti,
 		Tier:       s.proofProducer.Tier(),
-		Proof:      zkProof,
+		Proof:      proof,
 	}
 
-	circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
-	if err != nil {
-		return err
+	if s.proofProducer.Tier() == encoding.TierPseZkevmID {
+		circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
+		if err != nil {
+			return err
+		}
+		evidence.Proof = append(uint16ToBytes(circuitsIdx), evidence.Proof...)
 	}
-	evidence.Proof = append(uint16ToBytes(circuitsIdx), evidence.Proof...)
 
 	input, err := encoding.EncodeEvidence(evidence)
 	if err != nil {

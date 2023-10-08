@@ -141,7 +141,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	var producer proofProducer.ProofProducer
 	if cfg.Dummy {
-		producer = &proofProducer.OptimisticProofProducer{}
+		producer = new(proofProducer.OptimisticProofProducer)
 	} else {
 		if producer, err = proofProducer.NewZkevmRpcdProducer(
 			cfg.ZKEvmRpcdEndpoint,
@@ -474,6 +474,7 @@ func (p *Prover) onBlockProposed(
 			"blockID", event.BlockId,
 			"prover", event.AssignedProver,
 			"expiresAt", provingWindowExpiresAt,
+			"minTier", event.MinTier,
 		)
 
 		metrics.ProverProofsAssigned.Inc(1)
