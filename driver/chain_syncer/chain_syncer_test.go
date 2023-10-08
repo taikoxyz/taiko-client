@@ -1,6 +1,7 @@
 package chainSyncer
 
 import (
+	"bytes"
 	"context"
 
 	"os"
@@ -64,6 +65,7 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		PseZkevmTierFee:               common.Big256,
 		MaxTierFeePriceBumpIterations: 3,
 		TierFeePriceBump:              common.Big2,
+		ExtraData:                     "test",
 	})))
 
 	s.p = prop
@@ -97,7 +99,7 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 
 	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-
+	s.Equal("test", string(bytes.TrimRight(l2Head.Extra, "\x00")))
 	log.Info("L1HeaderByNumber head", "number", head.Number)
 	// (equiv to s.state.GetL2Head().Number)
 	log.Info("L2HeaderByNumber head", "number", l2Head.Number)

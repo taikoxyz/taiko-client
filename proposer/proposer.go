@@ -1,6 +1,7 @@
 package proposer
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"errors"
@@ -490,7 +491,7 @@ func (p *Proposer) initTierFees() error {
 		log.Info(
 			"Protocol tier",
 			"id", tier.ID,
-			"name", string(tier.VerifierName[:]),
+			"name", string(bytes.TrimRight(tier.VerifierName[:], "\x00")),
 			"validityBond", tier.ValidityBond,
 			"contestBond", tier.ContestBond,
 			"provingWindow", tier.ProvingWindow,

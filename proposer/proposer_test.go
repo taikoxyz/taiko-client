@@ -51,6 +51,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		PseZkevmTierFee:                     common.Big256,
 		TierFeePriceBump:                    common.Big2,
 		MaxTierFeePriceBumpIterations:       3,
+		ExtraData:                           "test",
 	})))
 
 	s.p = p
