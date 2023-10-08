@@ -23,11 +23,11 @@ import (
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
-var _ ProofSubmitter = (*ValidProofSubmitter)(nil)
+var _ Submitter = (*ProofSubmitter)(nil)
 
-// ValidProofSubmitter is responsible requesting zk proofs for the given valid L2
+// ProofSubmitter is responsible requesting proofs for the given L2
 // blocks, and submitting the generated proofs to the TaikoL1 smart contract.
-type ValidProofSubmitter struct {
+type ProofSubmitter struct {
 	rpc                        *rpc.Client
 	proofProducer              proofProducer.ProofProducer
 	resultCh                   chan *proofProducer.ProofWithHeader
@@ -38,7 +38,6 @@ type ValidProofSubmitter struct {
 	l1SignalService            common.Address
 	l2SignalService            common.Address
 	mutex                      *sync.Mutex
-	isGuardianProver           bool
 	graffiti                   [32]byte
 	submissionMaxRetry         uint64
 	retryInterval              time.Duration
@@ -48,7 +47,7 @@ type ValidProofSubmitter struct {
 	proveBlockMaxTxGasTipCap   *big.Int
 }
 
-// NewValidProofSubmitter creates a new ValidProofSubmitter instance.
+// NewValidProofSubmitter creates a new Submitter instance.
 func NewValidProofSubmitter(
 	rpcClient *rpc.Client,
 	proofProducer proofProducer.ProofProducer,
@@ -56,7 +55,6 @@ func NewValidProofSubmitter(
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
 	mutex *sync.Mutex,
-	isGuardianProver bool,
 	graffiti string,
 	submissionMaxRetry uint64,
 	retryInterval time.Duration,
@@ -64,7 +62,7 @@ func NewValidProofSubmitter(
 	proveBlockTxGasLimit *uint64,
 	txReplacementTipMultiplier uint64,
 	proveBlockMaxTxGasTipCap *big.Int,
-) (*ValidProofSubmitter, error) {
+) (*ProofSubmitter, error) {
 	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
 	if err != nil {
 		return nil, err
@@ -80,7 +78,7 @@ func NewValidProofSubmitter(
 		return nil, err
 	}
 
-	return &ValidProofSubmitter{
+	return &ProofSubmitter{
 		rpc:                        rpcClient,
 		proofProducer:              proofProducer,
 		resultCh:                   resultCh,
@@ -91,7 +89,6 @@ func NewValidProofSubmitter(
 		l2SignalService:            l2SignalService,
 		taikoL2Address:             taikoL2Address,
 		mutex:                      mutex,
-		isGuardianProver:           isGuardianProver,
 		graffiti:                   rpc.StringToBytes32(graffiti),
 		submissionMaxRetry:         submissionMaxRetry,
 		retryInterval:              retryInterval,
@@ -102,8 +99,8 @@ func NewValidProofSubmitter(
 	}, nil
 }
 
-// RequestProof implements the ProofSubmitter interface.
-func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
+// RequestProof implements the Submitter interface.
+func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
 	l1Origin, err := s.rpc.WaitL1Origin(ctx, event.BlockId)
 	if err != nil {
 		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.BlockId, err)
@@ -169,8 +166,8 @@ func (s *ValidProofSubmitter) RequestProof(ctx context.Context, event *bindings.
 	return nil
 }
 
-// SubmitProof implements the ProofSubmitter interface.
-func (s *ValidProofSubmitter) SubmitProof(
+// SubmitProof implements the Submitter interface.
+func (s *ProofSubmitter) SubmitProof(
 	ctx context.Context,
 	proofWithHeader *proofProducer.ProofWithHeader,
 ) (err error) {
@@ -179,13 +176,13 @@ func (s *ValidProofSubmitter) SubmitProof(
 		"blockID", proofWithHeader.BlockID,
 		"proposer", proofWithHeader.Meta.Coinbase,
 		"hash", proofWithHeader.Header.Hash(),
-		"proof", common.Bytes2Hex(proofWithHeader.ZkProof),
+		"proof", common.Bytes2Hex(proofWithHeader.Proof),
 		"graffiti", common.Bytes2Hex(s.graffiti[:]),
 	)
 	var (
 		blockID = proofWithHeader.BlockID
 		header  = proofWithHeader.Header
-		zkProof = proofWithHeader.ZkProof
+		zkProof = proofWithHeader.Proof
 	)
 
 	metrics.ProverReceivedProofCounter.Inc(1)
@@ -221,18 +218,13 @@ func (s *ValidProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
-	tier := encoding.TierPseZkevmID
-	if s.isGuardianProver {
-		tier = encoding.TierGuardianID
-	}
-
 	evidence := &encoding.BlockEvidence{
 		MetaHash:   proofWithHeader.Opts.MetaHash,
 		ParentHash: proofWithHeader.Opts.ParentHash,
 		BlockHash:  proofWithHeader.Opts.BlockHash,
 		SignalRoot: proofWithHeader.Opts.SignalRoot,
 		Graffiti:   s.graffiti,
-		Tier:       tier,
+		Tier:       s.proofProducer.Tier(),
 		Proof:      zkProof,
 	}
 
@@ -280,7 +272,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 	}
 
 	maxRetry := &s.submissionMaxRetry
-	if s.isGuardianProver {
+	if s.proofProducer.Tier() == encoding.TierGuardianID {
 		maxRetry = nil
 	}
 
@@ -313,7 +305,7 @@ func (s *ValidProofSubmitter) SubmitProof(
 // CancelProof cancels an existing proof generation.
 // Right now, it is just a stub that does nothing, because it is not possible to cancel the proof
 // with the current zkevm software.
-func (s *ValidProofSubmitter) CancelProof(ctx context.Context, blockID *big.Int) error {
+func (s *ProofSubmitter) CancelProof(ctx context.Context, blockID *big.Int) error {
 	return s.proofProducer.Cancel(ctx, blockID)
 }
 

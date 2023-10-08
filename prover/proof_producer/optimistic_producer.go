@@ -8,13 +8,14 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
-// DummyProofProducer always returns a dummy proof.
-type DummyProofProducer struct{}
+// OptimisticProofProducer always returns an optimistic (dummy) proof.
+type OptimisticProofProducer struct{}
 
 // RequestProof implements the ProofProducer interface.
-func (d *DummyProofProducer) RequestProof(
+func (o *OptimisticProofProducer) RequestProof(
 	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
@@ -23,7 +24,7 @@ func (d *DummyProofProducer) RequestProof(
 	resultCh chan *ProofWithHeader,
 ) error {
 	log.Info(
-		"Request dummy proof",
+		"Request optimistic proof",
 		"blockID", blockID,
 		"coinbase", meta.Coinbase,
 		"height", header.Number,
@@ -34,7 +35,7 @@ func (d *DummyProofProducer) RequestProof(
 		BlockID: blockID,
 		Meta:    meta,
 		Header:  header,
-		ZkProof: bytes.Repeat([]byte{0xff}, 100),
+		Proof:   bytes.Repeat([]byte{0xff}, 100),
 		Degree:  CircuitsIdx,
 		Opts:    opts,
 	}
@@ -42,7 +43,12 @@ func (d *DummyProofProducer) RequestProof(
 	return nil
 }
 
+// Tier implements the ProofProducer interface.
+func (o *OptimisticProofProducer) Tier() uint16 {
+	return encoding.TierOptimisticID
+}
+
 // Cancel cancels an existing proof generation.
-func (d *DummyProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
+func (o *OptimisticProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
 	return nil
 }

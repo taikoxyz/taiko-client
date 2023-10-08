@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [main,contestable-zkrollup]
+    branches: [main]
     tags:
       - "v*"
 

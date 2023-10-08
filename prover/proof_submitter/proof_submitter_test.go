@@ -23,7 +23,7 @@ import (
 
 type ProofSubmitterTestSuite struct {
 	testutils.ClientTestSuite
-	validProofSubmitter *ValidProofSubmitter
+	validProofSubmitter *ProofSubmitter
 	calldataSyncer      *calldata.Syncer
 	proposer            *proposer.Proposer
 	validProofCh        chan *proofProducer.ProofWithHeader
@@ -41,12 +41,11 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 
 	s.validProofSubmitter, err = NewValidProofSubmitter(
 		s.RpcClient,
-		&proofProducer.DummyProofProducer{},
+		&proofProducer.OptimisticProofProducer{},
 		s.validProofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		l1ProverPrivKey,
 		&sync.Mutex{},
-		false,
 		"test",
 		1,
 		12*time.Second,
@@ -117,7 +116,7 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotF
 				BlockID: common.Big256,
 				Meta:    &bindings.TaikoDataBlockMetadata{},
 				Header:  &types.Header{},
-				ZkProof: bytes.Repeat([]byte{0xff}, 100),
+				Proof:   bytes.Repeat([]byte{0xff}, 100),
 			},
 		),
 	)

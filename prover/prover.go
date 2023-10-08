@@ -58,7 +58,7 @@ type Prover struct {
 	tiers                  []*rpc.TierProviderTierWithID
 
 	// Proof submitters
-	validProofSubmitter proofSubmitter.ProofSubmitter
+	proofSubmitter proofSubmitter.Submitter
 
 	// Subscriptions
 	blockProposedCh      chan *bindings.TaikoL1ClientBlockProposed
@@ -156,7 +156,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	var producer proofProducer.ProofProducer
 	if cfg.Dummy {
-		producer = &proofProducer.DummyProofProducer{}
+		producer = &proofProducer.OptimisticProofProducer{}
 	} else {
 		if producer, err = proofProducer.NewZkevmRpcdProducer(
 			cfg.ZKEvmRpcdEndpoint,
@@ -171,14 +171,13 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// Proof submitter
-	if p.validProofSubmitter, err = proofSubmitter.NewValidProofSubmitter(
+	if p.proofSubmitter, err = proofSubmitter.NewValidProofSubmitter(
 		p.rpc,
 		producer,
 		p.proofGenerationCh,
 		p.cfg.TaikoL2Address,
 		p.cfg.L1ProverPrivKey,
 		p.submitProofTxMutex,
-		p.cfg.GuardianProver,
 		p.cfg.Graffiti,
 		p.cfg.ProofSubmissionMaxRetry,
 		p.cfg.BackOffRetryInterval,
@@ -481,7 +480,7 @@ func (p *Prover) onBlockProposed(
 
 		// If set not to prove unassigned blocks, this block is still not provable
 		// by us even though its open proving.
-		if provingWindowExpired && !p.cfg.ProveUnassignedBlocks {
+		if provingWindowExpired && event.AssignedProver == p.proverAddress && !p.cfg.ProveUnassignedBlocks {
 			log.Info("Skip proving expired blocks", "blockID", event.BlockId)
 			return nil
 		}
@@ -501,7 +500,7 @@ func (p *Prover) onBlockProposed(
 			}
 		}
 
-		return p.validProofSubmitter.RequestProof(ctx, event)
+		return p.proofSubmitter.RequestProof(ctx, event)
 	}
 
 	p.proposeConcurrencyGuard <- struct{}{}
@@ -542,7 +541,7 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 
 		if err := backoff.Retry(
 			func() error {
-				err := p.validProofSubmitter.SubmitProof(p.ctx, proofWithHeader)
+				err := p.proofSubmitter.SubmitProof(p.ctx, proofWithHeader)
 				if err != nil {
 					log.Error("Submit proof error", "error", err)
 					return err
@@ -737,7 +736,7 @@ func (p *Prover) requestProofByBlockID(blockId *big.Int, l1Height *big.Int) erro
 
 		p.proposeConcurrencyGuard <- struct{}{}
 
-		return p.validProofSubmitter.RequestProof(ctx, event)
+		return p.proofSubmitter.RequestProof(ctx, event)
 	}
 
 	handleBlockProposedEvent := func() error {

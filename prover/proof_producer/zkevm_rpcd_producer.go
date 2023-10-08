@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 var (
@@ -154,7 +155,7 @@ func (p *ZkevmRpcdProducer) RequestProof(
 		BlockID: blockID,
 		Header:  header,
 		Meta:    meta,
-		ZkProof: proof,
+		Proof:   proof,
 		Degree:  degree,
 		Opts:    opts,
 	}
@@ -266,6 +267,11 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 	}
 
 	return output.Result, nil
+}
+
+// Tier implements the ProofProducer interface.
+func (p *ZkevmRpcdProducer) Tier() uint16 {
+	return encoding.TierPseZkevmID
 }
 
 // Cancel cancels an existing proof generation.

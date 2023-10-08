@@ -35,7 +35,7 @@ type ProofWithHeader struct {
 	BlockID *big.Int
 	Meta    *bindings.TaikoDataBlockMetadata
 	Header  *types.Header
-	ZkProof []byte
+	Proof   []byte
 	Degree  uint64
 	Opts    *ProofRequestOptions
 }
@@ -50,6 +50,7 @@ type ProofProducer interface {
 		resultCh chan *ProofWithHeader,
 	) error
 	Cancel(ctx context.Context, blockID *big.Int) error
+	Tier() uint16
 }
 
 func DegreeToCircuitsIdx(degree uint64) (uint16, error) {

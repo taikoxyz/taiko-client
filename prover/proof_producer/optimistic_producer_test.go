@@ -14,7 +14,7 @@ import (
 )
 
 func TestRequestProof(t *testing.T) {
-	dummyProofProducer := &DummyProofProducer{}
+	optimisticProofProducer := &OptimisticProofProducer{}
 
 	resCh := make(chan *ProofWithHeader, 1)
 
@@ -35,7 +35,7 @@ func TestRequestProof(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, dummyProofProducer.RequestProof(
+	require.Nil(t, optimisticProofProducer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
@@ -47,11 +47,11 @@ func TestRequestProof(t *testing.T) {
 	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
-	require.NotEmpty(t, res.ZkProof)
+	require.NotEmpty(t, res.Proof)
 }
 
 func TestProofCancel(t *testing.T) {
-	dummyProofProducer := &DummyProofProducer{}
+	optimisticProofProducer := &OptimisticProofProducer{}
 
 	resCh := make(chan *ProofWithHeader, 1)
 
@@ -72,7 +72,7 @@ func TestProofCancel(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, dummyProofProducer.RequestProof(
+	require.Nil(t, optimisticProofProducer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
@@ -82,7 +82,7 @@ func TestProofCancel(t *testing.T) {
 	))
 
 	// Cancel the proof request, should return nil
-	require.Nil(t, dummyProofProducer.Cancel(context.Background(), blockID))
+	require.Nil(t, optimisticProofProducer.Cancel(context.Background(), blockID))
 }
 
 func randHash() common.Hash {
