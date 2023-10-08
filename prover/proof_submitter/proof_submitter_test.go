@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -45,7 +44,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		s.validProofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		l1ProverPrivKey,
-		&sync.Mutex{},
 		"test",
 		1,
 		12*time.Second,

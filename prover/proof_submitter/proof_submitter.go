@@ -37,7 +37,6 @@ type ProofSubmitter struct {
 	taikoL2Address             common.Address
 	l1SignalService            common.Address
 	l2SignalService            common.Address
-	mutex                      *sync.Mutex
 	graffiti                   [32]byte
 	submissionMaxRetry         uint64
 	retryInterval              time.Duration
@@ -45,6 +44,7 @@ type ProofSubmitter struct {
 	proveBlockTxGasLimit       *uint64
 	txReplacementTipMultiplier uint64
 	proveBlockMaxTxGasTipCap   *big.Int
+	mutex                      *sync.Mutex
 }
 
 // NewValidProofSubmitter creates a new Submitter instance.
@@ -54,7 +54,6 @@ func NewValidProofSubmitter(
 	resultCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
-	mutex *sync.Mutex,
 	graffiti string,
 	submissionMaxRetry uint64,
 	retryInterval time.Duration,
@@ -88,7 +87,6 @@ func NewValidProofSubmitter(
 		l1SignalService:            l1SignalService,
 		l2SignalService:            l2SignalService,
 		taikoL2Address:             taikoL2Address,
-		mutex:                      mutex,
 		graffiti:                   rpc.StringToBytes32(graffiti),
 		submissionMaxRetry:         submissionMaxRetry,
 		retryInterval:              retryInterval,
@@ -96,6 +94,7 @@ func NewValidProofSubmitter(
 		proveBlockTxGasLimit:       proveBlockTxGasLimit,
 		txReplacementTipMultiplier: txReplacementTipMultiplier,
 		proveBlockMaxTxGasTipCap:   proveBlockMaxTxGasTipCap,
+		mutex:                      new(sync.Mutex),
 	}, nil
 }
 
@@ -112,6 +111,10 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		return fmt.Errorf("failed to get the current L2 block by hash (%s): %w", l1Origin.L2BlockHash, err)
 	}
 
+	if block.Transactions().Len() == 0 {
+		return errors.New("no transaction in block")
+	}
+
 	parent, err := s.rpc.L2.BlockByHash(ctx, block.ParentHash())
 	if err != nil {
 		return fmt.Errorf("failed to get the L2 parent block by hash (%s): %w", block.ParentHash(), err)
@@ -122,13 +125,9 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		return err
 	}
 
-	if block.Transactions().Len() == 0 {
-		return errors.New("no transaction in block")
-	}
-
 	signalRoot, err := s.rpc.GetStorageRoot(ctx, s.rpc.L2GethClient, s.l2SignalService, block.Number())
 	if err != nil {
-		return fmt.Errorf("failed to get storage root: %w", err)
+		return fmt.Errorf("failed to get L2 signal service storage root: %w", err)
 	}
 
 	// Request proof.
@@ -161,7 +160,6 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 	}
 
 	metrics.ProverQueuedProofCounter.Inc(1)
-	metrics.ProverQueuedValidProofCounter.Inc(1)
 
 	return nil
 }
@@ -172,7 +170,7 @@ func (s *ProofSubmitter) SubmitProof(
 	proofWithHeader *proofProducer.ProofWithHeader,
 ) (err error) {
 	log.Info(
-		"New valid block proof",
+		"New block proof",
 		"blockID", proofWithHeader.BlockID,
 		"proposer", proofWithHeader.Meta.Coinbase,
 		"hash", proofWithHeader.Header.Hash(),
@@ -186,7 +184,6 @@ func (s *ProofSubmitter) SubmitProof(
 	)
 
 	metrics.ProverReceivedProofCounter.Inc(1)
-	metrics.ProverReceivedValidProofCounter.Inc(1)
 
 	// Get the corresponding L2 block.
 	block, err := s.rpc.L2.BlockByHash(ctx, header.Hash())
@@ -296,7 +293,6 @@ func (s *ProofSubmitter) SubmitProof(
 	}
 
 	metrics.ProverSentProofCounter.Inc(1)
-	metrics.ProverSentValidProofCounter.Inc(1)
 	metrics.ProverLatestProvenBlockIDGauge.Update(proofWithHeader.BlockID.Int64())
 
 	return nil

@@ -36,9 +36,8 @@ var (
 // Prover keep trying to prove new proposed blocks valid/invalid.
 type Prover struct {
 	// Configurations
-	cfg                   *Config
-	proverAddress         common.Address
-	guardianProverAddress common.Address
+	cfg           *Config
+	proverAddress common.Address
 
 	// Clients
 	rpc *rpc.Client
@@ -76,7 +75,6 @@ type Prover struct {
 	// Concurrency guards
 	proposeConcurrencyGuard     chan struct{}
 	submitProofConcurrencyGuard chan struct{}
-	submitProofTxMutex          *sync.Mutex
 
 	// capacity-related configs
 	capacityManager *capacity.CapacityManager
@@ -124,7 +122,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
-	p.submitProofTxMutex = &sync.Mutex{}
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 
 	chBufferSize := p.protocolConfigs.BlockMaxProposals
@@ -141,18 +138,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	// Concurrency guards
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
-
-	guardianProverAddress, err := p.rpc.TaikoL1.Resolve(
-		&bind.CallOpts{Context: ctx},
-		p.rpc.L1ChainID,
-		rpc.StringToBytes32("guardian"),
-		true,
-	)
-	if err != nil {
-		return err
-	}
-
-	p.guardianProverAddress = guardianProverAddress
 
 	var producer proofProducer.ProofProducer
 	if cfg.Dummy {
@@ -177,7 +162,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.proofGenerationCh,
 		p.cfg.TaikoL2Address,
 		p.cfg.L1ProverPrivKey,
-		p.submitProofTxMutex,
 		p.cfg.Graffiti,
 		p.cfg.ProofSubmissionMaxRetry,
 		p.cfg.BackOffRetryInterval,

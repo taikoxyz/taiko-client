@@ -29,20 +29,14 @@ var (
 	ProposerBlockFeeGauge          = metrics.NewRegisteredGauge("proposer/blockFee", nil)
 
 	// Prover
-	ProverLatestVerifiedIDGauge       = metrics.NewRegisteredGauge("prover/latestVerified/id", nil)
-	ProverLatestProvenBlockIDGauge    = metrics.NewRegisteredGauge("prover/latestProven/id", nil)
-	ProverQueuedProofCounter          = metrics.NewRegisteredCounter("prover/proof/all/queued", nil)
-	ProverQueuedValidProofCounter     = metrics.NewRegisteredCounter("prover/proof/valid/queued", nil)
-	ProverQueuedInvalidProofCounter   = metrics.NewRegisteredCounter("prover/proof/invalid/queued", nil)
-	ProverReceivedProofCounter        = metrics.NewRegisteredCounter("prover/proof/all/received", nil)
-	ProverReceivedValidProofCounter   = metrics.NewRegisteredCounter("prover/proof/valid/received", nil)
-	ProverReceivedInvalidProofCounter = metrics.NewRegisteredCounter("prover/proof/invalid/received", nil)
-	ProverSentProofCounter            = metrics.NewRegisteredCounter("prover/proof/all/sent", nil)
-	ProverSentValidProofCounter       = metrics.NewRegisteredCounter("prover/proof/valid/sent", nil)
-	ProverSentInvalidProofCounter     = metrics.NewRegisteredCounter("prover/proof/invalid/sent", nil)
-	ProverProofsAssigned              = metrics.NewRegisteredCounter("prover/proof/assigned", nil)
-	ProverReceivedProposedBlockGauge  = metrics.NewRegisteredGauge("prover/proposed/received", nil)
-	ProverReceivedProvenBlockGauge    = metrics.NewRegisteredGauge("prover/proven/received", nil)
+	ProverLatestVerifiedIDGauge      = metrics.NewRegisteredGauge("prover/latestVerified/id", nil)
+	ProverLatestProvenBlockIDGauge   = metrics.NewRegisteredGauge("prover/latestProven/id", nil)
+	ProverQueuedProofCounter         = metrics.NewRegisteredCounter("prover/proof/all/queued", nil)
+	ProverReceivedProofCounter       = metrics.NewRegisteredCounter("prover/proof/all/received", nil)
+	ProverSentProofCounter           = metrics.NewRegisteredCounter("prover/proof/all/sent", nil)
+	ProverProofsAssigned             = metrics.NewRegisteredCounter("prover/proof/assigned", nil)
+	ProverReceivedProposedBlockGauge = metrics.NewRegisteredGauge("prover/proposed/received", nil)
+	ProverReceivedProvenBlockGauge   = metrics.NewRegisteredGauge("prover/proven/received", nil)
 )
 
 // Serve starts the metrics server on the given address, will be closed when the given
