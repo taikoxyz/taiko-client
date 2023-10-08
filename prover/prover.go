@@ -748,7 +748,12 @@ func (p *Prover) requestProofByBlockID(blockId *big.Int, l1Height *big.Int, cont
 
 		p.proposeConcurrencyGuard <- struct{}{}
 
-		if proofSubmitter := p.selectSubmitter(event.MinTier); proofSubmitter != nil {
+		var minTier = event.MinTier
+		if contestOldProof {
+			minTier += 1
+		}
+
+		if proofSubmitter := p.selectSubmitter(minTier); proofSubmitter != nil {
 			return proofSubmitter.RequestProof(ctx, event)
 		}
 
