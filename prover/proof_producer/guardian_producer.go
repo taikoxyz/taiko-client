@@ -10,11 +10,11 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
-// OptimisticProofProducer always returns an optimistic (dummy) proof.
-type OptimisticProofProducer struct{ *DummyProofProducer }
+// GuardianProofProducer always returns an optimistic (dummy) proof.
+type GuardianProofProducer struct{ *DummyProofProducer }
 
 // RequestProof implements the ProofProducer interface.
-func (o *OptimisticProofProducer) RequestProof(
+func (g *GuardianProofProducer) RequestProof(
 	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
@@ -23,22 +23,22 @@ func (o *OptimisticProofProducer) RequestProof(
 	resultCh chan *ProofWithHeader,
 ) error {
 	log.Info(
-		"Request optimistic proof",
+		"Request guardian proof",
 		"blockID", blockID,
 		"coinbase", meta.Coinbase,
 		"height", header.Number,
 		"hash", header.Hash(),
 	)
 
-	return o.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, o.Tier(), resultCh)
+	return g.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, g.Tier(), resultCh)
 }
 
 // Tier implements the ProofProducer interface.
-func (o *OptimisticProofProducer) Tier() uint16 {
-	return encoding.TierOptimisticID
+func (g *GuardianProofProducer) Tier() uint16 {
+	return encoding.TierGuardianID
 }
 
 // Cancel cancels an existing proof generation.
-func (o *OptimisticProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
+func (g *GuardianProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
 	return nil
 }

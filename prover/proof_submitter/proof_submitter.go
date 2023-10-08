@@ -47,8 +47,8 @@ type ProofSubmitter struct {
 	mutex                      *sync.Mutex
 }
 
-// NewValidProofSubmitter creates a new Submitter instance.
-func NewValidProofSubmitter(
+// New creates a new ProofSubmitter instance.
+func New(
 	rpcClient *rpc.Client,
 	proofProducer proofProducer.ProofProducer,
 	resultCh chan *proofProducer.ProofWithHeader,
@@ -132,7 +132,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 
 	// Request proof.
 	opts := &proofProducer.ProofRequestOptions{
-		Height:             block.Number(),
+		BlockID:            block.Number(),
 		ProverAddress:      s.proverAddress,
 		ProposeBlockTxHash: event.Raw.TxHash,
 		L1SignalService:    s.l1SignalService,
@@ -194,7 +194,7 @@ func (s *ProofSubmitter) SubmitProof(
 	}
 
 	log.Debug(
-		"Get the L2 block to prove",
+		"L2 block to prove",
 		"blockID", blockID,
 		"hash", block.Hash(),
 		"root", header.Root.String(),
@@ -306,6 +306,11 @@ func (s *ProofSubmitter) SubmitProof(
 // with the current zkevm software.
 func (s *ProofSubmitter) CancelProof(ctx context.Context, blockID *big.Int) error {
 	return s.proofProducer.Cancel(ctx, blockID)
+}
+
+// Tier returns the proof tier of the current proof submitter.
+func (s *ProofSubmitter) Tier() uint16 {
+	return s.proofProducer.Tier()
 }
 
 // uint16ToBytes converts an uint16 to bytes.

@@ -38,7 +38,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.validProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
 	s.invalidProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
 
-	s.validProofSubmitter, err = NewValidProofSubmitter(
+	s.validProofSubmitter, err = New(
 		s.RpcClient,
 		&proofProducer.OptimisticProofProducer{},
 		s.validProofCh,

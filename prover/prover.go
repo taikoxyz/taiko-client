@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -57,7 +58,7 @@ type Prover struct {
 	tiers                  []*rpc.TierProviderTierWithID
 
 	// Proof submitters
-	proofSubmitter proofSubmitter.Submitter
+	proofSubmitters []proofSubmitter.Submitter
 
 	// Subscriptions
 	blockProposedCh      chan *bindings.TaikoL1ClientBlockProposed
@@ -139,42 +140,60 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
 
-	var producer proofProducer.ProofProducer
-	if cfg.Dummy {
-		producer = new(proofProducer.OptimisticProofProducer)
-	} else {
-		if producer, err = proofProducer.NewZkevmRpcdProducer(
-			cfg.ZKEvmRpcdEndpoint,
-			cfg.ZkEvmRpcdParamsPath,
-			cfg.L1HttpEndpoint,
-			cfg.L2HttpEndpoint,
-			true,
-			p.protocolConfigs,
+	// Protocol proof tiers
+	if p.tiers, err = p.rpc.GetTiers(ctx); err != nil {
+		return err
+	}
+
+	// Proof submitters
+	for _, tier := range p.tiers {
+		var (
+			producer  proofProducer.ProofProducer
+			submitter proofSubmitter.Submitter
+		)
+		switch tier.ID {
+		case encoding.TierOptimisticID:
+			producer = &proofProducer.OptimisticProofProducer{DummyProofProducer: new(proofProducer.DummyProofProducer)}
+		case encoding.TierSgxID:
+			producer = &proofProducer.SGXProofProducer{DummyProofProducer: new(proofProducer.DummyProofProducer)}
+		case encoding.TierPseZkevmID:
+			zkEvmRpcdProducer, err := proofProducer.NewZkevmRpcdProducer(
+				cfg.ZKEvmRpcdEndpoint,
+				cfg.ZkEvmRpcdParamsPath,
+				cfg.L1HttpEndpoint,
+				cfg.L2HttpEndpoint,
+				true,
+				p.protocolConfigs,
+			)
+			if err != nil {
+				return err
+			}
+			if p.cfg.Dummy {
+				zkEvmRpcdProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
+			}
+			producer = zkEvmRpcdProducer
+		case encoding.TierGuardianID:
+			producer = &proofProducer.GuardianProofProducer{DummyProofProducer: new(proofProducer.DummyProofProducer)}
+		}
+
+		if submitter, err = proofSubmitter.New(
+			p.rpc,
+			producer,
+			p.proofGenerationCh,
+			p.cfg.TaikoL2Address,
+			p.cfg.L1ProverPrivKey,
+			p.cfg.Graffiti,
+			p.cfg.ProofSubmissionMaxRetry,
+			p.cfg.BackOffRetryInterval,
+			p.cfg.WaitReceiptTimeout,
+			p.cfg.ProveBlockGasLimit,
+			p.cfg.ProveBlockTxReplacementMultiplier,
+			p.cfg.ProveBlockMaxTxGasTipCap,
 		); err != nil {
 			return err
 		}
-	}
 
-	// Proof submitter
-	if p.proofSubmitter, err = proofSubmitter.NewValidProofSubmitter(
-		p.rpc,
-		producer,
-		p.proofGenerationCh,
-		p.cfg.TaikoL2Address,
-		p.cfg.L1ProverPrivKey,
-		p.cfg.Graffiti,
-		p.cfg.ProofSubmissionMaxRetry,
-		p.cfg.BackOffRetryInterval,
-		p.cfg.WaitReceiptTimeout,
-		p.cfg.ProveBlockGasLimit,
-		p.cfg.ProveBlockTxReplacementMultiplier,
-		p.cfg.ProveBlockMaxTxGasTipCap,
-	); err != nil {
-		return err
-	}
-
-	if p.tiers, err = p.rpc.GetTiers(ctx); err != nil {
-		return err
+		p.proofSubmitters = append(p.proofSubmitters, submitter)
 	}
 
 	// Prover server
@@ -485,7 +504,11 @@ func (p *Prover) onBlockProposed(
 			}
 		}
 
-		return p.proofSubmitter.RequestProof(ctx, event)
+		if proofSubmitter := p.selectSubmitter(event.MinTier); proofSubmitter != nil {
+			return proofSubmitter.RequestProof(ctx, event)
+		}
+
+		return nil
 	}
 
 	p.proposeConcurrencyGuard <- struct{}{}
@@ -526,8 +549,12 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 
 		if err := backoff.Retry(
 			func() error {
-				err := p.proofSubmitter.SubmitProof(p.ctx, proofWithHeader)
-				if err != nil {
+				proofSubmitter := p.getSubmitterByTier(proofWithHeader.Tier)
+				if proofSubmitter == nil {
+					return nil
+				}
+
+				if err := proofSubmitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
 					log.Error("Submit proof error", "error", err)
 					return err
 				}
@@ -663,7 +690,7 @@ func (p *Prover) isValidProof(
 func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1ClientTransitionProved) error {
 	metrics.ProverReceivedProvenBlockGauge.Update(event.BlockId.Int64())
 
-	if !p.cfg.GuardianProver {
+	if !p.cfg.ContestControversialProofs {
 		return nil
 	}
 
@@ -686,11 +713,11 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 		return err
 	}
 
-	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(L1Height))
+	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(L1Height), true)
 }
 
 // requestProofByBlockID performs a proving operation for the given block.
-func (p *Prover) requestProofByBlockID(blockId *big.Int, l1Height *big.Int) error {
+func (p *Prover) requestProofByBlockID(blockId *big.Int, l1Height *big.Int, contestOldProof bool) error {
 	onBlockProposed := func(
 		ctx context.Context,
 		event *bindings.TaikoL1ClientBlockProposed,
@@ -721,7 +748,11 @@ func (p *Prover) requestProofByBlockID(blockId *big.Int, l1Height *big.Int) erro
 
 		p.proposeConcurrencyGuard <- struct{}{}
 
-		return p.proofSubmitter.RequestProof(ctx, event)
+		if proofSubmitter := p.selectSubmitter(event.MinTier); proofSubmitter != nil {
+			return proofSubmitter.RequestProof(ctx, event)
+		}
+
+		return nil
 	}
 
 	handleBlockProposedEvent := func() error {
@@ -767,7 +798,7 @@ func (p *Prover) onProvingWindowExpired(ctx context.Context, e *bindings.TaikoL1
 		return nil
 	}
 
-	return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(e.Raw.BlockNumber))
+	return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(e.Raw.BlockNumber), false)
 }
 
 // getProvingWindow returns the provingWindow of the given proposed block.
@@ -779,4 +810,30 @@ func (p *Prover) getProvingWindow(e *bindings.TaikoL1ClientBlockProposed) (time.
 	}
 
 	return 0, errTierNotFound
+}
+
+// selectSubmitter returns the proof submitter with the given minTier.
+func (p *Prover) selectSubmitter(minTier uint16) proofSubmitter.Submitter {
+	for _, s := range p.proofSubmitters {
+		if s.Tier() >= minTier {
+			return s
+		}
+	}
+
+	log.Warn("No proof producer / submitter found for the given minTier", "minTier", minTier)
+
+	return nil
+}
+
+// getSubmitterByTier returns the proof submitter with the given tier.
+func (p *Prover) getSubmitterByTier(tier uint16) proofSubmitter.Submitter {
+	for _, s := range p.proofSubmitters {
+		if s.Tier() == tier {
+			return s
+		}
+	}
+
+	log.Warn("No proof producer / submitter found for the given tier", "tier", tier)
+
+	return nil
 }

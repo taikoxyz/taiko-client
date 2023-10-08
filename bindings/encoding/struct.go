@@ -9,11 +9,12 @@ import (
 )
 
 // Tier IDs defined in protocol.
-const (
-	TierOptimisticID uint16 = 100
-	TierSgxID        uint16 = 200
-	TierPseZkevmID   uint16 = 300
-	TierGuardianID   uint16 = 1000
+var (
+	TierOptimisticID uint16   = 100
+	TierSgxID        uint16   = 200
+	TierPseZkevmID   uint16   = 300
+	TierGuardianID   uint16   = 1000
+	ProtocolTiers    []uint16 = []uint16{TierOptimisticID, TierSgxID, TierPseZkevmID, TierGuardianID}
 )
 
 // BlockHeader represents an Ethereum block header.

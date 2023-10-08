@@ -151,7 +151,7 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	// Valid block
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
-	s.Nil(s.p.proofSubmitter.SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+	s.Nil(s.p.selectSubmitter(e.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	// Empty blocks
 	for _, e = range testutils.ProposeAndInsertEmptyBlocks(
@@ -161,7 +161,7 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	) {
 		s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 
-		s.Nil(s.p.proofSubmitter.SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+		s.Nil(s.p.selectSubmitter(e.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 	}
 }
 

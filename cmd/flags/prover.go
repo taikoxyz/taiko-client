@@ -96,6 +96,12 @@ var (
 		Category: proverCategory,
 		Value:    false,
 	}
+	ContestControversialProofs = &cli.BoolFlag{
+		Name:     "prover.contestControversialProofs",
+		Usage:    "Whether you want to contest proofs with different L2 hashes with higher tier proofs",
+		Category: proverCategory,
+		Value:    false,
+	}
 	ProveBlockTxGasLimit = &cli.Uint64Flag{
 		Name:     "prover.proveBlockTxGasLimit",
 		Usage:    "Gas limit will be used for TaikoL1.proveBlock transactions",
@@ -161,6 +167,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProveBlockMaxTxGasTipCap,
 	Graffiti,
 	ProveUnassignedBlocks,
+	ContestControversialProofs,
 	ProveBlockTxGasLimit,
 	ProverHTTPServerPort,
 	ProverCapacity,
