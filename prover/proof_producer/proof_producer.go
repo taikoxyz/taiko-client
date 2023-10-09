@@ -50,6 +50,7 @@ type ProofProducer interface {
 		header *types.Header,
 		resultCh chan *ProofWithHeader,
 	) error
+	Cancellable() bool
 	Cancel(ctx context.Context, blockID *big.Int) error
 	Tier() uint16
 }

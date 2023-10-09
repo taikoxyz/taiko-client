@@ -38,6 +38,11 @@ func (s *SGXProofProducer) Tier() uint16 {
 	return encoding.TierSgxID
 }
 
+// Cancellable implements the ProofProducer interface.
+func (s *SGXProofProducer) Cancellable() bool {
+	return false
+}
+
 // Cancel cancels an existing proof generation.
 func (s *SGXProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
 	return nil

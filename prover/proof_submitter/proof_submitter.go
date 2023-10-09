@@ -301,11 +301,9 @@ func (s *ProofSubmitter) SubmitProof(
 	return nil
 }
 
-// CancelProof cancels an existing proof generation.
-// Right now, it is just a stub that does nothing, because it is not possible to cancel the proof
-// with the current zkevm software.
-func (s *ProofSubmitter) CancelProof(ctx context.Context, blockID *big.Int) error {
-	return s.proofProducer.Cancel(ctx, blockID)
+// Producer returns the inner proof producer.
+func (s *ProofSubmitter) Producer() proofProducer.ProofProducer {
+	return s.proofProducer
 }
 
 // Tier returns the proof tier of the current proof submitter.

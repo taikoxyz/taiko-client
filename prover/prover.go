@@ -542,7 +542,7 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 			if !p.cfg.GuardianProver {
 				_, released := p.capacityManager.ReleaseOneCapacity(proofWithHeader.Meta.Id)
 				if !released {
-					log.Error("unable to release capacity")
+					log.Error("Failed to release capacity", "id", proofWithHeader.Meta.Id)
 				}
 			}
 		}()
@@ -687,9 +687,23 @@ func (p *Prover) isValidProof(
 	return false, nil
 }
 
+// onTransitionProved verifies the proven block hash and will try contesting it if the block hash is wrong.
 func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1ClientTransitionProved) error {
 	metrics.ProverReceivedProvenBlockGauge.Update(event.BlockId.Int64())
 
+	// If the proof generation is cancellable, cancel it and release the capacity.
+	proofSubmitter := p.getSubmitterByTier(event.Tier)
+	if proofSubmitter != nil && proofSubmitter.Producer().Cancellable() {
+		if err := proofSubmitter.Producer().Cancel(ctx, event.BlockId); err != nil {
+			return err
+		}
+		// No need to check if the release is successful here, since this L2 block might
+		// be assigned to other provers.
+		p.capacityManager.ReleaseOneCapacity(event.BlockId.Uint64())
+	}
+
+	// If this prover is in contest mode, we check the validity of this proof and if it's invalid,
+	// contest it with a higher tier proof.
 	if !p.cfg.ContestControversialProofs {
 		return nil
 	}
@@ -708,12 +722,12 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 		return nil
 	}
 
-	L1Height, err := p.rpc.TaikoL2.LatestSyncedL1Height(&bind.CallOpts{Context: ctx, BlockNumber: event.BlockId})
+	l1Height, err := p.rpc.TaikoL2.LatestSyncedL1Height(&bind.CallOpts{Context: ctx, BlockNumber: event.BlockId})
 	if err != nil {
 		return err
 	}
 
-	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(L1Height), true)
+	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(l1Height), true)
 }
 
 // requestProofByBlockID performs a proving operation for the given block.

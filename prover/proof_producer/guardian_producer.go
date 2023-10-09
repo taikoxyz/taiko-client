@@ -38,6 +38,11 @@ func (g *GuardianProofProducer) Tier() uint16 {
 	return encoding.TierGuardianID
 }
 
+// Cancellable implements the ProofProducer interface.
+func (g *GuardianProofProducer) Cancellable() bool {
+	return false
+}
+
 // Cancel cancels an existing proof generation.
 func (g *GuardianProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
 	return nil

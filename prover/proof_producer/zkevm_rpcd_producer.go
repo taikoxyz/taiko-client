@@ -280,6 +280,11 @@ func (p *ZkevmRpcdProducer) Tier() uint16 {
 	return encoding.TierPseZkevmID
 }
 
+// Cancellable implements the ProofProducer interface.
+func (p *ZkevmRpcdProducer) Cancellable() bool {
+	return false
+}
+
 // Cancel cancels an existing proof generation.
 // Right now, it is just a stub that does nothing, because it is not possible to cancel the proof
 // with the current zkevm software.

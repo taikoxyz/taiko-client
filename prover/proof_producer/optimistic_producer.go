@@ -38,6 +38,11 @@ func (o *OptimisticProofProducer) Tier() uint16 {
 	return encoding.TierOptimisticID
 }
 
+// Cancellable implements the ProofProducer interface.
+func (o *OptimisticProofProducer) Cancellable() bool {
+	return false
+}
+
 // Cancel cancels an existing proof generation.
 func (o *OptimisticProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
 	return nil
