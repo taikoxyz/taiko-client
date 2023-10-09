@@ -24,12 +24,6 @@ var (
 		Required: true,
 		Category: proposerCategory,
 	}
-	TaikoTokenAddress = &cli.StringFlag{
-		Name:     "taikoToken",
-		Usage:    "TaikoToken contract address",
-		Required: true,
-		Category: proposerCategory,
-	}
 )
 
 // Optional flags used by proposer.
@@ -90,6 +84,7 @@ var (
 	}
 	MaxProposedTxListsPerEpoch = &cli.Uint64Flag{
 		Name:     "maxProposedTxListsPerEpoch",
+		Usage:    "Maximum number of transaction lists which will be proposed inside one proposing epoch",
 		Value:    1,
 		Category: proposerCategory,
 	}

@@ -43,13 +43,19 @@ var (
 	}
 	TaikoL1Address = &cli.StringFlag{
 		Name:     "taikoL1",
-		Usage:    "TaikoL1 contract address",
+		Usage:    "TaikoL1 contract `address`",
 		Required: true,
 		Category: commonCategory,
 	}
 	TaikoL2Address = &cli.StringFlag{
 		Name:     "taikoL2",
-		Usage:    "TaikoL2 contract address",
+		Usage:    "TaikoL2 contract `address`",
+		Required: true,
+		Category: commonCategory,
+	}
+	TaikoTokenAddress = &cli.StringFlag{
+		Name:     "taikoToken",
+		Usage:    "TaikoToken contract `address`",
 		Required: true,
 		Category: commonCategory,
 	}

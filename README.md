@@ -54,8 +54,6 @@ Then, run the integration tests:
 2. Perform a `pnpm install` in `taiko-mono/packages/protocol`
 3. Replace `<PATH_TO_TAIKO_MONO_REPO>` and execute:
 
-   ```bash
-   TAIKO_MONO_DIR=<PATH_TO_TAIKO_MONO_REPO> \
-   COMPILE_PROTOCOL=true \
-     make test
-   ```
+```sh
+TAIKO_MONO_DIR=<PATH_TO_TAIKO_MONO_REPO> make test
+```
