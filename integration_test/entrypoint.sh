@@ -56,7 +56,7 @@ if [ "$RUN_TESTS" == "true" ]; then
     TREASURY=0xdf09A0afD09a63fb04ab3573922437e1e637dE8b \
     PREMINT_TOKEN_AMOUNT=$PREMINT_TOKEN_AMOUNT \
     JWT_SECRET=$DIR/nodes/jwt.hex \
-        go test -v -p=1 ./$PACKAGE -coverprofile=coverage.out -covermode=atomic -timeout=300s
+        go test -v -p=1 ./prover/... -coverprofile=coverage.out -covermode=atomic -timeout=300s
 else
     echo "💻 Local dev net started"
     docker compose -f $TESTNET_CONFIG logs -f l2_execution_engine

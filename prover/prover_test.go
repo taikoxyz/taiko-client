@@ -170,8 +170,8 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 	s.Nil(s.p.onBlockVerified(context.Background(), &bindings.TaikoL1ClientBlockVerified{
 		BlockId:   common.Big1,
-		BlockHash: common.Hash{}},
-	))
+		BlockHash: common.Hash{},
+	}))
 }
 
 func (s *ProverTestSuite) TestSubmitProofOp() {
@@ -181,6 +181,7 @@ func (s *ProverTestSuite) TestSubmitProofOp() {
 			Meta:    &bindings.TaikoDataBlockMetadata{},
 			Header:  &types.Header{},
 			Proof:   []byte{},
+			Tier:    encoding.TierOptimisticID,
 		})
 	})
 	s.NotPanics(func() {
@@ -189,6 +190,7 @@ func (s *ProverTestSuite) TestSubmitProofOp() {
 			Meta:    &bindings.TaikoDataBlockMetadata{},
 			Header:  &types.Header{},
 			Proof:   []byte{},
+			Tier:    encoding.TierOptimisticID,
 		})
 	})
 }
@@ -240,6 +242,29 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.Equal(header.Hash(), common.BytesToHash(event.BlockHash[:]))
 	s.Equal(header.ParentHash, common.BytesToHash(event.ParentHash[:]))
 	s.Equal(encoding.TierGuardianID, event.Tier)
+}
+
+func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
+	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
+
+	header, err := s.p.rpc.L2.HeaderByNumber(context.Background(), e.BlockId)
+	s.Nil(err)
+
+	sub, err := s.p.rpc.TaikoL1.WatchTransitionProved(nil, sink, nil)
+	s.Nil(err)
+	defer func() {
+		sub.Unsubscribe()
+		close(sink)
+	}()
+
+	s.Nil(s.p.onProvingWindowExpired(context.Background(), e))
+	s.Nil(s.p.selectSubmitter(e.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+
+	event := <-sink
+	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
+	s.Equal(header.Hash(), common.BytesToHash(event.BlockHash[:]))
+	s.Equal(header.ParentHash, common.BytesToHash(event.ParentHash[:]))
 }
 
 func (s *ProverTestSuite) TestSelectSubmitter() {

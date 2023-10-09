@@ -262,7 +262,6 @@ func (p *Prover) eventLoop() {
 		case <-p.ctx.Done():
 			return
 		case proofWithHeader := <-p.proofGenerationCh:
-			log.Info("111888")
 			p.submitProofOp(p.ctx, proofWithHeader)
 		case <-p.proveNotify:
 			if err := p.proveOp(); err != nil {
