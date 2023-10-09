@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -170,7 +171,7 @@ func sendTxWithBackoff(
 			"nonce", nonce,
 			"proposedAt", proposedAt,
 		)
-
+		metrics.ProverValidProofSubmissionAcceptedCounter.Inc(1)
 		return nil
 	}, backOffPolicy); err != nil {
 		if maxRetry != nil {

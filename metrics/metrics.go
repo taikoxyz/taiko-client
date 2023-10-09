@@ -49,6 +49,7 @@ var (
 		nil,
 		metrics.NewExpDecaySample(128, 0.015),
 	)
+	ProverValidProofSubmissionAcceptedCounter = metrics.NewRegisteredCounter("prover/proof/valid/submission/accepted", nil)
 )
 
 // Serve starts the metrics server on the given address, will be closed when the given
