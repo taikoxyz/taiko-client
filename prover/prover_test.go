@@ -2,6 +2,7 @@ package prover
 
 import (
 	"context"
+	"math/big"
 	"net/url"
 	"os"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/proposer"
@@ -189,6 +191,31 @@ func (s *ProverTestSuite) TestSubmitProofOp() {
 			Proof:   []byte{},
 		})
 	})
+}
+
+func (s *ProverTestSuite) TestSelectSubmitter() {
+	submitter := s.p.selectSubmitter(encoding.TierGuardianID - 1)
+	s.NotNil(submitter)
+	s.Equal(encoding.TierGuardianID, submitter.Tier())
+}
+
+func (s *ProverTestSuite) TestGetSubmitterByTier() {
+	submitter := s.p.getSubmitterByTier(encoding.TierGuardianID)
+	s.NotNil(submitter)
+	s.Equal(encoding.TierGuardianID, submitter.Tier())
+}
+
+func (s *ProverTestSuite) TestIsBlockVerified() {
+	vars, err := s.p.rpc.TaikoL1.GetStateVariables(nil)
+	s.Nil(err)
+
+	verified, err := s.p.isBlockVerified(new(big.Int).SetUint64(vars.LastVerifiedBlockId))
+	s.Nil(err)
+	s.True(verified)
+
+	verified, err = s.p.isBlockVerified(new(big.Int).SetUint64(vars.LastVerifiedBlockId + 1))
+	s.Nil(err)
+	s.False(verified)
 }
 
 func (s *ProverTestSuite) TestStartSubscription() {

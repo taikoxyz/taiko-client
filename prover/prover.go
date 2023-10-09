@@ -350,7 +350,7 @@ func (p *Prover) onBlockProposed(
 		return fmt.Errorf("failed to check whether L1 chain was reorged from L2EE (eventID %d): %w", event.BlockId, err)
 	}
 
-	// then check the l1Current cursor at first, to see if the L1 chain has been reorged.
+	// Then check the l1Current cursor at first, to see if the L1 chain has been reorged.
 	if !reorged {
 		if reorged, l1CurrentToReset, lastHandledBlockIDToReset, err = p.rpc.CheckL1ReorgFromL1Cursor(
 			ctx,
