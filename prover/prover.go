@@ -98,7 +98,7 @@ func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
 func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
-	p.capacityManager = capacity.New(cfg.Capacity, cfg.TempCapacityExpiresAt)
+	p.capacityManager = capacity.New(cfg.Capacity)
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{

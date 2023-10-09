@@ -78,7 +78,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	}
 
 	log.Info(
-		"Propose block data",
+		"Proof assignment request body",
 		"feeToken", req.FeeToken,
 		"expiry", req.Expiry,
 		"tierFees", req.TierFees,
@@ -147,8 +147,8 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "expiry too long")
 	}
 
-	if _, ok := srv.capacityManager.TakeOneTempCapacity(); !ok {
-		log.Warn("Prover unable to take a temporary capacity", "proposerIP", c.RealIP())
+	if ok := srv.capacityManager.HoldOneCapacity(time.Duration(req.Expiry) * time.Second); !ok {
+		log.Warn("Prover unable to hold a capacity", "proposerIP", c.RealIP())
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
 
