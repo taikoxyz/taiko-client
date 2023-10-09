@@ -54,7 +54,7 @@ func (s *ProverServerTestSuite) SetupTest() {
 		CapacityManager:      capacity.New(1024),
 		TaikoL1Address:       common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		Rpc:                  rpcClient,
-		Bond:                 common.Big0,
+		LivenessBond:         common.Big0,
 		IsGuardian:           false,
 	})
 	s.Nil(err)

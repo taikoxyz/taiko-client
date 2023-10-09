@@ -40,7 +40,7 @@ type ProverServer struct {
 	capacityManager      *capacity.CapacityManager
 	taikoL1Address       common.Address
 	rpc                  *rpc.Client
-	bond                 *big.Int
+	livenessBond         *big.Int
 	isGuardian           bool
 }
 
@@ -54,7 +54,7 @@ type NewProverServerOpts struct {
 	CapacityManager      *capacity.CapacityManager
 	TaikoL1Address       common.Address
 	Rpc                  *rpc.Client
-	Bond                 *big.Int
+	LivenessBond         *big.Int
 	IsGuardian           bool
 }
 
@@ -71,7 +71,7 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		capacityManager:      opts.CapacityManager,
 		taikoL1Address:       opts.TaikoL1Address,
 		rpc:                  opts.Rpc,
-		bond:                 opts.Bond,
+		livenessBond:         opts.LivenessBond,
 		isGuardian:           opts.IsGuardian,
 	}
 

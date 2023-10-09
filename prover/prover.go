@@ -206,7 +206,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		CapacityManager:      p.capacityManager,
 		TaikoL1Address:       p.cfg.TaikoL1Address,
 		Rpc:                  p.rpc,
-		Bond:                 protocolConfigs.LivenessBond,
+		LivenessBond:         protocolConfigs.LivenessBond,
 		IsGuardian:           p.cfg.GuardianProver,
 	}
 	if p.cfg.GuardianProver {
@@ -667,25 +667,36 @@ func (p *Prover) closeSubscription() {
 // isValidProof checks if the given proof is a valid one.
 func (p *Prover) isValidProof(
 	ctx context.Context,
-	blockID uint64,
-	parentHash common.Hash,
-	blockHash common.Hash,
+	event *bindings.TaikoL1ClientTransitionProved,
 ) (bool, error) {
-	parent, err := p.rpc.L2ParentByBlockId(ctx, new(big.Int).SetUint64(blockID))
+	parent, err := p.rpc.L2ParentByBlockId(ctx, event.BlockId)
 	if err != nil {
 		return false, err
 	}
 
-	block, err := p.rpc.L2.BlockByNumber(ctx, new(big.Int).SetUint64(blockID))
+	block, err := p.rpc.L2.BlockByNumber(ctx, event.BlockId)
 	if err != nil {
 		return false, err
 	}
 
-	if parent.Hash() == parentHash && blockHash == block.Hash() {
-		return true, nil
+	l2SignalService, err := p.rpc.TaikoL2.Resolve0(nil, rpc.StringToBytes32("signal_service"), false)
+	if err != nil {
+		return false, err
 	}
 
-	return false, nil
+	signalRoot, err := p.rpc.GetStorageRoot(
+		ctx,
+		p.rpc.L2GethClient,
+		l2SignalService,
+		event.BlockId,
+	)
+	if err != nil {
+		return false, err
+	}
+
+	return parent.Hash() == event.ParentHash &&
+		block.Hash() == event.BlockHash &&
+		signalRoot == event.SignalRoot, nil
 }
 
 // onTransitionProved verifies the proven block hash and will try contesting it if the block hash is wrong.
@@ -709,12 +720,9 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 		return nil
 	}
 
-	// TODO(david): check signalRoot
 	isValidProof, err := p.isValidProof(
 		ctx,
-		event.BlockId.Uint64(),
-		event.ParentHash,
-		event.BlockHash,
+		event,
 	)
 	if err != nil {
 		return err

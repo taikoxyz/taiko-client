@@ -190,7 +190,7 @@ func NewTestProverServer(
 		CapacityManager:      capacityManager,
 		TaikoL1Address:       common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		Rpc:                  s.RpcClient,
-		Bond:                 protocolConfig.LivenessBond,
+		LivenessBond:         protocolConfig.LivenessBond,
 		IsGuardian:           true,
 	})
 	s.Nil(err)
