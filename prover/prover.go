@@ -84,7 +84,7 @@ type Prover struct {
 	wg  sync.WaitGroup
 }
 
-// New initializes the given prover instance based on the command line flags.
+// InitFromCli initializes the given prover instance based on the command line flags.
 func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {
@@ -262,6 +262,7 @@ func (p *Prover) eventLoop() {
 		case <-p.ctx.Done():
 			return
 		case proofWithHeader := <-p.proofGenerationCh:
+			log.Info("111888")
 			p.submitProofOp(p.ctx, proofWithHeader)
 		case <-p.proveNotify:
 			if err := p.proveOp(); err != nil {
@@ -312,6 +313,7 @@ func (p *Prover) proveOp() error {
 			OnBlockProposedEvent: p.onBlockProposed,
 		})
 		if err != nil {
+			log.Error("Failed to start event iterator", "event", "BlockProposed", "error", err)
 			return err
 		}
 
@@ -341,7 +343,7 @@ func (p *Prover) onBlockProposed(
 		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
 	}
 
-	// Check whether the L2 EE's recorded L1 info, to see if the L1 chain has been reorged.
+	// Check whether the L2 EE's anchored L1 info, to see if the L1 chain has been reorged.
 	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1ReorgFromL2EE(
 		ctx,
 		new(big.Int).Sub(event.BlockId, common.Big1),
@@ -708,6 +710,7 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 		return nil
 	}
 
+	// TODO(david): check signalRoot
 	isValidProof, err := p.isValidProof(
 		ctx,
 		event.BlockId.Uint64(),
@@ -727,18 +730,28 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 		return err
 	}
 
-	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(l1Height), true)
+	log.Info(
+		"Contest a proven block",
+		"blockID", event.BlockId,
+		"l1Height", l1Height,
+		"tier", event.Tier,
+		"parentHash", common.Bytes2Hex(event.ParentHash[:]),
+		"blockHash", common.Bytes2Hex(event.BlockHash[:]),
+		"signalRoot", common.Bytes2Hex(event.SignalRoot[:]),
+	)
+
+	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(l1Height+1), true)
 }
 
 // requestProofByBlockID performs a proving operation for the given block.
-func (p *Prover) requestProofByBlockID(blockId *big.Int, l1Height *big.Int, contestOldProof bool) error {
+func (p *Prover) requestProofByBlockID(blockID *big.Int, l1Height *big.Int, contestOldProof bool) error {
 	onBlockProposed := func(
 		ctx context.Context,
 		event *bindings.TaikoL1ClientBlockProposed,
 		end eventIterator.EndBlockProposedEventIterFunc,
 	) error {
 		// Only filter for exact blockID we want
-		if event.BlockId.Cmp(blockId) != 0 {
+		if event.BlockId.Cmp(blockID) != 0 {
 			return nil
 		}
 
@@ -764,7 +777,11 @@ func (p *Prover) requestProofByBlockID(blockId *big.Int, l1Height *big.Int, cont
 
 		var minTier = event.MinTier
 		if contestOldProof {
-			minTier += 1
+			if p.cfg.GuardianProver {
+				minTier = encoding.TierGuardianID
+			} else {
+				minTier += 1
+			}
 		}
 
 		if proofSubmitter := p.selectSubmitter(minTier); proofSubmitter != nil {
@@ -776,19 +793,26 @@ func (p *Prover) requestProofByBlockID(blockId *big.Int, l1Height *big.Int, cont
 
 	handleBlockProposedEvent := func() error {
 		defer func() { <-p.proposeConcurrencyGuard }()
-
+		l1Head, err := p.rpc.L1.BlockNumber(p.ctx)
+		if err != nil {
+			log.Error("Failed to get L1 block head", "error", err)
+			return err
+		}
+		end := new(big.Int).Add(l1Height, common.Big1)
+		if end.Uint64() > l1Head {
+			end = new(big.Int).SetUint64(l1Head)
+		}
 		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
 			Client:               p.rpc.L1,
 			TaikoL1:              p.rpc.TaikoL1,
-			StartHeight:          l1Height,
-			EndHeight:            new(big.Int).Add(l1Height, common.Big1),
+			StartHeight:          new(big.Int).Sub(l1Height, common.Big1),
+			EndHeight:            end,
 			OnBlockProposedEvent: onBlockProposed,
-			FilterQuery:          []*big.Int{blockId},
 		})
 		if err != nil {
+			log.Error("Failed to start event iterator", "event", "BlockProposed", "error", err)
 			return err
 		}
-
 		return iter.Iter()
 	}
 
@@ -797,7 +821,7 @@ func (p *Prover) requestProofByBlockID(blockId *big.Int, l1Height *big.Int, cont
 			func() error { return handleBlockProposedEvent() },
 			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
 		); err != nil {
-			log.Error("Failed to request proof with a given block ID", "blockID", blockId, "error", err)
+			log.Error("Failed to request proof with a given block ID", "blockID", blockID, "error", err)
 		}
 	}()
 

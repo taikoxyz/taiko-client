@@ -22,11 +22,10 @@ import (
 
 type ProofSubmitterTestSuite struct {
 	testutils.ClientTestSuite
-	validProofSubmitter *ProofSubmitter
-	calldataSyncer      *calldata.Syncer
-	proposer            *proposer.Proposer
-	validProofCh        chan *proofProducer.ProofWithHeader
-	invalidProofCh      chan *proofProducer.ProofWithHeader
+	proofSubmitter *ProofSubmitter
+	calldataSyncer *calldata.Syncer
+	proposer       *proposer.Proposer
+	proofCh        chan *proofProducer.ProofWithHeader
 }
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
@@ -35,13 +34,12 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	s.validProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
-	s.invalidProofCh = make(chan *proofProducer.ProofWithHeader, 1024)
+	s.proofCh = make(chan *proofProducer.ProofWithHeader, 1024)
 
-	s.validProofSubmitter, err = New(
+	s.proofSubmitter, err = New(
 		s.RpcClient,
 		&proofProducer.OptimisticProofProducer{},
-		s.validProofCh,
+		s.proofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		l1ProverPrivKey,
 		"test",
@@ -97,19 +95,19 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.proposer = prop
 }
 
-func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofDeadlineExceeded() {
+func (s *ProofSubmitterTestSuite) TestProofSubmitterRequestProofDeadlineExceeded() {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	s.ErrorContains(
-		s.validProofSubmitter.RequestProof(
+		s.proofSubmitter.RequestProof(
 			ctx, &bindings.TaikoL1ClientBlockProposed{BlockId: common.Big256}), "context deadline exceeded",
 	)
 }
 
-func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotFound() {
+func (s *ProofSubmitterTestSuite) TestProofSubmitterSubmitProofMetadataNotFound() {
 	s.Error(
-		s.validProofSubmitter.SubmitProof(
+		s.proofSubmitter.SubmitProof(
 			context.Background(), &proofProducer.ProofWithHeader{
 				BlockID: common.Big256,
 				Meta:    &bindings.TaikoDataBlockMetadata{},
@@ -120,26 +118,22 @@ func (s *ProofSubmitterTestSuite) TestValidProofSubmitterSubmitProofMetadataNotF
 	)
 }
 
-func (s *ProofSubmitterTestSuite) TestValidSubmitProofs() {
+func (s *ProofSubmitterTestSuite) TestSubmitProofs() {
 	events := testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.proposer, s.calldataSyncer)
 
 	for _, e := range events {
-		s.Nil(s.validProofSubmitter.RequestProof(context.Background(), e))
-		proofWithHeader := <-s.validProofCh
-		s.Nil(s.validProofSubmitter.SubmitProof(context.Background(), proofWithHeader))
+		s.Nil(s.proofSubmitter.RequestProof(context.Background(), e))
+		proofWithHeader := <-s.proofCh
+		s.Nil(s.proofSubmitter.SubmitProof(context.Background(), proofWithHeader))
 	}
 }
 
-func (s *ProofSubmitterTestSuite) TestValidProofSubmitterRequestProofCancelled() {
+func (s *ProofSubmitterTestSuite) TestProofSubmitterRequestProofCancelled() {
 	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		time.AfterFunc(2*time.Second, func() {
-			cancel()
-		})
-	}()
+	go func() { time.AfterFunc(2*time.Second, func() { cancel() }) }()
 
 	s.ErrorContains(
-		s.validProofSubmitter.RequestProof(
+		s.proofSubmitter.RequestProof(
 			ctx, &bindings.TaikoL1ClientBlockProposed{BlockId: common.Big256}), "context canceled",
 	)
 }

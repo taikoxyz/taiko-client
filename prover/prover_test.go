@@ -193,6 +193,55 @@ func (s *ProverTestSuite) TestSubmitProofOp() {
 	})
 }
 
+func (s *ProverTestSuite) TestOnBlockVerified() {
+	id := testutils.RandomHash().Big().Uint64()
+	s.Nil(s.p.onBlockVerified(context.Background(), &bindings.TaikoL1ClientBlockVerified{
+		BlockId: testutils.RandomHash().Big(),
+		Raw: types.Log{
+			BlockHash:   testutils.RandomHash(),
+			BlockNumber: id,
+		},
+	}))
+	s.Equal(id, s.p.latestVerifiedL1Height)
+}
+
+func (s *ProverTestSuite) TestContestWrongBlocks() {
+	s.p.cfg.ContestControversialProofs = false
+	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	s.Nil(s.p.onTransitionProved(context.Background(), &bindings.TaikoL1ClientTransitionProved{
+		BlockId: e.BlockId,
+		Tier:    e.MinTier,
+	}))
+	s.p.cfg.ContestControversialProofs = true
+	s.p.cfg.GuardianProver = true
+	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
+
+	sub, err := s.p.rpc.TaikoL1.WatchTransitionProved(nil, sink, nil)
+	s.Nil(err)
+	defer func() {
+		sub.Unsubscribe()
+		close(sink)
+	}()
+
+	header, err := s.p.rpc.L2.HeaderByNumber(context.Background(), e.BlockId)
+	s.Nil(err)
+	s.Greater(header.Number.Uint64(), uint64(0))
+	s.Nil(s.p.onTransitionProved(context.Background(), &bindings.TaikoL1ClientTransitionProved{
+		BlockId:    e.BlockId,
+		Tier:       encoding.TierPseZkevmID,
+		ParentHash: header.ParentHash,
+		BlockHash:  testutils.RandomHash(),
+		SignalRoot: testutils.RandomHash(),
+	}))
+	s.Nil(s.p.selectSubmitter(encoding.TierGuardianID).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+
+	event := <-sink
+	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
+	s.Equal(header.Hash(), common.BytesToHash(event.BlockHash[:]))
+	s.Equal(header.ParentHash, common.BytesToHash(event.ParentHash[:]))
+	s.Equal(encoding.TierGuardianID, event.Tier)
+}
+
 func (s *ProverTestSuite) TestSelectSubmitter() {
 	submitter := s.p.selectSubmitter(encoding.TierGuardianID - 1)
 	s.NotNil(submitter)
