@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-resty/resty/v2"
-	echo "github.com/labstack/echo/v4"
 	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -46,19 +45,19 @@ func (s *ProverServerTestSuite) SetupTest() {
 	})
 	s.Nil(err)
 
-	p := &ProverServer{
-		echo:                 echo.New(),
-		proverPrivateKey:     l1ProverPrivKey,
-		minOptimisticTierFee: common.Big1,
-		minSgxTierFee:        common.Big1,
-		minPseZkevmTierFee:   common.Big1,
-		maxExpiry:            24 * time.Hour,
-		capacityManager:      capacity.New(1024),
-		taikoL1Address:       common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		rpc:                  rpcClient,
-		bond:                 common.Big0,
-		isGuardian:           false,
-	}
+	p, err := New(&NewProverServerOpts{
+		ProverPrivateKey:     l1ProverPrivKey,
+		MinOptimisticTierFee: common.Big1,
+		MinSgxTierFee:        common.Big1,
+		MinPseZkevmTierFee:   common.Big1,
+		MaxExpiry:            time.Hour,
+		CapacityManager:      capacity.New(1024),
+		TaikoL1Address:       common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		Rpc:                  rpcClient,
+		Bond:                 common.Big0,
+		IsGuardian:           false,
+	})
+	s.Nil(err)
 
 	p.echo.HideBanner = true
 	p.configureMiddleware()

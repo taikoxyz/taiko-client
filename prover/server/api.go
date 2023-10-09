@@ -94,6 +94,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	}
 
 	if !srv.isGuardian {
+		// TODO: use tier bond
 		ok, err := rpc.CheckProverBalance(c.Request().Context(), srv.rpc, srv.proverAddress, srv.taikoL1Address, srv.bond)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err)

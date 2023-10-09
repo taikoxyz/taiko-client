@@ -102,8 +102,6 @@ func LogSkipper(c echo.Context) bool {
 	switch c.Request().URL.Path {
 	case "/healthz":
 		return true
-	case "/metrics":
-		return true
 	default:
 		return true
 	}
