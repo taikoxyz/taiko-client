@@ -33,6 +33,7 @@ func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
 	}
 
 	log.Warn("🤷 Unretryable proof submission error", "error", err, "blockID", blockID)
+	metrics.ProverValidProofSubmissionErrorCounter.Inc(1)
 	return false
 }
 
