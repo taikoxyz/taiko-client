@@ -43,6 +43,12 @@ var (
 	ProverProofsAssigned              = metrics.NewRegisteredCounter("prover/proof/assigned", nil)
 	ProverReceivedProposedBlockGauge  = metrics.NewRegisteredGauge("prover/proposed/received", nil)
 	ProverReceivedProvenBlockGauge    = metrics.NewRegisteredGauge("prover/proven/received", nil)
+
+	ProverProofGenerationTime = metrics.NewRegisteredHistogram(
+		"prover/proof/generation/time",
+		nil,
+		metrics.NewExpDecaySample(128, 0.015),
+	)
 )
 
 // Serve starts the metrics server on the given address, will be closed when the given
