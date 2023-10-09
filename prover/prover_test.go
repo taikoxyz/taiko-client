@@ -273,10 +273,20 @@ func (s *ProverTestSuite) TestSelectSubmitter() {
 	s.Equal(encoding.TierGuardianID, submitter.Tier())
 }
 
+func (s *ProverTestSuite) TestSelectSubmitterNotFound() {
+	submitter := s.p.selectSubmitter(encoding.TierGuardianID + 1)
+	s.Nil(submitter)
+}
+
 func (s *ProverTestSuite) TestGetSubmitterByTier() {
 	submitter := s.p.getSubmitterByTier(encoding.TierGuardianID)
 	s.NotNil(submitter)
 	s.Equal(encoding.TierGuardianID, submitter.Tier())
+}
+
+func (s *ProverTestSuite) TestGetProvingWindowNotFound() {
+	_, err := s.p.getProvingWindow(&bindings.TaikoL1ClientBlockProposed{MinTier: encoding.TierGuardianID + 1})
+	s.ErrorIs(err, errTierNotFound)
 }
 
 func (s *ProverTestSuite) TestIsBlockVerified() {
@@ -290,6 +300,29 @@ func (s *ProverTestSuite) TestIsBlockVerified() {
 	verified, err = s.p.isBlockVerified(new(big.Int).SetUint64(vars.LastVerifiedBlockId + 1))
 	s.Nil(err)
 	s.False(verified)
+}
+
+func (s *ProverTestSuite) TestProveOp() {
+	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
+
+	header, err := s.p.rpc.L2.HeaderByNumber(context.Background(), e.BlockId)
+	s.Nil(err)
+
+	sub, err := s.p.rpc.TaikoL1.WatchTransitionProved(nil, sink, nil)
+	s.Nil(err)
+	defer func() {
+		sub.Unsubscribe()
+		close(sink)
+	}()
+
+	s.Nil(s.p.proveOp())
+	s.Nil(s.p.selectSubmitter(e.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+
+	event := <-sink
+	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
+	s.Equal(header.Hash(), common.BytesToHash(event.BlockHash[:]))
+	s.Equal(header.ParentHash, common.BytesToHash(event.ParentHash[:]))
 }
 
 func (s *ProverTestSuite) TestStartSubscription() {
