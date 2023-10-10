@@ -6,12 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -29,21 +27,17 @@ var _ Submitter = (*ProofSubmitter)(nil)
 // ProofSubmitter is responsible requesting proofs for the given L2
 // blocks, and submitting the generated proofs to the TaikoL1 smart contract.
 type ProofSubmitter struct {
-	rpc                        *rpc.Client
-	proofProducer              proofProducer.ProofProducer
-	resultCh                   chan *proofProducer.ProofWithHeader
-	evidenceAssembler          *evidence.Assembler
-	txSender                   *transaction.TxSender
-	proverPrivKey              *ecdsa.PrivateKey
-	proverAddress              common.Address
-	taikoL2Address             common.Address
-	l1SignalService            common.Address
-	l2SignalService            common.Address
-	graffiti                   [32]byte
-	proveBlockTxGasLimit       *uint64
-	txReplacementTipMultiplier uint64
-	proveBlockMaxTxGasTipCap   *big.Int
-	mutex                      *sync.Mutex
+	rpc             *rpc.Client
+	proofProducer   proofProducer.ProofProducer
+	resultCh        chan *proofProducer.ProofWithHeader
+	evidenceBuilder *evidence.Builder
+	txBuilder       *transaction.ProveBlockTxBuilder
+	txSender        *transaction.Sender
+	proverAddress   common.Address
+	taikoL2Address  common.Address
+	l1SignalService common.Address
+	l2SignalService common.Address
+	graffiti        [32]byte
 }
 
 // New creates a new ProofSubmitter instance.
@@ -76,27 +70,35 @@ func New(
 		return nil, err
 	}
 
-	maxRetry := &submissionMaxRetry
+	var (
+		maxRetry   = &submissionMaxRetry
+		txGasLimit *big.Int
+	)
 	if proofProducer.Tier() == encoding.TierGuardianID {
 		maxRetry = nil
 	}
+	if proveBlockTxGasLimit != nil {
+		txGasLimit = new(big.Int).SetUint64(*proveBlockTxGasLimit)
+	}
 
 	return &ProofSubmitter{
-		rpc:                        rpcClient,
-		proofProducer:              proofProducer,
-		resultCh:                   resultCh,
-		evidenceAssembler:          evidence.NewAssembler(rpcClient, anchorValidator, graffiti),
-		txSender:                   transaction.NewTxSender(rpcClient, retryInterval, maxRetry, waitReceiptTimeout),
-		proverPrivKey:              proverPrivKey,
-		proverAddress:              crypto.PubkeyToAddress(proverPrivKey.PublicKey),
-		l1SignalService:            l1SignalService,
-		l2SignalService:            l2SignalService,
-		taikoL2Address:             taikoL2Address,
-		graffiti:                   rpc.StringToBytes32(graffiti),
-		proveBlockTxGasLimit:       proveBlockTxGasLimit,
-		txReplacementTipMultiplier: txReplacementTipMultiplier,
-		proveBlockMaxTxGasTipCap:   proveBlockMaxTxGasTipCap,
-		mutex:                      new(sync.Mutex),
+		rpc:             rpcClient,
+		proofProducer:   proofProducer,
+		resultCh:        resultCh,
+		evidenceBuilder: evidence.NewBuilder(rpcClient, anchorValidator, graffiti),
+		txBuilder: transaction.NewProveBlockTxBuilder(
+			rpcClient,
+			proverPrivKey,
+			txGasLimit,
+			proveBlockMaxTxGasTipCap,
+			new(big.Int).SetUint64(txReplacementTipMultiplier),
+		),
+		txSender:        transaction.NewSender(rpcClient, retryInterval, maxRetry, waitReceiptTimeout),
+		proverAddress:   crypto.PubkeyToAddress(proverPrivKey.PublicKey),
+		l1SignalService: l1SignalService,
+		l2SignalService: l2SignalService,
+		taikoL2Address:  taikoL2Address,
+		graffiti:        rpc.StringToBytes32(graffiti),
 	}, nil
 }
 
@@ -150,6 +152,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		ParentGasUsed:      parent.GasUsed(),
 	}
 
+	// Send the generated proof.
 	if err := s.proofProducer.RequestProof(
 		ctx,
 		opts,
@@ -182,9 +185,9 @@ func (s *ProofSubmitter) SubmitProof(
 
 	metrics.ProverReceivedProofCounter.Inc(1)
 
-	evidence, err := s.evidenceAssembler.AssembleEvidence(ctx, proofWithHeader)
+	evidence, err := s.evidenceBuilder.Build(ctx, proofWithHeader)
 	if err != nil {
-		return fmt.Errorf("failed to assemble evidence: %w", err)
+		return fmt.Errorf("failed to create evidence: %w", err)
 	}
 
 	input, err := encoding.EncodeEvidence(evidence)
@@ -192,39 +195,7 @@ func (s *ProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to encode TaikoL1.proveBlock inputs: %w", err)
 	}
 
-	// Send the TaikoL1.proveBlock transaction.
-	sendTx := func(nonce *big.Int) (*types.Transaction, error) {
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		txOpts, err := getProveBlocksTxOpts(ctx, s.rpc.L1, s.rpc.L1ChainID, s.proverPrivKey)
-		if err != nil {
-			return nil, err
-		}
-
-		if s.proveBlockTxGasLimit != nil {
-			txOpts.GasLimit = *s.proveBlockTxGasLimit
-		}
-
-		if nonce != nil {
-			txOpts.Nonce = nonce
-
-			if txOpts, err = rpc.IncreaseGasTipCap(
-				ctx,
-				s.rpc,
-				txOpts,
-				s.proverAddress,
-				new(big.Int).SetUint64(s.txReplacementTipMultiplier),
-				s.proveBlockMaxTxGasTipCap,
-			); err != nil {
-				return nil, err
-			}
-		}
-
-		return s.rpc.TaikoL1.ProveBlock(txOpts, proofWithHeader.BlockID.Uint64(), input)
-	}
-
-	if err := s.txSender.Send(ctx, proofWithHeader, sendTx); err != nil {
+	if err := s.txSender.Send(ctx, proofWithHeader, s.txBuilder.Build(ctx, proofWithHeader.BlockID, input)); err != nil {
 		if errors.Is(err, transaction.ErrUnretryable) {
 			return nil
 		}
@@ -236,32 +207,6 @@ func (s *ProofSubmitter) SubmitProof(
 	metrics.ProverLatestProvenBlockIDGauge.Update(proofWithHeader.BlockID.Int64())
 
 	return nil
-}
-
-// getProveBlocksTxOpts creates a bind.TransactOpts instance using the given private key.
-// Used for creating TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
-func getProveBlocksTxOpts(
-	ctx context.Context,
-	cli *rpc.EthClient,
-	chainID *big.Int,
-	proverPrivKey *ecdsa.PrivateKey,
-) (*bind.TransactOpts, error) {
-	opts, err := bind.NewKeyedTransactorWithChainID(proverPrivKey, chainID)
-	if err != nil {
-		return nil, err
-	}
-	gasTipCap, err := cli.SuggestGasTipCap(ctx)
-	if err != nil {
-		if rpc.IsMaxPriorityFeePerGasNotFoundError(err) {
-			gasTipCap = rpc.FallbackGasTipCap
-		} else {
-			return nil, err
-		}
-	}
-
-	opts.GasTipCap = gasTipCap
-
-	return opts, nil
 }
 
 // Producer returns the inner proof producer.

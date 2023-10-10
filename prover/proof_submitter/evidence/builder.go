@@ -12,24 +12,24 @@ import (
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
-// Assembler is responsible for assembling evidence for the given L2 block proof.
-type Assembler struct {
+// Builder is responsible for building evidence for the given L2 block proof.
+type Builder struct {
 	rpc               *rpc.Client
 	anchorTxValidator *anchorTxValidator.AnchorTxValidator
 	graffiti          [32]byte
 }
 
-// NewAssembler creates a new EvidenceAssembler instance.
-func NewAssembler(cli *rpc.Client, anchorTxValidator *anchorTxValidator.AnchorTxValidator, graffiti string) *Assembler {
-	return &Assembler{
+// NewBuilder creates a new Builder instance.
+func NewBuilder(cli *rpc.Client, anchorTxValidator *anchorTxValidator.AnchorTxValidator, graffiti string) *Builder {
+	return &Builder{
 		rpc:               cli,
 		anchorTxValidator: anchorTxValidator,
 		graffiti:          rpc.StringToBytes32(graffiti),
 	}
 }
 
-// assembleEvidence assembles the evidence for the given L2 block proof.
-func (a *Assembler) AssembleEvidence(
+// Build creates the evidence for the given L2 block proof.
+func (a *Builder) Build(
 	ctx context.Context,
 	proofWithHeader *proofProducer.ProofWithHeader,
 ) (*encoding.BlockEvidence, error) {
@@ -40,7 +40,7 @@ func (a *Assembler) AssembleEvidence(
 	)
 
 	log.Info(
-		"Assemble new evidence",
+		"Create new evidence",
 		"blockID", blockID,
 		"parentHash", proofWithHeader.Header.ParentHash,
 		"hash", proofWithHeader.Header.Hash(),
