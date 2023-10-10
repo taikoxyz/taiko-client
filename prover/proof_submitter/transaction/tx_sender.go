@@ -1,8 +1,7 @@
-package submitter
+package transaction
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"math/big"
@@ -20,7 +19,7 @@ import (
 )
 
 var (
-	errUnretryable = errors.New("unretryable")
+	ErrUnretryable = errors.New("unretryable")
 )
 
 type TxAssembler func(*big.Int) (*types.Transaction, error)
@@ -151,13 +150,13 @@ func (s *TxSender) Send(
 	}, s.backOffPolicy); err != nil {
 		if s.maxRetry != nil {
 			log.Error("Failed to send TaikoL1.proveBlock transaction", "error", err, "maxRetry", *s.maxRetry)
-			return errUnretryable
+			return ErrUnretryable
 		}
 		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
 	}
 
 	if isUnretryableError {
-		return errUnretryable
+		return ErrUnretryable
 	}
 
 	return nil
@@ -172,30 +171,4 @@ func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
 
 	log.Warn("🤷 Unretryable proof submission error", "error", err, "blockID", blockID)
 	return false
-}
-
-// getProveBlocksTxOpts creates a bind.TransactOpts instance using the given private key.
-// Used for creating TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
-func getProveBlocksTxOpts(
-	ctx context.Context,
-	cli *rpc.EthClient,
-	chainID *big.Int,
-	proverPrivKey *ecdsa.PrivateKey,
-) (*bind.TransactOpts, error) {
-	opts, err := bind.NewKeyedTransactorWithChainID(proverPrivKey, chainID)
-	if err != nil {
-		return nil, err
-	}
-	gasTipCap, err := cli.SuggestGasTipCap(ctx)
-	if err != nil {
-		if rpc.IsMaxPriorityFeePerGasNotFoundError(err) {
-			gasTipCap = rpc.FallbackGasTipCap
-		} else {
-			return nil, err
-		}
-	}
-
-	opts.GasTipCap = gasTipCap
-
-	return opts, nil
 }

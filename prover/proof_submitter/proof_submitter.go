@@ -21,6 +21,7 @@ import (
 	anchorTxValidator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/evidence"
+	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
 )
 
 var _ Submitter = (*ProofSubmitter)(nil)
@@ -32,7 +33,7 @@ type ProofSubmitter struct {
 	proofProducer              proofProducer.ProofProducer
 	resultCh                   chan *proofProducer.ProofWithHeader
 	evidenceAssembler          *evidence.Assembler
-	txSender                   *TxSender
+	txSender                   *transaction.TxSender
 	proverPrivKey              *ecdsa.PrivateKey
 	proverAddress              common.Address
 	taikoL2Address             common.Address
@@ -85,7 +86,7 @@ func New(
 		proofProducer:              proofProducer,
 		resultCh:                   resultCh,
 		evidenceAssembler:          evidence.NewAssembler(rpcClient, anchorValidator, graffiti),
-		txSender:                   NewTxSender(rpcClient, retryInterval, maxRetry, waitReceiptTimeout),
+		txSender:                   transaction.NewTxSender(rpcClient, retryInterval, maxRetry, waitReceiptTimeout),
 		proverPrivKey:              proverPrivKey,
 		proverAddress:              crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		l1SignalService:            l1SignalService,
@@ -224,7 +225,7 @@ func (s *ProofSubmitter) SubmitProof(
 	}
 
 	if err := s.txSender.Send(ctx, proofWithHeader, sendTx); err != nil {
-		if errors.Is(err, errUnretryable) {
+		if errors.Is(err, transaction.ErrUnretryable) {
 			return nil
 		}
 
@@ -235,6 +236,32 @@ func (s *ProofSubmitter) SubmitProof(
 	metrics.ProverLatestProvenBlockIDGauge.Update(proofWithHeader.BlockID.Int64())
 
 	return nil
+}
+
+// getProveBlocksTxOpts creates a bind.TransactOpts instance using the given private key.
+// Used for creating TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
+func getProveBlocksTxOpts(
+	ctx context.Context,
+	cli *rpc.EthClient,
+	chainID *big.Int,
+	proverPrivKey *ecdsa.PrivateKey,
+) (*bind.TransactOpts, error) {
+	opts, err := bind.NewKeyedTransactorWithChainID(proverPrivKey, chainID)
+	if err != nil {
+		return nil, err
+	}
+	gasTipCap, err := cli.SuggestGasTipCap(ctx)
+	if err != nil {
+		if rpc.IsMaxPriorityFeePerGasNotFoundError(err) {
+			gasTipCap = rpc.FallbackGasTipCap
+		} else {
+			return nil, err
+		}
+	}
+
+	opts.GasTipCap = gasTipCap
+
+	return opts, nil
 }
 
 // Producer returns the inner proof producer.
