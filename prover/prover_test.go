@@ -182,6 +182,7 @@ func (s *ProverTestSuite) TestSubmitProofOp() {
 			Header:  &types.Header{},
 			Proof:   []byte{},
 			Tier:    encoding.TierOptimisticID,
+			Opts:    &producer.ProofRequestOptions{},
 		})
 	})
 	s.NotPanics(func() {
@@ -191,6 +192,7 @@ func (s *ProverTestSuite) TestSubmitProofOp() {
 			Header:  &types.Header{},
 			Proof:   []byte{},
 			Tier:    encoding.TierOptimisticID,
+			Opts:    &producer.ProofRequestOptions{},
 		})
 	})
 }

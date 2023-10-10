@@ -112,6 +112,7 @@ func (s *ProofSubmitterTestSuite) TestProofSubmitterSubmitProofMetadataNotFound(
 				BlockID: common.Big256,
 				Meta:    &bindings.TaikoDataBlockMetadata{},
 				Header:  &types.Header{},
+				Opts:    &proofProducer.ProofRequestOptions{},
 				Proof:   bytes.Repeat([]byte{0xff}, 100),
 			},
 		),

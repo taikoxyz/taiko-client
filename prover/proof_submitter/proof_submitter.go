@@ -3,7 +3,6 @@ package submitter
 import (
 	"context"
 	"crypto/ecdsa"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
@@ -21,6 +20,7 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	anchorTxValidator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	"github.com/taikoxyz/taiko-client/prover/proof_submitter/evidence"
 )
 
 var _ Submitter = (*ProofSubmitter)(nil)
@@ -31,16 +31,14 @@ type ProofSubmitter struct {
 	rpc                        *rpc.Client
 	proofProducer              proofProducer.ProofProducer
 	resultCh                   chan *proofProducer.ProofWithHeader
-	anchorTxValidator          *anchorTxValidator.AnchorTxValidator
+	evidenceAssembler          *evidence.Assembler
+	txSender                   *TxSender
 	proverPrivKey              *ecdsa.PrivateKey
 	proverAddress              common.Address
 	taikoL2Address             common.Address
 	l1SignalService            common.Address
 	l2SignalService            common.Address
 	graffiti                   [32]byte
-	submissionMaxRetry         uint64
-	retryInterval              time.Duration
-	waitReceiptTimeout         time.Duration
 	proveBlockTxGasLimit       *uint64
 	txReplacementTipMultiplier uint64
 	proveBlockMaxTxGasTipCap   *big.Int
@@ -77,20 +75,23 @@ func New(
 		return nil, err
 	}
 
+	maxRetry := &submissionMaxRetry
+	if proofProducer.Tier() == encoding.TierGuardianID {
+		maxRetry = nil
+	}
+
 	return &ProofSubmitter{
 		rpc:                        rpcClient,
 		proofProducer:              proofProducer,
 		resultCh:                   resultCh,
-		anchorTxValidator:          anchorValidator,
+		evidenceAssembler:          evidence.NewAssembler(rpcClient, anchorValidator, graffiti),
+		txSender:                   NewTxSender(rpcClient, retryInterval, maxRetry, waitReceiptTimeout),
 		proverPrivKey:              proverPrivKey,
 		proverAddress:              crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		l1SignalService:            l1SignalService,
 		l2SignalService:            l2SignalService,
 		taikoL2Address:             taikoL2Address,
 		graffiti:                   rpc.StringToBytes32(graffiti),
-		submissionMaxRetry:         submissionMaxRetry,
-		retryInterval:              retryInterval,
-		waitReceiptTimeout:         waitReceiptTimeout,
 		proveBlockTxGasLimit:       proveBlockTxGasLimit,
 		txReplacementTipMultiplier: txReplacementTipMultiplier,
 		proveBlockMaxTxGasTipCap:   proveBlockMaxTxGasTipCap,
@@ -175,63 +176,14 @@ func (s *ProofSubmitter) SubmitProof(
 		"proposer", proofWithHeader.Meta.Coinbase,
 		"hash", proofWithHeader.Header.Hash(),
 		"proof", common.Bytes2Hex(proofWithHeader.Proof),
-		"tier", s.proofProducer.Tier(),
-		"graffiti", common.Bytes2Hex(s.graffiti[:]),
+		"tier", proofWithHeader.Tier,
 	)
 
 	metrics.ProverReceivedProofCounter.Inc(1)
 
-	var (
-		blockID = proofWithHeader.BlockID
-		header  = proofWithHeader.Header
-		proof   = proofWithHeader.Proof
-	)
-
-	// Get the corresponding L2 block.
-	block, err := s.rpc.L2.BlockByHash(ctx, header.Hash())
+	evidence, err := s.evidenceAssembler.AssembleEvidence(ctx, proofWithHeader)
 	if err != nil {
-		return fmt.Errorf("failed to get L2 block with given hash %s: %w", header.Hash(), err)
-	}
-
-	log.Debug(
-		"L2 block to prove",
-		"blockID", blockID,
-		"hash", block.Hash(),
-		"root", header.Root.String(),
-		"transactions", len(block.Transactions()),
-	)
-
-	if block.Transactions().Len() == 0 {
-		return fmt.Errorf("invalid block without anchor transaction, blockID %s", blockID)
-	}
-
-	// Validate TaikoL2.anchor transaction inside the L2 block.
-	anchorTx := block.Transactions()[0]
-	if err := s.anchorTxValidator.ValidateAnchorTx(ctx, anchorTx); err != nil {
-		return fmt.Errorf("invalid anchor transaction: %w", err)
-	}
-
-	// Get and validate this anchor transaction's receipt.
-	if _, err = s.anchorTxValidator.GetAndValidateAnchorTxReceipt(ctx, anchorTx); err != nil {
-		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
-	}
-
-	evidence := &encoding.BlockEvidence{
-		MetaHash:   proofWithHeader.Opts.MetaHash,
-		ParentHash: proofWithHeader.Opts.ParentHash,
-		BlockHash:  proofWithHeader.Opts.BlockHash,
-		SignalRoot: proofWithHeader.Opts.SignalRoot,
-		Graffiti:   s.graffiti,
-		Tier:       s.proofProducer.Tier(),
-		Proof:      proof,
-	}
-
-	if s.proofProducer.Tier() == encoding.TierPseZkevmID {
-		circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
-		if err != nil {
-			return err
-		}
-		evidence.Proof = append(uint16ToBytes(circuitsIdx), evidence.Proof...)
+		return fmt.Errorf("failed to assemble evidence: %w", err)
 	}
 
 	input, err := encoding.EncodeEvidence(evidence)
@@ -268,26 +220,10 @@ func (s *ProofSubmitter) SubmitProof(
 			}
 		}
 
-		return s.rpc.TaikoL1.ProveBlock(txOpts, blockID.Uint64(), input)
+		return s.rpc.TaikoL1.ProveBlock(txOpts, proofWithHeader.BlockID.Uint64(), input)
 	}
 
-	maxRetry := &s.submissionMaxRetry
-	if s.proofProducer.Tier() == encoding.TierGuardianID {
-		maxRetry = nil
-	}
-
-	if err := sendTxWithBackoff(
-		ctx,
-		s.rpc,
-		blockID,
-		proofWithHeader.Opts.EventL1Hash,
-		block.Header().Time,
-		proofWithHeader.Meta,
-		sendTx,
-		s.retryInterval,
-		maxRetry,
-		s.waitReceiptTimeout,
-	); err != nil {
+	if err := s.txSender.Send(ctx, proofWithHeader, sendTx); err != nil {
 		if errors.Is(err, errUnretryable) {
 			return nil
 		}
@@ -309,11 +245,4 @@ func (s *ProofSubmitter) Producer() proofProducer.ProofProducer {
 // Tier returns the proof tier of the current proof submitter.
 func (s *ProofSubmitter) Tier() uint16 {
 	return s.proofProducer.Tier()
-}
-
-// uint16ToBytes converts an uint16 to bytes.
-func uint16ToBytes(i uint16) []byte {
-	b := make([]byte, 2)
-	binary.BigEndian.PutUint16(b, i)
-	return b
 }

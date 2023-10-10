@@ -29,6 +29,7 @@ func (o *DummyProofProducer) RequestProof(
 		Proof:   bytes.Repeat([]byte{0xff}, 100),
 		Degree:  CircuitsIdx,
 		Opts:    opts,
+		Tier:    tier,
 	}
 
 	return nil
