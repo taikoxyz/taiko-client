@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
@@ -26,6 +27,7 @@ type ClientTestSuite struct {
 	TestAddrPrivKey     *ecdsa.PrivateKey
 	TestAddr            common.Address
 	ProverEndpoints     []*url.URL
+	AddressManager      *bindings.AddressManager
 	proverServer        *server.ProverServer
 }
 
@@ -80,7 +82,29 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 
 	if tokenBalance.Cmp(common.Big0) == 0 {
-		opts, err := bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
+		// Do not verify zk proofs in tests.
+		addressManager, err := bindings.NewAddressManager(
+			common.HexToAddress(os.Getenv("ADDRESS_MANAGER_CONTRACT_ADDRESS")),
+			rpcCli.L1,
+		)
+		s.Nil(err)
+
+		chainID, err := rpcCli.L1.ChainID(context.Background())
+		s.Nil(err)
+
+		ownerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
+		s.Nil(err)
+
+		opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1ChainID)
+		s.Nil(err)
+
+		tx, err := addressManager.SetAddress(opts, chainID, rpc.StringToBytes32("tier_pse_zkevm"), common.Address{})
+		s.Nil(err)
+		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
+		s.Nil(err)
+
+		// Deposit taiko tokens for provers.
+		opts, err = bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
 		s.Nil(err)
 
 		premintAmount, ok := new(big.Int).SetString(os.Getenv("PREMINT_TOKEN_AMOUNT"), 10)
@@ -90,7 +114,7 @@ func (s *ClientTestSuite) SetupTest() {
 		_, err = rpcCli.TaikoToken.Approve(opts, common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")), premintAmount)
 		s.Nil(err)
 
-		tx, err := rpcCli.TaikoL1.DepositTaikoToken(opts, premintAmount)
+		tx, err = rpcCli.TaikoL1.DepositTaikoToken(opts, premintAmount)
 		s.Nil(err)
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)

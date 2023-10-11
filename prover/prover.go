@@ -465,28 +465,54 @@ func (p *Prover) onBlockProposed(
 			provingWindowExpired   = now > provingWindowExpiresAt
 			timeToExpire           = time.Duration(provingWindowExpiresAt-now) * time.Second
 		)
-		if event.AssignedProver != p.proverAddress && !provingWindowExpired {
+
+		if provingWindowExpired {
+			// If the proving window is expired, we need to check if the current prover is the assigned prover
+			// at first, if yes, we should skip proving this block, if no, then we check if the current prover
+			// wants to prove unassigned blocks.
 			log.Info(
-				"Proposed block is not provable",
+				"Proposed block's proving window has expired",
 				"blockID", event.BlockId,
 				"prover", event.AssignedProver,
 				"expiresAt", provingWindowExpiresAt,
-				"timeToExpire", timeToExpire,
 			)
-
-			if p.cfg.ProveUnassignedBlocks {
-				log.Info("Add proposed block to wait for proof window expiration", "blockID", event.BlockId)
-				time.AfterFunc(timeToExpire, func() { p.proofWindowExpiredCh <- event })
+			if event.AssignedProver == p.proverAddress {
+				log.Warn(
+					"Assigned prover is the current prover, but the proving window has expired, skip proving",
+					"blockID", event.BlockId,
+					"prover", event.AssignedProver,
+					"expiresAt", provingWindowExpiresAt,
+				)
+				return nil
 			}
+			if !p.cfg.ProveUnassignedBlocks {
+				log.Info(
+					"Skip proving expired blocks",
+					"blockID", event.BlockId,
+					"prover", event.AssignedProver,
+					"expiresAt", provingWindowExpiresAt,
+				)
+				return nil
+			}
+		} else {
+			// If the proving window is not expired, we need to check if the current prover is the assigned prover,
+			// if no and the current prover wants to prove unassigned blocks, then we should wait for its expiration.
+			if event.AssignedProver != p.proverAddress {
+				log.Info(
+					"Proposed block is not provable",
+					"blockID", event.BlockId,
+					"prover", event.AssignedProver,
+					"expiresAt", provingWindowExpiresAt,
+					"timeToExpire", timeToExpire,
+				)
 
-			return nil
-		}
+				if p.cfg.ProveUnassignedBlocks {
+					log.Info("Add proposed block to wait for proof window expiration", "blockID", event.BlockId)
+					time.AfterFunc(timeToExpire, func() { p.proofWindowExpiredCh <- event })
+				}
 
-		// If set not to prove unassigned blocks, this block is still not provable
-		// by us even though its open proving.
-		if provingWindowExpired && event.AssignedProver == p.proverAddress && !p.cfg.ProveUnassignedBlocks {
-			log.Info("Skip proving expired blocks", "blockID", event.BlockId)
-			return nil
+				return nil
+			}
 		}
 
 		log.Info(
@@ -512,8 +538,6 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
-	p.proposeConcurrencyGuard <- struct{}{}
-
 	newL1Current, err := p.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash)
 	if err != nil {
 		return err
@@ -523,7 +547,21 @@ func (p *Prover) onBlockProposed(
 
 	go func() {
 		if err := backoff.Retry(
-			func() error { return handleBlockProposedEvent() },
+			func() error {
+				p.proposeConcurrencyGuard <- struct{}{}
+
+				if err := handleBlockProposedEvent(); err != nil {
+					log.Error(
+						"Failed to handle BlockProposed event",
+						"error", err,
+						"blockID", event.BlockId,
+						"minTier", event.MinTier,
+						"maxRetrys", p.cfg.BackOffMaxRetrys,
+					)
+					return err
+				}
+				return nil
+			},
 			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
 		); err != nil {
 			log.Error("Handle new BlockProposed event error", "error", err)
