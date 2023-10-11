@@ -40,7 +40,7 @@ type Config struct {
 	SgxTierFee                          *big.Int
 	PseZkevmTierFee                     *big.Int
 	TierFeePriceBump                    *big.Int
-	MaxTierFeePriceBumpIterations       uint64
+	MaxTierFeePriceBumps                uint64
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -141,6 +141,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		SgxTierFee:                          new(big.Int).SetUint64(c.Uint64(flags.SgxTierFee.Name)),
 		PseZkevmTierFee:                     new(big.Int).SetUint64(c.Uint64(flags.PseZkevmTierFee.Name)),
 		TierFeePriceBump:                    new(big.Int).SetUint64(c.Uint64(flags.TierFeePriceBump.Name)),
-		MaxTierFeePriceBumpIterations:       c.Uint64(flags.MaxTierFeePriceBumpIterations.Name),
+		MaxTierFeePriceBumps:                c.Uint64(flags.MaxTierFeePriceBumps.Name),
 	}, nil
 }

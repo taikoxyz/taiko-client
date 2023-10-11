@@ -141,7 +141,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		p.tierFees,
 		cfg.TierFeePriceBump,
 		cfg.ProverEndpoints,
-		cfg.MaxTierFeePriceBumpIterations,
+		cfg.MaxTierFeePriceBumps,
 		proverAssignmentTimeout,
 		requestProverServerTimeout,
 	); err != nil {

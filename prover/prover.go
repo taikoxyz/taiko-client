@@ -648,7 +648,6 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 	if err != nil {
 		return err
 	}
-
 	if isValidProof {
 		return nil
 	}

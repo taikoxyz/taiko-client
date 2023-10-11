@@ -95,22 +95,22 @@ func (s *ProverTestSuite) SetupTest() {
 
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
-		L1Endpoint:                    os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                    os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:                common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:             common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L1ProposerPrivKey:             l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:       common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:               &proposeInterval,
-		MaxProposedTxListsPerEpoch:    1,
-		WaitReceiptTimeout:            10 * time.Second,
-		ProverEndpoints:               []*url.URL{proverServerUrl},
-		OptimisticTierFee:             common.Big256,
-		SgxTierFee:                    common.Big256,
-		PseZkevmTierFee:               common.Big256,
-		MaxTierFeePriceBumpIterations: 3,
-		TierFeePriceBump:              common.Big2,
+		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		L1ProposerPrivKey:          l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		ProposeInterval:            &proposeInterval,
+		MaxProposedTxListsPerEpoch: 1,
+		WaitReceiptTimeout:         10 * time.Second,
+		ProverEndpoints:            []*url.URL{proverServerUrl},
+		OptimisticTierFee:          common.Big256,
+		SgxTierFee:                 common.Big256,
+		PseZkevmTierFee:            common.Big256,
+		MaxTierFeePriceBumps:       3,
+		TierFeePriceBump:           common.Big2,
 	})))
 
 	s.proposer = prop

@@ -54,7 +54,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(uint64(tierFee), c.SgxTierFee.Uint64())
 		s.Equal(uint64(tierFee), c.PseZkevmTierFee.Uint64())
 		s.Equal(uint64(15), c.TierFeePriceBump.Uint64())
-		s.Equal(uint64(5), c.MaxTierFeePriceBumpIterations)
+		s.Equal(uint64(5), c.MaxTierFeePriceBumps)
 
 		for i, e := range strings.Split(proverEndpoints, ",") {
 			s.Equal(c.ProverEndpoints[i].String(), e)
@@ -85,7 +85,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.SgxTierFee.Name, fmt.Sprint(tierFee),
 		"--" + flags.PseZkevmTierFee.Name, fmt.Sprint(tierFee),
 		"--" + flags.TierFeePriceBump.Name, "15",
-		"--" + flags.MaxTierFeePriceBumpIterations.Name, "5",
+		"--" + flags.MaxTierFeePriceBumps.Name, "5",
 	}))
 }
 
@@ -175,7 +175,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasTipCap.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasLimit.Name},
 		&cli.Uint64Flag{Name: flags.TierFeePriceBump.Name},
-		&cli.Uint64Flag{Name: flags.MaxTierFeePriceBumpIterations.Name},
+		&cli.Uint64Flag{Name: flags.MaxTierFeePriceBumps.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

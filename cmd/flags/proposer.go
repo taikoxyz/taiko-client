@@ -1,6 +1,7 @@
 package flags
 
 import (
+	"github.com/taikoxyz/taiko-client/version"
 	"github.com/urfave/cli/v2"
 )
 
@@ -28,12 +29,7 @@ var (
 
 // Optional flags used by proposer.
 var (
-	ExtraData = &cli.StringFlag{
-		Name:     "extraData",
-		Usage:    "Block extra data set by the proposer",
-		Value:    "",
-		Category: proposerCategory,
-	}
+	// Tier fee related.
 	OptimisticTierFee = &cli.Uint64Flag{
 		Name:     "tierFee.optimistic",
 		Usage:    "Initial tier fee (in wei) paid to prover to generate an optimistic proofs",
@@ -55,17 +51,31 @@ var (
 		Value:    10,
 		Category: proposerCategory,
 	}
-	MaxTierFeePriceBumpIterations = &cli.Uint64Flag{
-		Name:     "tierFee.maxPriceBumpIterations",
+	MaxTierFeePriceBumps = &cli.Uint64Flag{
+		Name:     "tierFee.maxPriceBumps",
 		Usage:    "If nobody accepts block at initial tier fee, how many iterations to increase tier fee before giving up",
 		Category: proposerCategory,
 		Value:    3,
 	}
+	// Proposing epoch related.
 	ProposeInterval = &cli.DurationFlag{
-		Name:     "proposeInterval",
+		Name:     "epoch.interval",
 		Usage:    "Time interval to propose L2 pending transactions",
 		Category: proposerCategory,
 	}
+	ProposeEmptyBlocksInterval = &cli.DurationFlag{
+		Name:     "epoch.emptyBlockInterval",
+		Usage:    "Time interval to propose empty blocks",
+		Category: proposerCategory,
+	}
+	// Proposing metadata realted.
+	ExtraData = &cli.StringFlag{
+		Name:     "extraData",
+		Usage:    "Block extra data set by the proposer (default = client version)",
+		Value:    version.VersionWithCommit(),
+		Category: proposerCategory,
+	}
+	// Transactions pool related.
 	TxPoolLocals = &cli.StringSliceFlag{
 		Name:     "txpool.locals",
 		Usage:    "Comma separated accounts to treat as locals (priority inclusion)",
@@ -77,30 +87,26 @@ var (
 		Value:    false,
 		Category: proposerCategory,
 	}
-	ProposeEmptyBlocksInterval = &cli.DurationFlag{
-		Name:     "proposeEmptyBlockInterval",
-		Usage:    "Time interval to propose empty blocks",
-		Category: proposerCategory,
-	}
 	MaxProposedTxListsPerEpoch = &cli.Uint64Flag{
-		Name:     "maxProposedTxListsPerEpoch",
+		Name:     "txpool.maxTxListsPerEpoch",
 		Usage:    "Maximum number of transaction lists which will be proposed inside one proposing epoch",
 		Value:    1,
 		Category: proposerCategory,
 	}
+	// Transaction related.
 	ProposeBlockTxGasLimit = &cli.Uint64Flag{
-		Name:     "proposeBlockTxGasLimit",
+		Name:     "tx.gasLimit",
 		Usage:    "Gas limit will be used for TaikoL1.proposeBlock transactions",
 		Category: proposerCategory,
 	}
 	ProposeBlockTxReplacementMultiplier = &cli.Uint64Flag{
-		Name:     "proposeBlockTxReplacementMultiplier",
+		Name:     "tx.replacementMultiplier",
 		Value:    2,
 		Usage:    "Gas tip multiplier when replacing a TaikoL1.proposeBlock transaction with same nonce",
 		Category: proposerCategory,
 	}
 	ProposeBlockTxGasTipCap = &cli.Uint64Flag{
-		Name:     "proposeBlockTxGasTipCap",
+		Name:     "tx.gasTipCap",
 		Usage:    "Gas tip cap (in wei) for a TaikoL1.proposeBlock transaction when doing the transaction replacement",
 		Category: proposerCategory,
 	}
@@ -126,5 +132,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	SgxTierFee,
 	PseZkevmTierFee,
 	TierFeePriceBump,
-	MaxTierFeePriceBumpIterations,
+	MaxTierFeePriceBumps,
 })
