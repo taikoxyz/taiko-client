@@ -218,7 +218,11 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	}))
 	s.p.cfg.ContestControversialProofs = true
 	s.p.cfg.GuardianProver = true
+
+	// Submit a wrong proof at first.
 	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
+	header, err := s.p.rpc.L2.HeaderByNumber(context.Background(), e.BlockId)
+	s.Nil(err)
 
 	sub, err := s.p.rpc.TaikoL1.WatchTransitionProved(nil, sink, nil)
 	s.Nil(err)
@@ -227,23 +231,34 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 		close(sink)
 	}()
 
-	header, err := s.p.rpc.L2.HeaderByNumber(context.Background(), e.BlockId)
-	s.Nil(err)
-	s.Greater(header.Number.Uint64(), uint64(0))
-	s.Nil(s.p.onTransitionProved(context.Background(), &bindings.TaikoL1ClientTransitionProved{
-		BlockId:    e.BlockId,
-		Tier:       encoding.TierPseZkevmID,
-		ParentHash: header.ParentHash,
-		BlockHash:  testutils.RandomHash(),
-		SignalRoot: testutils.RandomHash(),
-	}))
-	s.Nil(s.p.selectSubmitter(encoding.TierGuardianID).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+	s.Nil(s.p.proveOp())
+	proofWithHeader := <-s.p.proofGenerationCh
+	proofWithHeader.Opts.BlockHash = testutils.RandomHash()
+	s.Nil(s.p.selectSubmitter(e.MinTier).SubmitProof(context.Background(), proofWithHeader))
 
 	event := <-sink
 	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
-	s.Equal(header.Hash(), common.BytesToHash(event.BlockHash[:]))
+	s.Equal(common.BytesToHash(proofWithHeader.Opts.BlockHash[:]), common.BytesToHash(event.BlockHash[:]))
+	s.NotEqual(header.Hash(), common.BytesToHash(event.BlockHash[:]))
 	s.Equal(header.ParentHash, common.BytesToHash(event.ParentHash[:]))
-	s.Equal(encoding.TierGuardianID, event.Tier)
+
+	// Contest the transition.
+	contestedSink := make(chan *bindings.TaikoL1ClientTransitionContested)
+
+	contestedSub, err := s.p.rpc.TaikoL1.WatchTransitionContested(nil, contestedSink, nil)
+	s.Nil(err)
+	defer func() {
+		contestedSub.Unsubscribe()
+		close(contestedSink)
+	}()
+
+	s.Greater(header.Number.Uint64(), uint64(0))
+	s.Nil(s.p.onTransitionProved(context.Background(), event))
+
+	contestedEvent := <-contestedSink
+	s.Equal(header.Number.Uint64(), contestedEvent.BlockId.Uint64())
+	s.Equal(common.BytesToHash(proofWithHeader.Opts.BlockHash[:]), common.BytesToHash(contestedEvent.BlockHash[:]))
+	s.Equal(header.ParentHash, common.BytesToHash(contestedEvent.ParentHash[:]))
 }
 
 func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {

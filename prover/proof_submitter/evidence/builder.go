@@ -5,7 +5,11 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	anchorTxValidator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
@@ -28,8 +32,8 @@ func NewBuilder(cli *rpc.Client, anchorTxValidator *anchorTxValidator.AnchorTxVa
 	}
 }
 
-// Build creates the evidence for the given L2 block proof.
-func (a *Builder) Build(
+// ForSubmission creates the evidence for the given L2 block proof.
+func (b *Builder) ForSubmission(
 	ctx context.Context,
 	proofWithHeader *proofProducer.ProofWithHeader,
 ) (*encoding.BlockEvidence, error) {
@@ -49,7 +53,7 @@ func (a *Builder) Build(
 	)
 
 	// Get the corresponding L2 block.
-	block, err := a.rpc.L2.BlockByHash(ctx, header.Hash())
+	block, err := b.rpc.L2.BlockByHash(ctx, header.Hash())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get L2 block with given hash %s: %w", header.Hash(), err)
 	}
@@ -60,12 +64,12 @@ func (a *Builder) Build(
 
 	// Validate TaikoL2.anchor transaction inside the L2 block.
 	anchorTx := block.Transactions()[0]
-	if err := a.anchorTxValidator.ValidateAnchorTx(ctx, anchorTx); err != nil {
+	if err := b.anchorTxValidator.ValidateAnchorTx(ctx, anchorTx); err != nil {
 		return nil, fmt.Errorf("invalid anchor transaction: %w", err)
 	}
 
 	// Get and validate this anchor transaction's receipt.
-	if _, err = a.anchorTxValidator.GetAndValidateAnchorTxReceipt(ctx, anchorTx); err != nil {
+	if _, err = b.anchorTxValidator.GetAndValidateAnchorTxReceipt(ctx, anchorTx); err != nil {
 		return nil, fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
@@ -74,7 +78,7 @@ func (a *Builder) Build(
 		ParentHash: proofWithHeader.Opts.ParentHash,
 		BlockHash:  proofWithHeader.Opts.BlockHash,
 		SignalRoot: proofWithHeader.Opts.SignalRoot,
-		Graffiti:   a.graffiti,
+		Graffiti:   b.graffiti,
 		Tier:       proofWithHeader.Tier,
 		Proof:      proof,
 	}
@@ -88,6 +92,32 @@ func (a *Builder) Build(
 	}
 
 	return evidence, nil
+}
+
+// ForContest creates the evidence for contesting a L2 transition.
+func (b *Builder) ForContest(
+	ctx context.Context,
+	header *types.Header,
+	l2SignalService common.Address,
+	event *bindings.TaikoL1ClientTransitionProved,
+) (*encoding.BlockEvidence, error) {
+	signalRoot, err := b.rpc.GetStorageRoot(ctx, b.rpc.L2GethClient, l2SignalService, event.BlockId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get L2 signal service storage root: %w", err)
+	}
+	blockInfo, err := b.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId.Uint64())
+	if err != nil {
+		return nil, err
+	}
+
+	return &encoding.BlockEvidence{
+		MetaHash:   blockInfo.MetaHash,
+		ParentHash: event.ParentHash,
+		BlockHash:  header.Hash(),
+		SignalRoot: signalRoot,
+		Tier:       event.Tier,
+		Proof:      []byte{},
+	}, nil
 }
 
 // uint16ToBytes converts an uint16 to bytes.

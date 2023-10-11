@@ -14,6 +14,7 @@ import (
 type GuardianProofProducer struct{ *DummyProofProducer }
 
 // RequestProof implements the ProofProducer interface.
+// TODO: support returning `keccak256("RETURN_LIVENESS_BOND")` as proof.
 func (g *GuardianProofProducer) RequestProof(
 	ctx context.Context,
 	opts *ProofRequestOptions,

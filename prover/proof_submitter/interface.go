@@ -13,3 +13,11 @@ type Submitter interface {
 	Producer() proofProducer.ProofProducer
 	Tier() uint16
 }
+
+type Contester interface {
+	SubmitContest(
+		ctx context.Context,
+		blockProposedEvent *bindings.TaikoL1ClientBlockProposed,
+		transitionProvedEvent *bindings.TaikoL1ClientTransitionProved,
+	) error
+}

@@ -59,16 +59,19 @@ type Prover struct {
 
 	// Proof submitters
 	proofSubmitters []proofSubmitter.Submitter
+	proofContester  proofSubmitter.Contester
 
 	// Subscriptions
-	blockProposedCh      chan *bindings.TaikoL1ClientBlockProposed
-	blockProposedSub     event.Subscription
-	transitionProvedCh   chan *bindings.TaikoL1ClientTransitionProved
-	transitionProvedSub  event.Subscription
-	blockVerifiedCh      chan *bindings.TaikoL1ClientBlockVerified
-	blockVerifiedSub     event.Subscription
-	proofWindowExpiredCh chan *bindings.TaikoL1ClientBlockProposed
-	proveNotify          chan struct{}
+	blockProposedCh        chan *bindings.TaikoL1ClientBlockProposed
+	blockProposedSub       event.Subscription
+	transitionProvedCh     chan *bindings.TaikoL1ClientTransitionProved
+	transitionProvedSub    event.Subscription
+	transitionContestedCh  chan *bindings.TaikoL1ClientTransitionContested
+	transitionContestedSub event.Subscription
+	blockVerifiedCh        chan *bindings.TaikoL1ClientBlockVerified
+	blockVerifiedSub       event.Subscription
+	proofWindowExpiredCh   chan *bindings.TaikoL1ClientBlockProposed
+	proveNotify            chan struct{}
 
 	// Proof related
 	proofGenerationCh chan *proofProducer.ProofWithHeader
@@ -129,6 +132,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.blockProposedCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.blockVerifiedCh = make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	p.transitionProvedCh = make(chan *bindings.TaikoL1ClientTransitionProved, chBufferSize)
+	p.transitionContestedCh = make(chan *bindings.TaikoL1ClientTransitionContested, chBufferSize)
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proofWindowExpiredCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
@@ -194,6 +198,22 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		}
 
 		p.proofSubmitters = append(p.proofSubmitters, submitter)
+	}
+
+	// Proof contester
+	p.proofContester, err = proofSubmitter.NewProofContester(
+		p.rpc,
+		p.cfg.L1ProverPrivKey,
+		p.cfg.ProveBlockGasLimit,
+		p.cfg.ProveBlockTxReplacementMultiplier,
+		p.cfg.ProveBlockMaxTxGasTipCap,
+		p.cfg.ProofSubmissionMaxRetry,
+		p.cfg.BackOffRetryInterval,
+		p.cfg.WaitReceiptTimeout,
+		p.cfg.Graffiti,
+	)
+	if err != nil {
+		return err
 	}
 
 	// Prover server
@@ -275,6 +295,9 @@ func (p *Prover) eventLoop() {
 			if err := p.onTransitionProved(p.ctx, e); err != nil {
 				log.Error("Handle TransitionProved event error", "error", err)
 			}
+		case e := <-p.transitionContestedCh:
+			// TODO: add a listener.
+			log.Info("Transaction contested", "event", e)
 		case e := <-p.proofWindowExpiredCh:
 			if err := p.onProvingWindowExpired(p.ctx, e); err != nil {
 				log.Error("Handle provingWindow expired event error", "error", err)
@@ -426,7 +449,6 @@ func (p *Prover) onBlockProposed(
 		if err != nil {
 			return fmt.Errorf("failed to check if the current L2 block is verified: %w", err)
 		}
-
 		if isVerified {
 			log.Info("📋 Block has been verified", "blockID", event.BlockId)
 			return nil
@@ -667,7 +689,7 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 		"signalRoot", common.Bytes2Hex(event.SignalRoot[:]),
 	)
 
-	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(l1Height+1), true)
+	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(l1Height+1), event)
 }
 
 // Name returns the application name.
@@ -740,6 +762,7 @@ func (p *Prover) initSubscription() {
 	p.blockProposedSub = rpc.SubscribeBlockProposed(p.rpc.TaikoL1, p.blockProposedCh)
 	p.blockVerifiedSub = rpc.SubscribeBlockVerified(p.rpc.TaikoL1, p.blockVerifiedCh)
 	p.transitionProvedSub = rpc.SubscribeTransitionProved(p.rpc.TaikoL1, p.transitionProvedCh)
+	p.transitionContestedSub = rpc.SubscribeTransitionContested(p.rpc.TaikoL1, p.transitionContestedCh)
 }
 
 // closeSubscription closes all subscriptions.
@@ -747,6 +770,7 @@ func (p *Prover) closeSubscription() {
 	p.blockVerifiedSub.Unsubscribe()
 	p.blockProposedSub.Unsubscribe()
 	p.transitionProvedSub.Unsubscribe()
+	p.transitionContestedSub.Unsubscribe()
 }
 
 // isValidProof checks if the given proof is a valid one, comparing to current L2 node canonical chain.
@@ -785,7 +809,12 @@ func (p *Prover) isValidProof(ctx context.Context, event *bindings.TaikoL1Client
 }
 
 // requestProofByBlockID performs a proving operation for the given block.
-func (p *Prover) requestProofByBlockID(blockID *big.Int, l1Height *big.Int, contestMode bool) error {
+func (p *Prover) requestProofByBlockID(
+	blockID *big.Int,
+	l1Height *big.Int,
+	// If this event is not nil, then the prover will try contesting the transition.
+	transitionProvedEvent *bindings.TaikoL1ClientTransitionProved,
+) error {
 	// NOTE: since this callback function will only be called after a L2 block's proving window is expired,
 	// or a wrong proof's submission, so we won't check if L1 chain has been reorged here.
 	onBlockProposed := func(
@@ -813,19 +842,12 @@ func (p *Prover) requestProofByBlockID(blockID *big.Int, l1Height *big.Int, cont
 			return err
 		}
 
-		// If the current prover wants to contest a wrong proof, we will try
-		// to select a higher tier proof submitter.
-		var minTier = event.MinTier
-		if contestMode {
-			if p.cfg.GuardianProver {
-				minTier = encoding.TierGuardianID
-			} else {
-				minTier += 1
-			}
+		if transitionProvedEvent != nil {
+			return p.proofContester.SubmitContest(ctx, event, transitionProvedEvent)
 		}
 
 		// If there is no proof submitter selected, skip proving it.
-		if proofSubmitter := p.selectSubmitter(minTier); proofSubmitter != nil {
+		if proofSubmitter := p.selectSubmitter(event.MinTier); proofSubmitter != nil {
 			return proofSubmitter.RequestProof(ctx, event)
 		}
 
@@ -905,7 +927,7 @@ func (p *Prover) onProvingWindowExpired(ctx context.Context, e *bindings.TaikoL1
 		return nil
 	}
 
-	return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(e.Raw.BlockNumber), false)
+	return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(e.Raw.BlockNumber), nil)
 }
 
 // getProvingWindow returns the provingWindow of the given proposed block.

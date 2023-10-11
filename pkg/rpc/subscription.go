@@ -99,6 +99,24 @@ func SubscribeTransitionProved(
 	})
 }
 
+// SubscribeTransitionContested subscribes the protocol's TransitionContested events.
+func SubscribeTransitionContested(
+	taikoL1 *bindings.TaikoL1Client,
+	ch chan *bindings.TaikoL1ClientTransitionContested,
+) event.Subscription {
+	return SubscribeEvent("TransitionContested", func(ctx context.Context) (event.Subscription, error) {
+		sub, err := taikoL1.WatchTransitionContested(nil, ch, nil)
+		if err != nil {
+			log.Error("Create TaikoL1.TransitionContested subscription error", "error", err)
+			return nil, err
+		}
+
+		defer sub.Unsubscribe()
+
+		return waitSubErr(ctx, sub)
+	})
+}
+
 // SubscribeChainHead subscribes the new chain heads.
 func SubscribeChainHead(
 	client *EthClient,

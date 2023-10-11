@@ -185,7 +185,7 @@ func (s *ProofSubmitter) SubmitProof(
 
 	metrics.ProverReceivedProofCounter.Inc(1)
 
-	evidence, err := s.evidenceBuilder.Build(ctx, proofWithHeader)
+	evidence, err := s.evidenceBuilder.ForSubmission(ctx, proofWithHeader)
 	if err != nil {
 		return fmt.Errorf("failed to create evidence: %w", err)
 	}
