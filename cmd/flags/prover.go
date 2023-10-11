@@ -130,12 +130,6 @@ var (
 		Value:    1 * time.Hour,
 		Category: proverCategory,
 	}
-	TempCapacityExpiresAt = &cli.DurationFlag{
-		Name:     "prover.tempCapacityExpiresAt",
-		Usage:    "time in seconds temporary capacity lives for (format: 36s)",
-		Value:    36 * time.Second,
-		Category: proverCategory,
-	}
 	// Special flags for testing.
 	Dummy = &cli.BoolFlag{
 		Name:     "dummy",
@@ -173,5 +167,4 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProverCapacity,
 	MaxExpiry,
 	TaikoTokenAddress,
-	TempCapacityExpiresAt,
 })

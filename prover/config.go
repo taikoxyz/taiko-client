@@ -43,7 +43,6 @@ type Config struct {
 	ProveBlockMaxTxGasTipCap          *big.Int
 	HTTPServerPort                    uint64
 	Capacity                          uint64
-	TempCapacityExpiresAt             time.Duration
 	MinOptimisticTierFee              *big.Int
 	MinSgxTierFee                     *big.Int
 	MinPseZkevmTierFee                *big.Int
@@ -128,7 +127,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		WaitReceiptTimeout:                c.Duration(flags.WaitReceiptTimeout.Name),
 		ProveBlockGasLimit:                proveBlockTxGasLimit,
 		Capacity:                          c.Uint64(flags.ProverCapacity.Name),
-		TempCapacityExpiresAt:             c.Duration(flags.TempCapacityExpiresAt.Name),
 		ProveBlockTxReplacementMultiplier: proveBlockTxReplacementMultiplier,
 		ProveBlockMaxTxGasTipCap:          proveBlockMaxTxGasTipCap,
 		HTTPServerPort:                    c.Uint64(flags.ProverHTTPServerPort.Name),

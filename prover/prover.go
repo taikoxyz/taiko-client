@@ -330,7 +330,7 @@ func (p *Prover) onBlockProposed(
 	event *bindings.TaikoL1ClientBlockProposed,
 	end eventIterator.EndBlockProposedEventIterFunc,
 ) error {
-	// If there is newly generated proofs, we need to submit them as soon as possible.
+	// If there are newly generated proofs, we need to submit them as soon as possible.
 	if len(p.proofGenerationCh) > 0 {
 		log.Info("onBlockProposed early return", "proofGenerationChannelLength", len(p.proofGenerationCh))
 
@@ -525,10 +525,9 @@ func (p *Prover) onBlockProposed(
 
 		metrics.ProverProofsAssigned.Inc(1)
 
-		if !p.cfg.GuardianProver {
-			if _, ok := p.capacityManager.TakeOneCapacity(event.BlockId.Uint64()); !ok {
-				return errNoCapacity
-			}
+		// Make sure to take a capacity before requesting proof.
+		if err := p.takeOneCapacity(event.BlockId); err != nil {
+			return err
 		}
 
 		if proofSubmitter := p.selectSubmitter(event.MinTier); proofSubmitter != nil {
@@ -538,6 +537,7 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
+	// Move l1Current cursor.
 	newL1Current, err := p.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash)
 	if err != nil {
 		return err
@@ -545,6 +545,7 @@ func (p *Prover) onBlockProposed(
 	p.l1Current = newL1Current
 	p.lastHandledBlockID = event.BlockId.Uint64()
 
+	// Try generating a proof for the proposed block with the given backoff policy.
 	go func() {
 		if err := backoff.Retry(
 			func() error {
@@ -573,17 +574,12 @@ func (p *Prover) onBlockProposed(
 
 // submitProofOp performs a proof submission operation.
 func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader) {
-	p.submitProofConcurrencyGuard <- struct{}{}
-
 	go func() {
+		p.submitProofConcurrencyGuard <- struct{}{}
+
 		defer func() {
 			<-p.submitProofConcurrencyGuard
-			if !p.cfg.GuardianProver {
-				_, released := p.capacityManager.ReleaseOneCapacity(proofWithHeader.Meta.Id)
-				if !released {
-					log.Error("Failed to release capacity", "id", proofWithHeader.Meta.Id)
-				}
-			}
+			p.releaseOneCapacity(proofWithHeader.BlockID)
 		}()
 
 		if err := backoff.Retry(
@@ -622,6 +618,57 @@ func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1Cli
 	)
 
 	return nil
+}
+
+// onTransitionProved verifies the proven block hash and will try contesting it if the block hash is wrong.
+func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1ClientTransitionProved) error {
+	metrics.ProverReceivedProvenBlockGauge.Update(event.BlockId.Int64())
+
+	// If the proof generation is cancellable, cancel it and release the capacity.
+	proofSubmitter := p.getSubmitterByTier(event.Tier)
+	if proofSubmitter != nil && proofSubmitter.Producer().Cancellable() {
+		if err := proofSubmitter.Producer().Cancel(ctx, event.BlockId); err != nil {
+			return err
+		}
+		// No need to check if the release is successful here, since this L2 block might
+		// be assigned to other provers.
+		p.capacityManager.ReleaseOneCapacity(event.BlockId.Uint64())
+	}
+
+	// If this prover is in contest mode, we check the validity of this proof and if it's invalid,
+	// contest it with a higher tier proof.
+	if !p.cfg.ContestControversialProofs {
+		return nil
+	}
+
+	isValidProof, err := p.isValidProof(
+		ctx,
+		event,
+	)
+	if err != nil {
+		return err
+	}
+
+	if isValidProof {
+		return nil
+	}
+
+	l1Height, err := p.rpc.TaikoL2.LatestSyncedL1Height(&bind.CallOpts{Context: ctx, BlockNumber: event.BlockId})
+	if err != nil {
+		return err
+	}
+
+	log.Info(
+		"Contest a proven block",
+		"blockID", event.BlockId,
+		"l1Height", l1Height,
+		"tier", event.Tier,
+		"parentHash", common.Bytes2Hex(event.ParentHash[:]),
+		"blockHash", common.Bytes2Hex(event.BlockHash[:]),
+		"signalRoot", common.Bytes2Hex(event.SignalRoot[:]),
+	)
+
+	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(l1Height+1), true)
 }
 
 // Name returns the application name.
@@ -679,7 +726,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 	return nil
 }
 
-// isBlockVerified checks whether the given block has been verified by other provers.
+// isBlockVerified checks whether the given L2 block has been verified.
 func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 	stateVars, err := p.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: p.ctx})
 	if err != nil {
@@ -700,13 +747,11 @@ func (p *Prover) initSubscription() {
 func (p *Prover) closeSubscription() {
 	p.blockVerifiedSub.Unsubscribe()
 	p.blockProposedSub.Unsubscribe()
+	p.transitionProvedSub.Unsubscribe()
 }
 
-// isValidProof checks if the given proof is a valid one.
-func (p *Prover) isValidProof(
-	ctx context.Context,
-	event *bindings.TaikoL1ClientTransitionProved,
-) (bool, error) {
+// isValidProof checks if the given proof is a valid one, comparing to current L2 node canonical chain.
+func (p *Prover) isValidProof(ctx context.Context, event *bindings.TaikoL1ClientTransitionProved) (bool, error) {
 	parent, err := p.rpc.L2ParentByBlockId(ctx, event.BlockId)
 	if err != nil {
 		return false, err
@@ -717,11 +762,14 @@ func (p *Prover) isValidProof(
 		return false, err
 	}
 
-	l2SignalService, err := p.rpc.TaikoL2.Resolve0(nil, rpc.StringToBytes32("signal_service"), false)
+	l2SignalService, err := p.rpc.TaikoL2.Resolve0(
+		&bind.CallOpts{Context: ctx, BlockNumber: event.BlockId},
+		rpc.StringToBytes32("signal_service"),
+		false,
+	)
 	if err != nil {
 		return false, err
 	}
-
 	signalRoot, err := p.rpc.GetStorageRoot(
 		ctx,
 		p.rpc.L2GethClient,
@@ -737,65 +785,16 @@ func (p *Prover) isValidProof(
 		signalRoot == event.SignalRoot, nil
 }
 
-// onTransitionProved verifies the proven block hash and will try contesting it if the block hash is wrong.
-func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1ClientTransitionProved) error {
-	metrics.ProverReceivedProvenBlockGauge.Update(event.BlockId.Int64())
-
-	// If the proof generation is cancellable, cancel it and release the capacity.
-	proofSubmitter := p.getSubmitterByTier(event.Tier)
-	if proofSubmitter != nil && proofSubmitter.Producer().Cancellable() {
-		if err := proofSubmitter.Producer().Cancel(ctx, event.BlockId); err != nil {
-			return err
-		}
-		// No need to check if the release is successful here, since this L2 block might
-		// be assigned to other provers.
-		p.capacityManager.ReleaseOneCapacity(event.BlockId.Uint64())
-	}
-
-	// If this prover is in contest mode, we check the validity of this proof and if it's invalid,
-	// contest it with a higher tier proof.
-	if !p.cfg.ContestControversialProofs {
-		return nil
-	}
-
-	isValidProof, err := p.isValidProof(
-		ctx,
-		event,
-	)
-	if err != nil {
-		return err
-	}
-
-	if isValidProof {
-		return nil
-	}
-
-	l1Height, err := p.rpc.TaikoL2.LatestSyncedL1Height(&bind.CallOpts{Context: ctx, BlockNumber: event.BlockId})
-	if err != nil {
-		return err
-	}
-
-	log.Info(
-		"Contest a proven block",
-		"blockID", event.BlockId,
-		"l1Height", l1Height,
-		"tier", event.Tier,
-		"parentHash", common.Bytes2Hex(event.ParentHash[:]),
-		"blockHash", common.Bytes2Hex(event.BlockHash[:]),
-		"signalRoot", common.Bytes2Hex(event.SignalRoot[:]),
-	)
-
-	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(l1Height+1), true)
-}
-
 // requestProofByBlockID performs a proving operation for the given block.
-func (p *Prover) requestProofByBlockID(blockID *big.Int, l1Height *big.Int, contestOldProof bool) error {
+func (p *Prover) requestProofByBlockID(blockID *big.Int, l1Height *big.Int, contestMode bool) error {
+	// NOTE: since this callback function will only be called after a L2 block's proving window is expired,
+	// or a wrong proof's submission, so we won't check if L1 chain has been reorged here.
 	onBlockProposed := func(
 		ctx context.Context,
 		event *bindings.TaikoL1ClientBlockProposed,
 		end eventIterator.EndBlockProposedEventIterFunc,
 	) error {
-		// Only filter for exact blockID we want
+		// Only filter for exact blockID we want.
 		if event.BlockId.Cmp(blockID) != 0 {
 			return nil
 		}
@@ -805,23 +804,20 @@ func (p *Prover) requestProofByBlockID(blockID *big.Int, l1Height *big.Int, cont
 		if err != nil {
 			return fmt.Errorf("failed to check if the current L2 block is verified: %w", err)
 		}
-
 		if isVerified {
 			log.Info("📋 Block has been verified", "blockID", event.BlockId)
 			return nil
 		}
 
-		// Make sure to take a capacity before requesting proof
-		if !p.cfg.GuardianProver {
-			if _, ok := p.capacityManager.TakeOneCapacity(event.BlockId.Uint64()); !ok {
-				return errNoCapacity
-			}
+		// Make sure to take a capacity before requesting proof.
+		if err := p.takeOneCapacity(event.BlockId); err != nil {
+			return err
 		}
 
-		p.proposeConcurrencyGuard <- struct{}{}
-
+		// If the current prover wants to contest a wrong proof, we will try
+		// to select a higher tier proof submitter.
 		var minTier = event.MinTier
-		if contestOldProof {
+		if contestMode {
 			if p.cfg.GuardianProver {
 				minTier = encoding.TierGuardianID
 			} else {
@@ -829,6 +825,7 @@ func (p *Prover) requestProofByBlockID(blockID *big.Int, l1Height *big.Int, cont
 			}
 		}
 
+		// If there is no proof submitter selected, skip proving it.
 		if proofSubmitter := p.selectSubmitter(minTier); proofSubmitter != nil {
 			return proofSubmitter.RequestProof(ctx, event)
 		}
@@ -838,6 +835,8 @@ func (p *Prover) requestProofByBlockID(blockID *big.Int, l1Height *big.Int, cont
 
 	handleBlockProposedEvent := func() error {
 		defer func() { <-p.proposeConcurrencyGuard }()
+
+		// Make sure `end` height is less than the latest L1 head.
 		l1Head, err := p.rpc.L1.BlockNumber(p.ctx)
 		if err != nil {
 			log.Error("Failed to get L1 block head", "error", err)
@@ -847,6 +846,7 @@ func (p *Prover) requestProofByBlockID(blockID *big.Int, l1Height *big.Int, cont
 		if end.Uint64() > l1Head {
 			end = new(big.Int).SetUint64(l1Head)
 		}
+
 		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
 			Client:               p.rpc.L1,
 			TaikoL1:              p.rpc.TaikoL1,
@@ -858,12 +858,24 @@ func (p *Prover) requestProofByBlockID(blockID *big.Int, l1Height *big.Int, cont
 			log.Error("Failed to start event iterator", "event", "BlockProposed", "error", err)
 			return err
 		}
+
 		return iter.Iter()
 	}
 
 	go func() {
 		if err := backoff.Retry(
-			func() error { return handleBlockProposedEvent() },
+			func() error {
+				if err := handleBlockProposedEvent(); err != nil {
+					log.Error(
+						"Failed to handle BlockProposed event",
+						"error", err,
+						"blockID", blockID,
+						"maxRetrys", p.cfg.BackOffMaxRetrys,
+					)
+					return err
+				}
+				return nil
+			},
 			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
 		); err != nil {
 			log.Error("Failed to request proof with a given block ID", "blockID", blockID, "error", err)
@@ -875,13 +887,21 @@ func (p *Prover) requestProofByBlockID(blockID *big.Int, l1Height *big.Int, cont
 
 // onProvingWindowExpired tries to submit a proof for an expired block.
 func (p *Prover) onProvingWindowExpired(ctx context.Context, e *bindings.TaikoL1ClientBlockProposed) error {
-	log.Info("Block proving window is expired", "blockID", e.BlockId, "l1Height", e.Raw.BlockNumber)
-
+	log.Info(
+		"Block proving window is expired",
+		"blockID", e.BlockId,
+		"assignedProver", e.AssignedProver,
+		"minTier", e.MinTier,
+	)
+	// If proving window is expired, then the assigned prover can not submit new proofs for it anymore.
+	if p.proverAddress == e.AssignedProver {
+		return nil
+	}
+	// Check if we still need to generate a new proof for that block.
 	needNewProof, err := rpc.NeedNewProof(ctx, p.rpc, e.BlockId, p.proverAddress)
 	if err != nil {
 		return err
 	}
-
 	if !needNewProof {
 		return nil
 	}
@@ -924,4 +944,25 @@ func (p *Prover) getSubmitterByTier(tier uint16) proofSubmitter.Submitter {
 	log.Warn("No proof producer / submitter found for the given tier", "tier", tier)
 
 	return nil
+}
+
+// takeOneCapacity takes one capacity from the capacity manager.
+func (p *Prover) takeOneCapacity(blockID *big.Int) error {
+	if !p.cfg.GuardianProver {
+		if _, ok := p.capacityManager.TakeOneCapacity(blockID.Uint64()); !ok {
+			return errNoCapacity
+		}
+	}
+
+	return nil
+}
+
+// releaseOneCapacity releases one capacity to the capacity manager.
+func (p *Prover) releaseOneCapacity(blockID *big.Int) {
+	if !p.cfg.GuardianProver {
+		_, released := p.capacityManager.ReleaseOneCapacity(blockID.Uint64())
+		if !released {
+			log.Error("Failed to release capacity", "id", blockID)
+		}
+	}
 }

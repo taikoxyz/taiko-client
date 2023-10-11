@@ -52,7 +52,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal(uint64(minTierFee), c.MinPseZkevmTierFee.Uint64())
 		s.Equal(uint64(3), c.ProveBlockTxReplacementMultiplier)
 		s.Equal(uint64(256), c.ProveBlockMaxTxGasTipCap.Uint64())
-		s.Equal(15*time.Second, c.TempCapacityExpiresAt)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 		s.True(c.ProveUnassignedBlocks)
 
@@ -81,7 +80,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.ProveBlockMaxTxGasTipCap.Name, "256",
 		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.Graffiti.Name, "",
-		"--" + flags.TempCapacityExpiresAt.Name, "15s",
 		"--" + flags.ProveUnassignedBlocks.Name,
 	}))
 }
@@ -152,7 +150,6 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.MinSgxTierFee.Name},
 		&cli.Uint64Flag{Name: flags.MinPseZkevmTierFee.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxGasLimit.Name},
-		&cli.DurationFlag{Name: flags.TempCapacityExpiresAt.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
