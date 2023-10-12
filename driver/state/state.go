@@ -167,9 +167,23 @@ func (s *State) startSubscriptions(ctx context.Context) {
 			case e := <-s.blockProposedCh:
 				s.setHeadBlockID(e.BlockId)
 			case e := <-s.transitionProvedCh:
-				log.Info("✅ Block proven", "blockID", e.BlockId, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
+				log.Info(
+					"✅ Transition proven",
+					"blockID", e.BlockId,
+					"parentHash", common.Hash(e.ParentHash),
+					"hash", common.Hash(e.BlockHash),
+					"signalRoot", common.Hash(e.SignalRoot),
+					"prover", e.Prover,
+				)
 			case e := <-s.blockVerifiedCh:
-				log.Info("📈 Block verified", "blockID", e.BlockId, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
+				log.Info(
+					"📈 Block verified",
+					"blockID", e.BlockId,
+					"hash", common.Hash(e.BlockHash),
+					"signalRoot", common.Hash(e.SignalRoot),
+					"assignedProver", e.AssignedProver,
+					"prover", e.Prover,
+				)
 			case e := <-s.crossChainSynced:
 				// Verify the protocol synced block, check if it exists in
 				// L2 execution engine.

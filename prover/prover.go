@@ -296,8 +296,9 @@ func (p *Prover) eventLoop() {
 				log.Error("Handle TransitionProved event error", "error", err)
 			}
 		case e := <-p.transitionContestedCh:
-			// TODO: add a listener.
-			log.Info("Transaction contested", "event", e)
+			if err := p.onTransitionContested(p.ctx, e); err != nil {
+				log.Error("Handle TransitionContested event error", "error", err)
+			}
 		case e := <-p.proofWindowExpiredCh:
 			if err := p.onProvingWindowExpired(p.ctx, e); err != nil {
 				log.Error("Handle provingWindow expired event error", "error", err)
@@ -625,18 +626,69 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 	}()
 }
 
+// onTransitionContested tries to submit a higher tier proof for the contested transition.
+func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1ClientTransitionContested) error {
+	log.Info(
+		"🗡 Transition contested",
+		"blockID", e.BlockId,
+		"parentHash", common.Bytes2Hex(e.ParentHash[:]),
+		"hash", common.Bytes2Hex(e.BlockHash[:]),
+		"signalRoot", common.BytesToHash(e.SignalRoot[:]),
+		"contester", e.Contester,
+		"bond", e.ContestBond,
+	)
+
+	// If this prover is not in contest mode, we simply output a log and return.
+	if !p.cfg.ContestControversialProofs {
+		return nil
+	}
+
+	// Compare the contested transition to the block in local L2 canonical chain.
+	isValidProof, err := p.isValidProof(
+		ctx,
+		e.BlockId,
+		e.ParentHash,
+		e.BlockHash,
+		e.SignalRoot,
+	)
+	if err != nil {
+		return err
+	}
+	if isValidProof {
+		log.Info(
+			"Contested transition is valid to local canonical chain, ignore the contest",
+			"blockID", e.BlockId,
+			"parentHash", common.Bytes2Hex(e.ParentHash[:]),
+			"hash", common.Bytes2Hex(e.BlockHash[:]),
+			"signalRoot", common.BytesToHash(e.SignalRoot[:]),
+			"contester", e.Contester,
+			"bond", e.ContestBond,
+		)
+		return nil
+	}
+
+	l1Height, err := p.rpc.TaikoL2.LatestSyncedL1Height(&bind.CallOpts{Context: ctx, BlockNumber: e.BlockId})
+	if err != nil {
+		return err
+	}
+
+	return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(l1Height+1), e.Tier+1, nil)
+}
+
 // onBlockVerified update the latestVerified block in current state, and cancels
 // the block being proven if it's verified.
-func (p *Prover) onBlockVerified(ctx context.Context, event *bindings.TaikoL1ClientBlockVerified) error {
-	metrics.ProverLatestVerifiedIDGauge.Update(event.BlockId.Int64())
+func (p *Prover) onBlockVerified(ctx context.Context, e *bindings.TaikoL1ClientBlockVerified) error {
+	metrics.ProverLatestVerifiedIDGauge.Update(e.BlockId.Int64())
 
-	p.latestVerifiedL1Height = event.Raw.BlockNumber
+	p.latestVerifiedL1Height = e.Raw.BlockNumber
 
 	log.Info(
 		"New verified block",
-		"blockID", event.BlockId,
-		"hash", common.BytesToHash(event.BlockHash[:]),
-		"prover", event.Prover,
+		"blockID", e.BlockId,
+		"hash", common.BytesToHash(e.BlockHash[:]),
+		"signalRoot", common.BytesToHash(e.SignalRoot[:]),
+		"assignedProver", e.AssignedProver,
+		"prover", e.Prover,
 	)
 
 	return nil
@@ -665,7 +717,10 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 
 	isValidProof, err := p.isValidProof(
 		ctx,
-		event,
+		event.BlockId,
+		event.ParentHash,
+		event.BlockHash,
+		event.SignalRoot,
 	)
 	if err != nil {
 		return err
@@ -680,7 +735,7 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 	}
 
 	log.Info(
-		"Contest a proven block",
+		"Contest a proven transition",
 		"blockID", event.BlockId,
 		"l1Height", l1Height,
 		"tier", event.Tier,
@@ -689,7 +744,7 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 		"signalRoot", common.Bytes2Hex(event.SignalRoot[:]),
 	)
 
-	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(l1Height+1), event)
+	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(l1Height+1), event.Tier, event)
 }
 
 // Name returns the application name.
@@ -774,44 +829,51 @@ func (p *Prover) closeSubscription() {
 }
 
 // isValidProof checks if the given proof is a valid one, comparing to current L2 node canonical chain.
-func (p *Prover) isValidProof(ctx context.Context, event *bindings.TaikoL1ClientTransitionProved) (bool, error) {
-	parent, err := p.rpc.L2ParentByBlockId(ctx, event.BlockId)
+func (p *Prover) isValidProof(
+	ctx context.Context,
+	blockID *big.Int,
+	parentHash common.Hash,
+	blockHash common.Hash,
+	signalRoot common.Hash,
+) (bool, error) {
+	parent, err := p.rpc.L2ParentByBlockId(ctx, blockID)
 	if err != nil {
 		return false, err
 	}
 
-	block, err := p.rpc.L2.BlockByNumber(ctx, event.BlockId)
+	block, err := p.rpc.L2.BlockByNumber(ctx, blockID)
 	if err != nil {
 		return false, err
 	}
 
 	l2SignalService, err := p.rpc.TaikoL2.Resolve0(
-		&bind.CallOpts{Context: ctx, BlockNumber: event.BlockId},
+		&bind.CallOpts{Context: ctx, BlockNumber: blockID},
 		rpc.StringToBytes32("signal_service"),
 		false,
 	)
 	if err != nil {
 		return false, err
 	}
-	signalRoot, err := p.rpc.GetStorageRoot(
+	root, err := p.rpc.GetStorageRoot(
 		ctx,
 		p.rpc.L2GethClient,
 		l2SignalService,
-		event.BlockId,
+		blockID,
 	)
 	if err != nil {
 		return false, err
 	}
 
-	return parent.Hash() == event.ParentHash &&
-		block.Hash() == event.BlockHash &&
-		signalRoot == event.SignalRoot, nil
+	return parent.Hash() == parentHash &&
+		block.Hash() == blockHash &&
+		root == signalRoot, nil
 }
 
 // requestProofByBlockID performs a proving operation for the given block.
 func (p *Prover) requestProofByBlockID(
 	blockID *big.Int,
 	l1Height *big.Int,
+	minTier uint16,
 	// If this event is not nil, then the prover will try contesting the transition.
 	transitionProvedEvent *bindings.TaikoL1ClientTransitionProved,
 ) error {
@@ -847,7 +909,7 @@ func (p *Prover) requestProofByBlockID(
 		}
 
 		// If there is no proof submitter selected, skip proving it.
-		if proofSubmitter := p.selectSubmitter(event.MinTier); proofSubmitter != nil {
+		if proofSubmitter := p.selectSubmitter(minTier); proofSubmitter != nil {
 			return proofSubmitter.RequestProof(ctx, event)
 		}
 
@@ -927,7 +989,7 @@ func (p *Prover) onProvingWindowExpired(ctx context.Context, e *bindings.TaikoL1
 		return nil
 	}
 
-	return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(e.Raw.BlockNumber), nil)
+	return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(e.Raw.BlockNumber), e.MinTier, nil)
 }
 
 // getProvingWindow returns the provingWindow of the given proposed block.

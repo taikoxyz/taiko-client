@@ -110,8 +110,12 @@ func (s *Sender) Send(
 		log.Info(
 			"💰 Your block proof was accepted",
 			"blockID", proofWithHeader.BlockID,
+			"parentHash", proofWithHeader.Header.ParentHash,
+			"hash", proofWithHeader.Header.Hash(),
+			"signalRoot", proofWithHeader.Opts.SignalRoot,
 			"txHash", tx.Hash(),
 			"tier", proofWithHeader.Tier,
+			"isContest", len(proofWithHeader.Proof) == 0,
 		)
 
 		return nil

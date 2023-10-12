@@ -82,7 +82,7 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 
 	if tokenBalance.Cmp(common.Big0) == 0 {
-		// Do not verify zk proofs in tests.
+		// Do not verify zk && sgx proofs in tests.
 		addressManager, err := bindings.NewAddressManager(
 			common.HexToAddress(os.Getenv("ADDRESS_MANAGER_CONTRACT_ADDRESS")),
 			rpcCli.L1,
@@ -99,6 +99,11 @@ func (s *ClientTestSuite) SetupTest() {
 		s.Nil(err)
 
 		tx, err := addressManager.SetAddress(opts, chainID, rpc.StringToBytes32("tier_pse_zkevm"), common.Address{})
+		s.Nil(err)
+		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
+		s.Nil(err)
+
+		tx, err = addressManager.SetAddress(opts, chainID, rpc.StringToBytes32("tier_sgx"), common.Address{})
 		s.Nil(err)
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)

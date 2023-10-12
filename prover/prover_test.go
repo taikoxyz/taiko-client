@@ -61,6 +61,7 @@ func (s *ProverTestSuite) SetupTest() {
 		MinSgxTierFee:            common.Big1,
 		MinPseZkevmTierFee:       common.Big1,
 		HTTPServerPort:           uint64(port),
+		WaitReceiptTimeout:       12 * time.Second,
 	})))
 	p.srv = testutils.NewTestProverServer(
 		&s.ClientTestSuite,
@@ -104,7 +105,7 @@ func (s *ProverTestSuite) SetupTest() {
 		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
-		WaitReceiptTimeout:         10 * time.Second,
+		WaitReceiptTimeout:         12 * time.Second,
 		ProverEndpoints:            []*url.URL{proverServerUrl},
 		OptimisticTierFee:          common.Big256,
 		SgxTierFee:                 common.Big256,
@@ -244,7 +245,6 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 
 	// Contest the transition.
 	contestedSink := make(chan *bindings.TaikoL1ClientTransitionContested)
-
 	contestedSub, err := s.p.rpc.TaikoL1.WatchTransitionContested(nil, contestedSink, nil)
 	s.Nil(err)
 	defer func() {
@@ -259,6 +259,15 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.Equal(header.Number.Uint64(), contestedEvent.BlockId.Uint64())
 	s.Equal(common.BytesToHash(proofWithHeader.Opts.BlockHash[:]), common.BytesToHash(contestedEvent.BlockHash[:]))
 	s.Equal(header.ParentHash, common.BytesToHash(contestedEvent.ParentHash[:]))
+
+	s.Nil(s.p.onTransitionContested(context.Background(), contestedEvent))
+	s.Nil(s.p.selectSubmitter(contestedEvent.Tier+1).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+	provenEvent := <-sink
+
+	s.Equal(header.Number.Uint64(), provenEvent.BlockId.Uint64())
+	s.Equal(header.Hash(), common.BytesToHash(provenEvent.BlockHash[:]))
+	s.Equal(header.ParentHash, common.BytesToHash(provenEvent.ParentHash[:]))
+	s.Greater(provenEvent.Tier, contestedEvent.Tier)
 }
 
 func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {

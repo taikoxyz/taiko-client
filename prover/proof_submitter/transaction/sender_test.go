@@ -49,6 +49,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 		&proofProducer.ProofWithHeader{
 			Meta:    meta,
 			BlockID: common.Big1,
+			Header:  &types.Header{},
 			Opts:    &proofProducer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
 		func(nonce *big.Int) (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
@@ -59,6 +60,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 		&proofProducer.ProofWithHeader{
 			Meta:    meta,
 			BlockID: common.Big1,
+			Header:  &types.Header{},
 			Opts:    &proofProducer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
 		func(nonce *big.Int) (*types.Transaction, error) {

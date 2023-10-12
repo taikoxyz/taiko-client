@@ -126,8 +126,11 @@ func (c *ProofContester) SubmitContest(
 			Meta:    &blockProposedEvent.Meta,
 			Header:  header,
 			Proof:   []byte{},
-			Opts:    &proofProducer.ProofRequestOptions{EventL1Hash: blockProposedEvent.Raw.BlockHash},
-			Tier:    transitionProvedEvent.Tier,
+			Opts: &proofProducer.ProofRequestOptions{
+				EventL1Hash: blockProposedEvent.Raw.BlockHash,
+				SignalRoot:  evidence.SignalRoot,
+			},
+			Tier: transitionProvedEvent.Tier,
 		},
 		c.txBuilder.Build(ctx, transitionProvedEvent.BlockId, input),
 	); err != nil {
