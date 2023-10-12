@@ -211,13 +211,13 @@ func (s *ProverTestSuite) TestOnBlockVerified() {
 }
 
 func (s *ProverTestSuite) TestContestWrongBlocks() {
-	s.p.cfg.ContestControversialProofs = false
+	s.p.cfg.ContesterMode = false
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onTransitionProved(context.Background(), &bindings.TaikoL1ClientTransitionProved{
 		BlockId: e.BlockId,
 		Tier:    e.MinTier,
 	}))
-	s.p.cfg.ContestControversialProofs = true
+	s.p.cfg.ContesterMode = true
 	s.p.cfg.GuardianProver = true
 
 	// Submit a wrong proof at first.

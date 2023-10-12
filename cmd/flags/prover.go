@@ -117,9 +117,9 @@ var (
 		Category: proverCategory,
 	}
 	// Running mode
-	ContestControversialProofs = &cli.BoolFlag{
-		Name:     "mode.contest",
-		Usage:    "Whether you want to contest wrong proofs with higher tier proofs",
+	ContesterMode = &cli.BoolFlag{
+		Name:     "mode.contester",
+		Usage:    "Whether you want to contest wrong transitions with higher tier proofs",
 		Category: proverCategory,
 		Value:    false,
 	}
@@ -167,7 +167,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProveBlockMaxTxGasTipCap,
 	Graffiti,
 	ProveUnassignedBlocks,
-	ContestControversialProofs,
+	ContesterMode,
 	ProveBlockTxGasLimit,
 	ProverHTTPServerPort,
 	ProverCapacity,

@@ -638,8 +638,8 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 		"bond", e.ContestBond,
 	)
 
-	// If this prover is not in contest mode, we simply output a log and return.
-	if !p.cfg.ContestControversialProofs {
+	// If this prover is not in contester mode, we simply output a log and return.
+	if !p.cfg.ContesterMode {
 		return nil
 	}
 
@@ -711,7 +711,7 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 
 	// If this prover is in contest mode, we check the validity of this proof and if it's invalid,
 	// contest it with a higher tier proof.
-	if !p.cfg.ContestControversialProofs {
+	if !p.cfg.ContesterMode {
 		return nil
 	}
 
