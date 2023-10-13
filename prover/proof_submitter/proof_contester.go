@@ -109,7 +109,7 @@ func (c *ProofContester) SubmitContest(
 		return err
 	}
 
-	// Genreate an evidence for contest.
+	// Generate an evidence for contest.
 	evidence, err := c.evidenceBuilder.ForContest(ctx, header, c.l2SignalService, transitionProvedEvent)
 	if err != nil {
 		return err

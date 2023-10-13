@@ -13,8 +13,8 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-// TxBuiler will build a transaction with the given nonce.
-type TxBuiler func(nonce *big.Int) (*types.Transaction, error)
+// TxBuilder will build a transaction with the given nonce.
+type TxBuilder func(nonce *big.Int) (*types.Transaction, error)
 
 // ProveBlockTxBuilder is responsible for building ProveBlock transactions.
 type ProveBlockTxBuilder struct {
@@ -47,7 +47,7 @@ func NewProveBlockTxBuilder(
 }
 
 // Build creates a new ProveBlock transaction with the given nonce.
-func (a *ProveBlockTxBuilder) Build(ctx context.Context, blockID *big.Int, input []byte) TxBuiler {
+func (a *ProveBlockTxBuilder) Build(ctx context.Context, blockID *big.Int, input []byte) TxBuilder {
 	return func(nonce *big.Int) (*types.Transaction, error) {
 		a.mutex.Lock()
 		defer a.mutex.Unlock()

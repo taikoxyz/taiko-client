@@ -68,7 +68,7 @@ var (
 		Usage:    "Time interval to propose empty blocks",
 		Category: proposerCategory,
 	}
-	// Proposing metadata realted.
+	// Proposing metadata related.
 	ExtraData = &cli.StringFlag{
 		Name:     "extraData",
 		Usage:    "Block extra data set by the proposer (default = client version)",

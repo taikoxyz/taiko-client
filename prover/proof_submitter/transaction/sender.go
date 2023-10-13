@@ -55,7 +55,7 @@ func NewSender(
 func (s *Sender) Send(
 	ctx context.Context,
 	proofWithHeader *proofProducer.ProofWithHeader,
-	txAssembler TxBuiler,
+	buildTx TxBuilder,
 ) error {
 	var (
 		isUnretryableError bool
@@ -77,12 +77,12 @@ func (s *Sender) Send(
 		}
 
 		// Assemble the taikoL1.proveBlock transaction.
-		tx, err := txAssembler(nonce)
+		tx, err := buildTx(nonce)
 		if err != nil {
 			err = encoding.TryParsingCustomError(err)
 			if isSubmitProofTxErrorRetryable(err, proofWithHeader.BlockID) {
-				log.Info("Retry sending TaikoL1.proveBlock transaction", "blockID", proofWithHeader.BlockID, "reason", err)
-				if strings.Contains(err.Error(), core.ErrNonceTooLow.Error()) {
+				log.Warn("Retry sending TaikoL1.proveBlock transaction", "blockID", proofWithHeader.BlockID, "reason", err)
+				if errors.Is(err, core.ErrNonceTooLow) {
 					nonce = nil
 				}
 
