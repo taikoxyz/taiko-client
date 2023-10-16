@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "title": "Taiko Prover API",
+        "title": "Taiko Prover Server API",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
             "name": "API Support",

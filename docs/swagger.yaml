@@ -30,7 +30,7 @@ info:
     name: MIT
     url: https://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md
   termsOfService: http://swagger.io/terms/
-  title: Taiko Prover API
+  title: Taiko Prover Server API
   version: "1.0"
 paths:
   /assignment:

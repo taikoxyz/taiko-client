@@ -13,7 +13,7 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-// @title Taiko Prover API
+// @title Taiko Prover Server API
 // @version 1.0
 // @termsOfService http://swagger.io/terms/
 
