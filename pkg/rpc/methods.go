@@ -22,7 +22,8 @@ import (
 
 var (
 	// errSyncing is returned when the L2 execution engine is syncing.
-	errSyncing = errors.New("syncing")
+	errSyncing        = errors.New("syncing")
+	errEmptyTiersList = errors.New("empty proof tiers list in protocol")
 	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
 	// if the previous check failed.
 	syncProgressRecheckDelay       = 12 * time.Second
@@ -46,6 +47,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	iter, err := c.TaikoL1.FilterBlockVerified(
 		&bind.FilterOpts{Start: stateVars.GenesisHeight, End: &stateVars.GenesisHeight, Context: ctxWithTimeout},
 		[]*big.Int{common.Big0},
+		nil,
 		nil,
 	)
 	if err != nil {
@@ -558,4 +560,35 @@ func (c *Client) IsJustSyncedByP2P(ctx context.Context) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// TierProviderTierWithID wraps protocol ITierProviderTier struct with an ID.
+type TierProviderTierWithID struct {
+	ID uint16
+	bindings.ITierProviderTier
+}
+
+// GetTiers fetches all protocol supported tiers.
+func (c *Client) GetTiers(ctx context.Context) ([]*TierProviderTierWithID, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	ids, err := c.TaikoL1.GetTierIds(&bind.CallOpts{Context: ctxWithTimeout})
+	if err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return nil, errEmptyTiersList
+	}
+
+	var tiers []*TierProviderTierWithID
+	for _, id := range ids {
+		tier, err := c.TaikoL1.GetTier(&bind.CallOpts{Context: ctxWithTimeout}, id)
+		if err != nil {
+			return nil, err
+		}
+		tiers = append(tiers, &TierProviderTierWithID{ID: id, ITierProviderTier: tier})
+	}
+
+	return tiers, nil
 }

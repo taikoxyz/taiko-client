@@ -141,7 +141,7 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	if !s.progressTracker.Triggered() {
-		// Check whteher we need to reorg the L2 chain at first.
+		// Check whether we need to reorg the L2 chain at first.
 		// 1. Last verified block
 		var (
 			reorged                    bool
@@ -330,25 +330,21 @@ func (s *Syncer) insertNewHead(
 		}
 	}
 
-	parentTimestamp, err := s.rpc.TaikoL2.ParentTimestamp(&bind.CallOpts{BlockNumber: parent.Number, Context: ctx})
-	if err != nil {
-		return nil, err
-	}
-
 	// Get L2 baseFee
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{BlockNumber: parent.Number, Context: ctx},
-		event.Meta.Timestamp-parentTimestamp,
+		event.Meta.L1Height,
 		uint32(parent.GasUsed),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
 	}
 
-	log.Debug(
-		"GetBasefee",
+	log.Info(
+		"L2 baseFee",
+		"blockID", event.BlockId,
 		"baseFee", baseFee,
-		"timeSinceParent", uint32(event.Meta.Timestamp-parentTimestamp),
+		"syncedL1Height", event.Meta.L1Height,
 		"parentGasUsed", parent.GasUsed,
 	)
 
@@ -421,16 +417,17 @@ func (s *Syncer) createExecutionPayloads(
 	fc := &engine.ForkchoiceStateV1{HeadBlockHash: parentHash}
 	attributes := &engine.PayloadAttributes{
 		Timestamp:             event.Meta.Timestamp,
-		Random:                event.Meta.MixHash,
-		SuggestedFeeRecipient: event.Meta.Proposer,
+		Random:                event.Meta.Difficulty,
+		SuggestedFeeRecipient: event.Meta.Coinbase,
 		Withdrawals:           withdrawals,
 		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
-			Beneficiary:    event.Meta.Proposer,
+			Beneficiary:    event.Meta.Coinbase,
 			GasLimit:       uint64(event.Meta.GasLimit) + s.anchorConstructor.GasLimit(),
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
-			MixHash:        event.Meta.MixHash,
+			MixHash:        event.Meta.Difficulty,
+			ExtraData:      event.Meta.ExtraData[:],
 		},
 		BaseFeePerGas: baseFee,
 		L1Origin:      l1Origin,
@@ -448,6 +445,7 @@ func (s *Syncer) createExecutionPayloads(
 		"timestamp", attributes.BlockMetadata.Timestamp,
 		"mixHash", attributes.BlockMetadata.MixHash,
 		"baseFee", attributes.BaseFeePerGas,
+		"extraData", string(attributes.BlockMetadata.ExtraData),
 		"l1OriginHeight", attributes.L1Origin.L1BlockHeight,
 		"l1OriginHash", attributes.L1Origin.L1BlockHash,
 	)

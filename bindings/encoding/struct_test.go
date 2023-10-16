@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
-	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 var (
@@ -32,26 +31,6 @@ var (
 		MixDigest:   randomHash(),
 		Nonce:       types.EncodeNonce(rand.Uint64()),
 		BaseFee:     new(big.Int).SetUint64(rand.Uint64()),
-	}
-	testMetaInput = TaikoL1BlockMetadataInput{
-		Proposer:        common.BytesToAddress(randomHash().Bytes()),
-		TxListHash:      randomHash(),
-		TxListByteStart: common.Big0,
-		TxListByteEnd:   common.Big0,
-		CacheTxListInfo: false,
-	}
-	testMeta = bindings.TaikoDataBlockMetadata{
-		Id:                rand.Uint64(),
-		Timestamp:         uint64(time.Now().Unix()),
-		L1Height:          rand.Uint64(),
-		L1Hash:            randomHash(),
-		MixHash:           randomHash(),
-		TxListHash:        randomHash(),
-		TxListByteStart:   common.Big0,
-		TxListByteEnd:     common.Big256,
-		GasLimit:          rand.Uint32(),
-		Proposer:          common.BytesToAddress(randomHash().Bytes()),
-		DepositsProcessed: []bindings.TaikoDataEthDeposit{},
 	}
 )
 

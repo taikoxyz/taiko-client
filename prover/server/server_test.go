@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-resty/resty/v2"
-	echo "github.com/labstack/echo/v4"
 	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -24,8 +23,8 @@ import (
 
 type ProverServerTestSuite struct {
 	suite.Suite
-	ps *ProverServer
-	ws *httptest.Server // web server
+	s          *ProverServer
+	testServer *httptest.Server
 }
 
 func (s *ProverServerTestSuite) SetupTest() {
@@ -46,23 +45,25 @@ func (s *ProverServerTestSuite) SetupTest() {
 	})
 	s.Nil(err)
 
-	p := &ProverServer{
-		echo:             echo.New(),
-		proverPrivateKey: l1ProverPrivKey,
-		minProofFee:      common.Big1,
-		maxExpiry:        24 * time.Hour,
-		capacityManager:  capacity.New(1024, 100*time.Second),
-		taikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		rpc:              rpcClient,
-		bond:             common.Big0,
-		isOracle:         false,
-	}
+	p, err := New(&NewProverServerOpts{
+		ProverPrivateKey:     l1ProverPrivKey,
+		MinOptimisticTierFee: common.Big1,
+		MinSgxTierFee:        common.Big1,
+		MinPseZkevmTierFee:   common.Big1,
+		MaxExpiry:            time.Hour,
+		CapacityManager:      capacity.New(1024),
+		TaikoL1Address:       common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		Rpc:                  rpcClient,
+		LivenessBond:         common.Big0,
+		IsGuardian:           false,
+	})
+	s.Nil(err)
 
 	p.echo.HideBanner = true
 	p.configureMiddleware()
 	p.configureRoutes()
-	s.ps = p
-	s.ws = httptest.NewServer(p.echo)
+	s.s = p
+	s.testServer = httptest.NewServer(p.echo)
 }
 
 func (s *ProverServerTestSuite) TestHealth() {
@@ -81,7 +82,7 @@ func (s *ProverServerTestSuite) TestStartShutdown() {
 	s.Nil(err)
 
 	go func() {
-		if err := s.ps.Start(fmt.Sprintf(":%v", port)); err != nil {
+		if err := s.s.Start(fmt.Sprintf(":%v", port)); err != nil {
 			log.Error("Failed to start prover server", "error", err)
 		}
 	}()
@@ -99,11 +100,11 @@ func (s *ProverServerTestSuite) TestStartShutdown() {
 		return nil
 	}, backoff.NewExponentialBackOff()))
 
-	s.Nil(s.ps.Shutdown(context.Background()))
+	s.Nil(s.s.Shutdown(context.Background()))
 }
 
 func (s *ProverServerTestSuite) TearDownTest() {
-	s.ws.Close()
+	s.testServer.Close()
 }
 
 func TestProverServerTestSuite(t *testing.T) {
@@ -111,7 +112,7 @@ func TestProverServerTestSuite(t *testing.T) {
 }
 
 func (s *ProverServerTestSuite) sendReq(path string) *http.Response {
-	resp, err := http.Get(s.ws.URL + path)
+	res, err := http.Get(s.testServer.URL + path)
 	s.Nil(err)
-	return resp
+	return res
 }

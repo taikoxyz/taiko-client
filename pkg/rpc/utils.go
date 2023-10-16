@@ -45,7 +45,7 @@ func CheckProverBalance(
 	rpc *Client,
 	prover common.Address,
 	taikoL1Address common.Address,
-	bond *big.Int,
+	livenessBond *big.Int,
 ) (bool, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
@@ -57,7 +57,7 @@ func CheckProverBalance(
 
 	log.Info("Prover's deposited taikoTokenBalance", "balance", depositedBalance.String(), "address", prover.Hex())
 
-	if bond.Cmp(depositedBalance) > 0 {
+	if livenessBond.Cmp(depositedBalance) > 0 {
 		// Check allowance on taiko token contract
 		allowance, err := rpc.TaikoToken.Allowance(&bind.CallOpts{Context: ctxWithTimeout}, prover, taikoL1Address)
 		if err != nil {
@@ -74,14 +74,14 @@ func CheckProverBalance(
 
 		log.Info("Prover's wallet taiko token balance", "balance", balance.String(), "address", prover.Hex())
 
-		if bond.Cmp(allowance) > 0 || bond.Cmp(balance) > 0 {
+		if livenessBond.Cmp(allowance) > 0 || livenessBond.Cmp(balance) > 0 {
 			log.Info(
 				"Assigned prover does not have required on-chain token balance or allowance",
 				"providedProver", prover.Hex(),
 				"depositedBalance", depositedBalance.String(),
 				"taikoTokenBalance", balance,
 				"allowance", allowance.String(),
-				"proofBond", bond,
+				"proofBond", livenessBond,
 			)
 			return false, nil
 		}
@@ -189,7 +189,7 @@ func NeedNewProof(
 		"📬 Block's proof has already been submitted by another prover",
 		"blockID", id,
 		"prover", transition.Prover,
-		"provenAt", transition.ProvenAt,
+		"timestamp", transition.Timestamp,
 	)
 
 	return false, nil

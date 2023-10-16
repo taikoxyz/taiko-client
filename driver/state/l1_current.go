@@ -61,21 +61,21 @@ func (s *State) ResetL1Current(
 		}
 		targetHash := header.Hash()
 
-		iter, err := eventIterator.NewBlockProvenIterator(
+		iter, err := eventIterator.NewTransitionProvedIterator(
 			ctx,
-			&eventIterator.BlockProvenIteratorConfig{
+			&eventIterator.TransitionProvenIteratorConfig{
 				Client:      s.rpc.L1,
 				TaikoL1:     s.rpc.TaikoL1,
 				StartHeight: s.GenesisL1Height,
 				EndHeight:   s.GetL1Head().Number,
 				FilterQuery: []*big.Int{},
 				Reverse:     true,
-				OnBlockProvenEvent: func(
+				OnTransitionProved: func(
 					ctx context.Context,
-					e *bindings.TaikoL1ClientBlockProven,
-					end eventIterator.EndBlockProvenEventIterFunc,
+					e *bindings.TaikoL1ClientTransitionProved,
+					end eventIterator.EndTransitionProvedEventIterFunc,
 				) error {
-					log.Debug("Filtered BlockProven event", "ID", e.BlockId, "hash", common.Hash(e.BlockHash))
+					log.Debug("Filtered TransitionProved event", "ID", e.BlockId, "hash", common.Hash(e.BlockHash))
 					if e.BlockHash == targetHash {
 						heightOrID.ID = e.BlockId
 						end()
@@ -95,7 +95,7 @@ func (s *State) ResetL1Current(
 		}
 
 		if heightOrID.ID == nil {
-			return nil, nil, fmt.Errorf("BlockProven event not found, hash: %s", targetHash)
+			return nil, nil, fmt.Errorf("TransitionProved event not found, hash: %s", targetHash)
 		}
 	}
 

@@ -9,20 +9,14 @@ import (
 
 // CapacityManager manages the prover capacity concurrent-safely.
 type CapacityManager struct {
-	capacity              map[uint64]bool
-	tempCapacity          []time.Time
-	tempCapacityExpiresAt time.Duration
-	maxCapacity           uint64
-	mutex                 sync.RWMutex
+	slotsManager *slotsManager
+	mutex        sync.RWMutex
 }
 
 // New creates a new CapacityManager instance.
-func New(capacity uint64, tempCapacityExpiresAt time.Duration) *CapacityManager {
+func New(capacity uint64) *CapacityManager {
 	return &CapacityManager{
-		capacity:              make(map[uint64]bool),
-		maxCapacity:           capacity,
-		tempCapacity:          make([]time.Time, 0),
-		tempCapacityExpiresAt: tempCapacityExpiresAt,
+		slotsManager: &slotsManager{[]*capacitySlot{}, capacity},
 	}
 }
 
@@ -31,14 +25,14 @@ func (m *CapacityManager) ReadCapacity() uint64 {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	log.Info("Reading capacity",
-		"maxCapacity", m.maxCapacity,
-		"currentCapacity", m.maxCapacity-uint64(len(m.capacity)),
-		"currentUsage", len(m.capacity),
-		"currentTempCapacityUsage", len(m.tempCapacity),
+	log.Info(
+		"Reading capacity",
+		"maxCapacity", m.slotsManager.MaxSlots(),
+		"currentCapacity", m.slotsManager.MaxSlots()-m.slotsManager.Len(),
+		"currentUsage", m.slotsManager.Len(),
 	)
 
-	return m.maxCapacity - uint64((len(m.capacity)))
+	return m.slotsManager.MaxSlots() - m.slotsManager.Len()
 }
 
 // ReleaseOneCapacity releases one capacity.
@@ -46,26 +40,37 @@ func (m *CapacityManager) ReleaseOneCapacity(blockID uint64) (uint64, bool) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if _, ok := m.capacity[blockID]; !ok {
-		log.Info("Can not release capacity",
-			"blockID", blockID,
-			"maxCapacity", m.maxCapacity,
-			"currentCapacity", m.maxCapacity-uint64(len(m.capacity)),
-			"currentUsage", len(m.capacity),
-		)
-		return uint64(len(m.capacity)), false
+	if blockID == BlockIDPlaceHolder {
+		return m.slotsManager.MaxSlots() - m.slotsManager.Len(), false
 	}
 
-	delete(m.capacity, blockID)
+	if ok := m.slotsManager.removeItemByBlockID(blockID); !ok {
+		log.Info(
+			"Can not release capacity",
+			"blockID", blockID,
+			"maxCapacity", m.slotsManager.MaxSlots(),
+			"currentCapacity", m.slotsManager.MaxSlots()-m.slotsManager.Len(),
+			"currentUsage", m.slotsManager.Len(),
+		)
+		return m.slotsManager.MaxSlots() - m.slotsManager.Len(), false
+	}
 
-	log.Info("Released capacity",
+	log.Info(
+		"Released capacity",
 		"blockID", blockID,
-		"maxCapacity", m.maxCapacity,
-		"currentCapacityAfterRelease", m.maxCapacity-uint64(len(m.capacity)),
-		"currentUsageAfterRelease", len(m.capacity),
+		"maxCapacity", m.slotsManager.MaxSlots(),
+		"currentCapacity", m.slotsManager.MaxSlots()-m.slotsManager.Len(),
+		"currentUsage", m.slotsManager.Len(),
 	)
 
-	return m.maxCapacity - uint64(len(m.capacity)), true
+	return m.slotsManager.MaxSlots() - m.slotsManager.Len(), true
+}
+
+func (m *CapacityManager) HoldOneCapacity(expiry time.Duration) bool {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	return m.slotsManager.HoldOneSlot(expiry)
 }
 
 // TakeOneCapacity takes one capacity.
@@ -73,63 +78,25 @@ func (m *CapacityManager) TakeOneCapacity(blockID uint64) (uint64, bool) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if len(m.capacity) == int(m.maxCapacity) {
-		log.Info("Could not take one capacity",
+	if ok := m.slotsManager.TakeOneSlot(blockID); !ok {
+		log.Info(
+			"Could not take one capacity",
 			"blockID", blockID,
-			"maxCapacity", m.maxCapacity,
-			"currentCapacity", m.maxCapacity-uint64(len(m.capacity)),
-			"currentUsage", len(m.capacity),
+			"maxCapacity", m.slotsManager.MaxSlots(),
+			"currentCapacity", m.slotsManager.MaxSlots()-m.slotsManager.Len(),
+			"currentUsage", m.slotsManager.Len(),
 		)
-		return 0, false
+
+		return m.slotsManager.MaxSlots() - m.slotsManager.Len(), true
 	}
 
-	m.capacity[blockID] = true
-
-	log.Info("Took one capacity",
+	log.Info(
+		"Took one capacity",
 		"blockID", blockID,
-		"maxCapacity", m.maxCapacity,
-		"currentCapacityAfterTaking", m.maxCapacity-uint64(len(m.capacity)),
-		"currentUsageAfterTaking", len(m.capacity),
+		"maxCapacity", m.slotsManager.MaxSlots(),
+		"currentCapacity", m.slotsManager.MaxSlots()-m.slotsManager.Len(),
+		"currentUsage", m.slotsManager.Len(),
 	)
 
-	return m.maxCapacity - uint64((len(m.capacity))), true
-}
-
-func (m *CapacityManager) TakeOneTempCapacity() (uint64, bool) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	// clear expired tempCapacities
-
-	m.clearExpiredTempCapacities()
-
-	if len(m.capacity)+len(m.tempCapacity) >= int(m.maxCapacity) {
-		log.Info("Could not take one temp capacity",
-			"maxCapacity", m.maxCapacity,
-			"currentCapacityAfterTaking", m.maxCapacity-uint64(len(m.capacity)),
-			"currentUsageAfterTaking", len(m.capacity),
-			"tempCapacity", m.maxCapacity-uint64(len((m.tempCapacity))),
-			"tempCapacityUsage", len(m.tempCapacity),
-		)
-		return 0, false
-	}
-
-	m.tempCapacity = append(m.tempCapacity, time.Now().UTC())
-
-	return m.maxCapacity - uint64(len(m.capacity)) - uint64((len(m.tempCapacity))), true
-}
-
-func (m *CapacityManager) clearExpiredTempCapacities() {
-	for i, c := range m.tempCapacity {
-		if time.Now().UTC().Sub(c) > m.tempCapacityExpiresAt {
-			m.tempCapacity = append(m.tempCapacity[:i], m.tempCapacity[i+1:]...)
-			log.Info("Cleared one temp capacity",
-				"maxCapacity", m.maxCapacity,
-				"currentCapacityAfterClearing", m.maxCapacity-uint64(len(m.capacity)),
-				"currentUsageAfterClearing", len(m.capacity),
-				"tempCapacity", m.maxCapacity-uint64(len((m.tempCapacity))),
-				"tempCapacityUsage", len(m.tempCapacity),
-			)
-		}
-	}
+	return m.slotsManager.MaxSlots() - m.slotsManager.Len(), true
 }

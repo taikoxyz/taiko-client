@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -32,7 +33,7 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 		&protocolConfigs,
 		s.RpcClient,
 		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		common.Big256,
+		[]encoding.TierFee{},
 		common.Big2,
 		[]*url.URL{s.ProverEndpoints[0]},
 		32,

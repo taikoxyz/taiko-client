@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 var (
@@ -25,14 +26,15 @@ var (
 
 // ZkevmRpcdProducer is responsible for requesting zk proofs from the given proverd endpoint.
 type ZkevmRpcdProducer struct {
-	RpcdEndpoint    string                         // a proverd RPC endpoint
-	Param           string                         // parameter file to use
-	L1Endpoint      string                         // a L1 node RPC endpoint
-	L2Endpoint      string                         // a L2 execution engine's RPC endpoint
-	Retry           bool                           // retry proof computation if error
-	CustomProofHook func() ([]byte, uint64, error) // only for testing purposes
-	ProofTimeTarget uint64                         // used for calculating proof delay
-	ProtocolConfig  *bindings.TaikoDataConfig      // protocol configurations
+	RpcdEndpoint        string                         // a proverd RPC endpoint
+	Param               string                         // parameter file to use
+	L1Endpoint          string                         // a L1 node RPC endpoint
+	L2Endpoint          string                         // a L2 execution engine's RPC endpoint
+	Retry               bool                           // retry proof computation if error
+	ProofTimeTarget     uint64                         // used for calculating proof delay
+	ProtocolConfig      *bindings.TaikoDataConfig      // protocol configurations
+	CustomProofHook     func() ([]byte, uint64, error) // only for testing purposes
+	*DummyProofProducer                                // only for testing purposes
 }
 
 // RequestProofBody represents the JSON body for requesting the proof.
@@ -131,10 +133,14 @@ func (p *ZkevmRpcdProducer) RequestProof(
 	log.Info(
 		"Request proof from zkevm-chain proverd service",
 		"blockID", blockID,
-		"proposer", meta.Proposer,
+		"coinbase", meta.Coinbase,
 		"height", header.Number,
 		"hash", header.Hash(),
 	)
+
+	if p.DummyProofProducer != nil {
+		return p.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, p.Tier(), resultCh)
+	}
 
 	var (
 		proof  []byte
@@ -154,9 +160,10 @@ func (p *ZkevmRpcdProducer) RequestProof(
 		BlockID: blockID,
 		Header:  header,
 		Meta:    meta,
-		ZkProof: proof,
+		Proof:   proof,
 		Degree:  degree,
 		Opts:    opts,
+		Tier:    p.Tier(),
 	}
 
 	return nil
@@ -175,12 +182,12 @@ func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 		}
 		output, err := p.requestProof(opts)
 		if err != nil {
-			log.Error("Failed to request proof", "height", opts.Height, "err", err, "endpoint", p.RpcdEndpoint)
+			log.Error("Failed to request proof", "height", opts.BlockID, "err", err, "endpoint", p.RpcdEndpoint)
 			return err
 		}
 
 		if output == nil {
-			log.Info("Proof generating", "height", opts.Height, "time", time.Since(start))
+			log.Info("Proof generating", "height", opts.BlockID, "time", time.Since(start))
 			return errProofGenerating
 		}
 
@@ -194,7 +201,7 @@ func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 
 		proof = common.Hex2Bytes(proofOutput)
 		degree = output.Aggregation.Degree
-		log.Info("Proof generated", "height", opts.Height, "degree", degree, "time", time.Since(start))
+		log.Info("Proof generated", "height", opts.BlockID, "degree", degree, "time", time.Since(start))
 		return nil
 	}, backoff.NewConstantBackOff(proofPollingInterval)); err != nil {
 		return nil, 0, err
@@ -210,7 +217,7 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 		Method:  "proof",
 		Params: []*RequestProofBodyParam{{
 			Circuit:      "super",
-			Block:        opts.Height,
+			Block:        opts.BlockID,
 			L2RPC:        p.L2Endpoint,
 			Retry:        true,
 			Param:        p.Param,
@@ -248,7 +255,7 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to request proof, id: %d, statusCode: %d", opts.Height, res.StatusCode)
+		return nil, fmt.Errorf("failed to request proof, id: %d, statusCode: %d", opts.BlockID, res.StatusCode)
 	}
 
 	resBytes, err := io.ReadAll(res.Body)
@@ -266,6 +273,16 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 	}
 
 	return output.Result, nil
+}
+
+// Tier implements the ProofProducer interface.
+func (p *ZkevmRpcdProducer) Tier() uint16 {
+	return encoding.TierPseZkevmID
+}
+
+// Cancellable implements the ProofProducer interface.
+func (p *ZkevmRpcdProducer) Cancellable() bool {
+	return false
 }
 
 // Cancel cancels an existing proof generation.

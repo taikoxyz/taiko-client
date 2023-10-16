@@ -1,66 +1,68 @@
-package submitter
+package transaction
 
 import (
 	"context"
 	"errors"
 	"math/big"
+	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 var (
-	testKey, _          = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	testAddr            = crypto.PubkeyToAddress(testKey.PublicKey)
-	testMaxRetry uint64 = 1
+	testKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	testAddr   = crypto.PubkeyToAddress(testKey.PublicKey)
 )
 
-func (s *ProofSubmitterTestSuite) TestIsSubmitProofTxErrorRetryable() {
+type TransactionTestSuite struct {
+	testutils.ClientTestSuite
+	sender *Sender
+}
+
+func (s *TransactionTestSuite) SetupTest() {
+	s.ClientTestSuite.SetupTest()
+	s.sender = NewSender(s.RpcClient, 5*time.Second, nil, 1*time.Minute)
+}
+
+func (s *TransactionTestSuite) TestIsSubmitProofTxErrorRetryable() {
 	s.True(isSubmitProofTxErrorRetryable(errors.New(testAddr.String()), common.Big0))
 	s.False(isSubmitProofTxErrorRetryable(errors.New("L1_NOT_SPECIAL_PROVER"), common.Big0))
 	s.False(isSubmitProofTxErrorRetryable(errors.New("L1_DUP_PROVERS"), common.Big0))
 	s.False(isSubmitProofTxErrorRetryable(errors.New("L1_"+testAddr.String()), common.Big0))
 }
 
-func (s *ProofSubmitterTestSuite) TestGetProveBlocksTxOpts() {
-	optsL1, err := getProveBlocksTxOpts(context.Background(), s.RpcClient.L1, s.RpcClient.L1ChainID, s.TestAddrPrivKey)
-	s.Nil(err)
-	s.Greater(optsL1.GasTipCap.Uint64(), uint64(0))
-
-	optsL2, err := getProveBlocksTxOpts(context.Background(), s.RpcClient.L2, s.RpcClient.L2ChainID, s.TestAddrPrivKey)
-	s.Nil(err)
-	s.Greater(optsL2.GasTipCap.Uint64(), uint64(0))
-}
-
-func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
+func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	l1HeadChild, err := s.RpcClient.L1.HeaderByNumber(context.Background(), new(big.Int).Sub(l1Head.Number, common.Big1))
 	s.Nil(err)
 	meta := &bindings.TaikoDataBlockMetadata{L1Height: l1HeadChild.Number.Uint64(), L1Hash: l1HeadChild.Hash()}
-	s.NotNil(sendTxWithBackoff(
+	s.NotNil(s.sender.Send(
 		context.Background(),
-		s.RpcClient,
-		common.Big1,
-		l1Head.Hash(),
-		0,
-		meta,
+		&proofProducer.ProofWithHeader{
+			Meta:    meta,
+			BlockID: common.Big1,
+			Header:  &types.Header{},
+			Opts:    &proofProducer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
+		},
 		func(nonce *big.Int) (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
-		12*time.Second,
-		&testMaxRetry,
-		5*time.Second,
 	))
 
-	s.Nil(sendTxWithBackoff(
+	s.Nil(s.sender.Send(
 		context.Background(),
-		s.RpcClient,
-		common.Big1,
-		l1Head.Hash(),
-		0,
-		meta,
+		&proofProducer.ProofWithHeader{
+			Meta:    meta,
+			BlockID: common.Big1,
+			Header:  &types.Header{},
+			Opts:    &proofProducer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
+		},
 		func(nonce *big.Int) (*types.Transaction, error) {
 			height, err := s.RpcClient.L1.BlockNumber(context.Background())
 			s.Nil(err)
@@ -77,8 +79,9 @@ func (s *ProofSubmitterTestSuite) TestSendTxWithBackoff() {
 
 			return block.Transactions()[0], nil
 		},
-		12*time.Second,
-		&testMaxRetry,
-		5*time.Second,
 	))
+}
+
+func TestTxSenderTestSuite(t *testing.T) {
+	suite.Run(t, new(TransactionTestSuite))
 }

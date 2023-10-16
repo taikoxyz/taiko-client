@@ -58,5 +58,5 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
-	require.NotEmpty(t, res.ZkProof)
+	require.NotEmpty(t, res.Proof)
 }

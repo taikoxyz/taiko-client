@@ -8,10 +8,16 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+// Tier IDs defined in protocol.
 var (
-	OracleProverAddress = common.HexToAddress("0x0000000000000000000000000000000000000001")
+	TierOptimisticID uint16   = 100
+	TierSgxID        uint16   = 200
+	TierPseZkevmID   uint16   = 300
+	TierGuardianID   uint16   = 1000
+	ProtocolTiers    []uint16 = []uint16{TierOptimisticID, TierSgxID, TierPseZkevmID, TierGuardianID}
 )
 
+// BlockHeader represents an Ethereum block header.
 type BlockHeader struct {
 	ParentHash       [32]byte
 	OmmersHash       [32]byte
@@ -31,34 +37,30 @@ type BlockHeader struct {
 	BaseFeePerGas    *big.Int
 }
 
-type TaikoL1Evidence struct {
+// BlockEvidence should be same with TaikoData.BlockEvidence.
+type BlockEvidence struct {
 	MetaHash   [32]byte
-	BlockHash  [32]byte
 	ParentHash [32]byte
+	BlockHash  [32]byte
 	SignalRoot [32]byte
 	Graffiti   [32]byte
-	Prover     common.Address
-	Proofs     []byte
+	Tier       uint16
+	Proof      []byte
 }
 
-type TaikoL1BlockMetadataInput struct {
-	TxListHash      [32]byte
-	Proposer        common.Address
-	TxListByteStart *big.Int
-	TxListByteEnd   *big.Int
-	CacheTxListInfo bool
+// TierFee should be same with TaikoData.TierFee.
+type TierFee struct {
+	Tier uint16
+	Fee  *big.Int
 }
 
+// ProverAssignment should be same with TaikoData.ProverAssignment.
 type ProverAssignment struct {
-	Prover common.Address
-	Expiry uint64
-	Data   []byte
-}
-
-type ProposeBlockData struct {
-	Input  TaikoL1BlockMetadataInput `json:"input"`
-	Fee    *big.Int                  `json:"fee"`
-	Expiry uint64                    `json:"expiry"`
+	Prover    common.Address
+	FeeToken  common.Address
+	TierFees  []TierFee
+	Expiry    uint64
+	Signature []byte
 }
 
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.

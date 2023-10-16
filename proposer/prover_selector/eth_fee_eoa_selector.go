@@ -30,15 +30,15 @@ var (
 // ETHFeeEOASelector is a prover selector implementation which use ETHs as prover fee and
 // all provers selected must be EOA accounts.
 type ETHFeeEOASelector struct {
-	protocolConfigs       *bindings.TaikoDataConfig
-	rpc                   *rpc.Client
-	taikoL1Address        common.Address
-	feeBase               *big.Int
-	feeIncreasePercentage *big.Int
-	proverEndpoints       []*url.URL
-	proposalFeeIterations uint64
-	proposalExpiry        time.Duration
-	requestTimeout        time.Duration
+	protocolConfigs               *bindings.TaikoDataConfig
+	rpc                           *rpc.Client
+	taikoL1Address                common.Address
+	tiersFee                      []encoding.TierFee
+	tierFeePriceBump              *big.Int
+	proverEndpoints               []*url.URL
+	maxTierFeePriceBumpIterations uint64
+	proposalExpiry                time.Duration
+	requestTimeout                time.Duration
 }
 
 // NewETHFeeEOASelector creates a new ETHFeeEOASelector instance.
@@ -46,10 +46,10 @@ func NewETHFeeEOASelector(
 	protocolConfigs *bindings.TaikoDataConfig,
 	rpc *rpc.Client,
 	taikoL1Address common.Address,
-	feeBase *big.Int,
-	feeIncreasePercentage *big.Int,
+	tiersFee []encoding.TierFee,
+	tierFeePriceBump *big.Int,
 	proverEndpoints []*url.URL,
-	proposalFeeIterations uint64,
+	maxTierFeePriceBumpIterations uint64,
 	proposalExpiry time.Duration,
 	requestTimeout time.Duration,
 ) (*ETHFeeEOASelector, error) {
@@ -67,10 +67,10 @@ func NewETHFeeEOASelector(
 		protocolConfigs,
 		rpc,
 		taikoL1Address,
-		feeBase,
-		feeIncreasePercentage,
+		tiersFee,
+		tierFeePriceBump,
 		proverEndpoints,
-		proposalFeeIterations,
+		maxTierFeePriceBumpIterations,
 		proposalExpiry,
 		requestTimeout,
 	}, nil
@@ -82,59 +82,67 @@ func (s *ETHFeeEOASelector) ProverEndpoints() []*url.URL { return s.proverEndpoi
 // AssignProver tries to pick a prover through the registered prover endpoints.
 func (s *ETHFeeEOASelector) AssignProver(
 	ctx context.Context,
-	meta *encoding.TaikoL1BlockMetadataInput,
+	tierFees []encoding.TierFee,
+	txListHash common.Hash,
 ) ([]byte, *big.Int, error) {
-	oracleProverAddress, err := s.rpc.TaikoL1.Resolve0(
+	guardianProverAddress, err := s.rpc.TaikoL1.Resolve0(
 		&bind.CallOpts{Context: ctx},
-		rpc.StringToBytes32("oracle_prover"),
+		rpc.StringToBytes32("guardian"),
 		true,
 	)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	var (
+		expiry       = uint64(time.Now().Add(s.proposalExpiry).Unix())
+		fees         = make([]encoding.TierFee, len(tierFees))
+		big100       = new(big.Int).SetUint64(uint64(100))
+		maxProverFee = common.Big0
+	)
+	copy(fees, tierFees)
+
 	// Iterate over each configured endpoint, and see if someone wants to accept this block.
 	// If it is denied, we continue on to the next endpoint.
 	// If we do not find a prover, we can increase the fee up to a point, or give up.
-	for i := 0; i < int(s.proposalFeeIterations); i++ {
-		var (
-			fee    = new(big.Int).Set(s.feeBase)
-			expiry = uint64(time.Now().Add(s.proposalExpiry).Unix())
-		)
-
-		// Increase fee on each failed loop
-		if i > 0 {
-			cumulativePercent := new(big.Int).Mul(s.feeIncreasePercentage, big.NewInt(int64(i)))
-			increase := new(big.Int).Mul(fee, cumulativePercent)
-			increase.Div(increase, big.NewInt(100))
-			fee.Add(fee, increase)
+	for i := 0; i < int(s.maxTierFeePriceBumpIterations); i++ {
+		// Bump tier fee on each failed loop
+		cumulativeBumpPercent := new(big.Int).Mul(s.tierFeePriceBump, new(big.Int).SetUint64(uint64(i)))
+		for idx := range fees {
+			if i > 0 {
+				fee := new(big.Int).Mul(fees[idx].Fee, cumulativeBumpPercent)
+				fees[idx].Fee = fees[idx].Fee.Add(fees[idx].Fee, fee.Div(fee, big100))
+			}
+			if fees[idx].Fee.Cmp(maxProverFee) > 0 {
+				maxProverFee = fees[idx].Fee
+			}
 		}
+
 		for _, endpoint := range s.shuffleProverEndpoints() {
 			encodedAssignment, proverAddress, err := assignProver(
 				ctx,
-				meta,
 				endpoint,
-				fee,
 				expiry,
+				tierFees,
+				txListHash,
 				s.requestTimeout,
-				oracleProverAddress,
+				guardianProverAddress,
 			)
 			if err != nil {
 				log.Warn("Failed to assign prover", "endpoint", endpoint, "error", err)
 				continue
 			}
 
-			if proverAddress != encoding.OracleProverAddress {
-				ok, err := rpc.CheckProverBalance(ctx, s.rpc, proverAddress, s.taikoL1Address, s.protocolConfigs.ProofBond)
-				if err != nil {
-					log.Warn("Failed to check prover balance", "endpoint", endpoint, "error", err)
-					continue
-				}
-				if !ok {
-					continue
-				}
+			ok, err := rpc.CheckProverBalance(ctx, s.rpc, proverAddress, s.taikoL1Address, s.protocolConfigs.LivenessBond)
+			if err != nil {
+				log.Warn("Failed to check prover balance", "endpoint", endpoint, "error", err)
+				continue
+			}
+			if !ok {
+				continue
 			}
 
-			return encodedAssignment, fee, nil
+			return encodedAssignment, maxProverFee, nil
 		}
 	}
 
@@ -152,25 +160,30 @@ func (s *ETHFeeEOASelector) shuffleProverEndpoints() []*url.URL {
 // assignProver tries to assign a proof generation task to the given prover by HTTP API.
 func assignProver(
 	ctx context.Context,
-	meta *encoding.TaikoL1BlockMetadataInput,
 	endpoint *url.URL,
-	fee *big.Int,
 	expiry uint64,
+	tierFees []encoding.TierFee,
+	txListHash common.Hash,
 	timeout time.Duration,
-	oracleProverAddress common.Address,
+	guardianProverAddress common.Address,
 ) ([]byte, common.Address, error) {
 	log.Info(
 		"Attempting to assign prover",
 		"endpoint", endpoint,
-		"fee", fee.String(),
 		"expiry", expiry,
+		"txListHash", txListHash,
 	)
 
 	// Send the HTTP request
 	var (
 		client  = resty.New()
-		reqBody = &encoding.ProposeBlockData{Expiry: expiry, Input: *meta, Fee: fee}
-		result  = server.ProposeBlockResponse{}
+		reqBody = &server.CreateAssignmentRequestBody{
+			FeeToken:   (common.Address{}),
+			TierFees:   tierFees,
+			Expiry:     expiry,
+			TxListHash: txListHash,
+		}
+		result = server.ProposeBlockResponse{}
 	)
 	requestUrl, err := url.JoinPath(endpoint.String(), "/assignment")
 	if err != nil {
@@ -196,12 +209,12 @@ func assignProver(
 
 	// Ensure prover in response is the same as the one recovered
 	// from the signature
-	encodedBlockData, err := encoding.EncodeProposeBlockData(reqBody)
+	payload, err := encoding.EncodeProverAssignmentPayload(txListHash, common.Address{}, expiry, tierFees)
 	if err != nil {
 		return nil, common.Address{}, err
 	}
 
-	pubKey, err := crypto.SigToPub(crypto.Keccak256Hash(encodedBlockData).Bytes(), result.SignedPayload)
+	pubKey, err := crypto.SigToPub(crypto.Keccak256Hash(payload).Bytes(), result.SignedPayload)
 	if err != nil {
 		return nil, common.Address{}, err
 	}
@@ -217,15 +230,12 @@ func assignProver(
 	// Convert signature to one solidity can recover by adding 27 to 65th byte
 	result.SignedPayload[64] = uint8(uint(result.SignedPayload[64])) + 27
 
-	// If this assignment is to oracle prover, change prover address in assignment to `LibUtils.ORACLE_PROVER`
-	if oracleProverAddress != (common.Address{}) && result.Prover == oracleProverAddress {
-		result.Prover = encoding.OracleProverAddress
-	}
-
 	encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
-		Prover: result.Prover,
-		Expiry: reqBody.Expiry,
-		Data:   result.SignedPayload,
+		Prover:    result.Prover,
+		FeeToken:  common.Address{},
+		TierFees:  tierFees,
+		Expiry:    reqBody.Expiry,
+		Signature: result.SignedPayload,
 	})
 	if err != nil {
 		return nil, common.Address{}, err
@@ -235,7 +245,7 @@ func assignProver(
 		"Prover assigned",
 		"address", result.Prover,
 		"endpoint", endpoint,
-		"fee", fee.String(),
+		"tierFees", tierFees,
 		"expiry", expiry,
 	)
 

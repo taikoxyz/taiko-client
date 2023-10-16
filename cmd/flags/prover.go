@@ -9,27 +9,26 @@ import (
 // Required flags used by prover.
 var (
 	ZkEvmRpcdEndpoint = &cli.StringFlag{
-		Name:     "zkevmRpcdEndpoint",
+		Name:     "zkevm.rpcdEndpoint",
 		Usage:    "RPC endpoint of a ZKEVM RPCD service",
 		Required: true,
 		Category: proverCategory,
 	}
 	ZkEvmRpcdParamsPath = &cli.StringFlag{
-		Name:     "zkevmRpcdParamsPath",
+		Name:     "zkevm.rpcdParamsPath",
 		Usage:    "Path of ZKEVM parameters file to use",
 		Required: true,
 		Category: proverCategory,
 	}
 	L1ProverPrivKey = &cli.StringFlag{
-		Name: "l1.proverPrivKey",
-		Usage: "Private key of L1 prover, " +
-			"who will send TaikoL1.proveBlock / TaikoL1.proveBlockInvalid transactions",
+		Name:     "l1.proverPrivKey",
+		Usage:    "Private key of L1 prover, who will send TaikoL1.proveBlock transactions",
 		Required: true,
 		Category: proverCategory,
 	}
-	MinProofFee = &cli.StringFlag{
-		Name:     "prover.minProofFee",
-		Usage:    "Minimum accepted fee for accepting proving a block",
+	ProverCapacity = &cli.Uint64Flag{
+		Name:     "prover.capacity",
+		Usage:    "Capacity of prover",
 		Required: true,
 		Category: proverCategory,
 	}
@@ -38,106 +37,110 @@ var (
 // Optional flags used by prover.
 var (
 	StartingBlockID = &cli.Uint64Flag{
-		Name:     "startingBlockID",
+		Name:     "prover.startingBlockID",
 		Usage:    "If set, prover will start proving blocks from the block with this ID",
 		Category: proverCategory,
 	}
 	MaxConcurrentProvingJobs = &cli.UintFlag{
-		Name:     "maxConcurrentProvingJobs",
+		Name:     "prover.maxConcurrentJobs",
 		Usage:    "Limits the number of concurrent proving blocks jobs",
 		Value:    1,
 		Category: proverCategory,
 	}
-	// Special flags for testing.
-	Dummy = &cli.BoolFlag{
-		Name:     "dummy",
-		Usage:    "Produce dummy proofs, testing purposes only",
-		Value:    false,
-		Category: proverCategory,
-	}
-	RandomDummyProofDelay = &cli.StringFlag{
-		Name: "randomDummyProofDelay",
-		Usage: "Set the random dummy proof delay between the bounds using the format: " +
-			"`lowerBound-upperBound` (e.g. `30m-1h`), testing purposes only",
-		Category: proverCategory,
-	}
-	OracleProver = &cli.BoolFlag{
-		Name:     "oracleProver",
-		Usage:    "Set whether prover should use oracle prover or not",
-		Category: proverCategory,
-	}
-	OracleProverPrivateKey = &cli.StringFlag{
-		Name:     "oracleProverPrivateKey",
-		Usage:    "Private key of oracle prover",
-		Category: proverCategory,
-	}
-	OracleProofSubmissionDelay = &cli.Uint64Flag{
-		Name:     "oracleProofSubmissionDelay",
-		Usage:    "Oracle proof submission delay in seconds",
-		Value:    0,
-		Category: proverCategory,
-	}
-	ProofSubmissionMaxRetry = &cli.Uint64Flag{
-		Name:     "proofSubmissionMaxRetry",
-		Usage:    "Max retry counts for proof submission",
-		Value:    0,
-		Category: proverCategory,
-	}
 	Graffiti = &cli.StringFlag{
-		Name:     "graffiti",
+		Name:     "prover.graffiti",
 		Usage:    "When string is passed, adds additional graffiti info to proof evidence",
 		Category: proverCategory,
 		Value:    "",
 	}
-	CheckProofWindowExpiredInterval = &cli.Uint64Flag{
-		Name:     "prover.checkProofWindowExpiredInterval",
-		Usage:    "Interval in seconds to check for expired proof windows from other provers",
-		Category: proverCategory,
-		Value:    15,
-	}
+	// Proving strategy.
 	ProveUnassignedBlocks = &cli.BoolFlag{
 		Name:     "prover.proveUnassignedBlocks",
 		Usage:    "Whether you want to prove unassigned blocks, or only work on assigned proofs",
 		Category: proverCategory,
 		Value:    false,
 	}
+	// Tier fee related.
+	MinOptimisticTierFee = &cli.Uint64Flag{
+		Name:     "minTierFee.optimistic",
+		Usage:    "Minimum accepted fee for generating an optimistic proof",
+		Category: proverCategory,
+	}
+	MinSgxTierFee = &cli.Uint64Flag{
+		Name:     "minTierFee.sgx",
+		Usage:    "Minimum accepted fee for generating a SGX proof",
+		Category: proverCategory,
+	}
+	MinPseZkevmTierFee = &cli.Uint64Flag{
+		Name:     "minTierFee.pseZKEvm",
+		Usage:    "Minimum accepted fee for generating a PSE zkEVM proof",
+		Category: proverCategory,
+	}
+	// Guardian prover related.
+	GuardianProver = &cli.BoolFlag{
+		Name:     "guardian",
+		Usage:    "Set whether prover should use guardian prover or not",
+		Category: proverCategory,
+	}
+	GuardianProverPrivateKey = &cli.StringFlag{
+		Name:     "guardian.privateKey",
+		Usage:    "Private key of guardian prover",
+		Category: proverCategory,
+	}
+	GuardianProofSubmissionDelay = &cli.DurationFlag{
+		Name:     "guardian.submissionDelay",
+		Usage:    "Guardian proof submission delay",
+		Value:    0 * time.Second,
+		Category: proverCategory,
+	}
+	// Transaction related.
+	ProofSubmissionMaxRetry = &cli.Uint64Flag{
+		Name:     "tx.submissionMaxRetry",
+		Usage:    "Max retry counts for proof submission",
+		Value:    3,
+		Category: proverCategory,
+	}
 	ProveBlockTxGasLimit = &cli.Uint64Flag{
-		Name:     "prover.proveBlockTxGasLimit",
+		Name:     "tx.gasLimit",
 		Usage:    "Gas limit will be used for TaikoL1.proveBlock transactions",
 		Category: proverCategory,
 	}
+	ProveBlockMaxTxGasTipCap = &cli.Uint64Flag{
+		Name:     "tx.maxGasTipCap",
+		Usage:    "Gas tip cap (in wei) for a TaikoL1.proveBlock transaction when doing the transaction replacement",
+		Category: proverCategory,
+	}
 	ProveBlockTxReplacementMultiplier = &cli.Uint64Flag{
-		Name:     "proveBlockTxReplacementMultiplier",
+		Name:     "tx.replacementMultiplier",
 		Value:    2,
 		Usage:    "Gas tip multiplier when replacing a TaikoL1.proveBlock transaction with same nonce",
 		Category: proverCategory,
 	}
-	ProveBlockMaxTxGasTipCap = &cli.Uint64Flag{
-		Name:     "proveBlockMaxTxGasTipCap",
-		Usage:    "Gas tip cap (in wei) for a TaikoL1.proveBlock transaction when doing the transaction replacement",
+	// Running mode
+	ContesterMode = &cli.BoolFlag{
+		Name:     "mode.contester",
+		Usage:    "Whether you want to contest wrong transitions with higher tier proofs",
 		Category: proverCategory,
+		Value:    false,
 	}
+	// HTTP server related.
 	ProverHTTPServerPort = &cli.Uint64Flag{
-		Name:     "prover.httpServerPort",
+		Name:     "http.port",
 		Usage:    "Port to expose for http server",
 		Category: proverCategory,
 		Value:    9876,
 	}
-	ProverCapacity = &cli.Uint64Flag{
-		Name:     "prover.capacity",
-		Usage:    "Capacity of prover, required if oracleProver is false",
+	MaxExpiry = &cli.DurationFlag{
+		Name:     "http.maxExpiry",
+		Usage:    "Maximum accepted expiry in seconds for accepting proving a block",
+		Value:    1 * time.Hour,
 		Category: proverCategory,
 	}
-	MaxExpiry = &cli.Uint64Flag{
-		Name:     "prover.maxExpiry",
-		Usage:    "maximum accepted expiry in seconds for accepting proving a block",
-		Value:    uint64(time.Hour.Seconds()),
-		Category: proverCategory,
-	}
-	TempCapacityExpiresAt = &cli.DurationFlag{
-		Name:     "prover.tempCapacityExpiresAt",
-		Usage:    "time in seconds temporary capacity lives for, format: 36s",
-		Value:    36 * time.Second,
+	// Special flags for testing.
+	Dummy = &cli.BoolFlag{
+		Name:     "prover.dummy",
+		Usage:    "Produce dummy proofs, testing purposes only",
+		Value:    false,
 		Category: proverCategory,
 	}
 )
@@ -150,24 +153,24 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ZkEvmRpcdEndpoint,
 	ZkEvmRpcdParamsPath,
 	L1ProverPrivKey,
-	MinProofFee,
+	MinOptimisticTierFee,
+	MinSgxTierFee,
+	MinPseZkevmTierFee,
 	StartingBlockID,
 	MaxConcurrentProvingJobs,
 	Dummy,
-	RandomDummyProofDelay,
-	OracleProver,
-	OracleProverPrivateKey,
-	OracleProofSubmissionDelay,
+	GuardianProver,
+	GuardianProverPrivateKey,
+	GuardianProofSubmissionDelay,
 	ProofSubmissionMaxRetry,
 	ProveBlockTxReplacementMultiplier,
 	ProveBlockMaxTxGasTipCap,
 	Graffiti,
-	CheckProofWindowExpiredInterval,
 	ProveUnassignedBlocks,
+	ContesterMode,
 	ProveBlockTxGasLimit,
 	ProverHTTPServerPort,
 	ProverCapacity,
 	MaxExpiry,
 	TaikoTokenAddress,
-	TempCapacityExpiresAt,
 })

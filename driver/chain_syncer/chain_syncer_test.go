@@ -1,8 +1,8 @@
 package chainSyncer
 
 import (
+	"bytes"
 	"context"
-	"math/big"
 
 	"os"
 	"testing"
@@ -49,20 +49,23 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
 	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
-		L1Endpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:                     common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                     common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:                  common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L1ProposerPrivKey:                  l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:            common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:                    &proposeInterval,
-		MaxProposedTxListsPerEpoch:         1,
-		WaitReceiptTimeout:                 10 * time.Second,
-		ProverEndpoints:                    s.ProverEndpoints,
-		BlockProposalFee:                   big.NewInt(1000),
-		BlockProposalFeeIterations:         3,
-		BlockProposalFeeIncreasePercentage: common.Big2,
+		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		L1ProposerPrivKey:          l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		ProposeInterval:            &proposeInterval,
+		MaxProposedTxListsPerEpoch: 1,
+		WaitReceiptTimeout:         12 * time.Second,
+		ProverEndpoints:            s.ProverEndpoints,
+		OptimisticTierFee:          common.Big256,
+		SgxTierFee:                 common.Big256,
+		PseZkevmTierFee:            common.Big256,
+		MaxTierFeePriceBumps:       3,
+		TierFeePriceBump:           common.Big2,
+		ExtraData:                  "test",
 	})))
 
 	s.p = prop
@@ -96,14 +99,11 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 
 	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-
+	s.Equal("test", string(bytes.TrimRight(l2Head.Extra, "\x00")))
 	log.Info("L1HeaderByNumber head", "number", head.Number)
 	// (equiv to s.state.GetL2Head().Number)
 	log.Info("L2HeaderByNumber head", "number", l2Head.Number)
 	log.Info("LatestVerifiedBlock number", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
-
-	config, err := s.s.rpc.TaikoL1.GetConfig(&bind.CallOpts{})
-	s.Nil(err)
 
 	// increase evm time to make blocks verifiable.
 	var result uint64
@@ -111,7 +111,8 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 		context.Background(),
 		&result,
 		"evm_increaseTime",
-		config.ProofRegularCooldown.Uint64()))
+		(1024 * time.Hour).Seconds(),
+	))
 	s.NotNil(result)
 	log.Info("EVM time increase", "number", result)
 

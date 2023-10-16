@@ -15,7 +15,7 @@ const (
 
 // ProofRequestOptions contains all options that need to be passed to zkEVM rpcd service.
 type ProofRequestOptions struct {
-	Height             *big.Int // the block number
+	BlockID            *big.Int
 	ProverAddress      common.Address
 	ProposeBlockTxHash common.Hash
 	L1SignalService    common.Address
@@ -35,9 +35,10 @@ type ProofWithHeader struct {
 	BlockID *big.Int
 	Meta    *bindings.TaikoDataBlockMetadata
 	Header  *types.Header
-	ZkProof []byte
+	Proof   []byte
 	Degree  uint64
 	Opts    *ProofRequestOptions
+	Tier    uint16
 }
 
 type ProofProducer interface {
@@ -49,7 +50,9 @@ type ProofProducer interface {
 		header *types.Header,
 		resultCh chan *ProofWithHeader,
 	) error
+	Cancellable() bool
 	Cancel(ctx context.Context, blockID *big.Int) error
+	Tier() uint16
 }
 
 func DegreeToCircuitsIdx(degree uint64) (uint16, error) {

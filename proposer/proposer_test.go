@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -45,11 +44,14 @@ func (s *ProposerTestSuite) SetupTest() {
 		ProposeInterval:                     &proposeInterval,
 		MaxProposedTxListsPerEpoch:          1,
 		ProposeBlockTxReplacementMultiplier: 2,
-		WaitReceiptTimeout:                  10 * time.Second,
+		WaitReceiptTimeout:                  12 * time.Second,
 		ProverEndpoints:                     s.ProverEndpoints,
-		BlockProposalFee:                    common.Big256,
-		BlockProposalFeeIncreasePercentage:  common.Big2,
-		BlockProposalFeeIterations:          3,
+		OptimisticTierFee:                   common.Big256,
+		SgxTierFee:                          common.Big256,
+		PseZkevmTierFee:                     common.Big256,
+		TierFeePriceBump:                    common.Big2,
+		MaxTierFeePriceBumps:                3,
+		ExtraData:                           "test",
 	})))
 
 	s.p = p
@@ -104,7 +106,6 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	_, isPending, err := s.p.rpc.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
-	s.Equal(s.p.l2SuggestedFeeRecipient, event.Meta.Proposer)
 
 	receipt, err := s.p.rpc.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
@@ -132,14 +133,14 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	opts, err := getTxOpts(
 		context.Background(),
 		s.p.rpc.L1,
-		s.p.l1ProposerPrivKey,
+		s.p.proposerPrivKey,
 		s.RpcClient.L1ChainID,
 		fee,
 	)
 	s.Nil(err)
 	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
 
-	nonce, err := s.RpcClient.L1.PendingNonceAt(context.Background(), s.p.l1ProposerAddress)
+	nonce, err := s.RpcClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
 	s.Nil(err)
 
 	tx := types.NewTransaction(
@@ -154,7 +155,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RpcClient.L1ChainID), s.p.l1ProposerPrivKey)
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RpcClient.L1ChainID), s.p.proposerPrivKey)
 	s.Nil(err)
 	s.Nil(s.RpcClient.L1.SendTransaction(context.Background(), signedTx))
 
@@ -162,23 +163,18 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	meta := &encoding.TaikoL1BlockMetadataInput{
-		Proposer:        s.p.L2SuggestedFeeRecipient(),
-		TxListHash:      crypto.Keccak256Hash(encoded),
-		TxListByteStart: common.Big0,
-		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
-		CacheTxListInfo: false,
-	}
-
-	assignment, fee, err := s.p.proverSelector.AssignProver(context.Background(), meta)
+	signedAssignment, fee, err := s.p.proverSelector.AssignProver(
+		context.Background(),
+		s.p.tierFees,
+		crypto.Keccak256Hash(encoded),
+	)
 	s.Nil(err)
 
 	newTx, err := s.p.sendProposeBlockTx(
 		context.Background(),
-		meta,
 		encoded,
 		&nonce,
-		assignment,
+		signedAssignment,
 		fee,
 		true,
 	)
@@ -187,21 +183,13 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 }
 
 func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
-	meta := &encoding.TaikoL1BlockMetadataInput{
-		Proposer:        s.p.L2SuggestedFeeRecipient(),
-		TxListHash:      testutils.RandomHash(),
-		TxListByteStart: common.Big0,
-		TxListByteEnd:   common.Big0,
-		CacheTxListInfo: false,
-	}
-
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	_, fee, err := s.p.proverSelector.AssignProver(context.Background(), meta)
+	_, fee, err := s.p.proverSelector.AssignProver(context.Background(), s.p.tierFees, testutils.RandomHash())
 
 	s.Nil(err)
-	s.Equal(fee.Uint64(), s.p.cfg.BlockProposalFee.Uint64())
+	s.Equal(fee.Uint64(), s.p.cfg.OptimisticTierFee.Uint64())
 }
 
 func (s *ProposerTestSuite) TestUpdateProposingTicker() {

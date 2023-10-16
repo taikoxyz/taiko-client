@@ -1,6 +1,7 @@
 package proposer
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"errors"
@@ -43,9 +44,8 @@ type Proposer struct {
 	rpc *rpc.Client
 
 	// Private keys and account addresses
-	l1ProposerPrivKey       *ecdsa.PrivateKey
-	l1ProposerAddress       common.Address
-	l2SuggestedFeeRecipient common.Address
+	proposerPrivKey *ecdsa.PrivateKey
+	proposerAddress common.Address
 
 	// Proposing configurations
 	proposingInterval          *time.Duration
@@ -57,6 +57,8 @@ type Proposer struct {
 	proposeBlockTxGasLimit     *uint64
 	txReplacementTipMultiplier uint64
 	proposeBlockTxGasTipCap    *big.Int
+	tiers                      []*rpc.TierProviderTierWithID
+	tierFees                   []encoding.TierFee
 
 	// Prover selector
 	proverSelector selector.ProverSelector
@@ -88,9 +90,8 @@ func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
 
 // InitFromConfig initializes the proposer instance based on the given configurations.
 func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
-	p.l1ProposerPrivKey = cfg.L1ProposerPrivKey
-	p.l1ProposerAddress = crypto.PubkeyToAddress(cfg.L1ProposerPrivKey.PublicKey)
-	p.l2SuggestedFeeRecipient = cfg.L2SuggestedFeeRecipient
+	p.proposerPrivKey = cfg.L1ProposerPrivKey
+	p.proposerAddress = crypto.PubkeyToAddress(cfg.L1ProposerPrivKey.PublicKey)
 	p.proposingInterval = cfg.ProposeInterval
 	p.proposeEmptyBlocksInterval = cfg.ProposeEmptyBlocksInterval
 	p.proposeBlockTxGasLimit = cfg.ProposeBlockTxGasLimit
@@ -126,14 +127,21 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
+	if p.tiers, err = p.rpc.GetTiers(ctx); err != nil {
+		return err
+	}
+	if err := p.initTierFees(); err != nil {
+		return err
+	}
+
 	if p.proverSelector, err = selector.NewETHFeeEOASelector(
 		&protocolConfigs,
 		p.rpc,
 		cfg.TaikoL1Address,
-		cfg.BlockProposalFee,
-		cfg.BlockProposalFeeIncreasePercentage,
+		p.tierFees,
+		cfg.TierFeePriceBump,
 		cfg.ProverEndpoints,
-		cfg.BlockProposalFeeIterations,
+		cfg.MaxTierFeePriceBumps,
 		proverAssignmentTimeout,
 		requestProverServerTimeout,
 	); err != nil {
@@ -232,7 +240,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	txLists, err := p.rpc.GetPoolContent(
 		ctx,
-		p.L2SuggestedFeeRecipient(),
+		p.proposerAddress,
 		baseFee,
 		p.protocolConfigs.BlockMaxGasLimit,
 		p.protocolConfigs.BlockMaxTxListBytes.Uint64(),
@@ -282,7 +290,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	}
 	nonce, err := p.rpc.L1.NonceAt(
 		ctx,
-		crypto.PubkeyToAddress(p.l1ProposerPrivKey.PublicKey),
+		crypto.PubkeyToAddress(p.proposerPrivKey.PublicKey),
 		new(big.Int).SetUint64(head),
 	)
 	if err != nil {
@@ -305,13 +313,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 				}
 
 				txNonce := nonce + uint64(i)
-				if err := p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
-					Proposer:        p.l2SuggestedFeeRecipient,
-					TxListHash:      crypto.Keccak256Hash(txListBytes),
-					TxListByteStart: common.Big0,
-					TxListByteEnd:   new(big.Int).SetUint64(uint64(len(txListBytes))),
-					CacheTxListInfo: false,
-				}, txListBytes, uint(txs.Len()), &txNonce); err != nil {
+				if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len()), &txNonce); err != nil {
 					return fmt.Errorf("failed to propose transactions: %w", err)
 				}
 
@@ -336,19 +338,14 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 // sendProposeBlockTx tries to send a TaikoL1.proposeBlock transaction.
 func (p *Proposer) sendProposeBlockTx(
 	ctx context.Context,
-	meta *encoding.TaikoL1BlockMetadataInput,
 	txListBytes []byte,
 	nonce *uint64,
-	assignment []byte,
-	fee *big.Int,
+	signedAssignment []byte,
+	maxFee *big.Int,
 	isReplacement bool,
 ) (*types.Transaction, error) {
 	// Propose the transactions list
-	inputs, err := encoding.EncodeProposeBlockInput(meta)
-	if err != nil {
-		return nil, err
-	}
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.l1ProposerPrivKey, p.rpc.L1ChainID, fee)
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.proposerPrivKey, p.rpc.L1ChainID, maxFee)
 	if err != nil {
 		return nil, err
 	}
@@ -363,7 +360,7 @@ func (p *Proposer) sendProposeBlockTx(
 			ctx,
 			p.rpc,
 			opts,
-			p.l1ProposerAddress,
+			p.proposerAddress,
 			new(big.Int).SetUint64(p.txReplacementTipMultiplier),
 			p.proposeBlockTxGasTipCap,
 		); err != nil {
@@ -371,7 +368,13 @@ func (p *Proposer) sendProposeBlockTx(
 		}
 	}
 
-	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(opts, inputs, assignment, txListBytes)
+	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(
+		opts,
+		crypto.Keccak256Hash(txListBytes),
+		rpc.StringToBytes32(p.cfg.ExtraData),
+		signedAssignment,
+		txListBytes,
+	)
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
 	}
@@ -382,12 +385,15 @@ func (p *Proposer) sendProposeBlockTx(
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
-	meta *encoding.TaikoL1BlockMetadataInput,
 	txListBytes []byte,
 	txNum uint,
 	nonce *uint64,
 ) error {
-	assignment, fee, err := p.proverSelector.AssignProver(ctx, meta)
+	signedAssignment, maxFee, err := p.proverSelector.AssignProver(
+		ctx,
+		p.tierFees,
+		crypto.Keccak256Hash(txListBytes),
+	)
 	if err != nil {
 		return err
 	}
@@ -401,7 +407,14 @@ func (p *Proposer) ProposeTxList(
 			if ctx.Err() != nil {
 				return nil
 			}
-			if tx, err = p.sendProposeBlockTx(ctx, meta, txListBytes, nonce, assignment, fee, isReplacement); err != nil {
+			if tx, err = p.sendProposeBlockTx(
+				ctx,
+				txListBytes,
+				nonce,
+				signedAssignment,
+				maxFee,
+				isReplacement,
+			); err != nil {
 				log.Warn("Failed to send propose block transaction", "error", encoding.TryParsingCustomError(err))
 				if strings.Contains(err.Error(), core.ErrNonceTooLow.Error()) {
 					return nil
@@ -447,13 +460,7 @@ func (p *Proposer) ProposeTxList(
 
 // ProposeEmptyBlockOp performs a proposing one empty block operation.
 func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
-	return p.ProposeTxList(ctx, &encoding.TaikoL1BlockMetadataInput{
-		TxListHash:      crypto.Keccak256Hash([]byte{}),
-		Proposer:        p.L2SuggestedFeeRecipient(),
-		TxListByteStart: common.Big0,
-		TxListByteEnd:   common.Big0,
-		CacheTxListInfo: false,
-	}, []byte{}, 0, nil)
+	return p.ProposeTxList(ctx, []byte{}, 0, nil)
 }
 
 // updateProposingTicker updates the internal proposing timer.
@@ -479,9 +486,35 @@ func (p *Proposer) Name() string {
 	return "proposer"
 }
 
-// L2SuggestedFeeRecipient returns the L2 suggested fee recipient of the current proposer.
-func (p *Proposer) L2SuggestedFeeRecipient() common.Address {
-	return p.l2SuggestedFeeRecipient
+// initTierFees initializes the proving fees for every proof tier configured in the protocol for the proposer.
+func (p *Proposer) initTierFees() error {
+	for _, tier := range p.tiers {
+		log.Info(
+			"Protocol tier",
+			"id", tier.ID,
+			"name", string(bytes.TrimRight(tier.VerifierName[:], "\x00")),
+			"validityBond", tier.ValidityBond,
+			"contestBond", tier.ContestBond,
+			"provingWindow", tier.ProvingWindow,
+			"cooldownWindow", tier.CooldownWindow,
+		)
+
+		switch tier.ID {
+		case encoding.TierOptimisticID:
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.cfg.OptimisticTierFee})
+		case encoding.TierSgxID:
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.cfg.SgxTierFee})
+		case encoding.TierPseZkevmID:
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.cfg.PseZkevmTierFee})
+		case encoding.TierGuardianID:
+			// Guardian prover should not charge any fee.
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: common.Big0})
+		default:
+			return fmt.Errorf("unknown tier: %d", tier.ID)
+		}
+	}
+
+	return nil
 }
 
 // getTxOpts creates a bind.TransactOpts instance using the given private key.
@@ -507,7 +540,6 @@ func getTxOpts(
 	}
 
 	opts.GasTipCap = gasTipCap
-
 	opts.Value = fee
 
 	return opts, nil

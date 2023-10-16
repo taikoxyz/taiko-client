@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -28,17 +27,15 @@ type Config struct {
 	StartingBlockID                   *big.Int
 	MaxConcurrentProvingJobs          uint
 	Dummy                             bool
-	OracleProver                      bool
-	OracleProverPrivateKey            *ecdsa.PrivateKey
-	OracleProofSubmissionDelay        time.Duration
+	GuardianProver                    bool
+	GuardianProverPrivateKey          *ecdsa.PrivateKey
+	GuardianProofSubmissionDelay      time.Duration
 	ProofSubmissionMaxRetry           uint64
 	Graffiti                          string
-	RandomDummyProofDelayLowerBound   *time.Duration
-	RandomDummyProofDelayUpperBound   *time.Duration
 	BackOffMaxRetrys                  uint64
 	BackOffRetryInterval              time.Duration
-	CheckProofWindowExpiredInterval   time.Duration
 	ProveUnassignedBlocks             bool
+	ContesterMode                     bool
 	RPCTimeout                        *time.Duration
 	WaitReceiptTimeout                time.Duration
 	ProveBlockGasLimit                *uint64
@@ -46,8 +43,9 @@ type Config struct {
 	ProveBlockMaxTxGasTipCap          *big.Int
 	HTTPServerPort                    uint64
 	Capacity                          uint64
-	TempCapacityExpiresAt             time.Duration
-	MinProofFee                       *big.Int
+	MinOptimisticTierFee              *big.Int
+	MinSgxTierFee                     *big.Int
+	MinPseZkevmTierFee                *big.Int
 	MaxExpiry                         time.Duration
 }
 
@@ -60,50 +58,15 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
 	}
 
-	oracleProverSet := c.IsSet(flags.OracleProver.Name)
-
-	var oracleProverPrivKey *ecdsa.PrivateKey
-	if oracleProverSet {
-		if !c.IsSet(flags.OracleProverPrivateKey.Name) {
-			return nil, fmt.Errorf("oracleProver flag set without oracleProverPrivateKey set")
+	var guardianProverPrivKey *ecdsa.PrivateKey
+	if c.IsSet(flags.GuardianProver.Name) {
+		if !c.IsSet(flags.GuardianProverPrivateKey.Name) {
+			return nil, fmt.Errorf("guardianProver flag set without guardianProverPrivateKey set")
 		}
 
-		oracleProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(c.String(flags.OracleProverPrivateKey.Name)))
+		guardianProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(c.String(flags.GuardianProverPrivateKey.Name)))
 		if err != nil {
-			return nil, fmt.Errorf("invalid oracle private key: %w", err)
-		}
-	} else {
-		if !c.IsSet(flags.ProverCapacity.Name) {
-			return nil, fmt.Errorf("capacity is required if oracleProver is not set to true")
-		}
-	}
-
-	var (
-		randomDummyProofDelayLowerBound *time.Duration
-		randomDummyProofDelayUpperBound *time.Duration
-	)
-	if c.IsSet(flags.RandomDummyProofDelay.Name) {
-		flagValue := c.String(flags.RandomDummyProofDelay.Name)
-		splitted := strings.Split(flagValue, "-")
-		if len(splitted) != 2 {
-			return nil, fmt.Errorf("invalid random dummy proof delay value: %s", flagValue)
-		}
-
-		lower, err := time.ParseDuration(splitted[0])
-		if err != nil {
-			return nil, fmt.Errorf("invalid random dummy proof delay value: %s, err: %w", flagValue, err)
-		}
-		upper, err := time.ParseDuration(splitted[1])
-		if err != nil {
-			return nil, fmt.Errorf("invalid random dummy proof delay value: %s, err: %w", flagValue, err)
-		}
-		if lower > upper {
-			return nil, fmt.Errorf("invalid random dummy proof delay value (lower > upper): %s", flagValue)
-		}
-
-		if upper != time.Duration(0) {
-			randomDummyProofDelayLowerBound = &lower
-			randomDummyProofDelayUpperBound = &upper
+			return nil, fmt.Errorf("invalid guardian private key: %w", err)
 		}
 	}
 
@@ -114,7 +77,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 
 	var timeout *time.Duration
 	if c.IsSet(flags.RPCTimeout.Name) {
-		duration := time.Duration(c.Uint64(flags.RPCTimeout.Name)) * time.Second
+		duration := c.Duration(flags.RPCTimeout.Name)
 		timeout = &duration
 	}
 
@@ -122,11 +85,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	if c.IsSet(flags.ProveBlockTxGasLimit.Name) {
 		gasLimit := c.Uint64(flags.ProveBlockTxGasLimit.Name)
 		proveBlockTxGasLimit = &gasLimit
-	}
-
-	minProofFee, ok := new(big.Int).SetString(c.String(flags.MinProofFee.Name), 10)
-	if !ok {
-		return nil, fmt.Errorf("invalid minProofFee: %v", minProofFee)
 	}
 
 	proveBlockTxReplacementMultiplier := c.Uint64(flags.ProveBlockTxReplacementMultiplier.Name)
@@ -143,41 +101,38 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	return &Config{
-		L1WsEndpoint:                    c.String(flags.L1WSEndpoint.Name),
-		L1HttpEndpoint:                  c.String(flags.L1HTTPEndpoint.Name),
-		L2WsEndpoint:                    c.String(flags.L2WSEndpoint.Name),
-		L2HttpEndpoint:                  c.String(flags.L2HTTPEndpoint.Name),
-		TaikoL1Address:                  common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
-		TaikoL2Address:                  common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-		TaikoTokenAddress:               common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
-		L1ProverPrivKey:                 l1ProverPrivKey,
-		ZKEvmRpcdEndpoint:               c.String(flags.ZkEvmRpcdEndpoint.Name),
-		ZkEvmRpcdParamsPath:             c.String(flags.ZkEvmRpcdParamsPath.Name),
-		StartingBlockID:                 startingBlockID,
-		MaxConcurrentProvingJobs:        c.Uint(flags.MaxConcurrentProvingJobs.Name),
-		Dummy:                           c.Bool(flags.Dummy.Name),
-		OracleProver:                    c.Bool(flags.OracleProver.Name),
-		OracleProverPrivateKey:          oracleProverPrivKey,
-		OracleProofSubmissionDelay:      time.Duration(c.Uint64(flags.OracleProofSubmissionDelay.Name)) * time.Second,
-		ProofSubmissionMaxRetry:         c.Uint64(flags.ProofSubmissionMaxRetry.Name),
-		Graffiti:                        c.String(flags.Graffiti.Name),
-		RandomDummyProofDelayLowerBound: randomDummyProofDelayLowerBound,
-		RandomDummyProofDelayUpperBound: randomDummyProofDelayUpperBound,
-		BackOffMaxRetrys:                c.Uint64(flags.BackOffMaxRetrys.Name),
-		BackOffRetryInterval:            time.Duration(c.Uint64(flags.BackOffRetryInterval.Name)) * time.Second,
-		CheckProofWindowExpiredInterval: time.Duration(
-			c.Uint64(flags.CheckProofWindowExpiredInterval.Name),
-		) * time.Second,
+		L1WsEndpoint:                      c.String(flags.L1WSEndpoint.Name),
+		L1HttpEndpoint:                    c.String(flags.L1HTTPEndpoint.Name),
+		L2WsEndpoint:                      c.String(flags.L2WSEndpoint.Name),
+		L2HttpEndpoint:                    c.String(flags.L2HTTPEndpoint.Name),
+		TaikoL1Address:                    common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
+		TaikoL2Address:                    common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
+		TaikoTokenAddress:                 common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
+		L1ProverPrivKey:                   l1ProverPrivKey,
+		ZKEvmRpcdEndpoint:                 c.String(flags.ZkEvmRpcdEndpoint.Name),
+		ZkEvmRpcdParamsPath:               c.String(flags.ZkEvmRpcdParamsPath.Name),
+		StartingBlockID:                   startingBlockID,
+		MaxConcurrentProvingJobs:          c.Uint(flags.MaxConcurrentProvingJobs.Name),
+		Dummy:                             c.Bool(flags.Dummy.Name),
+		GuardianProver:                    c.Bool(flags.GuardianProver.Name),
+		GuardianProverPrivateKey:          guardianProverPrivKey,
+		GuardianProofSubmissionDelay:      c.Duration(flags.GuardianProofSubmissionDelay.Name),
+		ProofSubmissionMaxRetry:           c.Uint64(flags.ProofSubmissionMaxRetry.Name),
+		Graffiti:                          c.String(flags.Graffiti.Name),
+		BackOffMaxRetrys:                  c.Uint64(flags.BackOffMaxRetrys.Name),
+		BackOffRetryInterval:              c.Duration(flags.BackOffRetryInterval.Name),
 		ProveUnassignedBlocks:             c.Bool(flags.ProveUnassignedBlocks.Name),
+		ContesterMode:                     c.Bool(flags.ContesterMode.Name),
 		RPCTimeout:                        timeout,
-		WaitReceiptTimeout:                time.Duration(c.Uint64(flags.WaitReceiptTimeout.Name)) * time.Second,
+		WaitReceiptTimeout:                c.Duration(flags.WaitReceiptTimeout.Name),
 		ProveBlockGasLimit:                proveBlockTxGasLimit,
 		Capacity:                          c.Uint64(flags.ProverCapacity.Name),
-		TempCapacityExpiresAt:             c.Duration(flags.TempCapacityExpiresAt.Name),
 		ProveBlockTxReplacementMultiplier: proveBlockTxReplacementMultiplier,
 		ProveBlockMaxTxGasTipCap:          proveBlockMaxTxGasTipCap,
 		HTTPServerPort:                    c.Uint64(flags.ProverHTTPServerPort.Name),
-		MinProofFee:                       minProofFee,
-		MaxExpiry:                         time.Duration(c.Uint64(flags.MaxExpiry.Name)) * time.Second,
+		MinOptimisticTierFee:              new(big.Int).SetUint64(c.Uint64(flags.MinOptimisticTierFee.Name)),
+		MinSgxTierFee:                     new(big.Int).SetUint64(c.Uint64(flags.MinSgxTierFee.Name)),
+		MinPseZkevmTierFee:                new(big.Int).SetUint64(c.Uint64(flags.MinPseZkevmTierFee.Name)),
+		MaxExpiry:                         c.Duration(flags.MaxExpiry.Name),
 	}, nil
 }

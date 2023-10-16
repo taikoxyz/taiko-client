@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"math/big"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,13 +16,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/go-resty/resty/v2"
 	"github.com/phayes/freeport"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 )
@@ -31,13 +28,7 @@ import (
 func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
 	invalidTxListBytes := RandomBytes(256)
 
-	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
-		Proposer:        proposer.L2SuggestedFeeRecipient(),
-		TxListHash:      crypto.Keccak256Hash(invalidTxListBytes),
-		TxListByteStart: common.Big0,
-		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(invalidTxListBytes))),
-		CacheTxListInfo: false,
-	}, invalidTxListBytes, 1, nil))
+	s.Nil(proposer.ProposeTxList(context.Background(), invalidTxListBytes, 1, nil))
 }
 
 func ProposeAndInsertEmptyBlocks(
@@ -64,13 +55,7 @@ func ProposeAndInsertEmptyBlocks(
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	s.Nil(proposer.ProposeTxList(context.Background(), &encoding.TaikoL1BlockMetadataInput{
-		Proposer:        proposer.L2SuggestedFeeRecipient(),
-		TxListHash:      crypto.Keccak256Hash(encoded),
-		TxListByteStart: common.Big0,
-		TxListByteEnd:   new(big.Int).SetUint64(uint64(len(encoded))),
-		CacheTxListInfo: false,
-	}, encoded, 0, nil))
+	s.Nil(proposer.ProposeTxList(context.Background(), encoded, 0, nil))
 
 	ProposeInvalidTxListBytes(s, proposer)
 
@@ -197,14 +182,16 @@ func NewTestProverServer(
 	s.Nil(err)
 
 	srv, err := server.New(&server.NewProverServerOpts{
-		ProverPrivateKey: proverPrivKey,
-		MinProofFee:      common.Big1,
-		MaxExpiry:        24 * time.Hour,
-		CapacityManager:  capacityManager,
-		TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		Rpc:              s.RpcClient,
-		Bond:             protocolConfig.ProofBond,
-		IsOracle:         true,
+		ProverPrivateKey:     proverPrivKey,
+		MinOptimisticTierFee: common.Big1,
+		MinSgxTierFee:        common.Big1,
+		MinPseZkevmTierFee:   common.Big1,
+		MaxExpiry:            24 * time.Hour,
+		CapacityManager:      capacityManager,
+		TaikoL1Address:       common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		Rpc:                  s.RpcClient,
+		LivenessBond:         protocolConfig.LivenessBond,
+		IsGuardian:           true,
 	})
 	s.Nil(err)
 

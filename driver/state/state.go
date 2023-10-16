@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -32,19 +31,19 @@ func (h *HeightOrID) NotEmpty() bool {
 // State contains all states which will be used by driver.
 type State struct {
 	// Subscriptions, will automatically resubscribe on errors
-	l1HeadSub          event.Subscription // L1 new heads
-	l2HeadSub          event.Subscription // L2 new heads
-	l2BlockProvenSub   event.Subscription // TaikoL1.BlockProven events
-	l2BlockVerifiedSub event.Subscription // TaikoL1.BlockVerified events
-	l2BlockProposedSub event.Subscription // TaikoL1.BlockProposed events
-	l2HeaderSyncedSub  event.Subscription // TaikoL1.HeaderSynced events
+	l1HeadSub             event.Subscription // L1 new heads
+	l2HeadSub             event.Subscription // L2 new heads
+	l2TransitionProvedSub event.Subscription // TaikoL1.TransitionProved events
+	l2BlockVerifiedSub    event.Subscription // TaikoL1.BlockVerified events
+	l2BlockProposedSub    event.Subscription // TaikoL1.BlockProposed events
+	l2HeaderSyncedSub     event.Subscription // TaikoL1.HeaderSynced events
 
-	l1HeadCh         chan *types.Header
-	l2HeadCh         chan *types.Header
-	blockProposedCh  chan *bindings.TaikoL1ClientBlockProposed
-	blockProvenCh    chan *bindings.TaikoL1ClientBlockProven
-	blockVerifiedCh  chan *bindings.TaikoL1ClientBlockVerified
-	crossChainSynced chan *bindings.TaikoL1ClientCrossChainSynced
+	l1HeadCh           chan *types.Header
+	l2HeadCh           chan *types.Header
+	blockProposedCh    chan *bindings.TaikoL1ClientBlockProposed
+	transitionProvedCh chan *bindings.TaikoL1ClientTransitionProved
+	blockVerifiedCh    chan *bindings.TaikoL1ClientBlockVerified
+	crossChainSynced   chan *bindings.TaikoL1ClientCrossChainSynced
 
 	// Feeds
 	l1HeadsFeed event.Feed // L1 new heads notification feed
@@ -66,19 +65,19 @@ type State struct {
 // New creates a new driver state instance.
 func New(ctx context.Context, rpc *rpc.Client) (*State, error) {
 	s := &State{
-		rpc:              rpc,
-		l1Head:           new(atomic.Value),
-		l2Head:           new(atomic.Value),
-		l2HeadBlockID:    new(atomic.Value),
-		l2VerifiedHead:   new(atomic.Value),
-		l1Current:        new(atomic.Value),
-		l1HeadCh:         make(chan *types.Header, 10),
-		l2HeadCh:         make(chan *types.Header, 10),
-		blockProposedCh:  make(chan *bindings.TaikoL1ClientBlockProposed, 10),
-		blockProvenCh:    make(chan *bindings.TaikoL1ClientBlockProven, 10),
-		blockVerifiedCh:  make(chan *bindings.TaikoL1ClientBlockVerified, 10),
-		crossChainSynced: make(chan *bindings.TaikoL1ClientCrossChainSynced, 10),
-		BlockDeadendHash: common.BigToHash(common.Big1),
+		rpc:                rpc,
+		l1Head:             new(atomic.Value),
+		l2Head:             new(atomic.Value),
+		l2HeadBlockID:      new(atomic.Value),
+		l2VerifiedHead:     new(atomic.Value),
+		l1Current:          new(atomic.Value),
+		l1HeadCh:           make(chan *types.Header, 10),
+		l2HeadCh:           make(chan *types.Header, 10),
+		blockProposedCh:    make(chan *bindings.TaikoL1ClientBlockProposed, 10),
+		transitionProvedCh: make(chan *bindings.TaikoL1ClientTransitionProved, 10),
+		blockVerifiedCh:    make(chan *bindings.TaikoL1ClientBlockVerified, 10),
+		crossChainSynced:   make(chan *bindings.TaikoL1ClientCrossChainSynced, 10),
+		BlockDeadendHash:   common.BigToHash(common.Big1),
 	}
 
 	if err := s.init(ctx); err != nil {
@@ -96,7 +95,7 @@ func (s *State) Close() {
 	s.l2HeadSub.Unsubscribe()
 	s.l2BlockVerifiedSub.Unsubscribe()
 	s.l2BlockProposedSub.Unsubscribe()
-	s.l2BlockProvenSub.Unsubscribe()
+	s.l2TransitionProvedSub.Unsubscribe()
 	s.l2HeaderSyncedSub.Unsubscribe()
 }
 
@@ -158,7 +157,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 	s.l2HeaderSyncedSub = rpc.SubscribeXchainSynced(s.rpc.TaikoL1, s.crossChainSynced)
 	s.l2BlockVerifiedSub = rpc.SubscribeBlockVerified(s.rpc.TaikoL1, s.blockVerifiedCh)
 	s.l2BlockProposedSub = rpc.SubscribeBlockProposed(s.rpc.TaikoL1, s.blockProposedCh)
-	s.l2BlockProvenSub = rpc.SubscribeBlockProven(s.rpc.TaikoL1, s.blockProvenCh)
+	s.l2TransitionProvedSub = rpc.SubscribeTransitionProved(s.rpc.TaikoL1, s.transitionProvedCh)
 
 	go func() {
 		for {
@@ -167,12 +166,24 @@ func (s *State) startSubscriptions(ctx context.Context) {
 				return
 			case e := <-s.blockProposedCh:
 				s.setHeadBlockID(e.BlockId)
-			case e := <-s.blockProvenCh:
-				if e.Prover != encoding.OracleProverAddress {
-					log.Info("✅ Block proven", "blockID", e.BlockId, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
-				}
+			case e := <-s.transitionProvedCh:
+				log.Info(
+					"✅ Transition proven",
+					"blockID", e.BlockId,
+					"parentHash", common.Hash(e.ParentHash),
+					"hash", common.Hash(e.BlockHash),
+					"signalRoot", common.Hash(e.SignalRoot),
+					"prover", e.Prover,
+				)
 			case e := <-s.blockVerifiedCh:
-				log.Info("📈 Block verified", "blockID", e.BlockId, "hash", common.Hash(e.BlockHash), "prover", e.Prover)
+				log.Info(
+					"📈 Block verified",
+					"blockID", e.BlockId,
+					"hash", common.Hash(e.BlockHash),
+					"signalRoot", common.Hash(e.SignalRoot),
+					"assignedProver", e.AssignedProver,
+					"prover", e.Prover,
+				)
 			case e := <-s.crossChainSynced:
 				// Verify the protocol synced block, check if it exists in
 				// L2 execution engine.
@@ -294,7 +305,7 @@ func (s *State) getSyncedHeaderID(ctx context.Context, l1Height uint64, hash com
 		Start:   l1Height,
 		End:     &l1Height,
 		Context: ctx,
-	}, nil, nil)
+	}, nil, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to filter BlockVerified event: %w", err)
 	}

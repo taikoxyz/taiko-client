@@ -29,58 +29,60 @@ var (
 	_ = abi.ConvertType
 )
 
+// ITierProviderTier is an auto generated low-level Go binding around an user-defined struct.
+type ITierProviderTier struct {
+	VerifierName      [32]byte
+	ValidityBond      *big.Int
+	ContestBond       *big.Int
+	CooldownWindow    *big.Int
+	ProvingWindow     uint16
+	MaxBlocksToVerify uint8
+}
+
 // TaikoDataBlock is an auto generated low-level Go binding around an user-defined struct.
 type TaikoDataBlock struct {
 	MetaHash             [32]byte
-	Prover               common.Address
-	ProofBond            *big.Int
+	AssignedProver       common.Address
+	LivenessBond         *big.Int
 	BlockId              uint64
 	ProposedAt           uint64
 	NextTransitionId     uint32
 	VerifiedTransitionId uint32
+	MinTier              uint16
 	Reserved             [7][32]byte
 }
 
 // TaikoDataBlockMetadata is an auto generated low-level Go binding around an user-defined struct.
 type TaikoDataBlockMetadata struct {
+	L1Hash            [32]byte
+	Difficulty        [32]byte
+	TxListHash        [32]byte
+	ExtraData         [32]byte
 	Id                uint64
 	Timestamp         uint64
 	L1Height          uint64
-	L1Hash            [32]byte
-	MixHash           [32]byte
-	TxListHash        [32]byte
-	TxListByteStart   *big.Int
-	TxListByteEnd     *big.Int
 	GasLimit          uint32
-	Proposer          common.Address
+	Coinbase          common.Address
 	DepositsProcessed []TaikoDataEthDeposit
 }
 
 // TaikoDataConfig is an auto generated low-level Go binding around an user-defined struct.
 type TaikoDataConfig struct {
-	ChainId                          *big.Int
-	RelaySignalRoot                  bool
-	BlockMaxProposals                uint64
-	BlockRingBufferSize              uint64
-	BlockMaxVerificationsPerTx       uint64
-	BlockMaxGasLimit                 uint32
-	BlockFeeBaseGas                  uint32
-	BlockMaxTxListBytes              *big.Int
-	BlockTxListExpiry                *big.Int
-	ProposerRewardPerSecond          *big.Int
-	ProposerRewardMax                *big.Int
-	ProofRegularCooldown             *big.Int
-	ProofOracleCooldown              *big.Int
-	ProofWindow                      uint16
-	ProofBond                        *big.Int
-	SkipProverAssignmentVerificaiton bool
-	EthDepositRingBufferSize         *big.Int
-	EthDepositMinCountPerBlock       uint64
-	EthDepositMaxCountPerBlock       uint64
-	EthDepositMinAmount              *big.Int
-	EthDepositMaxAmount              *big.Int
-	EthDepositGas                    *big.Int
-	EthDepositMaxFee                 *big.Int
+	ChainId                      *big.Int
+	RelaySignalRoot              bool
+	BlockMaxProposals            uint64
+	BlockRingBufferSize          uint64
+	MaxBlocksToVerifyPerProposal uint64
+	BlockMaxGasLimit             uint32
+	BlockMaxTxListBytes          *big.Int
+	LivenessBond                 *big.Int
+	EthDepositRingBufferSize     *big.Int
+	EthDepositMinCountPerBlock   uint64
+	EthDepositMaxCountPerBlock   uint64
+	EthDepositMinAmount          *big.Int
+	EthDepositMaxAmount          *big.Int
+	EthDepositGas                *big.Int
+	EthDepositMaxFee             *big.Int
 }
 
 // TaikoDataEthDeposit is an auto generated low-level Go binding around an user-defined struct.
@@ -106,29 +108,39 @@ type TaikoDataSlotB struct {
 	LastVerifiedBlockId     uint64
 }
 
+// TaikoDataSlotC is an auto generated low-level Go binding around an user-defined struct.
+type TaikoDataSlotC struct {
+	AccumulatedReward  *big.Int
+	LastProposedHeight uint64
+}
+
 // TaikoDataStateVariables is an auto generated low-level Go binding around an user-defined struct.
 type TaikoDataStateVariables struct {
 	GenesisHeight           uint64
 	GenesisTimestamp        uint64
-	NumBlocks               uint64
-	LastVerifiedBlockId     uint64
 	NextEthDepositToProcess uint64
 	NumEthDeposits          uint64
+	NumBlocks               uint64
+	LastVerifiedBlockId     uint64
 }
 
 // TaikoDataTransition is an auto generated low-level Go binding around an user-defined struct.
 type TaikoDataTransition struct {
-	Key        [32]byte
-	BlockHash  [32]byte
-	SignalRoot [32]byte
-	Prover     common.Address
-	ProvenAt   uint64
-	Reserved   [6][32]byte
+	Key          [32]byte
+	BlockHash    [32]byte
+	SignalRoot   [32]byte
+	Prover       common.Address
+	ValidityBond *big.Int
+	Contester    common.Address
+	ContestBond  *big.Int
+	Timestamp    uint64
+	Tier         uint16
+	Reserved     [4][32]byte
 }
 
 // TaikoL1ClientMetaData contains all meta data concerning the TaikoL1Client contract.
 var TaikoL1ClientMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"L1_ALREADY_PROVEN\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ALREADY_PROVEN\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_BLOCK_ID_MISMATCH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_BLOCK_ID_MISMATCH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_BLOCK_ID_MISMATCH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_EVIDENCE_MISMATCH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_EVIDENCE_MISMATCH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INSUFFICIENT_TOKEN\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INSUFFICIENT_TOKEN\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_ASSIGNMENT\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_ASSIGNMENT\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_BLOCK_ID\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_BLOCK_ID\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_BLOCK_ID\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_CONFIG\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_CONFIG\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_ETH_DEPOSIT\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_ETH_DEPOSIT\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_EVIDENCE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_EVIDENCE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_METADATA\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_METADATA\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_ORACLE_PROVER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_ORACLE_PROVER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PARAM\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PROOF\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PROPOSER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PROPOSER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PROVER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PROVER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PROVER_SIG\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PROVER_SIG\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_NOT_PROVEABLE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_NOT_PROVEABLE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_SAME_PROOF\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_SAME_PROOF\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TOO_MANY_BLOCKS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TOO_MANY_BLOCKS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TRANSITION_NOT_FOUND\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TRANSITION_NOT_FOUND\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TX_LIST\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TX_LIST\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TX_LIST_HASH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TX_LIST_HASH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TX_LIST_NOT_EXIST\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TX_LIST_NOT_EXIST\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TX_LIST_RANGE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TX_LIST_RANGE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_UNEXPECTED_TRANSITION_ID\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_UNEXPECTED_TRANSITION_ID\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_DENIED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_INVALID_ADDR\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"}],\"name\":\"RESOLVER_ZERO_ADDR\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addressManager\",\"type\":\"address\"}],\"name\":\"AddressManagerChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"reward\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"l1Height\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"l1Hash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"mixHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"txListHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint24\",\"name\":\"txListByteStart\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"txListByteEnd\",\"type\":\"uint24\"},{\"internalType\":\"uint32\",\"name\":\"gasLimit\",\"type\":\"uint32\"},{\"internalType\":\"address\",\"name\":\"proposer\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"amount\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.EthDeposit[]\",\"name\":\"depositsProcessed\",\"type\":\"tuple[]\"}],\"indexed\":false,\"internalType\":\"structTaikoData.BlockMetadata\",\"name\":\"meta\",\"type\":\"tuple\"}],\"name\":\"BlockProposed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"reward\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"l1Height\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"l1Hash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"mixHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"txListHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint24\",\"name\":\"txListByteStart\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"txListByteEnd\",\"type\":\"uint24\"},{\"internalType\":\"uint32\",\"name\":\"gasLimit\",\"type\":\"uint32\"},{\"internalType\":\"address\",\"name\":\"proposer\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"amount\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.EthDeposit[]\",\"name\":\"depositsProcessed\",\"type\":\"tuple[]\"}],\"indexed\":false,\"internalType\":\"structTaikoData.BlockMetadata\",\"name\":\"meta\",\"type\":\"tuple\"}],\"name\":\"BlockProposed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"parentHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"name\":\"BlockProven\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"parentHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"}],\"name\":\"BlockProven\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"}],\"name\":\"BlockVerified\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"}],\"name\":\"BlockVerified\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"bond\",\"type\":\"uint256\"}],\"name\":\"BondReceived\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"bond\",\"type\":\"uint256\"}],\"name\":\"BondReceived\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"bond\",\"type\":\"uint256\"}],\"name\":\"BondReturned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"bond\",\"type\":\"uint256\"}],\"name\":\"BondReturned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"bond\",\"type\":\"uint256\"}],\"name\":\"BondRewarded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"bond\",\"type\":\"uint256\"}],\"name\":\"BondRewarded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"srcHeight\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"}],\"name\":\"CrossChainSynced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"srcHeight\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"}],\"name\":\"CrossChainSynced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"amount\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"}],\"indexed\":false,\"internalType\":\"structTaikoData.EthDeposit\",\"name\":\"deposit\",\"type\":\"tuple\"}],\"name\":\"EthDeposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"amount\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"}],\"indexed\":false,\"internalType\":\"structTaikoData.EthDeposit\",\"name\":\"deposit\",\"type\":\"tuple\"}],\"name\":\"EthDeposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"canDepositEthToL2\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"}],\"name\":\"depositEtherToL2\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"depositTaikoToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"}],\"name\":\"getBlock\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"metaHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"proofBond\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"proposedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"nextTransitionId\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"verifiedTransitionId\",\"type\":\"uint32\"},{\"internalType\":\"bytes32[7]\",\"name\":\"__reserved\",\"type\":\"bytes32[7]\"}],\"internalType\":\"structTaikoData.Block\",\"name\":\"blk\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getConfig\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"relaySignalRoot\",\"type\":\"bool\"},{\"internalType\":\"uint64\",\"name\":\"blockMaxProposals\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"blockRingBufferSize\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"blockMaxVerificationsPerTx\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"blockMaxGasLimit\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"blockFeeBaseGas\",\"type\":\"uint32\"},{\"internalType\":\"uint24\",\"name\":\"blockMaxTxListBytes\",\"type\":\"uint24\"},{\"internalType\":\"uint256\",\"name\":\"blockTxListExpiry\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"proposerRewardPerSecond\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"proposerRewardMax\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"proofRegularCooldown\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"proofOracleCooldown\",\"type\":\"uint256\"},{\"internalType\":\"uint16\",\"name\":\"proofWindow\",\"type\":\"uint16\"},{\"internalType\":\"uint96\",\"name\":\"proofBond\",\"type\":\"uint96\"},{\"internalType\":\"bool\",\"name\":\"skipProverAssignmentVerificaiton\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"ethDepositRingBufferSize\",\"type\":\"uint256\"},{\"internalType\":\"uint64\",\"name\":\"ethDepositMinCountPerBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"ethDepositMaxCountPerBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint96\",\"name\":\"ethDepositMinAmount\",\"type\":\"uint96\"},{\"internalType\":\"uint96\",\"name\":\"ethDepositMaxAmount\",\"type\":\"uint96\"},{\"internalType\":\"uint256\",\"name\":\"ethDepositGas\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"ethDepositMaxFee\",\"type\":\"uint256\"}],\"internalType\":\"structTaikoData.Config\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"}],\"name\":\"getCrossChainBlockHash\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"}],\"name\":\"getCrossChainSignalRoot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getStateVariables\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"genesisHeight\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"genesisTimestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"numBlocks\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"lastVerifiedBlockId\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"nextEthDepositToProcess\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"numEthDeposits\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.StateVariables\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getTaikoTokenBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"parentHash\",\"type\":\"bytes32\"}],\"name\":\"getTransition\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"key\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"provenAt\",\"type\":\"uint64\"},{\"internalType\":\"bytes32[6]\",\"name\":\"__reserved\",\"type\":\"bytes32[6]\"}],\"internalType\":\"structTaikoData.Transition\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint16\",\"name\":\"id\",\"type\":\"uint16\"}],\"name\":\"getVerifierName\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"_genesisBlockHash\",\"type\":\"bytes32\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"assignment\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"txList\",\"type\":\"bytes\"}],\"name\":\"proposeBlock\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"l1Height\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"l1Hash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"mixHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"txListHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint24\",\"name\":\"txListByteStart\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"txListByteEnd\",\"type\":\"uint24\"},{\"internalType\":\"uint32\",\"name\":\"gasLimit\",\"type\":\"uint32\"},{\"internalType\":\"address\",\"name\":\"proposer\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"amount\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.EthDeposit[]\",\"name\":\"depositsProcessed\",\"type\":\"tuple[]\"}],\"internalType\":\"structTaikoData.BlockMetadata\",\"name\":\"meta\",\"type\":\"tuple\"}],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"proveBlock\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"addr\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"addr\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddressManager\",\"type\":\"address\"}],\"name\":\"setAddressManager\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"state\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"genesisHeight\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"genesisTimestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"numEthDeposits\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"nextEthDepositToProcess\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.SlotA\",\"name\":\"slotA\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"numBlocks\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"nextEthDepositToProcess\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"lastVerifiedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"lastVerifiedBlockId\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.SlotB\",\"name\":\"slotB\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"maxBlocks\",\"type\":\"uint64\"}],\"name\":\"verifyBlocks\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"withdrawTaikoToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
+	ABI: "[{\"inputs\":[],\"name\":\"L1_ALREADY_CONTESTED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ALREADY_CONTESTED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ALREADY_PROVED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ALREADY_PROVED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ASSIGNED_PROVER_NOT_ALLOWED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ASSIGNED_PROVER_NOT_ALLOWED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ASSIGNMENT_EXPIRED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ASSIGNMENT_EXPIRED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ASSIGNMENT_INSUFFICIENT_FEE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ASSIGNMENT_INSUFFICIENT_FEE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ASSIGNMENT_INVALID_PARAMS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ASSIGNMENT_INVALID_PARAMS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ASSIGNMENT_INVALID_SIG\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_ASSIGNMENT_INVALID_SIG\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_BLOCK_MISMATCH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_BLOCK_MISMATCH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_BLOCK_MISMATCH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_BLOCK_MISMATCH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INSUFFICIENT_TOKEN\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INSUFFICIENT_TOKEN\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_ADDRESS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_ADDRESS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_BLOCK_ID\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_BLOCK_ID\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_BLOCK_ID\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_CONFIG\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_CONFIG\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_ETH_DEPOSIT\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_ETH_DEPOSIT\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_EVIDENCE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_EVIDENCE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_METADATA\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PARAM\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PROOF\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PROPOSER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PROVER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_PROVER_SIG\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_TIER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_INVALID_TIER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_NOT_ASSIGNED_PROVER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_NOT_ASSIGNED_PROVER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TIER_NOT_FOUND\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TIER_NOT_FOUND\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TOO_MANY_BLOCKS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TOO_MANY_BLOCKS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TRANSITION_ID_ZERO\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TRANSITION_ID_ZERO\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TRANSITION_NOT_FOUND\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TRANSITION_NOT_FOUND\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TXLIST_INVALID_RANGE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TXLIST_MISMATCH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TXLIST_MISMATCH\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TXLIST_NOT_FOUND\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TXLIST_TOO_LARGE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_TXLIST_TOO_LARGE\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_UNAUTHORIZED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_UNAUTHORIZED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_UNEXPECTED_TRANSITION_ID\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_UNEXPECTED_TRANSITION_ID\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_UNEXPECTED_TRANSITION_TIER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"L1_UNEXPECTED_TRANSITION_TIER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_DENIED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_INVALID_ADDR\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"}],\"name\":\"RESOLVER_ZERO_ADDR\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addressManager\",\"type\":\"address\"}],\"name\":\"AddressManagerChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"assignedProver\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint96\",\"name\":\"livenessBond\",\"type\":\"uint96\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"proverFee\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"minTier\",\"type\":\"uint16\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"l1Hash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"difficulty\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"txListHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"extraData\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"l1Height\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"gasLimit\",\"type\":\"uint32\"},{\"internalType\":\"address\",\"name\":\"coinbase\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"amount\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.EthDeposit[]\",\"name\":\"depositsProcessed\",\"type\":\"tuple[]\"}],\"indexed\":false,\"internalType\":\"structTaikoData.BlockMetadata\",\"name\":\"meta\",\"type\":\"tuple\"}],\"name\":\"BlockProposed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"assignedProver\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint96\",\"name\":\"livenessBond\",\"type\":\"uint96\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"proverFee\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"minTier\",\"type\":\"uint16\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"l1Hash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"difficulty\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"txListHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"extraData\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"l1Height\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"gasLimit\",\"type\":\"uint32\"},{\"internalType\":\"address\",\"name\":\"coinbase\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"amount\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.EthDeposit[]\",\"name\":\"depositsProcessed\",\"type\":\"tuple[]\"}],\"indexed\":false,\"internalType\":\"structTaikoData.BlockMetadata\",\"name\":\"meta\",\"type\":\"tuple\"}],\"name\":\"BlockProposed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"assignedProver\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"}],\"name\":\"BlockVerified\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"assignedProver\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"}],\"name\":\"BlockVerified\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"srcHeight\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"}],\"name\":\"CrossChainSynced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"srcHeight\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"}],\"name\":\"CrossChainSynced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"amount\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"}],\"indexed\":false,\"internalType\":\"structTaikoData.EthDeposit\",\"name\":\"deposit\",\"type\":\"tuple\"}],\"name\":\"EthDeposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"amount\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"}],\"indexed\":false,\"internalType\":\"structTaikoData.EthDeposit\",\"name\":\"deposit\",\"type\":\"tuple\"}],\"name\":\"EthDeposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"minted\",\"type\":\"bool\"}],\"name\":\"TokenCredited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"minted\",\"type\":\"bool\"}],\"name\":\"TokenCredited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"fromLocalBalance\",\"type\":\"bool\"}],\"name\":\"TokenDebited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"fromLocalBalance\",\"type\":\"bool\"}],\"name\":\"TokenDebited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TokenDeposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TokenDeposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TokenWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TokenWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TokenWithdrawnByOwner\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TokenWithdrawnByOwner\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"parentHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"contester\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint96\",\"name\":\"contestBond\",\"type\":\"uint96\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"tier\",\"type\":\"uint16\"}],\"name\":\"TransitionContested\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"parentHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"contester\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint96\",\"name\":\"contestBond\",\"type\":\"uint96\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"tier\",\"type\":\"uint16\"}],\"name\":\"TransitionContested\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"parentHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint96\",\"name\":\"validityBond\",\"type\":\"uint96\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"tier\",\"type\":\"uint16\"}],\"name\":\"TransitionProved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"blockId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"parentHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint96\",\"name\":\"validityBond\",\"type\":\"uint96\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"tier\",\"type\":\"uint16\"}],\"name\":\"TransitionProved\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"canDepositEthToL2\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"}],\"name\":\"depositEtherToL2\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"depositTaikoToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"}],\"name\":\"getBlock\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"metaHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"assignedProver\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"livenessBond\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"proposedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"nextTransitionId\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"verifiedTransitionId\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"minTier\",\"type\":\"uint16\"},{\"internalType\":\"bytes32[7]\",\"name\":\"__reserved\",\"type\":\"bytes32[7]\"}],\"internalType\":\"structTaikoData.Block\",\"name\":\"blk\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getConfig\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"relaySignalRoot\",\"type\":\"bool\"},{\"internalType\":\"uint64\",\"name\":\"blockMaxProposals\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"blockRingBufferSize\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maxBlocksToVerifyPerProposal\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"blockMaxGasLimit\",\"type\":\"uint32\"},{\"internalType\":\"uint24\",\"name\":\"blockMaxTxListBytes\",\"type\":\"uint24\"},{\"internalType\":\"uint96\",\"name\":\"livenessBond\",\"type\":\"uint96\"},{\"internalType\":\"uint256\",\"name\":\"ethDepositRingBufferSize\",\"type\":\"uint256\"},{\"internalType\":\"uint64\",\"name\":\"ethDepositMinCountPerBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"ethDepositMaxCountPerBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint96\",\"name\":\"ethDepositMinAmount\",\"type\":\"uint96\"},{\"internalType\":\"uint96\",\"name\":\"ethDepositMaxAmount\",\"type\":\"uint96\"},{\"internalType\":\"uint256\",\"name\":\"ethDepositGas\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"ethDepositMaxFee\",\"type\":\"uint256\"}],\"internalType\":\"structTaikoData.Config\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"}],\"name\":\"getCrossChainBlockHash\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"}],\"name\":\"getCrossChainSignalRoot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"rand\",\"type\":\"uint256\"}],\"name\":\"getMinTier\",\"outputs\":[{\"internalType\":\"uint16\",\"name\":\"\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getStateVariables\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"genesisHeight\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"genesisTimestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"nextEthDepositToProcess\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"numEthDeposits\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"numBlocks\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"lastVerifiedBlockId\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.StateVariables\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"}],\"name\":\"getTaikoTokenBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint16\",\"name\":\"tierId\",\"type\":\"uint16\"}],\"name\":\"getTier\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"verifierName\",\"type\":\"bytes32\"},{\"internalType\":\"uint96\",\"name\":\"validityBond\",\"type\":\"uint96\"},{\"internalType\":\"uint96\",\"name\":\"contestBond\",\"type\":\"uint96\"},{\"internalType\":\"uint24\",\"name\":\"cooldownWindow\",\"type\":\"uint24\"},{\"internalType\":\"uint16\",\"name\":\"provingWindow\",\"type\":\"uint16\"},{\"internalType\":\"uint8\",\"name\":\"maxBlocksToVerify\",\"type\":\"uint8\"}],\"internalType\":\"structITierProvider.Tier\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getTierIds\",\"outputs\":[{\"internalType\":\"uint16[]\",\"name\":\"\",\"type\":\"uint16[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"parentHash\",\"type\":\"bytes32\"}],\"name\":\"getTransition\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"key\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"prover\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"validityBond\",\"type\":\"uint96\"},{\"internalType\":\"address\",\"name\":\"contester\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"contestBond\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"tier\",\"type\":\"uint16\"},{\"internalType\":\"bytes32[4]\",\"name\":\"__reserved\",\"type\":\"bytes32[4]\"}],\"internalType\":\"structTaikoData.Transition\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"_genesisBlockHash\",\"type\":\"bytes32\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"isConfigValid\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ownerWithdrawTaikoToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"txListHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"extraData\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"assignment\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"txList\",\"type\":\"bytes\"}],\"name\":\"proposeBlock\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"l1Hash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"difficulty\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"txListHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"extraData\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"l1Height\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"gasLimit\",\"type\":\"uint32\"},{\"internalType\":\"address\",\"name\":\"coinbase\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint96\",\"name\":\"amount\",\"type\":\"uint96\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.EthDeposit[]\",\"name\":\"depositsProcessed\",\"type\":\"tuple[]\"}],\"internalType\":\"structTaikoData.BlockMetadata\",\"name\":\"meta\",\"type\":\"tuple\"}],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"proveBlock\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"addr\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"addr\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddressManager\",\"type\":\"address\"}],\"name\":\"setAddressManager\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"state\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"genesisHeight\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"genesisTimestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"numEthDeposits\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"nextEthDepositToProcess\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.SlotA\",\"name\":\"slotA\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"numBlocks\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"nextEthDepositToProcess\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"lastVerifiedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"lastVerifiedBlockId\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.SlotB\",\"name\":\"slotB\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint128\",\"name\":\"accumulatedReward\",\"type\":\"uint128\"},{\"internalType\":\"uint64\",\"name\":\"lastProposedHeight\",\"type\":\"uint64\"}],\"internalType\":\"structTaikoData.SlotC\",\"name\":\"slotC\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"maxBlocksToVerify\",\"type\":\"uint64\"}],\"name\":\"verifyBlocks\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"withdrawTaikoToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
 }
 
 // TaikoL1ClientABI is the input ABI used to generate the binding from.
@@ -341,7 +353,7 @@ func (_TaikoL1Client *TaikoL1ClientCallerSession) CanDepositEthToL2(amount *big.
 
 // GetBlock is a free data retrieval call binding the contract method 0x5fa15e79.
 //
-// Solidity: function getBlock(uint64 blockId) view returns((bytes32,address,uint96,uint64,uint64,uint32,uint32,bytes32[7]) blk)
+// Solidity: function getBlock(uint64 blockId) view returns((bytes32,address,uint96,uint64,uint64,uint32,uint32,uint16,bytes32[7]) blk)
 func (_TaikoL1Client *TaikoL1ClientCaller) GetBlock(opts *bind.CallOpts, blockId uint64) (TaikoDataBlock, error) {
 	var out []interface{}
 	err := _TaikoL1Client.contract.Call(opts, &out, "getBlock", blockId)
@@ -358,21 +370,21 @@ func (_TaikoL1Client *TaikoL1ClientCaller) GetBlock(opts *bind.CallOpts, blockId
 
 // GetBlock is a free data retrieval call binding the contract method 0x5fa15e79.
 //
-// Solidity: function getBlock(uint64 blockId) view returns((bytes32,address,uint96,uint64,uint64,uint32,uint32,bytes32[7]) blk)
+// Solidity: function getBlock(uint64 blockId) view returns((bytes32,address,uint96,uint64,uint64,uint32,uint32,uint16,bytes32[7]) blk)
 func (_TaikoL1Client *TaikoL1ClientSession) GetBlock(blockId uint64) (TaikoDataBlock, error) {
 	return _TaikoL1Client.Contract.GetBlock(&_TaikoL1Client.CallOpts, blockId)
 }
 
 // GetBlock is a free data retrieval call binding the contract method 0x5fa15e79.
 //
-// Solidity: function getBlock(uint64 blockId) view returns((bytes32,address,uint96,uint64,uint64,uint32,uint32,bytes32[7]) blk)
+// Solidity: function getBlock(uint64 blockId) view returns((bytes32,address,uint96,uint64,uint64,uint32,uint32,uint16,bytes32[7]) blk)
 func (_TaikoL1Client *TaikoL1ClientCallerSession) GetBlock(blockId uint64) (TaikoDataBlock, error) {
 	return _TaikoL1Client.Contract.GetBlock(&_TaikoL1Client.CallOpts, blockId)
 }
 
 // GetConfig is a free data retrieval call binding the contract method 0xc3f909d4.
 //
-// Solidity: function getConfig() pure returns((uint256,bool,uint64,uint64,uint64,uint32,uint32,uint24,uint256,uint256,uint256,uint256,uint256,uint16,uint96,bool,uint256,uint64,uint64,uint96,uint96,uint256,uint256))
+// Solidity: function getConfig() pure returns((uint256,bool,uint64,uint64,uint64,uint32,uint24,uint96,uint256,uint64,uint64,uint96,uint96,uint256,uint256))
 func (_TaikoL1Client *TaikoL1ClientCaller) GetConfig(opts *bind.CallOpts) (TaikoDataConfig, error) {
 	var out []interface{}
 	err := _TaikoL1Client.contract.Call(opts, &out, "getConfig")
@@ -389,14 +401,14 @@ func (_TaikoL1Client *TaikoL1ClientCaller) GetConfig(opts *bind.CallOpts) (Taiko
 
 // GetConfig is a free data retrieval call binding the contract method 0xc3f909d4.
 //
-// Solidity: function getConfig() pure returns((uint256,bool,uint64,uint64,uint64,uint32,uint32,uint24,uint256,uint256,uint256,uint256,uint256,uint16,uint96,bool,uint256,uint64,uint64,uint96,uint96,uint256,uint256))
+// Solidity: function getConfig() pure returns((uint256,bool,uint64,uint64,uint64,uint32,uint24,uint96,uint256,uint64,uint64,uint96,uint96,uint256,uint256))
 func (_TaikoL1Client *TaikoL1ClientSession) GetConfig() (TaikoDataConfig, error) {
 	return _TaikoL1Client.Contract.GetConfig(&_TaikoL1Client.CallOpts)
 }
 
 // GetConfig is a free data retrieval call binding the contract method 0xc3f909d4.
 //
-// Solidity: function getConfig() pure returns((uint256,bool,uint64,uint64,uint64,uint32,uint32,uint24,uint256,uint256,uint256,uint256,uint256,uint16,uint96,bool,uint256,uint64,uint64,uint96,uint96,uint256,uint256))
+// Solidity: function getConfig() pure returns((uint256,bool,uint64,uint64,uint64,uint32,uint24,uint96,uint256,uint64,uint64,uint96,uint96,uint256,uint256))
 func (_TaikoL1Client *TaikoL1ClientCallerSession) GetConfig() (TaikoDataConfig, error) {
 	return _TaikoL1Client.Contract.GetConfig(&_TaikoL1Client.CallOpts)
 }
@@ -463,6 +475,37 @@ func (_TaikoL1Client *TaikoL1ClientCallerSession) GetCrossChainSignalRoot(blockI
 	return _TaikoL1Client.Contract.GetCrossChainSignalRoot(&_TaikoL1Client.CallOpts, blockId)
 }
 
+// GetMinTier is a free data retrieval call binding the contract method 0x59ab4e23.
+//
+// Solidity: function getMinTier(uint256 rand) view returns(uint16)
+func (_TaikoL1Client *TaikoL1ClientCaller) GetMinTier(opts *bind.CallOpts, rand *big.Int) (uint16, error) {
+	var out []interface{}
+	err := _TaikoL1Client.contract.Call(opts, &out, "getMinTier", rand)
+
+	if err != nil {
+		return *new(uint16), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint16)).(*uint16)
+
+	return out0, err
+
+}
+
+// GetMinTier is a free data retrieval call binding the contract method 0x59ab4e23.
+//
+// Solidity: function getMinTier(uint256 rand) view returns(uint16)
+func (_TaikoL1Client *TaikoL1ClientSession) GetMinTier(rand *big.Int) (uint16, error) {
+	return _TaikoL1Client.Contract.GetMinTier(&_TaikoL1Client.CallOpts, rand)
+}
+
+// GetMinTier is a free data retrieval call binding the contract method 0x59ab4e23.
+//
+// Solidity: function getMinTier(uint256 rand) view returns(uint16)
+func (_TaikoL1Client *TaikoL1ClientCallerSession) GetMinTier(rand *big.Int) (uint16, error) {
+	return _TaikoL1Client.Contract.GetMinTier(&_TaikoL1Client.CallOpts, rand)
+}
+
 // GetStateVariables is a free data retrieval call binding the contract method 0xdde89cf5.
 //
 // Solidity: function getStateVariables() view returns((uint64,uint64,uint64,uint64,uint64,uint64))
@@ -496,10 +539,10 @@ func (_TaikoL1Client *TaikoL1ClientCallerSession) GetStateVariables() (TaikoData
 
 // GetTaikoTokenBalance is a free data retrieval call binding the contract method 0x8dff9cea.
 //
-// Solidity: function getTaikoTokenBalance(address addr) view returns(uint256)
-func (_TaikoL1Client *TaikoL1ClientCaller) GetTaikoTokenBalance(opts *bind.CallOpts, addr common.Address) (*big.Int, error) {
+// Solidity: function getTaikoTokenBalance(address user) view returns(uint256)
+func (_TaikoL1Client *TaikoL1ClientCaller) GetTaikoTokenBalance(opts *bind.CallOpts, user common.Address) (*big.Int, error) {
 	var out []interface{}
-	err := _TaikoL1Client.contract.Call(opts, &out, "getTaikoTokenBalance", addr)
+	err := _TaikoL1Client.contract.Call(opts, &out, "getTaikoTokenBalance", user)
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -513,21 +556,83 @@ func (_TaikoL1Client *TaikoL1ClientCaller) GetTaikoTokenBalance(opts *bind.CallO
 
 // GetTaikoTokenBalance is a free data retrieval call binding the contract method 0x8dff9cea.
 //
-// Solidity: function getTaikoTokenBalance(address addr) view returns(uint256)
-func (_TaikoL1Client *TaikoL1ClientSession) GetTaikoTokenBalance(addr common.Address) (*big.Int, error) {
-	return _TaikoL1Client.Contract.GetTaikoTokenBalance(&_TaikoL1Client.CallOpts, addr)
+// Solidity: function getTaikoTokenBalance(address user) view returns(uint256)
+func (_TaikoL1Client *TaikoL1ClientSession) GetTaikoTokenBalance(user common.Address) (*big.Int, error) {
+	return _TaikoL1Client.Contract.GetTaikoTokenBalance(&_TaikoL1Client.CallOpts, user)
 }
 
 // GetTaikoTokenBalance is a free data retrieval call binding the contract method 0x8dff9cea.
 //
-// Solidity: function getTaikoTokenBalance(address addr) view returns(uint256)
-func (_TaikoL1Client *TaikoL1ClientCallerSession) GetTaikoTokenBalance(addr common.Address) (*big.Int, error) {
-	return _TaikoL1Client.Contract.GetTaikoTokenBalance(&_TaikoL1Client.CallOpts, addr)
+// Solidity: function getTaikoTokenBalance(address user) view returns(uint256)
+func (_TaikoL1Client *TaikoL1ClientCallerSession) GetTaikoTokenBalance(user common.Address) (*big.Int, error) {
+	return _TaikoL1Client.Contract.GetTaikoTokenBalance(&_TaikoL1Client.CallOpts, user)
+}
+
+// GetTier is a free data retrieval call binding the contract method 0x576c3de7.
+//
+// Solidity: function getTier(uint16 tierId) view returns((bytes32,uint96,uint96,uint24,uint16,uint8))
+func (_TaikoL1Client *TaikoL1ClientCaller) GetTier(opts *bind.CallOpts, tierId uint16) (ITierProviderTier, error) {
+	var out []interface{}
+	err := _TaikoL1Client.contract.Call(opts, &out, "getTier", tierId)
+
+	if err != nil {
+		return *new(ITierProviderTier), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(ITierProviderTier)).(*ITierProviderTier)
+
+	return out0, err
+
+}
+
+// GetTier is a free data retrieval call binding the contract method 0x576c3de7.
+//
+// Solidity: function getTier(uint16 tierId) view returns((bytes32,uint96,uint96,uint24,uint16,uint8))
+func (_TaikoL1Client *TaikoL1ClientSession) GetTier(tierId uint16) (ITierProviderTier, error) {
+	return _TaikoL1Client.Contract.GetTier(&_TaikoL1Client.CallOpts, tierId)
+}
+
+// GetTier is a free data retrieval call binding the contract method 0x576c3de7.
+//
+// Solidity: function getTier(uint16 tierId) view returns((bytes32,uint96,uint96,uint24,uint16,uint8))
+func (_TaikoL1Client *TaikoL1ClientCallerSession) GetTier(tierId uint16) (ITierProviderTier, error) {
+	return _TaikoL1Client.Contract.GetTier(&_TaikoL1Client.CallOpts, tierId)
+}
+
+// GetTierIds is a free data retrieval call binding the contract method 0xd8cde1c6.
+//
+// Solidity: function getTierIds() view returns(uint16[])
+func (_TaikoL1Client *TaikoL1ClientCaller) GetTierIds(opts *bind.CallOpts) ([]uint16, error) {
+	var out []interface{}
+	err := _TaikoL1Client.contract.Call(opts, &out, "getTierIds")
+
+	if err != nil {
+		return *new([]uint16), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]uint16)).(*[]uint16)
+
+	return out0, err
+
+}
+
+// GetTierIds is a free data retrieval call binding the contract method 0xd8cde1c6.
+//
+// Solidity: function getTierIds() view returns(uint16[])
+func (_TaikoL1Client *TaikoL1ClientSession) GetTierIds() ([]uint16, error) {
+	return _TaikoL1Client.Contract.GetTierIds(&_TaikoL1Client.CallOpts)
+}
+
+// GetTierIds is a free data retrieval call binding the contract method 0xd8cde1c6.
+//
+// Solidity: function getTierIds() view returns(uint16[])
+func (_TaikoL1Client *TaikoL1ClientCallerSession) GetTierIds() ([]uint16, error) {
+	return _TaikoL1Client.Contract.GetTierIds(&_TaikoL1Client.CallOpts)
 }
 
 // GetTransition is a free data retrieval call binding the contract method 0xfd257e29.
 //
-// Solidity: function getTransition(uint64 blockId, bytes32 parentHash) view returns((bytes32,bytes32,bytes32,address,uint64,bytes32[6]))
+// Solidity: function getTransition(uint64 blockId, bytes32 parentHash) view returns((bytes32,bytes32,bytes32,address,uint96,address,uint96,uint64,uint16,bytes32[4]))
 func (_TaikoL1Client *TaikoL1ClientCaller) GetTransition(opts *bind.CallOpts, blockId uint64, parentHash [32]byte) (TaikoDataTransition, error) {
 	var out []interface{}
 	err := _TaikoL1Client.contract.Call(opts, &out, "getTransition", blockId, parentHash)
@@ -544,47 +649,47 @@ func (_TaikoL1Client *TaikoL1ClientCaller) GetTransition(opts *bind.CallOpts, bl
 
 // GetTransition is a free data retrieval call binding the contract method 0xfd257e29.
 //
-// Solidity: function getTransition(uint64 blockId, bytes32 parentHash) view returns((bytes32,bytes32,bytes32,address,uint64,bytes32[6]))
+// Solidity: function getTransition(uint64 blockId, bytes32 parentHash) view returns((bytes32,bytes32,bytes32,address,uint96,address,uint96,uint64,uint16,bytes32[4]))
 func (_TaikoL1Client *TaikoL1ClientSession) GetTransition(blockId uint64, parentHash [32]byte) (TaikoDataTransition, error) {
 	return _TaikoL1Client.Contract.GetTransition(&_TaikoL1Client.CallOpts, blockId, parentHash)
 }
 
 // GetTransition is a free data retrieval call binding the contract method 0xfd257e29.
 //
-// Solidity: function getTransition(uint64 blockId, bytes32 parentHash) view returns((bytes32,bytes32,bytes32,address,uint64,bytes32[6]))
+// Solidity: function getTransition(uint64 blockId, bytes32 parentHash) view returns((bytes32,bytes32,bytes32,address,uint96,address,uint96,uint64,uint16,bytes32[4]))
 func (_TaikoL1Client *TaikoL1ClientCallerSession) GetTransition(blockId uint64, parentHash [32]byte) (TaikoDataTransition, error) {
 	return _TaikoL1Client.Contract.GetTransition(&_TaikoL1Client.CallOpts, blockId, parentHash)
 }
 
-// GetVerifierName is a free data retrieval call binding the contract method 0x0372303d.
+// IsConfigValid is a free data retrieval call binding the contract method 0xe3f1bdc5.
 //
-// Solidity: function getVerifierName(uint16 id) pure returns(bytes32)
-func (_TaikoL1Client *TaikoL1ClientCaller) GetVerifierName(opts *bind.CallOpts, id uint16) ([32]byte, error) {
+// Solidity: function isConfigValid() pure returns(bool)
+func (_TaikoL1Client *TaikoL1ClientCaller) IsConfigValid(opts *bind.CallOpts) (bool, error) {
 	var out []interface{}
-	err := _TaikoL1Client.contract.Call(opts, &out, "getVerifierName", id)
+	err := _TaikoL1Client.contract.Call(opts, &out, "isConfigValid")
 
 	if err != nil {
-		return *new([32]byte), err
+		return *new(bool), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
 
 	return out0, err
 
 }
 
-// GetVerifierName is a free data retrieval call binding the contract method 0x0372303d.
+// IsConfigValid is a free data retrieval call binding the contract method 0xe3f1bdc5.
 //
-// Solidity: function getVerifierName(uint16 id) pure returns(bytes32)
-func (_TaikoL1Client *TaikoL1ClientSession) GetVerifierName(id uint16) ([32]byte, error) {
-	return _TaikoL1Client.Contract.GetVerifierName(&_TaikoL1Client.CallOpts, id)
+// Solidity: function isConfigValid() pure returns(bool)
+func (_TaikoL1Client *TaikoL1ClientSession) IsConfigValid() (bool, error) {
+	return _TaikoL1Client.Contract.IsConfigValid(&_TaikoL1Client.CallOpts)
 }
 
-// GetVerifierName is a free data retrieval call binding the contract method 0x0372303d.
+// IsConfigValid is a free data retrieval call binding the contract method 0xe3f1bdc5.
 //
-// Solidity: function getVerifierName(uint16 id) pure returns(bytes32)
-func (_TaikoL1Client *TaikoL1ClientCallerSession) GetVerifierName(id uint16) ([32]byte, error) {
-	return _TaikoL1Client.Contract.GetVerifierName(&_TaikoL1Client.CallOpts, id)
+// Solidity: function isConfigValid() pure returns(bool)
+func (_TaikoL1Client *TaikoL1ClientCallerSession) IsConfigValid() (bool, error) {
+	return _TaikoL1Client.Contract.IsConfigValid(&_TaikoL1Client.CallOpts)
 }
 
 // Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
@@ -682,10 +787,11 @@ func (_TaikoL1Client *TaikoL1ClientCallerSession) Resolve0(name [32]byte, allowZ
 
 // State is a free data retrieval call binding the contract method 0xc19d93fb.
 //
-// Solidity: function state() view returns((uint64,uint64,uint64,uint64) slotA, (uint64,uint64,uint64,uint64) slotB)
+// Solidity: function state() view returns((uint64,uint64,uint64,uint64) slotA, (uint64,uint64,uint64,uint64) slotB, (uint128,uint64) slotC)
 func (_TaikoL1Client *TaikoL1ClientCaller) State(opts *bind.CallOpts) (struct {
 	SlotA TaikoDataSlotA
 	SlotB TaikoDataSlotB
+	SlotC TaikoDataSlotC
 }, error) {
 	var out []interface{}
 	err := _TaikoL1Client.contract.Call(opts, &out, "state")
@@ -693,6 +799,7 @@ func (_TaikoL1Client *TaikoL1ClientCaller) State(opts *bind.CallOpts) (struct {
 	outstruct := new(struct {
 		SlotA TaikoDataSlotA
 		SlotB TaikoDataSlotB
+		SlotC TaikoDataSlotC
 	})
 	if err != nil {
 		return *outstruct, err
@@ -700,6 +807,7 @@ func (_TaikoL1Client *TaikoL1ClientCaller) State(opts *bind.CallOpts) (struct {
 
 	outstruct.SlotA = *abi.ConvertType(out[0], new(TaikoDataSlotA)).(*TaikoDataSlotA)
 	outstruct.SlotB = *abi.ConvertType(out[1], new(TaikoDataSlotB)).(*TaikoDataSlotB)
+	outstruct.SlotC = *abi.ConvertType(out[2], new(TaikoDataSlotC)).(*TaikoDataSlotC)
 
 	return *outstruct, err
 
@@ -707,20 +815,22 @@ func (_TaikoL1Client *TaikoL1ClientCaller) State(opts *bind.CallOpts) (struct {
 
 // State is a free data retrieval call binding the contract method 0xc19d93fb.
 //
-// Solidity: function state() view returns((uint64,uint64,uint64,uint64) slotA, (uint64,uint64,uint64,uint64) slotB)
+// Solidity: function state() view returns((uint64,uint64,uint64,uint64) slotA, (uint64,uint64,uint64,uint64) slotB, (uint128,uint64) slotC)
 func (_TaikoL1Client *TaikoL1ClientSession) State() (struct {
 	SlotA TaikoDataSlotA
 	SlotB TaikoDataSlotB
+	SlotC TaikoDataSlotC
 }, error) {
 	return _TaikoL1Client.Contract.State(&_TaikoL1Client.CallOpts)
 }
 
 // State is a free data retrieval call binding the contract method 0xc19d93fb.
 //
-// Solidity: function state() view returns((uint64,uint64,uint64,uint64) slotA, (uint64,uint64,uint64,uint64) slotB)
+// Solidity: function state() view returns((uint64,uint64,uint64,uint64) slotA, (uint64,uint64,uint64,uint64) slotB, (uint128,uint64) slotC)
 func (_TaikoL1Client *TaikoL1ClientCallerSession) State() (struct {
 	SlotA TaikoDataSlotA
 	SlotB TaikoDataSlotB
+	SlotC TaikoDataSlotC
 }, error) {
 	return _TaikoL1Client.Contract.State(&_TaikoL1Client.CallOpts)
 }
@@ -788,25 +898,46 @@ func (_TaikoL1Client *TaikoL1ClientTransactorSession) Init(_addressManager commo
 	return _TaikoL1Client.Contract.Init(&_TaikoL1Client.TransactOpts, _addressManager, _genesisBlockHash)
 }
 
-// ProposeBlock is a paid mutator transaction binding the contract method 0xb6d5a397.
+// OwnerWithdrawTaikoToken is a paid mutator transaction binding the contract method 0x6edda419.
 //
-// Solidity: function proposeBlock(bytes input, bytes assignment, bytes txList) payable returns((uint64,uint64,uint64,bytes32,bytes32,bytes32,uint24,uint24,uint32,address,(address,uint96,uint64)[]) meta)
-func (_TaikoL1Client *TaikoL1ClientTransactor) ProposeBlock(opts *bind.TransactOpts, input []byte, assignment []byte, txList []byte) (*types.Transaction, error) {
-	return _TaikoL1Client.contract.Transact(opts, "proposeBlock", input, assignment, txList)
+// Solidity: function ownerWithdrawTaikoToken(address to, uint256 amount) returns()
+func (_TaikoL1Client *TaikoL1ClientTransactor) OwnerWithdrawTaikoToken(opts *bind.TransactOpts, to common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _TaikoL1Client.contract.Transact(opts, "ownerWithdrawTaikoToken", to, amount)
 }
 
-// ProposeBlock is a paid mutator transaction binding the contract method 0xb6d5a397.
+// OwnerWithdrawTaikoToken is a paid mutator transaction binding the contract method 0x6edda419.
 //
-// Solidity: function proposeBlock(bytes input, bytes assignment, bytes txList) payable returns((uint64,uint64,uint64,bytes32,bytes32,bytes32,uint24,uint24,uint32,address,(address,uint96,uint64)[]) meta)
-func (_TaikoL1Client *TaikoL1ClientSession) ProposeBlock(input []byte, assignment []byte, txList []byte) (*types.Transaction, error) {
-	return _TaikoL1Client.Contract.ProposeBlock(&_TaikoL1Client.TransactOpts, input, assignment, txList)
+// Solidity: function ownerWithdrawTaikoToken(address to, uint256 amount) returns()
+func (_TaikoL1Client *TaikoL1ClientSession) OwnerWithdrawTaikoToken(to common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _TaikoL1Client.Contract.OwnerWithdrawTaikoToken(&_TaikoL1Client.TransactOpts, to, amount)
 }
 
-// ProposeBlock is a paid mutator transaction binding the contract method 0xb6d5a397.
+// OwnerWithdrawTaikoToken is a paid mutator transaction binding the contract method 0x6edda419.
 //
-// Solidity: function proposeBlock(bytes input, bytes assignment, bytes txList) payable returns((uint64,uint64,uint64,bytes32,bytes32,bytes32,uint24,uint24,uint32,address,(address,uint96,uint64)[]) meta)
-func (_TaikoL1Client *TaikoL1ClientTransactorSession) ProposeBlock(input []byte, assignment []byte, txList []byte) (*types.Transaction, error) {
-	return _TaikoL1Client.Contract.ProposeBlock(&_TaikoL1Client.TransactOpts, input, assignment, txList)
+// Solidity: function ownerWithdrawTaikoToken(address to, uint256 amount) returns()
+func (_TaikoL1Client *TaikoL1ClientTransactorSession) OwnerWithdrawTaikoToken(to common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _TaikoL1Client.Contract.OwnerWithdrawTaikoToken(&_TaikoL1Client.TransactOpts, to, amount)
+}
+
+// ProposeBlock is a paid mutator transaction binding the contract method 0x04dc4c8b.
+//
+// Solidity: function proposeBlock(bytes32 txListHash, bytes32 extraData, bytes assignment, bytes txList) payable returns((bytes32,bytes32,bytes32,bytes32,uint64,uint64,uint64,uint32,address,(address,uint96,uint64)[]) meta)
+func (_TaikoL1Client *TaikoL1ClientTransactor) ProposeBlock(opts *bind.TransactOpts, txListHash [32]byte, extraData [32]byte, assignment []byte, txList []byte) (*types.Transaction, error) {
+	return _TaikoL1Client.contract.Transact(opts, "proposeBlock", txListHash, extraData, assignment, txList)
+}
+
+// ProposeBlock is a paid mutator transaction binding the contract method 0x04dc4c8b.
+//
+// Solidity: function proposeBlock(bytes32 txListHash, bytes32 extraData, bytes assignment, bytes txList) payable returns((bytes32,bytes32,bytes32,bytes32,uint64,uint64,uint64,uint32,address,(address,uint96,uint64)[]) meta)
+func (_TaikoL1Client *TaikoL1ClientSession) ProposeBlock(txListHash [32]byte, extraData [32]byte, assignment []byte, txList []byte) (*types.Transaction, error) {
+	return _TaikoL1Client.Contract.ProposeBlock(&_TaikoL1Client.TransactOpts, txListHash, extraData, assignment, txList)
+}
+
+// ProposeBlock is a paid mutator transaction binding the contract method 0x04dc4c8b.
+//
+// Solidity: function proposeBlock(bytes32 txListHash, bytes32 extraData, bytes assignment, bytes txList) payable returns((bytes32,bytes32,bytes32,bytes32,uint64,uint64,uint64,uint32,address,(address,uint96,uint64)[]) meta)
+func (_TaikoL1Client *TaikoL1ClientTransactorSession) ProposeBlock(txListHash [32]byte, extraData [32]byte, assignment []byte, txList []byte) (*types.Transaction, error) {
+	return _TaikoL1Client.Contract.ProposeBlock(&_TaikoL1Client.TransactOpts, txListHash, extraData, assignment, txList)
 }
 
 // ProveBlock is a paid mutator transaction binding the contract method 0x10d008bd.
@@ -895,23 +1026,23 @@ func (_TaikoL1Client *TaikoL1ClientTransactorSession) TransferOwnership(newOwner
 
 // VerifyBlocks is a paid mutator transaction binding the contract method 0x8778209d.
 //
-// Solidity: function verifyBlocks(uint64 maxBlocks) returns()
-func (_TaikoL1Client *TaikoL1ClientTransactor) VerifyBlocks(opts *bind.TransactOpts, maxBlocks uint64) (*types.Transaction, error) {
-	return _TaikoL1Client.contract.Transact(opts, "verifyBlocks", maxBlocks)
+// Solidity: function verifyBlocks(uint64 maxBlocksToVerify) returns()
+func (_TaikoL1Client *TaikoL1ClientTransactor) VerifyBlocks(opts *bind.TransactOpts, maxBlocksToVerify uint64) (*types.Transaction, error) {
+	return _TaikoL1Client.contract.Transact(opts, "verifyBlocks", maxBlocksToVerify)
 }
 
 // VerifyBlocks is a paid mutator transaction binding the contract method 0x8778209d.
 //
-// Solidity: function verifyBlocks(uint64 maxBlocks) returns()
-func (_TaikoL1Client *TaikoL1ClientSession) VerifyBlocks(maxBlocks uint64) (*types.Transaction, error) {
-	return _TaikoL1Client.Contract.VerifyBlocks(&_TaikoL1Client.TransactOpts, maxBlocks)
+// Solidity: function verifyBlocks(uint64 maxBlocksToVerify) returns()
+func (_TaikoL1Client *TaikoL1ClientSession) VerifyBlocks(maxBlocksToVerify uint64) (*types.Transaction, error) {
+	return _TaikoL1Client.Contract.VerifyBlocks(&_TaikoL1Client.TransactOpts, maxBlocksToVerify)
 }
 
 // VerifyBlocks is a paid mutator transaction binding the contract method 0x8778209d.
 //
-// Solidity: function verifyBlocks(uint64 maxBlocks) returns()
-func (_TaikoL1Client *TaikoL1ClientTransactorSession) VerifyBlocks(maxBlocks uint64) (*types.Transaction, error) {
-	return _TaikoL1Client.Contract.VerifyBlocks(&_TaikoL1Client.TransactOpts, maxBlocks)
+// Solidity: function verifyBlocks(uint64 maxBlocksToVerify) returns()
+func (_TaikoL1Client *TaikoL1ClientTransactorSession) VerifyBlocks(maxBlocksToVerify uint64) (*types.Transaction, error) {
+	return _TaikoL1Client.Contract.VerifyBlocks(&_TaikoL1Client.TransactOpts, maxBlocksToVerify)
 }
 
 // WithdrawTaikoToken is a paid mutator transaction binding the contract method 0x5043f059.
@@ -1169,49 +1300,51 @@ func (it *TaikoL1ClientBlockProposedIterator) Close() error {
 
 // TaikoL1ClientBlockProposed represents a BlockProposed event raised by the TaikoL1Client contract.
 type TaikoL1ClientBlockProposed struct {
-	BlockId *big.Int
-	Prover  common.Address
-	Reward  *big.Int
-	Meta    TaikoDataBlockMetadata
-	Raw     types.Log // Blockchain specific contextual infos
+	BlockId        *big.Int
+	AssignedProver common.Address
+	LivenessBond   *big.Int
+	ProverFee      *big.Int
+	MinTier        uint16
+	Meta           TaikoDataBlockMetadata
+	Raw            types.Log // Blockchain specific contextual infos
 }
 
-// FilterBlockProposed is a free log retrieval operation binding the contract event 0xe3713939242e9072c6fbb16f90e98d4b583d66b9fae9208ba2148aa8d6e82af6.
+// FilterBlockProposed is a free log retrieval operation binding the contract event 0xc857f5d042c0ceb165ef70eab0812ba2e6b15a03ce07638b58efc04dbb175ef6.
 //
-// Solidity: event BlockProposed(uint256 indexed blockId, address indexed prover, uint256 reward, (uint64,uint64,uint64,bytes32,bytes32,bytes32,uint24,uint24,uint32,address,(address,uint96,uint64)[]) meta)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBlockProposed(opts *bind.FilterOpts, blockId []*big.Int, prover []common.Address) (*TaikoL1ClientBlockProposedIterator, error) {
+// Solidity: event BlockProposed(uint256 indexed blockId, address indexed assignedProver, uint96 livenessBond, uint256 proverFee, uint16 minTier, (bytes32,bytes32,bytes32,bytes32,uint64,uint64,uint64,uint32,address,(address,uint96,uint64)[]) meta)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBlockProposed(opts *bind.FilterOpts, blockId []*big.Int, assignedProver []common.Address) (*TaikoL1ClientBlockProposedIterator, error) {
 
 	var blockIdRule []interface{}
 	for _, blockIdItem := range blockId {
 		blockIdRule = append(blockIdRule, blockIdItem)
 	}
-	var proverRule []interface{}
-	for _, proverItem := range prover {
-		proverRule = append(proverRule, proverItem)
+	var assignedProverRule []interface{}
+	for _, assignedProverItem := range assignedProver {
+		assignedProverRule = append(assignedProverRule, assignedProverItem)
 	}
 
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BlockProposed", blockIdRule, proverRule)
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BlockProposed", blockIdRule, assignedProverRule)
 	if err != nil {
 		return nil, err
 	}
 	return &TaikoL1ClientBlockProposedIterator{contract: _TaikoL1Client.contract, event: "BlockProposed", logs: logs, sub: sub}, nil
 }
 
-// WatchBlockProposed is a free log subscription operation binding the contract event 0xe3713939242e9072c6fbb16f90e98d4b583d66b9fae9208ba2148aa8d6e82af6.
+// WatchBlockProposed is a free log subscription operation binding the contract event 0xc857f5d042c0ceb165ef70eab0812ba2e6b15a03ce07638b58efc04dbb175ef6.
 //
-// Solidity: event BlockProposed(uint256 indexed blockId, address indexed prover, uint256 reward, (uint64,uint64,uint64,bytes32,bytes32,bytes32,uint24,uint24,uint32,address,(address,uint96,uint64)[]) meta)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockProposed(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBlockProposed, blockId []*big.Int, prover []common.Address) (event.Subscription, error) {
+// Solidity: event BlockProposed(uint256 indexed blockId, address indexed assignedProver, uint96 livenessBond, uint256 proverFee, uint16 minTier, (bytes32,bytes32,bytes32,bytes32,uint64,uint64,uint64,uint32,address,(address,uint96,uint64)[]) meta)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockProposed(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBlockProposed, blockId []*big.Int, assignedProver []common.Address) (event.Subscription, error) {
 
 	var blockIdRule []interface{}
 	for _, blockIdItem := range blockId {
 		blockIdRule = append(blockIdRule, blockIdItem)
 	}
-	var proverRule []interface{}
-	for _, proverItem := range prover {
-		proverRule = append(proverRule, proverItem)
+	var assignedProverRule []interface{}
+	for _, assignedProverItem := range assignedProver {
+		assignedProverRule = append(assignedProverRule, assignedProverItem)
 	}
 
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BlockProposed", blockIdRule, proverRule)
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BlockProposed", blockIdRule, assignedProverRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1243,9 +1376,9 @@ func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockProposed(opts *bind.Watch
 	}), nil
 }
 
-// ParseBlockProposed is a log parse operation binding the contract event 0xe3713939242e9072c6fbb16f90e98d4b583d66b9fae9208ba2148aa8d6e82af6.
+// ParseBlockProposed is a log parse operation binding the contract event 0xc857f5d042c0ceb165ef70eab0812ba2e6b15a03ce07638b58efc04dbb175ef6.
 //
-// Solidity: event BlockProposed(uint256 indexed blockId, address indexed prover, uint256 reward, (uint64,uint64,uint64,bytes32,bytes32,bytes32,uint24,uint24,uint32,address,(address,uint96,uint64)[]) meta)
+// Solidity: event BlockProposed(uint256 indexed blockId, address indexed assignedProver, uint96 livenessBond, uint256 proverFee, uint16 minTier, (bytes32,bytes32,bytes32,bytes32,uint64,uint64,uint64,uint32,address,(address,uint96,uint64)[]) meta)
 func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBlockProposed(log types.Log) (*TaikoL1ClientBlockProposed, error) {
 	event := new(TaikoL1ClientBlockProposed)
 	if err := _TaikoL1Client.contract.UnpackLog(event, "BlockProposed", log); err != nil {
@@ -1324,49 +1457,51 @@ func (it *TaikoL1ClientBlockProposed0Iterator) Close() error {
 
 // TaikoL1ClientBlockProposed0 represents a BlockProposed0 event raised by the TaikoL1Client contract.
 type TaikoL1ClientBlockProposed0 struct {
-	BlockId *big.Int
-	Prover  common.Address
-	Reward  *big.Int
-	Meta    TaikoDataBlockMetadata
-	Raw     types.Log // Blockchain specific contextual infos
+	BlockId        *big.Int
+	AssignedProver common.Address
+	LivenessBond   *big.Int
+	ProverFee      *big.Int
+	MinTier        uint16
+	Meta           TaikoDataBlockMetadata
+	Raw            types.Log // Blockchain specific contextual infos
 }
 
-// FilterBlockProposed0 is a free log retrieval operation binding the contract event 0xe3713939242e9072c6fbb16f90e98d4b583d66b9fae9208ba2148aa8d6e82af6.
+// FilterBlockProposed0 is a free log retrieval operation binding the contract event 0xc857f5d042c0ceb165ef70eab0812ba2e6b15a03ce07638b58efc04dbb175ef6.
 //
-// Solidity: event BlockProposed(uint256 indexed blockId, address indexed prover, uint256 reward, (uint64,uint64,uint64,bytes32,bytes32,bytes32,uint24,uint24,uint32,address,(address,uint96,uint64)[]) meta)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBlockProposed0(opts *bind.FilterOpts, blockId []*big.Int, prover []common.Address) (*TaikoL1ClientBlockProposed0Iterator, error) {
+// Solidity: event BlockProposed(uint256 indexed blockId, address indexed assignedProver, uint96 livenessBond, uint256 proverFee, uint16 minTier, (bytes32,bytes32,bytes32,bytes32,uint64,uint64,uint64,uint32,address,(address,uint96,uint64)[]) meta)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBlockProposed0(opts *bind.FilterOpts, blockId []*big.Int, assignedProver []common.Address) (*TaikoL1ClientBlockProposed0Iterator, error) {
 
 	var blockIdRule []interface{}
 	for _, blockIdItem := range blockId {
 		blockIdRule = append(blockIdRule, blockIdItem)
 	}
-	var proverRule []interface{}
-	for _, proverItem := range prover {
-		proverRule = append(proverRule, proverItem)
+	var assignedProverRule []interface{}
+	for _, assignedProverItem := range assignedProver {
+		assignedProverRule = append(assignedProverRule, assignedProverItem)
 	}
 
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BlockProposed0", blockIdRule, proverRule)
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BlockProposed0", blockIdRule, assignedProverRule)
 	if err != nil {
 		return nil, err
 	}
 	return &TaikoL1ClientBlockProposed0Iterator{contract: _TaikoL1Client.contract, event: "BlockProposed0", logs: logs, sub: sub}, nil
 }
 
-// WatchBlockProposed0 is a free log subscription operation binding the contract event 0xe3713939242e9072c6fbb16f90e98d4b583d66b9fae9208ba2148aa8d6e82af6.
+// WatchBlockProposed0 is a free log subscription operation binding the contract event 0xc857f5d042c0ceb165ef70eab0812ba2e6b15a03ce07638b58efc04dbb175ef6.
 //
-// Solidity: event BlockProposed(uint256 indexed blockId, address indexed prover, uint256 reward, (uint64,uint64,uint64,bytes32,bytes32,bytes32,uint24,uint24,uint32,address,(address,uint96,uint64)[]) meta)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockProposed0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBlockProposed0, blockId []*big.Int, prover []common.Address) (event.Subscription, error) {
+// Solidity: event BlockProposed(uint256 indexed blockId, address indexed assignedProver, uint96 livenessBond, uint256 proverFee, uint16 minTier, (bytes32,bytes32,bytes32,bytes32,uint64,uint64,uint64,uint32,address,(address,uint96,uint64)[]) meta)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockProposed0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBlockProposed0, blockId []*big.Int, assignedProver []common.Address) (event.Subscription, error) {
 
 	var blockIdRule []interface{}
 	for _, blockIdItem := range blockId {
 		blockIdRule = append(blockIdRule, blockIdItem)
 	}
-	var proverRule []interface{}
-	for _, proverItem := range prover {
-		proverRule = append(proverRule, proverItem)
+	var assignedProverRule []interface{}
+	for _, assignedProverItem := range assignedProver {
+		assignedProverRule = append(assignedProverRule, assignedProverItem)
 	}
 
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BlockProposed0", blockIdRule, proverRule)
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BlockProposed0", blockIdRule, assignedProverRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1398,308 +1533,12 @@ func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockProposed0(opts *bind.Watc
 	}), nil
 }
 
-// ParseBlockProposed0 is a log parse operation binding the contract event 0xe3713939242e9072c6fbb16f90e98d4b583d66b9fae9208ba2148aa8d6e82af6.
+// ParseBlockProposed0 is a log parse operation binding the contract event 0xc857f5d042c0ceb165ef70eab0812ba2e6b15a03ce07638b58efc04dbb175ef6.
 //
-// Solidity: event BlockProposed(uint256 indexed blockId, address indexed prover, uint256 reward, (uint64,uint64,uint64,bytes32,bytes32,bytes32,uint24,uint24,uint32,address,(address,uint96,uint64)[]) meta)
+// Solidity: event BlockProposed(uint256 indexed blockId, address indexed assignedProver, uint96 livenessBond, uint256 proverFee, uint16 minTier, (bytes32,bytes32,bytes32,bytes32,uint64,uint64,uint64,uint32,address,(address,uint96,uint64)[]) meta)
 func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBlockProposed0(log types.Log) (*TaikoL1ClientBlockProposed0, error) {
 	event := new(TaikoL1ClientBlockProposed0)
 	if err := _TaikoL1Client.contract.UnpackLog(event, "BlockProposed0", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ClientBlockProvenIterator is returned from FilterBlockProven and is used to iterate over the raw logs and unpacked data for BlockProven events raised by the TaikoL1Client contract.
-type TaikoL1ClientBlockProvenIterator struct {
-	Event *TaikoL1ClientBlockProven // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ClientBlockProvenIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ClientBlockProven)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ClientBlockProven)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ClientBlockProvenIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ClientBlockProvenIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ClientBlockProven represents a BlockProven event raised by the TaikoL1Client contract.
-type TaikoL1ClientBlockProven struct {
-	BlockId    *big.Int
-	ParentHash [32]byte
-	BlockHash  [32]byte
-	SignalRoot [32]byte
-	Prover     common.Address
-	Raw        types.Log // Blockchain specific contextual infos
-}
-
-// FilterBlockProven is a free log retrieval operation binding the contract event 0xd93fde3ea1bb11dcd7a4e66320a05fc5aa63983b6447eff660084c4b1b1b499b.
-//
-// Solidity: event BlockProven(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address prover)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBlockProven(opts *bind.FilterOpts, blockId []*big.Int) (*TaikoL1ClientBlockProvenIterator, error) {
-
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BlockProven", blockIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ClientBlockProvenIterator{contract: _TaikoL1Client.contract, event: "BlockProven", logs: logs, sub: sub}, nil
-}
-
-// WatchBlockProven is a free log subscription operation binding the contract event 0xd93fde3ea1bb11dcd7a4e66320a05fc5aa63983b6447eff660084c4b1b1b499b.
-//
-// Solidity: event BlockProven(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address prover)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockProven(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBlockProven, blockId []*big.Int) (event.Subscription, error) {
-
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BlockProven", blockIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ClientBlockProven)
-				if err := _TaikoL1Client.contract.UnpackLog(event, "BlockProven", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseBlockProven is a log parse operation binding the contract event 0xd93fde3ea1bb11dcd7a4e66320a05fc5aa63983b6447eff660084c4b1b1b499b.
-//
-// Solidity: event BlockProven(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address prover)
-func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBlockProven(log types.Log) (*TaikoL1ClientBlockProven, error) {
-	event := new(TaikoL1ClientBlockProven)
-	if err := _TaikoL1Client.contract.UnpackLog(event, "BlockProven", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ClientBlockProven0Iterator is returned from FilterBlockProven0 and is used to iterate over the raw logs and unpacked data for BlockProven0 events raised by the TaikoL1Client contract.
-type TaikoL1ClientBlockProven0Iterator struct {
-	Event *TaikoL1ClientBlockProven0 // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ClientBlockProven0Iterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ClientBlockProven0)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ClientBlockProven0)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ClientBlockProven0Iterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ClientBlockProven0Iterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ClientBlockProven0 represents a BlockProven0 event raised by the TaikoL1Client contract.
-type TaikoL1ClientBlockProven0 struct {
-	BlockId    *big.Int
-	ParentHash [32]byte
-	BlockHash  [32]byte
-	SignalRoot [32]byte
-	Prover     common.Address
-	Raw        types.Log // Blockchain specific contextual infos
-}
-
-// FilterBlockProven0 is a free log retrieval operation binding the contract event 0xd93fde3ea1bb11dcd7a4e66320a05fc5aa63983b6447eff660084c4b1b1b499b.
-//
-// Solidity: event BlockProven(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address prover)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBlockProven0(opts *bind.FilterOpts, blockId []*big.Int) (*TaikoL1ClientBlockProven0Iterator, error) {
-
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BlockProven0", blockIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ClientBlockProven0Iterator{contract: _TaikoL1Client.contract, event: "BlockProven0", logs: logs, sub: sub}, nil
-}
-
-// WatchBlockProven0 is a free log subscription operation binding the contract event 0xd93fde3ea1bb11dcd7a4e66320a05fc5aa63983b6447eff660084c4b1b1b499b.
-//
-// Solidity: event BlockProven(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address prover)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockProven0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBlockProven0, blockId []*big.Int) (event.Subscription, error) {
-
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BlockProven0", blockIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ClientBlockProven0)
-				if err := _TaikoL1Client.contract.UnpackLog(event, "BlockProven0", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseBlockProven0 is a log parse operation binding the contract event 0xd93fde3ea1bb11dcd7a4e66320a05fc5aa63983b6447eff660084c4b1b1b499b.
-//
-// Solidity: event BlockProven(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address prover)
-func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBlockProven0(log types.Log) (*TaikoL1ClientBlockProven0, error) {
-	event := new(TaikoL1ClientBlockProven0)
-	if err := _TaikoL1Client.contract.UnpackLog(event, "BlockProven0", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1775,48 +1614,58 @@ func (it *TaikoL1ClientBlockVerifiedIterator) Close() error {
 
 // TaikoL1ClientBlockVerified represents a BlockVerified event raised by the TaikoL1Client contract.
 type TaikoL1ClientBlockVerified struct {
-	BlockId   *big.Int
-	Prover    common.Address
-	BlockHash [32]byte
-	Raw       types.Log // Blockchain specific contextual infos
+	BlockId        *big.Int
+	AssignedProver common.Address
+	Prover         common.Address
+	BlockHash      [32]byte
+	SignalRoot     [32]byte
+	Raw            types.Log // Blockchain specific contextual infos
 }
 
-// FilterBlockVerified is a free log retrieval operation binding the contract event 0xb2fa36cea736414fca28c5aca50d94c59d740984c4c878c3dd8ba26791309b1a.
+// FilterBlockVerified is a free log retrieval operation binding the contract event 0x1433d0a0bbdef88a556faadc3c8481900a1bd0941743e979ddbe046e27ce4299.
 //
-// Solidity: event BlockVerified(uint256 indexed blockId, address indexed prover, bytes32 blockHash)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBlockVerified(opts *bind.FilterOpts, blockId []*big.Int, prover []common.Address) (*TaikoL1ClientBlockVerifiedIterator, error) {
+// Solidity: event BlockVerified(uint256 indexed blockId, address indexed assignedProver, address indexed prover, bytes32 blockHash, bytes32 signalRoot)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBlockVerified(opts *bind.FilterOpts, blockId []*big.Int, assignedProver []common.Address, prover []common.Address) (*TaikoL1ClientBlockVerifiedIterator, error) {
 
 	var blockIdRule []interface{}
 	for _, blockIdItem := range blockId {
 		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+	var assignedProverRule []interface{}
+	for _, assignedProverItem := range assignedProver {
+		assignedProverRule = append(assignedProverRule, assignedProverItem)
 	}
 	var proverRule []interface{}
 	for _, proverItem := range prover {
 		proverRule = append(proverRule, proverItem)
 	}
 
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BlockVerified", blockIdRule, proverRule)
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BlockVerified", blockIdRule, assignedProverRule, proverRule)
 	if err != nil {
 		return nil, err
 	}
 	return &TaikoL1ClientBlockVerifiedIterator{contract: _TaikoL1Client.contract, event: "BlockVerified", logs: logs, sub: sub}, nil
 }
 
-// WatchBlockVerified is a free log subscription operation binding the contract event 0xb2fa36cea736414fca28c5aca50d94c59d740984c4c878c3dd8ba26791309b1a.
+// WatchBlockVerified is a free log subscription operation binding the contract event 0x1433d0a0bbdef88a556faadc3c8481900a1bd0941743e979ddbe046e27ce4299.
 //
-// Solidity: event BlockVerified(uint256 indexed blockId, address indexed prover, bytes32 blockHash)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockVerified(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBlockVerified, blockId []*big.Int, prover []common.Address) (event.Subscription, error) {
+// Solidity: event BlockVerified(uint256 indexed blockId, address indexed assignedProver, address indexed prover, bytes32 blockHash, bytes32 signalRoot)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockVerified(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBlockVerified, blockId []*big.Int, assignedProver []common.Address, prover []common.Address) (event.Subscription, error) {
 
 	var blockIdRule []interface{}
 	for _, blockIdItem := range blockId {
 		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+	var assignedProverRule []interface{}
+	for _, assignedProverItem := range assignedProver {
+		assignedProverRule = append(assignedProverRule, assignedProverItem)
 	}
 	var proverRule []interface{}
 	for _, proverItem := range prover {
 		proverRule = append(proverRule, proverItem)
 	}
 
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BlockVerified", blockIdRule, proverRule)
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BlockVerified", blockIdRule, assignedProverRule, proverRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1848,9 +1697,9 @@ func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockVerified(opts *bind.Watch
 	}), nil
 }
 
-// ParseBlockVerified is a log parse operation binding the contract event 0xb2fa36cea736414fca28c5aca50d94c59d740984c4c878c3dd8ba26791309b1a.
+// ParseBlockVerified is a log parse operation binding the contract event 0x1433d0a0bbdef88a556faadc3c8481900a1bd0941743e979ddbe046e27ce4299.
 //
-// Solidity: event BlockVerified(uint256 indexed blockId, address indexed prover, bytes32 blockHash)
+// Solidity: event BlockVerified(uint256 indexed blockId, address indexed assignedProver, address indexed prover, bytes32 blockHash, bytes32 signalRoot)
 func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBlockVerified(log types.Log) (*TaikoL1ClientBlockVerified, error) {
 	event := new(TaikoL1ClientBlockVerified)
 	if err := _TaikoL1Client.contract.UnpackLog(event, "BlockVerified", log); err != nil {
@@ -1929,48 +1778,58 @@ func (it *TaikoL1ClientBlockVerified0Iterator) Close() error {
 
 // TaikoL1ClientBlockVerified0 represents a BlockVerified0 event raised by the TaikoL1Client contract.
 type TaikoL1ClientBlockVerified0 struct {
-	BlockId   *big.Int
-	Prover    common.Address
-	BlockHash [32]byte
-	Raw       types.Log // Blockchain specific contextual infos
+	BlockId        *big.Int
+	AssignedProver common.Address
+	Prover         common.Address
+	BlockHash      [32]byte
+	SignalRoot     [32]byte
+	Raw            types.Log // Blockchain specific contextual infos
 }
 
-// FilterBlockVerified0 is a free log retrieval operation binding the contract event 0xb2fa36cea736414fca28c5aca50d94c59d740984c4c878c3dd8ba26791309b1a.
+// FilterBlockVerified0 is a free log retrieval operation binding the contract event 0x1433d0a0bbdef88a556faadc3c8481900a1bd0941743e979ddbe046e27ce4299.
 //
-// Solidity: event BlockVerified(uint256 indexed blockId, address indexed prover, bytes32 blockHash)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBlockVerified0(opts *bind.FilterOpts, blockId []*big.Int, prover []common.Address) (*TaikoL1ClientBlockVerified0Iterator, error) {
+// Solidity: event BlockVerified(uint256 indexed blockId, address indexed assignedProver, address indexed prover, bytes32 blockHash, bytes32 signalRoot)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBlockVerified0(opts *bind.FilterOpts, blockId []*big.Int, assignedProver []common.Address, prover []common.Address) (*TaikoL1ClientBlockVerified0Iterator, error) {
 
 	var blockIdRule []interface{}
 	for _, blockIdItem := range blockId {
 		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+	var assignedProverRule []interface{}
+	for _, assignedProverItem := range assignedProver {
+		assignedProverRule = append(assignedProverRule, assignedProverItem)
 	}
 	var proverRule []interface{}
 	for _, proverItem := range prover {
 		proverRule = append(proverRule, proverItem)
 	}
 
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BlockVerified0", blockIdRule, proverRule)
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BlockVerified0", blockIdRule, assignedProverRule, proverRule)
 	if err != nil {
 		return nil, err
 	}
 	return &TaikoL1ClientBlockVerified0Iterator{contract: _TaikoL1Client.contract, event: "BlockVerified0", logs: logs, sub: sub}, nil
 }
 
-// WatchBlockVerified0 is a free log subscription operation binding the contract event 0xb2fa36cea736414fca28c5aca50d94c59d740984c4c878c3dd8ba26791309b1a.
+// WatchBlockVerified0 is a free log subscription operation binding the contract event 0x1433d0a0bbdef88a556faadc3c8481900a1bd0941743e979ddbe046e27ce4299.
 //
-// Solidity: event BlockVerified(uint256 indexed blockId, address indexed prover, bytes32 blockHash)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockVerified0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBlockVerified0, blockId []*big.Int, prover []common.Address) (event.Subscription, error) {
+// Solidity: event BlockVerified(uint256 indexed blockId, address indexed assignedProver, address indexed prover, bytes32 blockHash, bytes32 signalRoot)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockVerified0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBlockVerified0, blockId []*big.Int, assignedProver []common.Address, prover []common.Address) (event.Subscription, error) {
 
 	var blockIdRule []interface{}
 	for _, blockIdItem := range blockId {
 		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+	var assignedProverRule []interface{}
+	for _, assignedProverItem := range assignedProver {
+		assignedProverRule = append(assignedProverRule, assignedProverItem)
 	}
 	var proverRule []interface{}
 	for _, proverItem := range prover {
 		proverRule = append(proverRule, proverItem)
 	}
 
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BlockVerified0", blockIdRule, proverRule)
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BlockVerified0", blockIdRule, assignedProverRule, proverRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2002,888 +1861,12 @@ func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBlockVerified0(opts *bind.Watc
 	}), nil
 }
 
-// ParseBlockVerified0 is a log parse operation binding the contract event 0xb2fa36cea736414fca28c5aca50d94c59d740984c4c878c3dd8ba26791309b1a.
+// ParseBlockVerified0 is a log parse operation binding the contract event 0x1433d0a0bbdef88a556faadc3c8481900a1bd0941743e979ddbe046e27ce4299.
 //
-// Solidity: event BlockVerified(uint256 indexed blockId, address indexed prover, bytes32 blockHash)
+// Solidity: event BlockVerified(uint256 indexed blockId, address indexed assignedProver, address indexed prover, bytes32 blockHash, bytes32 signalRoot)
 func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBlockVerified0(log types.Log) (*TaikoL1ClientBlockVerified0, error) {
 	event := new(TaikoL1ClientBlockVerified0)
 	if err := _TaikoL1Client.contract.UnpackLog(event, "BlockVerified0", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ClientBondReceivedIterator is returned from FilterBondReceived and is used to iterate over the raw logs and unpacked data for BondReceived events raised by the TaikoL1Client contract.
-type TaikoL1ClientBondReceivedIterator struct {
-	Event *TaikoL1ClientBondReceived // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ClientBondReceivedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ClientBondReceived)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ClientBondReceived)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ClientBondReceivedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ClientBondReceivedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ClientBondReceived represents a BondReceived event raised by the TaikoL1Client contract.
-type TaikoL1ClientBondReceived struct {
-	From    common.Address
-	BlockId uint64
-	Bond    *big.Int
-	Raw     types.Log // Blockchain specific contextual infos
-}
-
-// FilterBondReceived is a free log retrieval operation binding the contract event 0xbb2d4a4c4a679d81940f242e401d2b2cc3383dbcb0ae798c14bd7905b1f6cae2.
-//
-// Solidity: event BondReceived(address indexed from, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBondReceived(opts *bind.FilterOpts, from []common.Address) (*TaikoL1ClientBondReceivedIterator, error) {
-
-	var fromRule []interface{}
-	for _, fromItem := range from {
-		fromRule = append(fromRule, fromItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BondReceived", fromRule)
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ClientBondReceivedIterator{contract: _TaikoL1Client.contract, event: "BondReceived", logs: logs, sub: sub}, nil
-}
-
-// WatchBondReceived is a free log subscription operation binding the contract event 0xbb2d4a4c4a679d81940f242e401d2b2cc3383dbcb0ae798c14bd7905b1f6cae2.
-//
-// Solidity: event BondReceived(address indexed from, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBondReceived(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBondReceived, from []common.Address) (event.Subscription, error) {
-
-	var fromRule []interface{}
-	for _, fromItem := range from {
-		fromRule = append(fromRule, fromItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BondReceived", fromRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ClientBondReceived)
-				if err := _TaikoL1Client.contract.UnpackLog(event, "BondReceived", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseBondReceived is a log parse operation binding the contract event 0xbb2d4a4c4a679d81940f242e401d2b2cc3383dbcb0ae798c14bd7905b1f6cae2.
-//
-// Solidity: event BondReceived(address indexed from, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBondReceived(log types.Log) (*TaikoL1ClientBondReceived, error) {
-	event := new(TaikoL1ClientBondReceived)
-	if err := _TaikoL1Client.contract.UnpackLog(event, "BondReceived", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ClientBondReceived0Iterator is returned from FilterBondReceived0 and is used to iterate over the raw logs and unpacked data for BondReceived0 events raised by the TaikoL1Client contract.
-type TaikoL1ClientBondReceived0Iterator struct {
-	Event *TaikoL1ClientBondReceived0 // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ClientBondReceived0Iterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ClientBondReceived0)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ClientBondReceived0)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ClientBondReceived0Iterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ClientBondReceived0Iterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ClientBondReceived0 represents a BondReceived0 event raised by the TaikoL1Client contract.
-type TaikoL1ClientBondReceived0 struct {
-	From    common.Address
-	BlockId uint64
-	Bond    *big.Int
-	Raw     types.Log // Blockchain specific contextual infos
-}
-
-// FilterBondReceived0 is a free log retrieval operation binding the contract event 0xbb2d4a4c4a679d81940f242e401d2b2cc3383dbcb0ae798c14bd7905b1f6cae2.
-//
-// Solidity: event BondReceived(address indexed from, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBondReceived0(opts *bind.FilterOpts, from []common.Address) (*TaikoL1ClientBondReceived0Iterator, error) {
-
-	var fromRule []interface{}
-	for _, fromItem := range from {
-		fromRule = append(fromRule, fromItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BondReceived0", fromRule)
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ClientBondReceived0Iterator{contract: _TaikoL1Client.contract, event: "BondReceived0", logs: logs, sub: sub}, nil
-}
-
-// WatchBondReceived0 is a free log subscription operation binding the contract event 0xbb2d4a4c4a679d81940f242e401d2b2cc3383dbcb0ae798c14bd7905b1f6cae2.
-//
-// Solidity: event BondReceived(address indexed from, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBondReceived0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBondReceived0, from []common.Address) (event.Subscription, error) {
-
-	var fromRule []interface{}
-	for _, fromItem := range from {
-		fromRule = append(fromRule, fromItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BondReceived0", fromRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ClientBondReceived0)
-				if err := _TaikoL1Client.contract.UnpackLog(event, "BondReceived0", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseBondReceived0 is a log parse operation binding the contract event 0xbb2d4a4c4a679d81940f242e401d2b2cc3383dbcb0ae798c14bd7905b1f6cae2.
-//
-// Solidity: event BondReceived(address indexed from, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBondReceived0(log types.Log) (*TaikoL1ClientBondReceived0, error) {
-	event := new(TaikoL1ClientBondReceived0)
-	if err := _TaikoL1Client.contract.UnpackLog(event, "BondReceived0", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ClientBondReturnedIterator is returned from FilterBondReturned and is used to iterate over the raw logs and unpacked data for BondReturned events raised by the TaikoL1Client contract.
-type TaikoL1ClientBondReturnedIterator struct {
-	Event *TaikoL1ClientBondReturned // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ClientBondReturnedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ClientBondReturned)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ClientBondReturned)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ClientBondReturnedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ClientBondReturnedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ClientBondReturned represents a BondReturned event raised by the TaikoL1Client contract.
-type TaikoL1ClientBondReturned struct {
-	To      common.Address
-	BlockId uint64
-	Bond    *big.Int
-	Raw     types.Log // Blockchain specific contextual infos
-}
-
-// FilterBondReturned is a free log retrieval operation binding the contract event 0xb14706301de9c688dd040a2ac19fc629179149bb39b0765094ef833e7bd907b2.
-//
-// Solidity: event BondReturned(address indexed to, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBondReturned(opts *bind.FilterOpts, to []common.Address) (*TaikoL1ClientBondReturnedIterator, error) {
-
-	var toRule []interface{}
-	for _, toItem := range to {
-		toRule = append(toRule, toItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BondReturned", toRule)
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ClientBondReturnedIterator{contract: _TaikoL1Client.contract, event: "BondReturned", logs: logs, sub: sub}, nil
-}
-
-// WatchBondReturned is a free log subscription operation binding the contract event 0xb14706301de9c688dd040a2ac19fc629179149bb39b0765094ef833e7bd907b2.
-//
-// Solidity: event BondReturned(address indexed to, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBondReturned(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBondReturned, to []common.Address) (event.Subscription, error) {
-
-	var toRule []interface{}
-	for _, toItem := range to {
-		toRule = append(toRule, toItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BondReturned", toRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ClientBondReturned)
-				if err := _TaikoL1Client.contract.UnpackLog(event, "BondReturned", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseBondReturned is a log parse operation binding the contract event 0xb14706301de9c688dd040a2ac19fc629179149bb39b0765094ef833e7bd907b2.
-//
-// Solidity: event BondReturned(address indexed to, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBondReturned(log types.Log) (*TaikoL1ClientBondReturned, error) {
-	event := new(TaikoL1ClientBondReturned)
-	if err := _TaikoL1Client.contract.UnpackLog(event, "BondReturned", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ClientBondReturned0Iterator is returned from FilterBondReturned0 and is used to iterate over the raw logs and unpacked data for BondReturned0 events raised by the TaikoL1Client contract.
-type TaikoL1ClientBondReturned0Iterator struct {
-	Event *TaikoL1ClientBondReturned0 // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ClientBondReturned0Iterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ClientBondReturned0)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ClientBondReturned0)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ClientBondReturned0Iterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ClientBondReturned0Iterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ClientBondReturned0 represents a BondReturned0 event raised by the TaikoL1Client contract.
-type TaikoL1ClientBondReturned0 struct {
-	To      common.Address
-	BlockId uint64
-	Bond    *big.Int
-	Raw     types.Log // Blockchain specific contextual infos
-}
-
-// FilterBondReturned0 is a free log retrieval operation binding the contract event 0xb14706301de9c688dd040a2ac19fc629179149bb39b0765094ef833e7bd907b2.
-//
-// Solidity: event BondReturned(address indexed to, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBondReturned0(opts *bind.FilterOpts, to []common.Address) (*TaikoL1ClientBondReturned0Iterator, error) {
-
-	var toRule []interface{}
-	for _, toItem := range to {
-		toRule = append(toRule, toItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BondReturned0", toRule)
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ClientBondReturned0Iterator{contract: _TaikoL1Client.contract, event: "BondReturned0", logs: logs, sub: sub}, nil
-}
-
-// WatchBondReturned0 is a free log subscription operation binding the contract event 0xb14706301de9c688dd040a2ac19fc629179149bb39b0765094ef833e7bd907b2.
-//
-// Solidity: event BondReturned(address indexed to, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBondReturned0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBondReturned0, to []common.Address) (event.Subscription, error) {
-
-	var toRule []interface{}
-	for _, toItem := range to {
-		toRule = append(toRule, toItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BondReturned0", toRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ClientBondReturned0)
-				if err := _TaikoL1Client.contract.UnpackLog(event, "BondReturned0", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseBondReturned0 is a log parse operation binding the contract event 0xb14706301de9c688dd040a2ac19fc629179149bb39b0765094ef833e7bd907b2.
-//
-// Solidity: event BondReturned(address indexed to, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBondReturned0(log types.Log) (*TaikoL1ClientBondReturned0, error) {
-	event := new(TaikoL1ClientBondReturned0)
-	if err := _TaikoL1Client.contract.UnpackLog(event, "BondReturned0", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ClientBondRewardedIterator is returned from FilterBondRewarded and is used to iterate over the raw logs and unpacked data for BondRewarded events raised by the TaikoL1Client contract.
-type TaikoL1ClientBondRewardedIterator struct {
-	Event *TaikoL1ClientBondRewarded // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ClientBondRewardedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ClientBondRewarded)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ClientBondRewarded)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ClientBondRewardedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ClientBondRewardedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ClientBondRewarded represents a BondRewarded event raised by the TaikoL1Client contract.
-type TaikoL1ClientBondRewarded struct {
-	To      common.Address
-	BlockId uint64
-	Bond    *big.Int
-	Raw     types.Log // Blockchain specific contextual infos
-}
-
-// FilterBondRewarded is a free log retrieval operation binding the contract event 0x428d08856cfebcae4c1b981318595cf05b757406a9c92c9bffd3ebb9a10023a6.
-//
-// Solidity: event BondRewarded(address indexed to, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBondRewarded(opts *bind.FilterOpts, to []common.Address) (*TaikoL1ClientBondRewardedIterator, error) {
-
-	var toRule []interface{}
-	for _, toItem := range to {
-		toRule = append(toRule, toItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BondRewarded", toRule)
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ClientBondRewardedIterator{contract: _TaikoL1Client.contract, event: "BondRewarded", logs: logs, sub: sub}, nil
-}
-
-// WatchBondRewarded is a free log subscription operation binding the contract event 0x428d08856cfebcae4c1b981318595cf05b757406a9c92c9bffd3ebb9a10023a6.
-//
-// Solidity: event BondRewarded(address indexed to, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBondRewarded(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBondRewarded, to []common.Address) (event.Subscription, error) {
-
-	var toRule []interface{}
-	for _, toItem := range to {
-		toRule = append(toRule, toItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BondRewarded", toRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ClientBondRewarded)
-				if err := _TaikoL1Client.contract.UnpackLog(event, "BondRewarded", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseBondRewarded is a log parse operation binding the contract event 0x428d08856cfebcae4c1b981318595cf05b757406a9c92c9bffd3ebb9a10023a6.
-//
-// Solidity: event BondRewarded(address indexed to, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBondRewarded(log types.Log) (*TaikoL1ClientBondRewarded, error) {
-	event := new(TaikoL1ClientBondRewarded)
-	if err := _TaikoL1Client.contract.UnpackLog(event, "BondRewarded", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoL1ClientBondRewarded0Iterator is returned from FilterBondRewarded0 and is used to iterate over the raw logs and unpacked data for BondRewarded0 events raised by the TaikoL1Client contract.
-type TaikoL1ClientBondRewarded0Iterator struct {
-	Event *TaikoL1ClientBondRewarded0 // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoL1ClientBondRewarded0Iterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoL1ClientBondRewarded0)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoL1ClientBondRewarded0)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoL1ClientBondRewarded0Iterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoL1ClientBondRewarded0Iterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoL1ClientBondRewarded0 represents a BondRewarded0 event raised by the TaikoL1Client contract.
-type TaikoL1ClientBondRewarded0 struct {
-	To      common.Address
-	BlockId uint64
-	Bond    *big.Int
-	Raw     types.Log // Blockchain specific contextual infos
-}
-
-// FilterBondRewarded0 is a free log retrieval operation binding the contract event 0x428d08856cfebcae4c1b981318595cf05b757406a9c92c9bffd3ebb9a10023a6.
-//
-// Solidity: event BondRewarded(address indexed to, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) FilterBondRewarded0(opts *bind.FilterOpts, to []common.Address) (*TaikoL1ClientBondRewarded0Iterator, error) {
-
-	var toRule []interface{}
-	for _, toItem := range to {
-		toRule = append(toRule, toItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "BondRewarded0", toRule)
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoL1ClientBondRewarded0Iterator{contract: _TaikoL1Client.contract, event: "BondRewarded0", logs: logs, sub: sub}, nil
-}
-
-// WatchBondRewarded0 is a free log subscription operation binding the contract event 0x428d08856cfebcae4c1b981318595cf05b757406a9c92c9bffd3ebb9a10023a6.
-//
-// Solidity: event BondRewarded(address indexed to, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) WatchBondRewarded0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientBondRewarded0, to []common.Address) (event.Subscription, error) {
-
-	var toRule []interface{}
-	for _, toItem := range to {
-		toRule = append(toRule, toItem)
-	}
-
-	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "BondRewarded0", toRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoL1ClientBondRewarded0)
-				if err := _TaikoL1Client.contract.UnpackLog(event, "BondRewarded0", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseBondRewarded0 is a log parse operation binding the contract event 0x428d08856cfebcae4c1b981318595cf05b757406a9c92c9bffd3ebb9a10023a6.
-//
-// Solidity: event BondRewarded(address indexed to, uint64 blockId, uint256 bond)
-func (_TaikoL1Client *TaikoL1ClientFilterer) ParseBondRewarded0(log types.Log) (*TaikoL1ClientBondRewarded0, error) {
-	event := new(TaikoL1ClientBondRewarded0)
-	if err := _TaikoL1Client.contract.UnpackLog(event, "BondRewarded0", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -3731,6 +2714,1952 @@ func (_TaikoL1Client *TaikoL1ClientFilterer) WatchOwnershipTransferred(opts *bin
 func (_TaikoL1Client *TaikoL1ClientFilterer) ParseOwnershipTransferred(log types.Log) (*TaikoL1ClientOwnershipTransferred, error) {
 	event := new(TaikoL1ClientOwnershipTransferred)
 	if err := _TaikoL1Client.contract.UnpackLog(event, "OwnershipTransferred", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTokenCreditedIterator is returned from FilterTokenCredited and is used to iterate over the raw logs and unpacked data for TokenCredited events raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenCreditedIterator struct {
+	Event *TaikoL1ClientTokenCredited // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTokenCreditedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTokenCredited)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTokenCredited)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTokenCreditedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTokenCreditedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTokenCredited represents a TokenCredited event raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenCredited struct {
+	Amount *big.Int
+	Minted bool
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterTokenCredited is a free log retrieval operation binding the contract event 0xeb0ac084e2fa6cfaebe54184190c7137c2fcc63c16e1dfaf6442ae95c01c44ad.
+//
+// Solidity: event TokenCredited(uint256 amount, bool minted)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTokenCredited(opts *bind.FilterOpts) (*TaikoL1ClientTokenCreditedIterator, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TokenCredited")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTokenCreditedIterator{contract: _TaikoL1Client.contract, event: "TokenCredited", logs: logs, sub: sub}, nil
+}
+
+// WatchTokenCredited is a free log subscription operation binding the contract event 0xeb0ac084e2fa6cfaebe54184190c7137c2fcc63c16e1dfaf6442ae95c01c44ad.
+//
+// Solidity: event TokenCredited(uint256 amount, bool minted)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTokenCredited(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTokenCredited) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TokenCredited")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTokenCredited)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TokenCredited", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTokenCredited is a log parse operation binding the contract event 0xeb0ac084e2fa6cfaebe54184190c7137c2fcc63c16e1dfaf6442ae95c01c44ad.
+//
+// Solidity: event TokenCredited(uint256 amount, bool minted)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTokenCredited(log types.Log) (*TaikoL1ClientTokenCredited, error) {
+	event := new(TaikoL1ClientTokenCredited)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TokenCredited", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTokenCredited0Iterator is returned from FilterTokenCredited0 and is used to iterate over the raw logs and unpacked data for TokenCredited0 events raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenCredited0Iterator struct {
+	Event *TaikoL1ClientTokenCredited0 // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTokenCredited0Iterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTokenCredited0)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTokenCredited0)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTokenCredited0Iterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTokenCredited0Iterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTokenCredited0 represents a TokenCredited0 event raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenCredited0 struct {
+	Amount *big.Int
+	Minted bool
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterTokenCredited0 is a free log retrieval operation binding the contract event 0xeb0ac084e2fa6cfaebe54184190c7137c2fcc63c16e1dfaf6442ae95c01c44ad.
+//
+// Solidity: event TokenCredited(uint256 amount, bool minted)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTokenCredited0(opts *bind.FilterOpts) (*TaikoL1ClientTokenCredited0Iterator, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TokenCredited0")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTokenCredited0Iterator{contract: _TaikoL1Client.contract, event: "TokenCredited0", logs: logs, sub: sub}, nil
+}
+
+// WatchTokenCredited0 is a free log subscription operation binding the contract event 0xeb0ac084e2fa6cfaebe54184190c7137c2fcc63c16e1dfaf6442ae95c01c44ad.
+//
+// Solidity: event TokenCredited(uint256 amount, bool minted)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTokenCredited0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTokenCredited0) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TokenCredited0")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTokenCredited0)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TokenCredited0", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTokenCredited0 is a log parse operation binding the contract event 0xeb0ac084e2fa6cfaebe54184190c7137c2fcc63c16e1dfaf6442ae95c01c44ad.
+//
+// Solidity: event TokenCredited(uint256 amount, bool minted)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTokenCredited0(log types.Log) (*TaikoL1ClientTokenCredited0, error) {
+	event := new(TaikoL1ClientTokenCredited0)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TokenCredited0", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTokenDebitedIterator is returned from FilterTokenDebited and is used to iterate over the raw logs and unpacked data for TokenDebited events raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenDebitedIterator struct {
+	Event *TaikoL1ClientTokenDebited // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTokenDebitedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTokenDebited)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTokenDebited)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTokenDebitedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTokenDebitedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTokenDebited represents a TokenDebited event raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenDebited struct {
+	Amount           *big.Int
+	FromLocalBalance bool
+	Raw              types.Log // Blockchain specific contextual infos
+}
+
+// FilterTokenDebited is a free log retrieval operation binding the contract event 0x8012eed335fcd2a9b93e688e5146be66d3b48c2e40578e713dc5f254d7fea32a.
+//
+// Solidity: event TokenDebited(uint256 amount, bool fromLocalBalance)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTokenDebited(opts *bind.FilterOpts) (*TaikoL1ClientTokenDebitedIterator, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TokenDebited")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTokenDebitedIterator{contract: _TaikoL1Client.contract, event: "TokenDebited", logs: logs, sub: sub}, nil
+}
+
+// WatchTokenDebited is a free log subscription operation binding the contract event 0x8012eed335fcd2a9b93e688e5146be66d3b48c2e40578e713dc5f254d7fea32a.
+//
+// Solidity: event TokenDebited(uint256 amount, bool fromLocalBalance)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTokenDebited(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTokenDebited) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TokenDebited")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTokenDebited)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TokenDebited", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTokenDebited is a log parse operation binding the contract event 0x8012eed335fcd2a9b93e688e5146be66d3b48c2e40578e713dc5f254d7fea32a.
+//
+// Solidity: event TokenDebited(uint256 amount, bool fromLocalBalance)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTokenDebited(log types.Log) (*TaikoL1ClientTokenDebited, error) {
+	event := new(TaikoL1ClientTokenDebited)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TokenDebited", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTokenDebited0Iterator is returned from FilterTokenDebited0 and is used to iterate over the raw logs and unpacked data for TokenDebited0 events raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenDebited0Iterator struct {
+	Event *TaikoL1ClientTokenDebited0 // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTokenDebited0Iterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTokenDebited0)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTokenDebited0)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTokenDebited0Iterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTokenDebited0Iterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTokenDebited0 represents a TokenDebited0 event raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenDebited0 struct {
+	Amount           *big.Int
+	FromLocalBalance bool
+	Raw              types.Log // Blockchain specific contextual infos
+}
+
+// FilterTokenDebited0 is a free log retrieval operation binding the contract event 0x8012eed335fcd2a9b93e688e5146be66d3b48c2e40578e713dc5f254d7fea32a.
+//
+// Solidity: event TokenDebited(uint256 amount, bool fromLocalBalance)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTokenDebited0(opts *bind.FilterOpts) (*TaikoL1ClientTokenDebited0Iterator, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TokenDebited0")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTokenDebited0Iterator{contract: _TaikoL1Client.contract, event: "TokenDebited0", logs: logs, sub: sub}, nil
+}
+
+// WatchTokenDebited0 is a free log subscription operation binding the contract event 0x8012eed335fcd2a9b93e688e5146be66d3b48c2e40578e713dc5f254d7fea32a.
+//
+// Solidity: event TokenDebited(uint256 amount, bool fromLocalBalance)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTokenDebited0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTokenDebited0) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TokenDebited0")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTokenDebited0)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TokenDebited0", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTokenDebited0 is a log parse operation binding the contract event 0x8012eed335fcd2a9b93e688e5146be66d3b48c2e40578e713dc5f254d7fea32a.
+//
+// Solidity: event TokenDebited(uint256 amount, bool fromLocalBalance)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTokenDebited0(log types.Log) (*TaikoL1ClientTokenDebited0, error) {
+	event := new(TaikoL1ClientTokenDebited0)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TokenDebited0", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTokenDepositedIterator is returned from FilterTokenDeposited and is used to iterate over the raw logs and unpacked data for TokenDeposited events raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenDepositedIterator struct {
+	Event *TaikoL1ClientTokenDeposited // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTokenDepositedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTokenDeposited)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTokenDeposited)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTokenDepositedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTokenDepositedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTokenDeposited represents a TokenDeposited event raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenDeposited struct {
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterTokenDeposited is a free log retrieval operation binding the contract event 0x26a49ee784523ce049bcbe276a63c7c9dbd9f428b1aa53633e679c9c046e8858.
+//
+// Solidity: event TokenDeposited(uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTokenDeposited(opts *bind.FilterOpts) (*TaikoL1ClientTokenDepositedIterator, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TokenDeposited")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTokenDepositedIterator{contract: _TaikoL1Client.contract, event: "TokenDeposited", logs: logs, sub: sub}, nil
+}
+
+// WatchTokenDeposited is a free log subscription operation binding the contract event 0x26a49ee784523ce049bcbe276a63c7c9dbd9f428b1aa53633e679c9c046e8858.
+//
+// Solidity: event TokenDeposited(uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTokenDeposited(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTokenDeposited) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TokenDeposited")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTokenDeposited)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TokenDeposited", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTokenDeposited is a log parse operation binding the contract event 0x26a49ee784523ce049bcbe276a63c7c9dbd9f428b1aa53633e679c9c046e8858.
+//
+// Solidity: event TokenDeposited(uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTokenDeposited(log types.Log) (*TaikoL1ClientTokenDeposited, error) {
+	event := new(TaikoL1ClientTokenDeposited)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TokenDeposited", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTokenDeposited0Iterator is returned from FilterTokenDeposited0 and is used to iterate over the raw logs and unpacked data for TokenDeposited0 events raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenDeposited0Iterator struct {
+	Event *TaikoL1ClientTokenDeposited0 // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTokenDeposited0Iterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTokenDeposited0)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTokenDeposited0)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTokenDeposited0Iterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTokenDeposited0Iterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTokenDeposited0 represents a TokenDeposited0 event raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenDeposited0 struct {
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterTokenDeposited0 is a free log retrieval operation binding the contract event 0x26a49ee784523ce049bcbe276a63c7c9dbd9f428b1aa53633e679c9c046e8858.
+//
+// Solidity: event TokenDeposited(uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTokenDeposited0(opts *bind.FilterOpts) (*TaikoL1ClientTokenDeposited0Iterator, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TokenDeposited0")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTokenDeposited0Iterator{contract: _TaikoL1Client.contract, event: "TokenDeposited0", logs: logs, sub: sub}, nil
+}
+
+// WatchTokenDeposited0 is a free log subscription operation binding the contract event 0x26a49ee784523ce049bcbe276a63c7c9dbd9f428b1aa53633e679c9c046e8858.
+//
+// Solidity: event TokenDeposited(uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTokenDeposited0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTokenDeposited0) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TokenDeposited0")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTokenDeposited0)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TokenDeposited0", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTokenDeposited0 is a log parse operation binding the contract event 0x26a49ee784523ce049bcbe276a63c7c9dbd9f428b1aa53633e679c9c046e8858.
+//
+// Solidity: event TokenDeposited(uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTokenDeposited0(log types.Log) (*TaikoL1ClientTokenDeposited0, error) {
+	event := new(TaikoL1ClientTokenDeposited0)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TokenDeposited0", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTokenWithdrawnIterator is returned from FilterTokenWithdrawn and is used to iterate over the raw logs and unpacked data for TokenWithdrawn events raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenWithdrawnIterator struct {
+	Event *TaikoL1ClientTokenWithdrawn // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTokenWithdrawnIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTokenWithdrawn)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTokenWithdrawn)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTokenWithdrawnIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTokenWithdrawnIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTokenWithdrawn represents a TokenWithdrawn event raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenWithdrawn struct {
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterTokenWithdrawn is a free log retrieval operation binding the contract event 0xc172f6497c150fc242267f743e8e4034b31b16ee123408d6d5f75a81128de114.
+//
+// Solidity: event TokenWithdrawn(uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTokenWithdrawn(opts *bind.FilterOpts) (*TaikoL1ClientTokenWithdrawnIterator, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TokenWithdrawn")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTokenWithdrawnIterator{contract: _TaikoL1Client.contract, event: "TokenWithdrawn", logs: logs, sub: sub}, nil
+}
+
+// WatchTokenWithdrawn is a free log subscription operation binding the contract event 0xc172f6497c150fc242267f743e8e4034b31b16ee123408d6d5f75a81128de114.
+//
+// Solidity: event TokenWithdrawn(uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTokenWithdrawn(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTokenWithdrawn) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TokenWithdrawn")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTokenWithdrawn)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TokenWithdrawn", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTokenWithdrawn is a log parse operation binding the contract event 0xc172f6497c150fc242267f743e8e4034b31b16ee123408d6d5f75a81128de114.
+//
+// Solidity: event TokenWithdrawn(uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTokenWithdrawn(log types.Log) (*TaikoL1ClientTokenWithdrawn, error) {
+	event := new(TaikoL1ClientTokenWithdrawn)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TokenWithdrawn", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTokenWithdrawn0Iterator is returned from FilterTokenWithdrawn0 and is used to iterate over the raw logs and unpacked data for TokenWithdrawn0 events raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenWithdrawn0Iterator struct {
+	Event *TaikoL1ClientTokenWithdrawn0 // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTokenWithdrawn0Iterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTokenWithdrawn0)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTokenWithdrawn0)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTokenWithdrawn0Iterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTokenWithdrawn0Iterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTokenWithdrawn0 represents a TokenWithdrawn0 event raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenWithdrawn0 struct {
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterTokenWithdrawn0 is a free log retrieval operation binding the contract event 0xc172f6497c150fc242267f743e8e4034b31b16ee123408d6d5f75a81128de114.
+//
+// Solidity: event TokenWithdrawn(uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTokenWithdrawn0(opts *bind.FilterOpts) (*TaikoL1ClientTokenWithdrawn0Iterator, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TokenWithdrawn0")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTokenWithdrawn0Iterator{contract: _TaikoL1Client.contract, event: "TokenWithdrawn0", logs: logs, sub: sub}, nil
+}
+
+// WatchTokenWithdrawn0 is a free log subscription operation binding the contract event 0xc172f6497c150fc242267f743e8e4034b31b16ee123408d6d5f75a81128de114.
+//
+// Solidity: event TokenWithdrawn(uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTokenWithdrawn0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTokenWithdrawn0) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TokenWithdrawn0")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTokenWithdrawn0)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TokenWithdrawn0", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTokenWithdrawn0 is a log parse operation binding the contract event 0xc172f6497c150fc242267f743e8e4034b31b16ee123408d6d5f75a81128de114.
+//
+// Solidity: event TokenWithdrawn(uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTokenWithdrawn0(log types.Log) (*TaikoL1ClientTokenWithdrawn0, error) {
+	event := new(TaikoL1ClientTokenWithdrawn0)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TokenWithdrawn0", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTokenWithdrawnByOwnerIterator is returned from FilterTokenWithdrawnByOwner and is used to iterate over the raw logs and unpacked data for TokenWithdrawnByOwner events raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenWithdrawnByOwnerIterator struct {
+	Event *TaikoL1ClientTokenWithdrawnByOwner // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTokenWithdrawnByOwnerIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTokenWithdrawnByOwner)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTokenWithdrawnByOwner)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTokenWithdrawnByOwnerIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTokenWithdrawnByOwnerIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTokenWithdrawnByOwner represents a TokenWithdrawnByOwner event raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenWithdrawnByOwner struct {
+	To     common.Address
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterTokenWithdrawnByOwner is a free log retrieval operation binding the contract event 0xc4f72d4b841abf7e4afe6a797fbc9d92a5186aa6332c2ff33c0e327f1c3e9a4c.
+//
+// Solidity: event TokenWithdrawnByOwner(address to, uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTokenWithdrawnByOwner(opts *bind.FilterOpts) (*TaikoL1ClientTokenWithdrawnByOwnerIterator, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TokenWithdrawnByOwner")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTokenWithdrawnByOwnerIterator{contract: _TaikoL1Client.contract, event: "TokenWithdrawnByOwner", logs: logs, sub: sub}, nil
+}
+
+// WatchTokenWithdrawnByOwner is a free log subscription operation binding the contract event 0xc4f72d4b841abf7e4afe6a797fbc9d92a5186aa6332c2ff33c0e327f1c3e9a4c.
+//
+// Solidity: event TokenWithdrawnByOwner(address to, uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTokenWithdrawnByOwner(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTokenWithdrawnByOwner) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TokenWithdrawnByOwner")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTokenWithdrawnByOwner)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TokenWithdrawnByOwner", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTokenWithdrawnByOwner is a log parse operation binding the contract event 0xc4f72d4b841abf7e4afe6a797fbc9d92a5186aa6332c2ff33c0e327f1c3e9a4c.
+//
+// Solidity: event TokenWithdrawnByOwner(address to, uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTokenWithdrawnByOwner(log types.Log) (*TaikoL1ClientTokenWithdrawnByOwner, error) {
+	event := new(TaikoL1ClientTokenWithdrawnByOwner)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TokenWithdrawnByOwner", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTokenWithdrawnByOwner0Iterator is returned from FilterTokenWithdrawnByOwner0 and is used to iterate over the raw logs and unpacked data for TokenWithdrawnByOwner0 events raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenWithdrawnByOwner0Iterator struct {
+	Event *TaikoL1ClientTokenWithdrawnByOwner0 // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTokenWithdrawnByOwner0Iterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTokenWithdrawnByOwner0)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTokenWithdrawnByOwner0)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTokenWithdrawnByOwner0Iterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTokenWithdrawnByOwner0Iterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTokenWithdrawnByOwner0 represents a TokenWithdrawnByOwner0 event raised by the TaikoL1Client contract.
+type TaikoL1ClientTokenWithdrawnByOwner0 struct {
+	To     common.Address
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterTokenWithdrawnByOwner0 is a free log retrieval operation binding the contract event 0xc4f72d4b841abf7e4afe6a797fbc9d92a5186aa6332c2ff33c0e327f1c3e9a4c.
+//
+// Solidity: event TokenWithdrawnByOwner(address to, uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTokenWithdrawnByOwner0(opts *bind.FilterOpts) (*TaikoL1ClientTokenWithdrawnByOwner0Iterator, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TokenWithdrawnByOwner0")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTokenWithdrawnByOwner0Iterator{contract: _TaikoL1Client.contract, event: "TokenWithdrawnByOwner0", logs: logs, sub: sub}, nil
+}
+
+// WatchTokenWithdrawnByOwner0 is a free log subscription operation binding the contract event 0xc4f72d4b841abf7e4afe6a797fbc9d92a5186aa6332c2ff33c0e327f1c3e9a4c.
+//
+// Solidity: event TokenWithdrawnByOwner(address to, uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTokenWithdrawnByOwner0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTokenWithdrawnByOwner0) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TokenWithdrawnByOwner0")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTokenWithdrawnByOwner0)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TokenWithdrawnByOwner0", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTokenWithdrawnByOwner0 is a log parse operation binding the contract event 0xc4f72d4b841abf7e4afe6a797fbc9d92a5186aa6332c2ff33c0e327f1c3e9a4c.
+//
+// Solidity: event TokenWithdrawnByOwner(address to, uint256 amount)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTokenWithdrawnByOwner0(log types.Log) (*TaikoL1ClientTokenWithdrawnByOwner0, error) {
+	event := new(TaikoL1ClientTokenWithdrawnByOwner0)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TokenWithdrawnByOwner0", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTransitionContestedIterator is returned from FilterTransitionContested and is used to iterate over the raw logs and unpacked data for TransitionContested events raised by the TaikoL1Client contract.
+type TaikoL1ClientTransitionContestedIterator struct {
+	Event *TaikoL1ClientTransitionContested // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTransitionContestedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTransitionContested)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTransitionContested)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTransitionContestedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTransitionContestedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTransitionContested represents a TransitionContested event raised by the TaikoL1Client contract.
+type TaikoL1ClientTransitionContested struct {
+	BlockId     *big.Int
+	ParentHash  [32]byte
+	BlockHash   [32]byte
+	SignalRoot  [32]byte
+	Contester   common.Address
+	ContestBond *big.Int
+	Tier        uint16
+	Raw         types.Log // Blockchain specific contextual infos
+}
+
+// FilterTransitionContested is a free log retrieval operation binding the contract event 0x135961061f7c7cad9a389080483d14014ba6fe9ebcf6d3d826185c69dd71ce75.
+//
+// Solidity: event TransitionContested(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address contester, uint96 contestBond, uint16 tier)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTransitionContested(opts *bind.FilterOpts, blockId []*big.Int) (*TaikoL1ClientTransitionContestedIterator, error) {
+
+	var blockIdRule []interface{}
+	for _, blockIdItem := range blockId {
+		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TransitionContested", blockIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTransitionContestedIterator{contract: _TaikoL1Client.contract, event: "TransitionContested", logs: logs, sub: sub}, nil
+}
+
+// WatchTransitionContested is a free log subscription operation binding the contract event 0x135961061f7c7cad9a389080483d14014ba6fe9ebcf6d3d826185c69dd71ce75.
+//
+// Solidity: event TransitionContested(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address contester, uint96 contestBond, uint16 tier)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTransitionContested(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTransitionContested, blockId []*big.Int) (event.Subscription, error) {
+
+	var blockIdRule []interface{}
+	for _, blockIdItem := range blockId {
+		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TransitionContested", blockIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTransitionContested)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TransitionContested", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTransitionContested is a log parse operation binding the contract event 0x135961061f7c7cad9a389080483d14014ba6fe9ebcf6d3d826185c69dd71ce75.
+//
+// Solidity: event TransitionContested(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address contester, uint96 contestBond, uint16 tier)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTransitionContested(log types.Log) (*TaikoL1ClientTransitionContested, error) {
+	event := new(TaikoL1ClientTransitionContested)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TransitionContested", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTransitionContested0Iterator is returned from FilterTransitionContested0 and is used to iterate over the raw logs and unpacked data for TransitionContested0 events raised by the TaikoL1Client contract.
+type TaikoL1ClientTransitionContested0Iterator struct {
+	Event *TaikoL1ClientTransitionContested0 // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTransitionContested0Iterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTransitionContested0)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTransitionContested0)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTransitionContested0Iterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTransitionContested0Iterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTransitionContested0 represents a TransitionContested0 event raised by the TaikoL1Client contract.
+type TaikoL1ClientTransitionContested0 struct {
+	BlockId     *big.Int
+	ParentHash  [32]byte
+	BlockHash   [32]byte
+	SignalRoot  [32]byte
+	Contester   common.Address
+	ContestBond *big.Int
+	Tier        uint16
+	Raw         types.Log // Blockchain specific contextual infos
+}
+
+// FilterTransitionContested0 is a free log retrieval operation binding the contract event 0x135961061f7c7cad9a389080483d14014ba6fe9ebcf6d3d826185c69dd71ce75.
+//
+// Solidity: event TransitionContested(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address contester, uint96 contestBond, uint16 tier)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTransitionContested0(opts *bind.FilterOpts, blockId []*big.Int) (*TaikoL1ClientTransitionContested0Iterator, error) {
+
+	var blockIdRule []interface{}
+	for _, blockIdItem := range blockId {
+		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TransitionContested0", blockIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTransitionContested0Iterator{contract: _TaikoL1Client.contract, event: "TransitionContested0", logs: logs, sub: sub}, nil
+}
+
+// WatchTransitionContested0 is a free log subscription operation binding the contract event 0x135961061f7c7cad9a389080483d14014ba6fe9ebcf6d3d826185c69dd71ce75.
+//
+// Solidity: event TransitionContested(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address contester, uint96 contestBond, uint16 tier)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTransitionContested0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTransitionContested0, blockId []*big.Int) (event.Subscription, error) {
+
+	var blockIdRule []interface{}
+	for _, blockIdItem := range blockId {
+		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TransitionContested0", blockIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTransitionContested0)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TransitionContested0", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTransitionContested0 is a log parse operation binding the contract event 0x135961061f7c7cad9a389080483d14014ba6fe9ebcf6d3d826185c69dd71ce75.
+//
+// Solidity: event TransitionContested(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address contester, uint96 contestBond, uint16 tier)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTransitionContested0(log types.Log) (*TaikoL1ClientTransitionContested0, error) {
+	event := new(TaikoL1ClientTransitionContested0)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TransitionContested0", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTransitionProvedIterator is returned from FilterTransitionProved and is used to iterate over the raw logs and unpacked data for TransitionProved events raised by the TaikoL1Client contract.
+type TaikoL1ClientTransitionProvedIterator struct {
+	Event *TaikoL1ClientTransitionProved // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTransitionProvedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTransitionProved)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTransitionProved)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTransitionProvedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTransitionProvedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTransitionProved represents a TransitionProved event raised by the TaikoL1Client contract.
+type TaikoL1ClientTransitionProved struct {
+	BlockId      *big.Int
+	ParentHash   [32]byte
+	BlockHash    [32]byte
+	SignalRoot   [32]byte
+	Prover       common.Address
+	ValidityBond *big.Int
+	Tier         uint16
+	Raw          types.Log // Blockchain specific contextual infos
+}
+
+// FilterTransitionProved is a free log retrieval operation binding the contract event 0x9eaac66787b7d7e72981c31449ddd9bde78ffdb8cb3e6543ba2b9a4bb653b5e3.
+//
+// Solidity: event TransitionProved(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address prover, uint96 validityBond, uint16 tier)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTransitionProved(opts *bind.FilterOpts, blockId []*big.Int) (*TaikoL1ClientTransitionProvedIterator, error) {
+
+	var blockIdRule []interface{}
+	for _, blockIdItem := range blockId {
+		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TransitionProved", blockIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTransitionProvedIterator{contract: _TaikoL1Client.contract, event: "TransitionProved", logs: logs, sub: sub}, nil
+}
+
+// WatchTransitionProved is a free log subscription operation binding the contract event 0x9eaac66787b7d7e72981c31449ddd9bde78ffdb8cb3e6543ba2b9a4bb653b5e3.
+//
+// Solidity: event TransitionProved(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address prover, uint96 validityBond, uint16 tier)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTransitionProved(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTransitionProved, blockId []*big.Int) (event.Subscription, error) {
+
+	var blockIdRule []interface{}
+	for _, blockIdItem := range blockId {
+		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TransitionProved", blockIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTransitionProved)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TransitionProved", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTransitionProved is a log parse operation binding the contract event 0x9eaac66787b7d7e72981c31449ddd9bde78ffdb8cb3e6543ba2b9a4bb653b5e3.
+//
+// Solidity: event TransitionProved(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address prover, uint96 validityBond, uint16 tier)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTransitionProved(log types.Log) (*TaikoL1ClientTransitionProved, error) {
+	event := new(TaikoL1ClientTransitionProved)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TransitionProved", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoL1ClientTransitionProved0Iterator is returned from FilterTransitionProved0 and is used to iterate over the raw logs and unpacked data for TransitionProved0 events raised by the TaikoL1Client contract.
+type TaikoL1ClientTransitionProved0Iterator struct {
+	Event *TaikoL1ClientTransitionProved0 // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoL1ClientTransitionProved0Iterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoL1ClientTransitionProved0)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoL1ClientTransitionProved0)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoL1ClientTransitionProved0Iterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoL1ClientTransitionProved0Iterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoL1ClientTransitionProved0 represents a TransitionProved0 event raised by the TaikoL1Client contract.
+type TaikoL1ClientTransitionProved0 struct {
+	BlockId      *big.Int
+	ParentHash   [32]byte
+	BlockHash    [32]byte
+	SignalRoot   [32]byte
+	Prover       common.Address
+	ValidityBond *big.Int
+	Tier         uint16
+	Raw          types.Log // Blockchain specific contextual infos
+}
+
+// FilterTransitionProved0 is a free log retrieval operation binding the contract event 0x9eaac66787b7d7e72981c31449ddd9bde78ffdb8cb3e6543ba2b9a4bb653b5e3.
+//
+// Solidity: event TransitionProved(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address prover, uint96 validityBond, uint16 tier)
+func (_TaikoL1Client *TaikoL1ClientFilterer) FilterTransitionProved0(opts *bind.FilterOpts, blockId []*big.Int) (*TaikoL1ClientTransitionProved0Iterator, error) {
+
+	var blockIdRule []interface{}
+	for _, blockIdItem := range blockId {
+		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+
+	logs, sub, err := _TaikoL1Client.contract.FilterLogs(opts, "TransitionProved0", blockIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoL1ClientTransitionProved0Iterator{contract: _TaikoL1Client.contract, event: "TransitionProved0", logs: logs, sub: sub}, nil
+}
+
+// WatchTransitionProved0 is a free log subscription operation binding the contract event 0x9eaac66787b7d7e72981c31449ddd9bde78ffdb8cb3e6543ba2b9a4bb653b5e3.
+//
+// Solidity: event TransitionProved(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address prover, uint96 validityBond, uint16 tier)
+func (_TaikoL1Client *TaikoL1ClientFilterer) WatchTransitionProved0(opts *bind.WatchOpts, sink chan<- *TaikoL1ClientTransitionProved0, blockId []*big.Int) (event.Subscription, error) {
+
+	var blockIdRule []interface{}
+	for _, blockIdItem := range blockId {
+		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+
+	logs, sub, err := _TaikoL1Client.contract.WatchLogs(opts, "TransitionProved0", blockIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoL1ClientTransitionProved0)
+				if err := _TaikoL1Client.contract.UnpackLog(event, "TransitionProved0", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTransitionProved0 is a log parse operation binding the contract event 0x9eaac66787b7d7e72981c31449ddd9bde78ffdb8cb3e6543ba2b9a4bb653b5e3.
+//
+// Solidity: event TransitionProved(uint256 indexed blockId, bytes32 parentHash, bytes32 blockHash, bytes32 signalRoot, address prover, uint96 validityBond, uint16 tier)
+func (_TaikoL1Client *TaikoL1ClientFilterer) ParseTransitionProved0(log types.Log) (*TaikoL1ClientTransitionProved0, error) {
+	event := new(TaikoL1ClientTransitionProved0)
+	if err := _TaikoL1Client.contract.UnpackLog(event, "TransitionProved0", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

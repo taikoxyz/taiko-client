@@ -14,7 +14,7 @@ import (
 )
 
 func TestRequestProof(t *testing.T) {
-	dummyProofProducer := &DummyProofProducer{}
+	optimisticProofProducer := &OptimisticProofProducer{}
 
 	resCh := make(chan *ProofWithHeader, 1)
 
@@ -35,7 +35,7 @@ func TestRequestProof(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, dummyProofProducer.RequestProof(
+	require.Nil(t, optimisticProofProducer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
@@ -47,46 +47,11 @@ func TestRequestProof(t *testing.T) {
 	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
-	require.NotEmpty(t, res.ZkProof)
-}
-
-func TestProofDelay(t *testing.T) {
-	dummyProofProducer := &DummyProofProducer{}
-	require.Equal(t, time.Duration(0), dummyProofProducer.proofDelay())
-
-	var (
-		delays    []time.Duration
-		oneSecond = 1 * time.Second
-		oneDay    = 24 * time.Hour
-	)
-	for i := 0; i < 1024; i++ {
-		dummyProofProducer := &DummyProofProducer{
-			RandomDummyProofDelayLowerBound: &oneSecond,
-			RandomDummyProofDelayUpperBound: &oneDay,
-		}
-
-		delay := dummyProofProducer.proofDelay()
-
-		require.LessOrEqual(t, delay, oneDay)
-		require.Greater(t, delay, oneSecond)
-
-		delays = append(delays, delay)
-	}
-
-	allSame := func(d []time.Duration) bool {
-		for i := 1; i < len(d); i++ {
-			if d[i] != d[0] {
-				return false
-			}
-		}
-		return true
-	}
-
-	require.False(t, allSame(delays))
+	require.NotEmpty(t, res.Proof)
 }
 
 func TestProofCancel(t *testing.T) {
-	dummyProofProducer := &DummyProofProducer{}
+	optimisticProofProducer := &OptimisticProofProducer{}
 
 	resCh := make(chan *ProofWithHeader, 1)
 
@@ -107,7 +72,7 @@ func TestProofCancel(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, dummyProofProducer.RequestProof(
+	require.Nil(t, optimisticProofProducer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
@@ -117,7 +82,7 @@ func TestProofCancel(t *testing.T) {
 	))
 
 	// Cancel the proof request, should return nil
-	require.Nil(t, dummyProofProducer.Cancel(context.Background(), blockID))
+	require.Nil(t, optimisticProofProducer.Cancel(context.Background(), blockID))
 }
 
 func randHash() common.Hash {
