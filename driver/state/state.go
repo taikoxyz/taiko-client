@@ -33,7 +33,7 @@ type State struct {
 	// Subscriptions, will automatically resubscribe on errors
 	l1HeadSub             event.Subscription // L1 new heads
 	l2HeadSub             event.Subscription // L2 new heads
-	l2TransitionProvedSub event.Subscription // TaikoL1.BlockProven events
+	l2TransitionProvedSub event.Subscription // TaikoL1.TransitionProved events
 	l2BlockVerifiedSub    event.Subscription // TaikoL1.BlockVerified events
 	l2BlockProposedSub    event.Subscription // TaikoL1.BlockProposed events
 	l2HeaderSyncedSub     event.Subscription // TaikoL1.HeaderSynced events
