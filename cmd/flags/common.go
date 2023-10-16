@@ -110,7 +110,7 @@ var (
 	}
 	WaitReceiptTimeout = &cli.DurationFlag{
 		Name:     "rpc.waitReceiptTimeout",
-		Usage:    "Timeout for wait for receipts for RPC transactions",
+		Usage:    "Timeout for waiting for receipts for RPC transactions",
 		Category: commonCategory,
 		Value:    1 * time.Minute,
 	}
