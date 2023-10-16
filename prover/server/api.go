@@ -13,6 +13,16 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+// @title Taiko Prover API
+// @version 1.0
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url https://community.taiko.xyz/
+// @contact.email info@taiko.xyz
+
+// @license.name MIT
+
 // CreateAssignmentRequestBody represents a request body when handling assignment creation request.
 type CreateAssignmentRequestBody struct {
 	FeeToken   common.Address

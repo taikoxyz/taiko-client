@@ -9,12 +9,10 @@
             "email": "info@taiko.xyz"
         },
         "license": {
-            "name": "MIT",
-            "url": "hhttps://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md"
+            "name": "MIT"
         },
         "version": "1.0"
     },
-    "host": "prover-api.test.taiko.xyz",
     "paths": {
         "/assignment": {
             "post": {
@@ -30,7 +28,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/server.ProposeBlockResponse"
+                            "$ref": "#/definitions/prover_server.ProposeBlockResponse"
                         }
                     },
                     "422": {
@@ -56,7 +54,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/server.Status"
+                            "$ref": "#/definitions/prover_server.Status"
                         }
                     }
                 }
@@ -64,7 +62,7 @@
         }
     },
     "definitions": {
-        "server.ProposeBlockResponse": {
+        "prover_server.ProposeBlockResponse": {
             "type": "object",
             "properties": {
                 "prover": {
@@ -78,7 +76,7 @@
                 }
             }
         },
-        "server.Status": {
+        "prover_server.Status": {
             "type": "object",
             "properties": {
                 "currentCapacity": {
@@ -87,7 +85,13 @@
                 "maxExpiry": {
                     "type": "integer"
                 },
-                "minProofFee": {
+                "minOptimisticTierFee": {
+                    "type": "integer"
+                },
+                "minPseZkevmTierFee": {
+                    "type": "integer"
+                },
+                "minSgxTierFee": {
                     "type": "integer"
                 }
             }

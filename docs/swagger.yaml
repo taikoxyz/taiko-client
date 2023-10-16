@@ -1,5 +1,5 @@
 definitions:
-  server.ProposeBlockResponse:
+  prover_server.ProposeBlockResponse:
     properties:
       prover:
         type: string
@@ -8,16 +8,19 @@ definitions:
           type: integer
         type: array
     type: object
-  server.Status:
+  prover_server.Status:
     properties:
       currentCapacity:
         type: integer
       maxExpiry:
         type: integer
-      minProofFee:
+      minOptimisticTierFee:
+        type: integer
+      minPseZkevmTierFee:
+        type: integer
+      minSgxTierFee:
         type: integer
     type: object
-host: prover-api.test.taiko.xyz
 info:
   contact:
     email: info@taiko.xyz
@@ -25,7 +28,6 @@ info:
     url: https://community.taiko.xyz/
   license:
     name: MIT
-    url: hhttps://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md
   termsOfService: http://swagger.io/terms/
   title: Taiko Prover API
   version: "1.0"
@@ -41,7 +43,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/server.ProposeBlockResponse'
+            $ref: '#/definitions/prover_server.ProposeBlockResponse'
         "422":
           description: prover does not have capacity
           schema:
@@ -58,6 +60,6 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/server.Status'
+            $ref: '#/definitions/prover_server.Status'
       summary: Get current prover server status
 swagger: "2.0"
