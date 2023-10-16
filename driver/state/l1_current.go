@@ -95,7 +95,7 @@ func (s *State) ResetL1Current(
 		}
 
 		if heightOrID.ID == nil {
-			return nil, nil, fmt.Errorf("BlockProven event not found, hash: %s", targetHash)
+			return nil, nil, fmt.Errorf("TransitionProved event not found, hash: %s", targetHash)
 		}
 	}
 

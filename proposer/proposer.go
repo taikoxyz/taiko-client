@@ -485,6 +485,7 @@ func (p *Proposer) updateProposingTicker() {
 func (p *Proposer) Name() string {
 	return "proposer"
 }
+
 // initTierFees initializes the proving fees for every proof tier configured in the protocol for the proposer.
 func (p *Proposer) initTierFees() error {
 	for _, tier := range p.tiers {
