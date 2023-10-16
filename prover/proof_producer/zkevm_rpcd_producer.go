@@ -208,7 +208,7 @@ func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 		return nil, 0, err
 	}
 
-	metrics.ProverProofGenerationTime.Update(int64(time.Since(start).Seconds()))
+	metrics.ProverPseProofGenerationTime.Update(int64(time.Since(start).Seconds()))
 
 	return proof, degree, nil
 }
