@@ -200,6 +200,7 @@ func (s *ProofSubmitter) SubmitProof(
 			return nil
 		}
 
+		metrics.ProverValidProofSubmissionErrorCounter.Inc(1)
 		return err
 	}
 

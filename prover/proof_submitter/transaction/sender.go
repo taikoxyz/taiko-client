@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
@@ -117,6 +118,8 @@ func (s *Sender) Send(
 			"tier", proofWithHeader.Tier,
 			"isContest", len(proofWithHeader.Proof) == 0,
 		)
+
+		metrics.ProverValidProofSubmissionAcceptedCounter.Inc(1)
 
 		return nil
 	}, s.backOffPolicy); err != nil {

@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/metrics"
 )
 
 var (
@@ -206,6 +207,9 @@ func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 	}, backoff.NewConstantBackOff(proofPollingInterval)); err != nil {
 		return nil, 0, err
 	}
+
+	metrics.ProverProofGenerationTime.Update(int64(time.Since(start).Seconds()))
+
 	return proof, degree, nil
 }
 
