@@ -16,7 +16,8 @@ const docTemplate = `{
             "email": "info@taiko.xyz"
         },
         "license": {
-            "name": "MIT"
+            "name": "MIT",
+            "url": "https://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md"
         },
         "version": "{{.Version}}"
     },

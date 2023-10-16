@@ -28,6 +28,7 @@ info:
     url: https://community.taiko.xyz/
   license:
     name: MIT
+    url: https://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md
   termsOfService: http://swagger.io/terms/
   title: Taiko Prover API
   version: "1.0"

@@ -22,6 +22,7 @@ import (
 // @contact.email info@taiko.xyz
 
 // @license.name MIT
+// @license.url https://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md
 
 // CreateAssignmentRequestBody represents a request body when handling assignment creation request.
 type CreateAssignmentRequestBody struct {
