@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
-	"github.com/taikoxyz/taiko-client/bindings"
+	bindings "github.com/taikoxyz/taiko-client/bindings/taikol1"
 )
 
 func TestRequestProof(t *testing.T) {

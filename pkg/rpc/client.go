@@ -10,7 +10,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/taikoxyz/taiko-client/bindings"
+	taikol1 "github.com/taikoxyz/taiko-client/bindings/taikol1"
+	taikol2 "github.com/taikoxyz/taiko-client/bindings/taikol2"
+	taikotoken "github.com/taikoxyz/taiko-client/bindings/taikotoken"
 )
 
 const (
@@ -32,9 +34,9 @@ type Client struct {
 	// Geth Engine API clients
 	L2Engine *EngineClient
 	// Protocol contracts clients
-	TaikoL1    *bindings.TaikoL1Client
-	TaikoL2    *bindings.TaikoL2Client
-	TaikoToken *bindings.TaikoToken
+	TaikoL1    *taikol1.TaikoL1Client
+	TaikoL2    *taikol2.TaikoL2Client
+	TaikoToken *taikotoken.TaikoToken
 	// Chain IDs
 	L1ChainID *big.Int
 	L2ChainID *big.Int
@@ -89,19 +91,19 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		l2RPC = NewEthClientWithDefaultTimeout(l2EthClient)
 	}
 
-	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1RPC)
+	taikoL1, err := taikol1.NewTaikoL1Client(cfg.TaikoL1Address, l1RPC)
 	if err != nil {
 		return nil, err
 	}
 
-	taikoL2, err := bindings.NewTaikoL2Client(cfg.TaikoL2Address, l2RPC)
+	taikoL2, err := taikol2.NewTaikoL2Client(cfg.TaikoL2Address, l2RPC)
 	if err != nil {
 		return nil, err
 	}
 
-	var taikoToken *bindings.TaikoToken
+	var taikoToken *taikotoken.TaikoToken
 	if cfg.TaikoTokenAddress.Hex() != ZeroAddress.Hex() {
-		taikoToken, err = bindings.NewTaikoToken(cfg.TaikoTokenAddress, l1RPC)
+		taikoToken, err = taikotoken.NewTaikoToken(cfg.TaikoTokenAddress, l1RPC)
 		if err != nil {
 			return nil, err
 		}

@@ -7,7 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikoxyz/taiko-client/bindings"
+	taikol1 "github.com/taikoxyz/taiko-client/bindings/taikol1"
+	taikol2 "github.com/taikoxyz/taiko-client/bindings/taikol2"
 )
 
 // ABI arguments marshaling components.
@@ -120,11 +121,11 @@ var (
 func init() {
 	var err error
 
-	if TaikoL1ABI, err = bindings.TaikoL1ClientMetaData.GetAbi(); err != nil {
+	if TaikoL1ABI, err = taikol1.TaikoL1ClientMetaData.GetAbi(); err != nil {
 		log.Crit("Get TaikoL1 ABI error", "error", err)
 	}
 
-	if TaikoL2ABI, err = bindings.TaikoL2ClientMetaData.GetAbi(); err != nil {
+	if TaikoL2ABI, err = taikol2.TaikoL2ClientMetaData.GetAbi(); err != nil {
 		log.Crit("Get TaikoL2 ABI error", "error", err)
 	}
 }

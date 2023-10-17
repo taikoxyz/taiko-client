@@ -3,7 +3,7 @@ package submitter
 import (
 	"context"
 
-	"github.com/taikoxyz/taiko-client/bindings"
+	bindings "github.com/taikoxyz/taiko-client/bindings/taikol1"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 

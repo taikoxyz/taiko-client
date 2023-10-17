@@ -29,19 +29,19 @@ echo ""
 
 cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoL1.sol/TaikoL1.json |
 	jq .abi |
-	${ABIGEN_BIN} --abi - --type TaikoL1Client --pkg bindings --out $DIR/../bindings/gen_taiko_l1.go
+	${ABIGEN_BIN} --abi - --type TaikoL1Client --pkg bindings --out $DIR/../bindings/taikol1/gen_taiko_l1.go
 
 cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoL2.sol/TaikoL2.json |
 	jq .abi |
-	${ABIGEN_BIN} --abi - --type TaikoL2Client --pkg bindings --out $DIR/../bindings/gen_taiko_l2.go
+	${ABIGEN_BIN} --abi - --type TaikoL2Client --pkg bindings --out $DIR/../bindings/taikol2/gen_taiko_l2.go
 
 cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoToken.sol/TaikoToken.json |
 	jq .abi |
-	${ABIGEN_BIN} --abi - --type TaikoToken --pkg bindings --out $DIR/../bindings/gen_taiko_token.go
+	${ABIGEN_BIN} --abi - --type TaikoToken --pkg bindings --out $DIR/../bindings/taikotoken/gen_taiko_token.go
 
 cat ${TAIKO_MONO_DIR}/packages/protocol/out/AddressManager.sol/AddressManager.json |
 	jq .abi |
-	${ABIGEN_BIN} --abi - --type AddressManager --pkg bindings --out $DIR/../bindings/gen_address_manager.go
+	${ABIGEN_BIN} --abi - --type AddressManager --pkg bindings --out $DIR/../bindings/addressmanager/gen_address_manager.go
 
 git -C ${TAIKO_MONO_DIR} log --format="%H" -n 1 >./bindings/.githead
 
