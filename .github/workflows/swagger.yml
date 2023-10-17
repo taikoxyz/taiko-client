@@ -4,6 +4,15 @@ on:
     pull_request:
         types: [opened, edited, synchronize, reopened]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
     build:
         name: Swagger autogen docs
@@ -25,6 +34,11 @@ jobs:
             - name: swag init
               run: ./scripts/swagger.sh
     deploy:
+        if: ${{ always() }}
+        needs: build
+        environment:
+          name: github-pages
+          url: ${{ steps.deployment.outputs.page_url }}
         name: github pages deploy swagger docs
         runs-on: ubuntu-latest
 
