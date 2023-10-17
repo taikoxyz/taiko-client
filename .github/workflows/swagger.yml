@@ -1,0 +1,17 @@
+name: Swagger
+
+on:
+    push:
+        branches: [ main ]
+
+jobs:
+    build:
+        name: Swagger autogen docs
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: checkout
+              uses: actions/checkout@v2
+
+            - name: swag init
+              run: ./scripts/swagger.sh
