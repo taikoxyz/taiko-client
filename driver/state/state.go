@@ -132,7 +132,7 @@ func (s *State) init(ctx context.Context) error {
 	log.Info("L2 execution engine head", "height", l2Head.Number, "hash", l2Head.Hash())
 	s.setL2Head(l2Head)
 
-	latestVerifiedBlockHash, err := s.rpc.TaikoL1.GetCrossChainBlockHash(
+	snippet, err := s.rpc.TaikoL1.GetSyncedSnippet(
 		&bind.CallOpts{Context: ctx},
 		stateVars.LastVerifiedBlockId,
 	)
@@ -143,7 +143,7 @@ func (s *State) init(ctx context.Context) error {
 	s.setLatestVerifiedBlockHash(
 		new(big.Int).SetUint64(stateVars.LastVerifiedBlockId),
 		new(big.Int).SetUint64(stateVars.LastVerifiedBlockId),
-		latestVerifiedBlockHash,
+		snippet.BlockHash,
 	)
 	s.setHeadBlockID(new(big.Int).SetUint64(stateVars.NumBlocks - 1))
 
