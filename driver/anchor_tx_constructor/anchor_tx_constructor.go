@@ -14,11 +14,6 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-const (
-	// NOTE: this value should match the one defined in contracts/L2/LibL2Consts.sol
-	anchorGasCost = 180000
-)
-
 // AnchorTxConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
 // each L2 block, which is always the first transaction.
 type AnchorTxConstructor struct {
@@ -46,9 +41,14 @@ func New(rpc *rpc.Client, signalServiceAddress common.Address) (*AnchorTxConstru
 		return nil, fmt.Errorf("invalid golden touch private key %s", goldenTouchPrivKey)
 	}
 
+	anchorGasLimit, err := rpc.TaikoL2.ANCHORGASDEDUCT(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get anchor transaction gas limit: %w", err)
+	}
+
 	return &AnchorTxConstructor{
 		rpc:                  rpc,
-		gasLimit:             anchorGasCost,
+		gasLimit:             uint64(anchorGasLimit),
 		goldenTouchAddress:   goldenTouchAddress,
 		signalServiceAddress: signalServiceAddress,
 		signer:               signer,
