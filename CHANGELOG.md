@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.17.0](https://github.com/taikoxyz/taiko-client/compare/v0.16.0...v0.17.0) (2023-10-16)
+
+
+### Features
+
+* **all:** changes based on contestable zkRollup protocol design ([#414](https://github.com/taikoxyz/taiko-client/issues/414)) ([25a0c3b](https://github.com/taikoxyz/taiko-client/commit/25a0c3bc6507c22f28817c2a1e966ea7199699d8))
+
+
+### Bug Fixes
+
+* **prover:** fix L1 height used in `onBlockProven` handler ([#421](https://github.com/taikoxyz/taiko-client/issues/421)) ([4a1012a](https://github.com/taikoxyz/taiko-client/commit/4a1012ac702acc4d1d1bae5c295cdad02c99caef))
+
 ## [0.16.0](https://github.com/taikoxyz/taiko-client/compare/v0.15.0...v0.16.0) (2023-09-30)
 
 
