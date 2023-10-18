@@ -30,49 +30,52 @@ import (
 // @host prover-api.test.taiko.xyz
 // ProverServer represents a prover server instance.
 type ProverServer struct {
-	echo                 *echo.Echo
-	proverPrivateKey     *ecdsa.PrivateKey
-	proverAddress        common.Address
-	minOptimisticTierFee *big.Int
-	minSgxTierFee        *big.Int
-	minPseZkevmTierFee   *big.Int
-	maxExpiry            time.Duration
-	capacityManager      *capacity.CapacityManager
-	taikoL1Address       common.Address
-	rpc                  *rpc.Client
-	livenessBond         *big.Int
-	isGuardian           bool
+	echo                     *echo.Echo
+	proverPrivateKey         *ecdsa.PrivateKey
+	proverAddress            common.Address
+	minOptimisticTierFee     *big.Int
+	minSgxTierFee            *big.Int
+	minPseZkevmTierFee       *big.Int
+	minSgxAndPseZkevmTierFee *big.Int
+	maxExpiry                time.Duration
+	capacityManager          *capacity.CapacityManager
+	taikoL1Address           common.Address
+	rpc                      *rpc.Client
+	livenessBond             *big.Int
+	isGuardian               bool
 }
 
 // NewProverServerOpts contains all configurations for creating a prover server instance.
 type NewProverServerOpts struct {
-	ProverPrivateKey     *ecdsa.PrivateKey
-	MinOptimisticTierFee *big.Int
-	MinSgxTierFee        *big.Int
-	MinPseZkevmTierFee   *big.Int
-	MaxExpiry            time.Duration
-	CapacityManager      *capacity.CapacityManager
-	TaikoL1Address       common.Address
-	Rpc                  *rpc.Client
-	LivenessBond         *big.Int
-	IsGuardian           bool
+	ProverPrivateKey         *ecdsa.PrivateKey
+	MinOptimisticTierFee     *big.Int
+	MinSgxTierFee            *big.Int
+	MinPseZkevmTierFee       *big.Int
+	MinSgxAndPseZkevmTierFee *big.Int
+	MaxExpiry                time.Duration
+	CapacityManager          *capacity.CapacityManager
+	TaikoL1Address           common.Address
+	Rpc                      *rpc.Client
+	LivenessBond             *big.Int
+	IsGuardian               bool
 }
 
 // New creates a new prover server instance.
 func New(opts *NewProverServerOpts) (*ProverServer, error) {
 	srv := &ProverServer{
-		proverPrivateKey:     opts.ProverPrivateKey,
-		proverAddress:        crypto.PubkeyToAddress(opts.ProverPrivateKey.PublicKey),
-		echo:                 echo.New(),
-		minOptimisticTierFee: opts.MinOptimisticTierFee,
-		minSgxTierFee:        opts.MinSgxTierFee,
-		minPseZkevmTierFee:   opts.MinPseZkevmTierFee,
-		maxExpiry:            opts.MaxExpiry,
-		capacityManager:      opts.CapacityManager,
-		taikoL1Address:       opts.TaikoL1Address,
-		rpc:                  opts.Rpc,
-		livenessBond:         opts.LivenessBond,
-		isGuardian:           opts.IsGuardian,
+		proverPrivateKey:         opts.ProverPrivateKey,
+		proverAddress:            crypto.PubkeyToAddress(opts.ProverPrivateKey.PublicKey),
+		echo:                     echo.New(),
+		minOptimisticTierFee:     opts.MinOptimisticTierFee,
+		minSgxTierFee:            opts.MinSgxTierFee,
+		minPseZkevmTierFee:       opts.MinPseZkevmTierFee,
+		minSgxAndPseZkevmTierFee: opts.MinSgxAndPseZkevmTierFee,
+		maxExpiry:                opts.MaxExpiry,
+		capacityManager:          opts.CapacityManager,
+		taikoL1Address:           opts.TaikoL1Address,
+		rpc:                      opts.Rpc,
+		livenessBond:             opts.LivenessBond,
+		isGuardian:               opts.IsGuardian,
 	}
 
 	srv.echo.HideBanner = true

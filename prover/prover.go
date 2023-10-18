@@ -160,7 +160,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			producer = &proofProducer.OptimisticProofProducer{DummyProofProducer: new(proofProducer.DummyProofProducer)}
 		case encoding.TierSgxID:
 			producer = &proofProducer.SGXProofProducer{DummyProofProducer: new(proofProducer.DummyProofProducer)}
-		case encoding.TierPseZkevmID:
+		case encoding.TierSgxAndPseZkevmID:
 			zkEvmRpcdProducer, err := proofProducer.NewZkevmRpcdProducer(
 				cfg.ZKEvmRpcdEndpoint,
 				cfg.ZkEvmRpcdParamsPath,
@@ -218,16 +218,17 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	// Prover server
 	proverServerOpts := &server.NewProverServerOpts{
-		ProverPrivateKey:     p.cfg.L1ProverPrivKey,
-		MinOptimisticTierFee: p.cfg.MinOptimisticTierFee,
-		MinSgxTierFee:        p.cfg.MinSgxTierFee,
-		MinPseZkevmTierFee:   p.cfg.MinPseZkevmTierFee,
-		MaxExpiry:            p.cfg.MaxExpiry,
-		CapacityManager:      p.capacityManager,
-		TaikoL1Address:       p.cfg.TaikoL1Address,
-		Rpc:                  p.rpc,
-		LivenessBond:         protocolConfigs.LivenessBond,
-		IsGuardian:           p.cfg.GuardianProver,
+		ProverPrivateKey:         p.cfg.L1ProverPrivKey,
+		MinOptimisticTierFee:     p.cfg.MinOptimisticTierFee,
+		MinSgxTierFee:            p.cfg.MinSgxTierFee,
+		MinPseZkevmTierFee:       p.cfg.MinPseZkevmTierFee,
+		MinSgxAndPseZkevmTierFee: p.cfg.MinSgxAndPseZkevmTierFee,
+		MaxExpiry:                p.cfg.MaxExpiry,
+		CapacityManager:          p.capacityManager,
+		TaikoL1Address:           p.cfg.TaikoL1Address,
+		Rpc:                      p.rpc,
+		LivenessBond:             protocolConfigs.LivenessBond,
+		IsGuardian:               p.cfg.GuardianProver,
 	}
 	if p.cfg.GuardianProver {
 		proverServerOpts.ProverPrivateKey = p.cfg.GuardianProverPrivateKey

@@ -46,6 +46,7 @@ type Config struct {
 	MinOptimisticTierFee              *big.Int
 	MinSgxTierFee                     *big.Int
 	MinPseZkevmTierFee                *big.Int
+	MinSgxAndPseZkevmTierFee          *big.Int
 	MaxExpiry                         time.Duration
 }
 
@@ -133,6 +134,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		MinOptimisticTierFee:              new(big.Int).SetUint64(c.Uint64(flags.MinOptimisticTierFee.Name)),
 		MinSgxTierFee:                     new(big.Int).SetUint64(c.Uint64(flags.MinSgxTierFee.Name)),
 		MinPseZkevmTierFee:                new(big.Int).SetUint64(c.Uint64(flags.MinPseZkevmTierFee.Name)),
+		MinSgxAndPseZkevmTierFee:          new(big.Int).SetUint64(c.Uint64(flags.MinSgxAndPseZkevmTierFee.Name)),
 		MaxExpiry:                         c.Duration(flags.MaxExpiry.Name),
 	}, nil
 }

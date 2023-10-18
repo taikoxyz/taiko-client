@@ -281,7 +281,7 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 
 // Tier implements the ProofProducer interface.
 func (p *ZkevmRpcdProducer) Tier() uint16 {
-	return encoding.TierPseZkevmID
+	return encoding.TierSgxAndPseZkevmID
 }
 
 // Cancellable implements the ProofProducer interface.

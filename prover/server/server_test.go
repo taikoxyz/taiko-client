@@ -46,16 +46,17 @@ func (s *ProverServerTestSuite) SetupTest() {
 	s.Nil(err)
 
 	p, err := New(&NewProverServerOpts{
-		ProverPrivateKey:     l1ProverPrivKey,
-		MinOptimisticTierFee: common.Big1,
-		MinSgxTierFee:        common.Big1,
-		MinPseZkevmTierFee:   common.Big1,
-		MaxExpiry:            time.Hour,
-		CapacityManager:      capacity.New(1024),
-		TaikoL1Address:       common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		Rpc:                  rpcClient,
-		LivenessBond:         common.Big0,
-		IsGuardian:           false,
+		ProverPrivateKey:         l1ProverPrivKey,
+		MinOptimisticTierFee:     common.Big1,
+		MinSgxTierFee:            common.Big1,
+		MinPseZkevmTierFee:       common.Big1,
+		MinSgxAndPseZkevmTierFee: common.Big1,
+		MaxExpiry:                time.Hour,
+		CapacityManager:          capacity.New(1024),
+		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		Rpc:                      rpcClient,
+		LivenessBond:             common.Big0,
+		IsGuardian:               false,
 	})
 	s.Nil(err)
 

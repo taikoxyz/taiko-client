@@ -76,6 +76,11 @@ var (
 		Usage:    "Minimum accepted fee for generating a PSE zkEVM proof",
 		Category: proverCategory,
 	}
+	MinSgxAndPseZkevmTierFee = &cli.Uint64Flag{
+		Name:     "minTierFee.sgxAndPseZKEvm",
+		Usage:    "Minimum accepted fee for generating a SGX + PSE zkEVM proof",
+		Category: proverCategory,
+	}
 	// Guardian prover related.
 	GuardianProver = &cli.BoolFlag{
 		Name:     "guardian",
@@ -156,6 +161,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MinOptimisticTierFee,
 	MinSgxTierFee,
 	MinPseZkevmTierFee,
+	MinSgxAndPseZkevmTierFee,
 	StartingBlockID,
 	MaxConcurrentProvingJobs,
 	Dummy,
