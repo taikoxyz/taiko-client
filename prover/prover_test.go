@@ -60,6 +60,7 @@ func (s *ProverTestSuite) SetupTest() {
 		MinOptimisticTierFee:     common.Big1,
 		MinSgxTierFee:            common.Big1,
 		MinPseZkevmTierFee:       common.Big1,
+		MinSgxAndPseZkevmTierFee: common.Big1,
 		HTTPServerPort:           uint64(port),
 		WaitReceiptTimeout:       12 * time.Second,
 	})))
@@ -110,6 +111,7 @@ func (s *ProverTestSuite) SetupTest() {
 		OptimisticTierFee:          common.Big256,
 		SgxTierFee:                 common.Big256,
 		PseZkevmTierFee:            common.Big256,
+		SgxAndPseZkevmTierFee:      common.Big256,
 		MaxTierFeePriceBumps:       3,
 		TierFeePriceBump:           common.Big2,
 	})))

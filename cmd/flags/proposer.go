@@ -45,6 +45,11 @@ var (
 		Usage:    "Initial tier fee (in wei) paid to prover to generate a PSE zkEVM proofs",
 		Category: proposerCategory,
 	}
+	SgxAndPseZkevmTierFee = &cli.Uint64Flag{
+		Name:     "tierFee.sgxAndPseZKEvm",
+		Usage:    "Initial tier fee (in wei) paid to prover to generate a SGX + PSE zkEVM proofs",
+		Category: proposerCategory,
+	}
 	TierFeePriceBump = &cli.Uint64Flag{
 		Name:     "tierFee.pricebump",
 		Usage:    "Price bump percentage when no prover wants to accept the block at initial fee",
@@ -131,6 +136,7 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	OptimisticTierFee,
 	SgxTierFee,
 	PseZkevmTierFee,
+	SgxAndPseZkevmTierFee,
 	TierFeePriceBump,
 	MaxTierFeePriceBumps,
 })

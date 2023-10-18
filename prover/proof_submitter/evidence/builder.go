@@ -83,7 +83,7 @@ func (b *Builder) ForSubmission(
 		Proof:      proof,
 	}
 
-	if proofWithHeader.Tier == encoding.TierPseZkevmID {
+	if proofWithHeader.Tier == encoding.TierSgxAndPseZkevmID {
 		circuitsIdx, err := proofProducer.DegreeToCircuitsIdx(proofWithHeader.Degree)
 		if err != nil {
 			return nil, err

@@ -88,6 +88,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		OptimisticTierFee:          common.Big256,
 		SgxTierFee:                 common.Big256,
 		PseZkevmTierFee:            common.Big256,
+		SgxAndPseZkevmTierFee:      common.Big256,
 		MaxTierFeePriceBumps:       3,
 		TierFeePriceBump:           common.Big2,
 	})))

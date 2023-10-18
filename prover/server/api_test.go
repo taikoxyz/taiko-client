@@ -24,7 +24,7 @@ func (s *ProverServerTestSuite) TestGetStatusSuccess() {
 
 	s.Equal(s.s.minOptimisticTierFee.Uint64(), status.MinOptimisticTierFee)
 	s.Equal(s.s.minSgxTierFee.Uint64(), status.MinSgxTierFee)
-	s.Equal(s.s.minPseZkevmTierFee.Uint64(), status.MinPseZkevmTierFee)
+	s.Equal(s.s.minSgxAndPseZkevmTierFee.Uint64(), status.MinSgxTierFee)
 	s.Equal(uint64(s.s.maxExpiry.Seconds()), status.MaxExpiry)
 	s.Greater(status.CurrentCapacity, uint64(0))
 }
@@ -35,7 +35,7 @@ func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
 		TierFees: []encoding.TierFee{
 			{Tier: encoding.TierOptimisticID, Fee: common.Big256},
 			{Tier: encoding.TierSgxID, Fee: common.Big256},
-			{Tier: encoding.TierPseZkevmID, Fee: common.Big256},
+			{Tier: encoding.TierSgxAndPseZkevmID, Fee: common.Big256},
 		},
 		Expiry:     uint64(time.Now().Add(time.Minute).Unix()),
 		TxListHash: common.BigToHash(common.Big1),
