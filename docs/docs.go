@@ -17,7 +17,7 @@ const docTemplate = `{
         },
         "license": {
             "name": "MIT",
-            "url": "hhttps://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md"
+            "url": "https://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md"
         },
         "version": "{{.Version}}"
     },
@@ -38,7 +38,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/server.ProposeBlockResponse"
+                            "$ref": "#/definitions/prover_server.ProposeBlockResponse"
                         }
                     },
                     "422": {
@@ -64,7 +64,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/server.Status"
+                            "$ref": "#/definitions/prover_server.Status"
                         }
                     }
                 }
@@ -72,7 +72,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "server.ProposeBlockResponse": {
+        "prover_server.ProposeBlockResponse": {
             "type": "object",
             "properties": {
                 "prover": {
@@ -86,7 +86,7 @@ const docTemplate = `{
                 }
             }
         },
-        "server.Status": {
+        "prover_server.Status": {
             "type": "object",
             "properties": {
                 "currentCapacity": {
@@ -95,7 +95,13 @@ const docTemplate = `{
                 "maxExpiry": {
                     "type": "integer"
                 },
-                "minProofFee": {
+                "minOptimisticTierFee": {
+                    "type": "integer"
+                },
+                "minPseZkevmTierFee": {
+                    "type": "integer"
+                },
+                "minSgxTierFee": {
                     "type": "integer"
                 }
             }
@@ -106,10 +112,10 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "prover-api.test.taiko.xyz",
+	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "Taiko Prover API",
+	Title:            "Taiko Prover Server API",
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
