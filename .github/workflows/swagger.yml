@@ -27,13 +27,14 @@ jobs:
               uses: actions/setup-go@v3
               with:
                 go-version: 1.21
-                cache: true  
+                cache: true
 
             - name: install swag cli
               run: go install github.com/swaggo/swag/cmd/swag@latest
 
             - name: swag init
-              run: ./scripts/swagger.sh
+              run: ./scripts/gen_swagger_json.sh
+
     deploy:
         if: ${{ always() }}
         needs: build
