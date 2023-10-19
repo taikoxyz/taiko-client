@@ -532,8 +532,14 @@ func (p *Prover) onBlockProposed(
 
 				if p.cfg.ProveUnassignedBlocks {
 					log.Info(
-						"Add proposed block to wait for proof window expiration", "blockID", event.BlockId)
-					time.AfterFunc(timeToExpire+12*time.Second, func() { p.proofWindowExpiredCh <- event })
+						"Add proposed block to wait for proof window expiration",
+						"blockID", event.BlockId,
+					)
+					time.AfterFunc(
+						// Add another 12 seconds, to ensure one more L1 block will be mined before the proof submission
+						timeToExpire+12*time.Second,
+						func() { p.proofWindowExpiredCh <- event },
+					)
 				}
 
 				return nil
