@@ -485,7 +485,7 @@ func (p *Prover) onBlockProposed(
 
 		var (
 			now                    = uint64(time.Now().Unix())
-			provingWindowExpiresAt = currentL1OriginHeader.Time + uint64(provingWindow.Seconds())
+			provingWindowExpiresAt = event.Meta.Timestamp + uint64(provingWindow.Seconds())
 			provingWindowExpired   = now > provingWindowExpiresAt
 			timeToExpire           = time.Duration(provingWindowExpiresAt-now) * time.Second
 		)
