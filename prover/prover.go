@@ -424,7 +424,7 @@ func (p *Prover) onBlockProposed(
 			"L1 block hash mismatch due to L1 reorg",
 			"height", event.Meta.L1Height,
 			"currentL1OriginHeader", currentL1OriginHeader.Hash(),
-			"L1HashInEvent", event.Meta.L1Hash,
+			"l1HashInEvent", event.Meta.L1Hash,
 		)
 
 		return fmt.Errorf(
@@ -436,10 +436,10 @@ func (p *Prover) onBlockProposed(
 
 	log.Info(
 		"Proposed block",
-		"L1Height", event.Raw.BlockNumber,
-		"L1Hash", event.Raw.BlockHash,
-		"BlockID", event.BlockId,
-		"Removed", event.Raw.Removed,
+		"l1Height", event.Raw.BlockNumber,
+		"l1Hash", event.Raw.BlockHash,
+		"blockID", event.BlockId,
+		"removed", event.Raw.Removed,
 	)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
 
@@ -531,8 +531,15 @@ func (p *Prover) onBlockProposed(
 				)
 
 				if p.cfg.ProveUnassignedBlocks {
-					log.Info("Add proposed block to wait for proof window expiration", "blockID", event.BlockId)
-					time.AfterFunc(timeToExpire, func() { p.proofWindowExpiredCh <- event })
+					log.Info(
+						"Add proposed block to wait for proof window expiration",
+						"blockID", event.BlockId,
+					)
+					time.AfterFunc(
+						// Add another 12 seconds, to ensure one more L1 block will be mined before the proof submission
+						timeToExpire+12*time.Second,
+						func() { p.proofWindowExpiredCh <- event },
+					)
 				}
 
 				return nil

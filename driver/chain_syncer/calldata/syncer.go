@@ -199,10 +199,10 @@ func (s *Syncer) onBlockProposed(
 
 	log.Info(
 		"New BlockProposed event",
-		"L1Height", event.Raw.BlockNumber,
-		"L1Hash", event.Raw.BlockHash,
-		"BlockID", event.BlockId,
-		"Removed", event.Raw.Removed,
+		"l1Height", event.Raw.BlockNumber,
+		"l1Hash", event.Raw.BlockHash,
+		"blockID", event.BlockId,
+		"removed", event.Raw.Removed,
 	)
 
 	// Fetch the L2 parent block.
