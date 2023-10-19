@@ -34,6 +34,17 @@ const docTemplate = `{
                 ],
                 "summary": "Try to accept a block proof assignment",
                 "operationId": "create-assignment",
+                "parameters": [
+                    {
+                        "description": "assignment request body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/prover_server.CreateAssignmentRequestBody"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -72,6 +83,43 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "big.Int": {
+            "type": "object"
+        },
+        "github_com_taikoxyz_taiko-client_bindings_encoding.TierFee": {
+            "type": "object",
+            "properties": {
+                "fee": {
+                    "$ref": "#/definitions/big.Int"
+                },
+                "tier": {
+                    "type": "integer"
+                }
+            }
+        },
+        "prover_server.CreateAssignmentRequestBody": {
+            "type": "object",
+            "properties": {
+                "expiry": {
+                    "type": "integer"
+                },
+                "feeToken": {
+                    "type": "string"
+                },
+                "tierFees": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_taikoxyz_taiko-client_bindings_encoding.TierFee"
+                    }
+                },
+                "txListHash": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "prover_server.ProposeBlockResponse": {
             "type": "object",
             "properties": {
