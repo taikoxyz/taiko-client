@@ -414,22 +414,22 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
-	currentL1OriginHeader, err := p.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
+	lastL1OriginHeader, err := p.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
 	if err != nil {
 		return fmt.Errorf("failed to get L1 header, height %d: %w", event.Meta.L1Height, err)
 	}
 
-	if currentL1OriginHeader.Hash() != event.Meta.L1Hash {
+	if lastL1OriginHeader.Hash() != event.Meta.L1Hash {
 		log.Warn(
 			"L1 block hash mismatch due to L1 reorg",
 			"height", event.Meta.L1Height,
-			"currentL1OriginHeader", currentL1OriginHeader.Hash(),
+			"lastL1OriginHeader", lastL1OriginHeader.Hash(),
 			"l1HashInEvent", event.Meta.L1Hash,
 		)
 
 		return fmt.Errorf(
 			"L1 block hash mismatch due to L1 reorg: %s != %s",
-			currentL1OriginHeader.Hash(),
+			lastL1OriginHeader.Hash(),
 			event.Meta.L1Hash,
 		)
 	}
