@@ -436,10 +436,10 @@ func (p *Prover) onBlockProposed(
 
 	log.Info(
 		"Proposed block",
-		"L1Height", event.Raw.BlockNumber,
-		"L1Hash", event.Raw.BlockHash,
-		"BlockID", event.BlockId,
-		"Removed", event.Raw.Removed,
+		"l1Height", event.Raw.BlockNumber,
+		"l1Hash", event.Raw.BlockHash,
+		"blockID", event.BlockId,
+		"removed", event.Raw.Removed,
 	)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
 
@@ -531,8 +531,9 @@ func (p *Prover) onBlockProposed(
 				)
 
 				if p.cfg.ProveUnassignedBlocks {
-					log.Info("Add proposed block to wait for proof window expiration", "blockID", event.BlockId)
-					time.AfterFunc(timeToExpire, func() { p.proofWindowExpiredCh <- event })
+					log.Info(
+						"Add proposed block to wait for proof window expiration", "blockID", event.BlockId)
+					time.AfterFunc(timeToExpire+12*time.Second, func() { p.proofWindowExpiredCh <- event })
 				}
 
 				return nil
