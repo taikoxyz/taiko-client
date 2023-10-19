@@ -70,18 +70,18 @@ type ProposeBlockResponse struct {
 // handle this block, and if so, returns a signed payload the proposer
 // can submit onchain.
 //
-//		@Summary		Try to accept a block proof assignment
-//	    @Param          body        body    CreateAssignmentRequestBody   true    "assignment request body"
-//		@Accept			json
-//		@Produce		json
-//		@Success		200		{object} ProposeBlockResponse
-//		@Failure		422		{string} string	"invalid txList hash"
-//		@Failure		422		{string} string	"only receive ETH"
-//		@Failure		422		{string} string	"insufficient prover balance"
-//		@Failure		422		{string} string	"proof fee too low"
-//		@Failure		422		{string} string "expiry too long"
-//		@Failure		422		{string} string "prover does not have capacity"
-//		@Router			/assignment [post]
+//	@Summary		Try to accept a block proof assignment
+//	@Param          body        body    CreateAssignmentRequestBody   true    "assignment request body"
+//	@Accept			json
+//	@Produce		json
+//	@Success		200		{object} ProposeBlockResponse
+//	@Failure		422		{string} string	"invalid txList hash"
+//	@Failure		422		{string} string	"only receive ETH"
+//	@Failure		422		{string} string	"insufficient prover balance"
+//	@Failure		422		{string} string	"proof fee too low"
+//	@Failure		422		{string} string "expiry too long"
+//	@Failure		422		{string} string "prover does not have capacity"
+//	@Router			/assignment [post]
 func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	req := new(CreateAssignmentRequestBody)
 	if err := c.Bind(req); err != nil {
