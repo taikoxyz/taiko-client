@@ -1,4 +1,28 @@
 definitions:
+  big.Int:
+    type: object
+  github_com_taikoxyz_taiko-client_bindings_encoding.TierFee:
+    properties:
+      fee:
+        $ref: '#/definitions/big.Int'
+      tier:
+        type: integer
+    type: object
+  prover_server.CreateAssignmentRequestBody:
+    properties:
+      expiry:
+        type: integer
+      feeToken:
+        type: string
+      tierFees:
+        items:
+          $ref: '#/definitions/github_com_taikoxyz_taiko-client_bindings_encoding.TierFee'
+        type: array
+      txListHash:
+        items:
+          type: integer
+        type: array
+    type: object
   prover_server.ProposeBlockResponse:
     properties:
       prover:
@@ -38,6 +62,13 @@ paths:
       consumes:
       - application/json
       operationId: create-assignment
+      parameters:
+      - description: assignment request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/prover_server.CreateAssignmentRequestBody'
       produces:
       - application/json
       responses:
