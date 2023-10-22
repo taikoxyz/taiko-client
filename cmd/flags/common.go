@@ -15,7 +15,7 @@ var (
 	proverCategory   = "PROVER"
 )
 
-// Required flags used by all client softwares.
+// Required flags used by all client software.
 var (
 	L1WSEndpoint = &cli.StringFlag{
 		Name:     "l1.ws",
@@ -59,7 +59,7 @@ var (
 		Required: true,
 		Category: commonCategory,
 	}
-	// Optional flags used by all client softwares.
+	// Optional flags used by all client software.
 	// Logging
 	Verbosity = &cli.IntFlag{
 		Name:     "verbosity",

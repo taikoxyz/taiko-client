@@ -57,7 +57,7 @@ type ClientConfig struct {
 	BackOffMaxRetrys  *big.Int
 }
 
-// NewClient initializes all RPC clients used by Taiko client softwares.
+// NewClient initializes all RPC clients used by Taiko client software.
 func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
