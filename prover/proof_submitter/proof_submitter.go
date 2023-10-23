@@ -195,7 +195,18 @@ func (s *ProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to encode TaikoL1.proveBlock inputs: %w", err)
 	}
 
-	if err := s.txSender.Send(ctx, proofWithHeader, s.txBuilder.Build(ctx, proofWithHeader.BlockID, input)); err != nil {
+	var txBuilder transaction.TxBuilder
+	if proofWithHeader.Tier == encoding.TierGuardianID {
+		txBuilder = s.txBuilder.BuildForGuardianProofSubmission(
+			ctx,
+			proofWithHeader.BlockID,
+			(*bindings.TaikoDataBlockEvidence)(evidence),
+		)
+	} else {
+		txBuilder = s.txBuilder.BuildForNormalProofSubmission(ctx, proofWithHeader.BlockID, input)
+	}
+
+	if err := s.txSender.Send(ctx, proofWithHeader, txBuilder); err != nil {
 		if errors.Is(err, transaction.ErrUnretryable) {
 			return nil
 		}

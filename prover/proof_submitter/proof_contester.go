@@ -132,7 +132,7 @@ func (c *ProofContester) SubmitContest(
 			},
 			Tier: transitionProvedEvent.Tier,
 		},
-		c.txBuilder.Build(ctx, transitionProvedEvent.BlockId, input),
+		c.txBuilder.BuildForNormalProofSubmission(ctx, transitionProvedEvent.BlockId, input),
 	); err != nil {
 		if errors.Is(err, transaction.ErrUnretryable) {
 			return nil
