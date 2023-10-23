@@ -14,11 +14,13 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+// TODO(david): update this value
+const anchorGasLimit = 1_000_000
+
 // AnchorTxConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
 // each L2 block, which is always the first transaction.
 type AnchorTxConstructor struct {
 	rpc                  *rpc.Client
-	gasLimit             uint64
 	goldenTouchAddress   common.Address
 	signalServiceAddress common.Address
 	signer               *signer.FixedKSigner
@@ -41,14 +43,8 @@ func New(rpc *rpc.Client, signalServiceAddress common.Address) (*AnchorTxConstru
 		return nil, fmt.Errorf("invalid golden touch private key %s", goldenTouchPrivKey)
 	}
 
-	anchorGasLimit, err := rpc.TaikoL2.ANCHORGASDEDUCT(nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get anchor transaction gas limit: %w", err)
-	}
-
 	return &AnchorTxConstructor{
 		rpc:                  rpc,
-		gasLimit:             uint64(anchorGasLimit),
 		goldenTouchAddress:   goldenTouchAddress,
 		signalServiceAddress: signalServiceAddress,
 		signer:               signer,
@@ -94,15 +90,23 @@ func (c *AnchorTxConstructor) transactOpts(
 	l2Height *big.Int,
 	baseFee *big.Int,
 ) (*bind.TransactOpts, error) {
-	signer := types.LatestSignerForChainID(c.rpc.L2ChainID)
+	var (
+		signer       = types.LatestSignerForChainID(c.rpc.L2ChainID)
+		parentHeight = new(big.Int).Sub(l2Height, big.NewInt(1))
+	)
 
-	// Get the nonce of golden touch account at the specified height.
-	nonce, err := c.rpc.L2AccountNonce(ctx, c.goldenTouchAddress, new(big.Int).Sub(l2Height, big.NewInt(1)))
+	// Get the nonce of golden touch account at the specified parentHeight.
+	nonce, err := c.rpc.L2AccountNonce(ctx, c.goldenTouchAddress, parentHeight)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info("Golden touch account nonce", "nonce", nonce)
+	log.Info(
+		"Golden touch account nonce",
+		"address", c.goldenTouchAddress,
+		"nonce", nonce,
+		"parent", parentHeight,
+	)
 
 	return &bind.TransactOpts{
 		From: c.goldenTouchAddress,
@@ -120,13 +124,12 @@ func (c *AnchorTxConstructor) transactOpts(
 		Context:   ctx,
 		GasFeeCap: baseFee,
 		GasTipCap: common.Big0,
-		GasLimit:  c.gasLimit,
+		GasLimit:  c.GasLimit(),
 		NoSend:    true,
 	}, nil
 }
 
 // signTxPayload calculates an ECDSA signature for an anchor transaction.
-// ref: https://github.com/taikoxyz/taiko-mono/blob/main/packages/protocol/contracts/libs/LibAnchorSignature.sol
 func (c *AnchorTxConstructor) signTxPayload(hash []byte) ([]byte, error) {
 	if len(hash) != 32 {
 		return nil, fmt.Errorf("hash is required to be exactly 32 bytes (%d)", len(hash))
@@ -147,5 +150,5 @@ func (c *AnchorTxConstructor) signTxPayload(hash []byte) ([]byte, error) {
 
 // GasLimit returns protocol's anchorTxGasLimit constant.
 func (c *AnchorTxConstructor) GasLimit() uint64 {
-	return c.gasLimit
+	return anchorGasLimit
 }
