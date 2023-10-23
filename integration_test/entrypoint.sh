@@ -18,11 +18,9 @@ if ! docker info >/dev/null 2>&1; then
 fi
 
 TESTNET_CONFIG=$DIR/nodes/docker-compose.yml
-PREMINT_TOKEN_AMOUNT=92233720368547758070000000000000
 
 TESTNET_CONFIG=$TESTNET_CONFIG \
 TAIKO_MONO_DIR=$TAIKO_MONO_DIR \
-PREMINT_TOKEN_AMOUNT=$PREMINT_TOKEN_AMOUNT \
     $DIR/nodes/init.sh
 
 DEPLOYMENT_JSON=$(cat $TAIKO_MONO_DIR/packages/protocol/deployments/deploy_l1.json)
@@ -56,7 +54,6 @@ if [ "$RUN_TESTS" == "true" ]; then
     L2_SUGGESTED_FEE_RECIPIENT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \
     L1_PROVER_PRIVATE_KEY=59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d \
     TREASURY=0xdf09A0afD09a63fb04ab3573922437e1e637dE8b \
-    PREMINT_TOKEN_AMOUNT=$PREMINT_TOKEN_AMOUNT \
     JWT_SECRET=$DIR/nodes/jwt.hex \
         go test -v -p=1 ./$PACKAGE -coverprofile=coverage.out -covermode=atomic -timeout=300s
 else

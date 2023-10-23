@@ -108,18 +108,32 @@ func (s *ClientTestSuite) SetupTest() {
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)
 
+		// Transfer some tokens to provers.
+		balance, err := rpcCli.TaikoToken.BalanceOf(nil, crypto.PubkeyToAddress(ownerPrivKey.PublicKey))
+		s.Nil(err)
+		s.Greater(balance.Cmp(common.Big0), 0)
+
+		opts, err = bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1ChainID)
+		s.Nil(err)
+		proverBalance := new(big.Int).Div(balance, common.Big2)
+		s.Greater(proverBalance.Cmp(common.Big0), 0)
+
+		tx, err = rpcCli.TaikoToken.Transfer(
+			opts,
+			crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), proverBalance,
+		)
+		s.Nil(err)
+		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
+		s.Nil(err)
+
 		// Deposit taiko tokens for provers.
 		opts, err = bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
 		s.Nil(err)
 
-		premintAmount, ok := new(big.Int).SetString(os.Getenv("PREMINT_TOKEN_AMOUNT"), 10)
-		s.True(ok)
-		s.True(premintAmount.Cmp(common.Big0) > 0)
-
-		_, err = rpcCli.TaikoToken.Approve(opts, common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")), premintAmount)
+		_, err = rpcCli.TaikoToken.Approve(opts, common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")), proverBalance)
 		s.Nil(err)
 
-		tx, err = rpcCli.TaikoL1.DepositTaikoToken(opts, premintAmount)
+		tx, err = rpcCli.TaikoL1.DepositTaikoToken(opts, proverBalance)
 		s.Nil(err)
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)
