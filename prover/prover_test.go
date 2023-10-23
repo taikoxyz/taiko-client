@@ -53,7 +53,6 @@ func (s *ProverTestSuite) SetupTest() {
 		GuardianProverAddress:    common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
 		L1ProverPrivKey:          l1ProverPrivKey,
 		GuardianProverPrivateKey: l1ProverPrivKey,
-		GuardianProver:           false,
 		Dummy:                    true,
 		MaxConcurrentProvingJobs: 1,
 		ProveUnassignedBlocks:    true,
@@ -149,7 +148,6 @@ func (s *ProverTestSuite) TestInitError() {
 }
 
 func (s *ProverTestSuite) TestOnBlockProposed() {
-	s.p.cfg.GuardianProver = true
 	// Init prover
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -221,7 +219,6 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 		Tier:    e.MinTier,
 	}))
 	s.p.cfg.ContesterMode = true
-	s.p.cfg.GuardianProver = true
 
 	// Submit a wrong proof at first.
 	sink := make(chan *bindings.TaikoL1ClientTransitionProved)

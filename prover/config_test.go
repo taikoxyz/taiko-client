@@ -38,7 +38,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 			crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey),
 		)
 		s.True(c.Dummy)
-		s.True(c.GuardianProver)
 		s.Equal(
 			crypto.PubkeyToAddress(s.p.cfg.GuardianProverPrivateKey.PublicKey),
 			crypto.PubkeyToAddress(c.GuardianProverPrivateKey.PublicKey),

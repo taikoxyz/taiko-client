@@ -229,9 +229,9 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		TaikoL1Address:           p.cfg.TaikoL1Address,
 		Rpc:                      p.rpc,
 		LivenessBond:             protocolConfigs.LivenessBond,
-		IsGuardian:               p.cfg.GuardianProver,
+		IsGuardian:               p.IsGuardianProver(),
 	}
-	if p.cfg.GuardianProver {
+	if p.IsGuardianProver() {
 		proverServerOpts.ProverPrivateKey = p.cfg.GuardianProverPrivateKey
 	}
 	if p.srv, err = server.New(proverServerOpts); err != nil {
@@ -1038,9 +1038,14 @@ func (p *Prover) getSubmitterByTier(tier uint16) proofSubmitter.Submitter {
 	return nil
 }
 
+// IsGuardianProver reutrns true if the current prover is a guardian prover.
+func (p *Prover) IsGuardianProver() bool {
+	return p.cfg.GuardianProverAddress != common.Address{}
+}
+
 // takeOneCapacity takes one capacity from the capacity manager.
 func (p *Prover) takeOneCapacity(blockID *big.Int) error {
-	if !p.cfg.GuardianProver {
+	if !p.IsGuardianProver() {
 		if _, ok := p.capacityManager.TakeOneCapacity(blockID.Uint64()); !ok {
 			return errNoCapacity
 		}
@@ -1051,7 +1056,7 @@ func (p *Prover) takeOneCapacity(blockID *big.Int) error {
 
 // releaseOneCapacity releases one capacity to the capacity manager.
 func (p *Prover) releaseOneCapacity(blockID *big.Int) {
-	if !p.cfg.GuardianProver {
+	if !p.IsGuardianProver() {
 		_, released := p.capacityManager.ReleaseOneCapacity(blockID.Uint64())
 		if !released {
 			log.Error("Failed to release capacity", "id", blockID)
