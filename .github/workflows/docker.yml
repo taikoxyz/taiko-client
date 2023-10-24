@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [main]
+    branches: [main,updates-based-on-new-token]
     tags:
       - "v*"
 
