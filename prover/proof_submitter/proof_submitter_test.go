@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
 	"github.com/taikoxyz/taiko-client/driver/state"
@@ -126,6 +127,17 @@ func (s *ProofSubmitterTestSuite) TestSubmitProofs() {
 	for _, e := range events {
 		s.Nil(s.proofSubmitter.RequestProof(context.Background(), e))
 		proofWithHeader := <-s.proofCh
+		s.Nil(s.proofSubmitter.SubmitProof(context.Background(), proofWithHeader))
+	}
+}
+
+func (s *ProofSubmitterTestSuite) TestGuardianSubmitProofs() {
+	events := testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.proposer, s.calldataSyncer)
+
+	for _, e := range events {
+		s.Nil(s.proofSubmitter.RequestProof(context.Background(), e))
+		proofWithHeader := <-s.proofCh
+		proofWithHeader.Tier = encoding.TierGuardianID
 		s.Nil(s.proofSubmitter.SubmitProof(context.Background(), proofWithHeader))
 	}
 }

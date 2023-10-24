@@ -38,7 +38,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 			crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey),
 		)
 		s.True(c.Dummy)
-		s.True(c.GuardianProver)
 		s.Equal(
 			crypto.PubkeyToAddress(s.p.cfg.GuardianProverPrivateKey.PublicKey),
 			crypto.PubkeyToAddress(c.GuardianProverPrivateKey.PublicKey),
@@ -75,7 +74,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.MinSgxTierFee.Name, fmt.Sprint(minTierFee),
 		"--" + flags.MinPseZkevmTierFee.Name, fmt.Sprint(minTierFee),
 		"--" + flags.ProverCapacity.Name, "8",
-		"--" + flags.GuardianProver.Name,
+		"--" + flags.GuardianProver.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
 		"--" + flags.ProveBlockTxReplacementMultiplier.Name, "3",
 		"--" + flags.ProveBlockMaxTxGasTipCap.Name, "256",
 		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
@@ -97,7 +96,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProverError() {
 		"--" + flags.TaikoL2Address.Name, taikoL2,
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.Dummy.Name,
-		"--" + flags.GuardianProver.Name,
+		"--" + flags.GuardianProver.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.RPCTimeout.Name, "5s",
 		"--" + flags.MinOptimisticTierFee.Name, fmt.Sprint(minTierFee),
@@ -121,7 +120,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProverKeyError() {
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.GuardianProver.Name,
+		"--" + flags.GuardianProver.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
 		"--" + flags.GuardianProverPrivateKey.Name, "",
 	}), "invalid guardian private key")
 }
@@ -138,7 +137,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
 		&cli.Uint64Flag{Name: flags.StartingBlockID.Name},
 		&cli.BoolFlag{Name: flags.Dummy.Name},
-		&cli.BoolFlag{Name: flags.GuardianProver.Name},
+		&cli.StringFlag{Name: flags.GuardianProver.Name},
 		&cli.StringFlag{Name: flags.GuardianProverPrivateKey.Name},
 		&cli.StringFlag{Name: flags.Graffiti.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},

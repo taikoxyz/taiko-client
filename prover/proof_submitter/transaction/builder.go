@@ -10,6 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -46,8 +48,12 @@ func NewProveBlockTxBuilder(
 	}
 }
 
-// Build creates a new ProveBlock transaction with the given nonce.
-func (a *ProveBlockTxBuilder) Build(ctx context.Context, blockID *big.Int, input []byte) TxBuilder {
+// BuildForNormalProofSubmission creates a new TaikoL1.ProveBlock transaction with the given nonce.
+func (a *ProveBlockTxBuilder) BuildForNormalProofSubmission(
+	ctx context.Context,
+	blockID *big.Int,
+	input []byte,
+) TxBuilder {
 	return func(nonce *big.Int) (*types.Transaction, error) {
 		a.mutex.Lock()
 		defer a.mutex.Unlock()
@@ -76,7 +82,63 @@ func (a *ProveBlockTxBuilder) Build(ctx context.Context, blockID *big.Int, input
 			}
 		}
 
+		log.Info(
+			"Build proof submission transaction",
+			"blockID", blockID,
+			"gasLimit", txOpts.GasLimit,
+			"nonce", txOpts.Nonce,
+			"gasTipCap", txOpts.GasTipCap,
+			"gasFeeCap", txOpts.GasFeeCap,
+		)
+
 		return a.rpc.TaikoL1.ProveBlock(txOpts, blockID.Uint64(), input)
+	}
+}
+
+// BuildForGuardianProofSubmission creates a new GuardianProver.approveEvidence transaction with the given nonce.
+func (a *ProveBlockTxBuilder) BuildForGuardianProofSubmission(
+	ctx context.Context,
+	blockID *big.Int,
+	evidence *bindings.TaikoDataBlockEvidence,
+) TxBuilder {
+	return func(nonce *big.Int) (*types.Transaction, error) {
+		a.mutex.Lock()
+		defer a.mutex.Unlock()
+
+		txOpts, err := getProveBlocksTxOpts(ctx, a.rpc.L1, a.rpc.L1ChainID, a.proverPrivateKey)
+		if err != nil {
+			return nil, err
+		}
+
+		if a.gasLimit != nil {
+			txOpts.GasLimit = a.gasLimit.Uint64()
+		}
+
+		if nonce != nil {
+			txOpts.Nonce = nonce
+
+			if txOpts, err = rpc.IncreaseGasTipCap(
+				ctx,
+				a.rpc,
+				txOpts,
+				a.proverAddress,
+				a.gasTipMultiplier,
+				a.gasTipCap,
+			); err != nil {
+				return nil, err
+			}
+		}
+
+		log.Info(
+			"Build guardian proof submission transaction",
+			"blockID", blockID,
+			"gasLimit", txOpts.GasLimit,
+			"nonce", txOpts.Nonce,
+			"gasTipCap", txOpts.GasTipCap,
+			"gasFeeCap", txOpts.GasFeeCap,
+		)
+
+		return a.rpc.GuardianProver.ApproveEvidence(txOpts, blockID.Uint64(), *evidence)
 	}
 }
 

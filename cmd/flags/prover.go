@@ -82,9 +82,9 @@ var (
 		Category: proverCategory,
 	}
 	// Guardian prover related.
-	GuardianProver = &cli.BoolFlag{
-		Name:     "guardian",
-		Usage:    "Set whether prover should use guardian prover or not",
+	GuardianProver = &cli.StringFlag{
+		Name:     "guardianProver",
+		Usage:    "GuardianProver contract `address`",
 		Category: proverCategory,
 	}
 	GuardianProverPrivateKey = &cli.StringFlag{

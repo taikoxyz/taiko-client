@@ -27,7 +27,7 @@ type Config struct {
 	StartingBlockID                   *big.Int
 	MaxConcurrentProvingJobs          uint
 	Dummy                             bool
-	GuardianProver                    bool
+	GuardianProverAddress             common.Address
 	GuardianProverPrivateKey          *ecdsa.PrivateKey
 	GuardianProofSubmissionDelay      time.Duration
 	ProofSubmissionMaxRetry           uint64
@@ -115,7 +115,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		StartingBlockID:                   startingBlockID,
 		MaxConcurrentProvingJobs:          c.Uint(flags.MaxConcurrentProvingJobs.Name),
 		Dummy:                             c.Bool(flags.Dummy.Name),
-		GuardianProver:                    c.Bool(flags.GuardianProver.Name),
+		GuardianProverAddress:             common.HexToAddress(c.String(flags.GuardianProver.Name)),
 		GuardianProverPrivateKey:          guardianProverPrivKey,
 		GuardianProofSubmissionDelay:      c.Duration(flags.GuardianProofSubmissionDelay.Name),
 		ProofSubmissionMaxRetry:           c.Uint64(flags.ProofSubmissionMaxRetry.Name),

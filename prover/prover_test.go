@@ -50,9 +50,9 @@ func (s *ProverTestSuite) SetupTest() {
 		L2HttpEndpoint:           os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		GuardianProverAddress:    common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
 		L1ProverPrivKey:          l1ProverPrivKey,
 		GuardianProverPrivateKey: l1ProverPrivKey,
-		GuardianProver:           false,
 		Dummy:                    true,
 		MaxConcurrentProvingJobs: 1,
 		ProveUnassignedBlocks:    true,
@@ -102,8 +102,8 @@ func (s *ProverTestSuite) SetupTest() {
 		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L1ProposerPrivKey:          l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		L1ProposerPrivKey:          l1ProposerPrivKey,
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         12 * time.Second,
@@ -148,7 +148,6 @@ func (s *ProverTestSuite) TestInitError() {
 }
 
 func (s *ProverTestSuite) TestOnBlockProposed() {
-	s.p.cfg.GuardianProver = true
 	// Init prover
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -220,7 +219,6 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 		Tier:    e.MinTier,
 	}))
 	s.p.cfg.ContesterMode = true
-	s.p.cfg.GuardianProver = true
 
 	// Submit a wrong proof at first.
 	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
