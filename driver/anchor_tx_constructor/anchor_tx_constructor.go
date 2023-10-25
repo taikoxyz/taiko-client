@@ -14,8 +14,8 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-// TODO(david): update this value
-const anchorGasLimit = 1_000_000
+// Each TaikoL2.anchor transaction should use this value as it's gas limit.
+const anchorGasLimit = 250_000
 
 // AnchorTxConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
 // each L2 block, which is always the first transaction.
