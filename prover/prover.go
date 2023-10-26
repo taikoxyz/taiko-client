@@ -1057,8 +1057,7 @@ func (p *Prover) takeOneCapacity(blockID *big.Int) error {
 // releaseOneCapacity releases one capacity to the capacity manager.
 func (p *Prover) releaseOneCapacity(blockID *big.Int) {
 	if !p.IsGuardianProver() {
-		_, released := p.capacityManager.ReleaseOneCapacity(blockID.Uint64())
-		if !released {
+		if _, released := p.capacityManager.ReleaseOneCapacity(blockID.Uint64()); !released {
 			log.Error("Failed to release capacity", "id", blockID)
 		}
 	}

@@ -113,6 +113,23 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
 }
 
+func (s *ProposerTestSuite) TestProposeOpLocalsOnly() {
+	s.p.locals = []common.Address{common.BytesToAddress(testutils.RandomBytes(20))}
+	s.p.localsOnly = true
+
+	// Propose txs in L2 execution engine's mempool
+	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
+
+	sub, err := s.p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
+	s.Nil(err)
+	defer func() {
+		sub.Unsubscribe()
+		close(sink)
+	}()
+
+	s.Error(errNoNewTxs, s.p.ProposeOp(context.Background()))
+}
+
 func (s *ProposerTestSuite) TestProposeEmptyBlockOp() {
 	s.Nil(s.p.ProposeEmptyBlockOp(context.Background()))
 }

@@ -42,6 +42,18 @@ func TestEncodeProverAssignment(t *testing.T) {
 	require.NotNil(t, encoded)
 }
 
+func TestEncodeProverAssignmentPayload(t *testing.T) {
+	encoded, err := EncodeProverAssignmentPayload(
+		common.BytesToHash(randomBytes(32)),
+		common.BytesToAddress(randomBytes(20)),
+		120,
+		[]TierFee{{Tier: 0, Fee: common.Big1}},
+	)
+
+	require.Nil(t, err)
+	require.NotNil(t, encoded)
+}
+
 func TestUnpackTxListBytes(t *testing.T) {
 	_, err := UnpackTxListBytes(randomBytes(1024))
 	require.NotNil(t, err)
