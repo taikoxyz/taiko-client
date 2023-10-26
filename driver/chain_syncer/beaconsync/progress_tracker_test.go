@@ -58,7 +58,7 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestTrack() {
 
 	// Triggered
 	ctx, cancel = context.WithCancel(context.Background())
-	s.t.UpdateMeta(common.Big256, common.Big256, testutils.RandomHash())
+	s.t.UpdateMeta(common.Big256, testutils.RandomHash())
 	go s.t.Track(ctx)
 	time.Sleep(syncProgressCheckInterval + 5*time.Second)
 	cancel()
@@ -88,12 +88,6 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestLastSyncedVerifiedBlockID() {
 	s.Nil(s.t.LastSyncedVerifiedBlockID())
 	s.t.lastSyncedVerifiedBlockID = common.Big1
 	s.Equal(common.Big1.Uint64(), s.t.LastSyncedVerifiedBlockID().Uint64())
-}
-
-func (s *BeaconSyncProgressTrackerTestSuite) TestLastSyncedVerifiedBlockHeight() {
-	s.Nil(s.t.LastSyncedVerifiedBlockHeight())
-	s.t.lastSyncedVerifiedBlockHeight = common.Big1
-	s.Equal(common.Big1.Uint64(), s.t.LastSyncedVerifiedBlockHeight().Uint64())
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestLastSyncedVerifiedBlockHash() {

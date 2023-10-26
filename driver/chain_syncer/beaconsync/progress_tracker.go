@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	syncProgressCheckInterval = 10 * time.Second
+	syncProgressCheckInterval = 12 * time.Second
 )
 
 // SyncProgressTracker is responsible for tracking the L2 execution engine's sync progress, after
@@ -24,10 +24,9 @@ type SyncProgressTracker struct {
 	client *rpc.EthClient
 
 	// Meta data
-	triggered                     bool
-	lastSyncedVerifiedBlockID     *big.Int
-	lastSyncedVerifiedBlockHeight *big.Int
-	lastSyncedVerifiedBlockHash   common.Hash
+	triggered                   bool
+	lastSyncedVerifiedBlockID   *big.Int
+	lastSyncedVerifiedBlockHash common.Hash
 
 	// Out-of-sync check related
 	lastSyncProgress   *ethereum.SyncProgress
@@ -94,12 +93,11 @@ func (t *SyncProgressTracker) track(ctx context.Context) {
 			return
 		}
 
-		if new(big.Int).SetUint64(headHeight).Cmp(t.lastSyncedVerifiedBlockHeight) >= 0 {
+		if new(big.Int).SetUint64(headHeight).Cmp(t.lastSyncedVerifiedBlockID) >= 0 {
 			t.lastProgressedTime = time.Now()
 			log.Info("L2 execution engine has finished the P2P sync work, all verified blocks synced, "+
 				"will switch to insert pending blocks one by one",
 				"lastSyncedVerifiedBlockID", t.lastSyncedVerifiedBlockID,
-				"lastSyncedVerifiedBlockHeight", t.lastSyncedVerifiedBlockHeight,
 				"lastSyncedVerifiedBlockHash", t.lastSyncedVerifiedBlockHash,
 			)
 			return
@@ -134,11 +132,11 @@ func (t *SyncProgressTracker) track(ctx context.Context) {
 }
 
 // UpdateMeta updates the inner beacon sync meta data.
-func (t *SyncProgressTracker) UpdateMeta(id, height *big.Int, blockHash common.Hash) {
+func (t *SyncProgressTracker) UpdateMeta(id *big.Int, blockHash common.Hash) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 
-	log.Debug("Update sync progress tracker meta", "id", id, "height", height, "hash", blockHash)
+	log.Debug("Update sync progress tracker meta", "id", id, "hash", blockHash)
 
 	if !t.triggered {
 		t.lastProgressedTime = time.Now()
@@ -146,7 +144,6 @@ func (t *SyncProgressTracker) UpdateMeta(id, height *big.Int, blockHash common.H
 
 	t.triggered = true
 	t.lastSyncedVerifiedBlockID = id
-	t.lastSyncedVerifiedBlockHeight = height
 	t.lastSyncedVerifiedBlockHash = blockHash
 }
 
@@ -201,18 +198,6 @@ func (t *SyncProgressTracker) LastSyncedVerifiedBlockID() *big.Int {
 	}
 
 	return new(big.Int).Set(t.lastSyncedVerifiedBlockID)
-}
-
-// LastSyncedVerifiedBlockHeight returns tracker.lastSyncedVerifiedBlockHeight.
-func (t *SyncProgressTracker) LastSyncedVerifiedBlockHeight() *big.Int {
-	t.mutex.RLock()
-	defer t.mutex.RUnlock()
-
-	if t.lastSyncedVerifiedBlockHeight == nil {
-		return nil
-	}
-
-	return new(big.Int).Set(t.lastSyncedVerifiedBlockHeight)
 }
 
 // LastSyncedVerifiedBlockHash returns tracker.lastSyncedVerifiedBlockHash.
