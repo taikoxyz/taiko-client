@@ -17,17 +17,6 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-// HeightOrID contains a block height or a block ID.
-type HeightOrID struct {
-	Height *big.Int
-	ID     *big.Int
-}
-
-// NotEmpty checks whether this is an empty struct.
-func (h *HeightOrID) NotEmpty() bool {
-	return h.Height != nil || h.ID != nil
-}
-
 // State contains all states which will be used by driver.
 type State struct {
 	// Subscriptions, will automatically resubscribe on errors

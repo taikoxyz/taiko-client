@@ -45,12 +45,6 @@ func (s *DriverStateTestSuite) TestGetHeadBlockID() {
 	s.Equal(uint64(0), s.s.GetHeadBlockID().Uint64())
 }
 
-func (s *DriverStateTestSuite) TestHeightOrIDNotEmpty() {
-	s.False((&HeightOrID{}).NotEmpty())
-	s.True((&HeightOrID{Height: common.Big0}).NotEmpty())
-	s.True((&HeightOrID{ID: common.Big0}).NotEmpty())
-}
-
 func (s *DriverStateTestSuite) TestClose() {
 	s.NotPanics(s.s.Close)
 }

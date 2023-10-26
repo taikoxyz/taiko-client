@@ -98,21 +98,13 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 			"lastSyncedVerifiedBlockHash", s.progressTracker.LastSyncedVerifiedBlockHash(),
 		)
 
-		heightOrID := &state.HeightOrID{Height: l2Head.Number}
-
-		// If the L2 execution engine has synced to latest verified block.
-		if l2Head.Hash() == s.progressTracker.LastSyncedVerifiedBlockHash() {
-			heightOrID.ID = s.progressTracker.LastSyncedVerifiedBlockID()
-		}
-
 		// Reset the L1Current cursor.
-		_, blockID, err := s.state.ResetL1Current(s.ctx, heightOrID)
-		if err != nil {
+		if _, err := s.state.ResetL1Current(s.ctx, l2Head.Number); err != nil {
 			return err
 		}
 
 		// Reset to the latest L2 execution engine's chain status.
-		s.progressTracker.UpdateMeta(blockID, heightOrID.Height, l2Head.Hash())
+		s.progressTracker.UpdateMeta(l2Head.Number, l2Head.Number, l2Head.Hash())
 	}
 
 	// Insert the proposed block one by one.
