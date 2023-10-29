@@ -19,10 +19,15 @@ func (s *TransactionTestSuite) TestGetProveBlocksTxOpts() {
 }
 
 func (s *TransactionTestSuite) TestBuildTxs() {
-	s.NotNil(s.builder.BuildForNormalProofSubmission(context.Background(), common.Big256, testutils.RandomBytes(1024)))
-	s.NotNil(s.builder.BuildForGuardianProofSubmission(
+	_, err := s.builder.BuildForNormalProofSubmission(
+		context.Background(), common.Big256, testutils.RandomBytes(1024),
+	)(common.Big256)
+	s.NotNil(err)
+
+	_, err = s.builder.BuildForGuardianProofSubmission(
 		context.Background(),
 		common.Big256,
 		&bindings.TaikoDataBlockEvidence{},
-	))
+	)(common.Big256)
+	s.NotNil(err)
 }
