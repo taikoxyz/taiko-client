@@ -43,6 +43,10 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 	s.Nil(err)
 }
 
+func (s *ProverSelectorTestSuite) TestProverEndpoints() {
+	s.Equal(1, len(s.s.ProverEndpoints()))
+}
+
 func TestProverSelectorTestSuite(t *testing.T) {
 	suite.Run(t, new(ProverSelectorTestSuite))
 }
