@@ -9,23 +9,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
-func TestNewZkevmRpcdProducer(t *testing.T) {
-	dummyZkevmRpcdProducer, err := NewZkevmRpcdProducer(
-		"http://localhost:18545",
-		"",
-		"",
-		"",
-		false,
-		&bindings.TaikoDataConfig{},
-	)
-	require.Nil(t, err)
-	require.False(t, dummyZkevmRpcdProducer.Cancellable())
-
-	dummyZkevmRpcdProducer.CustomProofHook = func() ([]byte, uint64, error) {
-		return []byte{0}, CircuitsIdx, nil
-	}
+func TestSGXProducerRequestProof(t *testing.T) {
+	producer := &SGXProofProducer{}
 
 	resCh := make(chan *ProofWithHeader, 1)
 
@@ -33,7 +21,7 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 	header := &types.Header{
 		ParentHash:  randHash(),
 		UncleHash:   randHash(),
-		Coinbase:    common.HexToAddress("0x0000777735367b36bC9B61C50022d9D0700dB4Ec"),
+		Coinbase:    common.BytesToAddress(randHash().Bytes()),
 		Root:        randHash(),
 		TxHash:      randHash(),
 		ReceiptHash: randHash(),
@@ -46,8 +34,7 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-
-	require.Nil(t, dummyZkevmRpcdProducer.RequestProof(
+	require.Nil(t, producer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
@@ -59,7 +46,6 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
+	require.Equal(t, res.Tier, encoding.TierSgxID)
 	require.NotEmpty(t, res.Proof)
-
-	require.Nil(t, dummyZkevmRpcdProducer.Cancel(context.Background(), common.Big1))
 }

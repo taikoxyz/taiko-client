@@ -11,29 +11,18 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
-func TestNewZkevmRpcdProducer(t *testing.T) {
-	dummyZkevmRpcdProducer, err := NewZkevmRpcdProducer(
-		"http://localhost:18545",
-		"",
-		"",
-		"",
-		false,
-		&bindings.TaikoDataConfig{},
-	)
-	require.Nil(t, err)
-	require.False(t, dummyZkevmRpcdProducer.Cancellable())
-
-	dummyZkevmRpcdProducer.CustomProofHook = func() ([]byte, uint64, error) {
-		return []byte{0}, CircuitsIdx, nil
-	}
+func TestDummyProducerRequestProof(t *testing.T) {
+	producer := &DummyProofProducer{}
 
 	resCh := make(chan *ProofWithHeader, 1)
+
+	var tier uint16 = 1024
 
 	blockID := common.Big32
 	header := &types.Header{
 		ParentHash:  randHash(),
 		UncleHash:   randHash(),
-		Coinbase:    common.HexToAddress("0x0000777735367b36bC9B61C50022d9D0700dB4Ec"),
+		Coinbase:    common.BytesToAddress(randHash().Bytes()),
 		Root:        randHash(),
 		TxHash:      randHash(),
 		ReceiptHash: randHash(),
@@ -46,20 +35,19 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-
-	require.Nil(t, dummyZkevmRpcdProducer.RequestProof(
+	require.Nil(t, producer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
 		&bindings.TaikoDataBlockMetadata{},
 		header,
+		tier,
 		resCh,
 	))
 
 	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
+	require.Equal(t, tier, res.Tier)
 	require.NotEmpty(t, res.Proof)
-
-	require.Nil(t, dummyZkevmRpcdProducer.Cancel(context.Background(), common.Big1))
 }
