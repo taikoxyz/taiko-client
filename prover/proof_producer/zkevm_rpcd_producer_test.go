@@ -21,6 +21,7 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 		&bindings.TaikoDataConfig{},
 	)
 	require.Nil(t, err)
+	require.False(t, dummyZkevmRpcdProducer.Cancellable())
 
 	dummyZkevmRpcdProducer.CustomProofHook = func() ([]byte, uint64, error) {
 		return []byte{0}, CircuitsIdx, nil
@@ -59,4 +60,32 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
 	require.NotEmpty(t, res.Proof)
+
+	require.Nil(t, dummyZkevmRpcdProducer.Cancel(context.Background(), common.Big1))
+}
+
+func TestZkevmRpcdProducerCalls(t *testing.T) {
+	dummyZkevmRpcdProducer, err := NewZkevmRpcdProducer(
+		"",
+		"",
+		"",
+		"",
+		false,
+		&bindings.TaikoDataConfig{
+			BlockMaxGasLimit:    uint32(randHash().Big().Uint64()),
+			BlockMaxTxListBytes: randHash().Big(),
+		},
+	)
+	require.Nil(t, err)
+	require.False(t, dummyZkevmRpcdProducer.Cancellable())
+
+	dummyZkevmRpcdProducer.CustomProofHook = func() ([]byte, uint64, error) {
+		return []byte{0}, CircuitsIdx, nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_, _, err = dummyZkevmRpcdProducer.callProverDaemon(ctx, &ProofRequestOptions{BlockID: common.Big32})
+
+	require.Nil(t, err)
 }

@@ -2,6 +2,10 @@ package transaction
 
 import (
 	"context"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 func (s *TransactionTestSuite) TestGetProveBlocksTxOpts() {
@@ -12,4 +16,18 @@ func (s *TransactionTestSuite) TestGetProveBlocksTxOpts() {
 	optsL2, err := getProveBlocksTxOpts(context.Background(), s.RpcClient.L2, s.RpcClient.L2ChainID, s.TestAddrPrivKey)
 	s.Nil(err)
 	s.Greater(optsL2.GasTipCap.Uint64(), uint64(0))
+}
+
+func (s *TransactionTestSuite) TestBuildTxs() {
+	_, err := s.builder.BuildForNormalProofSubmission(
+		context.Background(), common.Big256, testutils.RandomBytes(1024),
+	)(common.Big256)
+	s.NotNil(err)
+
+	_, err = s.builder.BuildForGuardianProofSubmission(
+		context.Background(),
+		common.Big256,
+		&bindings.TaikoDataBlockEvidence{},
+	)(common.Big256)
+	s.NotNil(err)
 }

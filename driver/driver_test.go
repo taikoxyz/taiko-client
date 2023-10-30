@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/proposer"
 	"github.com/taikoxyz/taiko-client/testutils"
@@ -308,8 +307,7 @@ func (s *DriverTestSuite) TestL1Current() {
 	// propose and insert a block
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 	// reset L1 current with increased height
-	_, id, err := s.d.state.ResetL1Current(s.d.ctx, &state.HeightOrID{ID: common.Big1})
-	s.Equal(common.Big1, id)
+	_, err := s.d.state.ResetL1Current(s.d.ctx, common.Big1)
 	s.Nil(err)
 }
 

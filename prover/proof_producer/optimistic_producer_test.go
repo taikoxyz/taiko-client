@@ -11,10 +11,11 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
-func TestRequestProof(t *testing.T) {
-	optimisticProofProducer := &OptimisticProofProducer{}
+func TestOptimisticRequestProof(t *testing.T) {
+	producer := &OptimisticProofProducer{}
 
 	resCh := make(chan *ProofWithHeader, 1)
 
@@ -22,7 +23,7 @@ func TestRequestProof(t *testing.T) {
 	header := &types.Header{
 		ParentHash:  randHash(),
 		UncleHash:   randHash(),
-		Coinbase:    common.HexToAddress("0x0000777735367b36bC9B61C50022d9D0700dB4Ec"),
+		Coinbase:    common.BytesToAddress(randHash().Bytes()),
 		Root:        randHash(),
 		TxHash:      randHash(),
 		ReceiptHash: randHash(),
@@ -35,7 +36,7 @@ func TestRequestProof(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, optimisticProofProducer.RequestProof(
+	require.Nil(t, producer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
@@ -47,6 +48,7 @@ func TestRequestProof(t *testing.T) {
 	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
+	require.Equal(t, res.Tier, encoding.TierOptimisticID)
 	require.NotEmpty(t, res.Proof)
 }
 

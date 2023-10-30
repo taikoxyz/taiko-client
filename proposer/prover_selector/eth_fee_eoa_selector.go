@@ -133,7 +133,13 @@ func (s *ETHFeeEOASelector) AssignProver(
 				continue
 			}
 
-			ok, err := rpc.CheckProverBalance(ctx, s.rpc, proverAddress, s.taikoL1Address, s.protocolConfigs.LivenessBond)
+			ok, err := rpc.CheckProverBalance(
+				ctx,
+				s.rpc,
+				proverAddress,
+				s.taikoL1Address,
+				s.protocolConfigs.LivenessBond,
+			)
 			if err != nil {
 				log.Warn("Failed to check prover balance", "endpoint", endpoint, "error", err)
 				continue

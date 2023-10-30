@@ -31,72 +31,21 @@ func (s *State) SetL1Current(h *types.Header) {
 // BlockProposed event with given blockID / blockHash.
 func (s *State) ResetL1Current(
 	ctx context.Context,
-	heightOrID *HeightOrID,
-) (*bindings.TaikoL1ClientBlockProposed, *big.Int, error) {
-	if !heightOrID.NotEmpty() {
-		return nil, nil, fmt.Errorf("empty input %v", heightOrID)
+	blockID *big.Int,
+) (*bindings.TaikoL1ClientBlockProposed, error) {
+	if blockID == nil {
+		return nil, fmt.Errorf("empty block ID")
 	}
 
-	log.Info("Reset L1 current cursor", "heightOrID", heightOrID)
+	log.Info("Reset L1 current cursor", "blockID", blockID)
 
-	var (
-		err error
-	)
-
-	if (heightOrID.ID != nil && heightOrID.ID.Cmp(common.Big0) == 0) ||
-		(heightOrID.Height != nil && heightOrID.Height.Cmp(common.Big0) == 0) {
+	if blockID.Cmp(common.Big0) == 0 {
 		l1Current, err := s.rpc.L1.HeaderByNumber(ctx, s.GenesisL1Height)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		s.SetL1Current(l1Current)
-		return nil, common.Big0, nil
-	}
-
-	// Need to find the block ID at first, before filtering the BlockProposed events.
-	if heightOrID.ID == nil {
-		header, err := s.rpc.L2.HeaderByNumber(context.Background(), heightOrID.Height)
-		if err != nil {
-			return nil, nil, err
-		}
-		targetHash := header.Hash()
-
-		iter, err := eventIterator.NewTransitionProvedIterator(
-			ctx,
-			&eventIterator.TransitionProvenIteratorConfig{
-				Client:      s.rpc.L1,
-				TaikoL1:     s.rpc.TaikoL1,
-				StartHeight: s.GenesisL1Height,
-				EndHeight:   s.GetL1Head().Number,
-				FilterQuery: []*big.Int{},
-				Reverse:     true,
-				OnTransitionProved: func(
-					ctx context.Context,
-					e *bindings.TaikoL1ClientTransitionProved,
-					end eventIterator.EndTransitionProvedEventIterFunc,
-				) error {
-					log.Debug("Filtered TransitionProved event", "ID", e.BlockId, "hash", common.Hash(e.BlockHash))
-					if e.BlockHash == targetHash {
-						heightOrID.ID = e.BlockId
-						end()
-					}
-
-					return nil
-				},
-			},
-		)
-
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if err := iter.Iter(); err != nil {
-			return nil, nil, err
-		}
-
-		if heightOrID.ID == nil {
-			return nil, nil, fmt.Errorf("TransitionProved event not found, hash: %s", targetHash)
-		}
+		return nil, nil
 	}
 
 	var event *bindings.TaikoL1ClientBlockProposed
@@ -107,7 +56,7 @@ func (s *State) ResetL1Current(
 			TaikoL1:     s.rpc.TaikoL1,
 			StartHeight: s.GenesisL1Height,
 			EndHeight:   s.GetL1Head().Number,
-			FilterQuery: []*big.Int{heightOrID.ID},
+			FilterQuery: []*big.Int{blockID},
 			Reverse:     true,
 			OnBlockProposedEvent: func(
 				ctx context.Context,
@@ -120,26 +69,25 @@ func (s *State) ResetL1Current(
 			},
 		},
 	)
-
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if err := iter.Iter(); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if event == nil {
-		return nil, nil, fmt.Errorf("BlockProposed event not found, blockID: %s", heightOrID.ID)
+		return nil, fmt.Errorf("BlockProposed event not found, blockID: %s", blockID)
 	}
 
 	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Raw.BlockNumber))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	s.SetL1Current(l1Current)
 
 	log.Info("Reset L1 current cursor", "height", s.GetL1Current().Number)
 
-	return event, heightOrID.ID, nil
+	return event, nil
 }

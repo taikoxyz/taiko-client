@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math/big"
+	"os"
 	"testing"
 	"time"
 
@@ -23,12 +24,18 @@ var (
 
 type TransactionTestSuite struct {
 	testutils.ClientTestSuite
-	sender *Sender
+	sender  *Sender
+	builder *ProveBlockTxBuilder
 }
 
 func (s *TransactionTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
+
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+
 	s.sender = NewSender(s.RpcClient, 5*time.Second, nil, 1*time.Minute)
+	s.builder = NewProveBlockTxBuilder(s.RpcClient, l1ProverPrivKey, nil, common.Big256, common.Big2)
 }
 
 func (s *TransactionTestSuite) TestIsSubmitProofTxErrorRetryable() {

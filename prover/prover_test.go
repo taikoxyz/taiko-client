@@ -309,6 +309,7 @@ func (s *ProverTestSuite) TestGetSubmitterByTier() {
 	submitter := s.p.getSubmitterByTier(encoding.TierGuardianID)
 	s.NotNil(submitter)
 	s.Equal(encoding.TierGuardianID, submitter.Tier())
+	s.Nil(s.p.getSubmitterByTier(encoding.TierGuardianID + 1))
 }
 
 func (s *ProverTestSuite) TestGetProvingWindowNotFound() {
@@ -350,6 +351,10 @@ func (s *ProverTestSuite) TestProveOp() {
 	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
 	s.Equal(header.Hash(), common.BytesToHash(event.BlockHash[:]))
 	s.Equal(header.ParentHash, common.BytesToHash(event.ParentHash[:]))
+}
+
+func (s *ProverTestSuite) TestReleaseOneCapacity() {
+	s.NotPanics(func() { s.p.releaseOneCapacity(common.Big1) })
 }
 
 func (s *ProverTestSuite) TestStartSubscription() {
