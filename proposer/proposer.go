@@ -345,7 +345,6 @@ func (p *Proposer) sendProposeBlockTx(
 	isReplacement bool,
 ) (*types.Transaction, error) {
 	// Propose the transactions list
-	log.Info("Max fee", "fee", maxFee, "fees", assignment.TierFees)
 	opts, err := getTxOpts(ctx, p.rpc.L1, p.proposerPrivKey, p.rpc.L1ChainID, maxFee)
 	if err != nil {
 		return nil, err
@@ -379,8 +378,8 @@ func (p *Proposer) sendProposeBlockTx(
 
 	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(
 		opts,
-		txListBytes,
 		encodedParams,
+		txListBytes,
 	)
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
