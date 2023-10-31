@@ -49,8 +49,8 @@ func NewProveBlockTxBuilder(
 	}
 }
 
-// BuildForNormalProofSubmission creates a new TaikoL1.ProveBlock transaction with the given nonce.
-func (a *ProveBlockTxBuilder) BuildForNormalProofSubmission(
+// Build creates a new TaikoL1.ProveBlock transaction with the given nonce.
+func (a *ProveBlockTxBuilder) Build(
 	ctx context.Context,
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,

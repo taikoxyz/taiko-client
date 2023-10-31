@@ -124,7 +124,7 @@ func (c *ProofContester) SubmitContest(
 			},
 			Tier: transitionProvedEvent.Tier,
 		},
-		c.txBuilder.BuildForNormalProofSubmission(
+		c.txBuilder.Build(
 			ctx,
 			transitionProvedEvent.BlockId,
 			&blockProposedEvent.Meta,

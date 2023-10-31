@@ -5,7 +5,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 func (s *TransactionTestSuite) TestGetProveBlocksTxOpts() {
@@ -19,15 +18,23 @@ func (s *TransactionTestSuite) TestGetProveBlocksTxOpts() {
 }
 
 func (s *TransactionTestSuite) TestBuildTxs() {
-	_, err := s.builder.BuildForNormalProofSubmission(
-		context.Background(), common.Big256, testutils.RandomBytes(1024),
+	_, err := s.builder.Build(
+		context.Background(),
+		common.Big256,
+		&bindings.TaikoDataBlockMetadata{},
+		&bindings.TaikoDataTransition{},
+		&bindings.TaikoDataTierProof{},
+		false,
 	)(common.Big256)
 	s.NotNil(err)
 
-	_, err = s.builder.BuildForGuardianProofSubmission(
+	_, err = s.builder.Build(
 		context.Background(),
 		common.Big256,
-		&bindings.TaikoDataBlockEvidence{},
+		&bindings.TaikoDataBlockMetadata{},
+		&bindings.TaikoDataTransition{},
+		&bindings.TaikoDataTierProof{},
+		true,
 	)(common.Big256)
 	s.NotNil(err)
 }

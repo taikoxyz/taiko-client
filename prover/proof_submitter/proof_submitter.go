@@ -206,13 +206,13 @@ func (s *ProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
-	txBuilder := s.txBuilder.BuildForNormalProofSubmission(
+	txBuilder := s.txBuilder.Build(
 		ctx,
 		proofWithHeader.BlockID,
 		proofWithHeader.Meta,
 		&bindings.TaikoDataTransition{
 			ParentHash: proofWithHeader.Header.ParentHash,
-			BlockHash:  proofWithHeader.Header.Hash(),
+			BlockHash:  proofWithHeader.Opts.BlockHash,
 			SignalRoot: proofWithHeader.Opts.SignalRoot,
 			Graffiti:   s.graffiti,
 		},

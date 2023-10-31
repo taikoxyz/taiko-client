@@ -257,7 +257,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 
 	contestedEvent := <-contestedSink
 	s.Equal(header.Number.Uint64(), contestedEvent.BlockId.Uint64())
-	s.Equal(common.BytesToHash(proofWithHeader.Opts.BlockHash[:]), common.BytesToHash(contestedEvent.Tran.BlockHash[:]))
+	s.Equal(header.Hash(), common.BytesToHash(contestedEvent.Tran.BlockHash[:]))
 	s.Equal(header.ParentHash, common.BytesToHash(contestedEvent.Tran.ParentHash[:]))
 
 	s.Nil(s.p.onTransitionContested(context.Background(), contestedEvent))

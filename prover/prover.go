@@ -652,13 +652,22 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 		return nil
 	}
 
+	contestedTransition, err := p.rpc.TaikoL1.GetTransition(
+		&bind.CallOpts{Context: ctx},
+		e.BlockId.Uint64(),
+		e.Tran.ParentHash,
+	)
+	if err != nil {
+		return err
+	}
+
 	// Compare the contested transition to the block in local L2 canonical chain.
 	isValidProof, err := p.isValidProof(
 		ctx,
 		e.BlockId,
 		e.Tran.ParentHash,
-		e.Tran.BlockHash,
-		e.Tran.SignalRoot,
+		contestedTransition.BlockHash,
+		contestedTransition.SignalRoot,
 	)
 	if err != nil {
 		return err
@@ -668,8 +677,8 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 			"Contested transition is valid to local canonical chain, ignore the contest",
 			"blockID", e.BlockId,
 			"parentHash", common.Bytes2Hex(e.Tran.ParentHash[:]),
-			"hash", common.Bytes2Hex(e.Tran.BlockHash[:]),
-			"signalRoot", common.BytesToHash(e.Tran.SignalRoot[:]),
+			"hash", common.Bytes2Hex(contestedTransition.BlockHash[:]),
+			"signalRoot", common.BytesToHash(contestedTransition.SignalRoot[:]),
 			"contester", e.Contester,
 			"bond", e.ContestBond,
 		)
