@@ -12,11 +12,57 @@ import (
 
 // ABI arguments marshaling components.
 var (
-	evidenceComponents = []abi.ArgumentMarshaling{
+	blockMetadataComponents = []abi.ArgumentMarshaling{
 		{
-			Name: "metaHash",
+			Name: "l1Hash",
 			Type: "bytes32",
 		},
+		{
+			Name: "difficulty",
+			Type: "bytes32",
+		},
+		{
+			Name: "blobHash",
+			Type: "bytes32",
+		},
+		{
+			Name: "extraData",
+			Type: "bytes32",
+		},
+		{
+			Name: "depositsHash",
+			Type: "bytes32",
+		},
+		{
+			Name: "coinbase",
+			Type: "address",
+		},
+		{
+			Name: "id",
+			Type: "uint64",
+		},
+		{
+			Name: "gasLimit",
+			Type: "uint32",
+		},
+		{
+			Name: "timestamp",
+			Type: "uint64",
+		},
+		{
+			Name: "l1Height",
+			Type: "uint64",
+		},
+		{
+			Name: "minTier",
+			Type: "uint16",
+		},
+		{
+			Name: "blobUsed",
+			Type: "bool",
+		},
+	}
+	transitionComponents = []abi.ArgumentMarshaling{
 		{
 			Name: "parentHash",
 			Type: "bytes32",
@@ -33,13 +79,26 @@ var (
 			Name: "graffiti",
 			Type: "bytes32",
 		},
+	}
+	tierProofComponents = []abi.ArgumentMarshaling{
 		{
 			Name: "tier",
 			Type: "uint16",
 		},
 		{
-			Name: "proof",
+			Name: "data",
 			Type: "bytes",
+		},
+	}
+	blockParamsComponents = []abi.ArgumentMarshaling{
+		{
+			Name:       "assignment",
+			Type:       "tuple",
+			Components: proverAssignmentComponents,
+		},
+		{
+			Name: "extraData",
+			Type: "bytes32",
 		},
 	}
 	proverAssignmentComponents = []abi.ArgumentMarshaling{
@@ -61,7 +120,7 @@ var (
 				},
 				{
 					Name: "fee",
-					Type: "uint256",
+					Type: "uint128",
 				},
 			},
 		},
@@ -77,12 +136,9 @@ var (
 )
 
 var (
-	// Evidence
-	evidenceType, _ = abi.NewType("tuple", "TaikoData.BlockEvidence", evidenceComponents)
-	evidenceArgs    = abi.Arguments{{Name: "Evidence", Type: evidenceType}}
-	// ProverAssignment
-	proverAssignmentType, _ = abi.NewType("tuple", "ProverAssignment", proverAssignmentComponents)
-	proverAssignmentArgs    = abi.Arguments{{Name: "ProverAssignment", Type: proverAssignmentType}}
+	// BlockParams
+	blockParamsComponentsType, _ = abi.NewType("tuple", "TaikoData.BlockParams", blockParamsComponents)
+	blockParamsComponentsArgs    = abi.Arguments{{Name: "TaikoData.BlockParams", Type: blockParamsComponentsType}}
 	// ProverAssignmentPayload
 	stringType, _   = abi.NewType("string", "", nil)
 	bytes32Type, _  = abi.NewType("bytes32", "", nil)
@@ -98,16 +154,24 @@ var (
 			},
 			{
 				Name: "fee",
-				Type: "uint256",
+				Type: "uint128",
 			},
 		},
 	)
 	proverAssignmentPayloadArgs = abi.Arguments{
 		{Name: "PROVER_ASSIGNMENT", Type: stringType},
-		{Name: "txListHash", Type: bytes32Type},
+		{Name: "blobHash", Type: bytes32Type},
 		{Name: "assignment.feeToken", Type: addressType},
 		{Name: "assignment.expiry", Type: uint64Type},
 		{Name: "assignment.tierFees", Type: tierFeesType},
+	}
+	blockMetadataComponentsType, _ = abi.NewType("tuple", "TaikoData.BlockMetadata", blockMetadataComponents)
+	transitionComponentsType, _    = abi.NewType("tuple", "TaikoData.Transition", transitionComponents)
+	tierProofComponentsType, _     = abi.NewType("tuple", "TaikoData.TierProof", tierProofComponents)
+	proveBlockInputArgs            = abi.Arguments{
+		{Name: "TaikoData.BlockMetadata", Type: blockMetadataComponentsType},
+		{Name: "TaikoData.Transition", Type: transitionComponentsType},
+		{Name: "TaikoData.TierProof", Type: tierProofComponentsType},
 	}
 )
 
@@ -129,20 +193,11 @@ func init() {
 	}
 }
 
-// EncodeProverAssignment performs the solidity `abi.encode` for the given proverAssignment.
-func EncodeProverAssignment(assignment *ProverAssignment) ([]byte, error) {
-	b, err := proverAssignmentArgs.Pack(assignment)
+// EncodeBlockParams performs the solidity `abi.encode` for the given blockParams.
+func EncodeBlockParams(params *BlockParams) ([]byte, error) {
+	b, err := blockParamsComponentsArgs.Pack(params)
 	if err != nil {
-		return nil, fmt.Errorf("failed to abi.encode prover assignment, %w", err)
-	}
-	return b, nil
-}
-
-// EncodeEvidence performs the solidity `abi.encode` for the given evidence.
-func EncodeEvidence(e *BlockEvidence) ([]byte, error) {
-	b, err := evidenceArgs.Pack(e)
-	if err != nil {
-		return nil, fmt.Errorf("failed to abi.encode evidence, %w", err)
+		return nil, fmt.Errorf("failed to abi.encode block params, %w", err)
 	}
 	return b, nil
 }
@@ -157,6 +212,19 @@ func EncodeProverAssignmentPayload(
 	b, err := proverAssignmentPayloadArgs.Pack("PROVER_ASSIGNMENT", txListHash, feeToken, expiry, tierFees)
 	if err != nil {
 		return nil, fmt.Errorf("failed to abi.encode prover assignment hash payload, %w", err)
+	}
+	return b, nil
+}
+
+// EncodeProveBlockInput performs the solidity `abi.encode` for the given TaikoL1.proveBlock input.
+func EncodeProveBlockInput(
+	meta *bindings.TaikoDataBlockMetadata,
+	transition *bindings.TaikoDataTransition,
+	tierProof *bindings.TaikoDataTierProof,
+) ([]byte, error) {
+	b, err := proveBlockInputArgs.Pack(meta, transition, tierProof)
+	if err != nil {
+		return nil, fmt.Errorf("failed to abi.encode TakoL1.proveBlock input, %w", err)
 	}
 	return b, nil
 }

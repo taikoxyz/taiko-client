@@ -349,8 +349,8 @@ func (s *Syncer) insertNewHead(
 	)
 
 	// Get withdrawals
-	withdrawals := make(types.Withdrawals, len(event.Meta.DepositsProcessed))
-	for i, d := range event.Meta.DepositsProcessed {
+	withdrawals := make(types.Withdrawals, len(event.DepositsProcessed))
+	for i, d := range event.DepositsProcessed {
 		withdrawals[i] = &types.Withdrawal{Address: d.Recipient, Amount: d.Amount.Uint64(), Index: d.Id}
 	}
 

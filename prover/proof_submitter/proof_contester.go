@@ -16,7 +16,6 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
-	"github.com/taikoxyz/taiko-client/prover/proof_submitter/evidence"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
 )
 
@@ -25,7 +24,6 @@ var _ Contester = (*ProofContester)(nil)
 // ProofContester is responsible for contesting wrong L2 transitions.
 type ProofContester struct {
 	rpc             *rpc.Client
-	evidenceBuilder *evidence.Builder
 	txBuilder       *transaction.ProveBlockTxBuilder
 	txSender        *transaction.Sender
 	l2SignalService common.Address
@@ -44,7 +42,7 @@ func NewProofContester(
 	waitReceiptTimeout time.Duration,
 	graffiti string,
 ) (*ProofContester, error) {
-	l2SignalService, err := rpcClient.TaikoL2.Resolve0(nil, rpc.StringToBytes32("signal_service"), false)
+	l2SignalService, err := rpcClient.TaikoL2.SignalService(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +53,7 @@ func NewProofContester(
 	}
 
 	return &ProofContester{
-		rpc:             rpcClient,
-		evidenceBuilder: evidence.NewBuilder(rpcClient, nil, graffiti),
+		rpc: rpcClient,
 		txBuilder: transaction.NewProveBlockTxBuilder(
 			rpcClient,
 			proverPrivKey,
@@ -80,14 +77,14 @@ func (c *ProofContester) SubmitContest(
 	transition, err := c.rpc.TaikoL1.GetTransition(
 		&bind.CallOpts{Context: ctx},
 		transitionProvedEvent.BlockId.Uint64(),
-		transitionProvedEvent.ParentHash,
+		transitionProvedEvent.Tran.ParentHash,
 	)
 	if err != nil {
 		if !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_") {
 			log.Warn(
 				"Failed to get transition",
 				"blockID", transitionProvedEvent.BlockId,
-				"parentHash", transitionProvedEvent.ParentHash,
+				"parentHash", transitionProvedEvent.Tran.ParentHash,
 				"error", encoding.TryParsingCustomError(err),
 			)
 			return nil
@@ -98,7 +95,7 @@ func (c *ProofContester) SubmitContest(
 		log.Info(
 			"Transaction has already been contested",
 			"blockID", transitionProvedEvent.BlockId,
-			"parentHash", transitionProvedEvent.ParentHash,
+			"parentHash", transitionProvedEvent.Tran.ParentHash,
 			"contester", transition.Contester,
 		)
 		return nil
@@ -109,14 +106,9 @@ func (c *ProofContester) SubmitContest(
 		return err
 	}
 
-	// Generate an evidence for contest.
-	evidence, err := c.evidenceBuilder.ForContest(ctx, header, c.l2SignalService, transitionProvedEvent)
+	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L2GethClient, c.l2SignalService, transitionProvedEvent.BlockId)
 	if err != nil {
-		return err
-	}
-	input, err := encoding.EncodeEvidence(evidence)
-	if err != nil {
-		return fmt.Errorf("failed to encode TaikoL1.proveBlock inputs: %w", err)
+		return fmt.Errorf("failed to get L2 signal service storage root: %w", err)
 	}
 
 	if err := c.txSender.Send(
@@ -128,11 +120,26 @@ func (c *ProofContester) SubmitContest(
 			Proof:   []byte{},
 			Opts: &proofProducer.ProofRequestOptions{
 				EventL1Hash: blockProposedEvent.Raw.BlockHash,
-				SignalRoot:  evidence.SignalRoot,
+				SignalRoot:  signalRoot,
 			},
 			Tier: transitionProvedEvent.Tier,
 		},
-		c.txBuilder.BuildForNormalProofSubmission(ctx, transitionProvedEvent.BlockId, input),
+		c.txBuilder.BuildForNormalProofSubmission(
+			ctx,
+			transitionProvedEvent.BlockId,
+			&blockProposedEvent.Meta,
+			&bindings.TaikoDataTransition{
+				ParentHash: header.ParentHash,
+				BlockHash:  header.Hash(),
+				SignalRoot: signalRoot,
+				Graffiti:   c.graffiti,
+			},
+			&bindings.TaikoDataTierProof{
+				Tier: transition.Tier,
+				Data: []byte{},
+			},
+			false,
+		),
 	); err != nil {
 		if errors.Is(err, transaction.ErrUnretryable) {
 			return nil

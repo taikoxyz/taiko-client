@@ -2,51 +2,20 @@ package encoding
 
 import (
 	"context"
-	"math/big"
-	"math/rand"
 	"os"
+	"testing"
+
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
-
-func TestEncodeEvidence(t *testing.T) {
-	evidence := &BlockEvidence{
-		MetaHash:   randomHash(),
-		BlockHash:  randomHash(),
-		ParentHash: randomHash(),
-		SignalRoot: randomHash(),
-		Graffiti:   randomHash(),
-		Tier:       uint16(rand.Uint64()),
-		Proof:      randomHash().Big().Bytes(),
-	}
-
-	b, err := EncodeEvidence(evidence)
-
-	require.Nil(t, err)
-	require.NotEmpty(t, b)
-}
-
-func TestEncodeProverAssignment(t *testing.T) {
-	encoded, err := EncodeProverAssignment(
-		&ProverAssignment{
-			Prover:    common.BigToAddress(new(big.Int).SetUint64(rand.Uint64())),
-			FeeToken:  common.Address{},
-			TierFees:  []TierFee{{Tier: 0, Fee: common.Big1}},
-			Signature: randomHash().Big().Bytes(),
-			Expiry:    1024,
-		},
-	)
-
-	require.Nil(t, err)
-	require.NotNil(t, encoded)
-}
 
 func TestEncodeProverAssignmentPayload(t *testing.T) {
 	encoded, err := EncodeProverAssignmentPayload(
@@ -97,9 +66,7 @@ func TestUnpackTxListBytes(t *testing.T) {
 
 	tx, err := taikoL1.ProposeBlock(
 		opts,
-		randomHash(),
-		[32]byte(randomHash().Bytes()),
-		randomBytes(32),
+		randomBytes(1024),
 		txListBytes,
 	)
 	require.Nil(t, err)

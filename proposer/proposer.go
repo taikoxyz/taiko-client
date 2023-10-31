@@ -340,11 +340,12 @@ func (p *Proposer) sendProposeBlockTx(
 	ctx context.Context,
 	txListBytes []byte,
 	nonce *uint64,
-	signedAssignment []byte,
+	assignment *encoding.ProverAssignment,
 	maxFee *big.Int,
 	isReplacement bool,
 ) (*types.Transaction, error) {
 	// Propose the transactions list
+	log.Info("Max fee", "fee", maxFee, "fees", assignment.TierFees)
 	opts, err := getTxOpts(ctx, p.rpc.L1, p.proposerPrivKey, p.rpc.L1ChainID, maxFee)
 	if err != nil {
 		return nil, err
@@ -368,12 +369,18 @@ func (p *Proposer) sendProposeBlockTx(
 		}
 	}
 
+	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
+		Assignment: assignment,
+		ExtraData:  rpc.StringToBytes32(p.cfg.ExtraData),
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(
 		opts,
-		crypto.Keccak256Hash(txListBytes),
-		rpc.StringToBytes32(p.cfg.ExtraData),
-		signedAssignment,
 		txListBytes,
+		encodedParams,
 	)
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
@@ -389,7 +396,7 @@ func (p *Proposer) ProposeTxList(
 	txNum uint,
 	nonce *uint64,
 ) error {
-	signedAssignment, maxFee, err := p.proverSelector.AssignProver(
+	assignment, maxFee, err := p.proverSelector.AssignProver(
 		ctx,
 		p.tierFees,
 		crypto.Keccak256Hash(txListBytes),
@@ -411,7 +418,7 @@ func (p *Proposer) ProposeTxList(
 				ctx,
 				txListBytes,
 				nonce,
-				signedAssignment,
+				assignment,
 				maxFee,
 				isReplacement,
 			); err != nil {
@@ -460,7 +467,11 @@ func (p *Proposer) ProposeTxList(
 
 // ProposeEmptyBlockOp performs a proposing one empty block operation.
 func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
-	return p.ProposeTxList(ctx, []byte{}, 0, nil)
+	emptyTxListBytes, err := rlp.EncodeToBytes(types.Transactions{})
+	if err != nil {
+		return err
+	}
+	return p.ProposeTxList(ctx, emptyTxListBytes, 0, nil)
 }
 
 // updateProposingTicker updates the internal proposing timer.

@@ -18,7 +18,6 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	anchorTxValidator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
-	"github.com/taikoxyz/taiko-client/prover/proof_submitter/evidence"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
 )
 
@@ -30,7 +29,7 @@ type ProofSubmitter struct {
 	rpc             *rpc.Client
 	proofProducer   proofProducer.ProofProducer
 	resultCh        chan *proofProducer.ProofWithHeader
-	evidenceBuilder *evidence.Builder
+	anchorValidator *anchorTxValidator.AnchorTxValidator
 	txBuilder       *transaction.ProveBlockTxBuilder
 	txSender        *transaction.Sender
 	proverAddress   common.Address
@@ -65,7 +64,7 @@ func New(
 		return nil, err
 	}
 
-	l2SignalService, err := rpcClient.TaikoL2.Resolve0(nil, rpc.StringToBytes32("signal_service"), false)
+	l2SignalService, err := rpcClient.TaikoL2.SignalService(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +84,7 @@ func New(
 		rpc:             rpcClient,
 		proofProducer:   proofProducer,
 		resultCh:        resultCh,
-		evidenceBuilder: evidence.NewBuilder(rpcClient, anchorValidator, graffiti),
+		anchorValidator: anchorValidator,
 		txBuilder: transaction.NewProveBlockTxBuilder(
 			rpcClient,
 			proverPrivKey,
@@ -185,26 +184,44 @@ func (s *ProofSubmitter) SubmitProof(
 
 	metrics.ProverReceivedProofCounter.Inc(1)
 
-	evidence, err := s.evidenceBuilder.ForSubmission(ctx, proofWithHeader)
+	// Validate anchor transaction
+	// Get the corresponding L2 block.
+	block, err := s.rpc.L2.BlockByHash(ctx, proofWithHeader.Header.Hash())
 	if err != nil {
-		return fmt.Errorf("failed to create evidence: %w", err)
+		return fmt.Errorf("failed to get L2 block with given hash %s: %w", proofWithHeader.Header.Hash(), err)
 	}
 
-	input, err := encoding.EncodeEvidence(evidence)
-	if err != nil {
-		return fmt.Errorf("failed to encode TaikoL1.proveBlock inputs: %w", err)
+	if block.Transactions().Len() == 0 {
+		return fmt.Errorf("invalid block without anchor transaction, blockID %s", proofWithHeader.BlockID)
 	}
 
-	var txBuilder transaction.TxBuilder
-	if proofWithHeader.Tier == encoding.TierGuardianID {
-		txBuilder = s.txBuilder.BuildForGuardianProofSubmission(
-			ctx,
-			proofWithHeader.BlockID,
-			(*bindings.TaikoDataBlockEvidence)(evidence),
-		)
-	} else {
-		txBuilder = s.txBuilder.BuildForNormalProofSubmission(ctx, proofWithHeader.BlockID, input)
+	// Validate TaikoL2.anchor transaction inside the L2 block.
+	anchorTx := block.Transactions()[0]
+	if err := s.anchorValidator.ValidateAnchorTx(ctx, anchorTx); err != nil {
+		return fmt.Errorf("invalid anchor transaction: %w", err)
 	}
+
+	// Get and validate this anchor transaction's receipt.
+	if _, err = s.anchorValidator.GetAndValidateAnchorTxReceipt(ctx, anchorTx); err != nil {
+		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
+	}
+
+	txBuilder := s.txBuilder.BuildForNormalProofSubmission(
+		ctx,
+		proofWithHeader.BlockID,
+		proofWithHeader.Meta,
+		&bindings.TaikoDataTransition{
+			ParentHash: proofWithHeader.Header.ParentHash,
+			BlockHash:  proofWithHeader.Header.Hash(),
+			SignalRoot: proofWithHeader.Opts.SignalRoot,
+			Graffiti:   s.graffiti,
+		},
+		&bindings.TaikoDataTierProof{
+			Tier: proofWithHeader.Tier,
+			Data: proofWithHeader.Proof,
+		},
+		proofWithHeader.Tier == encoding.TierGuardianID,
+	)
 
 	if err := s.txSender.Send(ctx, proofWithHeader, txBuilder); err != nil {
 		if errors.Is(err, transaction.ErrUnretryable) {

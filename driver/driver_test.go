@@ -9,6 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
@@ -131,7 +132,10 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
+	log.Info("111")
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	log.Info("222")
+
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)

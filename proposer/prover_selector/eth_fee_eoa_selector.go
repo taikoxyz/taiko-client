@@ -84,7 +84,7 @@ func (s *ETHFeeEOASelector) AssignProver(
 	ctx context.Context,
 	tierFees []encoding.TierFee,
 	txListHash common.Hash,
-) ([]byte, *big.Int, error) {
+) (*encoding.ProverAssignment, *big.Int, error) {
 	guardianProverAddress, err := s.rpc.TaikoL1.Resolve0(
 		&bind.CallOpts{Context: ctx},
 		rpc.StringToBytes32("guardian"),
@@ -172,7 +172,7 @@ func assignProver(
 	txListHash common.Hash,
 	timeout time.Duration,
 	guardianProverAddress common.Address,
-) ([]byte, common.Address, error) {
+) (*encoding.ProverAssignment, common.Address, error) {
 	log.Info(
 		"Attempting to assign prover",
 		"endpoint", endpoint,
@@ -233,20 +233,6 @@ func assignProver(
 		)
 	}
 
-	// Convert signature to one solidity can recover by adding 27 to 65th byte
-	result.SignedPayload[64] = uint8(uint(result.SignedPayload[64])) + 27
-
-	encoded, err := encoding.EncodeProverAssignment(&encoding.ProverAssignment{
-		Prover:    result.Prover,
-		FeeToken:  common.Address{},
-		TierFees:  tierFees,
-		Expiry:    reqBody.Expiry,
-		Signature: result.SignedPayload,
-	})
-	if err != nil {
-		return nil, common.Address{}, err
-	}
-
 	log.Info(
 		"Prover assigned",
 		"address", result.Prover,
@@ -255,5 +241,14 @@ func assignProver(
 		"expiry", expiry,
 	)
 
-	return encoded, result.Prover, nil
+	// Convert signature to one solidity can recover by adding 27 to 65th byte
+	result.SignedPayload[64] = uint8(uint(result.SignedPayload[64])) + 27
+
+	return &encoding.ProverAssignment{
+		Prover:    result.Prover,
+		FeeToken:  common.Address{},
+		TierFees:  tierFees,
+		Expiry:    reqBody.Expiry,
+		Signature: result.SignedPayload,
+	}, result.Prover, nil
 }
