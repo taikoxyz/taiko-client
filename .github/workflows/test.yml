@@ -45,7 +45,7 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
-          ref: bridgable_app_deploy
+          ref: code_too_large
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
