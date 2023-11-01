@@ -38,15 +38,10 @@ type BlockHeader struct {
 	BaseFeePerGas    *big.Int
 }
 
-// BlockEvidence should be same with TaikoData.BlockEvidence.
-type BlockEvidence struct {
-	MetaHash   [32]byte
-	ParentHash [32]byte
-	BlockHash  [32]byte
-	SignalRoot [32]byte
-	Graffiti   [32]byte
-	Tier       uint16
-	Proof      []byte
+// BlockParams should be same with TaikoData.BlockParams.
+type BlockParams struct {
+	Assignment *ProverAssignment
+	ExtraData  [32]byte
 }
 
 // TierFee should be same with TaikoData.TierFee.

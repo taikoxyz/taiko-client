@@ -122,7 +122,7 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 				L1Height:   l1Head.NumberU64(),
 				L1Hash:     l1Head.Hash(),
 				Coinbase:   common.BytesToAddress(testutils.RandomBytes(1024)),
-				TxListHash: testutils.RandomHash(),
+				BlobHash:   testutils.RandomHash(),
 				Difficulty: testutils.RandomHash(),
 				GasLimit:   rand.Uint32(),
 				Timestamp:  uint64(time.Now().Unix()),

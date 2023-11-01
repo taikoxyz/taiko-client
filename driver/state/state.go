@@ -159,9 +159,9 @@ func (s *State) startSubscriptions(ctx context.Context) {
 				log.Info(
 					"✅ Transition proven",
 					"blockID", e.BlockId,
-					"parentHash", common.Hash(e.ParentHash),
-					"hash", common.Hash(e.BlockHash),
-					"signalRoot", common.Hash(e.SignalRoot),
+					"parentHash", common.Hash(e.Tran.ParentHash),
+					"hash", common.Hash(e.Tran.BlockHash),
+					"signalRoot", common.Hash(e.Tran.SignalRoot),
 					"prover", e.Prover,
 				)
 			case e := <-s.blockVerifiedCh:

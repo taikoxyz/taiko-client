@@ -14,8 +14,10 @@ func (s *ProofSubmitterTestSuite) TestSubmitContestNoTransition() {
 			context.Background(),
 			&bindings.TaikoL1ClientBlockProposed{},
 			&bindings.TaikoL1ClientTransitionProved{
-				BlockId:    common.Big256,
-				ParentHash: testutils.RandomHash(),
+				BlockId: common.Big256,
+				Tran: bindings.TaikoDataTransition{
+					ParentHash: testutils.RandomHash(),
+				},
 			},
 		),
 	)
