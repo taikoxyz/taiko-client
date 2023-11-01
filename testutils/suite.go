@@ -99,12 +99,17 @@ func (s *ClientTestSuite) SetupTest() {
 		opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1ChainID)
 		s.Nil(err)
 
-		tx, err := addressManager.SetAddress(opts, chainID, rpc.StringToBytes32("tier_pse_zkevm"), common.Address{})
+		tx, err := addressManager.SetAddress(
+			opts,
+			chainID.Uint64(),
+			rpc.StringToBytes32("tier_pse_zkevm"),
+			common.Address{},
+		)
 		s.Nil(err)
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)
 
-		tx, err = addressManager.SetAddress(opts, chainID, rpc.StringToBytes32("tier_sgx"), common.Address{})
+		tx, err = addressManager.SetAddress(opts, chainID.Uint64(), rpc.StringToBytes32("tier_sgx"), common.Address{})
 		s.Nil(err)
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)

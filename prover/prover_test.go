@@ -155,7 +155,7 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	// Valid block
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
-	s.Nil(s.p.selectSubmitter(e.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	// Empty blocks
 	for _, e = range testutils.ProposeAndInsertEmptyBlocks(
@@ -165,7 +165,7 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	) {
 		s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
 
-		s.Nil(s.p.selectSubmitter(e.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+		s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 	}
 }
 
@@ -216,7 +216,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onTransitionProved(context.Background(), &bindings.TaikoL1ClientTransitionProved{
 		BlockId: e.BlockId,
-		Tier:    e.MinTier,
+		Tier:    e.Meta.MinTier,
 	}))
 	s.p.cfg.ContesterMode = true
 
@@ -235,13 +235,13 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.Nil(s.p.proveOp())
 	proofWithHeader := <-s.p.proofGenerationCh
 	proofWithHeader.Opts.BlockHash = testutils.RandomHash()
-	s.Nil(s.p.selectSubmitter(e.MinTier).SubmitProof(context.Background(), proofWithHeader))
+	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), proofWithHeader))
 
 	event := <-sink
 	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
-	s.Equal(common.BytesToHash(proofWithHeader.Opts.BlockHash[:]), common.BytesToHash(event.BlockHash[:]))
-	s.NotEqual(header.Hash(), common.BytesToHash(event.BlockHash[:]))
-	s.Equal(header.ParentHash, common.BytesToHash(event.ParentHash[:]))
+	s.Equal(common.BytesToHash(proofWithHeader.Opts.BlockHash[:]), common.BytesToHash(event.Tran.BlockHash[:]))
+	s.NotEqual(header.Hash(), common.BytesToHash(event.Tran.BlockHash[:]))
+	s.Equal(header.ParentHash, common.BytesToHash(event.Tran.ParentHash[:]))
 
 	// Contest the transition.
 	contestedSink := make(chan *bindings.TaikoL1ClientTransitionContested)
@@ -257,16 +257,16 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 
 	contestedEvent := <-contestedSink
 	s.Equal(header.Number.Uint64(), contestedEvent.BlockId.Uint64())
-	s.Equal(common.BytesToHash(proofWithHeader.Opts.BlockHash[:]), common.BytesToHash(contestedEvent.BlockHash[:]))
-	s.Equal(header.ParentHash, common.BytesToHash(contestedEvent.ParentHash[:]))
+	s.Equal(header.Hash(), common.BytesToHash(contestedEvent.Tran.BlockHash[:]))
+	s.Equal(header.ParentHash, common.BytesToHash(contestedEvent.Tran.ParentHash[:]))
 
 	s.Nil(s.p.onTransitionContested(context.Background(), contestedEvent))
 	s.Nil(s.p.selectSubmitter(contestedEvent.Tier+1).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 	provenEvent := <-sink
 
 	s.Equal(header.Number.Uint64(), provenEvent.BlockId.Uint64())
-	s.Equal(header.Hash(), common.BytesToHash(provenEvent.BlockHash[:]))
-	s.Equal(header.ParentHash, common.BytesToHash(provenEvent.ParentHash[:]))
+	s.Equal(header.Hash(), common.BytesToHash(provenEvent.Tran.BlockHash[:]))
+	s.Equal(header.ParentHash, common.BytesToHash(provenEvent.Tran.ParentHash[:]))
 	s.Greater(provenEvent.Tier, contestedEvent.Tier)
 }
 
@@ -286,12 +286,12 @@ func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
 
 	e.AssignedProver = common.Address(testutils.RandomHash().Bytes())
 	s.Nil(s.p.onProvingWindowExpired(context.Background(), e))
-	s.Nil(s.p.selectSubmitter(e.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	event := <-sink
 	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
-	s.Equal(header.Hash(), common.BytesToHash(event.BlockHash[:]))
-	s.Equal(header.ParentHash, common.BytesToHash(event.ParentHash[:]))
+	s.Equal(header.Hash(), common.BytesToHash(event.Tran.BlockHash[:]))
+	s.Equal(header.ParentHash, common.BytesToHash(event.Tran.ParentHash[:]))
 }
 
 func (s *ProverTestSuite) TestSelectSubmitter() {
@@ -313,7 +313,11 @@ func (s *ProverTestSuite) TestGetSubmitterByTier() {
 }
 
 func (s *ProverTestSuite) TestGetProvingWindowNotFound() {
-	_, err := s.p.getProvingWindow(&bindings.TaikoL1ClientBlockProposed{MinTier: encoding.TierGuardianID + 1})
+	_, err := s.p.getProvingWindow(&bindings.TaikoL1ClientBlockProposed{
+		Meta: bindings.TaikoDataBlockMetadata{
+			MinTier: encoding.TierGuardianID + 1,
+		},
+	})
 	s.ErrorIs(err, errTierNotFound)
 }
 
@@ -345,12 +349,12 @@ func (s *ProverTestSuite) TestProveOp() {
 	}()
 
 	s.Nil(s.p.proveOp())
-	s.Nil(s.p.selectSubmitter(e.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	event := <-sink
 	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
-	s.Equal(header.Hash(), common.BytesToHash(event.BlockHash[:]))
-	s.Equal(header.ParentHash, common.BytesToHash(event.ParentHash[:]))
+	s.Equal(header.Hash(), common.BytesToHash(event.Tran.BlockHash[:]))
+	s.Equal(header.ParentHash, common.BytesToHash(event.Tran.ParentHash[:]))
 }
 
 func (s *ProverTestSuite) TestReleaseOneCapacity() {

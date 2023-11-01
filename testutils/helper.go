@@ -59,7 +59,7 @@ func ProposeAndInsertEmptyBlocks(
 
 	ProposeInvalidTxListBytes(s, proposer)
 
-	// Zero byte txList
+	// Random bytes txList
 	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
 
 	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
