@@ -26,12 +26,9 @@ func (s *DriverStateTestSuite) TestSetL1Current() {
 func (s *DriverStateTestSuite) TestResetL1CurrentEmptyHeight() {
 	_, err := s.s.ResetL1Current(context.Background(), common.Big0)
 	s.Nil(err)
-
-	_, err = s.s.ResetL1Current(context.Background(), common.Big0)
-	s.Nil(err)
 }
 
-func (s *DriverStateTestSuite) TestResetL1CurrentEmptyID() {
+func (s *DriverStateTestSuite) TestResetL1CurrentGtCurrentHeight() {
 	_, err := s.s.ResetL1Current(context.Background(), common.Big1)
 	s.ErrorContains(err, "not found")
 }
