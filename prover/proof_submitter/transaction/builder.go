@@ -56,7 +56,7 @@ func (a *ProveBlockTxBuilder) Build(
 	meta *bindings.TaikoDataBlockMetadata,
 	transition *bindings.TaikoDataTransition,
 	tierProof *bindings.TaikoDataTierProof,
-	gurdian bool,
+	guardian bool,
 ) TxBuilder {
 	return func(nonce *big.Int) (*types.Transaction, error) {
 		a.mutex.Lock()
@@ -93,10 +93,10 @@ func (a *ProveBlockTxBuilder) Build(
 			"nonce", txOpts.Nonce,
 			"gasTipCap", txOpts.GasTipCap,
 			"gasFeeCap", txOpts.GasFeeCap,
-			"gurdian", gurdian,
+			"guardian", guardian,
 		)
 
-		if !gurdian {
+		if !guardian {
 			input, err := encoding.EncodeProveBlockInput(meta, transition, tierProof)
 			if err != nil {
 				return nil, err
