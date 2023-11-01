@@ -16,10 +16,6 @@ func TestSubscribeEvent(t *testing.T) {
 	}))
 }
 
-func Test(t *testing.T) {
-	require.True(t, true)
-}
-
 func TestSubscribeBlockVerified(t *testing.T) {
 	require.NotNil(t, SubscribeBlockVerified(
 		newTestClient(t).TaikoL1,
