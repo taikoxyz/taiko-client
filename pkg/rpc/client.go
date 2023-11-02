@@ -121,7 +121,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	isArchive, err := IsArchiveNode(ctxWithTimeout, l1RPC, stateVars.GenesisHeight)
+	isArchive, err := IsArchiveNode(ctxWithTimeout, l1RPC, stateVars.A.GenesisHeight)
 	if err != nil {
 		return nil, err
 	}

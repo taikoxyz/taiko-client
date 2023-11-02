@@ -227,9 +227,9 @@ func (d *Driver) reportProtocolStatus() {
 
 			log.Info(
 				"📖 Protocol status",
-				"lastVerifiedBlockId", vars.LastVerifiedBlockId,
-				"pendingBlocks", vars.NumBlocks-vars.LastVerifiedBlockId-1,
-				"availableSlots", vars.LastVerifiedBlockId+maxNumBlocks-vars.NumBlocks,
+				"lastVerifiedBlockId", vars.B.LastVerifiedBlockId,
+				"pendingBlocks", vars.B.NumBlocks-vars.B.LastVerifiedBlockId-1,
+				"availableSlots", vars.B.LastVerifiedBlockId+maxNumBlocks-vars.B.NumBlocks,
 			)
 		}
 	}
