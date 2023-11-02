@@ -95,8 +95,8 @@ func (s *State) init(ctx context.Context) error {
 		return err
 	}
 
-	log.Info("Genesis L1 height", "height", stateVars.GenesisHeight)
-	s.GenesisL1Height = new(big.Int).SetUint64(stateVars.GenesisHeight)
+	log.Info("Genesis L1 height", "height", stateVars.A.GenesisHeight)
+	s.GenesisL1Height = new(big.Int).SetUint64(stateVars.A.GenesisHeight)
 
 	// Set the L2 head's latest known L1 origin as current L1 sync cursor.
 	latestL2KnownL1Header, err := s.rpc.LatestL2KnownL1Header(ctx)
@@ -123,18 +123,18 @@ func (s *State) init(ctx context.Context) error {
 
 	snippet, err := s.rpc.TaikoL1.GetSyncedSnippet(
 		&bind.CallOpts{Context: ctx},
-		stateVars.LastVerifiedBlockId,
+		stateVars.B.LastVerifiedBlockId,
 	)
 	if err != nil {
 		return err
 	}
 
 	s.setLatestVerifiedBlockHash(
-		new(big.Int).SetUint64(stateVars.LastVerifiedBlockId),
-		new(big.Int).SetUint64(stateVars.LastVerifiedBlockId),
+		new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId),
+		new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId),
 		snippet.BlockHash,
 	)
-	s.setHeadBlockID(new(big.Int).SetUint64(stateVars.NumBlocks - 1))
+	s.setHeadBlockID(new(big.Int).SetUint64(stateVars.B.NumBlocks - 1))
 
 	return nil
 }

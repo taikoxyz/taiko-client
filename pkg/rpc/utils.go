@@ -29,7 +29,10 @@ var (
 func GetProtocolStateVariables(
 	taikoL1Client *bindings.TaikoL1Client,
 	opts *bind.CallOpts,
-) (*bindings.TaikoDataStateVariables, error) {
+) (*struct {
+	A bindings.TaikoDataSlotA
+	B bindings.TaikoDataSlotB
+}, error) {
 	stateVars, err := taikoL1Client.GetStateVariables(opts)
 	if err != nil {
 		return nil, err

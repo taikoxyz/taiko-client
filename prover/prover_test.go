@@ -102,7 +102,6 @@ func (s *ProverTestSuite) SetupTest() {
 		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
@@ -325,11 +324,11 @@ func (s *ProverTestSuite) TestIsBlockVerified() {
 	vars, err := s.p.rpc.TaikoL1.GetStateVariables(nil)
 	s.Nil(err)
 
-	verified, err := s.p.isBlockVerified(new(big.Int).SetUint64(vars.LastVerifiedBlockId))
+	verified, err := s.p.isBlockVerified(new(big.Int).SetUint64(vars.B.LastVerifiedBlockId))
 	s.Nil(err)
 	s.True(verified)
 
-	verified, err = s.p.isBlockVerified(new(big.Int).SetUint64(vars.LastVerifiedBlockId + 1))
+	verified, err = s.p.isBlockVerified(new(big.Int).SetUint64(vars.B.LastVerifiedBlockId + 1))
 	s.Nil(err)
 	s.False(verified)
 }

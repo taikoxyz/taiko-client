@@ -45,7 +45,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 
 	// Fetch the genesis `BlockVerified` event.
 	iter, err := c.TaikoL1.FilterBlockVerified(
-		&bind.FilterOpts{Start: stateVars.GenesisHeight, End: &stateVars.GenesisHeight, Context: ctxWithTimeout},
+		&bind.FilterOpts{Start: stateVars.A.GenesisHeight, End: &stateVars.A.GenesisHeight, Context: ctxWithTimeout},
 		[]*big.Int{common.Big0},
 		nil,
 		nil,
@@ -154,7 +154,7 @@ func (c *Client) GetGenesisL1Header(ctx context.Context) (*types.Header, error) 
 		return nil, err
 	}
 
-	return c.L1.HeaderByNumber(ctxWithTimeout, new(big.Int).SetUint64(stateVars.GenesisHeight))
+	return c.L1.HeaderByNumber(ctxWithTimeout, new(big.Int).SetUint64(stateVars.A.GenesisHeight))
 }
 
 // L2ParentByBlockId fetches the block header from L2 execution engine with the largest block id that
@@ -308,7 +308,7 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 		if err != nil {
 			return err
 		}
-		progress.HighestBlockID = new(big.Int).SetUint64(stateVars.NumBlocks - 1)
+		progress.HighestBlockID = new(big.Int).SetUint64(stateVars.B.NumBlocks - 1)
 		return nil
 	})
 	g.Go(func() error {
@@ -336,7 +336,10 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 }
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
-func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*bindings.TaikoDataStateVariables, error) {
+func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*struct {
+	A bindings.TaikoDataSlotA
+	B bindings.TaikoDataSlotB
+}, error) {
 	var (
 		ctxWithTimeout context.Context
 		cancel         context.CancelFunc
@@ -399,7 +402,7 @@ func (c *Client) CheckL1ReorgFromL2EE(ctx context.Context, blockID *big.Int) (bo
 
 			if l1CurrentToReset, err = c.L1.HeaderByNumber(
 				ctxWithTimeout,
-				new(big.Int).SetUint64(stateVars.GenesisHeight),
+				new(big.Int).SetUint64(stateVars.A.GenesisHeight),
 			); err != nil {
 				return false, nil, nil, err
 			}

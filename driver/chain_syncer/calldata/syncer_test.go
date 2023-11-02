@@ -53,7 +53,6 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         12 * time.Second,
