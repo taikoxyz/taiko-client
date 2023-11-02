@@ -780,11 +780,11 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 	if err != nil {
 		return err
 	}
-	p.genesisHeightL1 = stateVars.GenesisHeight
+	p.genesisHeightL1 = stateVars.A.GenesisHeight
 
 	if startingBlockID == nil {
-		if stateVars.LastVerifiedBlockId == 0 {
-			genesisL1Header, err := p.rpc.L1.HeaderByNumber(p.ctx, new(big.Int).SetUint64(stateVars.GenesisHeight))
+		if stateVars.B.LastVerifiedBlockId == 0 {
+			genesisL1Header, err := p.rpc.L1.HeaderByNumber(p.ctx, new(big.Int).SetUint64(stateVars.A.GenesisHeight))
 			if err != nil {
 				return err
 			}
@@ -793,7 +793,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 			return nil
 		}
 
-		startingBlockID = new(big.Int).SetUint64(stateVars.LastVerifiedBlockId)
+		startingBlockID = new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId)
 	}
 
 	log.Info("Init L1Current cursor", "startingBlockID", startingBlockID)
@@ -827,7 +827,7 @@ func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 		return false, err
 	}
 
-	return id.Uint64() <= stateVars.LastVerifiedBlockId, nil
+	return id.Uint64() <= stateVars.B.LastVerifiedBlockId, nil
 }
 
 // initSubscription initializes all subscriptions in current prover instance.

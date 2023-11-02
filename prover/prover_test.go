@@ -324,11 +324,11 @@ func (s *ProverTestSuite) TestIsBlockVerified() {
 	vars, err := s.p.rpc.TaikoL1.GetStateVariables(nil)
 	s.Nil(err)
 
-	verified, err := s.p.isBlockVerified(new(big.Int).SetUint64(vars.LastVerifiedBlockId))
+	verified, err := s.p.isBlockVerified(new(big.Int).SetUint64(vars.B.LastVerifiedBlockId))
 	s.Nil(err)
 	s.True(verified)
 
-	verified, err = s.p.isBlockVerified(new(big.Int).SetUint64(vars.LastVerifiedBlockId + 1))
+	verified, err = s.p.isBlockVerified(new(big.Int).SetUint64(vars.B.LastVerifiedBlockId + 1))
 	s.Nil(err)
 	s.False(verified)
 }
