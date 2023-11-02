@@ -13,12 +13,6 @@ var (
 		Required: true,
 		Category: proposerCategory,
 	}
-	L2SuggestedFeeRecipient = &cli.StringFlag{
-		Name:     "l2.suggestedFeeRecipient",
-		Usage:    "Address of the proposed block's suggested fee recipient",
-		Required: true,
-		Category: proposerCategory,
-	}
 	ProverEndpoints = &cli.StringFlag{
 		Name:     "proverEndpoints",
 		Usage:    "Comma-delineated list of prover endpoints proposer should query when attempting to propose a block",
@@ -122,7 +116,6 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2HTTPEndpoint,
 	TaikoTokenAddress,
 	L1ProposerPrivKey,
-	L2SuggestedFeeRecipient,
 	ProposeInterval,
 	TxPoolLocals,
 	TxPoolLocalsOnly,
