@@ -26,7 +26,7 @@ func (s *DriverStateTestSuite) TestResetL1CurrentEmptyHeight() {
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentEmptyID() {
-	s.ErrorContains(s.s.ResetL1Current(context.Background(), common.Big1), "not found")
+	s.ErrorContains(s.s.ResetL1Current(context.Background(), common.Big1), "execution reverted")
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentCtxErr() {
