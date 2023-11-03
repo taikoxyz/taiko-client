@@ -685,12 +685,12 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 		return nil
 	}
 
-	l1Height, err := p.rpc.TaikoL2.LatestSyncedL1Height(&bind.CallOpts{Context: ctx, BlockNumber: e.BlockId})
+	blockInfo, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, e.BlockId.Uint64())
 	if err != nil {
 		return err
 	}
 
-	return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(l1Height+1), e.Tier+1, nil)
+	return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(blockInfo.ProposedIn), e.Tier+1, nil)
 }
 
 // onBlockVerified update the latestVerified block in current state, and cancels
@@ -747,7 +747,7 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 		return nil
 	}
 
-	l1Height, err := p.rpc.TaikoL2.LatestSyncedL1Height(&bind.CallOpts{Context: ctx, BlockNumber: event.BlockId})
+	blockInfo, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId.Uint64())
 	if err != nil {
 		return err
 	}
@@ -755,14 +755,14 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 	log.Info(
 		"Contest a proven transition",
 		"blockID", event.BlockId,
-		"l1Height", l1Height,
+		"l1Height", blockInfo.ProposedIn,
 		"tier", event.Tier,
 		"parentHash", common.Bytes2Hex(event.Tran.ParentHash[:]),
 		"blockHash", common.Bytes2Hex(event.Tran.BlockHash[:]),
 		"signalRoot", common.Bytes2Hex(event.Tran.SignalRoot[:]),
 	)
 
-	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(l1Height+1), event.Tier, event)
+	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(blockInfo.ProposedIn), event.Tier, event)
 }
 
 // Name returns the application name.
