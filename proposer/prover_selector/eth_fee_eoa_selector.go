@@ -124,6 +124,7 @@ func (s *ETHFeeEOASelector) AssignProver(
 				endpoint,
 				expiry,
 				tierFees,
+				s.taikoL1Address,
 				txListHash,
 				s.requestTimeout,
 				guardianProverAddress,
@@ -169,6 +170,7 @@ func assignProver(
 	endpoint *url.URL,
 	expiry uint64,
 	tierFees []encoding.TierFee,
+	taikoL1Address common.Address,
 	txListHash common.Hash,
 	timeout time.Duration,
 	guardianProverAddress common.Address,
@@ -215,7 +217,7 @@ func assignProver(
 
 	// Ensure prover in response is the same as the one recovered
 	// from the signature
-	payload, err := encoding.EncodeProverAssignmentPayload(txListHash, common.Address{}, expiry, tierFees)
+	payload, err := encoding.EncodeProverAssignmentPayload(taikoL1Address, txListHash, common.Address{}, expiry, tierFees)
 	if err != nil {
 		return nil, common.Address{}, err
 	}

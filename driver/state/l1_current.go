@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikoxyz/taiko-client/bindings"
-	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 )
 
 // GetL1Current reads the L1 current cursor concurrent safely.
@@ -32,9 +31,9 @@ func (s *State) SetL1Current(h *types.Header) {
 func (s *State) ResetL1Current(
 	ctx context.Context,
 	blockID *big.Int,
-) (*bindings.TaikoL1ClientBlockProposed, error) {
+) error {
 	if blockID == nil {
-		return nil, fmt.Errorf("empty block ID")
+		return fmt.Errorf("empty block ID")
 	}
 
 	log.Info("Reset L1 current cursor", "blockID", blockID)
@@ -42,52 +41,24 @@ func (s *State) ResetL1Current(
 	if blockID.Cmp(common.Big0) == 0 {
 		l1Current, err := s.rpc.L1.HeaderByNumber(ctx, s.GenesisL1Height)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		s.SetL1Current(l1Current)
-		return nil, nil
+		return nil
 	}
 
-	var event *bindings.TaikoL1ClientBlockProposed
-	iter, err := eventIterator.NewBlockProposedIterator(
-		ctx,
-		&eventIterator.BlockProposedIteratorConfig{
-			Client:      s.rpc.L1,
-			TaikoL1:     s.rpc.TaikoL1,
-			StartHeight: s.GenesisL1Height,
-			EndHeight:   s.GetL1Head().Number,
-			FilterQuery: []*big.Int{blockID},
-			Reverse:     true,
-			OnBlockProposedEvent: func(
-				ctx context.Context,
-				e *bindings.TaikoL1ClientBlockProposed,
-				end eventIterator.EndBlockProposedEventIterFunc,
-			) error {
-				event = e
-				end()
-				return nil
-			},
-		},
-	)
+	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, blockID.Uint64())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if err := iter.Iter(); err != nil {
-		return nil, err
-	}
-
-	if event == nil {
-		return nil, fmt.Errorf("BlockProposed event not found, blockID: %s", blockID)
-	}
-
-	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Raw.BlockNumber))
+	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.ProposedIn))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	s.SetL1Current(l1Current)
 
-	log.Info("Reset L1 current cursor", "height", s.GetL1Current().Number)
+	log.Info("Reset L1 current cursor", "height", s.GetL1Current().Number, "hash", s.GetL1Current().Hash())
 
-	return event, nil
+	return nil
 }

@@ -102,7 +102,7 @@ func (s *ClientTestSuite) SetupTest() {
 		tx, err := addressManager.SetAddress(
 			opts,
 			chainID.Uint64(),
-			rpc.StringToBytes32("tier_pse_zkevm"),
+			rpc.StringToBytes32("tier_sgx_and_pse_zkevm"),
 			common.Address{},
 		)
 		s.Nil(err)

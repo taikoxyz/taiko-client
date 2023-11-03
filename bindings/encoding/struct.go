@@ -40,8 +40,12 @@ type BlockHeader struct {
 
 // BlockParams should be same with TaikoData.BlockParams.
 type BlockParams struct {
-	Assignment *ProverAssignment
-	ExtraData  [32]byte
+	Assignment        *ProverAssignment
+	ExtraData         [32]byte
+	BlobHash          [32]byte
+	TxListByteOffset  *big.Int
+	TxListByteSize    *big.Int
+	CacheBlobForReuse bool
 }
 
 // TierFee should be same with TaikoData.TierFee.
