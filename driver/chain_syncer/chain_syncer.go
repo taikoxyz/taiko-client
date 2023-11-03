@@ -99,7 +99,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		)
 
 		// Reset the L1Current cursor.
-		if _, err := s.state.ResetL1Current(s.ctx, l2Head.Number); err != nil {
+		if err := s.state.ResetL1Current(s.ctx, l2Head.Number); err != nil {
 			return err
 		}
 

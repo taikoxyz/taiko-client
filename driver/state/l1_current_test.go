@@ -18,27 +18,19 @@ func (s *DriverStateTestSuite) TestSetL1Current() {
 	s.Equal(h.Hash(), s.s.GetL1Current().Hash())
 
 	// should warn, but not panic
-	s.NotPanics(func() {
-		s.s.SetL1Current(nil)
-	})
+	s.NotPanics(func() { s.s.SetL1Current(nil) })
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentEmptyHeight() {
-	_, err := s.s.ResetL1Current(context.Background(), common.Big0)
-	s.Nil(err)
-
-	_, err = s.s.ResetL1Current(context.Background(), common.Big0)
-	s.Nil(err)
+	s.Nil(s.s.ResetL1Current(context.Background(), common.Big0))
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentEmptyID() {
-	_, err := s.s.ResetL1Current(context.Background(), common.Big1)
-	s.ErrorContains(err, "not found")
+	s.ErrorContains(s.s.ResetL1Current(context.Background(), common.Big1), "execution reverted")
 }
 
 func (s *DriverStateTestSuite) TestResetL1CurrentCtxErr() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := s.s.ResetL1Current(ctx, common.Big0)
-	s.ErrorContains(err, "context canceled")
+	s.ErrorContains(s.s.ResetL1Current(ctx, common.Big0), "context canceled")
 }
