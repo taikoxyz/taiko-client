@@ -29,10 +29,10 @@ func (s *ProverServerTestSuite) TestGetStatusSuccess() {
 	s.Equal(uint64(s.s.maxExpiry.Seconds()), status.MaxExpiry)
 	s.Greater(status.CurrentCapacity, uint64(0))
 	s.NotEmpty(status.HeartBeatSignature)
-	pubKey, err := crypto.SigToPub([]byte("HEART_BEAT"), common.Hex2Bytes(status.HeartBeatSignature))
+	pubKey, err := crypto.SigToPub(crypto.Keccak256Hash([]byte("HEART_BEAT")).Bytes(), status.HeartBeatSignature)
 	s.Nil(err)
-	s.NotEmpty(status.ProverAddress)
-	s.Equal(status.ProverAddress, crypto.PubkeyToAddress(*pubKey).Hex())
+	s.NotEmpty(status.Prover)
+	s.Equal(status.Prover, crypto.PubkeyToAddress(*pubKey).Hex())
 }
 
 func (s *ProverServerTestSuite) TestProposeBlockSuccess() {

@@ -39,8 +39,8 @@ type Status struct {
 	MinPseZkevmTierFee   uint64 `json:"minPseZkevmTierFee"`
 	MaxExpiry            uint64 `json:"maxExpiry"`
 	CurrentCapacity      uint64 `json:"currentCapacity"`
-	ProverAddress        string `json:"proverAddress"`
-	HeartBeatSignature   string `json:"heartBeatSignature"`
+	Prover               string `json:"prover"`
+	HeartBeatSignature   []byte `json:"heartBeatSignature"`
 }
 
 // GetStatus handles a query to the current prover server status.
@@ -63,8 +63,8 @@ func (srv *ProverServer) GetStatus(c echo.Context) error {
 		MinPseZkevmTierFee:   srv.minPseZkevmTierFee.Uint64(),
 		MaxExpiry:            uint64(srv.maxExpiry.Seconds()),
 		CurrentCapacity:      srv.capacityManager.ReadCapacity(),
-		ProverAddress:        srv.proverAddress.Hex(),
-		HeartBeatSignature:   common.Bytes2Hex(sig),
+		Prover:               srv.proverAddress.Hex(),
+		HeartBeatSignature:   sig,
 	})
 }
 
