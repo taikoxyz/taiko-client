@@ -180,7 +180,13 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
 
-	encoded, err := encoding.EncodeProverAssignmentPayload(req.TxListHash, req.FeeToken, req.Expiry, req.TierFees)
+	encoded, err := encoding.EncodeProverAssignmentPayload(
+		srv.taikoL1Address,
+		req.TxListHash,
+		req.FeeToken,
+		req.Expiry,
+		req.TierFees,
+	)
 	if err != nil {
 		log.Error("Failed to encode proverAssignment payload data", "error", err)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
