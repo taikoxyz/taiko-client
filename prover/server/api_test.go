@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
@@ -27,6 +28,11 @@ func (s *ProverServerTestSuite) TestGetStatusSuccess() {
 	s.Equal(s.s.minSgxAndPseZkevmTierFee.Uint64(), status.MinSgxTierFee)
 	s.Equal(uint64(s.s.maxExpiry.Seconds()), status.MaxExpiry)
 	s.Greater(status.CurrentCapacity, uint64(0))
+	s.NotEmpty(status.HeartBeatSignature)
+	pubKey, err := crypto.SigToPub([]byte("HEART_BEAT"), common.Hex2Bytes(status.HeartBeatSignature))
+	s.Nil(err)
+	s.NotEmpty(status.ProverAddress)
+	s.Equal(status.ProverAddress, crypto.PubkeyToAddress(*pubKey).Hex())
 }
 
 func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
