@@ -39,6 +39,8 @@ type Status struct {
 	MinPseZkevmTierFee   uint64 `json:"minPseZkevmTierFee"`
 	MaxExpiry            uint64 `json:"maxExpiry"`
 	CurrentCapacity      uint64 `json:"currentCapacity"`
+	Prover               string `json:"prover"`
+	HeartBeatSignature   []byte `json:"heartBeatSignature"`
 }
 
 // GetStatus handles a query to the current prover server status.
@@ -50,12 +52,19 @@ type Status struct {
 //	@Success		200	{object} Status
 //	@Router			/status [get]
 func (srv *ProverServer) GetStatus(c echo.Context) error {
+	sig, err := crypto.Sign(crypto.Keccak256Hash([]byte("HEART_BEAT")).Bytes(), srv.proverPrivateKey)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
 	return c.JSON(http.StatusOK, &Status{
 		MinOptimisticTierFee: srv.minOptimisticTierFee.Uint64(),
 		MinSgxTierFee:        srv.minSgxTierFee.Uint64(),
 		MinPseZkevmTierFee:   srv.minPseZkevmTierFee.Uint64(),
 		MaxExpiry:            uint64(srv.maxExpiry.Seconds()),
 		CurrentCapacity:      srv.capacityManager.ReadCapacity(),
+		Prover:               srv.proverAddress.Hex(),
+		HeartBeatSignature:   sig,
 	})
 }
 
