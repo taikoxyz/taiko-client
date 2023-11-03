@@ -29,6 +29,7 @@ var (
 	_ = abi.ConvertType
 )
 
+
 // TaikoL2Config is an auto generated low-level Go binding around an user-defined struct.
 type TaikoL2Config struct {
 	GasTargetPerL1Block       uint32

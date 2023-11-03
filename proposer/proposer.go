@@ -369,8 +369,12 @@ func (p *Proposer) sendProposeBlockTx(
 	}
 
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
-		Assignment: assignment,
-		ExtraData:  rpc.StringToBytes32(p.cfg.ExtraData),
+		Assignment:        assignment,
+		ExtraData:         rpc.StringToBytes32(p.cfg.ExtraData),
+		TxListByteOffset:  common.Big0,
+		TxListByteSize:    common.Big0,
+		BlobHash:          [32]byte{},
+		CacheBlobForReuse: false,
 	})
 	if err != nil {
 		return nil, err
