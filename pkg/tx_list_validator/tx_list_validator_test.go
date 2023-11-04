@@ -69,7 +69,7 @@ func TestIsTxListValid(t *testing.T) {
 		{
 			"txListBytes not decodable to rlp",
 			chainID,
-			randBytes(1),
+			randBytes(0),
 			HintNone,
 			0,
 		},

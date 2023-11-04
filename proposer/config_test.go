@@ -52,6 +52,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(uint64(tierFee), c.OptimisticTierFee.Uint64())
 		s.Equal(uint64(tierFee), c.SgxTierFee.Uint64())
 		s.Equal(uint64(tierFee), c.PseZkevmTierFee.Uint64())
+		s.Equal(uint64(tierFee), c.SgxAndPseZkevmTierFee.Uint64())
 		s.Equal(uint64(15), c.TierFeePriceBump.Uint64())
 		s.Equal(uint64(5), c.MaxTierFeePriceBumps)
 
@@ -82,6 +83,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.OptimisticTierFee.Name, fmt.Sprint(tierFee),
 		"--" + flags.SgxTierFee.Name, fmt.Sprint(tierFee),
 		"--" + flags.PseZkevmTierFee.Name, fmt.Sprint(tierFee),
+		"--" + flags.SgxAndPseZkevmTierFee.Name, fmt.Sprint(tierFee),
 		"--" + flags.TierFeePriceBump.Name, "15",
 		"--" + flags.MaxTierFeePriceBumps.Name, "5",
 	}))
@@ -146,6 +148,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.OptimisticTierFee.Name},
 		&cli.Uint64Flag{Name: flags.SgxTierFee.Name},
 		&cli.Uint64Flag{Name: flags.PseZkevmTierFee.Name},
+		&cli.Uint64Flag{Name: flags.SgxAndPseZkevmTierFee.Name},
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
 		&cli.DurationFlag{Name: flags.WaitReceiptTimeout.Name},
