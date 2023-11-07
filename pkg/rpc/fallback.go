@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Taken from: 
+// Taken from:
 // https://github.com/ethereum-optimism/optimism-legacy/blob/develop/bss-core/drivers/max_priority_fee_fallback.go
 var (
 	//lint:ignore ST1005 allow `errMaxPriorityFeePerGasNotFound` to be capitalized.
