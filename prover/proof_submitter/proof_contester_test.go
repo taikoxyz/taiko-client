@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
 
@@ -12,13 +13,11 @@ func (s *ProofSubmitterTestSuite) TestSubmitContestNoTransition() {
 	s.NotNil(
 		s.contester.SubmitContest(
 			context.Background(),
-			&bindings.TaikoL1ClientBlockProposed{},
-			&bindings.TaikoL1ClientTransitionProved{
-				BlockId: common.Big256,
-				Tran: bindings.TaikoDataTransition{
-					ParentHash: testutils.RandomHash(),
-				},
-			},
+			common.Big256,
+			common.Big1,
+			testutils.RandomHash(),
+			&bindings.TaikoDataBlockMetadata{},
+			encoding.TierOptimisticID,
 		),
 	)
 }

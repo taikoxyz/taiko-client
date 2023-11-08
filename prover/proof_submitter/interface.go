@@ -2,7 +2,9 @@ package submitter
 
 import (
 	"context"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/taikoxyz/taiko-client/bindings"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
@@ -17,7 +19,10 @@ type Submitter interface {
 type Contester interface {
 	SubmitContest(
 		ctx context.Context,
-		blockProposedEvent *bindings.TaikoL1ClientBlockProposed,
-		transitionProvedEvent *bindings.TaikoL1ClientTransitionProved,
+		blockID *big.Int,
+		proposedIn *big.Int,
+		parentHash common.Hash,
+		meta *bindings.TaikoDataBlockMetadata,
+		tier uint16,
 	) error
 }

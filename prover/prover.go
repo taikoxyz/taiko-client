@@ -922,7 +922,14 @@ func (p *Prover) requestProofByBlockID(
 		}
 
 		if transitionProvedEvent != nil {
-			return p.proofContester.SubmitContest(ctx, event, transitionProvedEvent)
+			return p.proofContester.SubmitContest(
+				ctx,
+				event.BlockId,
+				new(big.Int).SetUint64(event.Raw.BlockNumber),
+				transitionProvedEvent.Tran.ParentHash,
+				&event.Meta,
+				transitionProvedEvent.Tier,
+			)
 		}
 
 		// If there is no proof submitter selected, skip proving it.
