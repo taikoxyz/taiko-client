@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [main]
+    branches: [main,improve-contest]
     tags:
       - "v*"
 
