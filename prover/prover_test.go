@@ -259,19 +259,27 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.Equal(header.Hash(), common.BytesToHash(contestedEvent.Tran.BlockHash[:]))
 	s.Equal(header.ParentHash, common.BytesToHash(contestedEvent.Tran.ParentHash[:]))
 
-	approvedSink := make(chan *bindings.GuardianProverApproved)
-	approvedSub, err := s.p.rpc.GuardianProver.WatchApproved(nil, approvedSink, []uint64{})
-	s.Nil(err)
-	defer func() {
-		approvedSub.Unsubscribe()
-		close(approvedSink)
-	}()
-
 	s.Nil(s.p.onTransitionContested(context.Background(), contestedEvent))
-	s.Nil(s.p.selectSubmitter(encoding.TierGuardianID).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
-	approvedEvent := <-approvedSink
 
-	s.Equal(header.Number.Uint64(), approvedEvent.BlockId)
+	if contestedEvent.Tier >= encoding.TierSgxAndPseZkevmID {
+		approvedSink := make(chan *bindings.GuardianProverApproved)
+		approvedSub, err := s.p.rpc.GuardianProver.WatchApproved(nil, approvedSink, []uint64{})
+		s.Nil(err)
+		defer func() {
+			approvedSub.Unsubscribe()
+			close(approvedSink)
+		}()
+
+		s.Nil(s.p.selectSubmitter(encoding.TierGuardianID).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+		approvedEvent := <-approvedSink
+
+		s.Equal(header.Number.Uint64(), approvedEvent.BlockId)
+		return
+	}
+
+	s.Nil(s.p.selectSubmitter(contestedEvent.Tier+1).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+	event = <-sink
+	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
 }
 
 func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
