@@ -149,7 +149,7 @@ var (
 		Category: proverCategory,
 	}
 	// Max slippage allowed
-	MaxAcceptableBlockIdSlippage = &cli.Uint64Flag{
+	MaxAcceptableBlockSlippage = &cli.Uint64Flag{
 		Name:     "prover.blockSlippage",
 		Usage:    "Maximum accepted slippage difference for blockID for accepting proving a block",
 		Value:    1024,
@@ -186,5 +186,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProverCapacity,
 	MaxExpiry,
 	TaikoTokenAddress,
-	MaxAcceptableBlockIdSlippage,
+	MaxAcceptableBlockSlippage,
 })

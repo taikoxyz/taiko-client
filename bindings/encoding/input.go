@@ -153,6 +153,10 @@ var (
 			Type: "uint64",
 		},
 		{
+			Name: "maxBlockId",
+			Type: "uint64",
+		},
+		{
 			Name: "signature",
 			Type: "bytes",
 		},
@@ -188,6 +192,7 @@ var (
 		{Name: "blobHash", Type: bytes32Type},
 		{Name: "assignment.feeToken", Type: addressType},
 		{Name: "assignment.expiry", Type: uint64Type},
+		{Name: "assignment.maxBlockId", Type: uint64Type},
 		{Name: "assignment.tierFees", Type: tierFeesType},
 	}
 	blockMetadataComponentsType, _ = abi.NewType("tuple", "TaikoData.BlockMetadata", blockMetadataComponents)
