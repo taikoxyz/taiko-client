@@ -238,9 +238,18 @@ func EncodeProverAssignmentPayload(
 	txListHash common.Hash,
 	feeToken common.Address,
 	expiry uint64,
+	maxBlockID uint64,
 	tierFees []TierFee,
 ) ([]byte, error) {
-	b, err := proverAssignmentPayloadArgs.Pack("PROVER_ASSIGNMENT", taikoAddress, txListHash, feeToken, expiry, tierFees)
+	b, err := proverAssignmentPayloadArgs.Pack(
+		"PROVER_ASSIGNMENT",
+		taikoAddress,
+		txListHash,
+		feeToken,
+		expiry,
+		maxBlockID,
+		tierFees,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to abi.encode prover assignment hash payload, %w", err)
 	}

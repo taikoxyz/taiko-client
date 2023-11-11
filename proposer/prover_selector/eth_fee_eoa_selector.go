@@ -217,7 +217,14 @@ func assignProver(
 
 	// Ensure prover in response is the same as the one recovered
 	// from the signature
-	payload, err := encoding.EncodeProverAssignmentPayload(taikoL1Address, txListHash, common.Address{}, expiry, tierFees)
+	payload, err := encoding.EncodeProverAssignmentPayload(
+		taikoL1Address,
+		txListHash,
+		common.Address{},
+		expiry,
+		result.MaxBlockID,
+		tierFees,
+	)
 	if err != nil {
 		return nil, common.Address{}, err
 	}

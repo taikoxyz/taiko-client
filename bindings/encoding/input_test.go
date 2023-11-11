@@ -21,6 +21,7 @@ func TestEncodeProverAssignmentPayload(t *testing.T) {
 		common.BytesToHash(randomBytes(32)),
 		common.BytesToAddress(randomBytes(20)),
 		120,
+		1024,
 		[]TierFee{{Tier: 0, Fee: common.Big1}},
 	)
 
