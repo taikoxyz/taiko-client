@@ -56,11 +56,12 @@ type TierFee struct {
 
 // ProverAssignment should be same with TaikoData.ProverAssignment.
 type ProverAssignment struct {
-	Prover    common.Address
-	FeeToken  common.Address
-	TierFees  []TierFee
-	Expiry    uint64
-	Signature []byte
+	Prover     common.Address
+	FeeToken   common.Address
+	TierFees   []TierFee
+	Expiry     uint64
+	MaxBlockId uint64
+	Signature  []byte
 }
 
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.

@@ -208,5 +208,6 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	return c.JSON(http.StatusOK, &ProposeBlockResponse{
 		SignedPayload: signed,
 		Prover:        srv.proverAddress,
+		MaxBlockID:    l1Head + srv.maxSlippage,
 	})
 }
