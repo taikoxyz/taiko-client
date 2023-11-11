@@ -184,7 +184,6 @@ func (s *ProofSubmitter) SubmitProof(
 
 	metrics.ProverReceivedProofCounter.Inc(1)
 
-	// Validate anchor transaction
 	// Get the corresponding L2 block.
 	block, err := s.rpc.L2.BlockByHash(ctx, proofWithHeader.Header.Hash())
 	if err != nil {
