@@ -70,21 +70,24 @@ func NewProofContester(
 // SubmitContest submits a taikoL1.proveBlock transaction to contest a L2 block transition.
 func (c *ProofContester) SubmitContest(
 	ctx context.Context,
-	blockProposedEvent *bindings.TaikoL1ClientBlockProposed,
-	transitionProvedEvent *bindings.TaikoL1ClientTransitionProved,
+	blockID *big.Int,
+	proposedIn *big.Int,
+	parentHash common.Hash,
+	meta *bindings.TaikoDataBlockMetadata,
+	tier uint16,
 ) error {
 	// Ensure the transition has not been contested yet.
 	transition, err := c.rpc.TaikoL1.GetTransition(
 		&bind.CallOpts{Context: ctx},
-		transitionProvedEvent.BlockId.Uint64(),
-		transitionProvedEvent.Tran.ParentHash,
+		blockID.Uint64(),
+		parentHash,
 	)
 	if err != nil {
 		if !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_") {
 			log.Warn(
 				"Failed to get transition",
-				"blockID", transitionProvedEvent.BlockId,
-				"parentHash", transitionProvedEvent.Tran.ParentHash,
+				"blockID", blockID,
+				"parentHash", parentHash,
 				"error", encoding.TryParsingCustomError(err),
 			)
 			return nil
@@ -94,40 +97,45 @@ func (c *ProofContester) SubmitContest(
 	if transition.Contester != (common.Address{}) {
 		log.Info(
 			"Transaction has already been contested",
-			"blockID", transitionProvedEvent.BlockId,
-			"parentHash", transitionProvedEvent.Tran.ParentHash,
+			"blockID", blockID,
+			"parentHash", parentHash,
 			"contester", transition.Contester,
 		)
 		return nil
 	}
 
-	header, err := c.rpc.L2.HeaderByNumber(ctx, transitionProvedEvent.BlockId)
+	header, err := c.rpc.L2.HeaderByNumber(ctx, blockID)
 	if err != nil {
 		return err
 	}
 
-	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L2GethClient, c.l2SignalService, transitionProvedEvent.BlockId)
+	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L2GethClient, c.l2SignalService, blockID)
 	if err != nil {
 		return fmt.Errorf("failed to get L2 signal service storage root: %w", err)
+	}
+
+	l1HeaderProposedIn, err := c.rpc.L1.HeaderByNumber(ctx, proposedIn)
+	if err != nil {
+		return err
 	}
 
 	if err := c.txSender.Send(
 		ctx,
 		&proofProducer.ProofWithHeader{
-			BlockID: transitionProvedEvent.BlockId,
-			Meta:    &blockProposedEvent.Meta,
+			BlockID: blockID,
+			Meta:    meta,
 			Header:  header,
 			Proof:   []byte{},
 			Opts: &proofProducer.ProofRequestOptions{
-				EventL1Hash: blockProposedEvent.Raw.BlockHash,
+				EventL1Hash: l1HeaderProposedIn.Hash(),
 				SignalRoot:  signalRoot,
 			},
-			Tier: transitionProvedEvent.Tier,
+			Tier: tier,
 		},
 		c.txBuilder.Build(
 			ctx,
-			transitionProvedEvent.BlockId,
-			&blockProposedEvent.Meta,
+			blockID,
+			meta,
 			&bindings.TaikoDataTransition{
 				ParentHash: header.ParentHash,
 				BlockHash:  header.Hash(),

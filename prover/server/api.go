@@ -73,6 +73,7 @@ func (srv *ProverServer) GetStatus(c echo.Context) error {
 type ProposeBlockResponse struct {
 	SignedPayload []byte         `json:"signedPayload"`
 	Prover        common.Address `json:"prover"`
+	MaxBlockID    uint64         `json:"maxBlockID"`
 }
 
 // CreateAssignment handles a block proof assignment request, decides if this prover wants to
@@ -180,11 +181,18 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
 
+	l1Head, err := srv.rpc.L1.BlockNumber(c.Request().Context())
+	if err != nil {
+		log.Error("Failed to get L1 block head", "error", err)
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
+	}
+
 	encoded, err := encoding.EncodeProverAssignmentPayload(
 		srv.taikoL1Address,
 		req.TxListHash,
 		req.FeeToken,
 		req.Expiry,
+		l1Head+srv.maxSlippage,
 		req.TierFees,
 	)
 	if err != nil {
@@ -200,5 +208,6 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	return c.JSON(http.StatusOK, &ProposeBlockResponse{
 		SignedPayload: signed,
 		Prover:        srv.proverAddress,
+		MaxBlockID:    l1Head + srv.maxSlippage,
 	})
 }

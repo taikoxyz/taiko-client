@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	ZeroAddress                = common.HexToAddress("0x0000000000000000000000000000000000000000")
+	ZeroAddress                common.Address
 	waitReceiptPollingInterval = 3 * time.Second
 	defaultWaitReceiptTimeout  = 1 * time.Minute
 )
@@ -127,13 +127,21 @@ func WaitReceipt(
 	}
 }
 
-// NeedNewProof checks whether the L2 block still needs a new proof.
-func NeedNewProof(
+// BlockProofStatus represents the proving status of the given L2 block.
+type BlockProofStatus struct {
+	IsSubmitted            bool
+	Invalid                bool
+	CurrentTransitionState *bindings.TaikoDataTransitionState
+	ParentBlock            *types.Header
+}
+
+// GetBlockProofStatus checks whether the L2 block still needs a new proof or a new contest.
+func GetBlockProofStatus(
 	ctx context.Context,
 	cli *Client,
 	id *big.Int,
 	proverAddress common.Address,
-) (bool, error) {
+) (*BlockProofStatus, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
@@ -141,18 +149,18 @@ func NeedNewProof(
 	if id.Cmp(common.Big1) == 0 {
 		header, err := cli.L2.HeaderByNumber(ctxWithTimeout, common.Big0)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 
 		parent = header
 	} else {
 		parentL1Origin, err := cli.WaitL1Origin(ctxWithTimeout, new(big.Int).Sub(id, common.Big1))
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 
 		if parent, err = cli.L2.HeaderByHash(ctxWithTimeout, parentL1Origin.L2BlockHash); err != nil {
-			return false, err
+			return nil, err
 		}
 	}
 
@@ -163,29 +171,46 @@ func NeedNewProof(
 	)
 	if err != nil {
 		if !strings.Contains(encoding.TryParsingCustomError(err).Error(), "L1_TRANSITION_NOT_FOUND") {
-			return false, encoding.TryParsingCustomError(err)
+			return nil, encoding.TryParsingCustomError(err)
 		}
 
-		return true, nil
+		return &BlockProofStatus{IsSubmitted: false}, nil
 	}
 
 	l1Origin, err := cli.WaitL1Origin(ctxWithTimeout, id)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	if l1Origin.L2BlockHash != transition.BlockHash {
+	l2SignalService, err := cli.TaikoL2.SignalService(&bind.CallOpts{Context: ctx, BlockNumber: id})
+	if err != nil {
+		return nil, err
+	}
+
+	root, err := cli.GetStorageRoot(ctx, cli.L2GethClient, l2SignalService, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if l1Origin.L2BlockHash != transition.BlockHash || transition.SignalRoot != root {
 		log.Info(
-			"Different blockhash detected, try submitting a proof",
-			"local", common.BytesToHash(l1Origin.L2BlockHash[:]),
-			"protocol", common.BytesToHash(transition.BlockHash[:]),
+			"Different block hash or signal root detected, try submitting a contest",
+			"localBlockHash", common.BytesToHash(l1Origin.L2BlockHash[:]),
+			"protocolTransitionBlockHash", common.BytesToHash(transition.BlockHash[:]),
+			"localSignalRoot", root,
+			"protocolTransitionSignalRoot", common.BytesToHash(transition.SignalRoot[:]),
 		)
-		return true, nil
+		return &BlockProofStatus{
+			IsSubmitted:            true,
+			Invalid:                true,
+			CurrentTransitionState: &transition,
+			ParentBlock:            parent,
+		}, nil
 	}
 
 	if proverAddress == transition.Prover {
 		log.Info("📬 Block's proof has already been submitted by current prover", "blockID", id)
-		return false, nil
+		return &BlockProofStatus{IsSubmitted: true}, nil
 	}
 
 	log.Info(
@@ -195,7 +220,7 @@ func NeedNewProof(
 		"timestamp", transition.Timestamp,
 	)
 
-	return false, nil
+	return &BlockProofStatus{IsSubmitted: true}, nil
 }
 
 type AccountPoolContent map[string]map[string]*types.Transaction

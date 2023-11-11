@@ -153,6 +153,10 @@ var (
 			Type: "uint64",
 		},
 		{
+			Name: "maxBlockId",
+			Type: "uint64",
+		},
+		{
 			Name: "signature",
 			Type: "bytes",
 		},
@@ -188,6 +192,7 @@ var (
 		{Name: "blobHash", Type: bytes32Type},
 		{Name: "assignment.feeToken", Type: addressType},
 		{Name: "assignment.expiry", Type: uint64Type},
+		{Name: "assignment.maxBlockId", Type: uint64Type},
 		{Name: "assignment.tierFees", Type: tierFeesType},
 	}
 	blockMetadataComponentsType, _ = abi.NewType("tuple", "TaikoData.BlockMetadata", blockMetadataComponents)
@@ -233,9 +238,18 @@ func EncodeProverAssignmentPayload(
 	txListHash common.Hash,
 	feeToken common.Address,
 	expiry uint64,
+	maxBlockID uint64,
 	tierFees []TierFee,
 ) ([]byte, error) {
-	b, err := proverAssignmentPayloadArgs.Pack("PROVER_ASSIGNMENT", taikoAddress, txListHash, feeToken, expiry, tierFees)
+	b, err := proverAssignmentPayloadArgs.Pack(
+		"PROVER_ASSIGNMENT",
+		taikoAddress,
+		txListHash,
+		feeToken,
+		expiry,
+		maxBlockID,
+		tierFees,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to abi.encode prover assignment hash payload, %w", err)
 	}

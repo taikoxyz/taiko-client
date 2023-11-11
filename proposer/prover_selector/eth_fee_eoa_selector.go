@@ -217,7 +217,14 @@ func assignProver(
 
 	// Ensure prover in response is the same as the one recovered
 	// from the signature
-	payload, err := encoding.EncodeProverAssignmentPayload(taikoL1Address, txListHash, common.Address{}, expiry, tierFees)
+	payload, err := encoding.EncodeProverAssignmentPayload(
+		taikoL1Address,
+		txListHash,
+		common.Address{},
+		expiry,
+		result.MaxBlockID,
+		tierFees,
+	)
 	if err != nil {
 		return nil, common.Address{}, err
 	}
@@ -240,6 +247,7 @@ func assignProver(
 		"address", result.Prover,
 		"endpoint", endpoint,
 		"tierFees", tierFees,
+		"maxBlockID", result.MaxBlockID,
 		"expiry", expiry,
 	)
 
@@ -247,10 +255,11 @@ func assignProver(
 	result.SignedPayload[64] = uint8(uint(result.SignedPayload[64])) + 27
 
 	return &encoding.ProverAssignment{
-		Prover:    result.Prover,
-		FeeToken:  common.Address{},
-		TierFees:  tierFees,
-		Expiry:    reqBody.Expiry,
-		Signature: result.SignedPayload,
+		Prover:     result.Prover,
+		FeeToken:   common.Address{},
+		TierFees:   tierFees,
+		Expiry:     reqBody.Expiry,
+		MaxBlockId: result.MaxBlockID,
+		Signature:  result.SignedPayload,
 	}, result.Prover, nil
 }

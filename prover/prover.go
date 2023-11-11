@@ -225,6 +225,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		MinPseZkevmTierFee:       p.cfg.MinPseZkevmTierFee,
 		MinSgxAndPseZkevmTierFee: p.cfg.MinSgxAndPseZkevmTierFee,
 		MaxExpiry:                p.cfg.MaxExpiry,
+		MaxBlockSlippage:         p.cfg.MaxBlockSlippage,
 		CapacityManager:          p.capacityManager,
 		TaikoL1Address:           p.cfg.TaikoL1Address,
 		Rpc:                      p.rpc,
@@ -359,7 +360,6 @@ func (p *Prover) onBlockProposed(
 	// If there are newly generated proofs, we need to submit them as soon as possible.
 	if len(p.proofGenerationCh) > 0 {
 		log.Info("onBlockProposed early return", "proofGenerationChannelLength", len(p.proofGenerationCh))
-
 		end()
 		return nil
 	}
@@ -458,7 +458,7 @@ func (p *Prover) onBlockProposed(
 		}
 
 		// Check whether the block's proof is still needed.
-		needNewProof, err := rpc.NeedNewProof(
+		proofStatus, err := rpc.GetBlockProofStatus(
 			p.ctx,
 			p.rpc,
 			event.BlockId,
@@ -468,8 +468,22 @@ func (p *Prover) onBlockProposed(
 			return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
 		}
 
-		if !needNewProof {
-			return nil
+		if proofStatus.IsSubmitted {
+			// If there is already a proof submitted and there is no need to contest
+			// it, we skip proving this block here.
+			if !proofStatus.Invalid || !p.cfg.ContesterMode {
+				return nil
+			}
+
+			// The proof submitted to protocol is invalid.
+			return p.handleInvalidProof(
+				ctx, event.BlockId,
+				new(big.Int).SetUint64(event.Raw.BlockNumber),
+				proofStatus.ParentBlock.Hash(),
+				proofStatus.CurrentTransitionState.Contester,
+				&event.Meta,
+				proofStatus.CurrentTransitionState.Tier,
+			)
 		}
 
 		log.Info(
@@ -602,6 +616,44 @@ func (p *Prover) onBlockProposed(
 	}()
 
 	return nil
+}
+
+// handleInvalidProof handles the case when the proof submitted to protocol is invalid.
+func (p *Prover) handleInvalidProof(
+	ctx context.Context,
+	blockID *big.Int,
+	proposedIn *big.Int,
+	parentHash common.Hash,
+	contester common.Address,
+	meta *bindings.TaikoDataBlockMetadata,
+	tier uint16,
+) error {
+	// The proof submitted to protocol is invalid.
+	log.Info(
+		"Invalid proof detected",
+		"blockID", blockID,
+		"parent", parentHash,
+	)
+
+	// If there is no contester, we submit a contest to protocol.
+	if contester == rpc.ZeroAddress {
+		log.Info(
+			"Try submitting a contest",
+			"blockID", blockID,
+			"parent", parentHash,
+		)
+
+		return p.proofContester.SubmitContest(ctx, blockID, proposedIn, parentHash, meta, tier)
+	}
+
+	log.Info(
+		"Try submitting a higher tier proof",
+		"blockID", blockID,
+		"parent", parentHash,
+	)
+
+	// If there is already a contester, we try submitting a proof with a higher tier here.
+	return p.requestProofByBlockID(blockID, proposedIn, tier+1, nil)
 }
 
 // submitProofOp performs a proof submission operation.
@@ -921,7 +973,14 @@ func (p *Prover) requestProofByBlockID(
 		}
 
 		if transitionProvedEvent != nil {
-			return p.proofContester.SubmitContest(ctx, event, transitionProvedEvent)
+			return p.proofContester.SubmitContest(
+				ctx,
+				event.BlockId,
+				new(big.Int).SetUint64(event.Raw.BlockNumber),
+				transitionProvedEvent.Tran.ParentHash,
+				&event.Meta,
+				transitionProvedEvent.Tier,
+			)
 		}
 
 		// If there is no proof submitter selected, skip proving it.
@@ -997,12 +1056,26 @@ func (p *Prover) onProvingWindowExpired(ctx context.Context, e *bindings.TaikoL1
 		return nil
 	}
 	// Check if we still need to generate a new proof for that block.
-	needNewProof, err := rpc.NeedNewProof(ctx, p.rpc, e.BlockId, p.proverAddress)
+	proofStatus, err := rpc.GetBlockProofStatus(ctx, p.rpc, e.BlockId, p.proverAddress)
 	if err != nil {
 		return err
 	}
-	if !needNewProof {
-		return nil
+	if proofStatus.IsSubmitted {
+		// If there is already a proof submitted and there is no need to contest
+		// it, we skip proving this block here.
+		if !proofStatus.Invalid || !p.cfg.ContesterMode {
+			return nil
+		}
+
+		return p.handleInvalidProof(
+			ctx,
+			e.BlockId,
+			new(big.Int).SetUint64(e.Raw.BlockNumber),
+			proofStatus.ParentBlock.Hash(),
+			proofStatus.CurrentTransitionState.Contester,
+			&e.Meta,
+			proofStatus.CurrentTransitionState.Tier,
+		)
 	}
 
 	return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(e.Raw.BlockNumber), e.Meta.MinTier, nil)
