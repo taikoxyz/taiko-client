@@ -225,6 +225,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		MinPseZkevmTierFee:       p.cfg.MinPseZkevmTierFee,
 		MinSgxAndPseZkevmTierFee: p.cfg.MinSgxAndPseZkevmTierFee,
 		MaxExpiry:                p.cfg.MaxExpiry,
+		MaxSlippage:              p.cfg.MaxSlippage,
 		CapacityManager:          p.capacityManager,
 		TaikoL1Address:           p.cfg.TaikoL1Address,
 		Rpc:                      p.rpc,

@@ -38,6 +38,7 @@ type ProverServer struct {
 	minPseZkevmTierFee       *big.Int
 	minSgxAndPseZkevmTierFee *big.Int
 	maxExpiry                time.Duration
+	maxSlippage              uint64
 	capacityManager          *capacity.CapacityManager
 	taikoL1Address           common.Address
 	rpc                      *rpc.Client
@@ -53,6 +54,7 @@ type NewProverServerOpts struct {
 	MinPseZkevmTierFee       *big.Int
 	MinSgxAndPseZkevmTierFee *big.Int
 	MaxExpiry                time.Duration
+	MaxSlippage              uint64
 	CapacityManager          *capacity.CapacityManager
 	TaikoL1Address           common.Address
 	Rpc                      *rpc.Client
@@ -71,6 +73,7 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		minPseZkevmTierFee:       opts.MinPseZkevmTierFee,
 		minSgxAndPseZkevmTierFee: opts.MinSgxAndPseZkevmTierFee,
 		maxExpiry:                opts.MaxExpiry,
+		maxSlippage:              opts.MaxSlippage,
 		capacityManager:          opts.CapacityManager,
 		taikoL1Address:           opts.TaikoL1Address,
 		rpc:                      opts.Rpc,
