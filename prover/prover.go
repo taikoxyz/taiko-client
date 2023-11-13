@@ -1190,7 +1190,7 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 		return err
 	}
 
-	key := bytes.Join([][]byte{[]byte(dbKeyPrefix), blockID.Bytes()}, []byte("-"))
+	key := bytes.Join([][]byte{[]byte(dbKeyPrefix), blockID.Bytes()}, []byte(""))
 
 	if err := p.db.Put(key, signed); err != nil {
 		return err
