@@ -13,6 +13,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-resty/resty/v2"
 	"github.com/phayes/freeport"
@@ -57,6 +58,7 @@ func (s *ProverServerTestSuite) SetupTest() {
 		Rpc:                      rpcClient,
 		LivenessBond:             common.Big0,
 		IsGuardian:               false,
+		DB:                       memorydb.New(),
 	})
 	s.Nil(err)
 

@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -70,6 +71,8 @@ func (s *ProverTestSuite) SetupTest() {
 		p.capacityManager,
 		proverServerUrl,
 	)
+
+	p.db = memorydb.New()
 	s.p = p
 	s.cancel = cancel
 
