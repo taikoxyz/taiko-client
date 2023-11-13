@@ -296,7 +296,7 @@ func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
 		close(sink)
 	}()
 
-	e.AssignedProver = common.Address(testutils.RandomHash().Bytes())
+	e.AssignedProver = common.BytesToAddress(testutils.RandomHash().Bytes())
 	s.Nil(s.p.onProvingWindowExpired(context.Background(), e))
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 

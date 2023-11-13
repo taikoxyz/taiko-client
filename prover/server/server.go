@@ -10,10 +10,16 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb"
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
+)
+
+var (
+	dbKeyPrefix       = "blockid-"
+	numBlocksToReturn = new(big.Int).SetUint64(200)
 )
 
 // @title Taiko Prover API
@@ -44,6 +50,7 @@ type ProverServer struct {
 	rpc                      *rpc.Client
 	livenessBond             *big.Int
 	isGuardian               bool
+	db                       ethdb.KeyValueStore
 }
 
 // NewProverServerOpts contains all configurations for creating a prover server instance.
@@ -60,6 +67,7 @@ type NewProverServerOpts struct {
 	Rpc                      *rpc.Client
 	LivenessBond             *big.Int
 	IsGuardian               bool
+	DB                       ethdb.KeyValueStore
 }
 
 // New creates a new prover server instance.
@@ -79,6 +87,7 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		rpc:                      opts.Rpc,
 		livenessBond:             opts.LivenessBond,
 		isGuardian:               opts.IsGuardian,
+		db:                       opts.DB,
 	}
 
 	srv.echo.HideBanner = true

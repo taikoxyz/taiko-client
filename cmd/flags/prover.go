@@ -155,6 +155,14 @@ var (
 		Value:    1024,
 		Category: proverCategory,
 	}
+	// DB file location
+	// Guardian prover related.
+	DatabasePath = &cli.StringFlag{
+		Name:     "databasePath",
+		Usage:    "Database file location",
+		Value:    "db/",
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -187,4 +195,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxExpiry,
 	TaikoTokenAddress,
 	MaxAcceptableBlockSlippage,
+	DatabasePath,
 })

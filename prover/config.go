@@ -49,6 +49,7 @@ type Config struct {
 	MinSgxAndPseZkevmTierFee          *big.Int
 	MaxExpiry                         time.Duration
 	MaxBlockSlippage                  uint64
+	DatabasePath                      string
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -138,5 +139,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		MinSgxAndPseZkevmTierFee:          new(big.Int).SetUint64(c.Uint64(flags.MinSgxAndPseZkevmTierFee.Name)),
 		MaxExpiry:                         c.Duration(flags.MaxExpiry.Name),
 		MaxBlockSlippage:                  c.Uint64(flags.MaxAcceptableBlockSlippage.Name),
+		DatabasePath:                      c.String(flags.DatabasePath.Name),
 	}, nil
 }

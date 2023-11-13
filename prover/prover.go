@@ -1,7 +1,9 @@
 package prover
 
 import (
+	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"math/big"
@@ -15,6 +17,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/ethdb/leveldb"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -34,11 +38,19 @@ var (
 	errTierNotFound = errors.New("tier not found")
 )
 
+var (
+	dbKeyPrefix = "blockid-"
+)
+
 // Prover keep trying to prove new proposed blocks valid/invalid.
 type Prover struct {
 	// Configurations
-	cfg           *Config
-	proverAddress common.Address
+	cfg              *Config
+	proverAddress    common.Address
+	proverPrivateKey *ecdsa.PrivateKey
+
+	// Database
+	db ethdb.KeyValueStore
 
 	// Clients
 	rpc *rpc.Client
@@ -102,6 +114,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
 	p.capacityManager = capacity.New(cfg.Capacity)
+	p.proverPrivateKey = cfg.L1ProverPrivKey
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -217,6 +230,14 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		return err
 	}
 
+	// levelDB
+	db, err := leveldb.New(cfg.DatabasePath, 0, 1, "taiko", false)
+	if err != nil {
+		return err
+	}
+
+	p.db = db
+
 	// Prover server
 	proverServerOpts := &server.NewProverServerOpts{
 		ProverPrivateKey:         p.cfg.L1ProverPrivKey,
@@ -231,6 +252,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		Rpc:                      p.rpc,
 		LivenessBond:             protocolConfigs.LivenessBond,
 		IsGuardian:               p.IsGuardianProver(),
+		DB:                       db,
 	}
 	if p.IsGuardianProver() {
 		proverServerOpts.ProverPrivateKey = p.cfg.GuardianProverPrivateKey
@@ -317,6 +339,11 @@ func (p *Prover) eventLoop() {
 // Close closes the prover instance.
 func (p *Prover) Close(ctx context.Context) {
 	p.closeSubscription()
+
+	if err := p.db.Close(); err != nil {
+		log.Error("failed to close database connection", "error", err)
+	}
+
 	if err := p.srv.Shutdown(ctx); err != nil {
 		log.Error("Failed to shut down prover server", "error", err)
 	}
@@ -362,6 +389,14 @@ func (p *Prover) onBlockProposed(
 		log.Info("onBlockProposed early return", "proofGenerationChannelLength", len(p.proofGenerationCh))
 		end()
 		return nil
+	}
+
+	// guardian prover must sign each new block and store in database, to be exposed
+	// via API for liveness checks.
+	if p.IsGuardianProver() {
+		if err := p.signBlock(ctx, event.BlockId); err != nil {
+			return fmt.Errorf("faile to sign block data (eventID %d): %w", event.BlockId, err)
+		}
 	}
 
 	if _, err := p.rpc.WaitL1Origin(ctx, event.BlockId); err != nil {
@@ -1118,7 +1153,7 @@ func (p *Prover) getSubmitterByTier(tier uint16) proofSubmitter.Submitter {
 	return nil
 }
 
-// IsGuardianProver reutrns true if the current prover is a guardian prover.
+// IsGuardianProver returns true if the current prover is a guardian prover.
 func (p *Prover) IsGuardianProver() bool {
 	return p.cfg.GuardianProverAddress != common.Address{}
 }
@@ -1141,4 +1176,25 @@ func (p *Prover) releaseOneCapacity(blockID *big.Int) {
 			log.Error("Failed to release capacity", "id", blockID)
 		}
 	}
+}
+
+// signBlock signs the block data and stores it in the database.
+func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
+	block, err := p.rpc.L2.BlockByNumber(ctx, blockID)
+	if err != nil {
+		return err
+	}
+
+	signed, err := crypto.Sign(block.Hash().Bytes(), p.proverPrivateKey)
+	if err != nil {
+		return err
+	}
+
+	key := bytes.Join([][]byte{[]byte(dbKeyPrefix), blockID.Bytes()}, []byte("-"))
+
+	if err := p.db.Put(key, signed); err != nil {
+		return err
+	}
+
+	return nil
 }

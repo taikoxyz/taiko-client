@@ -211,3 +211,46 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		MaxBlockID:    l1Head + srv.maxSlippage,
 	})
 }
+
+type SignedBlock struct {
+	BlockID   uint64         `json:"blockID"`
+	BlockHash string         `json:"blockHash"`
+	Signature string         `json:"signature"`
+	Prover    common.Address `json:"proverAddress"`
+}
+
+// GetSignedBlocks handles a query to retrieve the most recent signed blocks from the database.
+//
+//	@Summary		Get signed blocks
+//	@ID			   	get-signed-blocks
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object} SignedBlocks
+//	@Router			/signedBlocks [get]
+func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
+	latestBlock, err := srv.rpc.L2.BlockByNumber(c.Request().Context(), nil)
+	if err != nil {
+		if err != nil {
+			log.Error("Failed to get latest L2 block", "error", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+	}
+
+	var signedBlocks []SignedBlock
+	start := new(big.Int).Sub(latestBlock.Number(), numBlocksToReturn)
+
+	iter := srv.db.NewIterator([]byte(dbKeyPrefix), start.Bytes())
+
+	defer iter.Release()
+
+	for iter.Next() {
+		signedBlocks = append(signedBlocks, SignedBlock{
+			BlockID:   new(big.Int).SetBytes(iter.Key()).Uint64(),
+			BlockHash: latestBlock.Hash().Hex(),
+			Signature: common.Bytes2Hex(iter.Value()),
+			Prover:    srv.proverAddress,
+		})
+	}
+
+	return c.JSON(http.StatusOK, signedBlocks)
+}

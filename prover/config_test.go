@@ -53,6 +53,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal(uint64(256), c.ProveBlockMaxTxGasTipCap.Uint64())
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 		s.True(c.ProveUnassignedBlocks)
+		s.Equal("dbPath", c.DatabasePath)
 
 		return err
 	}
@@ -80,6 +81,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.ProveUnassignedBlocks.Name,
+		"--" + flags.DatabasePath.Name, "dbPath",
 	}))
 }
 
@@ -149,6 +151,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.MinSgxTierFee.Name},
 		&cli.Uint64Flag{Name: flags.MinPseZkevmTierFee.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxGasLimit.Name},
+		&cli.StringFlag{Name: flags.DatabasePath.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
