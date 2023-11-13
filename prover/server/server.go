@@ -141,5 +141,6 @@ func (srv *ProverServer) configureRoutes() {
 	srv.echo.GET("/", srv.Health)
 	srv.echo.GET("/healthz", srv.Health)
 	srv.echo.GET("/status", srv.GetStatus)
+	srv.echo.GET("/signedBlocks", srv.GetSignedBlocks)
 	srv.echo.POST("/assignment", srv.CreateAssignment)
 }
