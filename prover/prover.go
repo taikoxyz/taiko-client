@@ -1182,6 +1182,11 @@ func (p *Prover) releaseOneCapacity(blockID *big.Int) {
 
 // signBlock signs the block data and stores it in the database.
 func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
+	// only guardianProvers should sign blocks
+	if !p.IsGuardianProver() {
+		return nil
+	}
+
 	block, err := p.rpc.L2.BlockByNumber(ctx, blockID)
 	if err != nil {
 		return err
