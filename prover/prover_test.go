@@ -241,9 +241,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	proofWithHeader.Opts.BlockHash = testutils.RandomHash()
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), proofWithHeader))
 
-	log.Info("WAITING FOR EVENT FROM SINK")
 	event := <-sink
-	log.Info("EVENT FROM SINK")
 	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
 	s.Equal(common.BytesToHash(proofWithHeader.Opts.BlockHash[:]), common.BytesToHash(event.Tran.BlockHash[:]))
 	s.NotEqual(header.Hash(), common.BytesToHash(event.Tran.BlockHash[:]))
