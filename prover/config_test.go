@@ -54,6 +54,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 		s.True(c.ProveUnassignedBlocks)
 		s.Equal("dbPath", c.DatabasePath)
+		s.Equal(128, c.DatabaseCacheSize)
 
 		return err
 	}
@@ -82,6 +83,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.ProveUnassignedBlocks.Name,
 		"--" + flags.DatabasePath.Name, "dbPath",
+		"--" + flags.DatabaseCacheSize.Name, "128",
 	}))
 }
 

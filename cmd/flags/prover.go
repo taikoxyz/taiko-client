@@ -158,8 +158,14 @@ var (
 	// DB file location
 	// Required for guardian prover only
 	DatabasePath = &cli.StringFlag{
-		Name:     "databasePath",
+		Name:     "db.path",
 		Usage:    "Database file location",
+		Category: proverCategory,
+	}
+	DatabaseCacheSize = &cli.Uint64Flag{
+		Name:     "db.cacheSize",
+		Usage:    "Database cache size in megabytes",
+		Value:    16,
 		Category: proverCategory,
 	}
 )
@@ -195,4 +201,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	TaikoTokenAddress,
 	MaxAcceptableBlockSlippage,
 	DatabasePath,
+	DatabaseCacheSize,
 })

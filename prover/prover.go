@@ -233,7 +233,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	// levelDB
 	var db ethdb.KeyValueStore
 	if cfg.DatabasePath != "" {
-		db, err := leveldb.New(cfg.DatabasePath, 0, 1, "taiko", false)
+		db, err := leveldb.New(cfg.DatabasePath, int(cfg.DatabaseCacheSize), 1, "taiko", false)
 		if err != nil {
 			return err
 		}
