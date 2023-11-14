@@ -64,6 +64,7 @@ func (s *ProverTestSuite) SetupTest() {
 		MinSgxAndPseZkevmTierFee: common.Big1,
 		HTTPServerPort:           uint64(port),
 		WaitReceiptTimeout:       12 * time.Second,
+		DatabasePath:             "",
 	})))
 	p.srv = testutils.NewTestProverServer(
 		&s.ClientTestSuite,

@@ -231,12 +231,15 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// levelDB
-	db, err := leveldb.New(cfg.DatabasePath, 0, 1, "taiko", false)
-	if err != nil {
-		return err
-	}
+	var db ethdb.KeyValueStore
+	if cfg.DatabasePath != "" {
+		db, err := leveldb.New(cfg.DatabasePath, 0, 1, "taiko", false)
+		if err != nil {
+			return err
+		}
 
-	p.db = db
+		p.db = db
+	}
 
 	// Prover server
 	proverServerOpts := &server.NewProverServerOpts{

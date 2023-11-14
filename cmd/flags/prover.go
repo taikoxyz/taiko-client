@@ -156,11 +156,10 @@ var (
 		Category: proverCategory,
 	}
 	// DB file location
-	// Guardian prover related.
+	// Required for guardian prover only
 	DatabasePath = &cli.StringFlag{
 		Name:     "databasePath",
 		Usage:    "Database file location",
-		Value:    "db/",
 		Category: proverCategory,
 	}
 )
