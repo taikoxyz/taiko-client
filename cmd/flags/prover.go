@@ -155,6 +155,13 @@ var (
 		Value:    1024,
 		Category: proverCategory,
 	}
+	// Max amount of L1 blocks that can pass before block is invalid
+	MaxProposedIn = &cli.Uint64Flag{
+		Name:     "prover.maxProposedIn",
+		Usage:    "Maximum amount of L1 blocks that can pass before block can not be proposed. 0 means no limit.",
+		Value:    0,
+		Category: proverCategory,
+	}
 	// DB file location
 	// Required for guardian prover only
 	DatabasePath = &cli.StringFlag{
@@ -198,6 +205,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProverHTTPServerPort,
 	ProverCapacity,
 	MaxExpiry,
+	MaxProposedIn,
 	TaikoTokenAddress,
 	MaxAcceptableBlockSlippage,
 	DatabasePath,

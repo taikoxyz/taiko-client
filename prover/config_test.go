@@ -55,6 +55,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.True(c.ProveUnassignedBlocks)
 		s.Equal("dbPath", c.DatabasePath)
 		s.Equal(uint64(128), c.DatabaseCacheSize)
+		s.Equal(uint64(100), c.MaxProposedIn)
 
 		return err
 	}
@@ -84,6 +85,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.ProveUnassignedBlocks.Name,
 		"--" + flags.DatabasePath.Name, "dbPath",
 		"--" + flags.DatabaseCacheSize.Name, "128",
+		"--" + flags.MaxProposedIn.Name, "100",
 	}))
 }
 
@@ -155,6 +157,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.ProveBlockTxGasLimit.Name},
 		&cli.StringFlag{Name: flags.DatabasePath.Name},
 		&cli.Uint64Flag{Name: flags.DatabaseCacheSize.Name},
+		&cli.Uint64Flag{Name: flags.MaxProposedIn.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

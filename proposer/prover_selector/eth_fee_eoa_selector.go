@@ -223,6 +223,7 @@ func assignProver(
 		common.Address{},
 		expiry,
 		result.MaxBlockID,
+		result.MaxProposedIn,
 		tierFees,
 	)
 	if err != nil {

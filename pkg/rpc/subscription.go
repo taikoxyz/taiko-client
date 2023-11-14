@@ -69,7 +69,7 @@ func SubscribeXchainSynced(
 	ch chan *bindings.TaikoL1ClientCrossChainSynced,
 ) event.Subscription {
 	return SubscribeEvent("CrossChainSynced", func(ctx context.Context) (event.Subscription, error) {
-		sub, err := taikoL1.WatchCrossChainSynced(nil, ch, nil)
+		sub, err := taikoL1.WatchCrossChainSynced(nil, ch, nil, nil)
 		if err != nil {
 			log.Error("Create TaikoL1.XchainSynced subscription error", "error", err)
 			return nil, err

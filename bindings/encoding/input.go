@@ -165,6 +165,14 @@ var (
 			Type: "uint64",
 		},
 		{
+			Name: "maxProposedIn",
+			Type: "uint64",
+		},
+		{
+			Name: "metaHash",
+			Type: "bytes32",
+		},
+		{
 			Name: "signature",
 			Type: "bytes",
 		},
@@ -201,6 +209,7 @@ var (
 		{Name: "assignment.feeToken", Type: addressType},
 		{Name: "assignment.expiry", Type: uint64Type},
 		{Name: "assignment.maxBlockId", Type: uint64Type},
+		{Name: "assignment.maxProposedIn", Type: uint64Type},
 		{Name: "assignment.tierFees", Type: tierFeesType},
 	}
 	blockMetadataComponentsType, _ = abi.NewType("tuple", "TaikoData.BlockMetadata", blockMetadataComponents)
@@ -247,6 +256,7 @@ func EncodeProverAssignmentPayload(
 	feeToken common.Address,
 	expiry uint64,
 	maxBlockID uint64,
+	maxProposedIn uint64,
 	tierFees []TierFee,
 ) ([]byte, error) {
 	b, err := proverAssignmentPayloadArgs.Pack(
@@ -256,6 +266,7 @@ func EncodeProverAssignmentPayload(
 		feeToken,
 		expiry,
 		maxBlockID,
+		maxProposedIn,
 		tierFees,
 	)
 	if err != nil {

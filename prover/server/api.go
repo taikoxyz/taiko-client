@@ -76,6 +76,7 @@ type ProposeBlockResponse struct {
 	SignedPayload []byte         `json:"signedPayload"`
 	Prover        common.Address `json:"prover"`
 	MaxBlockID    uint64         `json:"maxBlockID"`
+	MaxProposedIn uint64         `json:"maxProposedIn"`
 }
 
 // CreateAssignment handles a block proof assignment request, decides if this prover wants to
@@ -195,6 +196,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		req.FeeToken,
 		req.Expiry,
 		l1Head+srv.maxSlippage,
+		srv.maxProposedIn,
 		req.TierFees,
 	)
 	if err != nil {
@@ -211,6 +213,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		SignedPayload: signed,
 		Prover:        srv.proverAddress,
 		MaxBlockID:    l1Head + srv.maxSlippage,
+		MaxProposedIn: srv.maxProposedIn,
 	})
 }
 

@@ -48,6 +48,7 @@ type Config struct {
 	MinPseZkevmTierFee                *big.Int
 	MinSgxAndPseZkevmTierFee          *big.Int
 	MaxExpiry                         time.Duration
+	MaxProposedIn                     uint64
 	MaxBlockSlippage                  uint64
 	DatabasePath                      string
 	DatabaseCacheSize                 uint64
@@ -140,6 +141,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		MinSgxAndPseZkevmTierFee:          new(big.Int).SetUint64(c.Uint64(flags.MinSgxAndPseZkevmTierFee.Name)),
 		MaxExpiry:                         c.Duration(flags.MaxExpiry.Name),
 		MaxBlockSlippage:                  c.Uint64(flags.MaxAcceptableBlockSlippage.Name),
+		MaxProposedIn:                     c.Uint64(flags.MaxProposedIn.Name),
 		DatabasePath:                      c.String(flags.DatabasePath.Name),
 		DatabaseCacheSize:                 c.Uint64(flags.DatabaseCacheSize.Name),
 	}, nil

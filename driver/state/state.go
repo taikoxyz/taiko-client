@@ -176,8 +176,8 @@ func (s *State) startSubscriptions(ctx context.Context) {
 			case e := <-s.crossChainSynced:
 				// Verify the protocol synced block, check if it exists in
 				// L2 execution engine.
-				if s.GetL2Head().Number.Uint64() >= e.SrcHeight {
-					if err := s.VerifyL2Block(ctx, new(big.Int).SetUint64(e.SrcHeight), e.BlockHash); err != nil {
+				if s.GetL2Head().Number.Uint64() >= e.BlockId {
+					if err := s.VerifyL2Block(ctx, new(big.Int).SetUint64(e.BlockId), e.BlockHash); err != nil {
 						log.Error("Check new verified L2 block error", "error", err)
 						continue
 					}
@@ -187,7 +187,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 					log.Error("Get synced header block ID error", "error", err)
 					continue
 				}
-				s.setLatestVerifiedBlockHash(id, new(big.Int).SetUint64(e.SrcHeight), e.BlockHash)
+				s.setLatestVerifiedBlockHash(id, new(big.Int).SetUint64(e.BlockId), e.BlockHash)
 			case newHead := <-s.l1HeadCh:
 				s.setL1Head(newHead)
 				s.l1HeadsFeed.Send(newHead)
