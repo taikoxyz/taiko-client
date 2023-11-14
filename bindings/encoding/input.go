@@ -124,6 +124,10 @@ var (
 			Name: "cacheBlobForReuse",
 			Type: "bool",
 		},
+		{
+			Name: "parentMetaHash",
+			Type: "bytes32",
+		},
 	}
 	proverAssignmentComponents = []abi.ArgumentMarshaling{
 		{

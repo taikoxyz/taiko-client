@@ -46,6 +46,7 @@ type BlockParams struct {
 	TxListByteOffset  *big.Int
 	TxListByteSize    *big.Int
 	CacheBlobForReuse bool
+	ParentMetaHash    [32]byte
 }
 
 // TierFee should be same with TaikoData.TierFee.

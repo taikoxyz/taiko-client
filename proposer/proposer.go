@@ -368,6 +368,23 @@ func (p *Proposer) sendProposeBlockTx(
 		}
 	}
 
+	state, err := p.rpc.TaikoL1.State(&bind.CallOpts{
+		Context: ctx,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	parent, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{
+		Context: ctx,
+	},
+		state.SlotB.NumBlocks-1,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		Assignment:        assignment,
 		ExtraData:         rpc.StringToBytes32(p.cfg.ExtraData),
@@ -375,6 +392,7 @@ func (p *Proposer) sendProposeBlockTx(
 		TxListByteSize:    common.Big0,
 		BlobHash:          [32]byte{},
 		CacheBlobForReuse: false,
+		ParentMetaHash:    parent.MetaHash,
 	})
 	if err != nil {
 		return nil, err

@@ -29,6 +29,14 @@ var (
 	_ = abi.ConvertType
 )
 
+// ICrossChainSyncSnippet is an auto generated low-level Go binding around an user-defined struct.
+type ICrossChainSyncSnippet struct {
+	RemoteBlockId uint64
+	SyncedInBlock uint64
+	BlockHash     [32]byte
+	SignalRoot    [32]byte
+}
+
 // TaikoL2Config is an auto generated low-level Go binding around an user-defined struct.
 type TaikoL2Config struct {
 	GasTargetPerL1Block       uint32
