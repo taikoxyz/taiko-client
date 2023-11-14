@@ -227,7 +227,7 @@ type SignedBlock struct {
 //	@ID			   	get-signed-blocks
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object} SignedBlocks
+//	@Success		200	{object} []SignedBlocks
 //	@Router			/signedBlocks [get]
 func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 	latestBlock, err := srv.rpc.L2.BlockByNumber(c.Request().Context(), nil)
@@ -240,8 +240,11 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 
 	var signedBlocks []SignedBlock
 
+	// start iterator at 0
 	start := big.NewInt(0)
 
+	// if latestBlock is greater than the number of blocks to return, we only want to return
+	// the most recent N blocks signed by this guardian prover.
 	if latestBlock.NumberU64() > numBlocksToReturn.Uint64() {
 		start = new(big.Int).Sub(latestBlock.Number(), numBlocksToReturn)
 	}
