@@ -54,7 +54,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 		s.True(c.ProveUnassignedBlocks)
 		s.Equal("dbPath", c.DatabasePath)
-		s.Equal(128, c.DatabaseCacheSize)
+		s.Equal(uint64(128), c.DatabaseCacheSize)
 
 		return err
 	}
@@ -154,6 +154,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.MinPseZkevmTierFee.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxGasLimit.Name},
 		&cli.StringFlag{Name: flags.DatabasePath.Name},
+		&cli.Uint64Flag{Name: flags.DatabaseCacheSize.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

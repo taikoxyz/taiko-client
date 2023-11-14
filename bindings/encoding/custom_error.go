@@ -11,6 +11,11 @@ import (
 func TryParsingCustomError(originalError error) error {
 	errData := getErrorData(originalError)
 
+	// if errData is unparsable and returns 0x, we should not match any errors.
+	if errData == "0x" {
+		return originalError
+	}
+
 	for _, l1CustomError := range TaikoL1ABI.Errors {
 		if strings.HasPrefix(l1CustomError.ID.Hex(), errData) {
 			return errors.New(l1CustomError.Name)
