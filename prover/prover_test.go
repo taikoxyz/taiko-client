@@ -225,7 +225,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.p.cfg.ContesterMode = true
 
 	// Submit a wrong proof at first.
-	sink := make(chan *bindings.TaikoL1ClientTransitionProved, 0)
+	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
 	header, err := s.p.rpc.L2.HeaderByNumber(context.Background(), e.BlockId)
 	s.Nil(err)
 
