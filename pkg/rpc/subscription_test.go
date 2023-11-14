@@ -44,7 +44,7 @@ func TestSubscribeTransitionProved(t *testing.T) {
 	)
 }
 
-func TestSucscribeTransitionContested(t *testing.T) {
+func TestSubscribeTransitionContested(t *testing.T) {
 	require.NotNil(t, SubscribeTransitionContested(
 		newTestClient(t).TaikoL1,
 		make(chan *bindings.TaikoL1ClientTransitionContested, 1024)),
