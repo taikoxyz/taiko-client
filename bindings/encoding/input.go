@@ -69,6 +69,10 @@ var (
 			Name: "blobUsed",
 			Type: "bool",
 		},
+		{
+			Name: "parentMetaHash",
+			Type: "bytes32",
+		},
 	}
 	transitionComponents = []abi.ArgumentMarshaling{
 		{
