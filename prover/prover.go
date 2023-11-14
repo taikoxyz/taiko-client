@@ -1,7 +1,6 @@
 package prover
 
 import (
-	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"errors"
@@ -1193,9 +1192,9 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 		return err
 	}
 
-	key := bytes.Join([][]byte{[]byte(dbKeyPrefix), blockID.Bytes()}, []byte(""))
+	key := fmt.Sprintf("%v-%v", dbKeyPrefix, blockID.String())
 
-	if err := p.db.Put(key, signed); err != nil {
+	if err := p.db.Put([]byte(key), signed); err != nil {
 		return err
 	}
 

@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	dbKeyPrefix       = "blockid-"
+	dbKeyPrefix       = "blockid"
 	numBlocksToReturn = new(big.Int).SetUint64(200)
 )
 

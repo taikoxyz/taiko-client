@@ -3,6 +3,8 @@ package server
 import (
 	"math/big"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -237,15 +239,28 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 	}
 
 	var signedBlocks []SignedBlock
-	start := new(big.Int).Sub(latestBlock.Number(), numBlocksToReturn)
+
+	start := big.NewInt(0)
+
+	if latestBlock.NumberU64() > numBlocksToReturn.Uint64() {
+		start = new(big.Int).Sub(latestBlock.Number(), numBlocksToReturn)
+	}
 
 	iter := srv.db.NewIterator([]byte(dbKeyPrefix), start.Bytes())
 
 	defer iter.Release()
 
 	for iter.Next() {
+		k := strings.Split(string(iter.Key()), "-")
+
+		blockID, err := strconv.Atoi(k[1])
+
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+
 		signedBlocks = append(signedBlocks, SignedBlock{
-			BlockID:   new(big.Int).SetBytes(iter.Key()).Uint64(),
+			BlockID:   uint64(blockID),
 			BlockHash: latestBlock.Hash().Hex(),
 			Signature: common.Bytes2Hex(iter.Value()),
 			Prover:    srv.proverAddress,

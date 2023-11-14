@@ -1,9 +1,9 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -65,7 +65,9 @@ func (s *ProverServerTestSuite) TestGetSignedBlocks() {
 	signed, err := crypto.Sign(latest.Hash().Bytes(), s.s.proverPrivateKey)
 	s.Nil(err)
 
-	s.Nil(s.s.db.Put(bytes.Join([][]byte{[]byte(dbKeyPrefix), latest.Number().Bytes()}, []byte("")), signed))
+	key := fmt.Sprintf("%v-%v", dbKeyPrefix, latest.Number().String())
+
+	s.Nil(s.s.db.Put([]byte(key), signed))
 	res := s.sendReq("/signedBlocks")
 	s.Equal(http.StatusOK, res.StatusCode)
 
@@ -79,5 +81,5 @@ func (s *ProverServerTestSuite) TestGetSignedBlocks() {
 	s.Equal(1, len(signedBlocks))
 	s.Equal(latest.Hash().Hex(), signedBlocks[0].BlockHash)
 	s.Equal(latest.Number().Uint64(), signedBlocks[0].BlockID)
-	s.Equal(signed, signedBlocks[0].Signature)
+	s.Equal(common.Bytes2Hex(signed), signedBlocks[0].Signature)
 }
