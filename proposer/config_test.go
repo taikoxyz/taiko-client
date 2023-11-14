@@ -55,6 +55,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(uint64(tierFee), c.SgxAndPseZkevmTierFee.Uint64())
 		s.Equal(uint64(15), c.TierFeePriceBump.Uint64())
 		s.Equal(uint64(5), c.MaxTierFeePriceBumps)
+		s.Equal(true, c.IncludeParentMetaHash)
 
 		for i, e := range strings.Split(proverEndpoints, ",") {
 			s.Equal(c.ProverEndpoints[i].String(), e)
@@ -86,6 +87,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.SgxAndPseZkevmTierFee.Name, fmt.Sprint(tierFee),
 		"--" + flags.TierFeePriceBump.Name, "15",
 		"--" + flags.MaxTierFeePriceBumps.Name, "5",
+		"--" + flags.ProposeBlockIncludeParentMetaHash.Name, "true",
 	}))
 }
 
@@ -156,6 +158,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasLimit.Name},
 		&cli.Uint64Flag{Name: flags.TierFeePriceBump.Name},
 		&cli.Uint64Flag{Name: flags.MaxTierFeePriceBumps.Name},
+		&cli.BoolFlag{Name: flags.ProposeBlockIncludeParentMetaHash.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

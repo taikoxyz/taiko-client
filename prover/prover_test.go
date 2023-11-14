@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -224,7 +225,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.p.cfg.ContesterMode = true
 
 	// Submit a wrong proof at first.
-	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
+	sink := make(chan *bindings.TaikoL1ClientTransitionProved, 0)
 	header, err := s.p.rpc.L2.HeaderByNumber(context.Background(), e.BlockId)
 	s.Nil(err)
 
@@ -240,7 +241,9 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	proofWithHeader.Opts.BlockHash = testutils.RandomHash()
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), proofWithHeader))
 
+	log.Info("WAITING FOR EVENT FROM SINK")
 	event := <-sink
+	log.Info("EVENT FROM SINK")
 	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
 	s.Equal(common.BytesToHash(proofWithHeader.Opts.BlockHash[:]), common.BytesToHash(event.Tran.BlockHash[:]))
 	s.NotEqual(header.Hash(), common.BytesToHash(event.Tran.BlockHash[:]))
@@ -304,7 +307,9 @@ func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
 	s.Nil(s.p.onProvingWindowExpired(context.Background(), e))
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
+	log.Info("WAITING FOR EVENT FROM SINK")
 	event := <-sink
+	log.Info("EVENT FROM SINK")
 	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
 	s.Equal(header.Hash(), common.BytesToHash(event.Tran.BlockHash[:]))
 	s.Equal(header.ParentHash, common.BytesToHash(event.Tran.ParentHash[:]))
