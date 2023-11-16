@@ -142,8 +142,8 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// Concurrency guards
-	p.proposeConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
-	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.MaxConcurrentProvingJobs)
+	p.proposeConcurrencyGuard = make(chan struct{}, cfg.Capacity)
+	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.Capacity)
 
 	// Protocol proof tiers
 	if p.tiers, err = p.rpc.GetTiers(ctx); err != nil {

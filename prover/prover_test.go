@@ -54,7 +54,6 @@ func (s *ProverTestSuite) SetupTest() {
 		L1ProverPrivKey:          l1ProverPrivKey,
 		GuardianProverPrivateKey: l1ProverPrivKey,
 		Dummy:                    true,
-		MaxConcurrentProvingJobs: 1,
 		ProveUnassignedBlocks:    true,
 		Capacity:                 1024,
 		MinOptimisticTierFee:     common.Big1,
@@ -140,7 +139,6 @@ func (s *ProverTestSuite) TestInitError() {
 		L1ProverPrivKey:                   l1ProverPrivKey,
 		GuardianProverPrivateKey:          l1ProverPrivKey,
 		Dummy:                             true,
-		MaxConcurrentProvingJobs:          1,
 		ProveUnassignedBlocks:             true,
 		ProveBlockTxReplacementMultiplier: 2,
 	})), "dial tcp:")

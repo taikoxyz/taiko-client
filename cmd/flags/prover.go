@@ -41,12 +41,6 @@ var (
 		Usage:    "If set, prover will start proving blocks from the block with this ID",
 		Category: proverCategory,
 	}
-	MaxConcurrentProvingJobs = &cli.UintFlag{
-		Name:     "prover.maxConcurrentJobs",
-		Usage:    "Limits the number of concurrent proving blocks jobs",
-		Value:    1,
-		Category: proverCategory,
-	}
 	Graffiti = &cli.StringFlag{
 		Name:     "prover.graffiti",
 		Usage:    "When string is passed, adds additional graffiti info to proof evidence",
@@ -170,7 +164,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MinPseZkevmTierFee,
 	MinSgxAndPseZkevmTierFee,
 	StartingBlockID,
-	MaxConcurrentProvingJobs,
 	Dummy,
 	GuardianProver,
 	GuardianProverPrivateKey,
