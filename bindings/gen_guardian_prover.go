@@ -29,12 +29,12 @@ var (
 	_ = abi.ConvertType
 )
 
-
 // TaikoDataTierProof is an auto generated low-level Go binding around an user-defined struct.
 type TaikoDataTierProof struct {
 	Tier uint16
 	Data []byte
 }
+
 
 // GuardianProverMetaData contains all meta data concerning the GuardianProver contract.
 var GuardianProverMetaData = &bind.MetaData{

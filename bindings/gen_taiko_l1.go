@@ -30,6 +30,7 @@ var (
 )
 
 
+
 // ITierProviderTier is an auto generated low-level Go binding around an user-defined struct.
 type ITierProviderTier struct {
 	VerifierName      [32]byte
