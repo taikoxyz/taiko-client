@@ -38,7 +38,7 @@ var (
 )
 
 var (
-	dbKeyPrefix = "blockid-"
+	dbKeyPrefix = "blockid"
 )
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
