@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/prover/db"
 )
 
 func (s *ProverServerTestSuite) TestGetStatusSuccess() {
@@ -65,9 +65,7 @@ func (s *ProverServerTestSuite) TestGetSignedBlocks() {
 	signed, err := crypto.Sign(latest.Hash().Bytes(), s.s.proverPrivateKey)
 	s.Nil(err)
 
-	key := fmt.Sprintf("%v-%v", dbKeyPrefix, latest.Number().String())
-
-	s.Nil(s.s.db.Put([]byte(key), signed))
+	s.Nil(s.s.db.Put(db.BuildBlockKey(latest.Number().String()), signed))
 	res := s.sendReq("/signedBlocks")
 	s.Equal(http.StatusOK, res.StatusCode)
 

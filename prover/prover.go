@@ -26,6 +26,7 @@ import (
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
+	"github.com/taikoxyz/taiko-client/prover/db"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/taikoxyz/taiko-client/prover/server"
@@ -35,10 +36,6 @@ import (
 var (
 	errNoCapacity   = errors.New("no prover capacity available")
 	errTierNotFound = errors.New("tier not found")
-)
-
-var (
-	dbKeyPrefix = "blockid"
 )
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
@@ -1197,9 +1194,7 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 		return err
 	}
 
-	key := fmt.Sprintf("%v-%v", dbKeyPrefix, blockID.String())
-
-	if err := p.db.Put([]byte(key), signed); err != nil {
+	if err := p.db.Put(db.BuildBlockKey(blockID.String()), signed); err != nil {
 		return err
 	}
 

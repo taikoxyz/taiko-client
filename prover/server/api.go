@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/prover/db"
 )
 
 // @title Taiko Prover Server API
@@ -252,7 +253,7 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 		start = new(big.Int).Sub(latestBlock.Number(), numBlocksToReturn)
 	}
 
-	iter := srv.db.NewIterator([]byte(dbKeyPrefix), start.Bytes())
+	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), start.Bytes())
 
 	defer iter.Release()
 
