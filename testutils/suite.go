@@ -139,8 +139,6 @@ func (s *ClientTestSuite) SetupTest() {
 		_, err = rpcCli.TaikoToken.Approve(opts, common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")), proverBalance)
 		s.Nil(err)
 
-		tx, err = rpcCli.TaikoL1.DepositTaikoToken(opts, proverBalance)
-		s.Nil(err)
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)
 	}
