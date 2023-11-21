@@ -47,6 +47,7 @@ type ProverServer struct {
 	maxProposedIn            uint64
 	capacityManager          *capacity.CapacityManager
 	taikoL1Address           common.Address
+	assignmentHookAddress    common.Address
 	rpc                      *rpc.Client
 	livenessBond             *big.Int
 	isGuardian               bool
@@ -65,6 +66,7 @@ type NewProverServerOpts struct {
 	MaxProposedIn            uint64
 	CapacityManager          *capacity.CapacityManager
 	TaikoL1Address           common.Address
+	AssignmentHookAddress    common.Address
 	Rpc                      *rpc.Client
 	LivenessBond             *big.Int
 	IsGuardian               bool
@@ -86,6 +88,7 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		maxSlippage:              opts.MaxBlockSlippage,
 		capacityManager:          opts.CapacityManager,
 		taikoL1Address:           opts.TaikoL1Address,
+		assignmentHookAddress:    opts.AssignmentHookAddress,
 		rpc:                      opts.Rpc,
 		livenessBond:             opts.LivenessBond,
 		isGuardian:               opts.IsGuardian,

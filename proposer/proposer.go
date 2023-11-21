@@ -138,6 +138,7 @@ func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
 		&protocolConfigs,
 		p.rpc,
 		cfg.TaikoL1Address,
+		cfg.AssignmentHookAddress,
 		p.tierFees,
 		cfg.TierFeePriceBump,
 		cfg.ProverEndpoints,
@@ -341,6 +342,7 @@ func (p *Proposer) sendProposeBlockTx(
 	txListBytes []byte,
 	nonce *uint64,
 	assignment *encoding.ProverAssignment,
+	assignedProver common.Address,
 	maxFee *big.Int,
 	isReplacement bool,
 ) (*types.Transaction, error) {
@@ -390,14 +392,32 @@ func (p *Proposer) sendProposeBlockTx(
 		parentMetaHash = parent.MetaHash
 	}
 
+	hookCalls := make([]encoding.HookCall, 0)
+
+	// initially just use the AssignmentHook default.
+	// TODO: flag for additional hook addresses and data.
+	hookInputData, err := encoding.EncodeAssignmentHookInput(&encoding.AssignmentHookInput{
+		Assignment: assignment,
+		Tip:        big.NewInt(0), // TODO: flag for tip
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	hookCalls = append(hookCalls, encoding.HookCall{
+		Hook: p.cfg.AssignmentHookAddress,
+		Data: hookInputData,
+	})
+
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
-		Assignment:        assignment,
+		AssignedProver:    assignedProver,
 		ExtraData:         rpc.StringToBytes32(p.cfg.ExtraData),
 		TxListByteOffset:  common.Big0,
 		TxListByteSize:    common.Big0,
 		BlobHash:          [32]byte{},
 		CacheBlobForReuse: false,
 		ParentMetaHash:    parentMetaHash,
+		HookCalls:         hookCalls,
 	})
 	if err != nil {
 		return nil, err
@@ -422,7 +442,7 @@ func (p *Proposer) ProposeTxList(
 	txNum uint,
 	nonce *uint64,
 ) error {
-	assignment, maxFee, err := p.proverSelector.AssignProver(
+	assignment, proverAddress, maxFee, err := p.proverSelector.AssignProver(
 		ctx,
 		p.tierFees,
 		crypto.Keccak256Hash(txListBytes),
@@ -445,6 +465,7 @@ func (p *Proposer) ProposeTxList(
 				txListBytes,
 				nonce,
 				assignment,
+				proverAddress,
 				maxFee,
 				isReplacement,
 			); err != nil {

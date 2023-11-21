@@ -19,6 +19,12 @@ var (
 		Required: true,
 		Category: proposerCategory,
 	}
+	ProposerAssignmentHookAddress = &cli.StringFlag{
+		Name:     "assignmentHookAddress",
+		Usage:    "Address of the AssignmentHook contract",
+		Required: true,
+		Category: proposerCategory,
+	}
 )
 
 // Optional flags used by proposer.
@@ -139,4 +145,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	TierFeePriceBump,
 	MaxTierFeePriceBumps,
 	ProposeBlockIncludeParentMetaHash,
+	ProposerAssignmentHookAddress,
 })

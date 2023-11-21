@@ -32,6 +32,12 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
+	ProverAssignmentHookAddress = &cli.StringFlag{
+		Name:     "assignmentHookAddress",
+		Usage:    "Address of the AssignmentHook contract",
+		Required: true,
+		Category: proverCategory,
+	}
 )
 
 // Optional flags used by prover.
@@ -210,4 +216,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxAcceptableBlockSlippage,
 	DatabasePath,
 	DatabaseCacheSize,
+	ProverAssignmentHookAddress,
 })

@@ -55,6 +55,7 @@ func (s *ProverServerTestSuite) SetupTest() {
 		MaxExpiry:                time.Hour,
 		CapacityManager:          capacity.New(1024),
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		AssignmentHookAddress:    common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		Rpc:                      rpcClient,
 		LivenessBond:             common.Big0,
 		IsGuardian:               false,

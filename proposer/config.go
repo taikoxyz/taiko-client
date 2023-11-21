@@ -21,6 +21,7 @@ type Config struct {
 	TaikoL1Address                      common.Address
 	TaikoL2Address                      common.Address
 	TaikoTokenAddress                   common.Address
+	AssignmentHookAddress               common.Address
 	L1ProposerPrivKey                   *ecdsa.PrivateKey
 	ExtraData                           string
 	ProposeInterval                     *time.Duration
@@ -118,6 +119,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		TaikoL1Address:                      common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                      common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		TaikoTokenAddress:                   common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
+		AssignmentHookAddress:               common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		ExtraData:                           c.String(flags.ExtraData.Name),
 		ProposeInterval:                     proposingInterval,

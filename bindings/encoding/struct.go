@@ -38,15 +38,22 @@ type BlockHeader struct {
 	BaseFeePerGas    *big.Int
 }
 
+// HookCall should be same with TaikoData.HookCall
+type HookCall struct {
+	Hook common.Address
+	Data []byte
+}
+
 // BlockParams should be same with TaikoData.BlockParams.
 type BlockParams struct {
-	Assignment        *ProverAssignment
+	AssignedProver    common.Address
 	ExtraData         [32]byte
 	BlobHash          [32]byte
 	TxListByteOffset  *big.Int
 	TxListByteSize    *big.Int
 	CacheBlobForReuse bool
 	ParentMetaHash    [32]byte
+	HookCalls         []HookCall
 }
 
 // TierFee should be same with TaikoData.TierFee.
@@ -57,14 +64,19 @@ type TierFee struct {
 
 // ProverAssignment should be same with TaikoData.ProverAssignment.
 type ProverAssignment struct {
-	Prover        common.Address
 	FeeToken      common.Address
-	TierFees      []TierFee
 	Expiry        uint64
 	MaxBlockId    uint64
 	MaxProposedIn uint64
 	MetaHash      [32]byte
+	TierFees      []TierFee
 	Signature     []byte
+}
+
+// AssignmentHookInput should be same as AssignmentHook.Input
+type AssignmentHookInput struct {
+	Assignment *ProverAssignment
+	Tip        *big.Int
 }
 
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.

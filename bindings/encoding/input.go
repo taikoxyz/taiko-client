@@ -104,9 +104,8 @@ var (
 	}
 	blockParamsComponents = []abi.ArgumentMarshaling{
 		{
-			Name:       "assignment",
-			Type:       "tuple",
-			Components: proverAssignmentComponents,
+			Name: "assignedProver",
+			Type: "address",
 		},
 		{
 			Name: "extraData",
@@ -132,29 +131,25 @@ var (
 			Name: "parentMetaHash",
 			Type: "bytes32",
 		},
-	}
-	proverAssignmentComponents = []abi.ArgumentMarshaling{
 		{
-			Name: "prover",
-			Type: "address",
-		},
-		{
-			Name: "feeToken",
-			Type: "address",
-		},
-		{
-			Name: "tierFees",
+			Name: "hookCalls",
 			Type: "tuple[]",
 			Components: []abi.ArgumentMarshaling{
 				{
-					Name: "tier",
-					Type: "uint16",
+					Name: "hook",
+					Type: "address",
 				},
 				{
-					Name: "fee",
-					Type: "uint128",
+					Name: "data",
+					Type: "bytes",
 				},
 			},
+		},
+	}
+	proverAssignmentComponents = []abi.ArgumentMarshaling{
+		{
+			Name: "feeToken",
+			Type: "address",
 		},
 		{
 			Name: "expiry",
@@ -173,14 +168,41 @@ var (
 			Type: "bytes32",
 		},
 		{
+			Name: "tierFees",
+			Type: "tuple[]",
+			Components: []abi.ArgumentMarshaling{
+				{
+					Name: "tier",
+					Type: "uint16",
+				},
+				{
+					Name: "fee",
+					Type: "uint128",
+				},
+			},
+		},
+		{
 			Name: "signature",
 			Type: "bytes",
+		},
+	}
+	assignmentHookInputComponents = []abi.ArgumentMarshaling{
+		{
+			Name:       "assignment",
+			Type:       "tuple",
+			Components: proverAssignmentComponents,
+		},
+		{
+			Name: "tip",
+			Type: "uint256",
 		},
 	}
 )
 
 var (
 	// BlockParams
+	assignmentHookInputType, _   = abi.NewType("tuple", "AssignmentHook.Input", assignmentHookInputComponents)
+	assignmentHookInputArgs      = abi.Arguments{{Name: "AssignmentHook.Input", Type: assignmentHookInputType}}
 	blockParamsComponentsType, _ = abi.NewType("tuple", "TaikoData.BlockParams", blockParamsComponents)
 	blockParamsComponentsArgs    = abi.Arguments{{Name: "TaikoData.BlockParams", Type: blockParamsComponentsType}}
 	// ProverAssignmentPayload
@@ -245,6 +267,15 @@ func EncodeBlockParams(params *BlockParams) ([]byte, error) {
 	b, err := blockParamsComponentsArgs.Pack(params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to abi.encode block params, %w", err)
+	}
+	return b, nil
+}
+
+// EncodeAssignmentHookInput performs the solidity `abi.encode` for the given input
+func EncodeAssignmentHookInput(input *AssignmentHookInput) ([]byte, error) {
+	b, err := assignmentHookInputArgs.Pack(input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to abi.encode assignment hook input params, %w", err)
 	}
 	return b, nil
 }

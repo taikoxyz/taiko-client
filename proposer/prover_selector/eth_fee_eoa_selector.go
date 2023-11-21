@@ -33,6 +33,7 @@ type ETHFeeEOASelector struct {
 	protocolConfigs               *bindings.TaikoDataConfig
 	rpc                           *rpc.Client
 	taikoL1Address                common.Address
+	assignmentHookAddress         common.Address
 	tiersFee                      []encoding.TierFee
 	tierFeePriceBump              *big.Int
 	proverEndpoints               []*url.URL
@@ -46,6 +47,7 @@ func NewETHFeeEOASelector(
 	protocolConfigs *bindings.TaikoDataConfig,
 	rpc *rpc.Client,
 	taikoL1Address common.Address,
+	assignmentHookAddress common.Address,
 	tiersFee []encoding.TierFee,
 	tierFeePriceBump *big.Int,
 	proverEndpoints []*url.URL,
@@ -67,6 +69,7 @@ func NewETHFeeEOASelector(
 		protocolConfigs,
 		rpc,
 		taikoL1Address,
+		assignmentHookAddress,
 		tiersFee,
 		tierFeePriceBump,
 		proverEndpoints,
@@ -84,14 +87,14 @@ func (s *ETHFeeEOASelector) AssignProver(
 	ctx context.Context,
 	tierFees []encoding.TierFee,
 	txListHash common.Hash,
-) (*encoding.ProverAssignment, *big.Int, error) {
+) (*encoding.ProverAssignment, common.Address, *big.Int, error) {
 	guardianProverAddress, err := s.rpc.TaikoL1.Resolve0(
 		&bind.CallOpts{Context: ctx},
 		rpc.StringToBytes32("guardian"),
 		true,
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, common.Address{}, nil, err
 	}
 
 	var (
@@ -138,7 +141,7 @@ func (s *ETHFeeEOASelector) AssignProver(
 				ctx,
 				s.rpc,
 				proverAddress,
-				s.taikoL1Address,
+				s.assignmentHookAddress,
 				s.protocolConfigs.LivenessBond,
 			)
 			if err != nil {
@@ -149,11 +152,11 @@ func (s *ETHFeeEOASelector) AssignProver(
 				continue
 			}
 
-			return encodedAssignment, maxProverFee, nil
+			return encodedAssignment, proverAddress, maxProverFee, nil
 		}
 	}
 
-	return nil, nil, errUnableToFindProver
+	return nil, common.Address{}, nil, errUnableToFindProver
 }
 
 // shuffleProverEndpoints shuffles the current selector's prover endpoints.
@@ -186,7 +189,7 @@ func assignProver(
 	var (
 		client  = resty.New()
 		reqBody = &server.CreateAssignmentRequestBody{
-			FeeToken:   (common.Address{}),
+			FeeToken:   rpc.ZeroAddress,
 			TierFees:   tierFees,
 			Expiry:     expiry,
 			TxListHash: txListHash,
@@ -256,11 +259,12 @@ func assignProver(
 	result.SignedPayload[64] = uint8(uint(result.SignedPayload[64])) + 27
 
 	return &encoding.ProverAssignment{
-		Prover:     result.Prover,
-		FeeToken:   common.Address{},
-		TierFees:   tierFees,
-		Expiry:     reqBody.Expiry,
-		MaxBlockId: result.MaxBlockID,
-		Signature:  result.SignedPayload,
+		FeeToken:      common.Address{},
+		TierFees:      tierFees,
+		Expiry:        reqBody.Expiry,
+		MaxBlockId:    result.MaxBlockID,
+		MaxProposedIn: result.MaxProposedIn,
+		MetaHash:      [32]byte{},
+		Signature:     result.SignedPayload,
 	}, result.Prover, nil
 }

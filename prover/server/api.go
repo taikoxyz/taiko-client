@@ -123,7 +123,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 			c.Request().Context(),
 			srv.rpc,
 			srv.proverAddress,
-			srv.taikoL1Address,
+			srv.assignmentHookAddress,
 			srv.livenessBond,
 		)
 		if err != nil {
