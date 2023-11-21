@@ -140,7 +140,18 @@ func (s *ClientTestSuite) SetupTest() {
 		opts, err = bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
 		s.Nil(err)
 
-		_, err = rpcCli.TaikoToken.Approve(opts, common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")), proverBalance)
+		_, err = rpcCli.TaikoToken.Approve(
+			opts,
+			common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
+			new(big.Int).Exp(big.NewInt(1_000_000_000), big.NewInt(18), nil),
+		)
+		s.Nil(err)
+
+		_, err = rpcCli.TaikoToken.Approve(
+			opts,
+			common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+			new(big.Int).Exp(big.NewInt(1_000_000_000), big.NewInt(18), nil),
+		)
 		s.Nil(err)
 
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
