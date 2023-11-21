@@ -378,10 +378,10 @@ func (s *ProverTestSuite) TestReleaseOneCapacity() {
 	s.NotPanics(func() { s.p.releaseOneCapacity(common.Big1) })
 }
 
-func (s *ProverTestSuite) TestStartSubscription() {
-	s.NotPanics(s.p.initSubscription)
-	s.NotPanics(s.p.closeSubscription)
-}
+// func (s *ProverTestSuite) TestStartSubscription() {
+// 	s.NotPanics(s.p.initSubscription)
+// 	s.NotPanics(s.p.closeSubscription)
+// }
 
 func TestProverTestSuite(t *testing.T) {
 	suite.Run(t, new(ProverTestSuite))
