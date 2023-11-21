@@ -2,6 +2,7 @@ package encoding
 
 import (
 	"context"
+	"math/big"
 	"os"
 	"testing"
 
@@ -25,6 +26,24 @@ func TestEncodeProverAssignmentPayload(t *testing.T) {
 		0,
 		[]TierFee{{Tier: 0, Fee: common.Big1}},
 	)
+
+	require.Nil(t, err)
+	require.NotNil(t, encoded)
+}
+
+func TestEncodeAssignmentHookInput(t *testing.T) {
+	encoded, err := EncodeAssignmentHookInput(&AssignmentHookInput{
+		Assignment: &ProverAssignment{
+			FeeToken:      common.Address{},
+			Expiry:        1,
+			MaxBlockId:    1,
+			MaxProposedIn: 1,
+			MetaHash:      [32]byte{0xff},
+			TierFees:      []TierFee{{Tier: 0, Fee: common.Big1}},
+			Signature:     []byte{0xff},
+		},
+		Tip: big.NewInt(1),
+	})
 
 	require.Nil(t, err)
 	require.NotNil(t, encoded)
