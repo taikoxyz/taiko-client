@@ -126,7 +126,7 @@ func (s *ClientTestSuite) SetupTest() {
 		opts, err = bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1ChainID)
 		s.Nil(err)
 		proverBalance := new(big.Int).Div(balance, common.Big2)
-		if s.Greater(proverBalance.Cmp(common.Big0), 0) {
+		if proverBalance.Cmp(common.Big0) == 1 {
 			tx, err = rpcCli.TaikoToken.Transfer(
 				opts,
 				crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), proverBalance,
