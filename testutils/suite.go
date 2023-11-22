@@ -79,13 +79,6 @@ func (s *ClientTestSuite) SetupTest() {
 	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
 	s.proverServer = NewTestProverServer(s, l1ProverPrivKey, capacity.New(1024), s.ProverEndpoints[0])
 
-	allowance, err := rpcCli.TaikoToken.Allowance(
-		nil,
-		crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey),
-		common.HexToAddress("TAIKO_L1_ADDRESS"),
-	)
-	s.Nil(err)
-
 	// Do not verify zk && sgx proofs in tests.
 	addressManager, err := bindings.NewAddressManager(
 		common.HexToAddress(os.Getenv("ADDRESS_MANAGER_CONTRACT_ADDRESS")),
