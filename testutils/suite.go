@@ -79,75 +79,83 @@ func (s *ClientTestSuite) SetupTest() {
 	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
 	s.proverServer = NewTestProverServer(s, l1ProverPrivKey, capacity.New(1024), s.ProverEndpoints[0])
 
-	// Do not verify zk && sgx proofs in tests.
-	addressManager, err := bindings.NewAddressManager(
-		common.HexToAddress(os.Getenv("ADDRESS_MANAGER_CONTRACT_ADDRESS")),
-		rpcCli.L1,
+	allowance, err := rpcCli.TaikoToken.Allowance(
+		nil,
+		crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey),
+		common.HexToAddress("TAIKO_L1_ADDRESS"),
 	)
 	s.Nil(err)
 
-	chainID, err := rpcCli.L1.ChainID(context.Background())
-	s.Nil(err)
+	if allowance.Cmp(common.Big0) == 0 {
+		// Do not verify zk && sgx proofs in tests.
+		addressManager, err := bindings.NewAddressManager(
+			common.HexToAddress(os.Getenv("ADDRESS_MANAGER_CONTRACT_ADDRESS")),
+			rpcCli.L1,
+		)
+		s.Nil(err)
 
-	ownerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
-	s.Nil(err)
+		chainID, err := rpcCli.L1.ChainID(context.Background())
+		s.Nil(err)
 
-	opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1ChainID)
-	s.Nil(err)
+		ownerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
+		s.Nil(err)
 
-	tx, err := addressManager.SetAddress(
-		opts,
-		chainID.Uint64(),
-		rpc.StringToBytes32("tier_sgx_and_pse_zkevm"),
-		common.Address{},
-	)
-	s.Nil(err)
-	_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
-	s.Nil(err)
+		opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1ChainID)
+		s.Nil(err)
 
-	tx, err = addressManager.SetAddress(opts, chainID.Uint64(), rpc.StringToBytes32("tier_sgx"), common.Address{})
-	s.Nil(err)
-	_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
-	s.Nil(err)
-
-	// Transfer some tokens to provers.
-	balance, err := rpcCli.TaikoToken.BalanceOf(nil, crypto.PubkeyToAddress(ownerPrivKey.PublicKey))
-	s.Nil(err)
-	s.Greater(balance.Cmp(common.Big0), 0)
-
-	opts, err = bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1ChainID)
-	s.Nil(err)
-	proverBalance := new(big.Int).Div(balance, common.Big2)
-
-	if proverBalance.Cmp(common.Big0) == 1 {
-		tx, err = rpcCli.TaikoToken.Transfer(
+		tx, err := addressManager.SetAddress(
 			opts,
-			crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), proverBalance,
+			chainID.Uint64(),
+			rpc.StringToBytes32("tier_sgx_and_pse_zkevm"),
+			common.Address{},
 		)
 		s.Nil(err)
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)
 
-		// Deposit taiko tokens for provers.
-		opts, err = bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
+		tx, err = addressManager.SetAddress(opts, chainID.Uint64(), rpc.StringToBytes32("tier_sgx"), common.Address{})
 		s.Nil(err)
-
-		_, err = rpcCli.TaikoToken.Approve(
-			opts,
-			common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-			new(big.Int).Exp(big.NewInt(1_000_000_000), big.NewInt(18), nil),
-		)
-		s.Nil(err)
-
-		_, err = rpcCli.TaikoToken.Approve(
-			opts,
-			common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-			new(big.Int).Exp(big.NewInt(1_000_000_000), big.NewInt(18), nil),
-		)
-		s.Nil(err)
-
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)
+
+		// Transfer some tokens to provers.
+		balance, err := rpcCli.TaikoToken.BalanceOf(nil, crypto.PubkeyToAddress(ownerPrivKey.PublicKey))
+		s.Nil(err)
+		s.Greater(balance.Cmp(common.Big0), 0)
+
+		opts, err = bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1ChainID)
+		s.Nil(err)
+		proverBalance := new(big.Int).Div(balance, common.Big2)
+		if proverBalance.Cmp(common.Big0) == 1 {
+			tx, err = rpcCli.TaikoToken.Transfer(
+				opts,
+				crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), proverBalance,
+			)
+			s.Nil(err)
+			_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
+			s.Nil(err)
+
+			// Deposit taiko tokens for provers.
+			opts, err = bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
+			s.Nil(err)
+
+			_, err = rpcCli.TaikoToken.Approve(
+				opts,
+				common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
+				new(big.Int).Exp(big.NewInt(1_000_000_000), big.NewInt(18), nil),
+			)
+			s.Nil(err)
+
+			_, err = rpcCli.TaikoToken.Approve(
+				opts,
+				common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+				new(big.Int).Exp(big.NewInt(1_000_000_000), big.NewInt(18), nil),
+			)
+			s.Nil(err)
+
+			_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
+			s.Nil(err)
+		}
 	}
 
 	s.Nil(rpcCli.L1RawRPC.CallContext(context.Background(), &s.testnetL1SnapshotID, "evm_snapshot"))
