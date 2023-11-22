@@ -227,7 +227,7 @@ func (s *BlockBatchIteratorTestSuite) TestBlockBatchIteratorConfig() {
 			endIterFunc()
 			return nil
 		},
-		StartHeight: big.NewInt(100000), // use very high number
+		StartHeight: big.NewInt(1000), // use very high number
 		EndHeight:   common.Big256,
 	})
 	s.ErrorContains(err6, "failed to get start header")
@@ -246,7 +246,7 @@ func (s *BlockBatchIteratorTestSuite) TestBlockBatchIteratorConfig() {
 			return nil
 		},
 		StartHeight: common.Big0,
-		EndHeight:   big.NewInt(100000), // use very high number
+		EndHeight:   big.NewInt(1000), // use very high number
 	})
 	s.ErrorContains(err7, "failed to get end header")
 }
