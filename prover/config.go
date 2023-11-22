@@ -26,7 +26,6 @@ type Config struct {
 	ZKEvmRpcdEndpoint                 string
 	ZkEvmRpcdParamsPath               string
 	StartingBlockID                   *big.Int
-	MaxConcurrentProvingJobs          uint
 	Dummy                             bool
 	GuardianProverAddress             common.Address
 	GuardianProverPrivateKey          *ecdsa.PrivateKey
@@ -119,7 +118,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ZKEvmRpcdEndpoint:                 c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath:               c.String(flags.ZkEvmRpcdParamsPath.Name),
 		StartingBlockID:                   startingBlockID,
-		MaxConcurrentProvingJobs:          c.Uint(flags.MaxConcurrentProvingJobs.Name),
 		Dummy:                             c.Bool(flags.Dummy.Name),
 		GuardianProverAddress:             common.HexToAddress(c.String(flags.GuardianProver.Name)),
 		GuardianProverPrivateKey:          guardianProverPrivKey,
