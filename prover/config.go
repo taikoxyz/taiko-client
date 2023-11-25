@@ -21,11 +21,11 @@ type Config struct {
 	TaikoL1Address                    common.Address
 	TaikoL2Address                    common.Address
 	TaikoTokenAddress                 common.Address
+	AssignmentHookAddress             common.Address
 	L1ProverPrivKey                   *ecdsa.PrivateKey
 	ZKEvmRpcdEndpoint                 string
 	ZkEvmRpcdParamsPath               string
 	StartingBlockID                   *big.Int
-	MaxConcurrentProvingJobs          uint
 	Dummy                             bool
 	GuardianProverAddress             common.Address
 	GuardianProverPrivateKey          *ecdsa.PrivateKey
@@ -48,7 +48,10 @@ type Config struct {
 	MinPseZkevmTierFee                *big.Int
 	MinSgxAndPseZkevmTierFee          *big.Int
 	MaxExpiry                         time.Duration
+	MaxProposedIn                     uint64
 	MaxBlockSlippage                  uint64
+	DatabasePath                      string
+	DatabaseCacheSize                 uint64
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -110,11 +113,11 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		TaikoL1Address:                    common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                    common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		TaikoTokenAddress:                 common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
+		AssignmentHookAddress:             common.HexToAddress(c.String(flags.ProverAssignmentHookAddress.Name)),
 		L1ProverPrivKey:                   l1ProverPrivKey,
 		ZKEvmRpcdEndpoint:                 c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath:               c.String(flags.ZkEvmRpcdParamsPath.Name),
 		StartingBlockID:                   startingBlockID,
-		MaxConcurrentProvingJobs:          c.Uint(flags.MaxConcurrentProvingJobs.Name),
 		Dummy:                             c.Bool(flags.Dummy.Name),
 		GuardianProverAddress:             common.HexToAddress(c.String(flags.GuardianProver.Name)),
 		GuardianProverPrivateKey:          guardianProverPrivKey,
@@ -138,5 +141,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		MinSgxAndPseZkevmTierFee:          new(big.Int).SetUint64(c.Uint64(flags.MinSgxAndPseZkevmTierFee.Name)),
 		MaxExpiry:                         c.Duration(flags.MaxExpiry.Name),
 		MaxBlockSlippage:                  c.Uint64(flags.MaxAcceptableBlockSlippage.Name),
+		MaxProposedIn:                     c.Uint64(flags.MaxProposedIn.Name),
+		DatabasePath:                      c.String(flags.DatabasePath.Name),
+		DatabaseCacheSize:                 c.Uint64(flags.DatabaseCacheSize.Name),
 	}, nil
 }

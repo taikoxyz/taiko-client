@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/prover/db"
 )
 
 func (s *ProverServerTestSuite) TestGetStatusSuccess() {
@@ -54,4 +56,28 @@ func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
 	b, err := io.ReadAll(res.Body)
 	s.Nil(err)
 	s.Contains(string(b), "signedPayload")
+}
+
+func (s *ProverServerTestSuite) TestGetSignedBlocks() {
+	latest, err := s.s.rpc.L2.BlockByNumber(context.Background(), nil)
+	s.Nil(err)
+
+	signed, err := crypto.Sign(latest.Hash().Bytes(), s.s.proverPrivateKey)
+	s.Nil(err)
+
+	s.Nil(s.s.db.Put(db.BuildBlockKey(latest.Number().String()), signed))
+	res := s.sendReq("/signedBlocks")
+	s.Equal(http.StatusOK, res.StatusCode)
+
+	signedBlocks := make([]SignedBlock, 0)
+
+	defer res.Body.Close()
+	b, err := io.ReadAll(res.Body)
+	s.Nil(err)
+	s.Nil(json.Unmarshal(b, &signedBlocks))
+
+	s.Equal(1, len(signedBlocks))
+	s.Equal(latest.Hash().Hex(), signedBlocks[0].BlockHash)
+	s.Equal(latest.Number().Uint64(), signedBlocks[0].BlockID)
+	s.Equal(common.Bytes2Hex(signed), signedBlocks[0].Signature)
 }

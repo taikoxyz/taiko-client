@@ -53,6 +53,10 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal(uint64(256), c.ProveBlockMaxTxGasTipCap.Uint64())
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 		s.True(c.ProveUnassignedBlocks)
+		s.Equal("dbPath", c.DatabasePath)
+		s.Equal(uint64(128), c.DatabaseCacheSize)
+		s.Equal(uint64(100), c.MaxProposedIn)
+		s.Equal(os.Getenv("ASSIGNMENT_HOOK_ADDRESS"), c.AssignmentHookAddress.String())
 
 		return err
 	}
@@ -75,11 +79,15 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.MinPseZkevmTierFee.Name, fmt.Sprint(minTierFee),
 		"--" + flags.ProverCapacity.Name, "8",
 		"--" + flags.GuardianProver.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
+		"--" + flags.ProverAssignmentHookAddress.Name, os.Getenv("ASSIGNMENT_HOOK_ADDRESS"),
 		"--" + flags.ProveBlockTxReplacementMultiplier.Name, "3",
 		"--" + flags.ProveBlockMaxTxGasTipCap.Name, "256",
 		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.ProveUnassignedBlocks.Name,
+		"--" + flags.DatabasePath.Name, "dbPath",
+		"--" + flags.DatabaseCacheSize.Name, "128",
+		"--" + flags.MaxProposedIn.Name, "100",
 	}))
 }
 
@@ -149,6 +157,10 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.MinSgxTierFee.Name},
 		&cli.Uint64Flag{Name: flags.MinPseZkevmTierFee.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxGasLimit.Name},
+		&cli.StringFlag{Name: flags.DatabasePath.Name},
+		&cli.Uint64Flag{Name: flags.DatabaseCacheSize.Name},
+		&cli.Uint64Flag{Name: flags.MaxProposedIn.Name},
+		&cli.StringFlag{Name: flags.ProverAssignmentHookAddress.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

@@ -34,6 +34,7 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 		&protocolConfigs,
 		s.RpcClient,
 		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		[]encoding.TierFee{},
 		common.Big2,
 		[]*url.URL{s.ProverEndpoints[0]},
@@ -49,7 +50,7 @@ func (s *ProverSelectorTestSuite) TestProverEndpoints() {
 }
 
 func (s *ProverSelectorTestSuite) TestProverAssignProver() {
-	sig, fee, err := s.s.AssignProver(context.Background(), []encoding.TierFee{
+	sig, _, fee, err := s.s.AssignProver(context.Background(), []encoding.TierFee{
 		{Tier: encoding.TierOptimisticID, Fee: common.Big256},
 		{Tier: encoding.TierSgxID, Fee: common.Big256},
 		{Tier: encoding.TierPseZkevmID, Fee: common.Big256},

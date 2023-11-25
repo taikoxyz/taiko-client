@@ -3,6 +3,8 @@ package server
 import (
 	"math/big"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -11,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/prover/db"
 )
 
 // @title Taiko Prover Server API
@@ -74,6 +77,7 @@ type ProposeBlockResponse struct {
 	SignedPayload []byte         `json:"signedPayload"`
 	Prover        common.Address `json:"prover"`
 	MaxBlockID    uint64         `json:"maxBlockID"`
+	MaxProposedIn uint64         `json:"maxProposedIn"`
 }
 
 // CreateAssignment handles a block proof assignment request, decides if this prover wants to
@@ -119,7 +123,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 			c.Request().Context(),
 			srv.rpc,
 			srv.proverAddress,
-			srv.taikoL1Address,
+			srv.assignmentHookAddress,
 			srv.livenessBond,
 		)
 		if err != nil {
@@ -193,6 +197,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		req.FeeToken,
 		req.Expiry,
 		l1Head+srv.maxSlippage,
+		srv.maxProposedIn,
 		req.TierFees,
 	)
 	if err != nil {
@@ -209,5 +214,65 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		SignedPayload: signed,
 		Prover:        srv.proverAddress,
 		MaxBlockID:    l1Head + srv.maxSlippage,
+		MaxProposedIn: srv.maxProposedIn,
 	})
+}
+
+type SignedBlock struct {
+	BlockID   uint64         `json:"blockID"`
+	BlockHash string         `json:"blockHash"`
+	Signature string         `json:"signature"`
+	Prover    common.Address `json:"proverAddress"`
+}
+
+// GetSignedBlocks handles a query to retrieve the most recent signed blocks from the database.
+//
+//	@Summary		Get signed blocks
+//	@ID			   	get-signed-blocks
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object} []SignedBlocks
+//	@Router			/signedBlocks [get]
+func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
+	latestBlock, err := srv.rpc.L2.BlockByNumber(c.Request().Context(), nil)
+	if err != nil {
+		if err != nil {
+			log.Error("Failed to get latest L2 block", "error", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+	}
+
+	var signedBlocks []SignedBlock
+
+	// start iterator at 0
+	start := big.NewInt(0)
+
+	// if latestBlock is greater than the number of blocks to return, we only want to return
+	// the most recent N blocks signed by this guardian prover.
+	if latestBlock.NumberU64() > numBlocksToReturn.Uint64() {
+		start = new(big.Int).Sub(latestBlock.Number(), numBlocksToReturn)
+	}
+
+	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), start.Bytes())
+
+	defer iter.Release()
+
+	for iter.Next() {
+		k := strings.Split(string(iter.Key()), "-")
+
+		blockID, err := strconv.Atoi(k[1])
+
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+
+		signedBlocks = append(signedBlocks, SignedBlock{
+			BlockID:   uint64(blockID),
+			BlockHash: latestBlock.Hash().Hex(),
+			Signature: common.Bytes2Hex(iter.Value()),
+			Prover:    srv.proverAddress,
+		})
+	}
+
+	return c.JSON(http.StatusOK, signedBlocks)
 }

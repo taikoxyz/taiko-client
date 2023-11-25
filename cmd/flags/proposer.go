@@ -19,6 +19,12 @@ var (
 		Required: true,
 		Category: proposerCategory,
 	}
+	ProposerAssignmentHookAddress = &cli.StringFlag{
+		Name:     "assignmentHookAddress",
+		Usage:    "Address of the AssignmentHook contract",
+		Required: true,
+		Category: proposerCategory,
+	}
 )
 
 // Optional flags used by proposer.
@@ -109,6 +115,12 @@ var (
 		Usage:    "Gas tip cap (in wei) for a TaikoL1.proposeBlock transaction when doing the transaction replacement",
 		Category: proposerCategory,
 	}
+	ProposeBlockIncludeParentMetaHash = &cli.BoolFlag{
+		Name:     "includeParentMetaHash",
+		Usage:    "Include parent meta hash when proposing block",
+		Value:    false,
+		Category: proposerCategory,
+	}
 )
 
 // All proposer flags.
@@ -132,4 +144,6 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	SgxAndPseZkevmTierFee,
 	TierFeePriceBump,
 	MaxTierFeePriceBumps,
+	ProposeBlockIncludeParentMetaHash,
+	ProposerAssignmentHookAddress,
 })

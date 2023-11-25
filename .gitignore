@@ -6,6 +6,7 @@
 *.dylib
 bin
 coverage.out
+prover/dbPath
 
 # Test binary, built with `go test -c`
 *.test

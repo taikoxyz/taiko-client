@@ -32,6 +32,12 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
+	ProverAssignmentHookAddress = &cli.StringFlag{
+		Name:     "assignmentHookAddress",
+		Usage:    "Address of the AssignmentHook contract",
+		Required: true,
+		Category: proverCategory,
+	}
 )
 
 // Optional flags used by prover.
@@ -39,12 +45,6 @@ var (
 	StartingBlockID = &cli.Uint64Flag{
 		Name:     "prover.startingBlockID",
 		Usage:    "If set, prover will start proving blocks from the block with this ID",
-		Category: proverCategory,
-	}
-	MaxConcurrentProvingJobs = &cli.UintFlag{
-		Name:     "prover.maxConcurrentJobs",
-		Usage:    "Limits the number of concurrent proving blocks jobs",
-		Value:    1,
 		Category: proverCategory,
 	}
 	Graffiti = &cli.StringFlag{
@@ -155,6 +155,26 @@ var (
 		Value:    1024,
 		Category: proverCategory,
 	}
+	// Max amount of L1 blocks that can pass before block is invalid
+	MaxProposedIn = &cli.Uint64Flag{
+		Name:     "prover.maxProposedIn",
+		Usage:    "Maximum amount of L1 blocks that can pass before block can not be proposed. 0 means no limit.",
+		Value:    0,
+		Category: proverCategory,
+	}
+	// DB file location
+	// Required for guardian prover only
+	DatabasePath = &cli.StringFlag{
+		Name:     "db.path",
+		Usage:    "Database file location",
+		Category: proverCategory,
+	}
+	DatabaseCacheSize = &cli.Uint64Flag{
+		Name:     "db.cacheSize",
+		Usage:    "Database cache size in megabytes",
+		Value:    16,
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -170,7 +190,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MinPseZkevmTierFee,
 	MinSgxAndPseZkevmTierFee,
 	StartingBlockID,
-	MaxConcurrentProvingJobs,
 	Dummy,
 	GuardianProver,
 	GuardianProverPrivateKey,
@@ -185,6 +204,10 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProverHTTPServerPort,
 	ProverCapacity,
 	MaxExpiry,
+	MaxProposedIn,
 	TaikoTokenAddress,
 	MaxAcceptableBlockSlippage,
+	DatabasePath,
+	DatabaseCacheSize,
+	ProverAssignmentHookAddress,
 })

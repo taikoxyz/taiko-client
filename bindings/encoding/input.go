@@ -69,6 +69,10 @@ var (
 			Name: "blobUsed",
 			Type: "bool",
 		},
+		{
+			Name: "parentMetaHash",
+			Type: "bytes32",
+		},
 	}
 	transitionComponents = []abi.ArgumentMarshaling{
 		{
@@ -100,9 +104,8 @@ var (
 	}
 	blockParamsComponents = []abi.ArgumentMarshaling{
 		{
-			Name:       "assignment",
-			Type:       "tuple",
-			Components: proverAssignmentComponents,
+			Name: "assignedProver",
+			Type: "address",
 		},
 		{
 			Name: "extraData",
@@ -124,15 +127,45 @@ var (
 			Name: "cacheBlobForReuse",
 			Type: "bool",
 		},
+		{
+			Name: "parentMetaHash",
+			Type: "bytes32",
+		},
+		{
+			Name: "hookCalls",
+			Type: "tuple[]",
+			Components: []abi.ArgumentMarshaling{
+				{
+					Name: "hook",
+					Type: "address",
+				},
+				{
+					Name: "data",
+					Type: "bytes",
+				},
+			},
+		},
 	}
 	proverAssignmentComponents = []abi.ArgumentMarshaling{
 		{
-			Name: "prover",
+			Name: "feeToken",
 			Type: "address",
 		},
 		{
-			Name: "feeToken",
-			Type: "address",
+			Name: "expiry",
+			Type: "uint64",
+		},
+		{
+			Name: "maxBlockId",
+			Type: "uint64",
+		},
+		{
+			Name: "maxProposedIn",
+			Type: "uint64",
+		},
+		{
+			Name: "metaHash",
+			Type: "bytes32",
 		},
 		{
 			Name: "tierFees",
@@ -149,22 +182,27 @@ var (
 			},
 		},
 		{
-			Name: "expiry",
-			Type: "uint64",
-		},
-		{
-			Name: "maxBlockId",
-			Type: "uint64",
-		},
-		{
 			Name: "signature",
 			Type: "bytes",
+		},
+	}
+	assignmentHookInputComponents = []abi.ArgumentMarshaling{
+		{
+			Name:       "assignment",
+			Type:       "tuple",
+			Components: proverAssignmentComponents,
+		},
+		{
+			Name: "tip",
+			Type: "uint256",
 		},
 	}
 )
 
 var (
 	// BlockParams
+	assignmentHookInputType, _   = abi.NewType("tuple", "AssignmentHook.Input", assignmentHookInputComponents)
+	assignmentHookInputArgs      = abi.Arguments{{Name: "AssignmentHook.Input", Type: assignmentHookInputType}}
 	blockParamsComponentsType, _ = abi.NewType("tuple", "TaikoData.BlockParams", blockParamsComponents)
 	blockParamsComponentsArgs    = abi.Arguments{{Name: "TaikoData.BlockParams", Type: blockParamsComponentsType}}
 	// ProverAssignmentPayload
@@ -193,6 +231,7 @@ var (
 		{Name: "assignment.feeToken", Type: addressType},
 		{Name: "assignment.expiry", Type: uint64Type},
 		{Name: "assignment.maxBlockId", Type: uint64Type},
+		{Name: "assignment.maxProposedIn", Type: uint64Type},
 		{Name: "assignment.tierFees", Type: tierFeesType},
 	}
 	blockMetadataComponentsType, _ = abi.NewType("tuple", "TaikoData.BlockMetadata", blockMetadataComponents)
@@ -232,6 +271,15 @@ func EncodeBlockParams(params *BlockParams) ([]byte, error) {
 	return b, nil
 }
 
+// EncodeAssignmentHookInput performs the solidity `abi.encode` for the given input
+func EncodeAssignmentHookInput(input *AssignmentHookInput) ([]byte, error) {
+	b, err := assignmentHookInputArgs.Pack(input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to abi.encode assignment hook input params, %w", err)
+	}
+	return b, nil
+}
+
 // EncodeProverAssignmentPayload performs the solidity `abi.encode` for the given proverAssignment payload.
 func EncodeProverAssignmentPayload(
 	taikoAddress common.Address,
@@ -239,6 +287,7 @@ func EncodeProverAssignmentPayload(
 	feeToken common.Address,
 	expiry uint64,
 	maxBlockID uint64,
+	maxProposedIn uint64,
 	tierFees []TierFee,
 ) ([]byte, error) {
 	b, err := proverAssignmentPayloadArgs.Pack(
@@ -248,6 +297,7 @@ func EncodeProverAssignmentPayload(
 		feeToken,
 		expiry,
 		maxBlockID,
+		maxProposedIn,
 		tierFees,
 	)
 	if err != nil {

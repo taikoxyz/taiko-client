@@ -15,6 +15,12 @@ func (e *testJsonError) Error() string { return common.Bytes2Hex(randomBytes(10)
 
 func (e *testJsonError) ErrorData() interface{} { return "0x8a1c400f" }
 
+type emptyTestJsonError struct{}
+
+func (e *emptyTestJsonError) Error() string { return "execution reverted" }
+
+func (e *emptyTestJsonError) ErrorData() interface{} { return "0x" }
+
 func TestTryParsingCustomError(t *testing.T) {
 	randomErr := common.Bytes2Hex(randomBytes(10))
 	require.Equal(t, randomErr, TryParsingCustomError(errors.New(randomErr)).Error())
@@ -29,4 +35,8 @@ func TestTryParsingCustomError(t *testing.T) {
 	err = TryParsingCustomError(&testJsonError{})
 
 	require.True(t, strings.HasPrefix(err.Error(), "L1_INVALID_BLOCK_ID"))
+
+	err = TryParsingCustomError(&emptyTestJsonError{})
+
+	require.Equal(t, err.Error(), "execution reverted")
 }

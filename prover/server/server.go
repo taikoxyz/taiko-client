@@ -10,10 +10,15 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb"
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
+)
+
+var (
+	numBlocksToReturn = new(big.Int).SetUint64(200)
 )
 
 // @title Taiko Prover API
@@ -39,11 +44,14 @@ type ProverServer struct {
 	minSgxAndPseZkevmTierFee *big.Int
 	maxExpiry                time.Duration
 	maxSlippage              uint64
+	maxProposedIn            uint64
 	capacityManager          *capacity.CapacityManager
 	taikoL1Address           common.Address
+	assignmentHookAddress    common.Address
 	rpc                      *rpc.Client
 	livenessBond             *big.Int
 	isGuardian               bool
+	db                       ethdb.KeyValueStore
 }
 
 // NewProverServerOpts contains all configurations for creating a prover server instance.
@@ -55,11 +63,14 @@ type NewProverServerOpts struct {
 	MinSgxAndPseZkevmTierFee *big.Int
 	MaxExpiry                time.Duration
 	MaxBlockSlippage         uint64
+	MaxProposedIn            uint64
 	CapacityManager          *capacity.CapacityManager
 	TaikoL1Address           common.Address
+	AssignmentHookAddress    common.Address
 	Rpc                      *rpc.Client
 	LivenessBond             *big.Int
 	IsGuardian               bool
+	DB                       ethdb.KeyValueStore
 }
 
 // New creates a new prover server instance.
@@ -73,12 +84,15 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		minPseZkevmTierFee:       opts.MinPseZkevmTierFee,
 		minSgxAndPseZkevmTierFee: opts.MinSgxAndPseZkevmTierFee,
 		maxExpiry:                opts.MaxExpiry,
+		maxProposedIn:            opts.MaxProposedIn,
 		maxSlippage:              opts.MaxBlockSlippage,
 		capacityManager:          opts.CapacityManager,
 		taikoL1Address:           opts.TaikoL1Address,
+		assignmentHookAddress:    opts.AssignmentHookAddress,
 		rpc:                      opts.Rpc,
 		livenessBond:             opts.LivenessBond,
 		isGuardian:               opts.IsGuardian,
+		db:                       opts.DB,
 	}
 
 	srv.echo.HideBanner = true
@@ -132,5 +146,6 @@ func (srv *ProverServer) configureRoutes() {
 	srv.echo.GET("/", srv.Health)
 	srv.echo.GET("/healthz", srv.Health)
 	srv.echo.GET("/status", srv.GetStatus)
+	srv.echo.GET("/signedBlocks", srv.GetSignedBlocks)
 	srv.echo.POST("/assignment", srv.CreateAssignment)
 }

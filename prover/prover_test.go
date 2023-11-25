@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -54,7 +55,6 @@ func (s *ProverTestSuite) SetupTest() {
 		L1ProverPrivKey:          l1ProverPrivKey,
 		GuardianProverPrivateKey: l1ProverPrivKey,
 		Dummy:                    true,
-		MaxConcurrentProvingJobs: 1,
 		ProveUnassignedBlocks:    true,
 		Capacity:                 1024,
 		MinOptimisticTierFee:     common.Big1,
@@ -63,6 +63,7 @@ func (s *ProverTestSuite) SetupTest() {
 		MinSgxAndPseZkevmTierFee: common.Big1,
 		HTTPServerPort:           uint64(port),
 		WaitReceiptTimeout:       12 * time.Second,
+		DatabasePath:             "",
 	})))
 	p.srv = testutils.NewTestProverServer(
 		&s.ClientTestSuite,
@@ -70,6 +71,8 @@ func (s *ProverTestSuite) SetupTest() {
 		p.capacityManager,
 		proverServerUrl,
 	)
+
+	p.db = memorydb.New()
 	s.p = p
 	s.cancel = cancel
 
@@ -102,6 +105,7 @@ func (s *ProverTestSuite) SetupTest() {
 		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
@@ -140,7 +144,6 @@ func (s *ProverTestSuite) TestInitError() {
 		L1ProverPrivKey:                   l1ProverPrivKey,
 		GuardianProverPrivateKey:          l1ProverPrivKey,
 		Dummy:                             true,
-		MaxConcurrentProvingJobs:          1,
 		ProveUnassignedBlocks:             true,
 		ProveBlockTxReplacementMultiplier: 2,
 	})), "dial tcp:")
@@ -296,7 +299,7 @@ func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
 		close(sink)
 	}()
 
-	e.AssignedProver = common.Address(testutils.RandomHash().Bytes())
+	e.AssignedProver = common.BytesToAddress(testutils.RandomHash().Bytes())
 	s.Nil(s.p.onProvingWindowExpired(context.Background(), e))
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 

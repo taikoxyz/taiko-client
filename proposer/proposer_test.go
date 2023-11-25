@@ -39,6 +39,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		TaikoL1Address:                      common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:                      common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		TaikoTokenAddress:                   common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		ProposeInterval:                     &proposeInterval,
 		MaxProposedTxListsPerEpoch:          1,
@@ -180,7 +181,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	signedAssignment, fee, err := s.p.proverSelector.AssignProver(
+	signedAssignment, proverAddress, fee, err := s.p.proverSelector.AssignProver(
 		context.Background(),
 		s.p.tierFees,
 		crypto.Keccak256Hash(encoded),
@@ -192,6 +193,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		encoded,
 		&nonce,
 		signedAssignment,
+		proverAddress,
 		fee,
 		true,
 	)
@@ -203,7 +205,7 @@ func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	_, fee, err := s.p.proverSelector.AssignProver(context.Background(), s.p.tierFees, testutils.RandomHash())
+	_, _, fee, err := s.p.proverSelector.AssignProver(context.Background(), s.p.tierFees, testutils.RandomHash())
 
 	s.Nil(err)
 	s.Equal(fee.Uint64(), s.p.cfg.OptimisticTierFee.Uint64())
