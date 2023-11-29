@@ -200,6 +200,6 @@ func (s *ClientTestSuite) SetL1Automine(automine bool) {
 
 func (s *ClientTestSuite) IncreaseTime(time uint64) {
 	var result uint64
-	s.RpcClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", time)
+	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", time))
 	s.NotNil(result)
 }
