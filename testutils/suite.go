@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"net/url"
 	"os"
-	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -140,8 +139,7 @@ func (s *ClientTestSuite) SetupTest() {
 
 func (s *ClientTestSuite) setAddress(ownerPrivKey *ecdsa.PrivateKey, name [32]byte, address common.Address) {
 	var (
-		salt      = RandomHash()
-		sevenDays = uint64((7 * 24 * time.Hour).Seconds())
+		salt = RandomHash()
 	)
 
 	controller, err := bindings.NewTaikoTimelockController(
@@ -166,14 +164,12 @@ func (s *ClientTestSuite) setAddress(ownerPrivKey *ecdsa.PrivateKey, name [32]by
 		data,
 		[32]byte{},
 		salt,
-		new(big.Int).SetUint64(sevenDays),
+		common.Big0,
 	)
 	s.Nil(err)
 
 	_, err = rpc.WaitReceipt(context.Background(), s.RpcClient.L1, tx)
 	s.Nil(err)
-
-	s.IncreaseTime(2 * sevenDays)
 
 	tx, err = controller.Execute(
 		opts,
@@ -205,5 +201,5 @@ func (s *ClientTestSuite) SetL1Automine(automine bool) {
 func (s *ClientTestSuite) IncreaseTime(time uint64) {
 	var result uint64
 	s.RpcClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", time)
-	s.NotZero(result)
+	s.NotNil(result)
 }

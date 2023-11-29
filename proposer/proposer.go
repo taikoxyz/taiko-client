@@ -370,21 +370,14 @@ func (p *Proposer) sendProposeBlockTx(
 		}
 	}
 
-	state, err := p.rpc.TaikoL1.State(&bind.CallOpts{
-		Context: ctx,
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
 	var parentMetaHash [32]byte = [32]byte{}
 	if p.cfg.IncludeParentMetaHash {
-		parent, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{
-			Context: ctx,
-		},
-			state.SlotB.NumBlocks-1,
-		)
+		state, err := p.rpc.TaikoL1.State(&bind.CallOpts{Context: ctx})
+		if err != nil {
+			return nil, err
+		}
+
+		parent, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, state.SlotB.NumBlocks-1)
 		if err != nil {
 			return nil, err
 		}
@@ -398,7 +391,7 @@ func (p *Proposer) sendProposeBlockTx(
 	// TODO: flag for additional hook addresses and data.
 	hookInputData, err := encoding.EncodeAssignmentHookInput(&encoding.AssignmentHookInput{
 		Assignment: assignment,
-		Tip:        big.NewInt(0), // TODO: flag for tip
+		Tip:        common.Big0, // TODO: flag for tip
 	})
 	if err != nil {
 		return nil, err
@@ -469,7 +462,7 @@ func (p *Proposer) ProposeTxList(
 				maxFee,
 				isReplacement,
 			); err != nil {
-				log.Warn("Failed to send propose block transaction", "error", encoding.TryParsingCustomError(err))
+				log.Warn("Failed to send taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				if strings.Contains(err.Error(), core.ErrNonceTooLow.Error()) {
 					return nil
 				}
