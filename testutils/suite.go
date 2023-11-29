@@ -153,29 +153,13 @@ func (s *ClientTestSuite) setAddress(ownerPrivKey *ecdsa.PrivateKey, name [32]by
 	opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, s.RpcClient.L1ChainID)
 	s.Nil(err)
 
-	proposerRole, err := controller.PROPOSERROLE(nil)
-	s.Nil(err)
-
-	executorRole, err := controller.EXECUTORROLE(nil)
-	s.Nil(err)
-
-	tx, err := controller.GrantRole(opts, proposerRole, crypto.PubkeyToAddress(ownerPrivKey.PublicKey))
-	s.Nil(err)
-	_, err = rpc.WaitReceipt(context.Background(), s.RpcClient.L1, tx)
-	s.Nil(err)
-
-	tx, err = controller.GrantRole(opts, executorRole, crypto.PubkeyToAddress(ownerPrivKey.PublicKey))
-	s.Nil(err)
-	_, err = rpc.WaitReceipt(context.Background(), s.RpcClient.L1, tx)
-	s.Nil(err)
-
 	addressManagerABI, err := bindings.AddressManagerMetaData.GetAbi()
 	s.Nil(err)
 
 	data, err := addressManagerABI.Pack("setAddress", s.RpcClient.L1ChainID.Uint64(), name, address)
 	s.Nil(err)
 
-	tx, err = controller.Schedule(
+	tx, err := controller.Schedule(
 		opts,
 		common.HexToAddress(os.Getenv("ADDRESS_MANAGER_CONTRACT_ADDRESS")),
 		common.Big0,
