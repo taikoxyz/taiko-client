@@ -37,7 +37,7 @@ type ERC20VotesUpgradeableCheckpoint struct {
 
 // TaikoTokenMetaData contains all meta data concerning the TaikoToken contract.
 var TaikoTokenMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"INVALID_PAUSE_STATUS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"REENTRANT_CALL\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_DENIED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_INVALID_MANAGER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_UNEXPECTED_CHAINID\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"}],\"name\":\"RESOLVER_ZERO_ADDR\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"TKO_INVALID_ADDR\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"TKO_INVALID_PREMINT_PARAMS\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"fromDelegate\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"toDelegate\",\"type\":\"address\"}],\"name\":\"DelegateChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"delegate\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"previousBalance\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newBalance\",\"type\":\"uint256\"}],\"name\":\"DelegateVotesChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferStarted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Paused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"Snapshot\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Unpaused\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"DOMAIN_SEPARATOR\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"acceptOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"snapshotId\",\"type\":\"uint256\"}],\"name\":\"balanceOfAt\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"burn\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint32\",\"name\":\"pos\",\"type\":\"uint32\"}],\"name\":\"checkpoints\",\"outputs\":[{\"components\":[{\"internalType\":\"uint32\",\"name\":\"fromBlock\",\"type\":\"uint32\"},{\"internalType\":\"uint224\",\"name\":\"votes\",\"type\":\"uint224\"}],\"internalType\":\"structERC20VotesUpgradeable.Checkpoint\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"subtractedValue\",\"type\":\"uint256\"}],\"name\":\"decreaseAllowance\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegatee\",\"type\":\"address\"}],\"name\":\"delegate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegatee\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"expiry\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"v\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"r\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"}],\"name\":\"delegateBySig\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"delegates\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockNumber\",\"type\":\"uint256\"}],\"name\":\"getPastTotalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"blockNumber\",\"type\":\"uint256\"}],\"name\":\"getPastVotes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"getVotes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"addedValue\",\"type\":\"uint256\"}],\"name\":\"increaseAllowance\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"_name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_symbol\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"_recipient\",\"type\":\"address\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"mint\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"nonces\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"numCheckpoints\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"paused\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pendingOwner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"deadline\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"v\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"r\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"}],\"name\":\"permit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"addr\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"addr\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"snapshot\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"snapshotId\",\"type\":\"uint256\"}],\"name\":\"totalSupplyAt\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"unpause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[],\"name\":\"INVALID_PAUSE_STATUS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"REENTRANT_CALL\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_DENIED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_INVALID_MANAGER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_UNEXPECTED_CHAINID\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"}],\"name\":\"RESOLVER_ZERO_ADDR\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"TKO_INVALID_ADDR\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"TKO_INVALID_PREMINT_PARAMS\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"previousAdmin\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"AdminChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"beacon\",\"type\":\"address\"}],\"name\":\"BeaconUpgraded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"fromDelegate\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"toDelegate\",\"type\":\"address\"}],\"name\":\"DelegateChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"delegate\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"previousBalance\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newBalance\",\"type\":\"uint256\"}],\"name\":\"DelegateVotesChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Paused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"Snapshot\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Unpaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"implementation\",\"type\":\"address\"}],\"name\":\"Upgraded\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"DOMAIN_SEPARATOR\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"snapshotId\",\"type\":\"uint256\"}],\"name\":\"balanceOfAt\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"burn\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint32\",\"name\":\"pos\",\"type\":\"uint32\"}],\"name\":\"checkpoints\",\"outputs\":[{\"components\":[{\"internalType\":\"uint32\",\"name\":\"fromBlock\",\"type\":\"uint32\"},{\"internalType\":\"uint224\",\"name\":\"votes\",\"type\":\"uint224\"}],\"internalType\":\"structERC20VotesUpgradeable.Checkpoint\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"subtractedValue\",\"type\":\"uint256\"}],\"name\":\"decreaseAllowance\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegatee\",\"type\":\"address\"}],\"name\":\"delegate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegatee\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"expiry\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"v\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"r\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"}],\"name\":\"delegateBySig\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"delegates\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockNumber\",\"type\":\"uint256\"}],\"name\":\"getPastTotalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"blockNumber\",\"type\":\"uint256\"}],\"name\":\"getPastVotes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"getVotes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"addedValue\",\"type\":\"uint256\"}],\"name\":\"increaseAllowance\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_symbol\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"_recipient\",\"type\":\"address\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"mint\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"nonces\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"numCheckpoints\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"paused\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"deadline\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"v\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"r\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"}],\"name\":\"permit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proxiableUUID\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"addr\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"addr\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"snapshot\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"snapshotId\",\"type\":\"uint256\"}],\"name\":\"totalSupplyAt\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"unpause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newImplementation\",\"type\":\"address\"}],\"name\":\"upgradeTo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newImplementation\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"upgradeToAndCall\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"}]",
 }
 
 // TaikoTokenABI is the input ABI used to generate the binding from.
@@ -682,35 +682,35 @@ func (_TaikoToken *TaikoTokenCallerSession) Paused() (bool, error) {
 	return _TaikoToken.Contract.Paused(&_TaikoToken.CallOpts)
 }
 
-// PendingOwner is a free data retrieval call binding the contract method 0xe30c3978.
+// ProxiableUUID is a free data retrieval call binding the contract method 0x52d1902d.
 //
-// Solidity: function pendingOwner() view returns(address)
-func (_TaikoToken *TaikoTokenCaller) PendingOwner(opts *bind.CallOpts) (common.Address, error) {
+// Solidity: function proxiableUUID() view returns(bytes32)
+func (_TaikoToken *TaikoTokenCaller) ProxiableUUID(opts *bind.CallOpts) ([32]byte, error) {
 	var out []interface{}
-	err := _TaikoToken.contract.Call(opts, &out, "pendingOwner")
+	err := _TaikoToken.contract.Call(opts, &out, "proxiableUUID")
 
 	if err != nil {
-		return *new(common.Address), err
+		return *new([32]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
 
 	return out0, err
 
 }
 
-// PendingOwner is a free data retrieval call binding the contract method 0xe30c3978.
+// ProxiableUUID is a free data retrieval call binding the contract method 0x52d1902d.
 //
-// Solidity: function pendingOwner() view returns(address)
-func (_TaikoToken *TaikoTokenSession) PendingOwner() (common.Address, error) {
-	return _TaikoToken.Contract.PendingOwner(&_TaikoToken.CallOpts)
+// Solidity: function proxiableUUID() view returns(bytes32)
+func (_TaikoToken *TaikoTokenSession) ProxiableUUID() ([32]byte, error) {
+	return _TaikoToken.Contract.ProxiableUUID(&_TaikoToken.CallOpts)
 }
 
-// PendingOwner is a free data retrieval call binding the contract method 0xe30c3978.
+// ProxiableUUID is a free data retrieval call binding the contract method 0x52d1902d.
 //
-// Solidity: function pendingOwner() view returns(address)
-func (_TaikoToken *TaikoTokenCallerSession) PendingOwner() (common.Address, error) {
-	return _TaikoToken.Contract.PendingOwner(&_TaikoToken.CallOpts)
+// Solidity: function proxiableUUID() view returns(bytes32)
+func (_TaikoToken *TaikoTokenCallerSession) ProxiableUUID() ([32]byte, error) {
+	return _TaikoToken.Contract.ProxiableUUID(&_TaikoToken.CallOpts)
 }
 
 // Resolve is a free data retrieval call binding the contract method 0x3eb6b8cf.
@@ -868,27 +868,6 @@ func (_TaikoToken *TaikoTokenCallerSession) TotalSupplyAt(snapshotId *big.Int) (
 	return _TaikoToken.Contract.TotalSupplyAt(&_TaikoToken.CallOpts, snapshotId)
 }
 
-// AcceptOwnership is a paid mutator transaction binding the contract method 0x79ba5097.
-//
-// Solidity: function acceptOwnership() returns()
-func (_TaikoToken *TaikoTokenTransactor) AcceptOwnership(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _TaikoToken.contract.Transact(opts, "acceptOwnership")
-}
-
-// AcceptOwnership is a paid mutator transaction binding the contract method 0x79ba5097.
-//
-// Solidity: function acceptOwnership() returns()
-func (_TaikoToken *TaikoTokenSession) AcceptOwnership() (*types.Transaction, error) {
-	return _TaikoToken.Contract.AcceptOwnership(&_TaikoToken.TransactOpts)
-}
-
-// AcceptOwnership is a paid mutator transaction binding the contract method 0x79ba5097.
-//
-// Solidity: function acceptOwnership() returns()
-func (_TaikoToken *TaikoTokenTransactorSession) AcceptOwnership() (*types.Transaction, error) {
-	return _TaikoToken.Contract.AcceptOwnership(&_TaikoToken.TransactOpts)
-}
-
 // Approve is a paid mutator transaction binding the contract method 0x095ea7b3.
 //
 // Solidity: function approve(address spender, uint256 amount) returns(bool)
@@ -1015,25 +994,25 @@ func (_TaikoToken *TaikoTokenTransactorSession) IncreaseAllowance(spender common
 	return _TaikoToken.Contract.IncreaseAllowance(&_TaikoToken.TransactOpts, spender, addedValue)
 }
 
-// Init is a paid mutator transaction binding the contract method 0xef2423fa.
+// Init is a paid mutator transaction binding the contract method 0x6ee5741a.
 //
-// Solidity: function init(address _addressManager, string _name, string _symbol, address _recipient) returns()
-func (_TaikoToken *TaikoTokenTransactor) Init(opts *bind.TransactOpts, _addressManager common.Address, _name string, _symbol string, _recipient common.Address) (*types.Transaction, error) {
-	return _TaikoToken.contract.Transact(opts, "init", _addressManager, _name, _symbol, _recipient)
+// Solidity: function init(string _name, string _symbol, address _recipient) returns()
+func (_TaikoToken *TaikoTokenTransactor) Init(opts *bind.TransactOpts, _name string, _symbol string, _recipient common.Address) (*types.Transaction, error) {
+	return _TaikoToken.contract.Transact(opts, "init", _name, _symbol, _recipient)
 }
 
-// Init is a paid mutator transaction binding the contract method 0xef2423fa.
+// Init is a paid mutator transaction binding the contract method 0x6ee5741a.
 //
-// Solidity: function init(address _addressManager, string _name, string _symbol, address _recipient) returns()
-func (_TaikoToken *TaikoTokenSession) Init(_addressManager common.Address, _name string, _symbol string, _recipient common.Address) (*types.Transaction, error) {
-	return _TaikoToken.Contract.Init(&_TaikoToken.TransactOpts, _addressManager, _name, _symbol, _recipient)
+// Solidity: function init(string _name, string _symbol, address _recipient) returns()
+func (_TaikoToken *TaikoTokenSession) Init(_name string, _symbol string, _recipient common.Address) (*types.Transaction, error) {
+	return _TaikoToken.Contract.Init(&_TaikoToken.TransactOpts, _name, _symbol, _recipient)
 }
 
-// Init is a paid mutator transaction binding the contract method 0xef2423fa.
+// Init is a paid mutator transaction binding the contract method 0x6ee5741a.
 //
-// Solidity: function init(address _addressManager, string _name, string _symbol, address _recipient) returns()
-func (_TaikoToken *TaikoTokenTransactorSession) Init(_addressManager common.Address, _name string, _symbol string, _recipient common.Address) (*types.Transaction, error) {
-	return _TaikoToken.Contract.Init(&_TaikoToken.TransactOpts, _addressManager, _name, _symbol, _recipient)
+// Solidity: function init(string _name, string _symbol, address _recipient) returns()
+func (_TaikoToken *TaikoTokenTransactorSession) Init(_name string, _symbol string, _recipient common.Address) (*types.Transaction, error) {
+	return _TaikoToken.Contract.Init(&_TaikoToken.TransactOpts, _name, _symbol, _recipient)
 }
 
 // Mint is a paid mutator transaction binding the contract method 0x40c10f19.
@@ -1225,6 +1204,183 @@ func (_TaikoToken *TaikoTokenTransactorSession) Unpause() (*types.Transaction, e
 	return _TaikoToken.Contract.Unpause(&_TaikoToken.TransactOpts)
 }
 
+// UpgradeTo is a paid mutator transaction binding the contract method 0x3659cfe6.
+//
+// Solidity: function upgradeTo(address newImplementation) returns()
+func (_TaikoToken *TaikoTokenTransactor) UpgradeTo(opts *bind.TransactOpts, newImplementation common.Address) (*types.Transaction, error) {
+	return _TaikoToken.contract.Transact(opts, "upgradeTo", newImplementation)
+}
+
+// UpgradeTo is a paid mutator transaction binding the contract method 0x3659cfe6.
+//
+// Solidity: function upgradeTo(address newImplementation) returns()
+func (_TaikoToken *TaikoTokenSession) UpgradeTo(newImplementation common.Address) (*types.Transaction, error) {
+	return _TaikoToken.Contract.UpgradeTo(&_TaikoToken.TransactOpts, newImplementation)
+}
+
+// UpgradeTo is a paid mutator transaction binding the contract method 0x3659cfe6.
+//
+// Solidity: function upgradeTo(address newImplementation) returns()
+func (_TaikoToken *TaikoTokenTransactorSession) UpgradeTo(newImplementation common.Address) (*types.Transaction, error) {
+	return _TaikoToken.Contract.UpgradeTo(&_TaikoToken.TransactOpts, newImplementation)
+}
+
+// UpgradeToAndCall is a paid mutator transaction binding the contract method 0x4f1ef286.
+//
+// Solidity: function upgradeToAndCall(address newImplementation, bytes data) payable returns()
+func (_TaikoToken *TaikoTokenTransactor) UpgradeToAndCall(opts *bind.TransactOpts, newImplementation common.Address, data []byte) (*types.Transaction, error) {
+	return _TaikoToken.contract.Transact(opts, "upgradeToAndCall", newImplementation, data)
+}
+
+// UpgradeToAndCall is a paid mutator transaction binding the contract method 0x4f1ef286.
+//
+// Solidity: function upgradeToAndCall(address newImplementation, bytes data) payable returns()
+func (_TaikoToken *TaikoTokenSession) UpgradeToAndCall(newImplementation common.Address, data []byte) (*types.Transaction, error) {
+	return _TaikoToken.Contract.UpgradeToAndCall(&_TaikoToken.TransactOpts, newImplementation, data)
+}
+
+// UpgradeToAndCall is a paid mutator transaction binding the contract method 0x4f1ef286.
+//
+// Solidity: function upgradeToAndCall(address newImplementation, bytes data) payable returns()
+func (_TaikoToken *TaikoTokenTransactorSession) UpgradeToAndCall(newImplementation common.Address, data []byte) (*types.Transaction, error) {
+	return _TaikoToken.Contract.UpgradeToAndCall(&_TaikoToken.TransactOpts, newImplementation, data)
+}
+
+// TaikoTokenAdminChangedIterator is returned from FilterAdminChanged and is used to iterate over the raw logs and unpacked data for AdminChanged events raised by the TaikoToken contract.
+type TaikoTokenAdminChangedIterator struct {
+	Event *TaikoTokenAdminChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoTokenAdminChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoTokenAdminChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoTokenAdminChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoTokenAdminChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoTokenAdminChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoTokenAdminChanged represents a AdminChanged event raised by the TaikoToken contract.
+type TaikoTokenAdminChanged struct {
+	PreviousAdmin common.Address
+	NewAdmin      common.Address
+	Raw           types.Log // Blockchain specific contextual infos
+}
+
+// FilterAdminChanged is a free log retrieval operation binding the contract event 0x7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f.
+//
+// Solidity: event AdminChanged(address previousAdmin, address newAdmin)
+func (_TaikoToken *TaikoTokenFilterer) FilterAdminChanged(opts *bind.FilterOpts) (*TaikoTokenAdminChangedIterator, error) {
+
+	logs, sub, err := _TaikoToken.contract.FilterLogs(opts, "AdminChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoTokenAdminChangedIterator{contract: _TaikoToken.contract, event: "AdminChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchAdminChanged is a free log subscription operation binding the contract event 0x7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f.
+//
+// Solidity: event AdminChanged(address previousAdmin, address newAdmin)
+func (_TaikoToken *TaikoTokenFilterer) WatchAdminChanged(opts *bind.WatchOpts, sink chan<- *TaikoTokenAdminChanged) (event.Subscription, error) {
+
+	logs, sub, err := _TaikoToken.contract.WatchLogs(opts, "AdminChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoTokenAdminChanged)
+				if err := _TaikoToken.contract.UnpackLog(event, "AdminChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseAdminChanged is a log parse operation binding the contract event 0x7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f.
+//
+// Solidity: event AdminChanged(address previousAdmin, address newAdmin)
+func (_TaikoToken *TaikoTokenFilterer) ParseAdminChanged(log types.Log) (*TaikoTokenAdminChanged, error) {
+	event := new(TaikoTokenAdminChanged)
+	if err := _TaikoToken.contract.UnpackLog(event, "AdminChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // TaikoTokenApprovalIterator is returned from FilterApproval and is used to iterate over the raw logs and unpacked data for Approval events raised by the TaikoToken contract.
 type TaikoTokenApprovalIterator struct {
 	Event *TaikoTokenApproval // Event containing the contract specifics and raw log
@@ -1373,6 +1529,150 @@ func (_TaikoToken *TaikoTokenFilterer) WatchApproval(opts *bind.WatchOpts, sink 
 func (_TaikoToken *TaikoTokenFilterer) ParseApproval(log types.Log) (*TaikoTokenApproval, error) {
 	event := new(TaikoTokenApproval)
 	if err := _TaikoToken.contract.UnpackLog(event, "Approval", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoTokenBeaconUpgradedIterator is returned from FilterBeaconUpgraded and is used to iterate over the raw logs and unpacked data for BeaconUpgraded events raised by the TaikoToken contract.
+type TaikoTokenBeaconUpgradedIterator struct {
+	Event *TaikoTokenBeaconUpgraded // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoTokenBeaconUpgradedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoTokenBeaconUpgraded)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoTokenBeaconUpgraded)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoTokenBeaconUpgradedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoTokenBeaconUpgradedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoTokenBeaconUpgraded represents a BeaconUpgraded event raised by the TaikoToken contract.
+type TaikoTokenBeaconUpgraded struct {
+	Beacon common.Address
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterBeaconUpgraded is a free log retrieval operation binding the contract event 0x1cf3b03a6cf19fa2baba4df148e9dcabedea7f8a5c07840e207e5c089be95d3e.
+//
+// Solidity: event BeaconUpgraded(address indexed beacon)
+func (_TaikoToken *TaikoTokenFilterer) FilterBeaconUpgraded(opts *bind.FilterOpts, beacon []common.Address) (*TaikoTokenBeaconUpgradedIterator, error) {
+
+	var beaconRule []interface{}
+	for _, beaconItem := range beacon {
+		beaconRule = append(beaconRule, beaconItem)
+	}
+
+	logs, sub, err := _TaikoToken.contract.FilterLogs(opts, "BeaconUpgraded", beaconRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoTokenBeaconUpgradedIterator{contract: _TaikoToken.contract, event: "BeaconUpgraded", logs: logs, sub: sub}, nil
+}
+
+// WatchBeaconUpgraded is a free log subscription operation binding the contract event 0x1cf3b03a6cf19fa2baba4df148e9dcabedea7f8a5c07840e207e5c089be95d3e.
+//
+// Solidity: event BeaconUpgraded(address indexed beacon)
+func (_TaikoToken *TaikoTokenFilterer) WatchBeaconUpgraded(opts *bind.WatchOpts, sink chan<- *TaikoTokenBeaconUpgraded, beacon []common.Address) (event.Subscription, error) {
+
+	var beaconRule []interface{}
+	for _, beaconItem := range beacon {
+		beaconRule = append(beaconRule, beaconItem)
+	}
+
+	logs, sub, err := _TaikoToken.contract.WatchLogs(opts, "BeaconUpgraded", beaconRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoTokenBeaconUpgraded)
+				if err := _TaikoToken.contract.UnpackLog(event, "BeaconUpgraded", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseBeaconUpgraded is a log parse operation binding the contract event 0x1cf3b03a6cf19fa2baba4df148e9dcabedea7f8a5c07840e207e5c089be95d3e.
+//
+// Solidity: event BeaconUpgraded(address indexed beacon)
+func (_TaikoToken *TaikoTokenFilterer) ParseBeaconUpgraded(log types.Log) (*TaikoTokenBeaconUpgraded, error) {
+	event := new(TaikoTokenBeaconUpgraded)
+	if err := _TaikoToken.contract.UnpackLog(event, "BeaconUpgraded", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1815,159 +2115,6 @@ func (_TaikoToken *TaikoTokenFilterer) WatchInitialized(opts *bind.WatchOpts, si
 func (_TaikoToken *TaikoTokenFilterer) ParseInitialized(log types.Log) (*TaikoTokenInitialized, error) {
 	event := new(TaikoTokenInitialized)
 	if err := _TaikoToken.contract.UnpackLog(event, "Initialized", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// TaikoTokenOwnershipTransferStartedIterator is returned from FilterOwnershipTransferStarted and is used to iterate over the raw logs and unpacked data for OwnershipTransferStarted events raised by the TaikoToken contract.
-type TaikoTokenOwnershipTransferStartedIterator struct {
-	Event *TaikoTokenOwnershipTransferStarted // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *TaikoTokenOwnershipTransferStartedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(TaikoTokenOwnershipTransferStarted)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(TaikoTokenOwnershipTransferStarted)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *TaikoTokenOwnershipTransferStartedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *TaikoTokenOwnershipTransferStartedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// TaikoTokenOwnershipTransferStarted represents a OwnershipTransferStarted event raised by the TaikoToken contract.
-type TaikoTokenOwnershipTransferStarted struct {
-	PreviousOwner common.Address
-	NewOwner      common.Address
-	Raw           types.Log // Blockchain specific contextual infos
-}
-
-// FilterOwnershipTransferStarted is a free log retrieval operation binding the contract event 0x38d16b8cac22d99fc7c124b9cd0de2d3fa1faef420bfe791d8c362d765e22700.
-//
-// Solidity: event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner)
-func (_TaikoToken *TaikoTokenFilterer) FilterOwnershipTransferStarted(opts *bind.FilterOpts, previousOwner []common.Address, newOwner []common.Address) (*TaikoTokenOwnershipTransferStartedIterator, error) {
-
-	var previousOwnerRule []interface{}
-	for _, previousOwnerItem := range previousOwner {
-		previousOwnerRule = append(previousOwnerRule, previousOwnerItem)
-	}
-	var newOwnerRule []interface{}
-	for _, newOwnerItem := range newOwner {
-		newOwnerRule = append(newOwnerRule, newOwnerItem)
-	}
-
-	logs, sub, err := _TaikoToken.contract.FilterLogs(opts, "OwnershipTransferStarted", previousOwnerRule, newOwnerRule)
-	if err != nil {
-		return nil, err
-	}
-	return &TaikoTokenOwnershipTransferStartedIterator{contract: _TaikoToken.contract, event: "OwnershipTransferStarted", logs: logs, sub: sub}, nil
-}
-
-// WatchOwnershipTransferStarted is a free log subscription operation binding the contract event 0x38d16b8cac22d99fc7c124b9cd0de2d3fa1faef420bfe791d8c362d765e22700.
-//
-// Solidity: event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner)
-func (_TaikoToken *TaikoTokenFilterer) WatchOwnershipTransferStarted(opts *bind.WatchOpts, sink chan<- *TaikoTokenOwnershipTransferStarted, previousOwner []common.Address, newOwner []common.Address) (event.Subscription, error) {
-
-	var previousOwnerRule []interface{}
-	for _, previousOwnerItem := range previousOwner {
-		previousOwnerRule = append(previousOwnerRule, previousOwnerItem)
-	}
-	var newOwnerRule []interface{}
-	for _, newOwnerItem := range newOwner {
-		newOwnerRule = append(newOwnerRule, newOwnerItem)
-	}
-
-	logs, sub, err := _TaikoToken.contract.WatchLogs(opts, "OwnershipTransferStarted", previousOwnerRule, newOwnerRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(TaikoTokenOwnershipTransferStarted)
-				if err := _TaikoToken.contract.UnpackLog(event, "OwnershipTransferStarted", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseOwnershipTransferStarted is a log parse operation binding the contract event 0x38d16b8cac22d99fc7c124b9cd0de2d3fa1faef420bfe791d8c362d765e22700.
-//
-// Solidity: event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner)
-func (_TaikoToken *TaikoTokenFilterer) ParseOwnershipTransferStarted(log types.Log) (*TaikoTokenOwnershipTransferStarted, error) {
-	event := new(TaikoTokenOwnershipTransferStarted)
-	if err := _TaikoToken.contract.UnpackLog(event, "OwnershipTransferStarted", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -2677,6 +2824,150 @@ func (_TaikoToken *TaikoTokenFilterer) WatchUnpaused(opts *bind.WatchOpts, sink 
 func (_TaikoToken *TaikoTokenFilterer) ParseUnpaused(log types.Log) (*TaikoTokenUnpaused, error) {
 	event := new(TaikoTokenUnpaused)
 	if err := _TaikoToken.contract.UnpackLog(event, "Unpaused", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaikoTokenUpgradedIterator is returned from FilterUpgraded and is used to iterate over the raw logs and unpacked data for Upgraded events raised by the TaikoToken contract.
+type TaikoTokenUpgradedIterator struct {
+	Event *TaikoTokenUpgraded // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaikoTokenUpgradedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaikoTokenUpgraded)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaikoTokenUpgraded)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaikoTokenUpgradedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaikoTokenUpgradedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaikoTokenUpgraded represents a Upgraded event raised by the TaikoToken contract.
+type TaikoTokenUpgraded struct {
+	Implementation common.Address
+	Raw            types.Log // Blockchain specific contextual infos
+}
+
+// FilterUpgraded is a free log retrieval operation binding the contract event 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b.
+//
+// Solidity: event Upgraded(address indexed implementation)
+func (_TaikoToken *TaikoTokenFilterer) FilterUpgraded(opts *bind.FilterOpts, implementation []common.Address) (*TaikoTokenUpgradedIterator, error) {
+
+	var implementationRule []interface{}
+	for _, implementationItem := range implementation {
+		implementationRule = append(implementationRule, implementationItem)
+	}
+
+	logs, sub, err := _TaikoToken.contract.FilterLogs(opts, "Upgraded", implementationRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TaikoTokenUpgradedIterator{contract: _TaikoToken.contract, event: "Upgraded", logs: logs, sub: sub}, nil
+}
+
+// WatchUpgraded is a free log subscription operation binding the contract event 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b.
+//
+// Solidity: event Upgraded(address indexed implementation)
+func (_TaikoToken *TaikoTokenFilterer) WatchUpgraded(opts *bind.WatchOpts, sink chan<- *TaikoTokenUpgraded, implementation []common.Address) (event.Subscription, error) {
+
+	var implementationRule []interface{}
+	for _, implementationItem := range implementation {
+		implementationRule = append(implementationRule, implementationItem)
+	}
+
+	logs, sub, err := _TaikoToken.contract.WatchLogs(opts, "Upgraded", implementationRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaikoTokenUpgraded)
+				if err := _TaikoToken.contract.UnpackLog(event, "Upgraded", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseUpgraded is a log parse operation binding the contract event 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b.
+//
+// Solidity: event Upgraded(address indexed implementation)
+func (_TaikoToken *TaikoTokenFilterer) ParseUpgraded(log types.Log) (*TaikoTokenUpgraded, error) {
+	event := new(TaikoTokenUpgraded)
+	if err := _TaikoToken.contract.UnpackLog(event, "Upgraded", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

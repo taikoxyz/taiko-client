@@ -88,34 +88,12 @@ func (s *ClientTestSuite) SetupTest() {
 
 	if allowance.Cmp(common.Big0) == 0 {
 		// Do not verify zk && sgx proofs in tests.
-		addressManager, err := bindings.NewAddressManager(
-			common.HexToAddress(os.Getenv("ADDRESS_MANAGER_CONTRACT_ADDRESS")),
-			rpcCli.L1,
-		)
+		securityConcilPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_SECURITY_COUNCIL_PRIVATE_KEY")))
 		s.Nil(err)
-
-		chainID, err := rpcCli.L1.ChainID(context.Background())
-		s.Nil(err)
+		s.setAddress(securityConcilPrivKey, rpc.StringToBytes32("tier_sgx_and_pse_zkevm"), common.Address{})
+		s.setAddress(securityConcilPrivKey, rpc.StringToBytes32("tier_sgx"), common.Address{})
 
 		ownerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
-		s.Nil(err)
-
-		opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1ChainID)
-		s.Nil(err)
-
-		tx, err := addressManager.SetAddress(
-			opts,
-			chainID.Uint64(),
-			rpc.StringToBytes32("tier_sgx_and_pse_zkevm"),
-			common.Address{},
-		)
-		s.Nil(err)
-		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
-		s.Nil(err)
-
-		tx, err = addressManager.SetAddress(opts, chainID.Uint64(), rpc.StringToBytes32("tier_sgx"), common.Address{})
-		s.Nil(err)
-		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)
 
 		// Transfer some tokens to provers.
@@ -123,14 +101,11 @@ func (s *ClientTestSuite) SetupTest() {
 		s.Nil(err)
 		s.Greater(balance.Cmp(common.Big0), 0)
 
-		opts, err = bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1ChainID)
+		opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1ChainID)
 		s.Nil(err)
 		proverBalance := new(big.Int).Div(balance, common.Big2)
 		if proverBalance.Cmp(common.Big0) == 1 {
-			tx, err = rpcCli.TaikoToken.Transfer(
-				opts,
-				crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), proverBalance,
-			)
+			tx, err := rpcCli.TaikoToken.Transfer(opts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), proverBalance)
 			s.Nil(err)
 			_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 			s.Nil(err)
@@ -162,6 +137,54 @@ func (s *ClientTestSuite) SetupTest() {
 	s.NotEmpty(s.testnetL1SnapshotID)
 }
 
+func (s *ClientTestSuite) setAddress(ownerPrivKey *ecdsa.PrivateKey, name [32]byte, address common.Address) {
+	var (
+		salt = RandomHash()
+	)
+
+	controller, err := bindings.NewTaikoTimelockController(
+		common.HexToAddress(os.Getenv("TIMELOCK_CONTROLLER")),
+		s.RpcClient.L1,
+	)
+	s.Nil(err)
+
+	opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, s.RpcClient.L1ChainID)
+	s.Nil(err)
+
+	addressManagerABI, err := bindings.AddressManagerMetaData.GetAbi()
+	s.Nil(err)
+
+	data, err := addressManagerABI.Pack("setAddress", s.RpcClient.L1ChainID.Uint64(), name, address)
+	s.Nil(err)
+
+	tx, err := controller.Schedule(
+		opts,
+		common.HexToAddress(os.Getenv("ADDRESS_MANAGER_CONTRACT_ADDRESS")),
+		common.Big0,
+		data,
+		[32]byte{},
+		salt,
+		common.Big0,
+	)
+	s.Nil(err)
+
+	_, err = rpc.WaitReceipt(context.Background(), s.RpcClient.L1, tx)
+	s.Nil(err)
+
+	tx, err = controller.Execute(
+		opts,
+		common.HexToAddress(os.Getenv("ADDRESS_MANAGER_CONTRACT_ADDRESS")),
+		common.Big0,
+		data,
+		[32]byte{},
+		salt,
+	)
+	s.Nil(err)
+
+	_, err = rpc.WaitReceipt(context.Background(), s.RpcClient.L1, tx)
+	s.Nil(err)
+}
+
 func (s *ClientTestSuite) TearDownTest() {
 	var revertRes bool
 	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", s.testnetL1SnapshotID))
@@ -173,4 +196,10 @@ func (s *ClientTestSuite) TearDownTest() {
 
 func (s *ClientTestSuite) SetL1Automine(automine bool) {
 	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), nil, "evm_setAutomine", automine))
+}
+
+func (s *ClientTestSuite) IncreaseTime(time uint64) {
+	var result uint64
+	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", time))
+	s.NotNil(result)
 }

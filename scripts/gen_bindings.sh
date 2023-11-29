@@ -51,6 +51,10 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/out/AssignmentHook.sol/AssignmentHook.js
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type AssignmentHook --pkg bindings --out $DIR/../bindings/gen_assignment_hook.go
 
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoTimelockController.sol/TaikoTimelockController.json |
+	jq .abi |
+	${ABIGEN_BIN} --abi - --type TaikoTimelockController --pkg bindings --out $DIR/../bindings/gen_taiko_timelock_controller.go
+
 git -C ${TAIKO_MONO_DIR} log --format="%H" -n 1 >./bindings/.githead
 
 echo "🍻 Go contract bindings generated!"

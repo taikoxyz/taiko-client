@@ -45,7 +45,7 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
-          ref: update_relayer_eventindexer_post_hooks
+          ref: based_contestable_zkrollup_improved
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1

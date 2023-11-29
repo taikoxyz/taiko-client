@@ -107,15 +107,7 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	log.Info("LatestVerifiedBlock number", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
 
 	// increase evm time to make blocks verifiable.
-	var result uint64
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(
-		context.Background(),
-		&result,
-		"evm_increaseTime",
-		(1024 * time.Hour).Seconds(),
-	))
-	s.NotNil(result)
-	log.Info("EVM time increase", "number", result)
+	s.IncreaseTime(uint64((1024 * time.Hour).Seconds()))
 
 	// interact with TaikoL1 contract to allow for verification of L2 blocks
 	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, uint64(3))

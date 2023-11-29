@@ -31,7 +31,7 @@ var (
 
 // AddressManagerMetaData contains all meta data concerning the AddressManager contract.
 var AddressManagerMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"oldAddress\",\"type\":\"address\"}],\"name\":\"AddressSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferStarted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"acceptOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"}],\"name\":\"getAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pendingOwner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"newAddress\",\"type\":\"address\"}],\"name\":\"setAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[],\"name\":\"INVALID_PAUSE_STATUS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"REENTRANT_CALL\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"oldAddress\",\"type\":\"address\"}],\"name\":\"AddressSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"previousAdmin\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"AdminChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"beacon\",\"type\":\"address\"}],\"name\":\"BeaconUpgraded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Paused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Unpaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"implementation\",\"type\":\"address\"}],\"name\":\"Upgraded\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"}],\"name\":\"getAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"paused\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proxiableUUID\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"newAddress\",\"type\":\"address\"}],\"name\":\"setAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"unpause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newImplementation\",\"type\":\"address\"}],\"name\":\"upgradeTo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newImplementation\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"upgradeToAndCall\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"}]",
 }
 
 // AddressManagerABI is the input ABI used to generate the binding from.
@@ -242,56 +242,66 @@ func (_AddressManager *AddressManagerCallerSession) Owner() (common.Address, err
 	return _AddressManager.Contract.Owner(&_AddressManager.CallOpts)
 }
 
-// PendingOwner is a free data retrieval call binding the contract method 0xe30c3978.
+// Paused is a free data retrieval call binding the contract method 0x5c975abb.
 //
-// Solidity: function pendingOwner() view returns(address)
-func (_AddressManager *AddressManagerCaller) PendingOwner(opts *bind.CallOpts) (common.Address, error) {
+// Solidity: function paused() view returns(bool)
+func (_AddressManager *AddressManagerCaller) Paused(opts *bind.CallOpts) (bool, error) {
 	var out []interface{}
-	err := _AddressManager.contract.Call(opts, &out, "pendingOwner")
+	err := _AddressManager.contract.Call(opts, &out, "paused")
 
 	if err != nil {
-		return *new(common.Address), err
+		return *new(bool), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
 
 	return out0, err
 
 }
 
-// PendingOwner is a free data retrieval call binding the contract method 0xe30c3978.
+// Paused is a free data retrieval call binding the contract method 0x5c975abb.
 //
-// Solidity: function pendingOwner() view returns(address)
-func (_AddressManager *AddressManagerSession) PendingOwner() (common.Address, error) {
-	return _AddressManager.Contract.PendingOwner(&_AddressManager.CallOpts)
+// Solidity: function paused() view returns(bool)
+func (_AddressManager *AddressManagerSession) Paused() (bool, error) {
+	return _AddressManager.Contract.Paused(&_AddressManager.CallOpts)
 }
 
-// PendingOwner is a free data retrieval call binding the contract method 0xe30c3978.
+// Paused is a free data retrieval call binding the contract method 0x5c975abb.
 //
-// Solidity: function pendingOwner() view returns(address)
-func (_AddressManager *AddressManagerCallerSession) PendingOwner() (common.Address, error) {
-	return _AddressManager.Contract.PendingOwner(&_AddressManager.CallOpts)
+// Solidity: function paused() view returns(bool)
+func (_AddressManager *AddressManagerCallerSession) Paused() (bool, error) {
+	return _AddressManager.Contract.Paused(&_AddressManager.CallOpts)
 }
 
-// AcceptOwnership is a paid mutator transaction binding the contract method 0x79ba5097.
+// ProxiableUUID is a free data retrieval call binding the contract method 0x52d1902d.
 //
-// Solidity: function acceptOwnership() returns()
-func (_AddressManager *AddressManagerTransactor) AcceptOwnership(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _AddressManager.contract.Transact(opts, "acceptOwnership")
+// Solidity: function proxiableUUID() view returns(bytes32)
+func (_AddressManager *AddressManagerCaller) ProxiableUUID(opts *bind.CallOpts) ([32]byte, error) {
+	var out []interface{}
+	err := _AddressManager.contract.Call(opts, &out, "proxiableUUID")
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
 }
 
-// AcceptOwnership is a paid mutator transaction binding the contract method 0x79ba5097.
+// ProxiableUUID is a free data retrieval call binding the contract method 0x52d1902d.
 //
-// Solidity: function acceptOwnership() returns()
-func (_AddressManager *AddressManagerSession) AcceptOwnership() (*types.Transaction, error) {
-	return _AddressManager.Contract.AcceptOwnership(&_AddressManager.TransactOpts)
+// Solidity: function proxiableUUID() view returns(bytes32)
+func (_AddressManager *AddressManagerSession) ProxiableUUID() ([32]byte, error) {
+	return _AddressManager.Contract.ProxiableUUID(&_AddressManager.CallOpts)
 }
 
-// AcceptOwnership is a paid mutator transaction binding the contract method 0x79ba5097.
+// ProxiableUUID is a free data retrieval call binding the contract method 0x52d1902d.
 //
-// Solidity: function acceptOwnership() returns()
-func (_AddressManager *AddressManagerTransactorSession) AcceptOwnership() (*types.Transaction, error) {
-	return _AddressManager.Contract.AcceptOwnership(&_AddressManager.TransactOpts)
+// Solidity: function proxiableUUID() view returns(bytes32)
+func (_AddressManager *AddressManagerCallerSession) ProxiableUUID() ([32]byte, error) {
+	return _AddressManager.Contract.ProxiableUUID(&_AddressManager.CallOpts)
 }
 
 // Init is a paid mutator transaction binding the contract method 0xe1c7392a.
@@ -313,6 +323,27 @@ func (_AddressManager *AddressManagerSession) Init() (*types.Transaction, error)
 // Solidity: function init() returns()
 func (_AddressManager *AddressManagerTransactorSession) Init() (*types.Transaction, error) {
 	return _AddressManager.Contract.Init(&_AddressManager.TransactOpts)
+}
+
+// Pause is a paid mutator transaction binding the contract method 0x8456cb59.
+//
+// Solidity: function pause() returns()
+func (_AddressManager *AddressManagerTransactor) Pause(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _AddressManager.contract.Transact(opts, "pause")
+}
+
+// Pause is a paid mutator transaction binding the contract method 0x8456cb59.
+//
+// Solidity: function pause() returns()
+func (_AddressManager *AddressManagerSession) Pause() (*types.Transaction, error) {
+	return _AddressManager.Contract.Pause(&_AddressManager.TransactOpts)
+}
+
+// Pause is a paid mutator transaction binding the contract method 0x8456cb59.
+//
+// Solidity: function pause() returns()
+func (_AddressManager *AddressManagerTransactorSession) Pause() (*types.Transaction, error) {
+	return _AddressManager.Contract.Pause(&_AddressManager.TransactOpts)
 }
 
 // RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
@@ -376,6 +407,69 @@ func (_AddressManager *AddressManagerSession) TransferOwnership(newOwner common.
 // Solidity: function transferOwnership(address newOwner) returns()
 func (_AddressManager *AddressManagerTransactorSession) TransferOwnership(newOwner common.Address) (*types.Transaction, error) {
 	return _AddressManager.Contract.TransferOwnership(&_AddressManager.TransactOpts, newOwner)
+}
+
+// Unpause is a paid mutator transaction binding the contract method 0x3f4ba83a.
+//
+// Solidity: function unpause() returns()
+func (_AddressManager *AddressManagerTransactor) Unpause(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _AddressManager.contract.Transact(opts, "unpause")
+}
+
+// Unpause is a paid mutator transaction binding the contract method 0x3f4ba83a.
+//
+// Solidity: function unpause() returns()
+func (_AddressManager *AddressManagerSession) Unpause() (*types.Transaction, error) {
+	return _AddressManager.Contract.Unpause(&_AddressManager.TransactOpts)
+}
+
+// Unpause is a paid mutator transaction binding the contract method 0x3f4ba83a.
+//
+// Solidity: function unpause() returns()
+func (_AddressManager *AddressManagerTransactorSession) Unpause() (*types.Transaction, error) {
+	return _AddressManager.Contract.Unpause(&_AddressManager.TransactOpts)
+}
+
+// UpgradeTo is a paid mutator transaction binding the contract method 0x3659cfe6.
+//
+// Solidity: function upgradeTo(address newImplementation) returns()
+func (_AddressManager *AddressManagerTransactor) UpgradeTo(opts *bind.TransactOpts, newImplementation common.Address) (*types.Transaction, error) {
+	return _AddressManager.contract.Transact(opts, "upgradeTo", newImplementation)
+}
+
+// UpgradeTo is a paid mutator transaction binding the contract method 0x3659cfe6.
+//
+// Solidity: function upgradeTo(address newImplementation) returns()
+func (_AddressManager *AddressManagerSession) UpgradeTo(newImplementation common.Address) (*types.Transaction, error) {
+	return _AddressManager.Contract.UpgradeTo(&_AddressManager.TransactOpts, newImplementation)
+}
+
+// UpgradeTo is a paid mutator transaction binding the contract method 0x3659cfe6.
+//
+// Solidity: function upgradeTo(address newImplementation) returns()
+func (_AddressManager *AddressManagerTransactorSession) UpgradeTo(newImplementation common.Address) (*types.Transaction, error) {
+	return _AddressManager.Contract.UpgradeTo(&_AddressManager.TransactOpts, newImplementation)
+}
+
+// UpgradeToAndCall is a paid mutator transaction binding the contract method 0x4f1ef286.
+//
+// Solidity: function upgradeToAndCall(address newImplementation, bytes data) payable returns()
+func (_AddressManager *AddressManagerTransactor) UpgradeToAndCall(opts *bind.TransactOpts, newImplementation common.Address, data []byte) (*types.Transaction, error) {
+	return _AddressManager.contract.Transact(opts, "upgradeToAndCall", newImplementation, data)
+}
+
+// UpgradeToAndCall is a paid mutator transaction binding the contract method 0x4f1ef286.
+//
+// Solidity: function upgradeToAndCall(address newImplementation, bytes data) payable returns()
+func (_AddressManager *AddressManagerSession) UpgradeToAndCall(newImplementation common.Address, data []byte) (*types.Transaction, error) {
+	return _AddressManager.Contract.UpgradeToAndCall(&_AddressManager.TransactOpts, newImplementation, data)
+}
+
+// UpgradeToAndCall is a paid mutator transaction binding the contract method 0x4f1ef286.
+//
+// Solidity: function upgradeToAndCall(address newImplementation, bytes data) payable returns()
+func (_AddressManager *AddressManagerTransactorSession) UpgradeToAndCall(newImplementation common.Address, data []byte) (*types.Transaction, error) {
+	return _AddressManager.Contract.UpgradeToAndCall(&_AddressManager.TransactOpts, newImplementation, data)
 }
 
 // AddressManagerAddressSetIterator is returned from FilterAddressSet and is used to iterate over the raw logs and unpacked data for AddressSet events raised by the AddressManager contract.
@@ -533,6 +627,285 @@ func (_AddressManager *AddressManagerFilterer) ParseAddressSet(log types.Log) (*
 	return event, nil
 }
 
+// AddressManagerAdminChangedIterator is returned from FilterAdminChanged and is used to iterate over the raw logs and unpacked data for AdminChanged events raised by the AddressManager contract.
+type AddressManagerAdminChangedIterator struct {
+	Event *AddressManagerAdminChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *AddressManagerAdminChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(AddressManagerAdminChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(AddressManagerAdminChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *AddressManagerAdminChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *AddressManagerAdminChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// AddressManagerAdminChanged represents a AdminChanged event raised by the AddressManager contract.
+type AddressManagerAdminChanged struct {
+	PreviousAdmin common.Address
+	NewAdmin      common.Address
+	Raw           types.Log // Blockchain specific contextual infos
+}
+
+// FilterAdminChanged is a free log retrieval operation binding the contract event 0x7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f.
+//
+// Solidity: event AdminChanged(address previousAdmin, address newAdmin)
+func (_AddressManager *AddressManagerFilterer) FilterAdminChanged(opts *bind.FilterOpts) (*AddressManagerAdminChangedIterator, error) {
+
+	logs, sub, err := _AddressManager.contract.FilterLogs(opts, "AdminChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &AddressManagerAdminChangedIterator{contract: _AddressManager.contract, event: "AdminChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchAdminChanged is a free log subscription operation binding the contract event 0x7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f.
+//
+// Solidity: event AdminChanged(address previousAdmin, address newAdmin)
+func (_AddressManager *AddressManagerFilterer) WatchAdminChanged(opts *bind.WatchOpts, sink chan<- *AddressManagerAdminChanged) (event.Subscription, error) {
+
+	logs, sub, err := _AddressManager.contract.WatchLogs(opts, "AdminChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(AddressManagerAdminChanged)
+				if err := _AddressManager.contract.UnpackLog(event, "AdminChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseAdminChanged is a log parse operation binding the contract event 0x7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f.
+//
+// Solidity: event AdminChanged(address previousAdmin, address newAdmin)
+func (_AddressManager *AddressManagerFilterer) ParseAdminChanged(log types.Log) (*AddressManagerAdminChanged, error) {
+	event := new(AddressManagerAdminChanged)
+	if err := _AddressManager.contract.UnpackLog(event, "AdminChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// AddressManagerBeaconUpgradedIterator is returned from FilterBeaconUpgraded and is used to iterate over the raw logs and unpacked data for BeaconUpgraded events raised by the AddressManager contract.
+type AddressManagerBeaconUpgradedIterator struct {
+	Event *AddressManagerBeaconUpgraded // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *AddressManagerBeaconUpgradedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(AddressManagerBeaconUpgraded)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(AddressManagerBeaconUpgraded)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *AddressManagerBeaconUpgradedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *AddressManagerBeaconUpgradedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// AddressManagerBeaconUpgraded represents a BeaconUpgraded event raised by the AddressManager contract.
+type AddressManagerBeaconUpgraded struct {
+	Beacon common.Address
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterBeaconUpgraded is a free log retrieval operation binding the contract event 0x1cf3b03a6cf19fa2baba4df148e9dcabedea7f8a5c07840e207e5c089be95d3e.
+//
+// Solidity: event BeaconUpgraded(address indexed beacon)
+func (_AddressManager *AddressManagerFilterer) FilterBeaconUpgraded(opts *bind.FilterOpts, beacon []common.Address) (*AddressManagerBeaconUpgradedIterator, error) {
+
+	var beaconRule []interface{}
+	for _, beaconItem := range beacon {
+		beaconRule = append(beaconRule, beaconItem)
+	}
+
+	logs, sub, err := _AddressManager.contract.FilterLogs(opts, "BeaconUpgraded", beaconRule)
+	if err != nil {
+		return nil, err
+	}
+	return &AddressManagerBeaconUpgradedIterator{contract: _AddressManager.contract, event: "BeaconUpgraded", logs: logs, sub: sub}, nil
+}
+
+// WatchBeaconUpgraded is a free log subscription operation binding the contract event 0x1cf3b03a6cf19fa2baba4df148e9dcabedea7f8a5c07840e207e5c089be95d3e.
+//
+// Solidity: event BeaconUpgraded(address indexed beacon)
+func (_AddressManager *AddressManagerFilterer) WatchBeaconUpgraded(opts *bind.WatchOpts, sink chan<- *AddressManagerBeaconUpgraded, beacon []common.Address) (event.Subscription, error) {
+
+	var beaconRule []interface{}
+	for _, beaconItem := range beacon {
+		beaconRule = append(beaconRule, beaconItem)
+	}
+
+	logs, sub, err := _AddressManager.contract.WatchLogs(opts, "BeaconUpgraded", beaconRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(AddressManagerBeaconUpgraded)
+				if err := _AddressManager.contract.UnpackLog(event, "BeaconUpgraded", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseBeaconUpgraded is a log parse operation binding the contract event 0x1cf3b03a6cf19fa2baba4df148e9dcabedea7f8a5c07840e207e5c089be95d3e.
+//
+// Solidity: event BeaconUpgraded(address indexed beacon)
+func (_AddressManager *AddressManagerFilterer) ParseBeaconUpgraded(log types.Log) (*AddressManagerBeaconUpgraded, error) {
+	event := new(AddressManagerBeaconUpgraded)
+	if err := _AddressManager.contract.UnpackLog(event, "BeaconUpgraded", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // AddressManagerInitializedIterator is returned from FilterInitialized and is used to iterate over the raw logs and unpacked data for Initialized events raised by the AddressManager contract.
 type AddressManagerInitializedIterator struct {
 	Event *AddressManagerInitialized // Event containing the contract specifics and raw log
@@ -661,159 +1034,6 @@ func (_AddressManager *AddressManagerFilterer) WatchInitialized(opts *bind.Watch
 func (_AddressManager *AddressManagerFilterer) ParseInitialized(log types.Log) (*AddressManagerInitialized, error) {
 	event := new(AddressManagerInitialized)
 	if err := _AddressManager.contract.UnpackLog(event, "Initialized", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// AddressManagerOwnershipTransferStartedIterator is returned from FilterOwnershipTransferStarted and is used to iterate over the raw logs and unpacked data for OwnershipTransferStarted events raised by the AddressManager contract.
-type AddressManagerOwnershipTransferStartedIterator struct {
-	Event *AddressManagerOwnershipTransferStarted // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *AddressManagerOwnershipTransferStartedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(AddressManagerOwnershipTransferStarted)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(AddressManagerOwnershipTransferStarted)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *AddressManagerOwnershipTransferStartedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *AddressManagerOwnershipTransferStartedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// AddressManagerOwnershipTransferStarted represents a OwnershipTransferStarted event raised by the AddressManager contract.
-type AddressManagerOwnershipTransferStarted struct {
-	PreviousOwner common.Address
-	NewOwner      common.Address
-	Raw           types.Log // Blockchain specific contextual infos
-}
-
-// FilterOwnershipTransferStarted is a free log retrieval operation binding the contract event 0x38d16b8cac22d99fc7c124b9cd0de2d3fa1faef420bfe791d8c362d765e22700.
-//
-// Solidity: event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner)
-func (_AddressManager *AddressManagerFilterer) FilterOwnershipTransferStarted(opts *bind.FilterOpts, previousOwner []common.Address, newOwner []common.Address) (*AddressManagerOwnershipTransferStartedIterator, error) {
-
-	var previousOwnerRule []interface{}
-	for _, previousOwnerItem := range previousOwner {
-		previousOwnerRule = append(previousOwnerRule, previousOwnerItem)
-	}
-	var newOwnerRule []interface{}
-	for _, newOwnerItem := range newOwner {
-		newOwnerRule = append(newOwnerRule, newOwnerItem)
-	}
-
-	logs, sub, err := _AddressManager.contract.FilterLogs(opts, "OwnershipTransferStarted", previousOwnerRule, newOwnerRule)
-	if err != nil {
-		return nil, err
-	}
-	return &AddressManagerOwnershipTransferStartedIterator{contract: _AddressManager.contract, event: "OwnershipTransferStarted", logs: logs, sub: sub}, nil
-}
-
-// WatchOwnershipTransferStarted is a free log subscription operation binding the contract event 0x38d16b8cac22d99fc7c124b9cd0de2d3fa1faef420bfe791d8c362d765e22700.
-//
-// Solidity: event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner)
-func (_AddressManager *AddressManagerFilterer) WatchOwnershipTransferStarted(opts *bind.WatchOpts, sink chan<- *AddressManagerOwnershipTransferStarted, previousOwner []common.Address, newOwner []common.Address) (event.Subscription, error) {
-
-	var previousOwnerRule []interface{}
-	for _, previousOwnerItem := range previousOwner {
-		previousOwnerRule = append(previousOwnerRule, previousOwnerItem)
-	}
-	var newOwnerRule []interface{}
-	for _, newOwnerItem := range newOwner {
-		newOwnerRule = append(newOwnerRule, newOwnerItem)
-	}
-
-	logs, sub, err := _AddressManager.contract.WatchLogs(opts, "OwnershipTransferStarted", previousOwnerRule, newOwnerRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(AddressManagerOwnershipTransferStarted)
-				if err := _AddressManager.contract.UnpackLog(event, "OwnershipTransferStarted", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseOwnershipTransferStarted is a log parse operation binding the contract event 0x38d16b8cac22d99fc7c124b9cd0de2d3fa1faef420bfe791d8c362d765e22700.
-//
-// Solidity: event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner)
-func (_AddressManager *AddressManagerFilterer) ParseOwnershipTransferStarted(log types.Log) (*AddressManagerOwnershipTransferStarted, error) {
-	event := new(AddressManagerOwnershipTransferStarted)
-	if err := _AddressManager.contract.UnpackLog(event, "OwnershipTransferStarted", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -967,6 +1187,418 @@ func (_AddressManager *AddressManagerFilterer) WatchOwnershipTransferred(opts *b
 func (_AddressManager *AddressManagerFilterer) ParseOwnershipTransferred(log types.Log) (*AddressManagerOwnershipTransferred, error) {
 	event := new(AddressManagerOwnershipTransferred)
 	if err := _AddressManager.contract.UnpackLog(event, "OwnershipTransferred", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// AddressManagerPausedIterator is returned from FilterPaused and is used to iterate over the raw logs and unpacked data for Paused events raised by the AddressManager contract.
+type AddressManagerPausedIterator struct {
+	Event *AddressManagerPaused // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *AddressManagerPausedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(AddressManagerPaused)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(AddressManagerPaused)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *AddressManagerPausedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *AddressManagerPausedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// AddressManagerPaused represents a Paused event raised by the AddressManager contract.
+type AddressManagerPaused struct {
+	Account common.Address
+	Raw     types.Log // Blockchain specific contextual infos
+}
+
+// FilterPaused is a free log retrieval operation binding the contract event 0x62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a258.
+//
+// Solidity: event Paused(address account)
+func (_AddressManager *AddressManagerFilterer) FilterPaused(opts *bind.FilterOpts) (*AddressManagerPausedIterator, error) {
+
+	logs, sub, err := _AddressManager.contract.FilterLogs(opts, "Paused")
+	if err != nil {
+		return nil, err
+	}
+	return &AddressManagerPausedIterator{contract: _AddressManager.contract, event: "Paused", logs: logs, sub: sub}, nil
+}
+
+// WatchPaused is a free log subscription operation binding the contract event 0x62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a258.
+//
+// Solidity: event Paused(address account)
+func (_AddressManager *AddressManagerFilterer) WatchPaused(opts *bind.WatchOpts, sink chan<- *AddressManagerPaused) (event.Subscription, error) {
+
+	logs, sub, err := _AddressManager.contract.WatchLogs(opts, "Paused")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(AddressManagerPaused)
+				if err := _AddressManager.contract.UnpackLog(event, "Paused", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParsePaused is a log parse operation binding the contract event 0x62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a258.
+//
+// Solidity: event Paused(address account)
+func (_AddressManager *AddressManagerFilterer) ParsePaused(log types.Log) (*AddressManagerPaused, error) {
+	event := new(AddressManagerPaused)
+	if err := _AddressManager.contract.UnpackLog(event, "Paused", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// AddressManagerUnpausedIterator is returned from FilterUnpaused and is used to iterate over the raw logs and unpacked data for Unpaused events raised by the AddressManager contract.
+type AddressManagerUnpausedIterator struct {
+	Event *AddressManagerUnpaused // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *AddressManagerUnpausedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(AddressManagerUnpaused)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(AddressManagerUnpaused)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *AddressManagerUnpausedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *AddressManagerUnpausedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// AddressManagerUnpaused represents a Unpaused event raised by the AddressManager contract.
+type AddressManagerUnpaused struct {
+	Account common.Address
+	Raw     types.Log // Blockchain specific contextual infos
+}
+
+// FilterUnpaused is a free log retrieval operation binding the contract event 0x5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa.
+//
+// Solidity: event Unpaused(address account)
+func (_AddressManager *AddressManagerFilterer) FilterUnpaused(opts *bind.FilterOpts) (*AddressManagerUnpausedIterator, error) {
+
+	logs, sub, err := _AddressManager.contract.FilterLogs(opts, "Unpaused")
+	if err != nil {
+		return nil, err
+	}
+	return &AddressManagerUnpausedIterator{contract: _AddressManager.contract, event: "Unpaused", logs: logs, sub: sub}, nil
+}
+
+// WatchUnpaused is a free log subscription operation binding the contract event 0x5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa.
+//
+// Solidity: event Unpaused(address account)
+func (_AddressManager *AddressManagerFilterer) WatchUnpaused(opts *bind.WatchOpts, sink chan<- *AddressManagerUnpaused) (event.Subscription, error) {
+
+	logs, sub, err := _AddressManager.contract.WatchLogs(opts, "Unpaused")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(AddressManagerUnpaused)
+				if err := _AddressManager.contract.UnpackLog(event, "Unpaused", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseUnpaused is a log parse operation binding the contract event 0x5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa.
+//
+// Solidity: event Unpaused(address account)
+func (_AddressManager *AddressManagerFilterer) ParseUnpaused(log types.Log) (*AddressManagerUnpaused, error) {
+	event := new(AddressManagerUnpaused)
+	if err := _AddressManager.contract.UnpackLog(event, "Unpaused", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// AddressManagerUpgradedIterator is returned from FilterUpgraded and is used to iterate over the raw logs and unpacked data for Upgraded events raised by the AddressManager contract.
+type AddressManagerUpgradedIterator struct {
+	Event *AddressManagerUpgraded // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *AddressManagerUpgradedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(AddressManagerUpgraded)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(AddressManagerUpgraded)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *AddressManagerUpgradedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *AddressManagerUpgradedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// AddressManagerUpgraded represents a Upgraded event raised by the AddressManager contract.
+type AddressManagerUpgraded struct {
+	Implementation common.Address
+	Raw            types.Log // Blockchain specific contextual infos
+}
+
+// FilterUpgraded is a free log retrieval operation binding the contract event 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b.
+//
+// Solidity: event Upgraded(address indexed implementation)
+func (_AddressManager *AddressManagerFilterer) FilterUpgraded(opts *bind.FilterOpts, implementation []common.Address) (*AddressManagerUpgradedIterator, error) {
+
+	var implementationRule []interface{}
+	for _, implementationItem := range implementation {
+		implementationRule = append(implementationRule, implementationItem)
+	}
+
+	logs, sub, err := _AddressManager.contract.FilterLogs(opts, "Upgraded", implementationRule)
+	if err != nil {
+		return nil, err
+	}
+	return &AddressManagerUpgradedIterator{contract: _AddressManager.contract, event: "Upgraded", logs: logs, sub: sub}, nil
+}
+
+// WatchUpgraded is a free log subscription operation binding the contract event 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b.
+//
+// Solidity: event Upgraded(address indexed implementation)
+func (_AddressManager *AddressManagerFilterer) WatchUpgraded(opts *bind.WatchOpts, sink chan<- *AddressManagerUpgraded, implementation []common.Address) (event.Subscription, error) {
+
+	var implementationRule []interface{}
+	for _, implementationItem := range implementation {
+		implementationRule = append(implementationRule, implementationItem)
+	}
+
+	logs, sub, err := _AddressManager.contract.WatchLogs(opts, "Upgraded", implementationRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(AddressManagerUpgraded)
+				if err := _AddressManager.contract.UnpackLog(event, "Upgraded", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseUpgraded is a log parse operation binding the contract event 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b.
+//
+// Solidity: event Upgraded(address indexed implementation)
+func (_AddressManager *AddressManagerFilterer) ParseUpgraded(log types.Log) (*AddressManagerUpgraded, error) {
+	event := new(AddressManagerUpgraded)
+	if err := _AddressManager.contract.UnpackLog(event, "Upgraded", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
