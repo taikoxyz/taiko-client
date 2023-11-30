@@ -25,6 +25,10 @@ definitions:
     type: object
   prover_server.ProposeBlockResponse:
     properties:
+      maxBlockID:
+        type: integer
+      maxProposedIn:
+        type: integer
       prover:
         type: string
       signedPayload:
@@ -32,10 +36,25 @@ definitions:
           type: integer
         type: array
     type: object
+  prover_server.SignedBlock:
+    properties:
+      blockHash:
+        type: string
+      blockID:
+        type: integer
+      proverAddress:
+        type: string
+      signature:
+        type: string
+    type: object
   prover_server.Status:
     properties:
       currentCapacity:
         type: integer
+      heartBeatSignature:
+        items:
+          type: integer
+        type: array
       maxExpiry:
         type: integer
       minOptimisticTierFee:
@@ -44,6 +63,8 @@ definitions:
         type: integer
       minSgxTierFee:
         type: integer
+      prover:
+        type: string
     type: object
 info:
   contact:
@@ -61,7 +82,6 @@ paths:
     post:
       consumes:
       - application/json
-      operationId: create-assignment
       parameters:
       - description: assignment request body
         in: body
@@ -81,6 +101,21 @@ paths:
           schema:
             type: string
       summary: Try to accept a block proof assignment
+  /signedBlocks:
+    get:
+      consumes:
+      - application/json
+      operationId: get-signed-blocks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/prover_server.SignedBlock'
+            type: array
+      summary: Get signed blocks
   /status:
     get:
       consumes:
