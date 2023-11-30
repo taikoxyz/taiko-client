@@ -231,7 +231,7 @@ type SignedBlock struct {
 //	@ID			   	get-signed-blocks
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object} []SignedBlocks
+//	@Success		200	{object} []SignedBlock
 //	@Router			/signedBlocks [get]
 func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 	latestBlock, err := srv.rpc.L2.BlockByNumber(c.Request().Context(), nil)
