@@ -37,7 +37,7 @@ type TaikoDataTierProof struct {
 
 // GuardianProverMetaData contains all meta data concerning the GuardianProver contract.
 var GuardianProverMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"INVALID_GUARDIAN\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"INVALID_GUARDIAN_SET\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"INVALID_PAUSE_STATUS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"INVALID_PROOF\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"PROVING_FAILED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"REENTRANT_CALL\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_DENIED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_INVALID_MANAGER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_UNEXPECTED_CHAINID\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"}],\"name\":\"RESOLVER_ZERO_ADDR\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"previousAdmin\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"AdminChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"blockId\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"approvalBits\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"proofSubmitted\",\"type\":\"bool\"}],\"name\":\"Approved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"beacon\",\"type\":\"address\"}],\"name\":\"BeaconUpgraded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address[5]\",\"name\":\"\",\"type\":\"address[5]\"}],\"name\":\"GuardiansUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Paused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Unpaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"implementation\",\"type\":\"address\"}],\"name\":\"Upgraded\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"NUM_GUARDIANS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"REQUIRED_GUARDIANS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"approvals\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"approvalBits\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"l1Hash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"difficulty\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"blobHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"extraData\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"depositsHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"coinbase\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"gasLimit\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"l1Height\",\"type\":\"uint64\"},{\"internalType\":\"uint24\",\"name\":\"txListByteOffset\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"txListByteSize\",\"type\":\"uint24\"},{\"internalType\":\"uint16\",\"name\":\"minTier\",\"type\":\"uint16\"},{\"internalType\":\"bool\",\"name\":\"blobUsed\",\"type\":\"bool\"},{\"internalType\":\"bytes32\",\"name\":\"parentMetaHash\",\"type\":\"bytes32\"}],\"internalType\":\"structTaikoData.BlockMetadata\",\"name\":\"meta\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"parentHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"graffiti\",\"type\":\"bytes32\"}],\"internalType\":\"structTaikoData.Transition\",\"name\":\"tran\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint16\",\"name\":\"tier\",\"type\":\"uint16\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"internalType\":\"structTaikoData.TierProof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"approve\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"guardian\",\"type\":\"address\"}],\"name\":\"guardianIds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"guardians\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"paused\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proxiableUUID\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"addr\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"addr\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[5]\",\"name\":\"_guardians\",\"type\":\"address[5]\"}],\"name\":\"setGuardians\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"unpause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newImplementation\",\"type\":\"address\"}],\"name\":\"upgradeTo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newImplementation\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"upgradeToAndCall\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[],\"name\":\"INVALID_GUARDIAN\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"INVALID_GUARDIAN_SET\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"INVALID_MIN_GUARDIANS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"INVALID_PAUSE_STATUS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"INVALID_PROOF\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"PROVING_FAILED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"REENTRANT_CALL\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_DENIED\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_INVALID_MANAGER\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RESOLVER_UNEXPECTED_CHAINID\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"}],\"name\":\"RESOLVER_ZERO_ADDR\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"previousAdmin\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"AdminChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"operationId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"approvalBits\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"proofSubmitted\",\"type\":\"bool\"}],\"name\":\"Approved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"beacon\",\"type\":\"address\"}],\"name\":\"BeaconUpgraded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"version\",\"type\":\"uint32\"},{\"indexed\":false,\"internalType\":\"address[]\",\"name\":\"guardians\",\"type\":\"address[]\"}],\"name\":\"GuardiansUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Paused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Unpaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"implementation\",\"type\":\"address\"}],\"name\":\"Upgraded\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"MIN_NUM_GUARDIANS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"addressManager\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"l1Hash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"difficulty\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"blobHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"extraData\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"depositsHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"coinbase\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"id\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"gasLimit\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"l1Height\",\"type\":\"uint64\"},{\"internalType\":\"uint24\",\"name\":\"txListByteOffset\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"txListByteSize\",\"type\":\"uint24\"},{\"internalType\":\"uint16\",\"name\":\"minTier\",\"type\":\"uint16\"},{\"internalType\":\"bool\",\"name\":\"blobUsed\",\"type\":\"bool\"},{\"internalType\":\"bytes32\",\"name\":\"parentMetaHash\",\"type\":\"bytes32\"}],\"internalType\":\"structTaikoData.BlockMetadata\",\"name\":\"meta\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"parentHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"blockHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"signalRoot\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"graffiti\",\"type\":\"bytes32\"}],\"internalType\":\"structTaikoData.Transition\",\"name\":\"tran\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint16\",\"name\":\"tier\",\"type\":\"uint16\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"internalType\":\"structTaikoData.TierProof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"approved\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"guardian\",\"type\":\"address\"}],\"name\":\"guardianIds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"guardians\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addressManager\",\"type\":\"address\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"hash\",\"type\":\"bytes32\"}],\"name\":\"isApproved\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"minGuardians\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numGuardians\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"paused\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proxiableUUID\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"chainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"addr\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"name\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"allowZeroAddress\",\"type\":\"bool\"}],\"name\":\"resolve\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"addr\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"_guardians\",\"type\":\"address[]\"},{\"internalType\":\"uint8\",\"name\":\"_minGuardians\",\"type\":\"uint8\"}],\"name\":\"setGuardians\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"unpause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newImplementation\",\"type\":\"address\"}],\"name\":\"upgradeTo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newImplementation\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"upgradeToAndCall\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"version\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // GuardianProverABI is the input ABI used to generate the binding from.
@@ -186,12 +186,12 @@ func (_GuardianProver *GuardianProverTransactorRaw) Transact(opts *bind.Transact
 	return _GuardianProver.Contract.contract.Transact(opts, method, params...)
 }
 
-// NUMGUARDIANS is a free data retrieval call binding the contract method 0x55ff4c83.
+// MINNUMGUARDIANS is a free data retrieval call binding the contract method 0x353ce811.
 //
-// Solidity: function NUM_GUARDIANS() view returns(uint256)
-func (_GuardianProver *GuardianProverCaller) NUMGUARDIANS(opts *bind.CallOpts) (*big.Int, error) {
+// Solidity: function MIN_NUM_GUARDIANS() view returns(uint256)
+func (_GuardianProver *GuardianProverCaller) MINNUMGUARDIANS(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _GuardianProver.contract.Call(opts, &out, "NUM_GUARDIANS")
+	err := _GuardianProver.contract.Call(opts, &out, "MIN_NUM_GUARDIANS")
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -203,49 +203,18 @@ func (_GuardianProver *GuardianProverCaller) NUMGUARDIANS(opts *bind.CallOpts) (
 
 }
 
-// NUMGUARDIANS is a free data retrieval call binding the contract method 0x55ff4c83.
+// MINNUMGUARDIANS is a free data retrieval call binding the contract method 0x353ce811.
 //
-// Solidity: function NUM_GUARDIANS() view returns(uint256)
-func (_GuardianProver *GuardianProverSession) NUMGUARDIANS() (*big.Int, error) {
-	return _GuardianProver.Contract.NUMGUARDIANS(&_GuardianProver.CallOpts)
+// Solidity: function MIN_NUM_GUARDIANS() view returns(uint256)
+func (_GuardianProver *GuardianProverSession) MINNUMGUARDIANS() (*big.Int, error) {
+	return _GuardianProver.Contract.MINNUMGUARDIANS(&_GuardianProver.CallOpts)
 }
 
-// NUMGUARDIANS is a free data retrieval call binding the contract method 0x55ff4c83.
+// MINNUMGUARDIANS is a free data retrieval call binding the contract method 0x353ce811.
 //
-// Solidity: function NUM_GUARDIANS() view returns(uint256)
-func (_GuardianProver *GuardianProverCallerSession) NUMGUARDIANS() (*big.Int, error) {
-	return _GuardianProver.Contract.NUMGUARDIANS(&_GuardianProver.CallOpts)
-}
-
-// REQUIREDGUARDIANS is a free data retrieval call binding the contract method 0x05520401.
-//
-// Solidity: function REQUIRED_GUARDIANS() view returns(uint256)
-func (_GuardianProver *GuardianProverCaller) REQUIREDGUARDIANS(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _GuardianProver.contract.Call(opts, &out, "REQUIRED_GUARDIANS")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// REQUIREDGUARDIANS is a free data retrieval call binding the contract method 0x05520401.
-//
-// Solidity: function REQUIRED_GUARDIANS() view returns(uint256)
-func (_GuardianProver *GuardianProverSession) REQUIREDGUARDIANS() (*big.Int, error) {
-	return _GuardianProver.Contract.REQUIREDGUARDIANS(&_GuardianProver.CallOpts)
-}
-
-// REQUIREDGUARDIANS is a free data retrieval call binding the contract method 0x05520401.
-//
-// Solidity: function REQUIRED_GUARDIANS() view returns(uint256)
-func (_GuardianProver *GuardianProverCallerSession) REQUIREDGUARDIANS() (*big.Int, error) {
-	return _GuardianProver.Contract.REQUIREDGUARDIANS(&_GuardianProver.CallOpts)
+// Solidity: function MIN_NUM_GUARDIANS() view returns(uint256)
+func (_GuardianProver *GuardianProverCallerSession) MINNUMGUARDIANS() (*big.Int, error) {
+	return _GuardianProver.Contract.MINNUMGUARDIANS(&_GuardianProver.CallOpts)
 }
 
 // AddressManager is a free data retrieval call binding the contract method 0x3ab76e9f.
@@ -277,37 +246,6 @@ func (_GuardianProver *GuardianProverSession) AddressManager() (common.Address, 
 // Solidity: function addressManager() view returns(address)
 func (_GuardianProver *GuardianProverCallerSession) AddressManager() (common.Address, error) {
 	return _GuardianProver.Contract.AddressManager(&_GuardianProver.CallOpts)
-}
-
-// Approvals is a free data retrieval call binding the contract method 0xbf7c2131.
-//
-// Solidity: function approvals(bytes32 ) view returns(uint256 approvalBits)
-func (_GuardianProver *GuardianProverCaller) Approvals(opts *bind.CallOpts, arg0 [32]byte) (*big.Int, error) {
-	var out []interface{}
-	err := _GuardianProver.contract.Call(opts, &out, "approvals", arg0)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// Approvals is a free data retrieval call binding the contract method 0xbf7c2131.
-//
-// Solidity: function approvals(bytes32 ) view returns(uint256 approvalBits)
-func (_GuardianProver *GuardianProverSession) Approvals(arg0 [32]byte) (*big.Int, error) {
-	return _GuardianProver.Contract.Approvals(&_GuardianProver.CallOpts, arg0)
-}
-
-// Approvals is a free data retrieval call binding the contract method 0xbf7c2131.
-//
-// Solidity: function approvals(bytes32 ) view returns(uint256 approvalBits)
-func (_GuardianProver *GuardianProverCallerSession) Approvals(arg0 [32]byte) (*big.Int, error) {
-	return _GuardianProver.Contract.Approvals(&_GuardianProver.CallOpts, arg0)
 }
 
 // GuardianIds is a free data retrieval call binding the contract method 0xb6158373.
@@ -370,6 +308,99 @@ func (_GuardianProver *GuardianProverSession) Guardians(arg0 *big.Int) (common.A
 // Solidity: function guardians(uint256 ) view returns(address)
 func (_GuardianProver *GuardianProverCallerSession) Guardians(arg0 *big.Int) (common.Address, error) {
 	return _GuardianProver.Contract.Guardians(&_GuardianProver.CallOpts, arg0)
+}
+
+// IsApproved is a free data retrieval call binding the contract method 0x48aefc32.
+//
+// Solidity: function isApproved(bytes32 hash) view returns(bool)
+func (_GuardianProver *GuardianProverCaller) IsApproved(opts *bind.CallOpts, hash [32]byte) (bool, error) {
+	var out []interface{}
+	err := _GuardianProver.contract.Call(opts, &out, "isApproved", hash)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// IsApproved is a free data retrieval call binding the contract method 0x48aefc32.
+//
+// Solidity: function isApproved(bytes32 hash) view returns(bool)
+func (_GuardianProver *GuardianProverSession) IsApproved(hash [32]byte) (bool, error) {
+	return _GuardianProver.Contract.IsApproved(&_GuardianProver.CallOpts, hash)
+}
+
+// IsApproved is a free data retrieval call binding the contract method 0x48aefc32.
+//
+// Solidity: function isApproved(bytes32 hash) view returns(bool)
+func (_GuardianProver *GuardianProverCallerSession) IsApproved(hash [32]byte) (bool, error) {
+	return _GuardianProver.Contract.IsApproved(&_GuardianProver.CallOpts, hash)
+}
+
+// MinGuardians is a free data retrieval call binding the contract method 0x2d6f5ca7.
+//
+// Solidity: function minGuardians() view returns(uint32)
+func (_GuardianProver *GuardianProverCaller) MinGuardians(opts *bind.CallOpts) (uint32, error) {
+	var out []interface{}
+	err := _GuardianProver.contract.Call(opts, &out, "minGuardians")
+
+	if err != nil {
+		return *new(uint32), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint32)).(*uint32)
+
+	return out0, err
+
+}
+
+// MinGuardians is a free data retrieval call binding the contract method 0x2d6f5ca7.
+//
+// Solidity: function minGuardians() view returns(uint32)
+func (_GuardianProver *GuardianProverSession) MinGuardians() (uint32, error) {
+	return _GuardianProver.Contract.MinGuardians(&_GuardianProver.CallOpts)
+}
+
+// MinGuardians is a free data retrieval call binding the contract method 0x2d6f5ca7.
+//
+// Solidity: function minGuardians() view returns(uint32)
+func (_GuardianProver *GuardianProverCallerSession) MinGuardians() (uint32, error) {
+	return _GuardianProver.Contract.MinGuardians(&_GuardianProver.CallOpts)
+}
+
+// NumGuardians is a free data retrieval call binding the contract method 0xd13cbca3.
+//
+// Solidity: function numGuardians() view returns(uint256)
+func (_GuardianProver *GuardianProverCaller) NumGuardians(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _GuardianProver.contract.Call(opts, &out, "numGuardians")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// NumGuardians is a free data retrieval call binding the contract method 0xd13cbca3.
+//
+// Solidity: function numGuardians() view returns(uint256)
+func (_GuardianProver *GuardianProverSession) NumGuardians() (*big.Int, error) {
+	return _GuardianProver.Contract.NumGuardians(&_GuardianProver.CallOpts)
+}
+
+// NumGuardians is a free data retrieval call binding the contract method 0xd13cbca3.
+//
+// Solidity: function numGuardians() view returns(uint256)
+func (_GuardianProver *GuardianProverCallerSession) NumGuardians() (*big.Int, error) {
+	return _GuardianProver.Contract.NumGuardians(&_GuardianProver.CallOpts)
 }
 
 // Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
@@ -527,23 +558,54 @@ func (_GuardianProver *GuardianProverCallerSession) Resolve0(name [32]byte, allo
 	return _GuardianProver.Contract.Resolve0(&_GuardianProver.CallOpts, name, allowZeroAddress)
 }
 
+// Version is a free data retrieval call binding the contract method 0x54fd4d50.
+//
+// Solidity: function version() view returns(uint32)
+func (_GuardianProver *GuardianProverCaller) Version(opts *bind.CallOpts) (uint32, error) {
+	var out []interface{}
+	err := _GuardianProver.contract.Call(opts, &out, "version")
+
+	if err != nil {
+		return *new(uint32), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint32)).(*uint32)
+
+	return out0, err
+
+}
+
+// Version is a free data retrieval call binding the contract method 0x54fd4d50.
+//
+// Solidity: function version() view returns(uint32)
+func (_GuardianProver *GuardianProverSession) Version() (uint32, error) {
+	return _GuardianProver.Contract.Version(&_GuardianProver.CallOpts)
+}
+
+// Version is a free data retrieval call binding the contract method 0x54fd4d50.
+//
+// Solidity: function version() view returns(uint32)
+func (_GuardianProver *GuardianProverCallerSession) Version() (uint32, error) {
+	return _GuardianProver.Contract.Version(&_GuardianProver.CallOpts)
+}
+
 // Approve is a paid mutator transaction binding the contract method 0x492d2474.
 //
-// Solidity: function approve((bytes32,bytes32,bytes32,bytes32,bytes32,address,uint64,uint32,uint64,uint64,uint24,uint24,uint16,bool,bytes32) meta, (bytes32,bytes32,bytes32,bytes32) tran, (uint16,bytes) proof) returns()
+// Solidity: function approve((bytes32,bytes32,bytes32,bytes32,bytes32,address,uint64,uint32,uint64,uint64,uint24,uint24,uint16,bool,bytes32) meta, (bytes32,bytes32,bytes32,bytes32) tran, (uint16,bytes) proof) returns(bool approved)
 func (_GuardianProver *GuardianProverTransactor) Approve(opts *bind.TransactOpts, meta TaikoDataBlockMetadata, tran TaikoDataTransition, proof TaikoDataTierProof) (*types.Transaction, error) {
 	return _GuardianProver.contract.Transact(opts, "approve", meta, tran, proof)
 }
 
 // Approve is a paid mutator transaction binding the contract method 0x492d2474.
 //
-// Solidity: function approve((bytes32,bytes32,bytes32,bytes32,bytes32,address,uint64,uint32,uint64,uint64,uint24,uint24,uint16,bool,bytes32) meta, (bytes32,bytes32,bytes32,bytes32) tran, (uint16,bytes) proof) returns()
+// Solidity: function approve((bytes32,bytes32,bytes32,bytes32,bytes32,address,uint64,uint32,uint64,uint64,uint24,uint24,uint16,bool,bytes32) meta, (bytes32,bytes32,bytes32,bytes32) tran, (uint16,bytes) proof) returns(bool approved)
 func (_GuardianProver *GuardianProverSession) Approve(meta TaikoDataBlockMetadata, tran TaikoDataTransition, proof TaikoDataTierProof) (*types.Transaction, error) {
 	return _GuardianProver.Contract.Approve(&_GuardianProver.TransactOpts, meta, tran, proof)
 }
 
 // Approve is a paid mutator transaction binding the contract method 0x492d2474.
 //
-// Solidity: function approve((bytes32,bytes32,bytes32,bytes32,bytes32,address,uint64,uint32,uint64,uint64,uint24,uint24,uint16,bool,bytes32) meta, (bytes32,bytes32,bytes32,bytes32) tran, (uint16,bytes) proof) returns()
+// Solidity: function approve((bytes32,bytes32,bytes32,bytes32,bytes32,address,uint64,uint32,uint64,uint64,uint24,uint24,uint16,bool,bytes32) meta, (bytes32,bytes32,bytes32,bytes32) tran, (uint16,bytes) proof) returns(bool approved)
 func (_GuardianProver *GuardianProverTransactorSession) Approve(meta TaikoDataBlockMetadata, tran TaikoDataTransition, proof TaikoDataTierProof) (*types.Transaction, error) {
 	return _GuardianProver.Contract.Approve(&_GuardianProver.TransactOpts, meta, tran, proof)
 }
@@ -611,25 +673,25 @@ func (_GuardianProver *GuardianProverTransactorSession) RenounceOwnership() (*ty
 	return _GuardianProver.Contract.RenounceOwnership(&_GuardianProver.TransactOpts)
 }
 
-// SetGuardians is a paid mutator transaction binding the contract method 0x5cb1eb25.
+// SetGuardians is a paid mutator transaction binding the contract method 0xe94e9e99.
 //
-// Solidity: function setGuardians(address[5] _guardians) returns()
-func (_GuardianProver *GuardianProverTransactor) SetGuardians(opts *bind.TransactOpts, _guardians [5]common.Address) (*types.Transaction, error) {
-	return _GuardianProver.contract.Transact(opts, "setGuardians", _guardians)
+// Solidity: function setGuardians(address[] _guardians, uint8 _minGuardians) returns()
+func (_GuardianProver *GuardianProverTransactor) SetGuardians(opts *bind.TransactOpts, _guardians []common.Address, _minGuardians uint8) (*types.Transaction, error) {
+	return _GuardianProver.contract.Transact(opts, "setGuardians", _guardians, _minGuardians)
 }
 
-// SetGuardians is a paid mutator transaction binding the contract method 0x5cb1eb25.
+// SetGuardians is a paid mutator transaction binding the contract method 0xe94e9e99.
 //
-// Solidity: function setGuardians(address[5] _guardians) returns()
-func (_GuardianProver *GuardianProverSession) SetGuardians(_guardians [5]common.Address) (*types.Transaction, error) {
-	return _GuardianProver.Contract.SetGuardians(&_GuardianProver.TransactOpts, _guardians)
+// Solidity: function setGuardians(address[] _guardians, uint8 _minGuardians) returns()
+func (_GuardianProver *GuardianProverSession) SetGuardians(_guardians []common.Address, _minGuardians uint8) (*types.Transaction, error) {
+	return _GuardianProver.Contract.SetGuardians(&_GuardianProver.TransactOpts, _guardians, _minGuardians)
 }
 
-// SetGuardians is a paid mutator transaction binding the contract method 0x5cb1eb25.
+// SetGuardians is a paid mutator transaction binding the contract method 0xe94e9e99.
 //
-// Solidity: function setGuardians(address[5] _guardians) returns()
-func (_GuardianProver *GuardianProverTransactorSession) SetGuardians(_guardians [5]common.Address) (*types.Transaction, error) {
-	return _GuardianProver.Contract.SetGuardians(&_GuardianProver.TransactOpts, _guardians)
+// Solidity: function setGuardians(address[] _guardians, uint8 _minGuardians) returns()
+func (_GuardianProver *GuardianProverTransactorSession) SetGuardians(_guardians []common.Address, _minGuardians uint8) (*types.Transaction, error) {
+	return _GuardianProver.Contract.SetGuardians(&_GuardianProver.TransactOpts, _guardians, _minGuardians)
 }
 
 // TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
@@ -920,40 +982,40 @@ func (it *GuardianProverApprovedIterator) Close() error {
 
 // GuardianProverApproved represents a Approved event raised by the GuardianProver contract.
 type GuardianProverApproved struct {
-	BlockId        uint64
+	OperationId    *big.Int
 	ApprovalBits   *big.Int
 	ProofSubmitted bool
 	Raw            types.Log // Blockchain specific contextual infos
 }
 
-// FilterApproved is a free log retrieval operation binding the contract event 0x491ef33230925e6876158c5f7551d4f58c2c7d04e41546850b1009678c20816a.
+// FilterApproved is a free log retrieval operation binding the contract event 0x344afde5e92a836ece804d851bb090d420129616171e9911ade0a3f4d785e311.
 //
-// Solidity: event Approved(uint64 indexed blockId, uint256 approvalBits, bool proofSubmitted)
-func (_GuardianProver *GuardianProverFilterer) FilterApproved(opts *bind.FilterOpts, blockId []uint64) (*GuardianProverApprovedIterator, error) {
+// Solidity: event Approved(uint256 indexed operationId, uint256 approvalBits, bool proofSubmitted)
+func (_GuardianProver *GuardianProverFilterer) FilterApproved(opts *bind.FilterOpts, operationId []*big.Int) (*GuardianProverApprovedIterator, error) {
 
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
+	var operationIdRule []interface{}
+	for _, operationIdItem := range operationId {
+		operationIdRule = append(operationIdRule, operationIdItem)
 	}
 
-	logs, sub, err := _GuardianProver.contract.FilterLogs(opts, "Approved", blockIdRule)
+	logs, sub, err := _GuardianProver.contract.FilterLogs(opts, "Approved", operationIdRule)
 	if err != nil {
 		return nil, err
 	}
 	return &GuardianProverApprovedIterator{contract: _GuardianProver.contract, event: "Approved", logs: logs, sub: sub}, nil
 }
 
-// WatchApproved is a free log subscription operation binding the contract event 0x491ef33230925e6876158c5f7551d4f58c2c7d04e41546850b1009678c20816a.
+// WatchApproved is a free log subscription operation binding the contract event 0x344afde5e92a836ece804d851bb090d420129616171e9911ade0a3f4d785e311.
 //
-// Solidity: event Approved(uint64 indexed blockId, uint256 approvalBits, bool proofSubmitted)
-func (_GuardianProver *GuardianProverFilterer) WatchApproved(opts *bind.WatchOpts, sink chan<- *GuardianProverApproved, blockId []uint64) (event.Subscription, error) {
+// Solidity: event Approved(uint256 indexed operationId, uint256 approvalBits, bool proofSubmitted)
+func (_GuardianProver *GuardianProverFilterer) WatchApproved(opts *bind.WatchOpts, sink chan<- *GuardianProverApproved, operationId []*big.Int) (event.Subscription, error) {
 
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
+	var operationIdRule []interface{}
+	for _, operationIdItem := range operationId {
+		operationIdRule = append(operationIdRule, operationIdItem)
 	}
 
-	logs, sub, err := _GuardianProver.contract.WatchLogs(opts, "Approved", blockIdRule)
+	logs, sub, err := _GuardianProver.contract.WatchLogs(opts, "Approved", operationIdRule)
 	if err != nil {
 		return nil, err
 	}
@@ -985,9 +1047,9 @@ func (_GuardianProver *GuardianProverFilterer) WatchApproved(opts *bind.WatchOpt
 	}), nil
 }
 
-// ParseApproved is a log parse operation binding the contract event 0x491ef33230925e6876158c5f7551d4f58c2c7d04e41546850b1009678c20816a.
+// ParseApproved is a log parse operation binding the contract event 0x344afde5e92a836ece804d851bb090d420129616171e9911ade0a3f4d785e311.
 //
-// Solidity: event Approved(uint64 indexed blockId, uint256 approvalBits, bool proofSubmitted)
+// Solidity: event Approved(uint256 indexed operationId, uint256 approvalBits, bool proofSubmitted)
 func (_GuardianProver *GuardianProverFilterer) ParseApproved(log types.Log) (*GuardianProverApproved, error) {
 	event := new(GuardianProverApproved)
 	if err := _GuardianProver.contract.UnpackLog(event, "Approved", log); err != nil {
@@ -1210,13 +1272,14 @@ func (it *GuardianProverGuardiansUpdatedIterator) Close() error {
 
 // GuardianProverGuardiansUpdated represents a GuardiansUpdated event raised by the GuardianProver contract.
 type GuardianProverGuardiansUpdated struct {
-	Arg0 [5]common.Address
-	Raw  types.Log // Blockchain specific contextual infos
+	Version   uint32
+	Guardians []common.Address
+	Raw       types.Log // Blockchain specific contextual infos
 }
 
-// FilterGuardiansUpdated is a free log retrieval operation binding the contract event 0x9ce971150384a46b1b1f7cfdf16a84a1c346add127bf86ce2787fb41872b6fc9.
+// FilterGuardiansUpdated is a free log retrieval operation binding the contract event 0x5132e5b598a417dfc5c7488e5360aef3e865fe4b238cd5ea2a8282e0ca8d10ef.
 //
-// Solidity: event GuardiansUpdated(address[5] arg0)
+// Solidity: event GuardiansUpdated(uint32 version, address[] guardians)
 func (_GuardianProver *GuardianProverFilterer) FilterGuardiansUpdated(opts *bind.FilterOpts) (*GuardianProverGuardiansUpdatedIterator, error) {
 
 	logs, sub, err := _GuardianProver.contract.FilterLogs(opts, "GuardiansUpdated")
@@ -1226,9 +1289,9 @@ func (_GuardianProver *GuardianProverFilterer) FilterGuardiansUpdated(opts *bind
 	return &GuardianProverGuardiansUpdatedIterator{contract: _GuardianProver.contract, event: "GuardiansUpdated", logs: logs, sub: sub}, nil
 }
 
-// WatchGuardiansUpdated is a free log subscription operation binding the contract event 0x9ce971150384a46b1b1f7cfdf16a84a1c346add127bf86ce2787fb41872b6fc9.
+// WatchGuardiansUpdated is a free log subscription operation binding the contract event 0x5132e5b598a417dfc5c7488e5360aef3e865fe4b238cd5ea2a8282e0ca8d10ef.
 //
-// Solidity: event GuardiansUpdated(address[5] arg0)
+// Solidity: event GuardiansUpdated(uint32 version, address[] guardians)
 func (_GuardianProver *GuardianProverFilterer) WatchGuardiansUpdated(opts *bind.WatchOpts, sink chan<- *GuardianProverGuardiansUpdated) (event.Subscription, error) {
 
 	logs, sub, err := _GuardianProver.contract.WatchLogs(opts, "GuardiansUpdated")
@@ -1263,9 +1326,9 @@ func (_GuardianProver *GuardianProverFilterer) WatchGuardiansUpdated(opts *bind.
 	}), nil
 }
 
-// ParseGuardiansUpdated is a log parse operation binding the contract event 0x9ce971150384a46b1b1f7cfdf16a84a1c346add127bf86ce2787fb41872b6fc9.
+// ParseGuardiansUpdated is a log parse operation binding the contract event 0x5132e5b598a417dfc5c7488e5360aef3e865fe4b238cd5ea2a8282e0ca8d10ef.
 //
-// Solidity: event GuardiansUpdated(address[5] arg0)
+// Solidity: event GuardiansUpdated(uint32 version, address[] guardians)
 func (_GuardianProver *GuardianProverFilterer) ParseGuardiansUpdated(log types.Log) (*GuardianProverGuardiansUpdated, error) {
 	event := new(GuardianProverGuardiansUpdated)
 	if err := _GuardianProver.contract.UnpackLog(event, "GuardiansUpdated", log); err != nil {
