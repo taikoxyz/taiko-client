@@ -257,8 +257,72 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if p.IsGuardianProver() {
 		proverServerOpts.ProverPrivateKey = p.cfg.GuardianProverPrivateKey
 	}
+
 	if p.srv, err = server.New(proverServerOpts); err != nil {
 		return err
+	}
+
+	if err := p.setApprovalAmount(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Prover) setApprovalAmount() error {
+	if p.cfg.Allowance.Cmp(common.Big0) != 1 {
+		log.Info("skipping setting approval, approval amount not set")
+		return nil
+	}
+
+	// check allowance
+	allowance, err := p.rpc.TaikoToken.Allowance(
+		&bind.CallOpts{},
+		p.proverAddress,
+		p.cfg.TaikoL1Address,
+	)
+	if err != nil {
+		return err
+	}
+
+	if allowance.Cmp(p.cfg.Allowance) == 1 {
+		log.Info("skipping setting approval, allowance already greater or equal",
+			"allowance", allowance.String(),
+			"approvalAmount", p.cfg.Allowance.String(),
+		)
+		return nil
+	}
+
+	opts, err := bind.NewKeyedTransactorWithChainID(
+		p.cfg.L1ProverPrivKey,
+		p.rpc.L1ChainID,
+	)
+	if err != nil {
+		return err
+	}
+
+	amt := new(big.Int).Exp(big.NewInt(1_000_000_000), big.NewInt(18), nil)
+
+	log.Info("prover approving taikoL1 for taiko token", "amt", amt.Uint64())
+
+	tx, err := p.rpc.TaikoToken.Approve(
+		opts,
+		p.cfg.TaikoL1Address,
+		amt,
+	)
+	if err != nil {
+		return err
+	}
+
+	receipt, err := rpc.WaitReceipt(context.Background(), p.rpc.L1, tx)
+	if err != nil {
+		return err
+	}
+
+	log.Info("prover approved taikoL1 for taiko token", "txHash", receipt.TxHash.Hex())
+
+	if receipt.Status != 1 {
+		return errors.New("unsuccessful transaction to approve taikol1")
 	}
 
 	return nil

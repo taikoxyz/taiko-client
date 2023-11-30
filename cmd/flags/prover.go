@@ -175,6 +175,11 @@ var (
 		Value:    16,
 		Category: proverCategory,
 	}
+	Allowance = &cli.StringFlag{
+		Name:     "prover.allowance",
+		Usage:    "Amount to approve TaikoL1 contract for TaikoToken usage",
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -210,4 +215,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	DatabasePath,
 	DatabaseCacheSize,
 	ProverAssignmentHookAddress,
+	Allowance,
 })

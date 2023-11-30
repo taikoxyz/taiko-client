@@ -52,6 +52,7 @@ type Config struct {
 	MaxBlockSlippage                  uint64
 	DatabasePath                      string
 	DatabaseCacheSize                 uint64
+	Allowance                         *big.Int
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -105,6 +106,16 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proveBlockMaxTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProveBlockMaxTxGasTipCap.Name))
 	}
 
+	var allowance *big.Int = common.Big0
+	if c.IsSet(flags.Allowance.Name) {
+		amt, ok := new(big.Int).SetString(c.String(flags.Allowance.Name), 10)
+		if !ok {
+			return nil, fmt.Errorf("error setting allowance config value: %v", c.String(flags.Allowance.Name))
+		}
+
+		allowance = amt
+	}
+
 	return &Config{
 		L1WsEndpoint:                      c.String(flags.L1WSEndpoint.Name),
 		L1HttpEndpoint:                    c.String(flags.L1HTTPEndpoint.Name),
@@ -144,5 +155,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		MaxProposedIn:                     c.Uint64(flags.MaxProposedIn.Name),
 		DatabasePath:                      c.String(flags.DatabasePath.Name),
 		DatabaseCacheSize:                 c.Uint64(flags.DatabaseCacheSize.Name),
+		Allowance:                         allowance,
 	}, nil
 }
