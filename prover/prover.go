@@ -395,14 +395,6 @@ func (p *Prover) onBlockProposed(
 		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
 	}
 
-	// guardian prover must sign each new block and store in database, to be exposed
-	// via API for liveness checks.
-	if p.IsGuardianProver() {
-		if err := p.signBlock(ctx, event.BlockId); err != nil {
-			return fmt.Errorf("failed to sign block data (eventID %d): %w", event.BlockId, err)
-		}
-	}
-
 	// Check whether the L2 EE's anchored L1 info, to see if the L1 chain has been reorged.
 	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1ReorgFromL2EE(
 		ctx,
@@ -478,6 +470,14 @@ func (p *Prover) onBlockProposed(
 		"removed", event.Raw.Removed,
 	)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
+
+	// guardian prover must sign each new block and store in database, to be exposed
+	// via API for liveness checks.
+	if p.IsGuardianProver() {
+		if err := p.signBlock(ctx, event.BlockId); err != nil {
+			return fmt.Errorf("failed to sign block data (eventID %d): %w", event.BlockId, err)
+		}
+	}
 
 	handleBlockProposedEvent := func() error {
 		defer func() { <-p.proposeConcurrencyGuard }()
