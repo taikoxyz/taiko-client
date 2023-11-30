@@ -33,7 +33,6 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "summary": "Try to accept a block proof assignment",
-                "operationId": "create-assignment",
                 "parameters": [
                     {
                         "description": "assignment request body",
@@ -56,6 +55,29 @@ const docTemplate = `{
                         "description": "prover does not have capacity",
                         "schema": {
                             "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/signedBlocks": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get signed blocks",
+                "operationId": "get-signed-blocks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/prover_server.SignedBlock"
+                            }
                         }
                     }
                 }
@@ -123,6 +145,12 @@ const docTemplate = `{
         "prover_server.ProposeBlockResponse": {
             "type": "object",
             "properties": {
+                "maxBlockID": {
+                    "type": "integer"
+                },
+                "maxProposedIn": {
+                    "type": "integer"
+                },
                 "prover": {
                     "type": "string"
                 },
@@ -134,11 +162,34 @@ const docTemplate = `{
                 }
             }
         },
+        "prover_server.SignedBlock": {
+            "type": "object",
+            "properties": {
+                "blockHash": {
+                    "type": "string"
+                },
+                "blockID": {
+                    "type": "integer"
+                },
+                "proverAddress": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "string"
+                }
+            }
+        },
         "prover_server.Status": {
             "type": "object",
             "properties": {
                 "currentCapacity": {
                     "type": "integer"
+                },
+                "heartBeatSignature": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "maxExpiry": {
                     "type": "integer"
@@ -151,6 +202,9 @@ const docTemplate = `{
                 },
                 "minSgxTierFee": {
                     "type": "integer"
+                },
+                "prover": {
+                    "type": "string"
                 }
             }
         }

@@ -218,6 +218,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	})
 }
 
+// SignedBlock represents a signed block.
 type SignedBlock struct {
 	BlockID   uint64         `json:"blockID"`
 	BlockHash string         `json:"blockHash"`
@@ -231,7 +232,7 @@ type SignedBlock struct {
 //	@ID			   	get-signed-blocks
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object} []SignedBlocks
+//	@Success		200	{object} []SignedBlock
 //	@Router			/signedBlocks [get]
 func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 	latestBlock, err := srv.rpc.L2.BlockByNumber(c.Request().Context(), nil)
