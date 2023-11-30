@@ -42,6 +42,8 @@ func (s *ProverTestSuite) SetupTest() {
 	port, err := strconv.Atoi(proverServerUrl.Port())
 	s.Nil(err)
 
+	allowance := new(big.Int).Exp(big.NewInt(10_000_000_000), big.NewInt(18), nil)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
 	s.Nil(InitFromConfig(ctx, p, (&Config{
@@ -64,7 +66,7 @@ func (s *ProverTestSuite) SetupTest() {
 		HTTPServerPort:           uint64(port),
 		WaitReceiptTimeout:       12 * time.Second,
 		DatabasePath:             "",
-		Allowance:                common.Big0,
+		Allowance:                allowance,
 	})))
 	p.srv = testutils.NewTestProverServer(
 		&s.ClientTestSuite,
