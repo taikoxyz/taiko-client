@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -106,23 +107,30 @@ func WaitReceipt(
 		ticker.Stop()
 	}()
 
-	for {
-		select {
-		case <-ctxWithTimeout.Done():
-			return nil, ctxWithTimeout.Err()
-		case <-ticker.C:
-			receipt, err := client.TransactionReceipt(ctxWithTimeout, tx.Hash())
-			if err != nil {
-				continue
-			}
-
-			if receipt.Status != types.ReceiptStatusSuccessful {
-				return nil, fmt.Errorf("transaction reverted, hash: %s", tx.Hash())
-			}
-
-			return receipt, nil
-		}
+	// If we are running tests, we don't need to wait for `waitL1OriginPollingInterval` seconds
+	// at first, just start fetching the receipt immediately.
+	if os.Getenv("RUN_TESTS") == "" {
+		<-time.After(waitL1OriginPollingInterval)
 	}
+
+	for ; true; <-ticker.C {
+		if ctxWithTimeout.Err() != nil {
+			return nil, ctxWithTimeout.Err()
+		}
+
+		receipt, err := client.TransactionReceipt(ctxWithTimeout, tx.Hash())
+		if err != nil {
+			continue
+		}
+
+		if receipt.Status != types.ReceiptStatusSuccessful {
+			return nil, fmt.Errorf("transaction reverted, hash: %s", tx.Hash())
+		}
+
+		return receipt, nil
+	}
+
+	return nil, fmt.Errorf("failed to find the receipt for transaction %s", tx.Hash())
 }
 
 // BlockProofStatus represents the proving status of the given L2 block.

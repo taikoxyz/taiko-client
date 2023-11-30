@@ -266,7 +266,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 
 	if contestedEvent.Tier >= encoding.TierSgxAndPseZkevmID {
 		approvedSink := make(chan *bindings.GuardianProverApproved)
-		approvedSub, err := s.p.rpc.GuardianProver.WatchApproved(nil, approvedSink, []uint64{})
+		approvedSub, err := s.p.rpc.GuardianProver.WatchApproved(nil, approvedSink, [](*big.Int){})
 		s.Nil(err)
 		defer func() {
 			approvedSub.Unsubscribe()
@@ -276,7 +276,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 		s.Nil(s.p.selectSubmitter(encoding.TierGuardianID).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 		approvedEvent := <-approvedSink
 
-		s.Equal(header.Number.Uint64(), approvedEvent.BlockId)
+		s.Equal(header.Number.Uint64(), approvedEvent.OperationId)
 		return
 	}
 

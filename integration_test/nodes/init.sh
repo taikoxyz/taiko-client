@@ -45,6 +45,7 @@ cd $TAIKO_MONO_DIR/packages/protocol &&
     TAIKO_TOKEN_NAME="Taiko Token Test" \
     TAIKO_TOKEN_SYMBOL=TTKOt \
     L2_GENESIS_HASH=$L2_GENESIS_HASH \
+    MIN_GUARDIANS=5 \
     forge script script/DeployOnL1.s.sol:DeployOnL1 \
         --fork-url http://localhost:18545 \
         --broadcast \
