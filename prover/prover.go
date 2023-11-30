@@ -391,16 +391,16 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
+	if _, err := p.rpc.WaitL1Origin(ctx, event.BlockId); err != nil {
+		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
+	}
+
 	// guardian prover must sign each new block and store in database, to be exposed
 	// via API for liveness checks.
 	if p.IsGuardianProver() {
 		if err := p.signBlock(ctx, event.BlockId); err != nil {
 			return fmt.Errorf("failed to sign block data (eventID %d): %w", event.BlockId, err)
 		}
-	}
-
-	if _, err := p.rpc.WaitL1Origin(ctx, event.BlockId); err != nil {
-		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
 	}
 
 	// Check whether the L2 EE's anchored L1 info, to see if the L1 chain has been reorged.
@@ -1185,6 +1185,8 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 		return nil
 	}
 
+	log.Info("guardian prover signing block", "blockID", blockID.Uint64())
+
 	block, err := p.rpc.L2.BlockByNumber(ctx, blockID)
 	if err != nil {
 		return err
@@ -1198,6 +1200,8 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 	if err := p.db.Put(db.BuildBlockKey(blockID.String()), signed); err != nil {
 		return err
 	}
+
+	log.Info("guardian prover successfully signed block", "blockID", blockID.Uint64())
 
 	return nil
 }
