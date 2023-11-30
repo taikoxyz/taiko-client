@@ -395,7 +395,7 @@ func (p *Prover) onBlockProposed(
 	// via API for liveness checks.
 	if p.IsGuardianProver() {
 		if err := p.signBlock(ctx, event.BlockId); err != nil {
-			return fmt.Errorf("faile to sign block data (eventID %d): %w", event.BlockId, err)
+			return fmt.Errorf("failed to sign block data (eventID %d): %w", event.BlockId, err)
 		}
 	}
 
