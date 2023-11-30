@@ -270,8 +270,8 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 }
 
 func (p *Prover) setApprovalAmount() error {
-	if p.cfg.Allowance != nil && p.cfg.Allowance.Cmp(common.Big0) != 1 {
-		log.Info("skipping setting approval, approval amount not set")
+	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
+		log.Info("skipping setting approval, allowance not set")
 		return nil
 	}
 
@@ -286,7 +286,7 @@ func (p *Prover) setApprovalAmount() error {
 	}
 
 	if allowance.Cmp(p.cfg.Allowance) == 1 {
-		log.Info("skipping setting approval, allowance already greater or equal",
+		log.Info("skipping setting allowance, allowance already greater or equal",
 			"allowance", allowance.String(),
 			"approvalAmount", p.cfg.Allowance.String(),
 		)
