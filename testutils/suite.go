@@ -79,12 +79,6 @@ func (s *ClientTestSuite) SetupTest() {
 	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
 	s.proverServer = NewTestProverServer(s, l1ProverPrivKey, capacity.New(1024), s.ProverEndpoints[0])
 
-	// allowance, err := rpcCli.TaikoToken.Allowance(
-	// 	nil,
-	// 	crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey),
-	// 	common.HexToAddress("TAIKO_L1_ADDRESS"),
-	// )
-
 	balance, err := rpcCli.TaikoToken.BalanceOf(nil, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey))
 	s.Nil(err)
 
@@ -113,7 +107,7 @@ func (s *ClientTestSuite) SetupTest() {
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)
 
-		// Deposit taiko tokens for provers.
+		// Increase allowance for AssignmentHook and TaikoL1
 		opts, err = bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
 		s.Nil(err)
 
