@@ -301,14 +301,12 @@ func (p *Prover) setApprovalAmount() error {
 		return err
 	}
 
-	amt := new(big.Int).Exp(big.NewInt(1_000_000_000), big.NewInt(18), nil)
-
-	log.Info("prover approving taikoL1 for taiko token", "amt", amt.String())
+	log.Info("prover approving taikoL1 for taiko token", "allowance", p.cfg.Allowance.String())
 
 	tx, err := p.rpc.TaikoToken.Approve(
 		opts,
 		p.cfg.TaikoL1Address,
-		amt,
+		p.cfg.Allowance,
 	)
 	if err != nil {
 		return err
@@ -317,10 +315,6 @@ func (p *Prover) setApprovalAmount() error {
 	receipt, err := rpc.WaitReceipt(context.Background(), p.rpc.L1, tx)
 	if err != nil {
 		return err
-	}
-
-	if receipt.Status != 1 {
-		return errors.New("unsuccessful transaction to approve taikol1")
 	}
 
 	log.Info("prover approved taikoL1 for taiko token", "txHash", receipt.TxHash.Hex())
