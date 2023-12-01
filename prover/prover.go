@@ -334,7 +334,7 @@ func (p *Prover) setApprovalAmount() error {
 		return err
 	}
 
-	log.Info("new allowance for taikoL1 cotnract", "allowance", allowance.String())
+	log.Info("new allowance for taikoL1 contract", "allowance", allowance.String())
 
 	return nil
 }
