@@ -144,6 +144,7 @@ func (s *ProverTestSuite) TestInitError() {
 		L2HttpEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
 		TaikoL1Address:                    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:                    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:                 common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		L1ProverPrivKey:                   l1ProverPrivKey,
 		GuardianProverPrivateKey:          l1ProverPrivKey,
 		Dummy:                             true,
