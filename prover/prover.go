@@ -343,6 +343,7 @@ func (p *Prover) setApprovalAmount() error {
 func (p *Prover) Start() error {
 	if err := p.setApprovalAmount(); err != nil {
 		log.Crit("failed to set approval amount", "error", err)
+		return err
 	}
 
 	p.wg.Add(1)
