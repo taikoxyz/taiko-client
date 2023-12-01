@@ -283,6 +283,8 @@ func (p *Prover) setApprovalAmount() error {
 		return err
 	}
 
+	log.Info("existing allowance for taikoL1 contract", "allowance", allowance.String())
+
 	if allowance.Cmp(p.cfg.Allowance) == 1 {
 		log.Info("skipping setting allowance, allowance already greater or equal",
 			"allowance", allowance.String(),
@@ -301,7 +303,7 @@ func (p *Prover) setApprovalAmount() error {
 
 	amt := new(big.Int).Exp(big.NewInt(1_000_000_000), big.NewInt(18), nil)
 
-	log.Info("prover approving taikoL1 for taiko token", "amt", amt.Uint64())
+	log.Info("prover approving taikoL1 for taiko token", "amt", amt.String())
 
 	tx, err := p.rpc.TaikoToken.Approve(
 		opts,
@@ -317,11 +319,22 @@ func (p *Prover) setApprovalAmount() error {
 		return err
 	}
 
-	log.Info("prover approved taikoL1 for taiko token", "txHash", receipt.TxHash.Hex())
-
 	if receipt.Status != 1 {
 		return errors.New("unsuccessful transaction to approve taikol1")
 	}
+
+	log.Info("prover approved taikoL1 for taiko token", "txHash", receipt.TxHash.Hex())
+
+	allowance, err = p.rpc.TaikoToken.Allowance(
+		&bind.CallOpts{},
+		p.proverAddress,
+		p.cfg.TaikoL1Address,
+	)
+	if err != nil {
+		return err
+	}
+
+	log.Info("new allowance for taikoL1 cotnract", "allowance", allowance.String())
 
 	return nil
 }

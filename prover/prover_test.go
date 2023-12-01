@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -18,6 +19,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
@@ -42,7 +44,7 @@ func (s *ProverTestSuite) SetupTest() {
 	port, err := strconv.Atoi(proverServerUrl.Port())
 	s.Nil(err)
 
-	allowance := new(big.Int).Exp(big.NewInt(10_000_000_000), big.NewInt(18), nil)
+	allowance := new(big.Int).Exp(big.NewInt(1_000_000_100), big.NewInt(18), nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
@@ -384,6 +386,50 @@ func (s *ProverTestSuite) TestReleaseOneCapacity() {
 func (s *ProverTestSuite) TestStartSubscription() {
 	s.NotPanics(s.p.initSubscription)
 	s.NotPanics(s.p.closeSubscription)
+}
+
+func (s *ProverTestSuite) TestSetApprovalAmount() {
+	opts, err := bind.NewKeyedTransactorWithChainID(s.p.proverPrivateKey, s.p.rpc.L1ChainID)
+	s.Nil(err)
+
+	tx, err := s.p.rpc.TaikoToken.Approve(opts, s.p.cfg.TaikoL1Address, common.Big0)
+	s.Nil(err)
+
+	_, err = rpc.WaitReceipt(context.Background(), s.p.rpc.L1, tx)
+	s.Nil(err)
+
+	allowance, err := s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.proverAddress, s.p.cfg.TaikoL1Address)
+	s.Nil(err)
+
+	s.Equal(0, allowance.Cmp(common.Big0))
+
+	// max that can be approved
+	amt, ok := new(big.Int).SetString("58764887351446156758749765621197442946723800609510499661540524634076971270144", 10)
+	s.True(ok)
+
+	s.p.cfg.Allowance = amt
+
+	s.Nil(s.p.setApprovalAmount())
+
+	allowance, err = s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.proverAddress, s.p.cfg.TaikoL1Address)
+	s.Nil(err)
+
+	s.Equal(0, amt.Cmp(allowance))
+}
+
+func (s *ProverTestSuite) TestSetApprovalAlreadySetHigher() {
+	originalAllowance, err := s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.proverAddress, s.p.cfg.TaikoL1Address)
+	s.Nil(err)
+
+	amt := big.NewInt(1)
+	s.p.cfg.Allowance = amt
+
+	s.Nil(s.p.setApprovalAmount())
+
+	allowance, err := s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.proverAddress, s.p.cfg.TaikoL1Address)
+	s.Nil(err)
+
+	s.Equal(0, allowance.Cmp(originalAllowance))
 }
 
 func TestProverTestSuite(t *testing.T) {
