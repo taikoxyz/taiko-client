@@ -269,13 +269,15 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	return nil
 }
 
+// setApprovalAmount will set the allowance on the TaikoToken contract for the
+// configured proverAddress as owner and the TaikoL1 contract as spender,
+// if flag is provided for allowance.
 func (p *Prover) setApprovalAmount() error {
 	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
 		log.Info("skipping setting approval, allowance not set")
 		return nil
 	}
 
-	// check allowance
 	allowance, err := p.rpc.TaikoToken.Allowance(
 		&bind.CallOpts{},
 		p.proverAddress,
