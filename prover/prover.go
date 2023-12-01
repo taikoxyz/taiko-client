@@ -257,6 +257,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if p.IsGuardianProver() {
 		proverServerOpts.ProverPrivateKey = p.cfg.GuardianProverPrivateKey
 	}
+
 	if p.srv, err = server.New(proverServerOpts); err != nil {
 		return err
 	}
@@ -264,10 +265,84 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	return nil
 }
 
+// setApprovalAmount will set the allowance on the TaikoToken contract for the
+// configured proverAddress as owner and the TaikoL1 contract as spender,
+// if flag is provided for allowance.
+func (p *Prover) setApprovalAmount() error {
+	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
+		log.Info("skipping setting approval, allowance not set")
+		return nil
+	}
+
+	allowance, err := p.rpc.TaikoToken.Allowance(
+		&bind.CallOpts{},
+		p.proverAddress,
+		p.cfg.TaikoL1Address,
+	)
+	if err != nil {
+		return err
+	}
+
+	log.Info("existing allowance for taikoL1 contract", "allowance", allowance.String())
+
+	if allowance.Cmp(p.cfg.Allowance) == 1 {
+		log.Info("skipping setting allowance, allowance already greater or equal",
+			"allowance", allowance.String(),
+			"approvalAmount", p.cfg.Allowance.String(),
+		)
+		return nil
+	}
+
+	opts, err := bind.NewKeyedTransactorWithChainID(
+		p.cfg.L1ProverPrivKey,
+		p.rpc.L1ChainID,
+	)
+	if err != nil {
+		return err
+	}
+
+	log.Info("prover approving taikoL1 for taiko token", "allowance", p.cfg.Allowance.String())
+
+	tx, err := p.rpc.TaikoToken.Approve(
+		opts,
+		p.cfg.TaikoL1Address,
+		p.cfg.Allowance,
+	)
+	if err != nil {
+		return err
+	}
+
+	receipt, err := rpc.WaitReceipt(context.Background(), p.rpc.L1, tx)
+	if err != nil {
+		return err
+	}
+
+	log.Info("prover approved taikoL1 for taiko token", "txHash", receipt.TxHash.Hex())
+
+	allowance, err = p.rpc.TaikoToken.Allowance(
+		&bind.CallOpts{},
+		p.proverAddress,
+		p.cfg.TaikoL1Address,
+	)
+	if err != nil {
+		return err
+	}
+
+	log.Info("new allowance for taikoL1 contract", "allowance", allowance.String())
+
+	return nil
+}
+
 // Start starts the main loop of the L2 block prover.
 func (p *Prover) Start() error {
+	if err := p.setApprovalAmount(); err != nil {
+		log.Crit("failed to set approval amount", "error", err)
+		return err
+	}
+
 	p.wg.Add(1)
 	p.initSubscription()
+
 	go func() {
 		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
 			log.Crit("Failed to start http server", "error", err)
@@ -391,14 +466,6 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
-	// guardian prover must sign each new block and store in database, to be exposed
-	// via API for liveness checks.
-	if p.IsGuardianProver() {
-		if err := p.signBlock(ctx, event.BlockId); err != nil {
-			return fmt.Errorf("failed to sign block data (eventID %d): %w", event.BlockId, err)
-		}
-	}
-
 	if _, err := p.rpc.WaitL1Origin(ctx, event.BlockId); err != nil {
 		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
 	}
@@ -478,6 +545,14 @@ func (p *Prover) onBlockProposed(
 		"removed", event.Raw.Removed,
 	)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
+
+	// guardian prover must sign each new block and store in database, to be exposed
+	// via API for liveness checks.
+	if p.IsGuardianProver() {
+		if err := p.signBlock(ctx, event.BlockId); err != nil {
+			return fmt.Errorf("failed to sign block data (eventID %d): %w", event.BlockId, err)
+		}
+	}
 
 	handleBlockProposedEvent := func() error {
 		defer func() { <-p.proposeConcurrencyGuard }()
@@ -1185,6 +1260,8 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 		return nil
 	}
 
+	log.Info("guardian prover signing block", "blockID", blockID.Uint64())
+
 	block, err := p.rpc.L2.BlockByNumber(ctx, blockID)
 	if err != nil {
 		return err
@@ -1198,6 +1275,8 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 	if err := p.db.Put(db.BuildBlockKey(blockID.String()), signed); err != nil {
 		return err
 	}
+
+	log.Info("guardian prover successfully signed block", "blockID", blockID.Uint64())
 
 	return nil
 }

@@ -18,6 +18,7 @@ var (
 	l2HttpEndpoint = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 	taikoL1        = os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2        = os.Getenv("TAIKO_L2_ADDRESS")
+	allowance      = "10000000000000000000000000000000000000000000000000"
 	rpcTimeout     = 5 * time.Second
 	minTierFee     = 1024
 )
@@ -57,6 +58,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal(uint64(128), c.DatabaseCacheSize)
 		s.Equal(uint64(100), c.MaxProposedIn)
 		s.Equal(os.Getenv("ASSIGNMENT_HOOK_ADDRESS"), c.AssignmentHookAddress.String())
+		s.Equal(allowance, c.Allowance.String())
 
 		return err
 	}
@@ -88,6 +90,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.DatabasePath.Name, "dbPath",
 		"--" + flags.DatabaseCacheSize.Name, "128",
 		"--" + flags.MaxProposedIn.Name, "100",
+		"--" + flags.Allowance.Name, allowance,
 	}))
 }
 
@@ -161,6 +164,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.DatabaseCacheSize.Name},
 		&cli.Uint64Flag{Name: flags.MaxProposedIn.Name},
 		&cli.StringFlag{Name: flags.ProverAssignmentHookAddress.Name},
+		&cli.StringFlag{Name: flags.Allowance.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
