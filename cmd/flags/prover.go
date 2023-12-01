@@ -140,6 +140,12 @@ var (
 		Value:    36 * time.Second,
 		Category: proverCategory,
 	}
+	Allowance = &cli.StringFlag{
+		Name:     "prover.allowance",
+		Usage:    "Amount to approve TaikoL1 contract for TaikoToken usage",
+		Value:    "0",
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -170,4 +176,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxExpiry,
 	TaikoTokenAddress,
 	TempCapacityExpiresAt,
+	Allowance,
 })
