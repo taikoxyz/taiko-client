@@ -328,17 +328,13 @@ func (p *Prover) setApprovalAmount() error {
 
 // Start starts the main loop of the L2 block prover.
 func (p *Prover) Start() error {
-	p.wg.Add(2)
-	p.initSubscription()
-	go func() {
-		defer func() {
-			p.wg.Done()
-		}()
+	if err := p.setApprovalAmount(); err != nil {
+		log.Crit("failed to set approval amount", "error", err)
+	}
 
-		if err := p.setApprovalAmount(); err != nil {
-			log.Crit("failed to set approval amount", "error", err)
-		}
-	}()
+	p.wg.Add(1)
+	p.initSubscription()
+
 	go func() {
 		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
 			log.Crit("Failed to start http server", "error", err)
