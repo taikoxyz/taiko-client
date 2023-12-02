@@ -30,7 +30,7 @@ var (
 // @contact.email info@taiko.xyz
 
 // @license.name MIT
-// @license.url hhttps://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md
+// @license.url https://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md
 
 // @host prover-api.test.taiko.xyz
 // ProverServer represents a prover server instance.
