@@ -1284,6 +1284,11 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 			"eventBlockID", blockID.Uint64(),
 		)
 		time.Sleep(6 * time.Second)
+
+		latest, err = p.rpc.L2.BlockByNumber(ctx, nil)
+		if err != nil {
+			return err
+		}
 	}
 
 	log.Info("guardian prover block signing caught up",
