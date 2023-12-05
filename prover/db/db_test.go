@@ -6,6 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_BuildBlockKey(t *testing.T) {
+func TestBuildBlockKey(t *testing.T) {
 	assert.Equal(t, BuildBlockKey("1"), []byte("blockid-1"))
 }
