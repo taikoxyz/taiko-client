@@ -107,11 +107,14 @@ func (s *ClientTestSuite) SetupTest() {
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)
 
+		decimal, err := rpcCli.TaikoToken.Decimals(nil)
+		s.Nil(err)
+
 		// Increase allowance for AssignmentHook and TaikoL1
 		opts, err = bind.NewKeyedTransactorWithChainID(l1ProverPrivKey, rpcCli.L1ChainID)
 		s.Nil(err)
 
-		bigInt := new(big.Int).Exp(big.NewInt(1_000_000_000), big.NewInt(18), nil)
+		bigInt := new(big.Int).Exp(big.NewInt(1_000_000_000), new(big.Int).SetUint64(uint64(decimal)), nil)
 		_, err = rpcCli.TaikoToken.Approve(
 			opts,
 			common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
@@ -155,7 +158,7 @@ func (s *ClientTestSuite) setAddress(ownerPrivKey *ecdsa.PrivateKey, name [32]by
 
 	tx, err := controller.Schedule(
 		opts,
-		common.HexToAddress(os.Getenv("ADDRESS_MANAGER_CONTRACT_ADDRESS")),
+		common.HexToAddress(os.Getenv("ROLLUP_ADDRESS_MANAGER_CONTRACT_ADDRESS")),
 		common.Big0,
 		data,
 		[32]byte{},
@@ -169,7 +172,7 @@ func (s *ClientTestSuite) setAddress(ownerPrivKey *ecdsa.PrivateKey, name [32]by
 
 	tx, err = controller.Execute(
 		opts,
-		common.HexToAddress(os.Getenv("ADDRESS_MANAGER_CONTRACT_ADDRESS")),
+		common.HexToAddress(os.Getenv("ROLLUP_ADDRESS_MANAGER_CONTRACT_ADDRESS")),
 		common.Big0,
 		data,
 		[32]byte{},

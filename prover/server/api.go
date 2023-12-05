@@ -246,7 +246,7 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 	var signedBlocks []SignedBlock
 
 	// start iterator at 0
-	start := big.NewInt(0)
+	start := common.Big0
 
 	// if latestBlock is greater than the number of blocks to return, we only want to return
 	// the most recent N blocks signed by this guardian prover.
