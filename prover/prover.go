@@ -229,8 +229,13 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	// levelDB
 	var db ethdb.KeyValueStore
 	if cfg.DatabasePath != "" {
-		db, err = leveldb.New(cfg.DatabasePath, int(cfg.DatabaseCacheSize), 1, "taiko", false)
-		if err != nil {
+		if db, err = leveldb.New(
+			cfg.DatabasePath,
+			int(cfg.DatabaseCacheSize),
+			16, // Minimum number of files handles is 16 in leveldb.
+			"taiko",
+			false,
+		); err != nil {
 			return err
 		}
 
@@ -268,14 +273,14 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 // setApprovalAmount will set the allowance on the TaikoToken contract for the
 // configured proverAddress as owner and the TaikoL1 contract as spender,
 // if flag is provided for allowance.
-func (p *Prover) setApprovalAmount() error {
+func (p *Prover) setApprovalAmount(ctx context.Context) error {
 	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
-		log.Info("skipping setting approval, allowance not set")
+		log.Info("Skipping setting approval, allowance not set")
 		return nil
 	}
 
 	allowance, err := p.rpc.TaikoToken.Allowance(
-		&bind.CallOpts{},
+		&bind.CallOpts{Context: ctx},
 		p.proverAddress,
 		p.cfg.TaikoL1Address,
 	)
@@ -283,10 +288,11 @@ func (p *Prover) setApprovalAmount() error {
 		return err
 	}
 
-	log.Info("existing allowance for taikoL1 contract", "allowance", allowance.String())
+	log.Info("Existing allowance for TaikoL1 contract", "allowance", allowance.String())
 
 	if allowance.Cmp(p.cfg.Allowance) == 1 {
-		log.Info("skipping setting allowance, allowance already greater or equal",
+		log.Info(
+			"Skipping setting allowance, allowance already greater or equal",
 			"allowance", allowance.String(),
 			"approvalAmount", p.cfg.Allowance.String(),
 		)
@@ -300,8 +306,9 @@ func (p *Prover) setApprovalAmount() error {
 	if err != nil {
 		return err
 	}
+	opts.Context = ctx
 
-	log.Info("prover approving taikoL1 for taiko token", "allowance", p.cfg.Allowance.String())
+	log.Info("Approving TaikoL1 for taiko token", "allowance", p.cfg.Allowance.String())
 
 	tx, err := p.rpc.TaikoToken.Approve(
 		opts,
@@ -312,38 +319,36 @@ func (p *Prover) setApprovalAmount() error {
 		return err
 	}
 
-	receipt, err := rpc.WaitReceipt(context.Background(), p.rpc.L1, tx)
+	receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx)
 	if err != nil {
 		return err
 	}
 
-	log.Info("prover approved taikoL1 for taiko token", "txHash", receipt.TxHash.Hex())
+	log.Info("Approved TaikoL1 for taiko token", "txHash", receipt.TxHash.Hex())
 
-	allowance, err = p.rpc.TaikoToken.Allowance(
-		&bind.CallOpts{},
+	if allowance, err = p.rpc.TaikoToken.Allowance(
+		&bind.CallOpts{Context: ctx},
 		p.proverAddress,
 		p.cfg.TaikoL1Address,
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 
-	log.Info("new allowance for taikoL1 contract", "allowance", allowance.String())
+	log.Info("New allowance for TaikoL1 contract", "allowance", allowance.String())
 
 	return nil
 }
 
 // Start starts the main loop of the L2 block prover.
 func (p *Prover) Start() error {
-	if err := p.setApprovalAmount(); err != nil {
-		log.Crit("failed to set approval amount", "error", err)
-		return err
-	}
-
 	p.wg.Add(1)
 	p.initSubscription()
 
 	go func() {
+		if err := p.setApprovalAmount(p.ctx); err != nil {
+			log.Crit("Failed to set approval amount", "error", err)
+		}
+
 		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
 			log.Crit("Failed to start http server", "error", err)
 		}
