@@ -463,7 +463,7 @@ func (p *Prover) onBlockProposed(
 	event *bindings.TaikoL1ClientBlockProposed,
 	end eventIterator.EndBlockProposedEventIterFunc,
 ) error {
-	// if we are operating as a guardian prover,
+	// If we are operating as a guardian prover,
 	// we should sign all seen proposed blocks as soon as possible.
 	go func() {
 		if p.IsGuardianProver() {
@@ -1261,12 +1261,12 @@ func (p *Prover) releaseOneCapacity(blockID *big.Int) {
 
 // signBlock signs the block data and stores it in the database.
 func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
-	// only guardianProvers should sign blocks
+	// Only guardianProvers should sign blocks
 	if !p.IsGuardianProver() {
 		return nil
 	}
 
-	log.Info("guardian prover signing block", "blockID", blockID.Uint64())
+	log.Info("Guardian prover signing block", "blockID", blockID.Uint64())
 
 	exists, err := p.db.Has(db.BuildBlockKey(blockID.String()))
 	if err != nil {
@@ -1274,39 +1274,43 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 	}
 
 	if exists {
-		log.Info("guardian prover already signed block", "blockID", blockID.Uint64())
+		log.Info("Guardian prover already signed block", "blockID", blockID.Uint64())
 		return nil
 	}
 
-	latest, err := p.rpc.L2.BlockByNumber(ctx, nil)
+	head, err := p.rpc.L2.BlockNumber(ctx)
 	if err != nil {
 		return err
 	}
 
-	for latest.Number().Uint64() < blockID.Uint64() {
-		log.Info("guardian prover block signing waiting for chain",
-			"latestBlock", latest.Number().Uint64(),
+	for head < blockID.Uint64() {
+		log.Info(
+			"Guardian prover block signing waiting for chain",
+			"latestBlock", head,
 			"eventBlockID", blockID.Uint64(),
 		)
-		time.Sleep(6 * time.Second)
 
-		latest, err = p.rpc.L2.BlockByNumber(ctx, nil)
-		if err != nil {
+		if _, err := p.rpc.WaitL1Origin(ctx, blockID); err != nil {
+			return err
+		}
+
+		if head, err = p.rpc.L2.BlockNumber(ctx); err != nil {
 			return err
 		}
 	}
 
-	log.Info("guardian prover block signing caught up",
-		"latestBlock", latest.Number().Uint64(),
+	log.Info(
+		"Guardian prover block signing caught up",
+		"latestBlock", head,
 		"eventBlockID", blockID.Uint64(),
 	)
 
-	block, err := p.rpc.L2.BlockByNumber(ctx, blockID)
+	header, err := p.rpc.L2.HeaderByNumber(ctx, blockID)
 	if err != nil {
 		return err
 	}
 
-	signed, err := crypto.Sign(block.Hash().Bytes(), p.proverPrivateKey)
+	signed, err := crypto.Sign(header.Hash().Bytes(), p.proverPrivateKey)
 	if err != nil {
 		return err
 	}
@@ -1315,7 +1319,7 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 		return err
 	}
 
-	log.Info("guardian prover successfully signed block", "blockID", blockID.Uint64())
+	log.Info("Guardian prover successfully signed block", "blockID", blockID.Uint64(), "hash", header.Hash())
 
 	return nil
 }
