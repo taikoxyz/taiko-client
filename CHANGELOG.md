@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.18.0](https://github.com/taikoxyz/taiko-client/compare/v0.17.0...v0.18.0) (2023-12-03)
+
+
+### Features
+
+* **bindings:** update Go contract bindings ([#443](https://github.com/taikoxyz/taiko-client/issues/443)) ([b155b5a](https://github.com/taikoxyz/taiko-client/commit/b155b5a173eabb9ca5a13ae7f10c47d5f506b8ae))
+* **bindings:** update Go contract bindings based on latest A6 protocol changes ([#435](https://github.com/taikoxyz/taiko-client/issues/435)) ([7e39dc2](https://github.com/taikoxyz/taiko-client/commit/7e39dc23eac6558de4de114725b5cb4020312d68))
+* **bindings:** update Go contract bindings based on the latest contestable zkRollup protocol ([#429](https://github.com/taikoxyz/taiko-client/issues/429)) ([d33e19b](https://github.com/taikoxyz/taiko-client/commit/d33e19be64929f820a8841e49fad8d0d541bd368))
+* **bindings:** update Go contract bindings for the latest protocol ([#441](https://github.com/taikoxyz/taiko-client/issues/441)) ([02c981d](https://github.com/taikoxyz/taiko-client/commit/02c981d4d700c3e1ca8032307945dee5723be3a2))
+* **bindings:** updates related to TaikoToken && guardian prover changes ([#436](https://github.com/taikoxyz/taiko-client/issues/436)) ([9066722](https://github.com/taikoxyz/taiko-client/commit/9066722ae4dc7637c0db3acb2699ce11d63c5962))
+* **docs:** host swagger doc by github page ([#427](https://github.com/taikoxyz/taiko-client/issues/427)) ([ab4e613](https://github.com/taikoxyz/taiko-client/commit/ab4e613de050d7e77b7942f02f9d596bf718fc75))
+* **driver:** improve `ResetL1Current` method based on the latest protocol changes ([#445](https://github.com/taikoxyz/taiko-client/issues/445)) ([ddf6980](https://github.com/taikoxyz/taiko-client/commit/ddf6980a97d7c14239458cdde535066aea14912d))
+* **driver:** update `anchorGasLimit` based on the latest `TaikoL2` contract ([#437](https://github.com/taikoxyz/taiko-client/issues/437)) ([171600a](https://github.com/taikoxyz/taiko-client/commit/171600ad7c107056081a4bac9e4a6d9eebd9c393))
+* **pkg:** update `defaultMaxTransactionsPerBlock` to `150` ([#438](https://github.com/taikoxyz/taiko-client/issues/438)) ([93b9ecf](https://github.com/taikoxyz/taiko-client/commit/93b9ecf635869964eb12b3dae3e304184a83becb))
+* **proposer:** remove `--l2.suggestedFeeRecipient` flag ([#442](https://github.com/taikoxyz/taiko-client/issues/442)) ([405b9ed](https://github.com/taikoxyz/taiko-client/commit/405b9ed03c7a2749f56fdb16849281a284bcc562))
+* **prover:** add `--prover.blockSlippage` flag ([#449](https://github.com/taikoxyz/taiko-client/issues/449)) ([0ee8259](https://github.com/taikoxyz/taiko-client/commit/0ee82593c2fc2704a2c8f0130fd1887bc67f764b))
+* **prover:** guardian prover block signature && bindings updates for based contestable zkRollup ([#450](https://github.com/taikoxyz/taiko-client/issues/450)) ([904d3e7](https://github.com/taikoxyz/taiko-client/commit/904d3e76dd67c71ea225144d12526e0291e2b39f))
+* **prover:** improve `/status` API ([#444](https://github.com/taikoxyz/taiko-client/issues/444)) ([e688c25](https://github.com/taikoxyz/taiko-client/commit/e688c256109e20ed5ea29fc03e97433acf7002bf))
+* **prover:** increase the assignment expiration waiting time ([#431](https://github.com/taikoxyz/taiko-client/issues/431)) ([579dcc5](https://github.com/taikoxyz/taiko-client/commit/579dcc50686f73f42961f1624f067ede52701b4e))
+* **prover:** more accurate `provingWindowExpiresAt` calculation && update bindings ([#433](https://github.com/taikoxyz/taiko-client/issues/433)) ([72c528f](https://github.com/taikoxyz/taiko-client/commit/72c528f8df4994f13060c92cc1c1162a228dfd49))
+* **test:** fix `suite.go` ([#453](https://github.com/taikoxyz/taiko-client/issues/453)) ([38fbb66](https://github.com/taikoxyz/taiko-client/commit/38fbb662c9ec46e4ea55689970faa70b56eeed4f))
+
+
+### Bug Fixes
+
+* **docs:** fix swagger generation ([#455](https://github.com/taikoxyz/taiko-client/issues/455)) ([9533761](https://github.com/taikoxyz/taiko-client/commit/9533761cfea43a5bf0d9093694ede881e0c95996))
+* **prover:** fix guardian prover APIs ([#459](https://github.com/taikoxyz/taiko-client/issues/459)) ([08c77f2](https://github.com/taikoxyz/taiko-client/commit/08c77f244dfc4630c767b826b3156fad7b09dca4))
+* **prover:** fix Guardian prover waiting ([#462](https://github.com/taikoxyz/taiko-client/issues/462)) ([8266845](https://github.com/taikoxyz/taiko-client/commit/82668458bb9050bca4d676b73299d7595c772851))
+* **prover:** guardian prover sign wait ([#461](https://github.com/taikoxyz/taiko-client/issues/461)) ([51fd8f9](https://github.com/taikoxyz/taiko-client/commit/51fd8f9e31d9e44eb0e9b82a500ad83ab52b1e92))
+* **prover:** reorder guardian prover signature && add allowance flag ([#457](https://github.com/taikoxyz/taiko-client/issues/457)) ([4bc2a63](https://github.com/taikoxyz/taiko-client/commit/4bc2a63c57c3897b2634abc40af72e55522d4af6))
+* **server:** fix a typo in `license.url` ([#460](https://github.com/taikoxyz/taiko-client/issues/460)) ([d632109](https://github.com/taikoxyz/taiko-client/commit/d63210935f21173e8b03a4a09cb72eabf70c7ef0))
+* **tests:** fix workflow errors ([#440](https://github.com/taikoxyz/taiko-client/issues/440)) ([8b3cef2](https://github.com/taikoxyz/taiko-client/commit/8b3cef2f7a90dfb9b08fdebe7bd8edd63776db00))
+
 ## [0.17.0](https://github.com/taikoxyz/taiko-client/compare/v0.16.0...v0.17.0) (2023-10-16)
 
 
