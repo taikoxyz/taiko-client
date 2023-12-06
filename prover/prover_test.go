@@ -406,7 +406,7 @@ func (s *ProverTestSuite) TestSetApprovalAmount() {
 
 	s.Equal(0, allowance.Cmp(common.Big0))
 
-	// max that can be approved
+	// Max that can be approved
 	amt, ok := new(big.Int).SetString("58764887351446156758749765621197442946723800609510499661540524634076971270144", 10)
 	s.True(ok)
 

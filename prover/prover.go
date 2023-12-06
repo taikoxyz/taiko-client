@@ -88,7 +88,7 @@ type Prover struct {
 	proposeConcurrencyGuard     chan struct{}
 	submitProofConcurrencyGuard chan struct{}
 
-	// capacity-related configs
+	// Capacity-related configs
 	capacityManager *capacity.CapacityManager
 
 	ctx context.Context
@@ -345,12 +345,12 @@ func (p *Prover) Start() error {
 	p.initSubscription()
 
 	go func() {
-		if err := p.setApprovalAmount(p.ctx); err != nil {
-			log.Crit("Failed to set approval amount", "error", err)
-		}
-
 		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
 			log.Crit("Failed to start http server", "error", err)
+		}
+
+		if err := p.setApprovalAmount(p.ctx); err != nil {
+			log.Crit("Failed to set approval amount", "error", err)
 		}
 	}()
 	go p.eventLoop()
@@ -466,10 +466,11 @@ func (p *Prover) onBlockProposed(
 	// If we are operating as a guardian prover,
 	// we should sign all seen proposed blocks as soon as possible.
 	go func() {
-		if p.IsGuardianProver() {
-			if err := p.signBlock(ctx, event.BlockId); err != nil {
-				log.Error("guardian prover unable to sign block", "blockID", event.BlockId)
-			}
+		if !p.IsGuardianProver() {
+			return
+		}
+		if err := p.signBlock(ctx, event.BlockId); err != nil {
+			log.Error("Guardian prover unable to sign block", "blockID", event.BlockId, "error", err)
 		}
 	}()
 
@@ -557,6 +558,9 @@ func (p *Prover) onBlockProposed(
 		"l1Hash", event.Raw.BlockHash,
 		"blockID", event.BlockId,
 		"removed", event.Raw.Removed,
+		"assignedProver", event.AssignedProver,
+		"livenessBond", event.LivenessBond,
+		"minTier", event.Meta.MinTier,
 	)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
 
