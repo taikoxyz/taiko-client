@@ -6,6 +6,6 @@ var (
 	BlockKeyPrefix = "blockid-"
 )
 
-func BuildBlockKey(blockID string) []byte {
-	return []byte(fmt.Sprintf("%v%v", BlockKeyPrefix, blockID))
+func BuildBlockKey(blockTimestamp uint64) []byte {
+	return []byte(fmt.Sprintf("%v%v", BlockKeyPrefix, blockTimestamp))
 }

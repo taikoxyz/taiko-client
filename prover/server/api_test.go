@@ -65,7 +65,7 @@ func (s *ProverServerTestSuite) TestGetSignedBlocks() {
 	signed, err := crypto.Sign(latest.Hash().Bytes(), s.s.proverPrivateKey)
 	s.Nil(err)
 
-	s.Nil(s.s.db.Put(db.BuildBlockKey(latest.Number().String()), signed))
+	s.Nil(s.s.db.Put(db.BuildBlockKey(latest.Time()), signed))
 	res := s.sendReq("/signedBlocks")
 	s.Equal(http.StatusOK, res.StatusCode)
 

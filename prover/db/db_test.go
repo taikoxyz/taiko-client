@@ -7,5 +7,5 @@ import (
 )
 
 func Test_BuildBlockKey(t *testing.T) {
-	assert.Equal(t, BuildBlockKey("1"), []byte("blockid-1"))
+	assert.Equal(t, BuildBlockKey(1), []byte("blockid-1"))
 }

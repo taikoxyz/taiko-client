@@ -243,18 +243,32 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 		}
 	}
 
-	var signedBlocks []SignedBlock
+	var signedBlocks []SignedBlock = []SignedBlock{}
 
 	// start iterator at 0
-	start := big.NewInt(0)
+	var start uint64 = 0
 
 	// if latestBlock is greater than the number of blocks to return, we only want to return
 	// the most recent N blocks signed by this guardian prover.
 	if latestBlock.NumberU64() > numBlocksToReturn.Uint64() {
-		start = new(big.Int).Sub(latestBlock.Number(), numBlocksToReturn)
+		blockNum := new(big.Int).Sub(latestBlock.Number(), numBlocksToReturn)
+		block, err := srv.rpc.L2.BlockByNumber(
+			c.Request().Context(),
+			blockNum,
+		)
+		if err != nil {
+			log.Error("Failed to get L2 block", "error", err, "blockNum", blockNum)
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+
+		start = block.Time()
 	}
 
-	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), start.Bytes())
+	// start should be set to a block timestamp latestBlock-numBlocksToReturn blocks ago.
+	// so when we iterate, we should only be seeing numBlocksToReturn amount of blocks being pulled
+	// from the database and returned.
+
+	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), new(big.Int).SetUint64(start).Bytes())
 
 	defer iter.Release()
 
