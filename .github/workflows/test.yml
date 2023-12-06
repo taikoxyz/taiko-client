@@ -45,7 +45,7 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono
           path: ${{ env.TAIKO_MONO_DIR }}
-          ref: based_contestable_zkrollup_improved
+          ref: based_contestable_zkrollup
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
