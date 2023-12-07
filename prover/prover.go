@@ -88,7 +88,7 @@ type Prover struct {
 	proposeConcurrencyGuard     chan struct{}
 	submitProofConcurrencyGuard chan struct{}
 
-	// capacity-related configs
+	// Capacity-related configs
 	capacityManager *capacity.CapacityManager
 
 	ctx context.Context
@@ -229,8 +229,13 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	// levelDB
 	var db ethdb.KeyValueStore
 	if cfg.DatabasePath != "" {
-		db, err = leveldb.New(cfg.DatabasePath, int(cfg.DatabaseCacheSize), 1, "taiko", false)
-		if err != nil {
+		if db, err = leveldb.New(
+			cfg.DatabasePath,
+			int(cfg.DatabaseCacheSize),
+			16, // Minimum number of files handles is 16 in leveldb.
+			"taiko",
+			false,
+		); err != nil {
 			return err
 		}
 
@@ -268,14 +273,14 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 // setApprovalAmount will set the allowance on the TaikoToken contract for the
 // configured proverAddress as owner and the TaikoL1 contract as spender,
 // if flag is provided for allowance.
-func (p *Prover) setApprovalAmount() error {
+func (p *Prover) setApprovalAmount(ctx context.Context) error {
 	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
-		log.Info("skipping setting approval, allowance not set")
+		log.Info("Skipping setting approval, `--prover.allowance` flag not set")
 		return nil
 	}
 
 	allowance, err := p.rpc.TaikoToken.Allowance(
-		&bind.CallOpts{},
+		&bind.CallOpts{Context: ctx},
 		p.proverAddress,
 		p.cfg.TaikoL1Address,
 	)
@@ -283,10 +288,11 @@ func (p *Prover) setApprovalAmount() error {
 		return err
 	}
 
-	log.Info("existing allowance for taikoL1 contract", "allowance", allowance.String())
+	log.Info("Existing allowance for TaikoL1 contract", "allowance", allowance.String())
 
-	if allowance.Cmp(p.cfg.Allowance) == 1 {
-		log.Info("skipping setting allowance, allowance already greater or equal",
+	if allowance.Cmp(p.cfg.Allowance) >= 0 {
+		log.Info(
+			"Skipping setting allowance, allowance already greater or equal",
 			"allowance", allowance.String(),
 			"approvalAmount", p.cfg.Allowance.String(),
 		)
@@ -300,8 +306,9 @@ func (p *Prover) setApprovalAmount() error {
 	if err != nil {
 		return err
 	}
+	opts.Context = ctx
 
-	log.Info("prover approving taikoL1 for taiko token", "allowance", p.cfg.Allowance.String())
+	log.Info("Approving TaikoL1 for taiko token", "allowance", p.cfg.Allowance.String())
 
 	tx, err := p.rpc.TaikoToken.Approve(
 		opts,
@@ -312,38 +319,35 @@ func (p *Prover) setApprovalAmount() error {
 		return err
 	}
 
-	receipt, err := rpc.WaitReceipt(context.Background(), p.rpc.L1, tx)
+	receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx)
 	if err != nil {
 		return err
 	}
 
-	log.Info("prover approved taikoL1 for taiko token", "txHash", receipt.TxHash.Hex())
+	log.Info("Approved TaikoL1 for taiko token", "txHash", receipt.TxHash.Hex())
 
-	allowance, err = p.rpc.TaikoToken.Allowance(
-		&bind.CallOpts{},
+	if allowance, err = p.rpc.TaikoToken.Allowance(
+		&bind.CallOpts{Context: ctx},
 		p.proverAddress,
 		p.cfg.TaikoL1Address,
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 
-	log.Info("new allowance for taikoL1 contract", "allowance", allowance.String())
+	log.Info("New allowance for TaikoL1 contract", "allowance", allowance.String())
 
 	return nil
 }
 
 // Start starts the main loop of the L2 block prover.
 func (p *Prover) Start() error {
-	if err := p.setApprovalAmount(); err != nil {
-		log.Crit("failed to set approval amount", "error", err)
-		return err
-	}
-
 	p.wg.Add(1)
 	p.initSubscription()
 
 	go func() {
+		if err := p.setApprovalAmount(p.ctx); err != nil {
+			log.Crit("Failed to set approval amount", "error", err)
+		}
 		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
 			log.Crit("Failed to start http server", "error", err)
 		}
@@ -458,13 +462,14 @@ func (p *Prover) onBlockProposed(
 	event *bindings.TaikoL1ClientBlockProposed,
 	end eventIterator.EndBlockProposedEventIterFunc,
 ) error {
-	// if we are operating as a guardian prover,
+	// If we are operating as a guardian prover,
 	// we should sign all seen proposed blocks as soon as possible.
 	go func() {
-		if p.IsGuardianProver() {
-			if err := p.signBlock(ctx, event.BlockId); err != nil {
-				log.Error("guardian prover unable to sign block", "blockID", event.BlockId)
-			}
+		if !p.IsGuardianProver() {
+			return
+		}
+		if err := p.signBlock(ctx, event.BlockId); err != nil {
+			log.Error("Guardian prover unable to sign block", "blockID", event.BlockId, "error", err)
 		}
 	}()
 
@@ -552,6 +557,9 @@ func (p *Prover) onBlockProposed(
 		"l1Hash", event.Raw.BlockHash,
 		"blockID", event.BlockId,
 		"removed", event.Raw.Removed,
+		"assignedProver", event.AssignedProver,
+		"livenessBond", event.LivenessBond,
+		"minTier", event.Meta.MinTier,
 	)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
 
@@ -1261,58 +1269,67 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 		return nil
 	}
 
-	log.Info("guardian prover signing block", "blockID", blockID.Uint64())
+	log.Info("Guardian prover signing block", "blockID", blockID.Uint64())
 
-	latest, err := p.rpc.L2.BlockByNumber(ctx, nil)
+	head, err := p.rpc.L2.BlockNumber(ctx)
 	if err != nil {
 		return err
 	}
 
-	for latest.Number().Uint64() < blockID.Uint64() {
-		log.Info("guardian prover block signing waiting for chain",
-			"latestBlock", latest.Number().Uint64(),
+	for head < blockID.Uint64() {
+		log.Info(
+			"Guardian prover block signing waiting for chain",
+			"latestBlock", head,
 			"eventBlockID", blockID.Uint64(),
 		)
-		time.Sleep(6 * time.Second)
 
-		latest, err = p.rpc.L2.BlockByNumber(ctx, nil)
+		if _, err := p.rpc.WaitL1Origin(ctx, blockID); err != nil {
+			return err
+		}
+
+		head, err = p.rpc.L2.BlockNumber(ctx)
 		if err != nil {
 			return err
 		}
 	}
 
-	block, err := p.rpc.L2.BlockByNumber(ctx, blockID)
+	header, err := p.rpc.L2.HeaderByNumber(ctx, blockID)
 	if err != nil {
 		return err
 	}
 
-	exists, err := p.db.Has(db.BuildBlockKey(block.Time()))
+	exists, err := p.db.Has(db.BuildBlockKey(header.Time))
 	if err != nil {
 		return err
 	}
 
 	if exists {
-		log.Info("guardian prover already signed block", "blockID", blockID.Uint64())
+		log.Info("Guardian prover already signed block", "blockID", blockID.Uint64())
 		return nil
 	}
 
-	log.Info("guardian prover block signing caught up",
-		"latestBlock", latest.Number().Uint64(),
+	log.Info(
+		"Guardian prover block signing caught up",
+		"latestBlock", head,
 		"eventBlockID", blockID.Uint64(),
 	)
 
-	signed, err := crypto.Sign(block.Hash().Bytes(), p.proverPrivateKey)
+	signed, err := crypto.Sign(header.Hash().Bytes(), p.proverPrivateKey)
 	if err != nil {
 		return err
 	}
 
-	val := db.BuildBlockValue(block.Hash().Bytes(), signed, blockID)
-
-	if err := p.db.Put(db.BuildBlockKey(block.Time()), val); err != nil {
+	if err := p.db.Put(
+		db.BuildBlockKey(header.Time),
+		db.BuildBlockValue(header.Hash().Bytes(),
+			signed,
+			blockID,
+		),
+	); err != nil {
 		return err
 	}
 
-	log.Info("guardian prover successfully signed block", "blockID", blockID.Uint64())
+	log.Info("Guardian prover successfully signed block", "blockID", blockID.Uint64())
 
 	return nil
 }

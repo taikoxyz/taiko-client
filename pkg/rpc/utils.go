@@ -59,7 +59,8 @@ func CheckProverBalance(
 		return false, err
 	}
 
-	log.Info("Prover allowance for TaikoL1 contract",
+	log.Info(
+		"Prover allowance for TaikoL1 contract",
 		"allowance", allowance.String(),
 		"address", prover.Hex(),
 		"bond", bond.String(),
@@ -120,6 +121,7 @@ func WaitReceipt(
 
 		receipt, err := client.TransactionReceipt(ctxWithTimeout, tx.Hash())
 		if err != nil {
+			log.Debug("Failed to fetch transaction receipt", "hash", tx.Hash(), "error", err)
 			continue
 		}
 
