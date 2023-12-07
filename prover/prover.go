@@ -480,6 +480,7 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
+	// Wait for the corresponding L2 block being mined.
 	if _, err := p.rpc.WaitL1Origin(ctx, event.BlockId); err != nil {
 		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
 	}
@@ -563,145 +564,6 @@ func (p *Prover) onBlockProposed(
 	)
 	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
 
-	handleBlockProposedEvent := func() error {
-		defer func() { <-p.proposeConcurrencyGuard }()
-
-		// Check whether the block has been verified.
-		isVerified, err := p.isBlockVerified(event.BlockId)
-		if err != nil {
-			return fmt.Errorf("failed to check if the current L2 block is verified: %w", err)
-		}
-		if isVerified {
-			log.Info("📋 Block has been verified", "blockID", event.BlockId)
-			return nil
-		}
-
-		// Check whether the block's proof is still needed.
-		proofStatus, err := rpc.GetBlockProofStatus(
-			p.ctx,
-			p.rpc,
-			event.BlockId,
-			p.proverAddress,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
-		}
-
-		if proofStatus.IsSubmitted {
-			// If there is already a proof submitted and there is no need to contest
-			// it, we skip proving this block here.
-			if !proofStatus.Invalid || !p.cfg.ContesterMode {
-				return nil
-			}
-
-			// The proof submitted to protocol is invalid.
-			return p.handleInvalidProof(
-				ctx, event.BlockId,
-				new(big.Int).SetUint64(event.Raw.BlockNumber),
-				proofStatus.ParentBlock.Hash(),
-				proofStatus.CurrentTransitionState.Contester,
-				&event.Meta,
-				proofStatus.CurrentTransitionState.Tier,
-			)
-		}
-
-		log.Info(
-			"Proposed block information",
-			"blockID", event.BlockId,
-			"assignedProver", event.AssignedProver,
-			"minTier", event.Meta.MinTier,
-		)
-
-		provingWindow, err := p.getProvingWindow(event)
-		if err != nil {
-			return fmt.Errorf("failed to get proving window: %w", err)
-		}
-
-		var (
-			now                    = uint64(time.Now().Unix())
-			provingWindowExpiresAt = event.Meta.Timestamp + uint64(provingWindow.Seconds())
-			provingWindowExpired   = now > provingWindowExpiresAt
-			timeToExpire           = time.Duration(provingWindowExpiresAt-now) * time.Second
-		)
-
-		if provingWindowExpired {
-			// If the proving window is expired, we need to check if the current prover is the assigned prover
-			// at first, if yes, we should skip proving this block, if no, then we check if the current prover
-			// wants to prove unassigned blocks.
-			log.Info(
-				"Proposed block's proving window has expired",
-				"blockID", event.BlockId,
-				"prover", event.AssignedProver,
-				"expiresAt", provingWindowExpiresAt,
-			)
-			if event.AssignedProver == p.proverAddress {
-				log.Warn(
-					"Assigned prover is the current prover, but the proving window has expired, skip proving",
-					"blockID", event.BlockId,
-					"prover", event.AssignedProver,
-					"expiresAt", provingWindowExpiresAt,
-				)
-				return nil
-			}
-			if !p.cfg.ProveUnassignedBlocks {
-				log.Info(
-					"Skip proving expired blocks",
-					"blockID", event.BlockId,
-					"prover", event.AssignedProver,
-					"expiresAt", provingWindowExpiresAt,
-				)
-				return nil
-			}
-		} else {
-			// If the proving window is not expired, we need to check if the current prover is the assigned prover,
-			// if no and the current prover wants to prove unassigned blocks, then we should wait for its expiration.
-			if event.AssignedProver != p.proverAddress {
-				log.Info(
-					"Proposed block is not provable",
-					"blockID", event.BlockId,
-					"prover", event.AssignedProver,
-					"expiresAt", provingWindowExpiresAt,
-					"timeToExpire", timeToExpire,
-				)
-
-				if p.cfg.ProveUnassignedBlocks {
-					log.Info(
-						"Add proposed block to wait for proof window expiration",
-						"blockID", event.BlockId,
-					)
-					time.AfterFunc(
-						// Add another 12 seconds, to ensure one more L1 block will be mined before the proof submission
-						timeToExpire+12*time.Second,
-						func() { p.proofWindowExpiredCh <- event },
-					)
-				}
-
-				return nil
-			}
-		}
-
-		log.Info(
-			"Proposed block is provable",
-			"blockID", event.BlockId,
-			"prover", event.AssignedProver,
-			"expiresAt", provingWindowExpiresAt,
-			"minTier", event.Meta.MinTier,
-		)
-
-		metrics.ProverProofsAssigned.Inc(1)
-
-		// Make sure to take a capacity before requesting proof.
-		if err := p.takeOneCapacity(event.BlockId); err != nil {
-			return err
-		}
-
-		if proofSubmitter := p.selectSubmitter(event.Meta.MinTier); proofSubmitter != nil {
-			return proofSubmitter.RequestProof(ctx, event)
-		}
-
-		return nil
-	}
-
 	// Move l1Current cursor.
 	newL1Current, err := p.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash)
 	if err != nil {
@@ -715,8 +577,9 @@ func (p *Prover) onBlockProposed(
 		if err := backoff.Retry(
 			func() error {
 				p.proposeConcurrencyGuard <- struct{}{}
+				defer func() { <-p.proposeConcurrencyGuard }()
 
-				if err := handleBlockProposedEvent(); err != nil {
+				if err := p.handleNewBlockProposedEvent(ctx, event); err != nil {
 					log.Error(
 						"Failed to handle BlockProposed event",
 						"error", err,
@@ -733,6 +596,152 @@ func (p *Prover) onBlockProposed(
 			log.Error("Handle new BlockProposed event error", "error", err)
 		}
 	}()
+
+	return nil
+}
+
+// handleNewBlockProposedEvent handles the new block proposed event.
+func (p *Prover) handleNewBlockProposedEvent(ctx context.Context, e *bindings.TaikoL1ClientBlockProposed) error {
+	// Check whether the block has been verified.
+	isVerified, err := p.isBlockVerified(e.BlockId)
+	if err != nil {
+		return fmt.Errorf("failed to check if the current L2 block is verified: %w", err)
+	}
+	if isVerified {
+		log.Info("📋 Block has been verified", "blockID", e.BlockId)
+		return nil
+	}
+
+	// Check whether the block's proof is still needed.
+	proofStatus, err := rpc.GetBlockProofStatus(
+		p.ctx,
+		p.rpc,
+		e.BlockId,
+		p.proverAddress,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
+	}
+
+	if proofStatus.IsSubmitted {
+		// If there is already a proof submitted and there is no need to contest
+		// it, we skip proving this block here.
+		if !proofStatus.Invalid {
+			log.Info(
+				"A valid proof has been submitted, skip proving",
+				"blockID", e.BlockId,
+				"parent", proofStatus.ParentHeader.Hash(),
+			)
+			return nil
+		}
+
+		// If there is an invalid proof, but current prover is not in contest mode, we skip proving this block.
+		if !p.cfg.ContesterMode {
+			log.Info(
+				"An invalid proof has been submitted, but current prover is not in contest mode, skip proving",
+				"blockID", e.BlockId,
+				"parent", proofStatus.ParentHeader.Hash(),
+			)
+			return nil
+		}
+
+		// The proof submitted to protocol is invalid.
+		return p.handleInvalidProof(
+			ctx,
+			e.BlockId,
+			new(big.Int).SetUint64(e.Raw.BlockNumber),
+			proofStatus.ParentHeader.Hash(),
+			proofStatus.CurrentTransitionState.Contester,
+			&e.Meta,
+			proofStatus.CurrentTransitionState.Tier,
+		)
+	}
+
+	provingWindow, err := p.getProvingWindow(e)
+	if err != nil {
+		return fmt.Errorf("failed to get proving window: %w", err)
+	}
+
+	var (
+		now                    = uint64(time.Now().Unix())
+		provingWindowExpiresAt = e.Meta.Timestamp + uint64(provingWindow.Seconds())
+		provingWindowExpired   = now > provingWindowExpiresAt
+		timeToExpire           = time.Duration(provingWindowExpiresAt-now) * time.Second
+	)
+	if provingWindowExpired {
+		// If the proving window is expired, we need to check if the current prover is the assigned prover
+		// at first, if yes, we should skip proving this block, if no, then we check if the current prover
+		// wants to prove unassigned blocks.
+		log.Info(
+			"Proposed block's proving window has expired",
+			"blockID", e.BlockId,
+			"prover", e.AssignedProver,
+			"expiresAt", provingWindowExpiresAt,
+		)
+		if e.AssignedProver == p.proverAddress {
+			log.Warn(
+				"Assigned prover is the current prover, but the proving window has expired, skip proving",
+				"blockID", e.BlockId,
+				"prover", e.AssignedProver,
+				"expiresAt", provingWindowExpiresAt,
+			)
+			return nil
+		}
+		if !p.cfg.ProveUnassignedBlocks {
+			log.Info(
+				"Skip proving expired blocks",
+				"blockID", e.BlockId,
+				"prover", e.AssignedProver,
+				"expiresAt", provingWindowExpiresAt,
+			)
+			return nil
+		}
+	} else {
+		// If the proving window is not expired, we need to check if the current prover is the assigned prover,
+		// if no and the current prover wants to prove unassigned blocks, then we should wait for its expiration.
+		if e.AssignedProver != p.proverAddress {
+			log.Info(
+				"Proposed block is not provable",
+				"blockID", e.BlockId,
+				"prover", e.AssignedProver,
+				"expiresAt", provingWindowExpiresAt,
+				"timeToExpire", timeToExpire,
+			)
+
+			if p.cfg.ProveUnassignedBlocks {
+				log.Info(
+					"Add proposed block to wait for proof window expiration",
+					"blockID", e.BlockId,
+				)
+				time.AfterFunc(
+					// Add another 12 seconds, to ensure one more L1 block will be mined before the proof submission
+					timeToExpire+12*time.Second,
+					func() { p.proofWindowExpiredCh <- e },
+				)
+			}
+
+			return nil
+		}
+	}
+
+	log.Info(
+		"Proposed block is provable",
+		"blockID", e.BlockId,
+		"prover", e.AssignedProver,
+		"expiresAt", provingWindowExpiresAt,
+		"minTier", e.Meta.MinTier,
+	)
+
+	metrics.ProverProofsAssigned.Inc(1)
+
+	// Make sure to take a capacity before requesting proof.
+	if err := p.takeOneCapacity(e.BlockId); err != nil {
+		return err
+	}
+
+	if proofSubmitter := p.selectSubmitter(e.Meta.MinTier); proofSubmitter != nil {
+		return proofSubmitter.RequestProof(ctx, e)
+	}
 
 	return nil
 }
@@ -1103,6 +1112,9 @@ func (p *Prover) requestProofByBlockID(
 		}
 
 		// If there is no proof submitter selected, skip proving it.
+		if p.IsGuardianProver() {
+			minTier = encoding.TierGuardianID
+		}
 		if proofSubmitter := p.selectSubmitter(minTier); proofSubmitter != nil {
 			return proofSubmitter.RequestProof(ctx, event)
 		}
@@ -1111,8 +1123,6 @@ func (p *Prover) requestProofByBlockID(
 	}
 
 	handleBlockProposedEvent := func() error {
-		defer func() { <-p.proposeConcurrencyGuard }()
-
 		// Make sure `end` height is less than the latest L1 head.
 		l1Head, err := p.rpc.L1.BlockNumber(p.ctx)
 		if err != nil {
@@ -1190,7 +1200,7 @@ func (p *Prover) onProvingWindowExpired(ctx context.Context, e *bindings.TaikoL1
 			ctx,
 			e.BlockId,
 			new(big.Int).SetUint64(e.Raw.BlockNumber),
-			proofStatus.ParentBlock.Hash(),
+			proofStatus.ParentHeader.Hash(),
 			proofStatus.CurrentTransitionState.Contester,
 			&e.Meta,
 			proofStatus.CurrentTransitionState.Tier,

@@ -140,7 +140,7 @@ type BlockProofStatus struct {
 	IsSubmitted            bool
 	Invalid                bool
 	CurrentTransitionState *bindings.TaikoDataTransitionState
-	ParentBlock            *types.Header
+	ParentHeader           *types.Header
 }
 
 // GetBlockProofStatus checks whether the L2 block still needs a new proof or a new contest.
@@ -182,7 +182,7 @@ func GetBlockProofStatus(
 			return nil, encoding.TryParsingCustomError(err)
 		}
 
-		return &BlockProofStatus{IsSubmitted: false}, nil
+		return &BlockProofStatus{IsSubmitted: false, ParentHeader: parent}, nil
 	}
 
 	l1Origin, err := cli.WaitL1Origin(ctxWithTimeout, id)
@@ -212,13 +212,18 @@ func GetBlockProofStatus(
 			IsSubmitted:            true,
 			Invalid:                true,
 			CurrentTransitionState: &transition,
-			ParentBlock:            parent,
+			ParentHeader:           parent,
 		}, nil
 	}
 
 	if proverAddress == transition.Prover {
 		log.Info("📬 Block's proof has already been submitted by current prover", "blockID", id)
-		return &BlockProofStatus{IsSubmitted: true}, nil
+		return &BlockProofStatus{
+			IsSubmitted:            true,
+			Invalid:                false,
+			ParentHeader:           parent,
+			CurrentTransitionState: &transition,
+		}, nil
 	}
 
 	log.Info(
@@ -228,7 +233,12 @@ func GetBlockProofStatus(
 		"timestamp", transition.Timestamp,
 	)
 
-	return &BlockProofStatus{IsSubmitted: true}, nil
+	return &BlockProofStatus{
+		IsSubmitted:            true,
+		Invalid:                false,
+		ParentHeader:           parent,
+		CurrentTransitionState: &transition,
+	}, nil
 }
 
 type AccountPoolContent map[string]map[string]*types.Transaction
