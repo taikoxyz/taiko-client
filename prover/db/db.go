@@ -10,6 +10,7 @@ import (
 
 var (
 	BlockKeyPrefix = "block-"
+	separator      = "++"
 )
 
 type SignedBlockData struct {
@@ -34,11 +35,11 @@ func BuildBlockValue(hash []byte, signature []byte, blockID *big.Int) []byte {
 			hash,
 			signature,
 			blockID.Bytes(),
-		}, []byte("-"))
+		}, []byte(separator))
 }
 
 func SignedBlockDataFromValue(val []byte) SignedBlockData {
-	v := bytes.Split(val, []byte("-"))
+	v := bytes.Split(val, []byte(separator))
 
 	return SignedBlockData{
 		BlockID:   new(big.Int).SetBytes(v[2]),
