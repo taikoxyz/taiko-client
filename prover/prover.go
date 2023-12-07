@@ -345,12 +345,11 @@ func (p *Prover) Start() error {
 	p.initSubscription()
 
 	go func() {
-		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
-			log.Crit("Failed to start http server", "error", err)
-		}
-
 		if err := p.setApprovalAmount(p.ctx); err != nil {
 			log.Crit("Failed to set approval amount", "error", err)
+		}
+		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
+			log.Crit("Failed to start http server", "error", err)
 		}
 	}()
 	go p.eventLoop()
