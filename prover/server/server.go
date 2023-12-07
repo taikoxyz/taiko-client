@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	numBlocksToReturn = new(big.Int).SetUint64(200)
+	defaultNumBlocksToReturn = new(big.Int).SetUint64(100)
 )
 
 // @title Taiko Prover API
