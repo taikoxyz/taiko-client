@@ -1283,7 +1283,10 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 			"latestBlock", head,
 			"eventBlockID", blockID.Uint64(),
 		)
-		time.Sleep(6 * time.Second)
+
+		if _, err := p.rpc.WaitL1Origin(ctx, blockID); err != nil {
+			return err
+		}
 
 		head, err = p.rpc.L2.BlockNumber(ctx)
 		if err != nil {
