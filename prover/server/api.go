@@ -13,7 +13,6 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/prover/db"
-	"golang.org/x/exp/slog"
 )
 
 // @title Taiko Prover Server API
@@ -271,7 +270,6 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 		}
 	}
 
-	slog.Info("starting block for signed blocks api", "start", start)
 	// start should be set to a block timestamp latestBlock-numBlocksToReturn blocks ago if
 	// a start timestamp was not provided.
 
