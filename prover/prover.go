@@ -1306,7 +1306,9 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 		return err
 	}
 
-	if err := p.db.Put(db.BuildBlockKey(block.Time()), signed); err != nil {
+	val := db.BuildBlockValue(block.Hash().Bytes(), signed)
+
+	if err := p.db.Put(db.BuildBlockKey(block.Time()), val); err != nil {
 		return err
 	}
 

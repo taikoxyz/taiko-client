@@ -1,7 +1,7 @@
 package server
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -237,25 +237,49 @@ type SignedBlock struct {
 //	@Success		200	{object} []SignedBlock
 //	@Router			/signedBlocks [get]
 func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
-	latestBlock, err := srv.rpc.L2.BlockByNumber(c.Request().Context(), nil)
-	if err != nil {
+	var signedBlocks []SignedBlock = []SignedBlock{}
+
+	// start iterator at at provided timestamp or 0 if not defined
+	start := "0"
+	if c.QueryParam("start") != "" {
+		start = c.QueryParam("start")
+	}
+
+	if start == "0" {
+		latestBlock, err := srv.rpc.L2.BlockByNumber(c.Request().Context(), nil)
 		if err != nil {
-			log.Error("Failed to get latest L2 block", "error", err)
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
+			if err != nil {
+				log.Error("Failed to get latest L2 block", "error", err)
+				return echo.NewHTTPError(http.StatusInternalServerError, err)
+			}
+		}
+
+		// if latestBlock is greater than the number of blocks to return, we only want to return
+		// the most recent N blocks signed by this guardian prover.
+		if latestBlock.NumberU64() > defaultNumBlocksToReturn.Uint64() {
+			blockNum := new(big.Int).Sub(latestBlock.Number(), defaultNumBlocksToReturn)
+			block, err := srv.rpc.L2.BlockByNumber(
+				c.Request().Context(),
+				blockNum,
+			)
+			if err != nil {
+				log.Error("Failed to get L2 block", "error", err, "blockNum", blockNum)
+				return echo.NewHTTPError(http.StatusInternalServerError, err)
+			}
+
+			start = strconv.Itoa(int(block.Time()))
 		}
 	}
 
-	if c.QueryParam("start") == "" {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.New("start queryParam is required"))
-	}
-	var signedBlocks []SignedBlock = []SignedBlock{}
+	// start should be set to a block timestamp latestBlock-numBlocksToReturn blocks ago.
+	// so when we iterate, we should only be seeing numBlocksToReturn amount of blocks being pulled
+	// from the database and returned.
 
-	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), []byte(c.QueryParam("start")))
+	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), []byte(start))
 
 	defer iter.Release()
 
 	for iter.Next() {
-		fmt.Println(string(iter.Key()))
 		k := strings.Split(string(iter.Key()), "-")
 
 		blockID, err := strconv.Atoi(k[1])
@@ -264,13 +288,17 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusInternalServerError, err)
 		}
 
+		v := bytes.Split(iter.Value(), []byte("-"))
+
 		signedBlocks = append(signedBlocks, SignedBlock{
 			BlockID:   uint64(blockID),
-			BlockHash: latestBlock.Hash().Hex(),
-			Signature: common.Bytes2Hex(iter.Value()),
+			BlockHash: common.Bytes2Hex(v[0]),
+			Signature: common.Bytes2Hex(v[1]),
 			Prover:    srv.proverAddress,
 		})
 	}
+
+	fmt.Println("done")
 
 	return c.JSON(http.StatusOK, signedBlocks)
 }

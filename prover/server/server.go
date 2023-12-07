@@ -17,6 +17,10 @@ import (
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 )
 
+var (
+	defaultNumBlocksToReturn = new(big.Int).SetUint64(100)
+)
+
 // @title Taiko Prover API
 // @version 1.0
 // @termsOfService http://swagger.io/terms/

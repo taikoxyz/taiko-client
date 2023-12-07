@@ -71,7 +71,9 @@ func (s *ProverServerTestSuite) TestGetSignedBlocks() {
 		s.Nil(err)
 		key := db.BuildBlockKey(bigInt.Uint64())
 
-		s.Nil(s.s.db.Put(key, signed))
+		val := db.BuildBlockValue(common.BigToHash(bigInt).Bytes(), signed)
+
+		s.Nil(s.s.db.Put(key, val))
 		has, err := s.s.db.Has(key)
 		s.Nil(err)
 		s.True(has)
