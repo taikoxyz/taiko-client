@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -280,12 +279,12 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 	defer iter.Release()
 
 	for iter.Next() {
-		v := bytes.Split(iter.Value(), []byte("-"))
+		signedblockData := db.SignedBlockDataFromValue(iter.Value())
 
 		signedBlocks = append(signedBlocks, SignedBlock{
-			BlockID:   new(big.Int).SetBytes(v[2]).Uint64(),
-			BlockHash: common.Bytes2Hex(v[0]),
-			Signature: common.Bytes2Hex(v[1]),
+			BlockID:   signedblockData.BlockID.Uint64(),
+			BlockHash: signedblockData.BlockHash.Hex(),
+			Signature: signedblockData.Signature,
 			Prover:    srv.proverAddress,
 		})
 	}

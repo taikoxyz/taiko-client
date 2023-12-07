@@ -2,12 +2,21 @@ package db
 
 import (
 	"bytes"
+	"math/big"
 	"strconv"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 var (
 	BlockKeyPrefix = "block-"
 )
+
+type SignedBlockData struct {
+	BlockID   *big.Int
+	BlockHash common.Hash
+	Signature string
+}
 
 // BuildBlockKey will build a block key for a signed block
 func BuildBlockKey(blockTimestamp uint64) []byte {
@@ -19,11 +28,21 @@ func BuildBlockKey(blockTimestamp uint64) []byte {
 }
 
 // BuildBlockValue will build a block value for a signed block
-func BuildBlockValue(hash []byte, signature []byte, blockID uint64) []byte {
+func BuildBlockValue(hash []byte, signature []byte, blockID *big.Int) []byte {
 	return bytes.Join(
 		[][]byte{
 			hash,
 			signature,
-			[]byte(strconv.Itoa(int(blockID))),
+			blockID.Bytes(),
 		}, []byte("-"))
+}
+
+func SignedBlockDataFromValue(val []byte) SignedBlockData {
+	v := bytes.Split(val, []byte("-"))
+
+	return SignedBlockData{
+		BlockID:   new(big.Int).SetBytes(v[2]),
+		BlockHash: common.BytesToHash(v[0]),
+		Signature: common.Bytes2Hex(v[1]),
+	}
 }
