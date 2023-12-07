@@ -44,7 +44,10 @@ func (s *ProverTestSuite) SetupTest() {
 	port, err := strconv.Atoi(proverServerUrl.Port())
 	s.Nil(err)
 
-	allowance := new(big.Int).Exp(big.NewInt(1_000_000_100), big.NewInt(18), nil)
+	decimal, err := s.RpcClient.TaikoToken.Decimals(nil)
+	s.Nil(err)
+
+	allowance := new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
@@ -403,13 +406,13 @@ func (s *ProverTestSuite) TestSetApprovalAmount() {
 
 	s.Equal(0, allowance.Cmp(common.Big0))
 
-	// max that can be approved
+	// Max that can be approved
 	amt, ok := new(big.Int).SetString("58764887351446156758749765621197442946723800609510499661540524634076971270144", 10)
 	s.True(ok)
 
 	s.p.cfg.Allowance = amt
 
-	s.Nil(s.p.setApprovalAmount())
+	s.Nil(s.p.setApprovalAmount(context.Background()))
 
 	allowance, err = s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.proverAddress, s.p.cfg.TaikoL1Address)
 	s.Nil(err)
@@ -421,10 +424,10 @@ func (s *ProverTestSuite) TestSetApprovalAlreadySetHigher() {
 	originalAllowance, err := s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.proverAddress, s.p.cfg.TaikoL1Address)
 	s.Nil(err)
 
-	amt := big.NewInt(1)
+	amt := common.Big1
 	s.p.cfg.Allowance = amt
 
-	s.Nil(s.p.setApprovalAmount())
+	s.Nil(s.p.setApprovalAmount(context.Background()))
 
 	allowance, err := s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.proverAddress, s.p.cfg.TaikoL1Address)
 	s.Nil(err)

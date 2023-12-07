@@ -113,14 +113,14 @@ func rlpEncodedTransactionBytes(l int, signed bool) []byte {
 			txData := &types.LegacyTx{
 				Nonce:    1,
 				To:       &testAddr,
-				GasPrice: big.NewInt(100),
-				Value:    big.NewInt(1),
+				GasPrice: common.Big256,
+				Value:    common.Big1,
 				Gas:      10,
 			}
 
 			tx = types.MustSignNewTx(testKey, types.LatestSigner(genesis.Config), txData)
 		} else {
-			tx = types.NewTransaction(1, testAddr, big.NewInt(1), 10, big.NewInt(100), nil)
+			tx = types.NewTransaction(1, testAddr, common.Big1, 10, common.Big256, nil)
 		}
 		txs = append(
 			txs,

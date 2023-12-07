@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -273,9 +272,7 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 
 	// start should be set to a block timestamp latestBlock-numBlocksToReturn blocks ago if
 	// a start timestamp was not provided.
-
 	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), []byte(start))
-
 	defer iter.Release()
 
 	for iter.Next() {
@@ -288,8 +285,6 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 			Prover:    srv.proverAddress,
 		})
 	}
-
-	fmt.Println("done")
 
 	return c.JSON(http.StatusOK, signedBlocks)
 }
