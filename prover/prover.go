@@ -1270,58 +1270,64 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 		return nil
 	}
 
-	log.Info("guardian prover signing block", "blockID", blockID.Uint64())
+	log.Info("Guardian prover signing block", "blockID", blockID.Uint64())
 
-	latest, err := p.rpc.L2.BlockByNumber(ctx, nil)
+	head, err := p.rpc.L2.BlockNumber(ctx)
 	if err != nil {
 		return err
 	}
 
-	for latest.Number().Uint64() < blockID.Uint64() {
-		log.Info("guardian prover block signing waiting for chain",
-			"latestBlock", latest.Number().Uint64(),
+	for head < blockID.Uint64() {
+		log.Info(
+			"Guardian prover block signing waiting for chain",
+			"latestBlock", head,
 			"eventBlockID", blockID.Uint64(),
 		)
 		time.Sleep(6 * time.Second)
 
-		latest, err = p.rpc.L2.BlockByNumber(ctx, nil)
+		head, err = p.rpc.L2.BlockNumber(ctx)
 		if err != nil {
 			return err
 		}
 	}
 
-	block, err := p.rpc.L2.BlockByNumber(ctx, blockID)
+	header, err := p.rpc.L2.HeaderByNumber(ctx, blockID)
 	if err != nil {
 		return err
 	}
 
-	exists, err := p.db.Has(db.BuildBlockKey(block.Time()))
+	exists, err := p.db.Has(db.BuildBlockKey(header.Time))
 	if err != nil {
 		return err
 	}
 
 	if exists {
-		log.Info("guardian prover already signed block", "blockID", blockID.Uint64())
+		log.Info("Guardian prover already signed block", "blockID", blockID.Uint64())
 		return nil
 	}
 
-	log.Info("guardian prover block signing caught up",
-		"latestBlock", latest.Number().Uint64(),
+	log.Info(
+		"Guardian prover block signing caught up",
+		"latestBlock", head,
 		"eventBlockID", blockID.Uint64(),
 	)
 
-	signed, err := crypto.Sign(block.Hash().Bytes(), p.proverPrivateKey)
+	signed, err := crypto.Sign(header.Hash().Bytes(), p.proverPrivateKey)
 	if err != nil {
 		return err
 	}
 
-	val := db.BuildBlockValue(block.Hash().Bytes(), signed, blockID)
-
-	if err := p.db.Put(db.BuildBlockKey(block.Time()), val); err != nil {
+	if err := p.db.Put(
+		db.BuildBlockKey(header.Time),
+		db.BuildBlockValue(header.Hash().Bytes(),
+			signed,
+			blockID,
+		),
+	); err != nil {
 		return err
 	}
 
-	log.Info("guardian prover successfully signed block", "blockID", blockID.Uint64())
+	log.Info("Guardian prover successfully signed block", "blockID", blockID.Uint64())
 
 	return nil
 }
