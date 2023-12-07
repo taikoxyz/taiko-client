@@ -19,10 +19,11 @@ func BuildBlockKey(blockTimestamp uint64) []byte {
 }
 
 // BuildBlockValue will build a block value for a signed block
-func BuildBlockValue(hash []byte, signature []byte) []byte {
+func BuildBlockValue(hash []byte, signature []byte, blockID uint64) []byte {
 	return bytes.Join(
 		[][]byte{
 			hash,
 			signature,
+			[]byte(strconv.Itoa(int(blockID))),
 		}, []byte("-"))
 }

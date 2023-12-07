@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -281,18 +280,10 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 	defer iter.Release()
 
 	for iter.Next() {
-		k := strings.Split(string(iter.Key()), "-")
-
-		blockID, err := strconv.Atoi(k[1])
-
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
-
 		v := bytes.Split(iter.Value(), []byte("-"))
 
 		signedBlocks = append(signedBlocks, SignedBlock{
-			BlockID:   uint64(blockID),
+			BlockID:   new(big.Int).SetBytes(v[2]).Uint64(),
 			BlockHash: common.Bytes2Hex(v[0]),
 			Signature: common.Bytes2Hex(v[1]),
 			Prover:    srv.proverAddress,
