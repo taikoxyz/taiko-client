@@ -1,9 +1,10 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"strings"
 	"time"
@@ -59,14 +60,24 @@ func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
 }
 
 func (s *ProverServerTestSuite) TestGetSignedBlocks() {
-	latest, err := s.s.rpc.L2.BlockByNumber(context.Background(), nil)
-	s.Nil(err)
+	var start uint64
+	// create 200, we only expect to get 100 back.
+	for i := 0; i < 200; i++ {
+		bigInt := big.NewInt(time.Now().UnixNano())
+		if i == 100 {
+			start = bigInt.Uint64()
+		}
+		signed, err := crypto.Sign(common.BigToHash(bigInt).Bytes(), s.s.proverPrivateKey)
+		s.Nil(err)
+		key := db.BuildBlockKey(bigInt.Uint64())
 
-	signed, err := crypto.Sign(latest.Hash().Bytes(), s.s.proverPrivateKey)
-	s.Nil(err)
+		s.Nil(s.s.db.Put(key, signed))
+		has, err := s.s.db.Has(key)
+		s.Nil(err)
+		s.True(has)
+	}
 
-	s.Nil(s.s.db.Put(db.BuildBlockKey(latest.Time()), signed))
-	res := s.sendReq("/signedBlocks")
+	res := s.sendReq(fmt.Sprintf("/signedBlocks?start=%v", start))
 	s.Equal(http.StatusOK, res.StatusCode)
 
 	signedBlocks := make([]SignedBlock, 0)
@@ -76,8 +87,5 @@ func (s *ProverServerTestSuite) TestGetSignedBlocks() {
 	s.Nil(err)
 	s.Nil(json.Unmarshal(b, &signedBlocks))
 
-	s.Equal(1, len(signedBlocks))
-	s.Equal(latest.Hash().Hex(), signedBlocks[0].BlockHash)
-	s.Equal(latest.Number().Uint64(), signedBlocks[0].BlockID)
-	s.Equal(common.Bytes2Hex(signed), signedBlocks[0].Signature)
+	s.Equal(100, len(signedBlocks))
 }

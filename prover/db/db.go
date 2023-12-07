@@ -1,11 +1,19 @@
 package db
 
-import "fmt"
+import (
+	"bytes"
+	"strconv"
+)
 
 var (
 	BlockKeyPrefix = "blockid-"
 )
 
 func BuildBlockKey(blockTimestamp uint64) []byte {
-	return []byte(fmt.Sprintf("%v%v", BlockKeyPrefix, blockTimestamp))
+	strconv.Itoa(int(blockTimestamp))
+	return bytes.Join(
+		[][]byte{
+			[]byte(BlockKeyPrefix),
+			[]byte(strconv.Itoa(int(blockTimestamp))),
+		}, []byte{})
 }

@@ -1,6 +1,8 @@
 package server
 
 import (
+	"errors"
+	"fmt"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -243,36 +245,17 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 		}
 	}
 
+	if c.QueryParam("start") == "" {
+		return echo.NewHTTPError(http.StatusInternalServerError, errors.New("start queryParam is required"))
+	}
 	var signedBlocks []SignedBlock = []SignedBlock{}
 
-	// start iterator at 0
-	var start uint64 = 0
-
-	// if latestBlock is greater than the number of blocks to return, we only want to return
-	// the most recent N blocks signed by this guardian prover.
-	if latestBlock.NumberU64() > numBlocksToReturn.Uint64() {
-		blockNum := new(big.Int).Sub(latestBlock.Number(), numBlocksToReturn)
-		block, err := srv.rpc.L2.BlockByNumber(
-			c.Request().Context(),
-			blockNum,
-		)
-		if err != nil {
-			log.Error("Failed to get L2 block", "error", err, "blockNum", blockNum)
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
-
-		start = block.Time()
-	}
-
-	// start should be set to a block timestamp latestBlock-numBlocksToReturn blocks ago.
-	// so when we iterate, we should only be seeing numBlocksToReturn amount of blocks being pulled
-	// from the database and returned.
-
-	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), new(big.Int).SetUint64(start).Bytes())
+	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), []byte(c.QueryParam("start")))
 
 	defer iter.Release()
 
 	for iter.Next() {
+		fmt.Println(string(iter.Key()))
 		k := strings.Split(string(iter.Key()), "-")
 
 		blockID, err := strconv.Atoi(k[1])
