@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	BlockKeyPrefix = "blockid-"
+	BlockKeyPrefix = "block-"
 )
 
 // BuildBlockKey will build a block key for a signed block
