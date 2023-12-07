@@ -275,7 +275,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 // if flag is provided for allowance.
 func (p *Prover) setApprovalAmount(ctx context.Context) error {
 	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
-		log.Info("Skipping setting approval, allowance not set")
+		log.Info("Skipping setting approval, `--prover.allowance` flag not set")
 		return nil
 	}
 
@@ -290,7 +290,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context) error {
 
 	log.Info("Existing allowance for TaikoL1 contract", "allowance", allowance.String())
 
-	if allowance.Cmp(p.cfg.Allowance) == 1 {
+	if allowance.Cmp(p.cfg.Allowance) >= 0 {
 		log.Info(
 			"Skipping setting allowance, allowance already greater or equal",
 			"allowance", allowance.String(),
