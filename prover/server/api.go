@@ -245,6 +245,8 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 		start = c.QueryParam("start")
 	}
 
+	// if no start timestamp was provided, we can get the latest block, and return
+	// defaultNumBlocksToReturn blocks signed before latest, if our guardian prover has signed them.
 	if start == "0" {
 		latestBlock, err := srv.rpc.L2.BlockByNumber(c.Request().Context(), nil)
 		if err != nil {
@@ -271,9 +273,8 @@ func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
 		}
 	}
 
-	// start should be set to a block timestamp latestBlock-numBlocksToReturn blocks ago.
-	// so when we iterate, we should only be seeing numBlocksToReturn amount of blocks being pulled
-	// from the database and returned.
+	// start should be set to a block timestamp latestBlock-numBlocksToReturn blocks ago if
+	// a start timestamp was not provided.
 
 	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), []byte(start))
 
