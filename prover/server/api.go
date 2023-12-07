@@ -1,10 +1,10 @@
 package server
 
 import (
+	"fmt"
 	"math/big"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -235,45 +235,61 @@ type SignedBlock struct {
 //	@Success		200	{object} []SignedBlock
 //	@Router			/signedBlocks [get]
 func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
-	latestBlock, err := srv.rpc.L2.BlockByNumber(c.Request().Context(), nil)
-	if err != nil {
+	var signedBlocks []SignedBlock = []SignedBlock{}
+
+	// start iterator at at provided timestamp or 0 if not defined
+	start := "0"
+	if c.QueryParam("start") != "" {
+		start = c.QueryParam("start")
+	}
+
+	// if no start timestamp was provided, we can get the latest block, and return
+	// defaultNumBlocksToReturn blocks signed before latest, if our guardian prover has signed them.
+	if start == "0" {
+		latestBlock, err := srv.rpc.L2.BlockByNumber(c.Request().Context(), nil)
 		if err != nil {
-			log.Error("Failed to get latest L2 block", "error", err)
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
+			if err != nil {
+				log.Error("Failed to get latest L2 block", "error", err)
+				return echo.NewHTTPError(http.StatusInternalServerError, err)
+			}
+		}
+
+		// if latestBlock is greater than the number of blocks to return, we only want to return
+		// the most recent N blocks signed by this guardian prover.
+		if latestBlock.NumberU64() > defaultNumBlocksToReturn.Uint64() {
+			blockNum := new(big.Int).Sub(latestBlock.Number(), defaultNumBlocksToReturn)
+			block, err := srv.rpc.L2.BlockByNumber(
+				c.Request().Context(),
+				blockNum,
+			)
+			if err != nil {
+				log.Error("Failed to get L2 block", "error", err, "blockNum", blockNum)
+				return echo.NewHTTPError(http.StatusInternalServerError, err)
+			}
+
+			start = strconv.Itoa(int(block.Time()))
 		}
 	}
 
-	var signedBlocks []SignedBlock
+	// start should be set to a block timestamp latestBlock-numBlocksToReturn blocks ago if
+	// a start timestamp was not provided.
 
-	// start iterator at 0
-	start := big.NewInt(0)
-
-	// if latestBlock is greater than the number of blocks to return, we only want to return
-	// the most recent N blocks signed by this guardian prover.
-	if latestBlock.NumberU64() > numBlocksToReturn.Uint64() {
-		start = new(big.Int).Sub(latestBlock.Number(), numBlocksToReturn)
-	}
-
-	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), start.Bytes())
+	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), []byte(start))
 
 	defer iter.Release()
 
 	for iter.Next() {
-		k := strings.Split(string(iter.Key()), "-")
-
-		blockID, err := strconv.Atoi(k[1])
-
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
+		signedblockData := db.SignedBlockDataFromValue(iter.Value())
 
 		signedBlocks = append(signedBlocks, SignedBlock{
-			BlockID:   uint64(blockID),
-			BlockHash: latestBlock.Hash().Hex(),
-			Signature: common.Bytes2Hex(iter.Value()),
+			BlockID:   signedblockData.BlockID.Uint64(),
+			BlockHash: signedblockData.BlockHash.Hex(),
+			Signature: signedblockData.Signature,
 			Prover:    srv.proverAddress,
 		})
 	}
+
+	fmt.Println("done")
 
 	return c.JSON(http.StatusOK, signedBlocks)
 }

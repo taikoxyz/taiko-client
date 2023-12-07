@@ -1263,16 +1263,6 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 
 	log.Info("guardian prover signing block", "blockID", blockID.Uint64())
 
-	exists, err := p.db.Has(db.BuildBlockKey(blockID.String()))
-	if err != nil {
-		return err
-	}
-
-	if exists {
-		log.Info("guardian prover already signed block", "blockID", blockID.Uint64())
-		return nil
-	}
-
 	latest, err := p.rpc.L2.BlockByNumber(ctx, nil)
 	if err != nil {
 		return err
@@ -1291,22 +1281,34 @@ func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
 		}
 	}
 
-	log.Info("guardian prover block signing caught up",
-		"latestBlock", latest.Number().Uint64(),
-		"eventBlockID", blockID.Uint64(),
-	)
-
 	block, err := p.rpc.L2.BlockByNumber(ctx, blockID)
 	if err != nil {
 		return err
 	}
+
+	exists, err := p.db.Has(db.BuildBlockKey(block.Time()))
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		log.Info("guardian prover already signed block", "blockID", blockID.Uint64())
+		return nil
+	}
+
+	log.Info("guardian prover block signing caught up",
+		"latestBlock", latest.Number().Uint64(),
+		"eventBlockID", blockID.Uint64(),
+	)
 
 	signed, err := crypto.Sign(block.Hash().Bytes(), p.proverPrivateKey)
 	if err != nil {
 		return err
 	}
 
-	if err := p.db.Put(db.BuildBlockKey(blockID.String()), signed); err != nil {
+	val := db.BuildBlockValue(block.Hash().Bytes(), signed, blockID)
+
+	if err := p.db.Put(db.BuildBlockKey(block.Time()), val); err != nil {
 		return err
 	}
 
