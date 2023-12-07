@@ -99,7 +99,8 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 			}
 
 			if progress.isSyncing() {
-				log.Info("L2 execution engine is syncing", "progress", progress)
+				log.Info("L2 execution engine is syncing", "CurrentBlockID", progress.CurrentBlockID,
+					"HighestBlockID", progress.HighestBlockID, "progress", progress.SyncProgress)
 				return errSyncing
 			}
 
