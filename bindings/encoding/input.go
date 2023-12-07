@@ -248,7 +248,7 @@ var (
 var (
 	TaikoL1ABI        *abi.ABI
 	TaikoL2ABI        *abi.ABI
-	AssignemntHookABI *abi.ABI
+	AssignmentHookABI *abi.ABI
 )
 
 func init() {
@@ -262,7 +262,7 @@ func init() {
 		log.Crit("Get TaikoL2 ABI error", "error", err)
 	}
 
-	if AssignemntHookABI, err = bindings.AssignmentHookMetaData.GetAbi(); err != nil {
+	if AssignmentHookABI, err = bindings.AssignmentHookMetaData.GetAbi(); err != nil {
 		log.Crit("Get AssignmentHook ABI error", "error", err)
 	}
 }
