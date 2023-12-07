@@ -15,7 +15,7 @@ func Test_BuildBlockKey(t *testing.T) {
 
 func Test_BuildBlockValue(t *testing.T) {
 	v := BuildBlockValue([]byte("hash"), []byte("sig"), big.NewInt(1))
-	spl := bytes.Split(v, []byte("-"))
+	spl := bytes.Split(v, []byte(separator))
 	assert.Equal(t, "hash", string(spl[0]))
 	assert.Equal(t, "sig", string(spl[1]))
 	assert.Equal(t, uint64(1), new(big.Int).SetBytes(spl[2]).Uint64())
