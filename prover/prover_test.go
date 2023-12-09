@@ -61,7 +61,6 @@ func (s *ProverTestSuite) SetupTest() {
 		TaikoTokenAddress:        common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		GuardianProverAddress:    common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
 		L1ProverPrivKey:          l1ProverPrivKey,
-		GuardianProverPrivateKey: l1ProverPrivKey,
 		Dummy:                    true,
 		ProveUnassignedBlocks:    true,
 		Capacity:                 1024,
@@ -152,7 +151,6 @@ func (s *ProverTestSuite) TestInitError() {
 		TaikoL2Address:                    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		TaikoTokenAddress:                 common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		L1ProverPrivKey:                   l1ProverPrivKey,
-		GuardianProverPrivateKey:          l1ProverPrivKey,
 		Dummy:                             true,
 		ProveUnassignedBlocks:             true,
 		ProveBlockTxReplacementMultiplier: 2,
@@ -163,7 +161,7 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	// Init prover
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
-	s.p.cfg.GuardianProverPrivateKey = l1ProverPrivKey
+	s.p.cfg.L1ProverPrivKey = l1ProverPrivKey
 	// Valid block
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))

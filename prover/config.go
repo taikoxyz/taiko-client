@@ -28,7 +28,6 @@ type Config struct {
 	StartingBlockID                   *big.Int
 	Dummy                             bool
 	GuardianProverAddress             common.Address
-	GuardianProverPrivateKey          *ecdsa.PrivateKey
 	GuardianProofSubmissionDelay      time.Duration
 	ProofSubmissionMaxRetry           uint64
 	Graffiti                          string
@@ -62,18 +61,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(l1ProverPrivKeyStr))
 	if err != nil {
 		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
-	}
-
-	var guardianProverPrivKey *ecdsa.PrivateKey
-	if c.IsSet(flags.GuardianProver.Name) {
-		if !c.IsSet(flags.GuardianProverPrivateKey.Name) {
-			return nil, fmt.Errorf("guardianProver flag set without guardianProverPrivateKey set")
-		}
-
-		guardianProverPrivKey, err = crypto.ToECDSA(common.Hex2Bytes(c.String(flags.GuardianProverPrivateKey.Name)))
-		if err != nil {
-			return nil, fmt.Errorf("invalid guardian private key: %w", err)
-		}
 	}
 
 	var startingBlockID *big.Int
@@ -131,7 +118,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		StartingBlockID:                   startingBlockID,
 		Dummy:                             c.Bool(flags.Dummy.Name),
 		GuardianProverAddress:             common.HexToAddress(c.String(flags.GuardianProver.Name)),
-		GuardianProverPrivateKey:          guardianProverPrivKey,
 		GuardianProofSubmissionDelay:      c.Duration(flags.GuardianProofSubmissionDelay.Name),
 		ProofSubmissionMaxRetry:           c.Uint64(flags.ProofSubmissionMaxRetry.Name),
 		Graffiti:                          c.String(flags.Graffiti.Name),

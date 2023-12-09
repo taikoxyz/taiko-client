@@ -259,9 +259,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		IsGuardian:               p.IsGuardianProver(),
 		DB:                       db,
 	}
-	if p.IsGuardianProver() {
-		proverServerOpts.ProverPrivateKey = p.cfg.GuardianProverPrivateKey
-	}
 
 	if p.srv, err = server.New(proverServerOpts); err != nil {
 		return err

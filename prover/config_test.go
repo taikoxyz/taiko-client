@@ -39,10 +39,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 			crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey),
 		)
 		s.True(c.Dummy)
-		s.Equal(
-			crypto.PubkeyToAddress(s.p.cfg.GuardianProverPrivateKey.PublicKey),
-			crypto.PubkeyToAddress(c.GuardianProverPrivateKey.PublicKey),
-		)
 		s.Equal("", c.Graffiti)
 		s.Equal(true, c.ProveUnassignedBlocks)
 		s.Equal(rpcTimeout, *c.RPCTimeout)
@@ -84,7 +80,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.ProverAssignmentHookAddress.Name, os.Getenv("ASSIGNMENT_HOOK_ADDRESS"),
 		"--" + flags.ProveBlockTxReplacementMultiplier.Name, "3",
 		"--" + flags.ProveBlockMaxTxGasTipCap.Name, "256",
-		"--" + flags.GuardianProverPrivateKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.ProveUnassignedBlocks.Name,
 		"--" + flags.DatabasePath.Name, "dbPath",
@@ -92,28 +87,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.MaxProposedIn.Name, "100",
 		"--" + flags.Allowance.Name, allowance,
 	}))
-}
-
-func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProverError() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"--" + flags.L1WSEndpoint.Name, l1WsEndpoint,
-		"--" + flags.L1HTTPEndpoint.Name, l1HttpEndpoint,
-		"--" + flags.L2WSEndpoint.Name, l2WsEndpoint,
-		"--" + flags.L2HTTPEndpoint.Name, l2HttpEndpoint,
-		"--" + flags.TaikoL1Address.Name, taikoL1,
-		"--" + flags.TaikoL2Address.Name, taikoL2,
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.Dummy.Name,
-		"--" + flags.GuardianProver.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
-		"--" + flags.Graffiti.Name, "",
-		"--" + flags.RPCTimeout.Name, "5s",
-		"--" + flags.MinOptimisticTierFee.Name, fmt.Sprint(minTierFee),
-		"--" + flags.MinSgxTierFee.Name, fmt.Sprint(minTierFee),
-		"--" + flags.MinPseZkevmTierFee.Name, fmt.Sprint(minTierFee),
-	}), "guardianProver flag set without guardianProverPrivateKey set")
 }
 
 func (s *ProverTestSuite) TestNewConfigFromCliContext_ProverKeyError() {
@@ -132,7 +105,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProverKeyError() {
 		"TestNewConfigFromCliContext",
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.GuardianProver.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
-		"--" + flags.GuardianProverPrivateKey.Name, "",
 	}), "invalid guardian private key")
 }
 
@@ -149,7 +121,6 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.StartingBlockID.Name},
 		&cli.BoolFlag{Name: flags.Dummy.Name},
 		&cli.StringFlag{Name: flags.GuardianProver.Name},
-		&cli.StringFlag{Name: flags.GuardianProverPrivateKey.Name},
 		&cli.StringFlag{Name: flags.Graffiti.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxReplacementMultiplier.Name},
