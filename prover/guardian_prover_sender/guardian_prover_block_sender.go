@@ -82,7 +82,7 @@ func (s *GuardianProverBlockSender) sendSignedBlockReq(
 		BlockID:   blockID.Uint64(),
 		BlockHash: hash.Hex(),
 		Signature: signed,
-		Prover:    common.Address{},
+		Prover:    s.proverAddress,
 	}
 
 	body, err := json.Marshal(req)
