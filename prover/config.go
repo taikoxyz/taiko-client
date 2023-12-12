@@ -53,6 +53,7 @@ type Config struct {
 	DatabasePath                      string
 	DatabaseCacheSize                 uint64
 	Allowance                         *big.Int
+	RaikoHostEndpoint                 string
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -128,6 +129,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L1ProverPrivKey:                   l1ProverPrivKey,
 		ZKEvmRpcdEndpoint:                 c.String(flags.ZkEvmRpcdEndpoint.Name),
 		ZkEvmRpcdParamsPath:               c.String(flags.ZkEvmRpcdParamsPath.Name),
+		RaikoHostEndpoint:                 c.String(flags.RaikoHostEndpoint.Name),
 		StartingBlockID:                   startingBlockID,
 		Dummy:                             c.Bool(flags.Dummy.Name),
 		GuardianProverAddress:             common.HexToAddress(c.String(flags.GuardianProver.Name)),

@@ -20,6 +20,12 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
+	RaikoHostEndpoint = &cli.StringFlag{
+		Name:     "raiko.hostEndpoint",
+		Usage:    "RPC endpoint of a ZKEVM RPCD service",
+		Required: true,
+		Category: proverCategory,
+	}
 	L1ProverPrivKey = &cli.StringFlag{
 		Name:     "l1.proverPrivKey",
 		Usage:    "Private key of L1 prover, who will send TaikoL1.proveBlock transactions",
@@ -189,6 +195,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2HTTPEndpoint,
 	ZkEvmRpcdEndpoint,
 	ZkEvmRpcdParamsPath,
+	RaikoHostEndpoint,
 	L1ProverPrivKey,
 	MinOptimisticTierFee,
 	MinSgxTierFee,
