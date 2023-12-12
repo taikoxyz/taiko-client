@@ -3,7 +3,6 @@ package server
 import (
 	"math/big"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -12,7 +11,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/prover/db"
 )
 
 // @title Taiko Prover Server API
@@ -42,7 +40,6 @@ type Status struct {
 	MaxExpiry            uint64 `json:"maxExpiry"`
 	CurrentCapacity      uint64 `json:"currentCapacity"`
 	Prover               string `json:"prover"`
-	HeartBeatSignature   []byte `json:"heartBeatSignature"`
 }
 
 // GetStatus handles a query to the current prover server status.
@@ -54,11 +51,6 @@ type Status struct {
 //	@Success		200	{object} Status
 //	@Router			/status [get]
 func (srv *ProverServer) GetStatus(c echo.Context) error {
-	sig, err := crypto.Sign(crypto.Keccak256Hash([]byte("HEART_BEAT")).Bytes(), srv.proverPrivateKey)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
 	return c.JSON(http.StatusOK, &Status{
 		MinOptimisticTierFee: srv.minOptimisticTierFee.Uint64(),
 		MinSgxTierFee:        srv.minSgxTierFee.Uint64(),
@@ -66,7 +58,6 @@ func (srv *ProverServer) GetStatus(c echo.Context) error {
 		MaxExpiry:            uint64(srv.maxExpiry.Seconds()),
 		CurrentCapacity:      srv.capacityManager.ReadCapacity(),
 		Prover:               srv.proverAddress.Hex(),
-		HeartBeatSignature:   sig,
 	})
 }
 
@@ -215,76 +206,4 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		MaxBlockID:    l1Head + srv.maxSlippage,
 		MaxProposedIn: srv.maxProposedIn,
 	})
-}
-
-// SignedBlock represents a signed block.
-type SignedBlock struct {
-	BlockID   uint64         `json:"blockID"`
-	BlockHash string         `json:"blockHash"`
-	Signature string         `json:"signature"`
-	Prover    common.Address `json:"proverAddress"`
-}
-
-// GetSignedBlocks handles a query to retrieve the most recent signed blocks from the database.
-//
-//	@Summary		Get signed blocks
-//	@ID			   	get-signed-blocks
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{object} []SignedBlock
-//	@Router			/signedBlocks [get]
-func (srv *ProverServer) GetSignedBlocks(c echo.Context) error {
-	var signedBlocks []SignedBlock = []SignedBlock{}
-
-	// start iterator at at provided timestamp or 0 if not defined
-	start := "0"
-	if c.QueryParam("start") != "" {
-		start = c.QueryParam("start")
-	}
-
-	// if no start timestamp was provided, we can get the latest block, and return
-	// defaultNumBlocksToReturn blocks signed before latest, if our guardian prover has signed them.
-	if start == "0" {
-		latestBlock, err := srv.rpc.L2.BlockByNumber(c.Request().Context(), nil)
-		if err != nil {
-			if err != nil {
-				log.Error("Failed to get latest L2 block", "error", err)
-				return echo.NewHTTPError(http.StatusInternalServerError, err)
-			}
-		}
-
-		// if latestBlock is greater than the number of blocks to return, we only want to return
-		// the most recent N blocks signed by this guardian prover.
-		if latestBlock.NumberU64() > defaultNumBlocksToReturn.Uint64() {
-			blockNum := new(big.Int).Sub(latestBlock.Number(), defaultNumBlocksToReturn)
-			block, err := srv.rpc.L2.BlockByNumber(
-				c.Request().Context(),
-				blockNum,
-			)
-			if err != nil {
-				log.Error("Failed to get L2 block", "error", err, "blockNum", blockNum)
-				return echo.NewHTTPError(http.StatusInternalServerError, err)
-			}
-
-			start = strconv.Itoa(int(block.Time()))
-		}
-	}
-
-	// start should be set to a block timestamp latestBlock-numBlocksToReturn blocks ago if
-	// a start timestamp was not provided.
-	iter := srv.db.NewIterator([]byte(db.BlockKeyPrefix), []byte(start))
-	defer iter.Release()
-
-	for iter.Next() {
-		signedblockData := db.SignedBlockDataFromValue(iter.Value())
-
-		signedBlocks = append(signedBlocks, SignedBlock{
-			BlockID:   signedblockData.BlockID.Uint64(),
-			BlockHash: signedblockData.BlockHash.Hex(),
-			Signature: signedblockData.Signature,
-			Prover:    srv.proverAddress,
-		})
-	}
-
-	return c.JSON(http.StatusOK, signedBlocks)
 }

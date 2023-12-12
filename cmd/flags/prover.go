@@ -180,6 +180,11 @@ var (
 		Usage:    "Amount to approve TaikoL1 contract for TaikoToken usage",
 		Category: proverCategory,
 	}
+	GuardianProverHealthCheckServerEndpoint = &cli.StringFlag{
+		Name:     "prover.guardianProverHealthCheckServerEndpoint",
+		Usage:    "HTTP endpoint for main guardian prover health check server",
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -199,6 +204,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	GuardianProver,
 	GuardianProverPrivateKey,
 	GuardianProofSubmissionDelay,
+	GuardianProverHealthCheckServerEndpoint,
 	ProofSubmissionMaxRetry,
 	ProveBlockTxReplacementMultiplier,
 	ProveBlockMaxTxGasTipCap,
