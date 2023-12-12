@@ -48,30 +48,34 @@ func (s *ProverTestSuite) SetupTest() {
 
 	allowance := new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil)
 
+	guardianProverHealthCheckServerEndpoint, err := url.Parse("http://localhost:4190")
+	s.Nil(err)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
 	s.Nil(InitFromConfig(ctx, p, (&Config{
-		L1WsEndpoint:             os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L1HttpEndpoint:           os.Getenv("L1_NODE_HTTP_ENDPOINT"),
-		L2WsEndpoint:             os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2HttpEndpoint:           os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:        common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		GuardianProverAddress:    common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
-		L1ProverPrivKey:          l1ProverPrivKey,
-		GuardianProverPrivateKey: l1ProverPrivKey,
-		Dummy:                    true,
-		ProveUnassignedBlocks:    true,
-		Capacity:                 1024,
-		MinOptimisticTierFee:     common.Big1,
-		MinSgxTierFee:            common.Big1,
-		MinPseZkevmTierFee:       common.Big1,
-		MinSgxAndPseZkevmTierFee: common.Big1,
-		HTTPServerPort:           uint64(port),
-		WaitReceiptTimeout:       12 * time.Second,
-		DatabasePath:             "",
-		Allowance:                allowance,
+		L1WsEndpoint:                            os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:                          os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:                            os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:                          os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:                          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                          common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:                       common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		GuardianProverAddress:                   common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
+		GuardianProverHealthCheckServerEndpoint: guardianProverHealthCheckServerEndpoint,
+		L1ProverPrivKey:                         l1ProverPrivKey,
+		GuardianProverPrivateKey:                l1ProverPrivKey,
+		Dummy:                                   true,
+		ProveUnassignedBlocks:                   true,
+		Capacity:                                1024,
+		MinOptimisticTierFee:                    common.Big1,
+		MinSgxTierFee:                           common.Big1,
+		MinPseZkevmTierFee:                      common.Big1,
+		MinSgxAndPseZkevmTierFee:                common.Big1,
+		HTTPServerPort:                          uint64(port),
+		WaitReceiptTimeout:                      12 * time.Second,
+		DatabasePath:                            "",
+		Allowance:                               allowance,
 	})))
 	p.srv = testutils.NewTestProverServer(
 		&s.ClientTestSuite,
