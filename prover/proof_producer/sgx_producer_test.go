@@ -13,7 +13,9 @@ import (
 )
 
 func TestSGXProducerRequestProof(t *testing.T) {
-	producer := &SGXProofProducer{}
+	producer := &SGXProofProducer{
+		DummyProofProducer: &DummyProofProducer{},
+	}
 
 	resCh := make(chan *ProofWithHeader, 1)
 
