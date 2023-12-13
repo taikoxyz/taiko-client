@@ -1041,8 +1041,10 @@ func (p *Prover) isValidProof(
 		return false, err
 	}
 
-	l2SignalService, err := p.rpc.TaikoL2.SignalService(
+	l2SignalService, err := p.rpc.TaikoL2.Resolve0(
 		&bind.CallOpts{Context: ctx, BlockNumber: blockID},
+		rpc.StringToBytes32("signal_service"),
+		false,
 	)
 	if err != nil {
 		return false, err

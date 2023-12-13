@@ -190,7 +190,11 @@ func GetBlockProofStatus(
 		return nil, err
 	}
 
-	l2SignalService, err := cli.TaikoL2.SignalService(&bind.CallOpts{Context: ctx, BlockNumber: id})
+	l2SignalService, err := cli.TaikoL2.Resolve0(
+		&bind.CallOpts{Context: ctx, BlockNumber: id},
+		StringToBytes32("signal_service"),
+		false,
+	)
 	if err != nil {
 		return nil, err
 	}

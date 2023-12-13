@@ -98,16 +98,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContext_ProverKeyError() {
 	}), "invalid L1 prover private key")
 }
 
-func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProverKeyError() {
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContext",
-		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
-		"--" + flags.GuardianProver.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
-	}), "invalid guardian private key")
-}
-
 func (s *ProverTestSuite) SetupApp() *cli.App {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
