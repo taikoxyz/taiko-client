@@ -33,7 +33,7 @@ type signedBlockReq struct {
 
 type GuardianProverBlockSender struct {
 	privateKey                *ecdsa.PrivateKey
-	healthCheckServerEndpoint url.URL
+	healthCheckServerEndpoint *url.URL
 	db                        ethdb.KeyValueStore
 	rpc                       *rpc.Client
 	proverAddress             common.Address
@@ -41,7 +41,7 @@ type GuardianProverBlockSender struct {
 
 func NewGuardianProverBlockSender(
 	privateKey *ecdsa.PrivateKey,
-	healthCheckServerEndpoint url.URL,
+	healthCheckServerEndpoint *url.URL,
 	db ethdb.KeyValueStore,
 	rpc *rpc.Client,
 	proverAddress common.Address,
@@ -78,6 +78,11 @@ func (s *GuardianProverBlockSender) sendSignedBlockReq(
 	hash common.Hash,
 	blockID *big.Int,
 ) error {
+	if s.healthCheckServerEndpoint == nil {
+		log.Info("no health check server endpoint set, returning early")
+		return nil
+	}
+
 	req := &signedBlockReq{
 		BlockID:   blockID.Uint64(),
 		BlockHash: hash.Hex(),

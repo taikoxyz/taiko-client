@@ -263,7 +263,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 		p.guardianProverSender = guardianproversender.NewGuardianProverBlockSender(
 			p.cfg.GuardianProverPrivateKey,
-			*p.cfg.GuardianProverHealthCheckServerEndpoint,
+			p.cfg.GuardianProverHealthCheckServerEndpoint,
 			db,
 			p.rpc,
 			p.proverAddress,
