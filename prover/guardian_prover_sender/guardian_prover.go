@@ -111,7 +111,13 @@ func (s *GuardianProverBlockSender) sendSignedBlockReq(
 		Prover:    s.proverAddress,
 	}
 
-	return s.post(ctx, "signedBlock", req)
+	if err := s.post(ctx, "signedBlock", req); err != nil {
+		return err
+	}
+
+	log.Info("Guardian prover successfully signed block", "blockID", blockID.Uint64())
+
+	return nil
 }
 
 func (s *GuardianProverBlockSender) sign(ctx context.Context, blockID *big.Int) ([]byte, common.Hash, error) {
@@ -175,8 +181,6 @@ func (s *GuardianProverBlockSender) sign(ctx context.Context, blockID *big.Int) 
 		return nil, common.Hash{}, err
 	}
 
-	log.Info("Guardian prover successfully signed block", "blockID", blockID.Uint64())
-
 	return signed, header.Hash(), nil
 }
 
@@ -195,5 +199,11 @@ func (s *GuardianProverBlockSender) SendHeartbeat(ctx context.Context) error {
 		ProverAddress:      s.proverAddress.Hex(),
 	}
 
-	return s.post(ctx, "healthCheck", req)
+	if err := s.post(ctx, "healthCheck", req); err != nil {
+		return err
+	}
+
+	log.Info("successfully sent heartbeat")
+
+	return nil
 }
