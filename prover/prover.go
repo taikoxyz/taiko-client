@@ -52,7 +52,7 @@ type Prover struct {
 	srv *server.ProverServer
 
 	// Guardian prover heartbeat and block sending related
-	guardianProverSender guardianproversender.Sender
+	guardianProverSender guardianproversender.BlockSenderHeartbeater
 
 	// Contract configurations
 	protocolConfigs *bindings.TaikoDataConfig
