@@ -22,7 +22,7 @@ var (
 	}
 	RaikoHostEndpoint = &cli.StringFlag{
 		Name:     "raiko.hostEndpoint",
-		Usage:    "RPC endpoint of a ZKEVM RPCD service",
+		Usage:    "RPC endpoint of a Raiko host service",
 		Required: true,
 		Category: proverCategory,
 	}
