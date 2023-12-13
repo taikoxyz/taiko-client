@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -20,6 +21,7 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
+	guardianproversender "github.com/taikoxyz/taiko-client/prover/guardian_prover_sender"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
@@ -70,8 +72,7 @@ func (s *ProverTestSuite) SetupTest() {
 		MinSgxAndPseZkevmTierFee: common.Big1,
 		HTTPServerPort:           uint64(port),
 		WaitReceiptTimeout:       12 * time.Second,
-		DatabasePath:             "dbdata",
-		DatabaseCacheSize:        16,
+		DatabasePath:             "",
 		Allowance:                allowance,
 	})))
 	p.srv = testutils.NewTestProverServer(
@@ -79,6 +80,14 @@ func (s *ProverTestSuite) SetupTest() {
 		l1ProverPrivKey,
 		p.capacityManager,
 		proverServerUrl,
+	)
+
+	p.guardianProverSender = guardianproversender.NewGuardianProverBlockSender(
+		p.cfg.GuardianProverPrivateKey,
+		p.cfg.GuardianProverHealthCheckServerEndpoint,
+		memorydb.New(),
+		p.rpc,
+		p.proverAddress,
 	)
 
 	s.p = p
