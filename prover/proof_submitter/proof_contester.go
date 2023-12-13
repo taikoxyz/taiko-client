@@ -42,7 +42,11 @@ func NewProofContester(
 	waitReceiptTimeout time.Duration,
 	graffiti string,
 ) (*ProofContester, error) {
-	l2SignalService, err := rpcClient.TaikoL2.SignalService(nil)
+	l2SignalService, err := rpcClient.TaikoL2.Resolve0(
+		nil,
+		rpc.StringToBytes32("signal_service"),
+		false,
+	)
 	if err != nil {
 		return nil, err
 	}
