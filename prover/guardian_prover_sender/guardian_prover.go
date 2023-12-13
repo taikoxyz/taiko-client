@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -55,6 +54,28 @@ func NewGuardianProverBlockSender(
 	}
 }
 
+func (s *GuardianProverBlockSender) post(ctx context.Context, route string, req interface{}) error {
+	body, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(
+		fmt.Sprintf("%v/%v", s.healthCheckServerEndpoint.String(), route),
+		"application/json",
+		bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf(
+			"unable to contract health check server endpoint, status code: %v", resp.StatusCode)
+	}
+
+	return nil
+}
+
 func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockID *big.Int) error {
 	signed, blockHash, err := s.sign(ctx, blockID)
 	if err != nil {
@@ -90,25 +111,7 @@ func (s *GuardianProverBlockSender) sendSignedBlockReq(
 		Prover:    s.proverAddress,
 	}
 
-	body, err := json.Marshal(req)
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.Post(
-		fmt.Sprintf("%v/%v", s.healthCheckServerEndpoint.String(), "signedBlock"),
-		"application/json",
-		bytes.NewBuffer(body))
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf(
-			"unable to contract health check server endpoint, status code: %v", resp.StatusCode)
-	}
-
-	return nil
+	return s.post(ctx, "signedBlock", req)
 }
 
 func (s *GuardianProverBlockSender) sign(ctx context.Context, blockID *big.Int) ([]byte, common.Hash, error) {
@@ -192,23 +195,5 @@ func (s *GuardianProverBlockSender) SendHeartbeat(ctx context.Context) error {
 		ProverAddress:      s.proverAddress.Hex(),
 	}
 
-	body, err := json.Marshal(req)
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.Post(
-		fmt.Sprintf("%v/%v", s.healthCheckServerEndpoint.String(), "healthCheck"),
-		"application/json",
-		bytes.NewBuffer(body),
-	)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("unsuccessful http request")
-	}
-
-	return nil
+	return s.post(ctx, "healthCheck", req)
 }
