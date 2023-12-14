@@ -8,24 +8,6 @@ import (
 
 // Required flags used by prover.
 var (
-	ZkEvmRpcdEndpoint = &cli.StringFlag{
-		Name:     "zkevm.rpcdEndpoint",
-		Usage:    "RPC endpoint of a ZKEVM RPCD service",
-		Required: true,
-		Category: proverCategory,
-	}
-	ZkEvmRpcdParamsPath = &cli.StringFlag{
-		Name:     "zkevm.rpcdParamsPath",
-		Usage:    "Path of ZKEVM parameters file to use",
-		Required: true,
-		Category: proverCategory,
-	}
-	RaikoHostEndpoint = &cli.StringFlag{
-		Name:     "raiko.hostEndpoint",
-		Usage:    "RPC endpoint of a Raiko host service",
-		Required: true,
-		Category: proverCategory,
-	}
 	L1ProverPrivKey = &cli.StringFlag{
 		Name:     "l1.proverPrivKey",
 		Usage:    "Private key of L1 prover, who will send TaikoL1.proveBlock transactions",
@@ -39,8 +21,14 @@ var (
 		Category: proverCategory,
 	}
 	ProverAssignmentHookAddress = &cli.StringFlag{
-		Name:     "assignmentHookAddress",
+		Name:     "assignmentHook",
 		Usage:    "Address of the AssignmentHook contract",
+		Required: true,
+		Category: proverCategory,
+	}
+	RaikoHostEndpoint = &cli.StringFlag{
+		Name:     "raiko.hostEndpoint",
+		Usage:    "RPC endpoint of a Raiko host service",
 		Required: true,
 		Category: proverCategory,
 	}
@@ -48,6 +36,16 @@ var (
 
 // Optional flags used by prover.
 var (
+	ZkEvmRpcdEndpoint = &cli.StringFlag{
+		Name:     "zkevm.rpcdEndpoint",
+		Usage:    "RPC endpoint of a ZKEVM RPCD service",
+		Category: proverCategory,
+	}
+	ZkEvmRpcdParamsPath = &cli.StringFlag{
+		Name:     "zkevm.rpcdParamsPath",
+		Usage:    "Path of ZKEVM parameters file to use",
+		Category: proverCategory,
+	}
 	StartingBlockID = &cli.Uint64Flag{
 		Name:     "prover.startingBlockID",
 		Usage:    "If set, prover will start proving blocks from the block with this ID",
@@ -91,11 +89,6 @@ var (
 	GuardianProver = &cli.StringFlag{
 		Name:     "guardianProver",
 		Usage:    "GuardianProver contract `address`",
-		Category: proverCategory,
-	}
-	GuardianProverPrivateKey = &cli.StringFlag{
-		Name:     "guardian.privateKey",
-		Usage:    "Private key of guardian prover",
 		Category: proverCategory,
 	}
 	GuardianProofSubmissionDelay = &cli.DurationFlag{
@@ -186,6 +179,11 @@ var (
 		Usage:    "Amount to approve TaikoL1 contract for TaikoToken usage",
 		Category: proverCategory,
 	}
+	GuardianProverHealthCheckServerEndpoint = &cli.StringFlag{
+		Name:     "prover.guardianProverHealthCheckServerEndpoint",
+		Usage:    "HTTP endpoint for main guardian prover health check server",
+		Category: proverCategory,
+	}
 )
 
 // All prover flags.
@@ -204,8 +202,8 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	StartingBlockID,
 	Dummy,
 	GuardianProver,
-	GuardianProverPrivateKey,
 	GuardianProofSubmissionDelay,
+	GuardianProverHealthCheckServerEndpoint,
 	ProofSubmissionMaxRetry,
 	ProveBlockTxReplacementMultiplier,
 	ProveBlockMaxTxGasTipCap,
