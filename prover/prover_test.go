@@ -21,6 +21,7 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
+	guardianproversender "github.com/taikoxyz/taiko-client/prover/guardian_prover_sender"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/testutils"
 )
@@ -80,7 +81,14 @@ func (s *ProverTestSuite) SetupTest() {
 		proverServerUrl,
 	)
 
-	p.db = memorydb.New()
+	p.guardianProverSender = guardianproversender.NewGuardianProverBlockSender(
+		p.cfg.L1ProverPrivKey,
+		p.cfg.GuardianProverHealthCheckServerEndpoint,
+		memorydb.New(),
+		p.rpc,
+		p.proverAddress,
+	)
+
 	s.p = p
 	s.cancel = cancel
 

@@ -26,7 +26,7 @@ import (
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
-	"github.com/taikoxyz/taiko-client/prover/db"
+	guardianproversender "github.com/taikoxyz/taiko-client/prover/guardian_prover_sender"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/taikoxyz/taiko-client/prover/server"
@@ -45,14 +45,14 @@ type Prover struct {
 	proverAddress    common.Address
 	proverPrivateKey *ecdsa.PrivateKey
 
-	// Database
-	db ethdb.KeyValueStore
-
 	// Clients
 	rpc *rpc.Client
 
 	// Prover Server
 	srv *server.ProverServer
+
+	// Guardian prover heartbeat and block sending related
+	guardianProverSender guardianproversender.BlockSenderHeartbeater
 
 	// Contract configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -238,8 +238,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		); err != nil {
 			return err
 		}
-
-		p.db = db
 	}
 
 	// Prover server
@@ -258,6 +256,18 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		LivenessBond:             protocolConfigs.LivenessBond,
 		IsGuardian:               p.IsGuardianProver(),
 		DB:                       db,
+	}
+
+	if p.IsGuardianProver() {
+		proverServerOpts.ProverPrivateKey = p.cfg.L1ProverPrivKey
+
+		p.guardianProverSender = guardianproversender.NewGuardianProverBlockSender(
+			p.cfg.L1ProverPrivKey,
+			p.cfg.GuardianProverHealthCheckServerEndpoint,
+			db,
+			p.rpc,
+			p.proverAddress,
+		)
 	}
 
 	if p.srv, err = server.New(proverServerOpts); err != nil {
@@ -349,6 +359,12 @@ func (p *Prover) Start() error {
 			log.Crit("Failed to start http server", "error", err)
 		}
 	}()
+
+	if p.IsGuardianProver() {
+		p.wg.Add(1)
+		go p.heartbeatInterval(p.ctx)
+	}
+
 	go p.eventLoop()
 
 	return nil
@@ -416,8 +432,10 @@ func (p *Prover) eventLoop() {
 func (p *Prover) Close(ctx context.Context) {
 	p.closeSubscription()
 
-	if err := p.db.Close(); err != nil {
-		log.Error("failed to close database connection", "error", err)
+	if p.guardianProverSender != nil {
+		if err := p.guardianProverSender.Close(); err != nil {
+			log.Error("failed to close database connection", "error", err)
+		}
 	}
 
 	if err := p.srv.Shutdown(ctx); err != nil {
@@ -465,7 +483,7 @@ func (p *Prover) onBlockProposed(
 		if !p.IsGuardianProver() {
 			return
 		}
-		if err := p.signBlock(ctx, event.BlockId); err != nil {
+		if err := p.guardianProverSender.SignAndSendBlock(ctx, event.BlockId); err != nil {
 			log.Error("Guardian prover unable to sign block", "blockID", event.BlockId, "error", err)
 		}
 	}()
@@ -1271,74 +1289,29 @@ func (p *Prover) releaseOneCapacity(blockID *big.Int) {
 	}
 }
 
-// signBlock signs the block data and stores it in the database.
-func (p *Prover) signBlock(ctx context.Context, blockID *big.Int) error {
-	// only guardianProvers should sign blocks
+// heartbeatInterval sends a heartbeat to the guardian prover health check server
+// on an interval
+func (p *Prover) heartbeatInterval(ctx context.Context) {
+	t := time.NewTicker(12 * time.Second)
+
+	defer func() {
+		t.Stop()
+		p.wg.Done()
+	}()
+
+	// only guardianProvers should send heartbeat
 	if !p.IsGuardianProver() {
-		return nil
+		return
 	}
 
-	log.Info("Guardian prover signing block", "blockID", blockID.Uint64())
-
-	head, err := p.rpc.L2.BlockNumber(ctx)
-	if err != nil {
-		return err
-	}
-
-	for head < blockID.Uint64() {
-		log.Info(
-			"Guardian prover block signing waiting for chain",
-			"latestBlock", head,
-			"eventBlockID", blockID.Uint64(),
-		)
-
-		if _, err := p.rpc.WaitL1Origin(ctx, blockID); err != nil {
-			return err
-		}
-
-		head, err = p.rpc.L2.BlockNumber(ctx)
-		if err != nil {
-			return err
+	for {
+		select {
+		case <-p.ctx.Done():
+			return
+		case <-t.C:
+			if err := p.guardianProverSender.SendHeartbeat(ctx); err != nil {
+				log.Error("error sending heartbeat", "error", err)
+			}
 		}
 	}
-
-	header, err := p.rpc.L2.HeaderByNumber(ctx, blockID)
-	if err != nil {
-		return err
-	}
-
-	exists, err := p.db.Has(db.BuildBlockKey(header.Time))
-	if err != nil {
-		return err
-	}
-
-	if exists {
-		log.Info("Guardian prover already signed block", "blockID", blockID.Uint64())
-		return nil
-	}
-
-	log.Info(
-		"Guardian prover block signing caught up",
-		"latestBlock", head,
-		"eventBlockID", blockID.Uint64(),
-	)
-
-	signed, err := crypto.Sign(header.Hash().Bytes(), p.proverPrivateKey)
-	if err != nil {
-		return err
-	}
-
-	if err := p.db.Put(
-		db.BuildBlockKey(header.Time),
-		db.BuildBlockValue(header.Hash().Bytes(),
-			signed,
-			blockID,
-		),
-	); err != nil {
-		return err
-	}
-
-	log.Info("Guardian prover successfully signed block", "blockID", blockID.Uint64())
-
-	return nil
 }

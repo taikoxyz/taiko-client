@@ -17,10 +17,6 @@ import (
 	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 )
 
-var (
-	defaultNumBlocksToReturn = new(big.Int).SetUint64(100)
-)
-
 // @title Taiko Prover API
 // @version 1.0
 // @termsOfService http://swagger.io/terms/
@@ -146,6 +142,5 @@ func (srv *ProverServer) configureRoutes() {
 	srv.echo.GET("/", srv.Health)
 	srv.echo.GET("/healthz", srv.Health)
 	srv.echo.GET("/status", srv.GetStatus)
-	srv.echo.GET("/signedBlocks", srv.GetSignedBlocks)
 	srv.echo.POST("/assignment", srv.CreateAssignment)
 }
