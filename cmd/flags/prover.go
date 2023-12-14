@@ -26,6 +26,12 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
+	RaikoHostEndpoint = &cli.StringFlag{
+		Name:     "raiko.hostEndpoint",
+		Usage:    "RPC endpoint of a Raiko host service",
+		Required: true,
+		Category: proverCategory,
+	}
 )
 
 // Optional flags used by prover.
@@ -187,6 +193,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2HTTPEndpoint,
 	ZkEvmRpcdEndpoint,
 	ZkEvmRpcdParamsPath,
+	RaikoHostEndpoint,
 	L1ProverPrivKey,
 	MinOptimisticTierFee,
 	MinSgxTierFee,
