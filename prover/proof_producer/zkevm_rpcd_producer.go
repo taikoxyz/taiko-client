@@ -60,22 +60,43 @@ type RequestProofBodyParam struct {
 	ProtocolInstance *ProtocolInstance `json:"protocol_instance"`
 }
 
+type RequestMetaData struct {
+	L1Hash           string   `json:"l1_hash"`
+	Difficulty       string   `json:"difficulty"`
+	BlobHash         string   `json:"blob_hash"`
+	ExtraData        string   `json:"extra_data"`
+	DepositsHash     string   `json:"deposits_hash"`
+	Coinbase         string   `json:"coinbase"`
+	ID               uint64   `json:"id"`
+	GasLimit         uint32   `json:"gas_limit"`
+	Timestamp        uint64   `json:"timestamp"`
+	L1Height         uint64   `json:"l1_height"`
+	TxListByteOffset *big.Int `json:"tx_list_byte_offset"`
+	TxListByteSize   *big.Int `json:"tx_list_byte_size"`
+	MinTier          uint16   `json:"min_tier"`
+	BlobUsed         bool     `json:"blob_used"`
+	ParentMetaHash   string   `json:"parent_metahash"`
+}
+
 // RequestProofBody represents the JSON body of RequestProofBody.Param's `protocol_instance` field.
 type ProtocolInstance struct {
-	L1SignalService         string `json:"l1_signal_service"`
-	L2SignalService         string `json:"l2_signal_service"`
-	TaikoL2                 string `json:"l2_contract"`
-	MetaHash                string `json:"meta_hash"`
-	BlockHash               string `json:"block_hash"`
-	ParentHash              string `json:"parent_hash"`
-	SignalRoot              string `json:"signal_root"`
-	Graffiti                string `json:"graffiti"`
-	Prover                  string `json:"prover"`
-	GasUsed                 uint64 `json:"gas_used"`
-	ParentGasUsed           uint64 `json:"parent_gas_used"`
-	BlockMaxGasLimit        uint64 `json:"block_max_gas_limit"`
-	MaxTransactionsPerBlock uint64 `json:"max_transactions_per_block"`
-	MaxBytesPerTxList       uint64 `json:"max_bytes_per_tx_list"`
+	L1SignalService         string           `json:"l1_signal_service"`
+	L2SignalService         string           `json:"l2_signal_service"`
+	TaikoL2                 string           `json:"l2_contract"`
+	MetaHash                string           `json:"meta_hash"`
+	BlockHash               string           `json:"block_hash"`
+	ParentHash              string           `json:"parent_hash"`
+	SignalRoot              string           `json:"signal_root"`
+	Graffiti                string           `json:"graffiti"`
+	Prover                  string           `json:"prover"`
+	Treasury                string           `json:"treasury"`
+	GasUsed                 uint64           `json:"gas_used"`
+	ParentGasUsed           uint64           `json:"parent_gas_used"`
+	BlockMaxGasLimit        uint64           `json:"block_max_gas_limit"`
+	MaxTransactionsPerBlock uint64           `json:"max_transactions_per_block"`
+	MaxBytesPerTxList       uint64           `json:"max_bytes_per_tx_list"`
+	AnchorGasLimit          uint64           `json:"anchor_gas_limit"`
+	RequestMetaData         *RequestMetaData `json:"request_meta_data"`
 }
 
 // RequestProofBodyResponse represents the JSON body of the response of the proof requests.
@@ -151,9 +172,13 @@ func (p *ZkevmRpcdProducer) RequestProof(
 	if p.CustomProofHook != nil {
 		proof, degree, err = p.CustomProofHook()
 	} else {
-		proof, degree, err = p.callProverDaemon(ctx, opts)
+		proof, degree, err = p.callProverDaemon(ctx, opts, meta)
 	}
 	if err != nil {
+		return err
+	}
+
+	if proof, err = encoding.EncodeZKEvmProof(proof); err != nil {
 		return err
 	}
 
@@ -171,7 +196,11 @@ func (p *ZkevmRpcdProducer) RequestProof(
 }
 
 // callProverDaemon keeps polling the proverd service to get the requested proof.
-func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofRequestOptions) ([]byte, uint64, error) {
+func (p *ZkevmRpcdProducer) callProverDaemon(
+	ctx context.Context,
+	opts *ProofRequestOptions,
+	meta *bindings.TaikoDataBlockMetadata,
+) ([]byte, uint64, error) {
 	var (
 		proof  []byte
 		degree uint64
@@ -181,7 +210,7 @@ func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 		if ctx.Err() != nil {
 			return nil
 		}
-		output, err := p.requestProof(opts)
+		output, err := p.requestProof(opts, meta)
 		if err != nil {
 			log.Error("Failed to request proof", "height", opts.BlockID, "err", err, "endpoint", p.RpcdEndpoint)
 			return err
@@ -214,7 +243,10 @@ func (p *ZkevmRpcdProducer) callProverDaemon(ctx context.Context, opts *ProofReq
 }
 
 // requestProof sends a RPC request to proverd to try to get the requested proof.
-func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput, error) {
+func (p *ZkevmRpcdProducer) requestProof(
+	opts *ProofRequestOptions,
+	meta *bindings.TaikoDataBlockMetadata,
+) (*RpcdOutput, error) {
 	reqBody := RequestProofBody{
 		JsonRPC: "2.0",
 		ID:      common.Big1,
@@ -231,6 +263,7 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 			Aggregate:    true,
 			ProtocolInstance: &ProtocolInstance{
 				Prover:            opts.ProverAddress.Hex()[2:],
+				Treasury:          opts.TaikoL2.Hex()[2:],
 				L1SignalService:   opts.L1SignalService.Hex()[2:],
 				L2SignalService:   opts.L2SignalService.Hex()[2:],
 				TaikoL2:           opts.TaikoL2.Hex()[2:],
@@ -243,6 +276,24 @@ func (p *ZkevmRpcdProducer) requestProof(opts *ProofRequestOptions) (*RpcdOutput
 				ParentGasUsed:     opts.ParentGasUsed,
 				BlockMaxGasLimit:  uint64(p.ProtocolConfig.BlockMaxGasLimit),
 				MaxBytesPerTxList: p.ProtocolConfig.BlockMaxTxListBytes.Uint64(),
+				AnchorGasLimit:    250_000,
+				RequestMetaData: &RequestMetaData{
+					L1Hash:           common.BytesToHash(meta.L1Hash[:]).Hex()[2:],
+					Difficulty:       common.BytesToHash(meta.Difficulty[:]).Hex()[2:],
+					BlobHash:         common.BytesToHash(meta.BlobHash[:]).Hex()[2:],
+					ExtraData:        common.BytesToHash(meta.ExtraData[:]).Hex()[2:],
+					DepositsHash:     common.BytesToHash(meta.DepositsHash[:]).Hex()[2:],
+					Coinbase:         meta.Coinbase.Hex()[2:],
+					ID:               meta.Id,
+					GasLimit:         meta.GasLimit,
+					Timestamp:        meta.Timestamp,
+					L1Height:         meta.L1Height,
+					TxListByteOffset: meta.TxListByteOffset,
+					TxListByteSize:   meta.TxListByteSize,
+					MinTier:          meta.MinTier,
+					BlobUsed:         meta.BlobUsed,
+					ParentMetaHash:   common.BytesToHash(meta.ParentMetaHash[:]).Hex()[2:],
+				},
 			},
 		}},
 	}

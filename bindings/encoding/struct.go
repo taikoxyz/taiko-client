@@ -79,6 +79,13 @@ type AssignmentHookInput struct {
 	Tip        *big.Int
 }
 
+// ZKEvmProof should be same as PseZkVerifier.ZkEvmProof
+type ZKEvmProof struct {
+	VerifierId uint16
+	Zkp        []byte
+	PointProof []byte
+}
+
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.
 func FromGethHeader(header *types.Header) *BlockHeader {
 	baseFeePerGas := header.BaseFee

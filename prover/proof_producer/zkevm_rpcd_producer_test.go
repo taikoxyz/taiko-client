@@ -85,7 +85,11 @@ func TestZkevmRpcdProducerCalls(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	_, _, err = dummyZkevmRpcdProducer.callProverDaemon(ctx, &ProofRequestOptions{BlockID: common.Big32})
+	_, _, err = dummyZkevmRpcdProducer.callProverDaemon(
+		ctx,
+		&ProofRequestOptions{BlockID: common.Big32},
+		&bindings.TaikoDataBlockMetadata{},
+	)
 
 	require.Nil(t, err)
 }
