@@ -243,7 +243,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 		p.proofSubmitters = append(p.proofSubmitters, submitter)
 	}
-	log.Info("222")
 
 	// Proof contester
 	p.proofContester, err = proofSubmitter.NewProofContester(
@@ -260,7 +259,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if err != nil {
 		return err
 	}
-	log.Info("333")
 
 	// levelDB
 	var db ethdb.KeyValueStore
