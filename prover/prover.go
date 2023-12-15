@@ -146,6 +146,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proofWindowExpiredCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
+
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
 	}
@@ -178,6 +179,37 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			}
 			producer = sgxProducer
 		case encoding.TierSgxAndPseZkevmID:
+			zkEvmRpcdProducer, err := proofProducer.NewZkevmRpcdProducer(
+				cfg.ZKEvmRpcdEndpoint,
+				cfg.ZkEvmRpcdParamsPath,
+				cfg.L1HttpEndpoint,
+				cfg.L2HttpEndpoint,
+				true,
+				p.protocolConfigs,
+			)
+			if err != nil {
+				return err
+			}
+
+			sgxProducer, err := proofProducer.NewSGXProducer(
+				cfg.RaikoHostEndpoint,
+				cfg.L1HttpEndpoint,
+				cfg.L2HttpEndpoint,
+			)
+			if err != nil {
+				return err
+			}
+
+			if p.cfg.Dummy {
+				zkEvmRpcdProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
+				sgxProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
+			}
+
+			producer = &proofProducer.SGXAndZkevmRpcdProducer{
+				SGXProofProducer:  sgxProducer,
+				ZkevmRpcdProducer: zkEvmRpcdProducer,
+			}
+		case encoding.TierPseZkevmID:
 			zkEvmRpcdProducer, err := proofProducer.NewZkevmRpcdProducer(
 				cfg.ZKEvmRpcdEndpoint,
 				cfg.ZkEvmRpcdParamsPath,
