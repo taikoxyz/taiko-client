@@ -217,7 +217,12 @@ func (p *ZkevmRpcdProducer) callProverDaemon(
 		}
 
 		if output == nil {
-			log.Info("Proof generating", "height", opts.BlockID, "time", time.Since(start))
+			log.Info(
+				"Proof generating",
+				"height", opts.BlockID,
+				"time", time.Since(start),
+				"producer", "ZkevmRpcdProducer",
+			)
 			return errProofGenerating
 		}
 
@@ -231,7 +236,13 @@ func (p *ZkevmRpcdProducer) callProverDaemon(
 
 		proof = common.Hex2Bytes(proofOutput)
 		degree = output.Aggregation.Degree
-		log.Info("Proof generated", "height", opts.BlockID, "degree", degree, "time", time.Since(start))
+		log.Info(
+			"Proof generated",
+			"height", opts.BlockID,
+			"degree", degree,
+			"time", time.Since(start),
+			"producer", "ZkevmRpcdProducer",
+		)
 		return nil
 	}, backoff.NewConstantBackOff(proofPollingInterval)); err != nil {
 		return nil, 0, err
