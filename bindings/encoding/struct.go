@@ -16,6 +16,7 @@ var (
 	TierSgxAndPseZkevmID uint16   = 400
 	TierGuardianID       uint16   = 1000
 	ProtocolTiers        []uint16 = []uint16{TierOptimisticID, TierSgxID, TierSgxAndPseZkevmID, TierGuardianID}
+	AnchorTxGasLimit     uint64   = 250_000
 )
 
 // BlockHeader represents an Ethereum block header.

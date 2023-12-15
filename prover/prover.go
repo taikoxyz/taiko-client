@@ -190,9 +190,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			if err != nil {
 				return err
 			}
-			if p.cfg.Dummy {
-				zkEvmRpcdProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
-			}
+
 			sgxProducer, err := proofProducer.NewSGXProducer(
 				cfg.RaikoHostEndpoint,
 				cfg.L1HttpEndpoint,
@@ -201,9 +199,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			if err != nil {
 				return err
 			}
+
 			if p.cfg.Dummy {
+				zkEvmRpcdProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
 				sgxProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
 			}
+
 			producer = &proofProducer.SGXAndZkevmRpcdProducer{
 				SGXProofProducer:  sgxProducer,
 				ZkevmRpcdProducer: zkEvmRpcdProducer,

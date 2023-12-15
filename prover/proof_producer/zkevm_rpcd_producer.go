@@ -287,7 +287,7 @@ func (p *ZkevmRpcdProducer) requestProof(
 				ParentGasUsed:     opts.ParentGasUsed,
 				BlockMaxGasLimit:  uint64(p.ProtocolConfig.BlockMaxGasLimit),
 				MaxBytesPerTxList: p.ProtocolConfig.BlockMaxTxListBytes.Uint64(),
-				AnchorGasLimit:    250_000,
+				AnchorGasLimit:    encoding.AnchorTxGasLimit,
 				RequestMetaData: &RequestMetaData{
 					L1Hash:           common.BytesToHash(meta.L1Hash[:]).Hex()[2:],
 					Difficulty:       common.BytesToHash(meta.Difficulty[:]).Hex()[2:],
