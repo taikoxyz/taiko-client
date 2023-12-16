@@ -16,6 +16,7 @@ var (
 	TierSgxAndPseZkevmID uint16   = 400
 	TierGuardianID       uint16   = 1000
 	ProtocolTiers        []uint16 = []uint16{TierOptimisticID, TierSgxID, TierSgxAndPseZkevmID, TierGuardianID}
+	AnchorTxGasLimit     uint64   = 250_000
 )
 
 // BlockHeader represents an Ethereum block header.
@@ -77,6 +78,13 @@ type ProverAssignment struct {
 type AssignmentHookInput struct {
 	Assignment *ProverAssignment
 	Tip        *big.Int
+}
+
+// ZKEvmProof should be same as PseZkVerifier.ZkEvmProof
+type ZKEvmProof struct {
+	VerifierId uint16
+	Zkp        []byte
+	PointProof []byte
 }
 
 // FromGethHeader converts a GETH *types.Header to *BlockHeader.

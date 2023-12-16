@@ -132,14 +132,24 @@ func (p *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 		}
 
 		if output == nil {
-			log.Info("Proof generating", "height", opts.BlockID, "time", time.Since(start))
+			log.Info(
+				"Proof generating",
+				"height", opts.BlockID,
+				"time", time.Since(start),
+				"producer", "SGXProofProducer",
+			)
 			return errProofGenerating
 		}
 
 		log.Debug("Proof generation output", "output", output)
 
 		proof = common.Hex2Bytes(output.Proof)
-		log.Info("Proof generated", "height", opts.BlockID, "time", time.Since(start))
+		log.Info(
+			"Proof generated",
+			"height", opts.BlockID,
+			"time", time.Since(start),
+			"producer", "SGXProofProducer",
+		)
 		return nil
 	}, backoff.NewConstantBackOff(proofPollingInterval)); err != nil {
 		return nil, err
