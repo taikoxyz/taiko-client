@@ -114,8 +114,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		}
 	}
 
-	if !c.IsSet(c.String(flags.GuardianProver.Name)) &&
-		!c.IsSet(c.String(flags.RaikoHostEndpoint.Name)) {
+	if !c.IsSet(flags.GuardianProver.Name) && !c.IsSet(flags.RaikoHostEndpoint.Name) {
 		return nil, fmt.Errorf("raiko host not provided")
 	}
 
