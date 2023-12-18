@@ -26,12 +26,6 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
-	RaikoHostEndpoint = &cli.StringFlag{
-		Name:     "raiko.hostEndpoint",
-		Usage:    "RPC endpoint of a Raiko host service",
-		Required: true,
-		Category: proverCategory,
-	}
 )
 
 // Optional flags used by prover.
@@ -44,6 +38,11 @@ var (
 	ZkEvmRpcdParamsPath = &cli.StringFlag{
 		Name:     "zkevm.rpcdParamsPath",
 		Usage:    "Path of ZKEVM parameters file to use",
+		Category: proverCategory,
+	}
+	RaikoHostEndpoint = &cli.StringFlag{
+		Name:     "raiko.hostEndpoint",
+		Usage:    "RPC endpoint of a Raiko host service",
 		Category: proverCategory,
 	}
 	StartingBlockID = &cli.Uint64Flag{

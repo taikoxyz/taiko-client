@@ -89,7 +89,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 	}))
 }
 
-func (s *ProverTestSuite) TestNewConfigFromCliContext_ProverKeyError() {
+func (s *ProverTestSuite) TestNewConfigFromCliContextProverKeyError() {
 	app := s.SetupApp()
 
 	s.ErrorContains(app.Run([]string{

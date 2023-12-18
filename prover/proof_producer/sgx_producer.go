@@ -143,7 +143,7 @@ func (p *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 
 		log.Debug("Proof generation output", "output", output)
 
-		proof = common.Hex2Bytes(output.Proof)
+		proof = common.Hex2Bytes(output.Proof[2:])
 		log.Info(
 			"Proof generated",
 			"height", opts.BlockID,
