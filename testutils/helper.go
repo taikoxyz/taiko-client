@@ -21,7 +21,6 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/phayes/freeport"
 	"github.com/taikoxyz/taiko-client/bindings"
-	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	"github.com/taikoxyz/taiko-client/prover/server"
 )
 
@@ -175,7 +174,6 @@ func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey, re
 func NewTestProverServer(
 	s *ClientTestSuite,
 	proverPrivKey *ecdsa.PrivateKey,
-	capacityManager *capacity.CapacityManager,
 	url *url.URL,
 ) *server.ProverServer {
 	protocolConfig, err := s.RpcClient.TaikoL1.GetConfig(nil)
@@ -188,8 +186,8 @@ func NewTestProverServer(
 		MinPseZkevmTierFee:       common.Big1,
 		MinSgxAndPseZkevmTierFee: common.Big1,
 		MaxExpiry:                24 * time.Hour,
-		CapacityManager:          capacityManager,
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		ProposeConcurrencyGuard:  make(chan struct{}, 1024),
 		Rpc:                      s.RpcClient,
 		LivenessBond:             protocolConfig.LivenessBond,
 		IsGuardian:               true,

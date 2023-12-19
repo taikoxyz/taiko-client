@@ -25,7 +25,6 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 	guardianproversender "github.com/taikoxyz/taiko-client/prover/guardian_prover_sender"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
@@ -34,7 +33,6 @@ import (
 )
 
 var (
-	errNoCapacity   = errors.New("no prover capacity available")
 	errTierNotFound = errors.New("tier not found")
 )
 
@@ -88,9 +86,6 @@ type Prover struct {
 	proposeConcurrencyGuard     chan struct{}
 	submitProofConcurrencyGuard chan struct{}
 
-	// Capacity-related configs
-	capacityManager *capacity.CapacityManager
-
 	ctx context.Context
 	wg  sync.WaitGroup
 }
@@ -109,7 +104,6 @@ func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
 func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
-	p.capacityManager = capacity.New(cfg.Capacity)
 	p.proverPrivateKey = cfg.L1ProverPrivKey
 
 	// Clients
@@ -288,7 +282,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		MinSgxAndPseZkevmTierFee: p.cfg.MinSgxAndPseZkevmTierFee,
 		MaxExpiry:                p.cfg.MaxExpiry,
 		MaxBlockSlippage:         p.cfg.MaxBlockSlippage,
-		CapacityManager:          p.capacityManager,
 		TaikoL1Address:           p.cfg.TaikoL1Address,
 		AssignmentHookAddress:    p.cfg.AssignmentHookAddress,
 		Rpc:                      p.rpc,
@@ -788,11 +781,6 @@ func (p *Prover) handleNewBlockProposedEvent(ctx context.Context, e *bindings.Ta
 
 	metrics.ProverProofsAssigned.Inc(1)
 
-	// Make sure to take a capacity before requesting proof.
-	if err := p.takeOneCapacity(e.BlockId); err != nil {
-		return err
-	}
-
 	if proofSubmitter := p.selectSubmitter(e.Meta.MinTier); proofSubmitter != nil {
 		return proofSubmitter.RequestProof(ctx, e)
 	}
@@ -845,7 +833,6 @@ func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProduc
 
 		defer func() {
 			<-p.submitProofConcurrencyGuard
-			p.releaseOneCapacity(proofWithHeader.BlockID)
 		}()
 
 		if err := backoff.Retry(
@@ -956,9 +943,6 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 		if err := proofSubmitter.Producer().Cancel(ctx, event.BlockId); err != nil {
 			return err
 		}
-		// No need to check if the release is successful here, since this L2 block might
-		// be assigned to other provers.
-		p.capacityManager.ReleaseOneCapacity(event.BlockId.Uint64())
 	}
 
 	// If this prover is in contest mode, we check the validity of this proof and if it's invalid,
@@ -1151,11 +1135,6 @@ func (p *Prover) requestProofByBlockID(
 			return nil
 		}
 
-		// Make sure to take a capacity before requesting proof.
-		if err := p.takeOneCapacity(event.BlockId); err != nil {
-			return err
-		}
-
 		if transitionProvedEvent != nil {
 			return p.proofContester.SubmitContest(
 				ctx,
@@ -1306,26 +1285,6 @@ func (p *Prover) getSubmitterByTier(tier uint16) proofSubmitter.Submitter {
 // IsGuardianProver returns true if the current prover is a guardian prover.
 func (p *Prover) IsGuardianProver() bool {
 	return p.cfg.GuardianProverAddress != common.Address{}
-}
-
-// takeOneCapacity takes one capacity from the capacity manager.
-func (p *Prover) takeOneCapacity(blockID *big.Int) error {
-	if !p.IsGuardianProver() {
-		if _, ok := p.capacityManager.TakeOneCapacity(blockID.Uint64()); !ok {
-			return errNoCapacity
-		}
-	}
-
-	return nil
-}
-
-// releaseOneCapacity releases one capacity to the capacity manager.
-func (p *Prover) releaseOneCapacity(blockID *big.Int) {
-	if !p.IsGuardianProver() {
-		if _, released := p.capacityManager.ReleaseOneCapacity(blockID.Uint64()); !released {
-			log.Error("Failed to release capacity", "id", blockID)
-		}
-	}
 }
 
 // heartbeatInterval sends a heartbeat to the guardian prover health check server

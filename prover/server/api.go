@@ -38,7 +38,6 @@ type Status struct {
 	MinSgxTierFee        uint64 `json:"minSgxTierFee"`
 	MinPseZkevmTierFee   uint64 `json:"minPseZkevmTierFee"`
 	MaxExpiry            uint64 `json:"maxExpiry"`
-	CurrentCapacity      uint64 `json:"currentCapacity"`
 	Prover               string `json:"prover"`
 }
 
@@ -56,7 +55,6 @@ func (srv *ProverServer) GetStatus(c echo.Context) error {
 		MinSgxTierFee:        srv.minSgxTierFee.Uint64(),
 		MinPseZkevmTierFee:   srv.minPseZkevmTierFee.Uint64(),
 		MaxExpiry:            uint64(srv.maxExpiry.Seconds()),
-		CurrentCapacity:      srv.capacityManager.ReadCapacity(),
 		Prover:               srv.proverAddress.Hex(),
 	})
 }
@@ -170,8 +168,8 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "expiry too long")
 	}
 
-	if ok := srv.capacityManager.HoldOneCapacity(time.Duration(req.Expiry) * time.Second); !ok {
-		log.Warn("Prover unable to hold a capacity", "proposerIP", c.RealIP())
+	// Check if the prover has any capacity now.
+	if len(srv.proposeConcurrencyGuard) == cap(srv.proposeConcurrencyGuard) {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
 

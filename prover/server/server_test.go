@@ -19,7 +19,6 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 )
 
 type ProverServerTestSuite struct {
@@ -53,7 +52,7 @@ func (s *ProverServerTestSuite) SetupTest() {
 		MinPseZkevmTierFee:       common.Big1,
 		MinSgxAndPseZkevmTierFee: common.Big1,
 		MaxExpiry:                time.Hour,
-		CapacityManager:          capacity.New(1024),
+		ProposeConcurrencyGuard:  make(chan struct{}, 1024),
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		AssignmentHookAddress:    common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		Rpc:                      rpcClient,

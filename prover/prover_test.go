@@ -77,7 +77,6 @@ func (s *ProverTestSuite) SetupTest() {
 	p.srv = testutils.NewTestProverServer(
 		&s.ClientTestSuite,
 		l1ProverPrivKey,
-		p.capacityManager,
 		proverServerUrl,
 	)
 
@@ -381,10 +380,6 @@ func (s *ProverTestSuite) TestProveOp() {
 	s.Equal(header.Number.Uint64(), event.BlockId.Uint64())
 	s.Equal(header.Hash(), common.BytesToHash(event.Tran.BlockHash[:]))
 	s.Equal(header.ParentHash, common.BytesToHash(event.Tran.ParentHash[:]))
-}
-
-func (s *ProverTestSuite) TestReleaseOneCapacity() {
-	s.NotPanics(func() { s.p.releaseOneCapacity(common.Big1) })
 }
 
 func (s *ProverTestSuite) TestStartSubscription() {
