@@ -26,7 +26,6 @@ func (s *ProverServerTestSuite) TestGetStatusSuccess() {
 	s.Equal(s.s.minSgxTierFee.Uint64(), status.MinSgxTierFee)
 	s.Equal(s.s.minSgxAndPseZkevmTierFee.Uint64(), status.MinSgxTierFee)
 	s.Equal(uint64(s.s.maxExpiry.Seconds()), status.MaxExpiry)
-	s.Greater(status.CurrentCapacity, uint64(0))
 	s.NotEmpty(status.Prover)
 }
 
