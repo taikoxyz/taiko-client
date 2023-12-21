@@ -26,7 +26,6 @@ var (
 	ProposerProposeEpochCounter    = metrics.NewRegisteredCounter("proposer/epoch", nil)
 	ProposerProposedTxListsCounter = metrics.NewRegisteredCounter("proposer/proposed/txLists", nil)
 	ProposerProposedTxsCounter     = metrics.NewRegisteredCounter("proposer/proposed/txs", nil)
-	ProposerBlockFeeGauge          = metrics.NewRegisteredGauge("proposer/blockFee", nil)
 
 	// Prover
 	ProverLatestVerifiedIDGauge      = metrics.NewRegisteredGauge("prover/latestVerified/id", nil)
@@ -37,13 +36,10 @@ var (
 	ProverProofsAssigned             = metrics.NewRegisteredCounter("prover/proof/assigned", nil)
 	ProverReceivedProposedBlockGauge = metrics.NewRegisteredGauge("prover/proposed/received", nil)
 	ProverReceivedProvenBlockGauge   = metrics.NewRegisteredGauge("prover/proven/received", nil)
-	ProverPseProofGenerationTime     = metrics.NewRegisteredHistogram(
-		"prover/proof/pse/generation/time",
-		nil,
-		metrics.NewExpDecaySample(128, 0.015),
-	)
-	ProverValidProofSubmissionAcceptedCounter = metrics.NewRegisteredCounter("prover/proof/submission/accepted", nil)
-	ProverValidProofSubmissionErrorCounter    = metrics.NewRegisteredCounter("prover/proof/submission/error", nil)
+	ProverSubmissionAcceptedCounter  = metrics.NewRegisteredCounter("prover/proof/submission/accepted", nil)
+	ProverSubmissionErrorCounter     = metrics.NewRegisteredCounter("prover/proof/submission/error", nil)
+	ProverSgxProofGeneratedCounter   = metrics.NewRegisteredCounter("prover/proof/sgx/generated", nil)
+	ProverPseProofGeneratedCounter   = metrics.NewRegisteredCounter("prover/proof/pse/generated", nil)
 )
 
 // Serve starts the metrics server on the given address, will be closed when the given

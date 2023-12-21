@@ -231,7 +231,7 @@ func (s *ProofSubmitter) SubmitProof(
 			return nil
 		}
 
-		metrics.ProverValidProofSubmissionErrorCounter.Inc(1)
+		metrics.ProverSubmissionErrorCounter.Inc(1)
 		return err
 	}
 
