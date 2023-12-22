@@ -171,7 +171,6 @@ func (s *ETHFeeEOASelector) shuffleProverEndpoints() []*url.URL {
 	return shuffledEndpoints
 }
 
-
 // assignProver tries to assign a proof generation task to the given prover by HTTP API.
 func assignProver(
 	ctx context.Context,
