@@ -112,6 +112,8 @@ func (p *SGXProofProducer) RequestProof(
 		Tier:    p.Tier(),
 	}
 
+	metrics.ProverSgxProofGeneratedCounter.Inc(1)
+
 	return nil
 }
 
@@ -143,7 +145,7 @@ func (p *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 
 		log.Debug("Proof generation output", "output", output)
 
-		proof = common.Hex2Bytes(output.Proof)
+		proof = common.Hex2Bytes(output.Proof[2:])
 		log.Info(
 			"Proof generated",
 			"height", opts.BlockID,
@@ -154,8 +156,6 @@ func (p *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 	}, backoff.NewConstantBackOff(proofPollingInterval)); err != nil {
 		return nil, err
 	}
-
-	metrics.ProverPseProofGenerationTime.Update(int64(time.Since(start).Seconds()))
 
 	return proof, nil
 }

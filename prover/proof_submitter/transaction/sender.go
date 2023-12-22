@@ -119,7 +119,7 @@ func (s *Sender) Send(
 			"isContest", len(proofWithHeader.Proof) == 0,
 		)
 
-		metrics.ProverValidProofSubmissionAcceptedCounter.Inc(1)
+		metrics.ProverSubmissionAcceptedCounter.Inc(1)
 
 		return nil
 	}, s.backOffPolicy); err != nil {

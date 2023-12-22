@@ -192,6 +192,8 @@ func (p *ZkevmRpcdProducer) RequestProof(
 		Tier:    p.Tier(),
 	}
 
+	metrics.ProverPseProofGeneratedCounter.Inc(1)
+
 	return nil
 }
 
@@ -247,8 +249,6 @@ func (p *ZkevmRpcdProducer) callProverDaemon(
 	}, backoff.NewConstantBackOff(proofPollingInterval)); err != nil {
 		return nil, 0, err
 	}
-
-	metrics.ProverPseProofGenerationTime.Update(int64(time.Since(start).Seconds()))
 
 	return proof, degree, nil
 }

@@ -100,7 +100,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	if c.IsSet(flags.Allowance.Name) {
 		amt, ok := new(big.Int).SetString(c.String(flags.Allowance.Name), 10)
 		if !ok {
-			return nil, fmt.Errorf("error setting allowance config value: %v", c.String(flags.Allowance.Name))
+			return nil, fmt.Errorf("invalid setting allowance config value: %v", c.String(flags.Allowance.Name))
 		}
 
 		allowance = amt
@@ -112,6 +112,10 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if !c.IsSet(flags.GuardianProver.Name) && !c.IsSet(flags.RaikoHostEndpoint.Name) {
+		return nil, fmt.Errorf("raiko host not provided")
 	}
 
 	return &Config{

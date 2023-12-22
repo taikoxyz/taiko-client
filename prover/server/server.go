@@ -14,7 +14,6 @@ import (
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	capacity "github.com/taikoxyz/taiko-client/prover/capacity_manager"
 )
 
 // @title Taiko Prover API
@@ -41,7 +40,7 @@ type ProverServer struct {
 	maxExpiry                time.Duration
 	maxSlippage              uint64
 	maxProposedIn            uint64
-	capacityManager          *capacity.CapacityManager
+	proposeConcurrencyGuard  chan struct{}
 	taikoL1Address           common.Address
 	assignmentHookAddress    common.Address
 	rpc                      *rpc.Client
@@ -60,7 +59,7 @@ type NewProverServerOpts struct {
 	MaxExpiry                time.Duration
 	MaxBlockSlippage         uint64
 	MaxProposedIn            uint64
-	CapacityManager          *capacity.CapacityManager
+	ProposeConcurrencyGuard  chan struct{}
 	TaikoL1Address           common.Address
 	AssignmentHookAddress    common.Address
 	Rpc                      *rpc.Client
@@ -82,7 +81,7 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		maxExpiry:                opts.MaxExpiry,
 		maxProposedIn:            opts.MaxProposedIn,
 		maxSlippage:              opts.MaxBlockSlippage,
-		capacityManager:          opts.CapacityManager,
+		proposeConcurrencyGuard:  opts.ProposeConcurrencyGuard,
 		taikoL1Address:           opts.TaikoL1Address,
 		assignmentHookAddress:    opts.AssignmentHookAddress,
 		rpc:                      opts.Rpc,
