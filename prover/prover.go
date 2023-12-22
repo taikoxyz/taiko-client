@@ -284,6 +284,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		MaxBlockSlippage:         p.cfg.MaxBlockSlippage,
 		TaikoL1Address:           p.cfg.TaikoL1Address,
 		AssignmentHookAddress:    p.cfg.AssignmentHookAddress,
+		ProposeConcurrencyGuard:  p.proposeConcurrencyGuard,
 		Rpc:                      p.rpc,
 		LivenessBond:             protocolConfigs.LivenessBond,
 		IsGuardian:               p.IsGuardianProver(),
