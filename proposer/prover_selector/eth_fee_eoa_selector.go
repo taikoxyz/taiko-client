@@ -161,10 +161,14 @@ func (s *ETHFeeEOASelector) AssignProver(
 
 // shuffleProverEndpoints shuffles the current selector's prover endpoints.
 func (s *ETHFeeEOASelector) shuffleProverEndpoints() []*url.URL {
-	rand.Shuffle(len(s.proverEndpoints), func(i, j int) {
-		s.proverEndpoints[i], s.proverEndpoints[j] = s.proverEndpoints[j], s.proverEndpoints[i]
+	// Clone the slice to avoid modifying the original proverEndpoints
+	shuffledEndpoints := make([]*url.URL, len(s.proverEndpoints))
+	copy(shuffledEndpoints, s.proverEndpoints)
+
+	rand.Shuffle(len(shuffledEndpoints), func(i, j int) {
+		shuffledEndpoints[i], shuffledEndpoints[j] = shuffledEndpoints[j], shuffledEndpoints[i]
 	})
-	return s.proverEndpoints
+	return shuffledEndpoints
 }
 
 // assignProver tries to assign a proof generation task to the given prover by HTTP API.
