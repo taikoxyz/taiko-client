@@ -36,25 +36,8 @@ definitions:
           type: integer
         type: array
     type: object
-  prover_server.SignedBlock:
-    properties:
-      blockHash:
-        type: string
-      blockID:
-        type: integer
-      proverAddress:
-        type: string
-      signature:
-        type: string
-    type: object
   prover_server.Status:
     properties:
-      currentCapacity:
-        type: integer
-      heartBeatSignature:
-        items:
-          type: integer
-        type: array
       maxExpiry:
         type: integer
       minOptimisticTierFee:
@@ -101,21 +84,6 @@ paths:
           schema:
             type: string
       summary: Try to accept a block proof assignment
-  /signedBlocks:
-    get:
-      consumes:
-      - application/json
-      operationId: get-signed-blocks
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/prover_server.SignedBlock'
-            type: array
-      summary: Get signed blocks
   /status:
     get:
       consumes:

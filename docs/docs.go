@@ -60,29 +60,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/signedBlocks": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Get signed blocks",
-                "operationId": "get-signed-blocks",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/prover_server.SignedBlock"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/status": {
             "get": {
                 "consumes": [
@@ -162,35 +139,9 @@ const docTemplate = `{
                 }
             }
         },
-        "prover_server.SignedBlock": {
-            "type": "object",
-            "properties": {
-                "blockHash": {
-                    "type": "string"
-                },
-                "blockID": {
-                    "type": "integer"
-                },
-                "proverAddress": {
-                    "type": "string"
-                },
-                "signature": {
-                    "type": "string"
-                }
-            }
-        },
         "prover_server.Status": {
             "type": "object",
             "properties": {
-                "currentCapacity": {
-                    "type": "integer"
-                },
-                "heartBeatSignature": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
                 "maxExpiry": {
                     "type": "integer"
                 },
