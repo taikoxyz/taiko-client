@@ -32,19 +32,8 @@ type ClientTestSuite struct {
 
 func (s *ClientTestSuite) SetupTest() {
 	// Default logger
-	log.Root().SetHandler(
-		log.LvlFilterHandler(log.LvlInfo, log.StreamHandler(os.Stdout, log.TerminalFormat(true))),
-	)
-
-	if os.Getenv("LOG_LEVEL") != "" {
-		level, err := log.LvlFromString(os.Getenv("LOG_LEVEL"))
-		if err != nil {
-			log.Crit("Invalid log level", "level", os.Getenv("LOG_LEVEL"))
-		}
-		log.Root().SetHandler(
-			log.LvlFilterHandler(level, log.StreamHandler(os.Stdout, log.TerminalFormat(true))),
-		)
-	}
+	glogger := log.NewGlogHandler(log.NewTerminalHandlerWithLevel(os.Stdout, log.LevelInfo, true))
+	log.SetDefault(log.NewLogger(glogger))
 
 	testAddrPrivKey, err := crypto.ToECDSA(
 		common.Hex2Bytes("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"),
