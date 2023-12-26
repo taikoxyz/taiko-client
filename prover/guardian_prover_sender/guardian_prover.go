@@ -70,7 +70,7 @@ func (s *GuardianProverBlockSender) post(ctx context.Context, route string, req 
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf(
-			"unable to contract health check server endpoint, status code: %v", resp.StatusCode)
+			"unable to contact health check server endpoint, status code: %v", resp.StatusCode)
 	}
 
 	return nil
@@ -100,7 +100,7 @@ func (s *GuardianProverBlockSender) sendSignedBlockReq(
 	blockID *big.Int,
 ) error {
 	if s.healthCheckServerEndpoint == nil {
-		log.Info("no health check server endpoint set, returning early")
+		log.Info("No health check server endpoint set, returning early")
 		return nil
 	}
 
@@ -203,7 +203,7 @@ func (s *GuardianProverBlockSender) SendHeartbeat(ctx context.Context) error {
 		return err
 	}
 
-	log.Info("successfully sent heartbeat")
+	log.Info("Successfully sent heartbeat", "signature", common.Bytes2Hex(sig))
 
 	return nil
 }
