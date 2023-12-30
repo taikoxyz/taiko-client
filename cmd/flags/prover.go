@@ -175,7 +175,7 @@ var (
 	}
 	Allowance = &cli.StringFlag{
 		Name:     "prover.allowance",
-		Usage:    "Amount to approve TaikoL1 contract for TaikoToken usage",
+		Usage:    "Amount to approve AssignmentHook contract for TaikoToken usage",
 		Category: proverCategory,
 	}
 	GuardianProverHealthCheckServerEndpoint = &cli.StringFlag{

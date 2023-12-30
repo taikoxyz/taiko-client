@@ -322,13 +322,13 @@ func (p *Prover) setApprovalAmount(ctx context.Context) error {
 	allowance, err := p.rpc.TaikoToken.Allowance(
 		&bind.CallOpts{Context: ctx},
 		p.proverAddress,
-		p.cfg.TaikoL1Address,
+		p.cfg.AssignmentHookAddress,
 	)
 	if err != nil {
 		return err
 	}
 
-	log.Info("Existing allowance for TaikoL1 contract", "allowance", allowance.String())
+	log.Info("Existing allowance for AssignmentHook contract", "allowance", allowance.String())
 
 	if allowance.Cmp(p.cfg.Allowance) >= 0 {
 		log.Info(
@@ -348,11 +348,11 @@ func (p *Prover) setApprovalAmount(ctx context.Context) error {
 	}
 	opts.Context = ctx
 
-	log.Info("Approving TaikoL1 for taiko token", "allowance", p.cfg.Allowance.String())
+	log.Info("Approving AssignmentHook for taiko token", "allowance", p.cfg.Allowance.String())
 
 	tx, err := p.rpc.TaikoToken.Approve(
 		opts,
-		p.cfg.TaikoL1Address,
+		p.cfg.AssignmentHookAddress,
 		p.cfg.Allowance,
 	)
 	if err != nil {
@@ -364,17 +364,17 @@ func (p *Prover) setApprovalAmount(ctx context.Context) error {
 		return err
 	}
 
-	log.Info("Approved TaikoL1 for taiko token", "txHash", receipt.TxHash.Hex())
+	log.Info("Approved AssignmentHook for taiko token", "txHash", receipt.TxHash.Hex())
 
 	if allowance, err = p.rpc.TaikoToken.Allowance(
 		&bind.CallOpts{Context: ctx},
 		p.proverAddress,
-		p.cfg.TaikoL1Address,
+		p.cfg.AssignmentHookAddress,
 	); err != nil {
 		return err
 	}
 
-	log.Info("New allowance for TaikoL1 contract", "allowance", allowance.String())
+	log.Info("New allowance for AssignmentHook contract", "allowance", allowance.String())
 
 	return nil
 }
