@@ -60,6 +60,7 @@ func (s *ProverTestSuite) SetupTest() {
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		TaikoTokenAddress:        common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		AssignmentHookAddress:    common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		GuardianProverAddress:    common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
 		L1ProverPrivKey:          l1ProverPrivKey,
 		Dummy:                    true,
@@ -157,6 +158,7 @@ func (s *ProverTestSuite) TestInitError() {
 		TaikoL1Address:                    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:                    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		TaikoTokenAddress:                 common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		AssignmentHookAddress:             common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_CONTRACT_ADDRESS")),
 		L1ProverPrivKey:                   l1ProverPrivKey,
 		Dummy:                             true,
 		ProveUnassignedBlocks:             true,
@@ -391,13 +393,13 @@ func (s *ProverTestSuite) TestSetApprovalAmount() {
 	opts, err := bind.NewKeyedTransactorWithChainID(s.p.proverPrivateKey, s.p.rpc.L1ChainID)
 	s.Nil(err)
 
-	tx, err := s.p.rpc.TaikoToken.Approve(opts, s.p.cfg.TaikoL1Address, common.Big0)
+	tx, err := s.p.rpc.TaikoToken.Approve(opts, s.p.cfg.AssignmentHookAddress, common.Big0)
 	s.Nil(err)
 
 	_, err = rpc.WaitReceipt(context.Background(), s.p.rpc.L1, tx)
 	s.Nil(err)
 
-	allowance, err := s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.proverAddress, s.p.cfg.TaikoL1Address)
+	allowance, err := s.p.rpc.TaikoToken.Allowance(nil, s.p.proverAddress, s.p.cfg.AssignmentHookAddress)
 	s.Nil(err)
 
 	s.Equal(0, allowance.Cmp(common.Big0))
@@ -410,7 +412,7 @@ func (s *ProverTestSuite) TestSetApprovalAmount() {
 
 	s.Nil(s.p.setApprovalAmount(context.Background()))
 
-	allowance, err = s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.proverAddress, s.p.cfg.TaikoL1Address)
+	allowance, err = s.p.rpc.TaikoToken.Allowance(nil, s.p.proverAddress, s.p.cfg.AssignmentHookAddress)
 	s.Nil(err)
 
 	s.Equal(0, amt.Cmp(allowance))
