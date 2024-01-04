@@ -11,6 +11,7 @@ import (
 	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
@@ -77,7 +78,7 @@ func (s *GuardianProverBlockSender) post(ctx context.Context, route string, req 
 }
 
 func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockID *big.Int) error {
-	signed, blockHash, err := s.sign(ctx, blockID)
+	signed, header, err := s.sign(ctx, blockID)
 	if err != nil {
 		return nil
 	}
@@ -86,7 +87,17 @@ func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockI
 		return nil
 	}
 
-	if err := s.sendSignedBlockReq(ctx, signed, blockHash, blockID); err != nil {
+	if err := s.sendSignedBlockReq(ctx, signed, header.Hash(), blockID); err != nil {
+		return err
+	}
+
+	if err := s.db.Put(
+		db.BuildBlockKey(header.Time),
+		db.BuildBlockValue(header.Hash().Bytes(),
+			signed,
+			blockID,
+		),
+	); err != nil {
 		return err
 	}
 
@@ -120,12 +131,12 @@ func (s *GuardianProverBlockSender) sendSignedBlockReq(
 	return nil
 }
 
-func (s *GuardianProverBlockSender) sign(ctx context.Context, blockID *big.Int) ([]byte, common.Hash, error) {
+func (s *GuardianProverBlockSender) sign(ctx context.Context, blockID *big.Int) ([]byte, *types.Header, error) {
 	log.Info("Guardian prover signing block", "blockID", blockID.Uint64())
 
 	head, err := s.rpc.L2.BlockNumber(ctx)
 	if err != nil {
-		return nil, common.Hash{}, err
+		return nil, nil, err
 	}
 
 	for head < blockID.Uint64() {
@@ -136,28 +147,28 @@ func (s *GuardianProverBlockSender) sign(ctx context.Context, blockID *big.Int) 
 		)
 
 		if _, err := s.rpc.WaitL1Origin(ctx, blockID); err != nil {
-			return nil, common.Hash{}, err
+			return nil, nil, err
 		}
 
 		head, err = s.rpc.L2.BlockNumber(ctx)
 		if err != nil {
-			return nil, common.Hash{}, err
+			return nil, nil, err
 		}
 	}
 
 	header, err := s.rpc.L2.HeaderByNumber(ctx, blockID)
 	if err != nil {
-		return nil, common.Hash{}, err
+		return nil, nil, err
 	}
 
 	exists, err := s.db.Has(db.BuildBlockKey(header.Time))
 	if err != nil {
-		return nil, common.Hash{}, err
+		return nil, nil, err
 	}
 
 	if exists {
 		log.Info("Guardian prover already signed block", "blockID", blockID.Uint64())
-		return nil, common.Hash{}, nil
+		return nil, nil, nil
 	}
 
 	log.Info(
@@ -168,20 +179,10 @@ func (s *GuardianProverBlockSender) sign(ctx context.Context, blockID *big.Int) 
 
 	signed, err := crypto.Sign(header.Hash().Bytes(), s.privateKey)
 	if err != nil {
-		return nil, common.Hash{}, err
+		return nil, nil, err
 	}
 
-	if err := s.db.Put(
-		db.BuildBlockKey(header.Time),
-		db.BuildBlockValue(header.Hash().Bytes(),
-			signed,
-			blockID,
-		),
-	); err != nil {
-		return nil, common.Hash{}, err
-	}
-
-	return signed, header.Hash(), nil
+	return signed, header, nil
 }
 
 func (s *GuardianProverBlockSender) Close() error {
