@@ -313,7 +313,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 // setApprovalAmount will set the allowance on the TaikoToken contract for the
 // configured proverAddress as owner and the TaikoL1 contract as spender,
 // if flag is provided for allowance.
-func (p *Prover) setApprovalAmount(ctx context.Context) error {
+func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address) error {
 	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
 		log.Info("Skipping setting approval, `--prover.allowance` flag not set")
 		return nil
@@ -322,19 +322,20 @@ func (p *Prover) setApprovalAmount(ctx context.Context) error {
 	allowance, err := p.rpc.TaikoToken.Allowance(
 		&bind.CallOpts{Context: ctx},
 		p.proverAddress,
-		p.cfg.AssignmentHookAddress,
+		contract,
 	)
 	if err != nil {
 		return err
 	}
 
-	log.Info("Existing allowance for AssignmentHook contract", "allowance", allowance.String())
+	log.Info("Existing allowance for the contract", "allowance", allowance.String(), "contract", contract)
 
 	if allowance.Cmp(p.cfg.Allowance) >= 0 {
 		log.Info(
 			"Skipping setting allowance, allowance already greater or equal",
 			"allowance", allowance.String(),
 			"approvalAmount", p.cfg.Allowance.String(),
+			"contract", contract,
 		)
 		return nil
 	}
@@ -348,11 +349,11 @@ func (p *Prover) setApprovalAmount(ctx context.Context) error {
 	}
 	opts.Context = ctx
 
-	log.Info("Approving AssignmentHook for taiko token", "allowance", p.cfg.Allowance.String())
+	log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance.String(), "contract", contract)
 
 	tx, err := p.rpc.TaikoToken.Approve(
 		opts,
-		p.cfg.AssignmentHookAddress,
+		contract,
 		p.cfg.Allowance,
 	)
 	if err != nil {
@@ -364,17 +365,21 @@ func (p *Prover) setApprovalAmount(ctx context.Context) error {
 		return err
 	}
 
-	log.Info("Approved AssignmentHook for taiko token", "txHash", receipt.TxHash.Hex())
+	log.Info(
+		"Approved the contract for taiko token",
+		"txHash", receipt.TxHash.Hex(),
+		"contract", contract,
+	)
 
 	if allowance, err = p.rpc.TaikoToken.Allowance(
 		&bind.CallOpts{Context: ctx},
 		p.proverAddress,
-		p.cfg.AssignmentHookAddress,
+		contract,
 	); err != nil {
 		return err
 	}
 
-	log.Info("New allowance for AssignmentHook contract", "allowance", allowance.String())
+	log.Info("New allowance for the contract", "allowance", allowance.String(), "contract", contract)
 
 	return nil
 }
@@ -384,10 +389,14 @@ func (p *Prover) Start() error {
 	p.wg.Add(1)
 	p.initSubscription()
 
+	if err := p.setApprovalAmount(p.ctx, p.cfg.TaikoL1Address); err != nil {
+		log.Crit("Failed to set approval amount", "contract", p.cfg.TaikoL1Address, "error", err)
+	}
+	if err := p.setApprovalAmount(p.ctx, p.cfg.AssignmentHookAddress); err != nil {
+		log.Crit("Failed to set approval amount", "contract", p.cfg.AssignmentHookAddress, "error", err)
+	}
+
 	go func() {
-		if err := p.setApprovalAmount(p.ctx); err != nil {
-			log.Crit("Failed to set approval amount", "error", err)
-		}
 		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
 			log.Crit("Failed to start http server", "error", err)
 		}
