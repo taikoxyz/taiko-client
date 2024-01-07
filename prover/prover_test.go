@@ -410,7 +410,7 @@ func (s *ProverTestSuite) TestSetApprovalAmount() {
 
 	s.p.cfg.Allowance = amt
 
-	s.Nil(s.p.setApprovalAmount(context.Background()))
+	s.Nil(s.p.setApprovalAmount(context.Background(), s.p.cfg.AssignmentHookAddress))
 
 	allowance, err = s.p.rpc.TaikoToken.Allowance(nil, s.p.proverAddress, s.p.cfg.AssignmentHookAddress)
 	s.Nil(err)
@@ -481,7 +481,7 @@ func (s *ProverTestSuite) TestSetApprovalAlreadySetHigher() {
 	amt := common.Big1
 	s.p.cfg.Allowance = amt
 
-	s.Nil(s.p.setApprovalAmount(context.Background()))
+	s.Nil(s.p.setApprovalAmount(context.Background(), s.p.cfg.TaikoL1Address))
 
 	allowance, err := s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.proverAddress, s.p.cfg.TaikoL1Address)
 	s.Nil(err)
