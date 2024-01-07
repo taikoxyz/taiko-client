@@ -353,7 +353,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 
 	tx, err := p.rpc.TaikoToken.Approve(
 		opts,
-		p.cfg.AssignmentHookAddress,
+		contract,
 		p.cfg.Allowance,
 	)
 	if err != nil {
