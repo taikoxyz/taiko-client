@@ -23,27 +23,27 @@ issues:
 linters:
   disable-all: true
   enable:
+    - bidichk
+    - durationcheck
+    - exportloopref
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
     - goconst
     - goimports
     - gosimple
     - govet
     - ineffassign
-    - misspell
-    - unconvert
-    - typecheck
-    - unused
-    - staticcheck
     - lll
-    - bidichk
-    - durationcheck
-    - exportloopref
-    - whitespace
-    - errname
-    - errorlint
-    - errcheck
-    - errchkjson
-    - exhaustive
     - makezero
+    - misspell
+    - staticcheck
+    - typecheck
+    - unconvert
+    - unused
+    - whitespace
 
 linters-settings:
   gofmt:
