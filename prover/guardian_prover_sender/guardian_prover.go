@@ -19,11 +19,13 @@ import (
 	"github.com/taikoxyz/taiko-client/prover/db"
 )
 
+// healthCheckReq is the request body sent to the health check server when a heartbeat is sent.
 type healthCheckReq struct {
 	ProverAddress      string `json:"prover"`
 	HeartBeatSignature []byte `json:"heartBeatSignature"`
 }
 
+// signedBlockReq is the request body sent to the health check server when a block is signed.
 type signedBlockReq struct {
 	BlockID   uint64         `json:"blockID"`
 	BlockHash string         `json:"blockHash"`
@@ -31,6 +33,7 @@ type signedBlockReq struct {
 	Prover    common.Address `json:"proverAddress"`
 }
 
+// GuardianProverBlockSender is responsible for signing and sending known blocks to the health check server.
 type GuardianProverBlockSender struct {
 	privateKey                *ecdsa.PrivateKey
 	healthCheckServerEndpoint *url.URL
@@ -39,7 +42,8 @@ type GuardianProverBlockSender struct {
 	proverAddress             common.Address
 }
 
-func NewGuardianProverBlockSender(
+// New creates a new GuardianProverBlockSender instance.
+func New(
 	privateKey *ecdsa.PrivateKey,
 	healthCheckServerEndpoint *url.URL,
 	db ethdb.KeyValueStore,
@@ -55,6 +59,7 @@ func NewGuardianProverBlockSender(
 	}
 }
 
+// post sends the given POST request to the health check server.
 func (s *GuardianProverBlockSender) post(ctx context.Context, route string, req interface{}) error {
 	body, err := json.Marshal(req)
 	if err != nil {
@@ -64,19 +69,22 @@ func (s *GuardianProverBlockSender) post(ctx context.Context, route string, req 
 	resp, err := http.Post(
 		fmt.Sprintf("%v/%v", s.healthCheckServerEndpoint.String(), route),
 		"application/json",
-		bytes.NewBuffer(body))
+		bytes.NewBuffer(body),
+	)
 	if err != nil {
 		return err
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf(
-			"unable to contact health check server endpoint, status code: %v", resp.StatusCode)
+			"unable to contact health check server endpoint, status code: %v", resp.StatusCode,
+		)
 	}
 
 	return nil
 }
 
+// SignAndSendBlock signs the given block and sends it to the health check server.
 func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockID *big.Int) error {
 	signed, header, err := s.sign(ctx, blockID)
 	if err != nil {
@@ -104,6 +112,7 @@ func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockI
 	return nil
 }
 
+// sendSignedBlockReq is the actual method that sends the signed block to the health check server.
 func (s *GuardianProverBlockSender) sendSignedBlockReq(
 	ctx context.Context,
 	signed []byte,
@@ -131,6 +140,7 @@ func (s *GuardianProverBlockSender) sendSignedBlockReq(
 	return nil
 }
 
+// sign signs the given block and returns the signature and header.
 func (s *GuardianProverBlockSender) sign(ctx context.Context, blockID *big.Int) ([]byte, *types.Header, error) {
 	log.Info("Guardian prover signing block", "blockID", blockID.Uint64())
 
@@ -185,10 +195,12 @@ func (s *GuardianProverBlockSender) sign(ctx context.Context, blockID *big.Int) 
 	return signed, header, nil
 }
 
+// Close closes the underlying database.
 func (s *GuardianProverBlockSender) Close() error {
 	return s.db.Close()
 }
 
+// SendHeartbeat sends a heartbeat to the health check server.
 func (s *GuardianProverBlockSender) SendHeartbeat(ctx context.Context) error {
 	sig, err := crypto.Sign(crypto.Keccak256Hash([]byte("HEART_BEAT")).Bytes(), s.privateKey)
 	if err != nil {
