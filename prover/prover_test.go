@@ -81,7 +81,7 @@ func (s *ProverTestSuite) SetupTest() {
 		proverServerUrl,
 	)
 
-	p.guardianProverSender = guardianproversender.NewGuardianProverBlockSender(
+	p.guardianProverSender = guardianproversender.New(
 		p.cfg.L1ProverPrivKey,
 		p.cfg.GuardianProverHealthCheckServerEndpoint,
 		memorydb.New(),
