@@ -115,8 +115,12 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 
 	// If we are running a guardian prover, we need to prove unassigned blocks and run in contester mode by default.
 	if c.IsSet(flags.GuardianProver.Name) {
-		c.Set(flags.ProveUnassignedBlocks.Name, "true")
-		c.Set(flags.ContesterMode.Name, "true")
+		if err := c.Set(flags.ProveUnassignedBlocks.Name, "true"); err != nil {
+			return nil, err
+		}
+		if err := c.Set(flags.ContesterMode.Name, "true"); err != nil {
+			return nil, err
+		}
 	}
 
 	if !c.IsSet(flags.GuardianProver.Name) && !c.IsSet(flags.RaikoHostEndpoint.Name) {
