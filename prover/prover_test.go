@@ -389,6 +389,11 @@ func (s *ProverTestSuite) TestStartSubscription() {
 	s.NotPanics(s.p.closeSubscription)
 }
 
+func (s *ProverTestSuite) TestSetApprovalAmountNoAmountSet() {
+	s.p.cfg.Allowance = nil
+	s.Nil(s.p.setApprovalAmount(context.Background(), s.p.cfg.AssignmentHookAddress))
+}
+
 func (s *ProverTestSuite) TestSetApprovalAmount() {
 	opts, err := bind.NewKeyedTransactorWithChainID(s.p.proverPrivateKey, s.p.rpc.L1ChainID)
 	s.Nil(err)
@@ -416,6 +421,15 @@ func (s *ProverTestSuite) TestSetApprovalAmount() {
 	s.Nil(err)
 
 	s.Equal(0, amt.Cmp(allowance))
+}
+
+func (s *ProverTestSuite) TestStart() {
+	ctx, cancel := context.WithCancel(context.Background())
+	s.p.ctx = ctx
+	s.p.cfg.HTTPServerPort = uint64(testutils.RandomPort())
+	s.Nil(s.p.Start())
+	defer s.p.Close(ctx)
+	cancel()
 }
 
 func (s *ProverTestSuite) TestGetBlockProofStatus() {
