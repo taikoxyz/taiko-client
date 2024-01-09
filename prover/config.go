@@ -59,9 +59,7 @@ type Config struct {
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
 func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
-	l1ProverPrivKeyStr := c.String(flags.L1ProverPrivKey.Name)
-
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(l1ProverPrivKeyStr))
+	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(c.String(flags.L1ProverPrivKey.Name)))
 	if err != nil {
 		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
 	}
@@ -108,8 +106,19 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 
 	var guardianProverHealthCheckServerEndpoint *url.URL
 	if c.IsSet(flags.GuardianProverHealthCheckServerEndpoint.Name) {
-		guardianProverHealthCheckServerEndpoint, err = url.Parse(c.String(flags.GuardianProverHealthCheckServerEndpoint.Name))
-		if err != nil {
+		if guardianProverHealthCheckServerEndpoint, err = url.Parse(
+			c.String(flags.GuardianProverHealthCheckServerEndpoint.Name),
+		); err != nil {
+			return nil, err
+		}
+	}
+
+	// If we are running a guardian prover, we need to prove unassigned blocks and run in contester mode by default.
+	if c.IsSet(flags.GuardianProver.Name) {
+		if err := c.Set(flags.ProveUnassignedBlocks.Name, "true"); err != nil {
+			return nil, err
+		}
+		if err := c.Set(flags.ContesterMode.Name, "true"); err != nil {
 			return nil, err
 		}
 	}
