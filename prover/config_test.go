@@ -40,7 +40,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		)
 		s.True(c.Dummy)
 		s.Equal("", c.Graffiti)
-		s.Equal(true, c.ProveUnassignedBlocks)
+		s.True(c.ProveUnassignedBlocks)
+		s.True(c.ContesterMode)
 		s.Equal(rpcTimeout, *c.RPCTimeout)
 		s.Equal(uint64(8), c.Capacity)
 		s.Equal(uint64(minTierFee), c.MinOptimisticTierFee.Uint64())
@@ -126,6 +127,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.MaxProposedIn.Name},
 		&cli.StringFlag{Name: flags.ProverAssignmentHookAddress.Name},
 		&cli.StringFlag{Name: flags.Allowance.Name},
+		&cli.StringFlag{Name: flags.ContesterMode.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
