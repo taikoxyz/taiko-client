@@ -13,6 +13,7 @@ var (
 	separator      = "++"
 )
 
+// SignedBlockData is the data stored in the db for a signed block
 type SignedBlockData struct {
 	BlockID   *big.Int
 	BlockHash common.Hash
@@ -38,6 +39,7 @@ func BuildBlockValue(hash []byte, signature []byte, blockID *big.Int) []byte {
 		}, []byte(separator))
 }
 
+// SignedBlockDataFromValue will build a SignedBlockData from a value
 func SignedBlockDataFromValue(val []byte) SignedBlockData {
 	v := bytes.Split(val, []byte(separator))
 

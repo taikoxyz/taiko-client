@@ -33,7 +33,8 @@ import (
 )
 
 var (
-	errTierNotFound = errors.New("tier not found")
+	errTierNotFound   = errors.New("tier not found")
+	heartbeatInterval = 12 * time.Second
 )
 
 // Prover keep trying to prove new proposed blocks valid/invalid.
@@ -290,11 +291,13 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		IsGuardian:               p.IsGuardianProver(),
 		DB:                       db,
 	}
+	if p.srv, err = server.New(proverServerOpts); err != nil {
+		return err
+	}
 
+	// Guardian prover heartbeat sender
 	if p.IsGuardianProver() {
-		proverServerOpts.ProverPrivateKey = p.cfg.L1ProverPrivKey
-
-		p.guardianProverSender = guardianproversender.NewGuardianProverBlockSender(
+		p.guardianProverSender = guardianproversender.New(
 			p.cfg.L1ProverPrivKey,
 			p.cfg.GuardianProverHealthCheckServerEndpoint,
 			db,
@@ -303,17 +306,13 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		)
 	}
 
-	if p.srv, err = server.New(proverServerOpts); err != nil {
-		return err
-	}
-
 	return nil
 }
 
 // setApprovalAmount will set the allowance on the TaikoToken contract for the
-// configured proverAddress as owner and the TaikoL1 contract as spender,
-// if flag is provided for allowance.
-func (p *Prover) setApprovalAmount(ctx context.Context) error {
+// configured proverAddress as owner and the contract as spender,
+// if `--prover.allowance` flag is provided for allowance.
+func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address) error {
 	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
 		log.Info("Skipping setting approval, `--prover.allowance` flag not set")
 		return nil
@@ -322,19 +321,20 @@ func (p *Prover) setApprovalAmount(ctx context.Context) error {
 	allowance, err := p.rpc.TaikoToken.Allowance(
 		&bind.CallOpts{Context: ctx},
 		p.proverAddress,
-		p.cfg.AssignmentHookAddress,
+		contract,
 	)
 	if err != nil {
 		return err
 	}
 
-	log.Info("Existing allowance for AssignmentHook contract", "allowance", allowance.String())
+	log.Info("Existing allowance for the contract", "allowance", allowance.String(), "contract", contract)
 
 	if allowance.Cmp(p.cfg.Allowance) >= 0 {
 		log.Info(
 			"Skipping setting allowance, allowance already greater or equal",
 			"allowance", allowance.String(),
 			"approvalAmount", p.cfg.Allowance.String(),
+			"contract", contract,
 		)
 		return nil
 	}
@@ -348,11 +348,11 @@ func (p *Prover) setApprovalAmount(ctx context.Context) error {
 	}
 	opts.Context = ctx
 
-	log.Info("Approving AssignmentHook for taiko token", "allowance", p.cfg.Allowance.String())
+	log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance.String(), "contract", contract)
 
 	tx, err := p.rpc.TaikoToken.Approve(
 		opts,
-		p.cfg.AssignmentHookAddress,
+		contract,
 		p.cfg.Allowance,
 	)
 	if err != nil {
@@ -364,30 +364,37 @@ func (p *Prover) setApprovalAmount(ctx context.Context) error {
 		return err
 	}
 
-	log.Info("Approved AssignmentHook for taiko token", "txHash", receipt.TxHash.Hex())
+	log.Info(
+		"Approved the contract for taiko token",
+		"txHash", receipt.TxHash.Hex(),
+		"contract", contract,
+	)
 
 	if allowance, err = p.rpc.TaikoToken.Allowance(
 		&bind.CallOpts{Context: ctx},
 		p.proverAddress,
-		p.cfg.AssignmentHookAddress,
+		contract,
 	); err != nil {
 		return err
 	}
 
-	log.Info("New allowance for AssignmentHook contract", "allowance", allowance.String())
+	log.Info("New allowance for the contract", "allowance", allowance.String(), "contract", contract)
 
 	return nil
 }
 
 // Start starts the main loop of the L2 block prover.
 func (p *Prover) Start() error {
+	for _, contract := range []common.Address{p.cfg.TaikoL1Address, p.cfg.AssignmentHookAddress} {
+		if err := p.setApprovalAmount(p.ctx, contract); err != nil {
+			log.Crit("Failed to set approval amount", "contract", contract, "error", err)
+		}
+	}
+
 	p.wg.Add(1)
 	p.initSubscription()
 
 	go func() {
-		if err := p.setApprovalAmount(p.ctx); err != nil {
-			log.Crit("Failed to set approval amount", "error", err)
-		}
 		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
 			log.Crit("Failed to start http server", "error", err)
 		}
@@ -1291,7 +1298,7 @@ func (p *Prover) IsGuardianProver() bool {
 // heartbeatInterval sends a heartbeat to the guardian prover health check server
 // on an interval
 func (p *Prover) heartbeatInterval(ctx context.Context) {
-	t := time.NewTicker(12 * time.Second)
+	t := time.NewTicker(heartbeatInterval)
 
 	defer func() {
 		t.Stop()
@@ -1309,7 +1316,7 @@ func (p *Prover) heartbeatInterval(ctx context.Context) {
 			return
 		case <-t.C:
 			if err := p.guardianProverSender.SendHeartbeat(ctx); err != nil {
-				log.Error("error sending heartbeat", "error", err)
+				log.Error("Failed to send guardian prover heartbeat", "error", err)
 			}
 		}
 	}
