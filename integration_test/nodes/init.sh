@@ -8,7 +8,7 @@ DIR=$(
 )
 
 # Download solc for PlonkVerifier
-$TAIKO_MONO_DIR/packages/protocol/script/download_solc.sh
+#$TAIKO_MONO_DIR/packages/protocol/script/download_solc.sh
 
 echo "Starting testnet..."
 
@@ -21,14 +21,7 @@ NODE_URL=localhost:18545 $DIR/../util/wait_for_node.sh
 NODE_URL=localhost:28545 $DIR/../util/wait_for_node.sh
 
 # Get the hash of L2 genesis.
-L2_GENESIS_HASH=$(
-    curl \
-        --silent \
-        -X POST \
-        -H "Content-Type: application/json" \
-        -d '{"jsonrpc":"2.0","id":0,"method":"eth_getBlockByNumber","params":["0x0", false]}' \
-        localhost:28545 | jq .result.hash | sed 's/\"//g'
-)
+L2_GENESIS_HASH=$(cast block --rpc-url localhost:28545 0x0 -f hash)
 
 GUARDIAN_PROVERS_ADDRESSES_LIST=(
     "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"

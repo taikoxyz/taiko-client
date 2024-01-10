@@ -7,15 +7,14 @@ DIR=$(
     pwd
 )
 
-if ! command -v docker &>/dev/null 2>&1; then
-    echo "ERROR: docker command not found"
-    exit 1
-fi
+# load tool commands.
+source "./scripts/common.sh"
 
-if ! docker info >/dev/null 2>&1; then
-    echo "ERROR: docker daemon isn't running"
-    exit 1
-fi
+# make sure all the commands are available.
+check_command "solc"
+check_command "cast"
+check_command "forge"
+check_command "docker"
 
 TESTNET_CONFIG=$DIR/nodes/docker-compose.yml
 
