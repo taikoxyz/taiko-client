@@ -16,6 +16,9 @@ check_command "cast"
 check_command "forge"
 check_command "docker"
 
+# make sure environment variables are set
+check_env "TAIKO_MONO_DIR"
+
 TESTNET_CONFIG=$DIR/nodes/docker-compose.yml
 
 TAIKO_L2_CONTRACT_ADDRESS=0x1670010000000000000000000000000000010001

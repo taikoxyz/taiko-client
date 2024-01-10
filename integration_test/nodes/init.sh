@@ -7,9 +7,6 @@ DIR=$(
     pwd
 )
 
-# Download solc for PlonkVerifier
-#$TAIKO_MONO_DIR/packages/protocol/script/download_solc.sh
-
 echo "Starting testnet..."
 
 docker compose -f $TESTNET_CONFIG down -v --remove-orphans &>/dev/null

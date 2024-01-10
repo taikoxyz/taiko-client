@@ -19,11 +19,9 @@ check_env() {
 }
 
 check_command() {
-  local command="$1"
-
-  if ! command -v "$command" &> /dev/null; then
-  print_error "$command could not be found"
-  exit
-fi
+  if ! command -v "$1" &> /dev/null; then
+    print_error "$1 could not be found"
+    exit
+  fi
 }
 
