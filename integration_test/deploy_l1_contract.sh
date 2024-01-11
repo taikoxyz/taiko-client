@@ -16,3 +16,4 @@ cd "$TAIKO_MONO_DIR"/packages/protocol &&
   -vvvvv \
   --private-key "$PRIVATE_KEY" \
   --block-gas-limit 100000000
+  
