@@ -297,6 +297,11 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	// Guardian prover heartbeat sender
 	if p.IsGuardianProver() {
+		// Check guardian prover contract address is correct.
+		if _, err := p.rpc.GuardianProver.MinGuardians(&bind.CallOpts{Context: ctx}); err != nil {
+			return fmt.Errorf("failed to get MinGuardians from guardian prover contract: %w", err)
+		}
+
 		p.guardianProverSender = guardianproversender.New(
 			p.cfg.L1ProverPrivKey,
 			p.cfg.GuardianProverHealthCheckServerEndpoint,
