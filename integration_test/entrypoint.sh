@@ -6,7 +6,6 @@ set -eou pipefail
 source scripts/common.sh
 
 # make sure all the commands are available.
-check_command "solc"
 check_command "cast"
 check_command "forge"
 check_command "docker"
