@@ -266,7 +266,7 @@ func assignProver(
 		FeeToken:      common.Address{},
 		TierFees:      tierFees,
 		Expiry:        reqBody.Expiry,
-		MaxBlockID:    result.MaxBlockID,
+		MaxBlockId:    result.MaxBlockID,
 		MaxProposedIn: result.MaxProposedIn,
 		MetaHash:      [32]byte{},
 		Signature:     result.SignedPayload,

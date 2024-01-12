@@ -67,7 +67,7 @@ type TierFee struct {
 type ProverAssignment struct {
 	FeeToken      common.Address
 	Expiry        uint64
-	MaxBlockID    uint64
+	MaxBlockId    uint64 // nolint: revive,stylecheck
 	MaxProposedIn uint64
 	MetaHash      [32]byte
 	TierFees      []TierFee
