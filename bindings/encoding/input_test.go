@@ -36,7 +36,7 @@ func TestEncodeAssignmentHookInput(t *testing.T) {
 		Assignment: &ProverAssignment{
 			FeeToken:      common.Address{},
 			Expiry:        1,
-			MaxBlockId:    1,
+			MaxBlockID:    1,
 			MaxProposedIn: 1,
 			MetaHash:      [32]byte{0xff},
 			TierFees:      []TierFee{{Tier: 0, Fee: common.Big1}},

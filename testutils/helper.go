@@ -37,12 +37,12 @@ func ProposeAndInsertEmptyBlocks(
 ) []*bindings.TaikoL1ClientBlockProposed {
 	var events []*bindings.TaikoL1ClientBlockProposed
 
-	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	l1Head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
-	sub, err := s.RpcClient.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
+	sub, err := s.RPCClient.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
 	s.Nil(err)
 	defer func() {
 		sub.Unsubscribe()
@@ -63,15 +63,15 @@ func ProposeAndInsertEmptyBlocks(
 
 	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
 
-	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), events[len(events)-1].Raw.TxHash)
+	_, isPending, err := s.RPCClient.L1.TransactionByHash(context.Background(), events[len(events)-1].Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
 
-	newL1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	newL1Head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Greater(newL1Head.Number.Uint64(), l1Head.Number.Uint64())
 
-	syncProgress, err := s.RpcClient.L2.SyncProgress(context.Background())
+	syncProgress, err := s.RPCClient.L2.SyncProgress(context.Background())
 	s.Nil(err)
 	s.Nil(syncProgress)
 
@@ -90,26 +90,26 @@ func ProposeAndInsertValidBlock(
 	proposer Proposer,
 	calldataSyncer CalldataSyncer,
 ) *bindings.TaikoL1ClientBlockProposed {
-	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	l1Head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
+	l2Head, err := s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
-	sub, err := s.RpcClient.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
+	sub, err := s.RPCClient.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
 	s.Nil(err)
 	defer func() {
 		sub.Unsubscribe()
 		close(sink)
 	}()
 
-	baseFee, err := s.RpcClient.TaikoL2.GetBasefee(nil, 0, uint32(l2Head.GasUsed))
+	baseFee, err := s.RPCClient.TaikoL2.GetBasefee(nil, 0, uint32(l2Head.GasUsed))
 	s.Nil(err)
 
-	nonce, err := s.RpcClient.L2.PendingNonceAt(context.Background(), s.TestAddr)
+	nonce, err := s.RPCClient.L2.PendingNonceAt(context.Background(), s.TestAddr)
 	s.Nil(err)
 
 	tx := types.NewTransaction(
@@ -120,27 +120,27 @@ func ProposeAndInsertValidBlock(
 		baseFee,
 		[]byte{},
 	)
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RpcClient.L2ChainID), s.TestAddrPrivKey)
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L2ChainID), s.TestAddrPrivKey)
 	s.Nil(err)
-	s.Nil(s.RpcClient.L2.SendTransaction(context.Background(), signedTx))
+	s.Nil(s.RPCClient.L2.SendTransaction(context.Background(), signedTx))
 
 	s.Nil(proposer.ProposeOp(context.Background()))
 
 	event := <-sink
 
-	_, isPending, err := s.RpcClient.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
+	_, isPending, err := s.RPCClient.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
 
-	receipt, err := s.RpcClient.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
+	receipt, err := s.RPCClient.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
 
-	newL1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	newL1Head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Greater(newL1Head.Number.Uint64(), l1Head.Number.Uint64())
 
-	syncProgress, err := s.RpcClient.L2.SyncProgress(context.Background())
+	syncProgress, err := s.RPCClient.L2.SyncProgress(context.Background())
 	s.Nil(err)
 	s.Nil(syncProgress)
 
@@ -149,22 +149,22 @@ func ProposeAndInsertValidBlock(
 
 	s.Nil(calldataSyncer.ProcessL1Blocks(ctx, newL1Head))
 
-	_, err = s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
+	_, err = s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	return event
 }
 
 func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey, recipient common.Address) {
-	config, err := s.RpcClient.TaikoL1.GetConfig(nil)
+	config, err := s.RPCClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
 
-	opts, err := bind.NewKeyedTransactorWithChainID(depositerPrivKey, s.RpcClient.L1ChainID)
+	opts, err := bind.NewKeyedTransactorWithChainID(depositerPrivKey, s.RPCClient.L1ChainID)
 	s.Nil(err)
 	opts.Value = config.EthDepositMinAmount
 
 	for i := 0; i < int(config.EthDepositMinCountPerBlock); i++ {
-		_, err = s.RpcClient.TaikoL1.DepositEtherToL2(opts, recipient)
+		_, err = s.RPCClient.TaikoL1.DepositEtherToL2(opts, recipient)
 		s.Nil(err)
 	}
 }
@@ -176,7 +176,7 @@ func NewTestProverServer(
 	proverPrivKey *ecdsa.PrivateKey,
 	url *url.URL,
 ) *server.ProverServer {
-	protocolConfig, err := s.RpcClient.TaikoL1.GetConfig(nil)
+	protocolConfig, err := s.RPCClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
 
 	srv, err := server.New(&server.NewProverServerOpts{
@@ -188,7 +188,7 @@ func NewTestProverServer(
 		MaxExpiry:                24 * time.Hour,
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		ProposeConcurrencyGuard:  make(chan struct{}, 1024),
-		Rpc:                      s.RpcClient,
+		RPC:                      s.RPCClient,
 		LivenessBond:             protocolConfig.LivenessBond,
 		IsGuardian:               true,
 	})

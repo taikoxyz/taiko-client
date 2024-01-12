@@ -1,4 +1,4 @@
-package chainSyncer
+package chainsyncer
 
 import (
 	"bytes"
@@ -29,12 +29,12 @@ type ChainSyncerTestSuite struct {
 func (s *ChainSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	state, err := state.New(context.Background(), s.RpcClient)
+	state, err := state.New(context.Background(), s.RPCClient)
 	s.Nil(err)
 
 	syncer, err := New(
 		context.Background(),
-		s.RpcClient,
+		s.RPCClient,
 		state,
 		false,
 		1*time.Hour,
@@ -78,7 +78,7 @@ func (s *ChainSyncerTestSuite) TestGetInnerSyncers() {
 }
 
 func (s *ChainSyncerTestSuite) TestSync() {
-	head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Nil(s.s.Sync(head))
 }
@@ -92,13 +92,13 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	// generate transactopts to interact with TaikoL1 contract with.
 	privKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
-	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.RpcClient.L1ChainID)
+	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.RPCClient.L1ChainID)
 	s.Nil(err)
 
-	head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	l2Head, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
+	l2Head, err := s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Equal("test", string(bytes.TrimRight(l2Head.Extra, "\x00")))
 	log.Info("L1HeaderByNumber head", "number", head.Number)
@@ -114,10 +114,10 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	s.Nil(err)
 	s.NotNil(tx)
 
-	head2, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	head2, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	l2Head2, err := s.RpcClient.L2.HeaderByNumber(context.Background(), nil)
+	l2Head2, err := s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	log.Info("L1HeaderByNumber head2", "number", head2.Number)
@@ -133,15 +133,15 @@ func TestChainSyncerTestSuite(t *testing.T) {
 
 func (s *ChainSyncerTestSuite) TakeSnapshot() {
 	// record snapshot state to revert to before changes
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &s.snapshotID, "evm_snapshot"))
+	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &s.snapshotID, "evm_snapshot"))
 }
 
 func (s *ChainSyncerTestSuite) RevertSnapshot() {
 	// revert to the snapshot state so protocol configs are unaffected
 	var revertRes bool
-	s.Nil(s.RpcClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", s.snapshotID))
+	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", s.snapshotID))
 	s.True(revertRes)
-	s.Nil(rpc.SetHead(context.Background(), s.RpcClient.L2RawRPC, common.Big0))
+	s.Nil(rpc.SetHead(context.Background(), s.RPCClient.L2RawRPC, common.Big0))
 }
 
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead() {

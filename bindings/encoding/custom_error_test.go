@@ -9,17 +9,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type testJsonError struct{}
+type testJSONError struct{}
 
-func (e *testJsonError) Error() string { return common.Bytes2Hex(randomBytes(10)) }
+func (e *testJSONError) Error() string { return common.Bytes2Hex(randomBytes(10)) }
 
-func (e *testJsonError) ErrorData() interface{} { return "0x8a1c400f" }
+func (e *testJSONError) ErrorData() interface{} { return "0x8a1c400f" }
 
-type emptyTestJsonError struct{}
+type emptyTestJSONError struct{}
 
-func (e *emptyTestJsonError) Error() string { return "execution reverted" }
+func (e *emptyTestJSONError) Error() string { return "execution reverted" }
 
-func (e *emptyTestJsonError) ErrorData() interface{} { return "0x" }
+func (e *emptyTestJSONError) ErrorData() interface{} { return "0x" }
 
 func TestTryParsingCustomError(t *testing.T) {
 	randomErr := common.Bytes2Hex(randomBytes(10))
@@ -32,11 +32,11 @@ func TestTryParsingCustomError(t *testing.T) {
 
 	require.True(t, strings.HasPrefix(err.Error(), "L1_INVALID_BLOCK_ID"))
 
-	err = TryParsingCustomError(&testJsonError{})
+	err = TryParsingCustomError(&testJSONError{})
 
 	require.True(t, strings.HasPrefix(err.Error(), "L1_INVALID_BLOCK_ID"))
 
-	err = TryParsingCustomError(&emptyTestJsonError{})
+	err = TryParsingCustomError(&emptyTestJSONError{})
 
 	require.Equal(t, err.Error(), "execution reverted")
 }

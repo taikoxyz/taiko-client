@@ -1,4 +1,4 @@
-package anchorTxValidator
+package anchortxvalidator
 
 import (
 	"context"

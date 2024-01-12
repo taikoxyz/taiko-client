@@ -40,9 +40,9 @@ func TryParsingCustomError(originalError error) error {
 // getErrorData tries to parse the actual custom error data from the given error.
 func getErrorData(err error) string {
 	// Geth node custom errors, the actual struct of this error is go-ethereum's <rpc.jsonError Value>.
-	gethJsonError, ok := err.(interface{ ErrorData() interface{} })
+	gethJSONError, ok := err.(interface{ ErrorData() interface{} }) // nolint: errorlint
 	if ok {
-		if errData, ok := gethJsonError.ErrorData().(string); ok {
+		if errData, ok := gethJSONError.ErrorData().(string); ok {
 			return errData
 		}
 	}

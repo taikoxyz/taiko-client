@@ -72,7 +72,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 				nodeGenesis.Hash(),
 				common.BytesToHash(l2GenesisHash[:]),
 			)
-		} else {
+		} else { //nolint:revive
 			return nil
 		}
 	}
@@ -162,26 +162,26 @@ func (c *Client) GetGenesisL1Header(ctx context.Context) (*types.Header, error) 
 	return c.L1.HeaderByNumber(ctxWithTimeout, new(big.Int).SetUint64(stateVars.A.GenesisHeight))
 }
 
-// L2ParentByBlockId fetches the block header from L2 execution engine with the largest block id that
+// L2ParentByBlockID fetches the block header from L2 execution engine with the largest block id that
 // smaller than the given `blockId`.
-func (c *Client) L2ParentByBlockId(ctx context.Context, blockID *big.Int) (*types.Header, error) {
+func (c *Client) L2ParentByBlockID(ctx context.Context, blockID *big.Int) (*types.Header, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	parentBlockId := new(big.Int).Sub(blockID, common.Big1)
+	parentBlockID := new(big.Int).Sub(blockID, common.Big1)
 
-	log.Debug("Get parent block by block ID", "parentBlockId", parentBlockId)
+	log.Debug("Get parent block by block ID", "parentBlockID", parentBlockID)
 
-	if parentBlockId.Cmp(common.Big0) == 0 {
+	if parentBlockID.Cmp(common.Big0) == 0 {
 		return c.L2.HeaderByNumber(ctxWithTimeout, common.Big0)
 	}
 
-	l1Origin, err := c.L2.L1OriginByID(ctxWithTimeout, parentBlockId)
+	l1Origin, err := c.L2.L1OriginByID(ctxWithTimeout, parentBlockID)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debug("Parent block L1 origin", "l1Origin", l1Origin, "parentBlockId", parentBlockId)
+	log.Debug("Parent block L1 origin", "l1Origin", l1Origin, "parentBlockID", parentBlockID)
 
 	return c.L2.HeaderByHash(ctxWithTimeout, l1Origin.L2BlockHash)
 }

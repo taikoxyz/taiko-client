@@ -74,6 +74,7 @@ func (s *GuardianProverBlockSender) post(ctx context.Context, route string, req 
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf(

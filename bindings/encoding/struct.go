@@ -10,13 +10,13 @@ import (
 
 // Tier IDs defined in protocol.
 var (
-	TierOptimisticID     uint16   = 100
-	TierSgxID            uint16   = 200
-	TierPseZkevmID       uint16   = 300
-	TierSgxAndPseZkevmID uint16   = 400
-	TierGuardianID       uint16   = 1000
-	ProtocolTiers        []uint16 = []uint16{TierOptimisticID, TierSgxID, TierSgxAndPseZkevmID, TierGuardianID}
-	AnchorTxGasLimit     uint64   = 250_000
+	TierOptimisticID     uint16 = 100
+	TierSgxID            uint16 = 200
+	TierPseZkevmID       uint16 = 300
+	TierSgxAndPseZkevmID uint16 = 400
+	TierGuardianID       uint16 = 1000
+	ProtocolTiers               = []uint16{TierOptimisticID, TierSgxID, TierSgxAndPseZkevmID, TierGuardianID}
+	AnchorTxGasLimit     uint64 = 250_000
 )
 
 // BlockHeader represents an Ethereum block header.
@@ -67,7 +67,7 @@ type TierFee struct {
 type ProverAssignment struct {
 	FeeToken      common.Address
 	Expiry        uint64
-	MaxBlockId    uint64
+	MaxBlockID    uint64
 	MaxProposedIn uint64
 	MetaHash      [32]byte
 	TierFees      []TierFee
@@ -82,7 +82,7 @@ type AssignmentHookInput struct {
 
 // ZKEvmProof should be same as PseZkVerifier.ZkEvmProof
 type ZKEvmProof struct {
-	VerifierId uint16
+	VerifierID uint16
 	Zkp        []byte
 	PointProof []byte
 }

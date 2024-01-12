@@ -77,7 +77,7 @@ var (
 	ExtraData = &cli.StringFlag{
 		Name:     "extraData",
 		Usage:    "Block extra data set by the proposer (default = client version)",
-		Value:    version.VersionWithCommit(),
+		Value:    version.CommitVersion(),
 		Category: proposerCategory,
 	}
 	// Transactions pool related.
@@ -123,7 +123,7 @@ var (
 	}
 )
 
-// All proposer flags.
+// ProposerFlags All proposer flags.
 var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2HTTPEndpoint,
 	TaikoTokenAddress,

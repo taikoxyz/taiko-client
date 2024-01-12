@@ -22,7 +22,7 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
+	txListValidator "github.com/taikoxyz/taiko-client/pkg/txlistvalidator"
 )
 
 var (
@@ -218,7 +218,7 @@ func (s *Syncer) onBlockProposed(
 
 		parent, err = s.rpc.L2.HeaderByHash(ctx, s.progressTracker.LastSyncedVerifiedBlockHash())
 	} else {
-		parent, err = s.rpc.L2ParentByBlockId(ctx, event.BlockId)
+		parent, err = s.rpc.L2ParentByBlockID(ctx, event.BlockId)
 	}
 
 	if err != nil {

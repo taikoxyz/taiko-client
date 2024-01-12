@@ -30,13 +30,13 @@ type SGXProofProducer struct {
 
 // SGXRequestProofBody represents the JSON body for requesting the proof.
 type SGXRequestProofBody struct {
-	JsonRPC string                      `json:"jsonrpc"`
+	Version string                      `json:"jsonrpc"`
 	ID      *big.Int                    `json:"id"`
 	Method  string                      `json:"method"`
 	Params  []*SGXRequestProofBodyParam `json:"params"`
 }
 
-// SGXRequestProofBody represents the JSON body of RequestProofBody's `param` field.
+// SGXRequestProofBodyParam represents the JSON body of RequestProofBody's `param` field.
 type SGXRequestProofBodyParam struct {
 	Type     string   `json:"type"`
 	Block    *big.Int `json:"block"`
@@ -48,7 +48,7 @@ type SGXRequestProofBodyParam struct {
 
 // SGXRequestProofBodyResponse represents the JSON body of the response of the proof requests.
 type SGXRequestProofBodyResponse struct {
-	JsonRPC string           `json:"jsonrpc"`
+	Version string           `json:"jsonrpc"`
 	ID      *big.Int         `json:"id"`
 	Result  *RaikoHostOutput `json:"result"`
 	Error   *struct {
@@ -77,7 +77,7 @@ func NewSGXProducer(
 }
 
 // RequestProof implements the ProofProducer interface.
-func (p *SGXProofProducer) RequestProof(
+func (s *SGXProofProducer) RequestProof(
 	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
@@ -93,11 +93,11 @@ func (p *SGXProofProducer) RequestProof(
 		"hash", header.Hash(),
 	)
 
-	if p.DummyProofProducer != nil {
-		return p.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, p.Tier(), resultCh)
+	if s.DummyProofProducer != nil {
+		return s.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, s.Tier(), resultCh)
 	}
 
-	proof, err := p.callProverDaemon(ctx, opts)
+	proof, err := s.callProverDaemon(ctx, opts)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (p *SGXProofProducer) RequestProof(
 		Proof:   proof,
 		Degree:  0,
 		Opts:    opts,
-		Tier:    p.Tier(),
+		Tier:    s.Tier(),
 	}
 
 	metrics.ProverSgxProofGeneratedCounter.Inc(1)
@@ -118,7 +118,7 @@ func (p *SGXProofProducer) RequestProof(
 }
 
 // callProverDaemon keeps polling the proverd service to get the requested proof.
-func (p *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequestOptions) ([]byte, error) {
+func (s *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequestOptions) ([]byte, error) {
 	var (
 		proof []byte
 		start = time.Now()
@@ -127,9 +127,9 @@ func (p *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 		if ctx.Err() != nil {
 			return nil
 		}
-		output, err := p.requestProof(opts)
+		output, err := s.requestProof(opts)
 		if err != nil {
-			log.Error("Failed to request proof", "height", opts.BlockID, "err", err, "endpoint", p.RaikoHostEndpoint)
+			log.Error("Failed to request proof", "height", opts.BlockID, "err", err, "endpoint", s.RaikoHostEndpoint)
 			return err
 		}
 
@@ -161,16 +161,16 @@ func (p *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 }
 
 // requestProof sends a RPC request to proverd to try to get the requested proof.
-func (p *SGXProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOutput, error) {
+func (s *SGXProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOutput, error) {
 	reqBody := SGXRequestProofBody{
-		JsonRPC: "2.0",
+		Version: "2.0",
 		ID:      common.Big1,
 		Method:  "proof",
 		Params: []*SGXRequestProofBodyParam{{
 			Type:     "Sgx",
 			Block:    opts.BlockID,
-			L2RPC:    p.L2Endpoint,
-			L1RPC:    p.L1Endpoint,
+			L2RPC:    s.L2Endpoint,
+			L1RPC:    s.L1Endpoint,
 			Prover:   opts.ProverAddress.Hex()[2:],
 			Graffiti: opts.Graffiti,
 		}},
@@ -181,7 +181,7 @@ func (p *SGXProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOu
 		return nil, err
 	}
 
-	res, err := http.Post(p.RaikoHostEndpoint, "application/json", bytes.NewBuffer(jsonValue))
+	res, err := http.Post(s.RaikoHostEndpoint, "application/json", bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return nil, err
 	}
@@ -219,6 +219,8 @@ func (s *SGXProofProducer) Cancellable() bool {
 }
 
 // Cancel cancels an existing proof generation.
+//
+//nolint:golint
 func (s *SGXProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
 	return nil
 }

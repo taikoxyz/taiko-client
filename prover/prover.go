@@ -286,7 +286,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		TaikoL1Address:           p.cfg.TaikoL1Address,
 		AssignmentHookAddress:    p.cfg.AssignmentHookAddress,
 		ProposeConcurrencyGuard:  p.proposeConcurrencyGuard,
-		Rpc:                      p.rpc,
+		RPC:                      p.rpc,
 		LivenessBond:             protocolConfigs.LivenessBond,
 		IsGuardian:               p.IsGuardianProver(),
 		DB:                       db,
@@ -929,7 +929,7 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 
 // onBlockVerified update the latestVerified block in current state, and cancels
 // the block being proven if it's verified.
-func (p *Prover) onBlockVerified(ctx context.Context, e *bindings.TaikoL1ClientBlockVerified) error {
+func (p *Prover) onBlockVerified(_ context.Context, e *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(e.BlockId.Int64())
 
 	p.latestVerifiedL1Height = e.Raw.BlockNumber
@@ -1085,7 +1085,7 @@ func (p *Prover) isValidProof(
 	blockHash common.Hash,
 	signalRoot common.Hash,
 ) (bool, error) {
-	parent, err := p.rpc.L2ParentByBlockId(ctx, blockID)
+	parent, err := p.rpc.L2ParentByBlockID(ctx, blockID)
 	if err != nil {
 		return false, err
 	}

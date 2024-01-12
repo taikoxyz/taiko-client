@@ -1,4 +1,4 @@
-package tx_list_validator
+package txlistvalidator
 
 import (
 	"math/big"

@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	BlockKeyPrefix = "block-"
+	blockKeyPrefix = "block-"
 	separator      = "++"
 )
 
@@ -24,7 +24,7 @@ type SignedBlockData struct {
 func BuildBlockKey(blockTimestamp uint64) []byte {
 	return bytes.Join(
 		[][]byte{
-			[]byte(BlockKeyPrefix),
+			[]byte(blockKeyPrefix),
 			[]byte(strconv.Itoa(int(blockTimestamp))),
 		}, []byte{})
 }

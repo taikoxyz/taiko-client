@@ -19,7 +19,7 @@ type BeaconSyncProgressTrackerTestSuite struct {
 func (s *BeaconSyncProgressTrackerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	s.t = NewSyncProgressTracker(s.RpcClient.L2, 30*time.Second)
+	s.t = NewSyncProgressTracker(s.RPCClient.L2, 30*time.Second)
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestSyncProgressed() {

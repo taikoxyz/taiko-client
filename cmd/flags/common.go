@@ -67,7 +67,7 @@ var (
 		Value:    3,
 		Category: loggingCategory,
 	}
-	LogJson = &cli.BoolFlag{
+	LogJSON = &cli.BoolFlag{
 		Name:     "log.json",
 		Usage:    "Format logs with JSON",
 		Category: loggingCategory,
@@ -116,7 +116,7 @@ var (
 	}
 )
 
-// All common flags.
+// CommonFlags All common flags.
 var CommonFlags = []cli.Flag{
 	// Required
 	L1WSEndpoint,
@@ -124,7 +124,7 @@ var CommonFlags = []cli.Flag{
 	TaikoL2Address,
 	// Optional
 	Verbosity,
-	LogJson,
+	LogJSON,
 	MetricsEnabled,
 	MetricsAddr,
 	MetricsPort,
