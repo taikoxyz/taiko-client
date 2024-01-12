@@ -18,7 +18,6 @@ lint:
 
 test:
 	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \
-	COMPILE_PROTOCOL=${COMPILE_PROTOCOL} \
 	PACKAGE=${PACKAGE} \
 	RUN_TESTS=true \
 		./integration_test/entrypoint.sh

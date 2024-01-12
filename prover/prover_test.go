@@ -38,7 +38,7 @@ func (s *ProverTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
 	// Init prover
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
 	proverServerUrl := testutils.LocalRandomProverEndpoint()
@@ -109,7 +109,7 @@ func (s *ProverTestSuite) SetupTest() {
 	s.d = d
 
 	// Init proposer
-	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 
 	prop := new(proposer.Proposer)
@@ -145,7 +145,7 @@ func (s *ProverTestSuite) TestName() {
 func (s *ProverTestSuite) TestInitError() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
 	p := new(Prover)
@@ -168,7 +168,7 @@ func (s *ProverTestSuite) TestInitError() {
 
 func (s *ProverTestSuite) TestOnBlockProposed() {
 	// Init prover
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 	s.p.cfg.L1ProverPrivKey = l1ProverPrivKey
 	// Valid block
