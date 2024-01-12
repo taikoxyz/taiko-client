@@ -28,7 +28,7 @@ type ProverServerTestSuite struct {
 }
 
 func (s *ProverServerTestSuite) SetupTest() {
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
 	timeout := 5 * time.Second

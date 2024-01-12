@@ -43,7 +43,7 @@ func TestL1ContentFrom(t *testing.T) {
 	baseFee, err := client.TaikoL2.GetBasefee(nil, 0, uint32(l2Head.GasUsed))
 	require.Nil(t, err)
 
-	testAddrPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	testAddrPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	require.Nil(t, err)
 
 	testAddr := crypto.PubkeyToAddress(testAddrPrivKey.PublicKey)

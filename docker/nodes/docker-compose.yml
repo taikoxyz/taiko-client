@@ -2,6 +2,7 @@ version: "3.9"
 
 services:
   l1_node:
+    container_name: l1_node
     image: ghcr.dockerproxy.com/foundry-rs/foundry:latest
     restart: unless-stopped
     pull_policy: always
@@ -14,6 +15,7 @@ services:
       - "0.0.0.0"
 
   l2_execution_engine:
+    container_name: l2_node
     image: gcr.dockerproxy.com/evmchain/taiko-geth:taiko
     restart: unless-stopped
     pull_policy: always

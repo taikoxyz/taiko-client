@@ -61,7 +61,7 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 	s.RpcClient = rpcCli
 
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
 	s.ProverEndpoints = []*url.URL{LocalRandomProverEndpoint()}
@@ -72,12 +72,12 @@ func (s *ClientTestSuite) SetupTest() {
 
 	if balance.Cmp(common.Big0) == 0 {
 		// Do not verify zk && sgx proofs in tests.
-		securityConcilPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_SECURITY_COUNCIL_PRIVATE_KEY")))
+		securityConcilPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_SECURITY_COUNCIL_PRIVATE_KEY")))
 		s.Nil(err)
 		s.setAddress(securityConcilPrivKey, rpc.StringToBytes32("tier_sgx_and_pse_zkevm"), common.Address{})
 		s.setAddress(securityConcilPrivKey, rpc.StringToBytes32("tier_sgx"), common.Address{})
 
-		ownerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
+		ownerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
 		s.Nil(err)
 
 		// Transfer some tokens to provers.

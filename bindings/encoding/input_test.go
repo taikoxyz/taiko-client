@@ -73,7 +73,7 @@ func TestUnpackTxListBytes(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	require.Nil(t, err)
 
 	opts, err := bind.NewKeyedTransactorWithChainID(l1ProposerPrivKey, chainID)
