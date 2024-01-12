@@ -294,7 +294,7 @@ func EncodeBlockParams(params *BlockParams) ([]byte, error) {
 // EncodeBlockParams performs the solidity `abi.encode` for the given blockParams.
 func EncodeZKEvmProof(proof []byte) ([]byte, error) {
 	b, err := zkEvmProofArgs.Pack(&ZKEvmProof{
-		VerifierID: 0,
+		VerifierId: 0,
 		Zkp:        proof,
 		PointProof: []byte{},
 	})

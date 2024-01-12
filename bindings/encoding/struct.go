@@ -82,7 +82,7 @@ type AssignmentHookInput struct {
 
 // ZKEvmProof should be same as PseZkVerifier.ZkEvmProof
 type ZKEvmProof struct {
-	VerifierID uint16
+	VerifierId uint16 // nolint: revive, stylecheck
 	Zkp        []byte
 	PointProof []byte
 }
