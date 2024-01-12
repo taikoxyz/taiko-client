@@ -27,4 +27,4 @@ export MIN_GUARDIANS=${#GUARDIAN_PROVERS_ADDRESSES_LIST[@]}
 
 # Get the hash of L2 genesis.
 export L2_GENESIS_HASH=$(cast block --rpc-url "$L2_EXECUTION_ENGINE_HTTP_ENDPOINT" 0x0 -f hash)
-echo "l2chain genesis hash: $L2_GENESIS_HASH"
+echo "L2 chain genesis hash: $L2_GENESIS_HASH"
