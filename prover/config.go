@@ -59,7 +59,7 @@ type Config struct {
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
 func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(c.String(flags.L1ProverPrivKey.Name)))
+	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(c.String(flags.L1ProverPrivKey.Name)))
 	if err != nil {
 		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
 	}

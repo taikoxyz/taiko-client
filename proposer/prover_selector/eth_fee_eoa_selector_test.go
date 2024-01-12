@@ -23,7 +23,7 @@ type ProverSelectorTestSuite struct {
 func (s *ProverSelectorTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	l1ProverPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 	s.proverAddress = crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey)
 

@@ -3,6 +3,8 @@
 RED='\033[1;31m'
 NC='\033[0m' # No Color
 
+COMPOSE="docker compose -f docker/nodes/docker-compose.yml"
+
 print_error() {
   local msg="$1"
   echo -e "${RED}$msg${NC}"
@@ -25,3 +27,18 @@ check_command() {
   fi
 }
 
+compose_down() {
+  local services=("$@")
+  echo
+  echo "stopping services..."
+  $COMPOSE down "${services[@]}" #--remove-orphans
+  echo "done"
+}
+
+compose_up() {
+  local services=("$@")
+  echo
+  echo "launching services..."
+  $COMPOSE up --quiet-pull "${services[@]}" -d --wait
+  echo "done"
+}
