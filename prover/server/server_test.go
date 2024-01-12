@@ -76,7 +76,7 @@ func (s *ProverServerTestSuite) TestHealth() {
 }
 
 func (s *ProverServerTestSuite) TestRoot() {
-	resp := s.sendReq("/healthz")
+	resp := s.sendReq("/")
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
 }

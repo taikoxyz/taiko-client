@@ -60,7 +60,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 		return err
 	}
 
-	for iter.Next() {
+	if iter.Next() {
 		l2GenesisHash := iter.Event.BlockHash
 
 		log.Debug("Genesis hash", "node", nodeGenesis.Hash(), "TaikoL1", common.BytesToHash(l2GenesisHash[:]))
@@ -72,11 +72,8 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 				nodeGenesis.Hash(),
 				common.BytesToHash(l2GenesisHash[:]),
 			)
-		} else { //nolint:revive
-			return nil
 		}
 	}
-
 	log.Warn("Genesis block not found in TaikoL1")
 
 	return nil
