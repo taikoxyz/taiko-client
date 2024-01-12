@@ -1,4 +1,4 @@
-# how to debug test cases?
+# How to debug test cases?
 * start docker compose
 ```
 ./docker/start.sh
