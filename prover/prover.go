@@ -287,6 +287,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		AssignmentHookAddress:    p.cfg.AssignmentHookAddress,
 		ProposeConcurrencyGuard:  p.proposeConcurrencyGuard,
 		Rpc:                      p.rpc,
+		ProtocolConfigs:          &protocolConfigs,
 		LivenessBond:             protocolConfigs.LivenessBond,
 		IsGuardian:               p.IsGuardianProver(),
 		DB:                       db,

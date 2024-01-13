@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb"
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -44,6 +45,7 @@ type ProverServer struct {
 	taikoL1Address           common.Address
 	assignmentHookAddress    common.Address
 	rpc                      *rpc.Client
+	protocolConfigs          *bindings.TaikoDataConfig
 	livenessBond             *big.Int
 	isGuardian               bool
 	db                       ethdb.KeyValueStore
@@ -63,6 +65,7 @@ type NewProverServerOpts struct {
 	TaikoL1Address           common.Address
 	AssignmentHookAddress    common.Address
 	Rpc                      *rpc.Client
+	ProtocolConfigs          *bindings.TaikoDataConfig
 	LivenessBond             *big.Int
 	IsGuardian               bool
 	DB                       ethdb.KeyValueStore
@@ -85,6 +88,7 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		taikoL1Address:           opts.TaikoL1Address,
 		assignmentHookAddress:    opts.AssignmentHookAddress,
 		rpc:                      opts.Rpc,
+		protocolConfigs:          opts.ProtocolConfigs,
 		livenessBond:             opts.LivenessBond,
 		isGuardian:               opts.IsGuardian,
 		db:                       opts.DB,
