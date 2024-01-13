@@ -78,7 +78,7 @@ func NewSyncer(
 }
 
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
-// L1 block heights, and then tries inserting them into L2 execution engine's block chain.
+// L1 block heights, and then tries inserting them into L2 execution engine's blockchain.
 func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
 	firstTry := true
 	for firstTry || s.reorgDetectedFlag {
