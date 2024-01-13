@@ -345,21 +345,17 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*struct {
 	A bindings.TaikoDataSlotA
 	B bindings.TaikoDataSlotB
 }, error) {
-	var (
-		ctxWithTimeout context.Context
-		cancel         context.CancelFunc
-	)
-	if opts != nil && opts.Context != nil {
-		if _, ok := opts.Context.Deadline(); !ok {
-			ctxWithTimeout, cancel = context.WithTimeout(opts.Context, defaultWaitReceiptTimeout)
-			defer cancel()
-			opts.Context = ctxWithTimeout
-		}
-	} else {
-		ctxWithTimeout, cancel = context.WithTimeout(context.Background(), defaultWaitReceiptTimeout)
-		defer cancel()
-		opts = &bind.CallOpts{Context: ctxWithTimeout}
+	if opts == nil {
+		opts = &bind.CallOpts{}
 	}
+
+	var ctx = context.Background()
+	if opts.Context != nil {
+		ctx = opts.Context
+	}
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, defaultWaitReceiptTimeout)
+	defer cancel()
+	opts.Context = ctxWithTimeout
 
 	return GetProtocolStateVariables(c.TaikoL1, opts)
 }
