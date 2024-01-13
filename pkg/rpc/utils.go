@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"github.com/taikoxyz/taiko-client/common/utils"
 	"math/big"
 	"os"
 	"strconv"
@@ -377,13 +378,12 @@ func IsArchiveNode(ctx context.Context, client *EthClient, l2GenesisHeight uint6
 // and otherwise returns the context as passed in. cancel func is always set to an empty function
 // so is safe to defer the cancel.
 func ctxWithTimeoutOrDefault(ctx context.Context, defaultTimeout time.Duration) (context.Context, context.CancelFunc) {
-	var (
-		ctxWithTimeout                    = ctx
-		cancel         context.CancelFunc = func() {}
-	)
+	if utils.IsNil(ctx) {
+		return context.WithTimeout(context.Background(), defaultTimeout)
+	}
 	if _, ok := ctx.Deadline(); !ok {
-		ctxWithTimeout, cancel = context.WithTimeout(ctx, defaultTimeout)
+		return context.WithTimeout(ctx, defaultTimeout)
 	}
 
-	return ctxWithTimeout, cancel
+	return ctx, func() {}
 }
