@@ -40,7 +40,7 @@ type ZkevmRpcdProducer struct {
 
 // RequestProofBody represents the JSON body for requesting the proof.
 type RequestProofBody struct {
-	Version string                   `json:"jsonrpc"`
+	JsonRPC string                   `json:"jsonrpc"` //nolint:revive,stylecheck
 	ID      *big.Int                 `json:"id"`
 	Method  string                   `json:"method"`
 	Params  []*RequestProofBodyParam `json:"params"`
@@ -101,7 +101,7 @@ type ProtocolInstance struct {
 
 // RequestProofBodyResponse represents the JSON body of the response of the proof requests.
 type RequestProofBodyResponse struct {
-	Version string      `json:"jsonrpc"`
+	JsonRPC string      `json:"jsonrpc"` //nolint:revive,stylecheck
 	ID      *big.Int    `json:"id"`
 	Result  *RpcdOutput `json:"result"`
 	Error   *struct {
@@ -259,7 +259,7 @@ func (p *ZkevmRpcdProducer) requestProof(
 	meta *bindings.TaikoDataBlockMetadata,
 ) (*RpcdOutput, error) {
 	reqBody := RequestProofBody{
-		Version: "2.0",
+		JsonRPC: "2.0",
 		ID:      common.Big1,
 		Method:  "proof",
 		Params: []*RequestProofBodyParam{{

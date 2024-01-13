@@ -30,7 +30,7 @@ type SGXProofProducer struct {
 
 // SGXRequestProofBody represents the JSON body for requesting the proof.
 type SGXRequestProofBody struct {
-	Version string                      `json:"jsonrpc"`
+	JsonRPC string                      `json:"jsonrpc"` //nolint:revive,stylecheck
 	ID      *big.Int                    `json:"id"`
 	Method  string                      `json:"method"`
 	Params  []*SGXRequestProofBodyParam `json:"params"`
@@ -48,7 +48,7 @@ type SGXRequestProofBodyParam struct {
 
 // SGXRequestProofBodyResponse represents the JSON body of the response of the proof requests.
 type SGXRequestProofBodyResponse struct {
-	Version string           `json:"jsonrpc"`
+	JsonRPC string           `json:"jsonrpc"` //nolint:revive,stylecheck
 	ID      *big.Int         `json:"id"`
 	Result  *RaikoHostOutput `json:"result"`
 	Error   *struct {
@@ -163,7 +163,7 @@ func (s *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 // requestProof sends a RPC request to proverd to try to get the requested proof.
 func (s *SGXProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOutput, error) {
 	reqBody := SGXRequestProofBody{
-		Version: "2.0",
+		JsonRPC: "2.0",
 		ID:      common.Big1,
 		Method:  "proof",
 		Params: []*SGXRequestProofBodyParam{{
