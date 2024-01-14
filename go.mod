@@ -9,6 +9,7 @@ require (
 	github.com/ethereum/go-ethereum v1.13.8
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/labstack/echo/v4 v4.11.1
+	github.com/modern-go/reflect2 v1.0.2
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/prysmaticlabs/prysm/v4 v4.0.1
 	github.com/stretchr/testify v1.8.4
