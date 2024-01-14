@@ -45,6 +45,9 @@ func (s *ProverServerTestSuite) SetupTest() {
 	})
 	s.Nil(err)
 
+	configs, err := rpcClient.TaikoL1.GetConfig(nil)
+	s.Nil(err)
+
 	p, err := New(&NewProverServerOpts{
 		ProverPrivateKey:         l1ProverPrivKey,
 		MinOptimisticTierFee:     common.Big1,
@@ -56,6 +59,7 @@ func (s *ProverServerTestSuite) SetupTest() {
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		AssignmentHookAddress:    common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		Rpc:                      rpcClient,
+		ProtocolConfigs:          &configs,
 		LivenessBond:             common.Big0,
 		IsGuardian:               false,
 		DB:                       memorydb.New(),
