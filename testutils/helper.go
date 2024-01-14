@@ -187,8 +187,10 @@ func NewTestProverServer(
 		MinSgxAndPseZkevmTierFee: common.Big1,
 		MaxExpiry:                24 * time.Hour,
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		AssignmentHookAddress:    common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		ProposeConcurrencyGuard:  make(chan struct{}, 1024),
 		RPC:                      s.RPCClient,
+		ProtocolConfigs:          &protocolConfig,
 		LivenessBond:             protocolConfig.LivenessBond,
 		IsGuardian:               true,
 	})

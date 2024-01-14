@@ -124,10 +124,12 @@ func (s *ETHFeeEOASelector) AssignProver(
 		for _, endpoint := range s.shuffleProverEndpoints() {
 			encodedAssignment, proverAddress, err := assignProver(
 				ctx,
+				s.protocolConfigs.ChainId,
 				endpoint,
 				expiry,
 				tierFees,
 				s.taikoL1Address,
+				s.assignmentHookAddress,
 				txListHash,
 				s.requestTimeout,
 				guardianProverAddress,
@@ -174,10 +176,12 @@ func (s *ETHFeeEOASelector) shuffleProverEndpoints() []*url.URL {
 // assignProver tries to assign a proof generation task to the given prover by HTTP API.
 func assignProver(
 	ctx context.Context,
+	chainID uint64,
 	endpoint *url.URL,
 	expiry uint64,
 	tierFees []encoding.TierFee,
 	taikoL1Address common.Address,
+	assignmentHookAddress common.Address,
 	txListHash common.Hash,
 	timeout time.Duration,
 	guardianProverAddress common.Address,
@@ -225,7 +229,9 @@ func assignProver(
 	// Ensure prover in response is the same as the one recovered
 	// from the signature
 	payload, err := encoding.EncodeProverAssignmentPayload(
+		chainID,
 		taikoL1Address,
+		assignmentHookAddress,
 		txListHash,
 		common.Address{},
 		expiry,

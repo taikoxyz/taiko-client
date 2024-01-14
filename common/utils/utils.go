@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/modern-go/reflect2"
 )
 
 func RandUint64(max *big.Int) uint64 {
@@ -24,4 +25,9 @@ func RandUint32(max *big.Int) uint32 {
 	}
 	num, _ := rand.Int(rand.Reader, max)
 	return uint32(num.Uint64())
+}
+
+// IsNil checks if the interface is empty.
+func IsNil(i interface{}) bool {
+	return i == nil || reflect2.IsNil(i)
 }
