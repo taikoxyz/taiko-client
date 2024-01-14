@@ -241,7 +241,10 @@ var (
 	)
 	proverAssignmentPayloadArgs = abi.Arguments{
 		{Name: "PROVER_ASSIGNMENT", Type: stringType},
+		{Name: "chainID", Type: uint64Type},
 		{Name: "taikoAddress", Type: addressType},
+		{Name: "assignmentHookAddress", Type: addressType},
+		{Name: "metaHash", Type: bytes32Type},
 		{Name: "blobHash", Type: bytes32Type},
 		{Name: "assignment.feeToken", Type: addressType},
 		{Name: "assignment.expiry", Type: uint64Type},
@@ -315,7 +318,9 @@ func EncodeAssignmentHookInput(input *AssignmentHookInput) ([]byte, error) {
 
 // EncodeProverAssignmentPayload performs the solidity `abi.encode` for the given proverAssignment payload.
 func EncodeProverAssignmentPayload(
+	chainID uint64,
 	taikoAddress common.Address,
+	assignmentHookAddress common.Address,
 	txListHash common.Hash,
 	feeToken common.Address,
 	expiry uint64,
@@ -325,7 +330,10 @@ func EncodeProverAssignmentPayload(
 ) ([]byte, error) {
 	b, err := proverAssignmentPayloadArgs.Pack(
 		"PROVER_ASSIGNMENT",
+		chainID,
 		taikoAddress,
+		assignmentHookAddress,
+		common.Hash{},
 		txListHash,
 		feeToken,
 		expiry,

@@ -180,7 +180,9 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	}
 
 	encoded, err := encoding.EncodeProverAssignmentPayload(
+		srv.protocolConfigs.ChainId,
 		srv.taikoL1Address,
+		srv.assignmentHookAddress,
 		req.TxListHash,
 		req.FeeToken,
 		req.Expiry,
