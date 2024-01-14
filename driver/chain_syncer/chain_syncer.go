@@ -1,4 +1,4 @@
-package chainSyncer
+package chainsyncer
 
 import (
 	"context"
@@ -124,7 +124,7 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 		// we also mark the triggered P2P sync progress as finished to prevent a potential `InsertBlockWithoutSetHead` in
 		// execution engine, which may cause errors since we do not pass all transactions in ExecutePayload when calling
 		// NewPayloadV1.
-		verifiedHeightToCompare -= 1
+		verifiedHeightToCompare--
 	}
 
 	if s.state.GetL2Head().Number.Uint64() < verifiedHeightToCompare {

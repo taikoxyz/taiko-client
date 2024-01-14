@@ -99,10 +99,9 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 	var endHeader *types.Header
 	if cfg.Reverse && cfg.EndHeight == nil {
 		return nil, fmt.Errorf("missing end height")
-	} else {
-		if endHeader, err = cfg.Client.HeaderByNumber(ctx, cfg.EndHeight); err != nil {
-			return nil, fmt.Errorf("failed to get end header, height: %s, error: %w", cfg.EndHeight, err)
-		}
+	}
+	if endHeader, err = cfg.Client.HeaderByNumber(ctx, cfg.EndHeight); err != nil {
+		return nil, fmt.Errorf("failed to get end header, height: %s, error: %w", cfg.EndHeight, err)
 	}
 
 	iterator := &BlockBatchIterator{

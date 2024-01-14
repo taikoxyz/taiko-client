@@ -94,7 +94,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proveBlockMaxTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProveBlockMaxTxGasTipCap.Name))
 	}
 
-	var allowance *big.Int = common.Big0
+	var allowance = common.Big0
 	if c.IsSet(flags.Allowance.Name) {
 		amt, ok := new(big.Int).SetString(c.String(flags.Allowance.Name), 10)
 		if !ok {

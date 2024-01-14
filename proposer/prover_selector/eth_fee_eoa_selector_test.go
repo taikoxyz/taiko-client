@@ -27,12 +27,12 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 	s.Nil(err)
 	s.proverAddress = crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey)
 
-	protocolConfigs, err := s.RpcClient.TaikoL1.GetConfig(nil)
+	protocolConfigs, err := s.RPCClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
 
 	s.s, err = NewETHFeeEOASelector(
 		&protocolConfigs,
-		s.RpcClient,
+		s.RPCClient,
 		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		[]encoding.TierFee{},

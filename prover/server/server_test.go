@@ -58,7 +58,7 @@ func (s *ProverServerTestSuite) SetupTest() {
 		ProposeConcurrencyGuard:  make(chan struct{}, 1024),
 		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		AssignmentHookAddress:    common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-		Rpc:                      rpcClient,
+		RPC:                      rpcClient,
 		ProtocolConfigs:          &configs,
 		LivenessBond:             common.Big0,
 		IsGuardian:               false,
@@ -74,11 +74,15 @@ func (s *ProverServerTestSuite) SetupTest() {
 }
 
 func (s *ProverServerTestSuite) TestHealth() {
-	s.Equal(http.StatusOK, s.sendReq("/healthz").StatusCode)
+	resp := s.sendReq("/healthz")
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
 }
 
 func (s *ProverServerTestSuite) TestRoot() {
-	s.Equal(http.StatusOK, s.sendReq("/").StatusCode)
+	resp := s.sendReq("/")
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
 }
 
 func (s *ProverServerTestSuite) TestStartShutdown() {

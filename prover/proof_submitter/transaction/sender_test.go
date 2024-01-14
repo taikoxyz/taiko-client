@@ -34,8 +34,8 @@ func (s *TransactionTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	s.sender = NewSender(s.RpcClient, 5*time.Second, nil, 1*time.Minute)
-	s.builder = NewProveBlockTxBuilder(s.RpcClient, l1ProverPrivKey, nil, common.Big256, common.Big2)
+	s.sender = NewSender(s.RPCClient, 5*time.Second, nil, 1*time.Minute)
+	s.builder = NewProveBlockTxBuilder(s.RPCClient, l1ProverPrivKey, nil, common.Big256, common.Big2)
 }
 
 func (s *TransactionTestSuite) TestIsSubmitProofTxErrorRetryable() {
@@ -46,9 +46,9 @@ func (s *TransactionTestSuite) TestIsSubmitProofTxErrorRetryable() {
 }
 
 func (s *TransactionTestSuite) TestSendTxWithBackoff() {
-	l1Head, err := s.RpcClient.L1.HeaderByNumber(context.Background(), nil)
+	l1Head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	l1HeadChild, err := s.RpcClient.L1.HeaderByNumber(context.Background(), new(big.Int).Sub(l1Head.Number, common.Big1))
+	l1HeadChild, err := s.RPCClient.L1.HeaderByNumber(context.Background(), new(big.Int).Sub(l1Head.Number, common.Big1))
 	s.Nil(err)
 	meta := &bindings.TaikoDataBlockMetadata{L1Height: l1HeadChild.Number.Uint64(), L1Hash: l1HeadChild.Hash()}
 	s.NotNil(s.sender.Send(
@@ -71,17 +71,17 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 			Opts:    &proofProducer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
 		func(nonce *big.Int) (*types.Transaction, error) {
-			height, err := s.RpcClient.L1.BlockNumber(context.Background())
+			height, err := s.RPCClient.L1.BlockNumber(context.Background())
 			s.Nil(err)
 
 			var block *types.Block
 			for {
-				block, err = s.RpcClient.L1.BlockByNumber(context.Background(), new(big.Int).SetUint64(height))
+				block, err = s.RPCClient.L1.BlockByNumber(context.Background(), new(big.Int).SetUint64(height))
 				s.Nil(err)
 				if block.Transactions().Len() != 0 {
 					break
 				}
-				height -= 1
+				height--
 			}
 
 			return block.Transactions()[0], nil

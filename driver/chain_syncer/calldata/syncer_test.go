@@ -3,7 +3,6 @@ package calldata
 import (
 	"context"
 	"math/big"
-	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -17,6 +16,8 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/proposer"
 	"github.com/taikoxyz/taiko-client/testutils"
+
+	"github.com/taikoxyz/taiko-client/common/utils"
 )
 
 type CalldataSyncerTestSuite struct {
@@ -28,14 +29,14 @@ type CalldataSyncerTestSuite struct {
 func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	state, err := state.New(context.Background(), s.RpcClient)
+	state, err := state.New(context.Background(), s.RPCClient)
 	s.Nil(err)
 
 	syncer, err := NewSyncer(
 		context.Background(),
-		s.RpcClient,
+		s.RPCClient,
 		state,
-		beaconsync.NewSyncProgressTracker(s.RpcClient.L2, 1*time.Hour),
+		beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 1*time.Hour),
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
@@ -73,7 +74,7 @@ func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
 	cancel()
 	syncer, err := NewSyncer(
 		ctx,
-		s.RpcClient,
+		s.RPCClient,
 		s.s.state,
 		s.s.progressTracker,
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
@@ -124,7 +125,7 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 				Coinbase:   common.BytesToAddress(testutils.RandomBytes(1024)),
 				BlobHash:   testutils.RandomHash(),
 				Difficulty: testutils.RandomHash(),
-				GasLimit:   rand.Uint32(),
+				GasLimit:   utils.RandUint32(nil),
 				Timestamp:  uint64(time.Now().Unix()),
 			},
 		},
@@ -144,18 +145,18 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())
 
-	balance, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
+	balance, err := s.RPCClient.L2.BalanceAt(context.Background(), treasury, nil)
 	s.Nil(err)
 
-	headBefore, err := s.RpcClient.L2.BlockNumber(context.Background())
+	headBefore, err := s.RPCClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
 
-	headAfter, err := s.RpcClient.L2.BlockNumber(context.Background())
+	headAfter, err := s.RPCClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
-	balanceAfter, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
+	balanceAfter, err := s.RPCClient.L2.BalanceAt(context.Background(), treasury, nil)
 	s.Nil(err)
 
 	s.Greater(headAfter, headBefore)
@@ -166,19 +167,19 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())
 
-	balance, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
+	balance, err := s.RPCClient.L2.BalanceAt(context.Background(), treasury, nil)
 	s.Nil(err)
 
-	headBefore, err := s.RpcClient.L2.BlockNumber(context.Background())
+	headBefore, err := s.RPCClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.s)
 
-	headAfter, err := s.RpcClient.L2.BlockNumber(context.Background())
+	headAfter, err := s.RPCClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
-	balanceAfter, err := s.RpcClient.L2.BalanceAt(context.Background(), treasury, nil)
+	balanceAfter, err := s.RPCClient.L2.BalanceAt(context.Background(), treasury, nil)
 	s.Nil(err)
 
 	s.Greater(headAfter, headBefore)
@@ -186,7 +187,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 
 	var hasNoneAnchorTxs bool
 	for i := headBefore + 1; i <= headAfter; i++ {
-		block, err := s.RpcClient.L2.BlockByNumber(context.Background(), new(big.Int).SetUint64(i))
+		block, err := s.RPCClient.L2.BlockByNumber(context.Background(), new(big.Int).SetUint64(i))
 		s.Nil(err)
 		s.GreaterOrEqual(block.Transactions().Len(), 1)
 		s.Greater(block.BaseFee().Uint64(), uint64(0))
@@ -197,7 +198,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 			}
 
 			hasNoneAnchorTxs = true
-			receipt, err := s.RpcClient.L2.TransactionReceipt(context.Background(), tx.Hash())
+			receipt, err := s.RPCClient.L2.TransactionReceipt(context.Background(), tx.Hash())
 			s.Nil(err)
 
 			fee := new(big.Int).Mul(block.BaseFee(), new(big.Int).SetUint64(receipt.GasUsed))

@@ -39,7 +39,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.proofCh = make(chan *proofProducer.ProofWithHeader, 1024)
 
 	s.submitter, err = New(
-		s.RpcClient,
+		s.RPCClient,
 		&proofProducer.OptimisticProofProducer{},
 		s.proofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
@@ -54,7 +54,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	)
 	s.Nil(err)
 	s.contester, err = NewProofContester(
-		s.RpcClient,
+		s.RPCClient,
 		l1ProverPrivKey,
 		nil,
 		2,
@@ -67,14 +67,14 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.Nil(err)
 
 	// Init calldata syncer
-	testState, err := state.New(context.Background(), s.RpcClient)
+	testState, err := state.New(context.Background(), s.RPCClient)
 	s.Nil(err)
 
-	tracker := beaconsync.NewSyncProgressTracker(s.RpcClient.L2, 30*time.Second)
+	tracker := beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 30*time.Second)
 
 	s.calldataSyncer, err = calldata.NewSyncer(
 		context.Background(),
-		s.RpcClient,
+		s.RPCClient,
 		testState,
 		tracker,
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),

@@ -41,11 +41,11 @@ func (s *ProverTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	proverServerUrl := testutils.LocalRandomProverEndpoint()
-	port, err := strconv.Atoi(proverServerUrl.Port())
+	proverServerURL := testutils.LocalRandomProverEndpoint()
+	port, err := strconv.Atoi(proverServerURL.Port())
 	s.Nil(err)
 
-	decimal, err := s.RpcClient.TaikoToken.Decimals(nil)
+	decimal, err := s.RPCClient.TaikoToken.Decimals(nil)
 	s.Nil(err)
 
 	allowance := new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil)
@@ -78,7 +78,7 @@ func (s *ProverTestSuite) SetupTest() {
 	p.srv = testutils.NewTestProverServer(
 		&s.ClientTestSuite,
 		l1ProverPrivKey,
-		proverServerUrl,
+		proverServerURL,
 	)
 
 	p.guardianProverSender = guardianproversender.New(
@@ -126,7 +126,7 @@ func (s *ProverTestSuite) SetupTest() {
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         12 * time.Second,
-		ProverEndpoints:            []*url.URL{proverServerUrl},
+		ProverEndpoints:            []*url.URL{proverServerURL},
 		OptimisticTierFee:          common.Big256,
 		SgxTierFee:                 common.Big256,
 		PseZkevmTierFee:            common.Big256,

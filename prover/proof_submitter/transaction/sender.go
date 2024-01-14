@@ -172,12 +172,12 @@ func (s *Sender) validateProof(ctx context.Context, proofWithHeader *proofProduc
 		)
 		return false, err
 	}
-	latestVerifiedId := stateVars.B.LastVerifiedBlockId
-	if new(big.Int).SetUint64(latestVerifiedId).Cmp(proofWithHeader.BlockID) >= 0 {
+	latestVerifiedID := stateVars.B.LastVerifiedBlockId
+	if new(big.Int).SetUint64(latestVerifiedID).Cmp(proofWithHeader.BlockID) >= 0 {
 		log.Info(
 			"Block is already verified, skip current proof submission",
 			"blockID", proofWithHeader.BlockID.Uint64(),
-			"latestVerifiedId", latestVerifiedId,
+			"latestVerifiedID", latestVerifiedID,
 		)
 		return false, nil
 	}

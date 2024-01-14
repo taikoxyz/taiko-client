@@ -22,7 +22,7 @@ import (
 	"github.com/taikoxyz/taiko-client/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	txListValidator "github.com/taikoxyz/taiko-client/pkg/tx_list_validator"
+	txListValidator "github.com/taikoxyz/taiko-client/pkg/txlistvalidator"
 )
 
 var (
@@ -78,7 +78,7 @@ func NewSyncer(
 }
 
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
-// L1 block heights, and then tries inserting them into L2 execution engine's block chain.
+// L1 block heights, and then tries inserting them into L2 execution engine's blockchain.
 func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
 	firstTry := true
 	for firstTry || s.reorgDetectedFlag {
@@ -218,7 +218,7 @@ func (s *Syncer) onBlockProposed(
 
 		parent, err = s.rpc.L2.HeaderByHash(ctx, s.progressTracker.LastSyncedVerifiedBlockHash())
 	} else {
-		parent, err = s.rpc.L2ParentByBlockId(ctx, event.BlockId)
+		parent, err = s.rpc.L2ParentByBlockID(ctx, event.BlockId)
 	}
 
 	if err != nil {

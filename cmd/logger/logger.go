@@ -14,7 +14,7 @@ func InitLogger(c *cli.Context) {
 		slogVerbosity = log.FromLegacyLevel(c.Int(flags.Verbosity.Name))
 	)
 
-	if c.Bool(flags.LogJson.Name) {
+	if c.Bool(flags.LogJSON.Name) {
 		glogger := log.NewGlogHandler(log.NewGlogHandler(log.JSONHandler(os.Stdout)))
 		glogger.Verbosity(slogVerbosity)
 		log.SetDefault(log.NewLogger(glogger))

@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
@@ -54,9 +55,10 @@ func Serve(ctx context.Context, c *cli.Context) error {
 		strconv.Itoa(c.Int(flags.MetricsPort.Name)),
 	)
 
-	server := &http.Server{
-		Addr:    address,
-		Handler: prometheus.Handler(metrics.DefaultRegistry),
+	server := http.Server{
+		ReadHeaderTimeout: time.Minute,
+		Addr:              address,
+		Handler:           prometheus.Handler(metrics.DefaultRegistry),
 	}
 
 	go func() {
