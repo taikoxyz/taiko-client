@@ -57,3 +57,8 @@ Then, run the integration tests:
 ```sh
 TAIKO_MONO_DIR=<PATH_TO_TAIKO_MONO_REPO> make test
 ```
+  * Here is my contribution to Taiko @craziefingers
+  * I really enjoying learning something new as I have no clue about developing but to be able to
+  * try something new means alot.
+
+
