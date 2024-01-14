@@ -1,4 +1,4 @@
-package anchorTxValidator
+package anchortxvalidator
 
 import (
 	"context"
@@ -20,7 +20,7 @@ type AnchorTxValidatorTestSuite struct {
 func (s *AnchorTxValidatorTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	validator, err := New(common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")), s.RpcClient.L2ChainID, s.RpcClient)
+	validator, err := New(common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")), s.RPCClient.L2ChainID, s.RPCClient)
 	s.Nil(err)
 	s.v = validator
 }
@@ -29,7 +29,7 @@ func (s *AnchorTxValidatorTestSuite) TestValidateAnchorTx() {
 	wrongPrivKey, err := crypto.HexToECDSA("2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200")
 	s.Nil(err)
 
-	goldenTouchPrivKey, err := s.RpcClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	goldenTouchPrivKey, err := s.RPCClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
 	s.Nil(err)
 
 	// 0x92954368afd3caa1f3ce3ead0069c1af414054aefe1ef9aeacc1bf426222ce38

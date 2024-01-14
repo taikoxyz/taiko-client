@@ -1,4 +1,4 @@
-package anchorTxConstructor
+package anchortxconstructor
 
 import (
 	"context"
@@ -23,11 +23,11 @@ type AnchorTxConstructorTestSuite struct {
 func (s *AnchorTxConstructorTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 	c, err := New(
-		s.RpcClient,
+		s.RPCClient,
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
-	head, err := s.RpcClient.L1.BlockByNumber(context.Background(), nil)
+	head, err := s.RPCClient.L1.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.l1Height = head.Number()
 	s.l1Hash = head.Hash()
@@ -45,11 +45,11 @@ func (s *AnchorTxConstructorTestSuite) TestAssembleAnchorTx() {
 }
 
 func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
-	goldenTouchAddress, err := s.RpcClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	goldenTouchAddress, err := s.RPCClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)
 
 	c, err := New(
-		s.RpcClient,
+		s.RPCClient,
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)

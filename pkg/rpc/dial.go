@@ -78,12 +78,12 @@ func DialEngineClientWithBackoff(
 
 // DialEngineClient initializes an RPC connection with authentication headers.
 // Taken from https://github.com/prysmaticlabs/prysm/blob/v2.1.4/beacon-chain/execution/rpc_connection.go#L151
-func DialEngineClient(ctx context.Context, endpointUrl string, jwtSecret string) (*rpc.Client, error) {
+func DialEngineClient(ctx context.Context, endpointURL string, jwtSecret string) (*rpc.Client, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
 	endpoint := network.Endpoint{
-		Url: endpointUrl,
+		Url: endpointURL,
 		Auth: network.AuthorizationData{
 			Method: authorization.Bearer,
 			Value:  jwtSecret,

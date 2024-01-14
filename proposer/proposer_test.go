@@ -87,7 +87,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 
 	to := common.BytesToAddress(testutils.RandomBytes(32))
 	tx := types.NewTx(&types.DynamicFeeTx{
-		ChainID:   s.RpcClient.L2ChainID,
+		ChainID:   s.RPCClient.L2ChainID,
 		Nonce:     nonce,
 		GasTipCap: common.Big0,
 		GasFeeCap: new(big.Int).SetUint64(baseFee.Uint64() * 2),
@@ -152,13 +152,13 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		context.Background(),
 		s.p.rpc.L1,
 		s.p.proposerPrivKey,
-		s.RpcClient.L1ChainID,
+		s.RPCClient.L1ChainID,
 		fee,
 	)
 	s.Nil(err)
 	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
 
-	nonce, err := s.RpcClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
+	nonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
 	s.Nil(err)
 
 	tx := types.NewTransaction(
@@ -173,9 +173,9 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RpcClient.L1ChainID), s.p.proposerPrivKey)
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L1ChainID), s.p.proposerPrivKey)
 	s.Nil(err)
-	s.Nil(s.RpcClient.L1.SendTransaction(context.Background(), signedTx))
+	s.Nil(s.RPCClient.L1.SendTransaction(context.Background(), signedTx))
 
 	var emptyTxs []types.Transaction
 	encoded, err := rlp.EncodeToBytes(emptyTxs)

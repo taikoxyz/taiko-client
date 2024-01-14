@@ -38,19 +38,19 @@ var (
 		Value:    1 * time.Hour,
 		Category: driverCategory,
 	}
-	CheckPointSyncUrl = &cli.StringFlag{
+	CheckPointSyncURL = &cli.StringFlag{
 		Name:     "p2p.checkPointSyncUrl",
 		Usage:    "HTTP RPC endpoint of another synced L2 execution engine node",
 		Category: driverCategory,
 	}
 )
 
-// All driver flags.
+// DriverFlags All driver flags.
 var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2WSEndpoint,
 	L2AuthEndpoint,
 	JWTSecret,
 	P2PSyncVerifiedBlocks,
 	P2PSyncTimeout,
-	CheckPointSyncUrl,
+	CheckPointSyncURL,
 })

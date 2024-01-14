@@ -19,7 +19,7 @@ const docTemplate = `{
             "name": "MIT",
             "url": "https://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md"
         },
-        "version": "{{.Version}}"
+        "version": "{{.JsonRPC}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",

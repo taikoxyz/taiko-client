@@ -370,7 +370,7 @@ func (p *Proposer) sendProposeBlockTx(
 		}
 	}
 
-	var parentMetaHash [32]byte = [32]byte{}
+	var parentMetaHash = [32]byte{}
 	if p.cfg.IncludeParentMetaHash {
 		state, err := p.rpc.TaikoL1.State(&bind.CallOpts{Context: ctx})
 		if err != nil {
@@ -525,7 +525,7 @@ func (p *Proposer) updateProposingTicker() {
 		duration = *p.proposingInterval
 	} else {
 		// Random number between 12 - 120
-		randomSeconds := rand.Intn(120-11) + 12
+		randomSeconds := rand.Intn(120-11) + 12 // nolint: gosec
 		duration = time.Duration(randomSeconds) * time.Second
 	}
 

@@ -64,7 +64,7 @@ type NewProverServerOpts struct {
 	ProposeConcurrencyGuard  chan struct{}
 	TaikoL1Address           common.Address
 	AssignmentHookAddress    common.Address
-	Rpc                      *rpc.Client
+	RPC                      *rpc.Client
 	ProtocolConfigs          *bindings.TaikoDataConfig
 	LivenessBond             *big.Int
 	IsGuardian               bool
@@ -87,7 +87,7 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		proposeConcurrencyGuard:  opts.ProposeConcurrencyGuard,
 		taikoL1Address:           opts.TaikoL1Address,
 		assignmentHookAddress:    opts.AssignmentHookAddress,
-		rpc:                      opts.Rpc,
+		rpc:                      opts.RPC,
 		protocolConfigs:          opts.ProtocolConfigs,
 		livenessBond:             opts.LivenessBond,
 		isGuardian:               opts.IsGuardian,

@@ -204,7 +204,7 @@ func assignProver(
 		}
 		result = server.ProposeBlockResponse{}
 	)
-	requestUrl, err := url.JoinPath(endpoint.String(), "/assignment")
+	requestURL, err := url.JoinPath(endpoint.String(), "/assignment")
 	if err != nil {
 		return nil, common.Address{}, err
 	}
@@ -218,7 +218,7 @@ func assignProver(
 		SetHeader("Accept", "application/json").
 		SetBody(reqBody).
 		SetResult(&result).
-		Post(requestUrl)
+		Post(requestURL)
 	if err != nil {
 		return nil, common.Address{}, err
 	}

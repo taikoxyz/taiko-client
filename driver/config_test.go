@@ -50,7 +50,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.P2PSyncTimeout.Name, "120s",
 		"--" + flags.RPCTimeout.Name, "5s",
 		"--" + flags.P2PSyncVerifiedBlocks.Name,
-		"--" + flags.CheckPointSyncUrl.Name, "http://localhost:8545",
+		"--" + flags.CheckPointSyncURL.Name, "http://localhost:8545",
 	}))
 }
 
@@ -84,7 +84,7 @@ func (s *DriverTestSuite) SetupApp() *cli.App {
 		&cli.BoolFlag{Name: flags.P2PSyncVerifiedBlocks.Name},
 		&cli.DurationFlag{Name: flags.P2PSyncTimeout.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
-		&cli.StringFlag{Name: flags.CheckPointSyncUrl.Name},
+		&cli.StringFlag{Name: flags.CheckPointSyncURL.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)

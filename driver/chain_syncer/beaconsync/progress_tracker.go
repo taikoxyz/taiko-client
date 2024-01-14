@@ -131,7 +131,7 @@ func (t *SyncProgressTracker) track(ctx context.Context) {
 	}
 }
 
-// UpdateMeta updates the inner beacon sync meta data.
+// UpdateMeta updates the inner beacon sync metadata.
 func (t *SyncProgressTracker) UpdateMeta(id *big.Int, blockHash common.Hash) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
@@ -147,7 +147,7 @@ func (t *SyncProgressTracker) UpdateMeta(id *big.Int, blockHash common.Hash) {
 	t.lastSyncedVerifiedBlockHash = blockHash
 }
 
-// ClearMeta cleans the inner beacon sync meta data.
+// ClearMeta cleans the inner beacon sync metadata.
 func (t *SyncProgressTracker) ClearMeta() {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()

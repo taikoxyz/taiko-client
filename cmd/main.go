@@ -19,7 +19,7 @@ func main() {
 	app.Name = "Taiko Clients"
 	app.Usage = "The taiko client software command line interface"
 	app.Copyright = "Copyright 2021-2022 Taiko Labs"
-	app.Version = version.VersionWithCommit()
+	app.Version = version.CommitVersion()
 	app.Description = "Client software implementation in Golang for Taiko protocol"
 	app.Authors = []*cli.Author{{Name: "Taiko Labs", Email: "info@taiko.xyz"}}
 	app.EnableBashCompletion = true

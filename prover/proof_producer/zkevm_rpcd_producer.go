@@ -40,13 +40,13 @@ type ZkevmRpcdProducer struct {
 
 // RequestProofBody represents the JSON body for requesting the proof.
 type RequestProofBody struct {
-	JsonRPC string                   `json:"jsonrpc"`
+	JsonRPC string                   `json:"jsonrpc"` //nolint:revive,stylecheck
 	ID      *big.Int                 `json:"id"`
 	Method  string                   `json:"method"`
 	Params  []*RequestProofBodyParam `json:"params"`
 }
 
-// RequestProofBody represents the JSON body of RequestProofBody's `param` field.
+// RequestProofBodyParam represents the JSON body of RequestProofBody's `param` field.
 type RequestProofBodyParam struct {
 	Circuit          string            `json:"circuit"`
 	Block            *big.Int          `json:"block"`
@@ -78,7 +78,7 @@ type RequestMetaData struct {
 	ParentMetaHash   string   `json:"parent_metahash"`
 }
 
-// RequestProofBody represents the JSON body of RequestProofBody.Param's `protocol_instance` field.
+// ProtocolInstance represents the JSON body of RequestProofBody.Param's `protocol_instance` field.
 type ProtocolInstance struct {
 	L1SignalService         string           `json:"l1_signal_service"`
 	L2SignalService         string           `json:"l2_signal_service"`
@@ -101,7 +101,7 @@ type ProtocolInstance struct {
 
 // RequestProofBodyResponse represents the JSON body of the response of the proof requests.
 type RequestProofBodyResponse struct {
-	JsonRPC string      `json:"jsonrpc"`
+	JsonRPC string      `json:"jsonrpc"` //nolint:revive,stylecheck
 	ID      *big.Int    `json:"id"`
 	Result  *RpcdOutput `json:"result"`
 	Error   *struct {

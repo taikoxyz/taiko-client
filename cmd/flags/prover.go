@@ -185,7 +185,7 @@ var (
 	}
 )
 
-// All prover flags.
+// ProverFlags All prover flags.
 var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L1HTTPEndpoint,
 	L2WSEndpoint,

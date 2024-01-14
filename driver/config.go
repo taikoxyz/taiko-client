@@ -36,7 +36,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 
 	var (
 		p2pSyncVerifiedBlocks = c.Bool(flags.P2PSyncVerifiedBlocks.Name)
-		l2CheckPoint          = c.String(flags.CheckPointSyncUrl.Name)
+		l2CheckPoint          = c.String(flags.CheckPointSyncURL.Name)
 	)
 
 	if p2pSyncVerifiedBlocks && len(l2CheckPoint) == 0 {

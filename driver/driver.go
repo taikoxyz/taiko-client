@@ -40,7 +40,7 @@ type Driver struct {
 	wg                   sync.WaitGroup
 }
 
-// New initializes the given driver instance based on the command line flags.
+// InitFromCli New initializes the given driver instance based on the command line flags.
 func (d *Driver) InitFromCli(ctx context.Context, c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {
@@ -164,7 +164,7 @@ func (d *Driver) eventLoop() {
 
 // doSync fetches all `BlockProposed` events emitted from local
 // L1 sync cursor to the L1 head, and then applies all corresponding
-// L2 blocks into node's local block chain.
+// L2 blocks into node's local blockchain.
 func (d *Driver) doSync() error {
 	// Check whether the application is closing.
 	if d.ctx.Err() != nil {

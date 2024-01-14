@@ -11,7 +11,7 @@ import (
 var (
 	//lint:ignore ST1005 allow `errMaxPriorityFeePerGasNotFound` to be capitalized.
 	errMaxPriorityFeePerGasNotFound = errors.New(
-		"Method eth_maxPriorityFeePerGas not found",
+		"method eth_maxPriorityFeePerGas not found",
 	)
 
 	// FallbackGasTipCap is the default fallback gasTipCap used when we are

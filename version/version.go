@@ -3,7 +3,7 @@ package version
 // Version info.
 const Version = "0.18.0" // x-release-please-version
 
-var Meta = "dev"
+var meta = "dev"
 
 // Git commit/date info, set via linker flags.
 var (
@@ -11,14 +11,13 @@ var (
 	GitDate   = ""
 )
 
-// VersionWithCommit returns a textual version string including Git commit/date
-// information.
-func VersionWithCommit() string {
-	vsn := Version + "-" + Meta
+// CommitVersion returns a textual version string including Git commit/date information.
+func CommitVersion() string {
+	vsn := Version + "-" + meta
 	if len(GitCommit) >= 8 {
 		vsn += "-" + GitCommit[:8]
 	}
-	if (Meta != "stable") && (GitDate != "") {
+	if (meta != "stable") && (GitDate != "") {
 		vsn += "-" + GitDate
 	}
 	return vsn

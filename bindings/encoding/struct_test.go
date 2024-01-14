@@ -1,9 +1,8 @@
 package encoding
 
 import (
-	cryptoRand "crypto/rand"
+	"crypto/rand"
 	"math/big"
-	"math/rand"
 	"testing"
 	"time"
 
@@ -11,6 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
+
+	"github.com/taikoxyz/taiko-client/common/utils"
 )
 
 var (
@@ -22,15 +23,15 @@ var (
 		TxHash:      randomHash(),
 		ReceiptHash: randomHash(),
 		Bloom:       types.BytesToBloom(randomHash().Bytes()),
-		Difficulty:  new(big.Int).SetUint64(rand.Uint64()),
-		Number:      new(big.Int).SetUint64(rand.Uint64()),
-		GasLimit:    rand.Uint64(),
-		GasUsed:     rand.Uint64(),
+		Difficulty:  new(big.Int).SetUint64(utils.RandUint64(nil)),
+		Number:      new(big.Int).SetUint64(utils.RandUint64(nil)),
+		GasLimit:    utils.RandUint64(nil),
+		GasUsed:     utils.RandUint64(nil),
 		Time:        uint64(time.Now().Unix()),
 		Extra:       randomHash().Bytes(),
 		MixDigest:   randomHash(),
-		Nonce:       types.EncodeNonce(rand.Uint64()),
-		BaseFee:     new(big.Int).SetUint64(rand.Uint64()),
+		Nonce:       types.EncodeNonce(utils.RandUint64(nil)),
+		BaseFee:     new(big.Int).SetUint64(utils.RandUint64(nil)),
 	}
 )
 
@@ -102,7 +103,7 @@ func TestToExecutableData(t *testing.T) {
 // randomHash generates a random blob of data and returns it as a hash.
 func randomHash() common.Hash {
 	var hash common.Hash
-	if n, err := cryptoRand.Read(hash[:]); n != common.HashLength || err != nil {
+	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
 		panic(err)
 	}
 	return hash
@@ -111,7 +112,7 @@ func randomHash() common.Hash {
 // randomBytes generates a random bytes.
 func randomBytes(size int) (b []byte) {
 	b = make([]byte, size)
-	if _, err := cryptoRand.Read(b); err != nil {
+	if _, err := rand.Read(b); err != nil {
 		log.Crit("Generate random bytes error", "error", err)
 	}
 	return

@@ -1,4 +1,4 @@
-package anchorTxConstructor
+package anchortxconstructor
 
 import (
 	"context"
