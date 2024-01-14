@@ -18,6 +18,8 @@ import (
 
 func TestEncodeProverAssignmentPayload(t *testing.T) {
 	encoded, err := EncodeProverAssignmentPayload(
+		randomHash().Big().Uint64(),
+		common.BytesToAddress(randomBytes(20)),
 		common.BytesToAddress(randomBytes(20)),
 		common.BytesToHash(randomBytes(32)),
 		common.BytesToAddress(randomBytes(20)),
