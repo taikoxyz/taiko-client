@@ -775,8 +775,8 @@ func (p *Prover) handleNewBlockProposedEvent(ctx context.Context, e *bindings.Ta
 					"blockID", e.BlockId,
 				)
 				time.AfterFunc(
-					// Add another 12 seconds, to ensure one more L1 block will be mined before the proof submission
-					timeToExpire+12*time.Second,
+					// Add another 60 seconds, to ensure one more L1 block will be mined before the proof submission
+					timeToExpire+60*time.Second,
 					func() { p.proofWindowExpiredCh <- e },
 				)
 			}
