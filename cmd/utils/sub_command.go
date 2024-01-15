@@ -7,9 +7,10 @@ import (
 	"syscall"
 
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikoxyz/taiko-client/cmd/logger"
-	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/urfave/cli/v2"
+
+	"github.com/taikoxyz/taiko-client/cmd/logger"
+	"github.com/taikoxyz/taiko-client/internal/metrics"
 )
 
 type SubcommandApplication interface {

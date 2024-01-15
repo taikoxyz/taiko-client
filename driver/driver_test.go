@@ -10,10 +10,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
+
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/proposer"
-	"github.com/taikoxyz/taiko-client/testutils"
 )
 
 type DriverTestSuite struct {
@@ -51,7 +52,7 @@ func (s *DriverTestSuite) SetupTest() {
 	s.Nil(err)
 
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
-	s.Nil(proposer.InitFromConfig(context.Background(), p, (&proposer.Config{
+	s.Nil(proposer.InitFromConfig(context.Background(), p, &proposer.Config{
 		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
@@ -69,7 +70,7 @@ func (s *DriverTestSuite) SetupTest() {
 		SgxAndPseZkevmTierFee:      common.Big256,
 		MaxTierFeePriceBumps:       3,
 		TierFeePriceBump:           common.Big2,
-	})))
+	}))
 	s.p = p
 }
 

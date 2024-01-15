@@ -12,8 +12,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
+
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/testutils"
+	"github.com/taikoxyz/taiko-client/internal/testutils"
 )
 
 type ProposerTestSuite struct {

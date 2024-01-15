@@ -9,8 +9,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/urfave/cli/v2"
+
+	"github.com/taikoxyz/taiko-client/cmd/flags"
 )
 
 // Config contains the configurations to initialize a Taiko prover.

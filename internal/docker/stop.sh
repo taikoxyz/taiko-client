@@ -2,7 +2,7 @@
 
 
 source scripts/common.sh
-source docker/docker_env.sh
+source internal/docker/docker_env.sh
 
 echo "stop docker compose service: ${DOCKER_SERVICE_LIST[*]}"
 

@@ -11,14 +11,15 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
+
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
 	"github.com/taikoxyz/taiko-client/driver/state"
+	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/proposer"
-	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
-	"github.com/taikoxyz/taiko-client/testutils"
+	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 type ProofSubmitterTestSuite struct {
@@ -27,7 +28,7 @@ type ProofSubmitterTestSuite struct {
 	contester      *ProofContester
 	calldataSyncer *calldata.Syncer
 	proposer       *proposer.Proposer
-	proofCh        chan *proofProducer.ProofWithHeader
+	proofCh        chan *producer.ProofWithHeader
 }
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
@@ -36,11 +37,11 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	s.proofCh = make(chan *proofProducer.ProofWithHeader, 1024)
+	s.proofCh = make(chan *producer.ProofWithHeader, 1024)
 
 	s.submitter, err = New(
 		s.RPCClient,
-		&proofProducer.OptimisticProofProducer{},
+		&producer.OptimisticProofProducer{},
 		s.proofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		l1ProverPrivKey,
@@ -124,11 +125,11 @@ func (s *ProofSubmitterTestSuite) TestProofSubmitterRequestProofDeadlineExceeded
 func (s *ProofSubmitterTestSuite) TestProofSubmitterSubmitProofMetadataNotFound() {
 	s.Error(
 		s.submitter.SubmitProof(
-			context.Background(), &proofProducer.ProofWithHeader{
+			context.Background(), &producer.ProofWithHeader{
 				BlockID: common.Big256,
 				Meta:    &bindings.TaikoDataBlockMetadata{},
 				Header:  &types.Header{},
-				Opts:    &proofProducer.ProofRequestOptions{},
+				Opts:    &producer.ProofRequestOptions{},
 				Proof:   bytes.Repeat([]byte{0xff}, 100),
 			},
 		),
