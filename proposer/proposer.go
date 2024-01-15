@@ -79,7 +79,7 @@ type Proposer struct {
 	cfg *Config
 }
 
-// New initializes the given proposer instance based on the command line flags.
+// InitFromCli New initializes the given proposer instance based on the command line flags.
 func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {

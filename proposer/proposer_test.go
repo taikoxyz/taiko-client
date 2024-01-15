@@ -34,7 +34,7 @@ func (s *ProposerTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.Background())
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
-	s.Nil(InitFromConfig(ctx, p, (&Config{
+	s.Nil(InitFromConfig(ctx, p, &Config{
 		L1Endpoint:                          os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L2Endpoint:                          os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
 		TaikoL1Address:                      common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
@@ -54,7 +54,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		TierFeePriceBump:                    common.Big2,
 		MaxTierFeePriceBumps:                3,
 		ExtraData:                           "test",
-	})))
+	}))
 
 	s.p = p
 	s.cancel = cancel
