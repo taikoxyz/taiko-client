@@ -2,7 +2,6 @@ package encoding
 
 import (
 	"crypto/rand"
-	"github.com/taikoxyz/taiko-client/internal/utils"
 	"math/big"
 	"testing"
 	"time"
@@ -11,6 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
+
+	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 var (

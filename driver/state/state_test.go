@@ -2,7 +2,6 @@ package state
 
 import (
 	"context"
-	"github.com/taikoxyz/taiko-client/internal/utils"
 	"math/big"
 	"testing"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/internal/testutils"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 type DriverStateTestSuite struct {
