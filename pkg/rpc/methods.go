@@ -72,10 +72,11 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 				nodeGenesis.Hash(),
 				common.BytesToHash(l2GenesisHash[:]),
 			)
-		} else {
-			return nil
 		}
+
+		return nil
 	}
+
 	log.Warn("Genesis block not found in TaikoL1")
 
 	return nil
