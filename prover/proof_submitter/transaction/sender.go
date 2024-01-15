@@ -12,10 +12,11 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/internal/metrics"
+	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 var (
@@ -55,7 +56,7 @@ func NewSender(
 // the transaction should not be retried anymore, it will return an `ErrUnretryable` error.
 func (s *Sender) Send(
 	ctx context.Context,
-	proofWithHeader *proofProducer.ProofWithHeader,
+	proofWithHeader *producer.ProofWithHeader,
 	buildTx TxBuilder,
 ) error {
 	var (
@@ -139,7 +140,7 @@ func (s *Sender) Send(
 
 // validateProof checks if the proof's corresponding L1 block is still in the canonical chain and if the
 // latest verified head is not ahead of this block proof.
-func (s *Sender) validateProof(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader) (bool, error) {
+func (s *Sender) validateProof(ctx context.Context, proofWithHeader *producer.ProofWithHeader) (bool, error) {
 	// 1. Check if the corresponding L1 block is still in the canonical chain.
 	l1Header, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(proofWithHeader.Meta.L1Height+1))
 	if err != nil {

@@ -19,7 +19,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/common/utils"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 var (

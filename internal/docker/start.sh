@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source scripts/common.sh
-source docker/docker_env.sh
+source internal/docker/docker_env.sh
 
 # start docker compose service list
 echo "start docker compose service: ${DOCKER_SERVICE_LIST[*]}"

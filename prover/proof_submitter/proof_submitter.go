@@ -12,11 +12,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
+
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/metrics"
+	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	anchorTxValidator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
+	validator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
 )
@@ -29,7 +30,7 @@ type ProofSubmitter struct {
 	rpc             *rpc.Client
 	proofProducer   proofProducer.ProofProducer
 	resultCh        chan *proofProducer.ProofWithHeader
-	anchorValidator *anchorTxValidator.AnchorTxValidator
+	anchorValidator *validator.AnchorTxValidator
 	txBuilder       *transaction.ProveBlockTxBuilder
 	txSender        *transaction.Sender
 	proverAddress   common.Address
@@ -54,7 +55,7 @@ func New(
 	txReplacementTipMultiplier uint64,
 	proveBlockMaxTxGasTipCap *big.Int,
 ) (*ProofSubmitter, error) {
-	anchorValidator, err := anchorTxValidator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
+	anchorValidator, err := validator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
 	if err != nil {
 		return nil, err
 	}

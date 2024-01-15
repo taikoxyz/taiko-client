@@ -3,7 +3,7 @@
 RED='\033[1;31m'
 NC='\033[0m' # No Color
 
-COMPOSE="docker compose -f docker/nodes/docker-compose.yml"
+COMPOSE="docker compose -f internal/docker/nodes/docker-compose.yml"
 
 print_error() {
   local msg="$1"

@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/urfave/cli/v2"
+
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
-	"github.com/urfave/cli/v2"
 )
 
 // Config contains the configurations to initialize a Taiko driver.

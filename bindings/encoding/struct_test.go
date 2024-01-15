@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/require"
 
-	"github.com/taikoxyz/taiko-client/common/utils"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 var (

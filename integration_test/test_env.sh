@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source docker/docker_env.sh
+source internal/docker/docker_env.sh
 source scripts/common.sh
 
 # make sure environment variables are set.
