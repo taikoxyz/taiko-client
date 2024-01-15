@@ -21,13 +21,14 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/metrics"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/internal/metrics"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
 )
 
 var (
@@ -78,7 +79,7 @@ type Proposer struct {
 	cfg *Config
 }
 
-// New initializes the given proposer instance based on the command line flags.
+// InitFromCli New initializes the given proposer instance based on the command line flags.
 func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {

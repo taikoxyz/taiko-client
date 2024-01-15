@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+
 	"github.com/taikoxyz/taiko-client/driver/signer"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )

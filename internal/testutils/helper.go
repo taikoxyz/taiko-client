@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/go-resty/resty/v2"
 	"github.com/phayes/freeport"
+
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/prover/server"
 )

@@ -6,9 +6,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"golang.org/x/sync/errgroup"
 )
 
 // SGXAndZkevmRpcdProducer generates a SGX + PSE ZKEVM proof for the given block.

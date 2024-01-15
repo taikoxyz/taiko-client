@@ -12,9 +12,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
+
 	"github.com/taikoxyz/taiko-client/bindings"
-	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
-	"github.com/taikoxyz/taiko-client/testutils"
+	"github.com/taikoxyz/taiko-client/internal/testutils"
+	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 var (
@@ -53,22 +54,22 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 	meta := &bindings.TaikoDataBlockMetadata{L1Height: l1HeadChild.Number.Uint64(), L1Hash: l1HeadChild.Hash()}
 	s.NotNil(s.sender.Send(
 		context.Background(),
-		&proofProducer.ProofWithHeader{
+		&producer.ProofWithHeader{
 			Meta:    meta,
 			BlockID: common.Big1,
 			Header:  &types.Header{},
-			Opts:    &proofProducer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
+			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
 		func(nonce *big.Int) (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
 	))
 
 	s.Nil(s.sender.Send(
 		context.Background(),
-		&proofProducer.ProofWithHeader{
+		&producer.ProofWithHeader{
 			Meta:    meta,
 			BlockID: common.Big1,
 			Header:  &types.Header{},
-			Opts:    &proofProducer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
+			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
 		func(nonce *big.Int) (*types.Transaction, error) {
 			height, err := s.RPCClient.L1.BlockNumber(context.Background())
