@@ -2,6 +2,7 @@ package calldata
 
 import (
 	"context"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"math/big"
 	"os"
 	"testing"
@@ -13,7 +14,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/common/utils"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/internal/testutils"

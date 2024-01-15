@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"math/big"
 	"os"
 	"strconv"
@@ -19,7 +20,6 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/common/utils"
 )
 
 var (
