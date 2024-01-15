@@ -29,7 +29,7 @@ var (
 	syncProgressRecheckDelay       = 12 * time.Second
 	waitL1OriginPollingInterval    = 3 * time.Second
 	defaultWaitL1OriginTimeout     = 3 * time.Minute
-	defaultMaxTransactionsPerBlock = uint64(150)
+	defaultMaxTransactionsPerBlock = uint64(79)
 )
 
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
@@ -73,7 +73,10 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 				common.BytesToHash(l2GenesisHash[:]),
 			)
 		}
+
+		return nil
 	}
+
 	log.Warn("Genesis block not found in TaikoL1")
 
 	return nil
