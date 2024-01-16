@@ -3,6 +3,7 @@ package proposer
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"math/big"
 	"net/url"
 	"strings"
@@ -17,11 +18,7 @@ import (
 
 // Config contains all configurations to initialize a Taiko proposer.
 type Config struct {
-	L1Endpoint                          string
-	L2Endpoint                          string
-	TaikoL1Address                      common.Address
-	TaikoL2Address                      common.Address
-	TaikoTokenAddress                   common.Address
+	*rpc.ClientConfig
 	AssignmentHookAddress               common.Address
 	L1ProposerPrivKey                   *ecdsa.PrivateKey
 	ExtraData                           string
@@ -31,9 +28,7 @@ type Config struct {
 	ProposeEmptyBlocksInterval          *time.Duration
 	MaxProposedTxListsPerEpoch          uint64
 	ProposeBlockTxGasLimit              *uint64
-	BackOffRetryInterval                time.Duration
 	ProposeBlockTxReplacementMultiplier uint64
-	RPCTimeout                          *time.Duration
 	WaitReceiptTimeout                  time.Duration
 	ProposeBlockTxGasTipCap             *big.Int
 	ProverEndpoints                     []*url.URL
@@ -69,11 +64,11 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proposeEmptyBlocksInterval = &interval
 	}
 
-	localAddresses := []common.Address{}
+	var localAddresses []common.Address
 	if c.IsSet(flags.TxPoolLocals.Name) {
 		for _, account := range strings.Split(c.String(flags.TxPoolLocals.Name), ",") {
 			if trimmed := strings.TrimSpace(account); !common.IsHexAddress(trimmed) {
-				return nil, fmt.Errorf("invalid account in --txpool.locals: %s", trimmed)
+				return nil, fmt.Errorf("invalid account in --txpool.LocalAddresses: %s", trimmed)
 			}
 			localAddresses = append(localAddresses, common.HexToAddress(account))
 		}
@@ -114,11 +109,15 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	return &Config{
-		L1Endpoint:                          c.String(flags.L1WSEndpoint.Name),
-		L2Endpoint:                          c.String(flags.L2HTTPEndpoint.Name),
-		TaikoL1Address:                      common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
-		TaikoL2Address:                      common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-		TaikoTokenAddress:                   common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
+		ClientConfig: &rpc.ClientConfig{
+			L1Endpoint:        c.String(flags.L1WSEndpoint.Name),
+			L2Endpoint:        c.String(flags.L2HTTPEndpoint.Name),
+			TaikoL1Address:    common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
+			TaikoL2Address:    common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
+			TaikoTokenAddress: common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
+			RetryInterval:     c.Duration(flags.BackOffRetryInterval.Name),
+			Timeout:           timeout,
+		},
 		AssignmentHookAddress:               common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		ExtraData:                           c.String(flags.ExtraData.Name),
@@ -128,9 +127,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProposeEmptyBlocksInterval:          proposeEmptyBlocksInterval,
 		MaxProposedTxListsPerEpoch:          c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
 		ProposeBlockTxGasLimit:              proposeBlockTxGasLimit,
-		BackOffRetryInterval:                c.Duration(flags.BackOffRetryInterval.Name),
 		ProposeBlockTxReplacementMultiplier: proposeBlockTxReplacementMultiplier,
-		RPCTimeout:                          timeout,
 		WaitReceiptTimeout:                  c.Duration(flags.WaitReceiptTimeout.Name),
 		ProposeBlockTxGasTipCap:             proposeBlockTxGasTipCap,
 		ProverEndpoints:                     proverEndpoints,

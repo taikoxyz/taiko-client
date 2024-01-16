@@ -3,6 +3,7 @@ package driver
 import (
 	"errors"
 	"fmt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,16 +15,9 @@ import (
 
 // Config contains the configurations to initialize a Taiko driver.
 type Config struct {
-	L1Endpoint            string
-	L2Endpoint            string
-	L2EngineEndpoint      string
-	L2CheckPoint          string
-	TaikoL1Address        common.Address
-	TaikoL2Address        common.Address
-	JwtSecret             string
+	*rpc.ClientConfig
 	P2PSyncVerifiedBlocks bool
 	P2PSyncTimeout        time.Duration
-	BackOffRetryInterval  time.Duration
 	RPCTimeout            *time.Duration
 }
 
@@ -52,16 +46,19 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	return &Config{
-		L1Endpoint:            c.String(flags.L1WSEndpoint.Name),
-		L2Endpoint:            c.String(flags.L2WSEndpoint.Name),
-		L2EngineEndpoint:      c.String(flags.L2AuthEndpoint.Name),
-		L2CheckPoint:          l2CheckPoint,
-		TaikoL1Address:        common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
-		TaikoL2Address:        common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-		JwtSecret:             string(jwtSecret),
+		ClientConfig: &rpc.ClientConfig{
+			L1Endpoint:       c.String(flags.L1WSEndpoint.Name),
+			L2Endpoint:       c.String(flags.L2WSEndpoint.Name),
+			L2CheckPoint:     l2CheckPoint,
+			TaikoL1Address:   common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
+			TaikoL2Address:   common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
+			L2EngineEndpoint: c.String(flags.L2AuthEndpoint.Name),
+			JwtSecret:        string(jwtSecret),
+			RetryInterval:    c.Duration(flags.BackOffRetryInterval.Name),
+			Timeout:          timeout,
+		},
 		P2PSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
 		P2PSyncTimeout:        c.Duration(flags.P2PSyncTimeout.Name),
-		BackOffRetryInterval:  c.Duration(flags.BackOffRetryInterval.Name),
 		RPCTimeout:            timeout,
 	}, nil
 }

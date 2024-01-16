@@ -2,6 +2,7 @@ package calldata
 
 import (
 	"context"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"math/big"
 	"os"
 	"testing"
@@ -47,12 +48,14 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.Nil(err)
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
-	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
-		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+	s.Nil(prop.InitFromConfig(context.Background(), &proposer.Config{
+		ClientConfig: &rpc.ClientConfig{
+			L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+			L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+			TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		},
 		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		ProposeInterval:            &proposeInterval,
@@ -65,7 +68,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		SgxAndPseZkevmTierFee:      common.Big256,
 		MaxTierFeePriceBumps:       3,
 		TierFeePriceBump:           common.Big2,
-	})))
+	}))
 
 	s.p = prop
 }
