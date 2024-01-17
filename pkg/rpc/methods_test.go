@@ -2,12 +2,14 @@ package rpc
 
 import (
 	"context"
+	"crypto/rand"
 	"math/big"
 	"os"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -109,6 +111,40 @@ func TestWaitTillL2ExecutionEngineSyncedNewClient(t *testing.T) {
 	require.Nil(t, err)
 }
 
+func TestGetSyncedL1SnippetFromAnchor(t *testing.T) {
+	client := newTestClient(t)
+
+	l1BlockHash := randomHash()
+	l1SignalRoot := randomHash()
+	l1Height := randomHash().Big().Uint64()
+	parentGasUsed := uint32(randomHash().Big().Uint64())
+
+	key, err := client.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	require.Nil(t, err)
+	testAddrPrivKey, err := crypto.ToECDSA(key.Bytes())
+	require.Nil(t, err)
+
+	opts, err := bind.NewKeyedTransactorWithChainID(testAddrPrivKey, client.L2ChainID)
+	require.Nil(t, err)
+
+	opts.NoSend = true
+	opts.GasLimit = 1_000_000
+
+	tx, err := client.TaikoL2.Anchor(opts, l1BlockHash, l1SignalRoot, l1Height, parentGasUsed)
+	require.Nil(t, err)
+
+	syncedL1BlockHash,
+		syncedL1SignalRoot,
+		syncedL1Height,
+		syncedParentGasUsed,
+		err := client.getSyncedL1SnippetFromAnchor(context.Background(), tx)
+	require.Nil(t, err)
+	require.Equal(t, l1BlockHash, syncedL1BlockHash)
+	require.Equal(t, l1SignalRoot, syncedL1SignalRoot)
+	require.Equal(t, l1Height, syncedL1Height)
+	require.Equal(t, parentGasUsed, syncedParentGasUsed)
+}
+
 func TestWaitTillL2ExecutionEngineSyncedContextErr(t *testing.T) {
 	client := newTestClient(t)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -153,4 +189,13 @@ func TestGetStorageRootNewestBlock(t *testing.T) {
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 		nil)
 	require.Nil(t, err)
+}
+
+// randomHash generates a random blob of data and returns it as a hash.
+func randomHash() common.Hash {
+	var hash common.Hash
+	if n, err := rand.Read(hash[:]); n != common.HashLength || err != nil {
+		panic(err)
+	}
+	return hash
 }

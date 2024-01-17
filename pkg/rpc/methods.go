@@ -472,7 +472,7 @@ func (c *Client) CheckL1ReorgFromL2EE(
 			continue
 		}
 
-		isSyncedL1SnippetValid, err := c.CheckL1ReorgFromAnchor(
+		isSyncedL1SnippetValid, err := c.checkSyncedL1SnippetFromAnchor(
 			ctx, blockID, l1Origin.L1BlockHeight.Uint64(), l1SignalService,
 		)
 		if err != nil {
@@ -502,13 +502,14 @@ func (c *Client) CheckL1ReorgFromL2EE(
 	return reorged, l1CurrentToReset, blockIDToReset, nil
 }
 
-func (c *Client) CheckL1ReorgFromAnchor(
+// checkSyncedL1SnippetFromAnchor checks whether the L1 snippet synced from the anchor transaction is valid.
+func (c *Client) checkSyncedL1SnippetFromAnchor(
 	ctx context.Context,
 	blockID *big.Int,
 	l1Height uint64,
 	l1SignalService common.Address,
 ) (bool, error) {
-	log.Info("Check L1 reorg from anchor", "blockID", blockID)
+	log.Info("Check synced L1 snippet from anchor", "blockID", blockID)
 	block, err := c.L2.BlockByNumber(ctx, blockID)
 	if err != nil {
 		return false, err
@@ -518,7 +519,7 @@ func (c *Client) CheckL1ReorgFromAnchor(
 		return false, err
 	}
 
-	l1BlockHash, l1SignalRoot, l1HeightInAnchor, parentGasUsed, err := c.getSyncedL1SnippetFromAnchcor(
+	l1BlockHash, l1SignalRoot, l1HeightInAnchor, parentGasUsed, err := c.getSyncedL1SnippetFromAnchor(
 		ctx,
 		block.Transactions()[0],
 	)
@@ -554,7 +555,8 @@ func (c *Client) CheckL1ReorgFromAnchor(
 	return false, nil
 }
 
-func (c *Client) getSyncedL1SnippetFromAnchcor(
+// getSyncedL1SnippetFromAnchor parses the anchor transaction calldata, and returns the synced L1 snippet,
+func (c *Client) getSyncedL1SnippetFromAnchor(
 	ctx context.Context,
 	tx *types.Transaction,
 ) (
