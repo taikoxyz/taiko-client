@@ -56,7 +56,7 @@ type ClientConfig struct {
 	L2EngineEndpoint      string
 	JwtSecret             string
 	RetryInterval         time.Duration
-	Timeout               *time.Duration
+	Timeout               time.Duration
 	BackOffMaxRetry       uint64
 }
 
@@ -83,13 +83,8 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		l1RPC *EthClient
 		l2RPC *EthClient
 	)
-	if cfg.Timeout != nil {
-		l1RPC = NewEthClientWithTimeout(l1EthClient, *cfg.Timeout)
-		l2RPC = NewEthClientWithTimeout(l2EthClient, *cfg.Timeout)
-	} else {
-		l1RPC = NewEthClientWithDefaultTimeout(l1EthClient)
-		l2RPC = NewEthClientWithDefaultTimeout(l2EthClient)
-	}
+	l1RPC = NewEthClientWithTimeout(l1EthClient, cfg.Timeout)
+	l2RPC = NewEthClientWithTimeout(l2EthClient, cfg.Timeout)
 
 	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1RPC)
 	if err != nil {
@@ -175,12 +170,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		if cfg.Timeout != nil {
-			l2CheckPoint = NewEthClientWithTimeout(l2CheckPointEthClient, *cfg.Timeout)
-		} else {
-			l2CheckPoint = NewEthClientWithDefaultTimeout(l2CheckPointEthClient)
-		}
+		l2CheckPoint = NewEthClientWithTimeout(l2CheckPointEthClient, cfg.Timeout)
 	}
 
 	client := &Client{

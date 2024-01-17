@@ -31,7 +31,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
 		s.Equal(120*time.Second, c.P2PSyncTimeout)
-		s.Equal(rpcTimeout, *c.RPCTimeout)
+		s.Equal(rpcTimeout, c.RPCTimeout)
 		s.NotEmpty(c.JwtSecret)
 		s.Nil(new(Driver).InitFromCli(context.Background(), ctx))
 		s.True(c.P2PSyncVerifiedBlocks)

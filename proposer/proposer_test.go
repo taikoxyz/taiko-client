@@ -2,7 +2,6 @@ package proposer
 
 import (
 	"context"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"math/big"
 	"os"
 	"testing"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 type ProposerTestSuite struct {

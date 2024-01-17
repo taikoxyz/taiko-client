@@ -3,7 +3,6 @@ package proposer
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"math/big"
 	"net/url"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // Config contains all configurations to initialize a Taiko proposer.
@@ -88,12 +88,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		)
 	}
 
-	var timeout *time.Duration
-	if c.IsSet(flags.RPCTimeout.Name) {
-		duration := c.Duration(flags.RPCTimeout.Name)
-		timeout = &duration
-	}
-
 	var proposeBlockTxGasTipCap *big.Int
 	if c.IsSet(flags.ProposeBlockTxGasTipCap.Name) {
 		proposeBlockTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProposeBlockTxGasTipCap.Name))
@@ -116,7 +110,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			TaikoL2Address:    common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 			TaikoTokenAddress: common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
 			RetryInterval:     c.Duration(flags.BackOffRetryInterval.Name),
-			Timeout:           timeout,
+			Timeout:           c.Duration(flags.RPCTimeout.Name),
 		},
 		AssignmentHookAddress:               common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,

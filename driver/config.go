@@ -3,7 +3,6 @@ package driver
 import (
 	"errors"
 	"fmt"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // Config contains the configurations to initialize a Taiko driver.
@@ -18,7 +18,7 @@ type Config struct {
 	*rpc.ClientConfig
 	P2PSyncVerifiedBlocks bool
 	P2PSyncTimeout        time.Duration
-	RPCTimeout            *time.Duration
+	RPCTimeout            time.Duration
 }
 
 // NewConfigFromCliContext creates a new config instance from
@@ -38,13 +38,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, errors.New("empty L2 check point URL")
 	}
 
-	var timeout *time.Duration
-
-	if c.IsSet(flags.RPCTimeout.Name) {
-		duration := c.Duration(flags.RPCTimeout.Name)
-		timeout = &duration
-	}
-
+	var timeout = c.Duration(flags.RPCTimeout.Name)
 	return &Config{
 		ClientConfig: &rpc.ClientConfig{
 			L1Endpoint:       c.String(flags.L1WSEndpoint.Name),

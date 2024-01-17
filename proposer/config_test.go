@@ -48,7 +48,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(1, len(c.LocalAddresses))
 		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
 		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
-		s.Equal(5*time.Second, *c.Timeout)
+		s.Equal(5*time.Second, c.Timeout)
 		s.Equal(10*time.Second, c.WaitReceiptTimeout)
 		s.Equal(uint64(tierFee), c.OptimisticTierFee.Uint64())
 		s.Equal(uint64(tierFee), c.SgxTierFee.Uint64())

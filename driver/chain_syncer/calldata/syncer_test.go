@@ -2,7 +2,6 @@ package calldata
 
 import (
 	"context"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"math/big"
 	"os"
 	"testing"
@@ -18,6 +17,7 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/internal/utils"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 )
 

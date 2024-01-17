@@ -2,7 +2,6 @@ package driver
 
 import (
 	"context"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"math/big"
 	"os"
 	"testing"
@@ -15,6 +14,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 )
 
