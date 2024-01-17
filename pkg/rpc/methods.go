@@ -19,7 +19,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
@@ -498,6 +497,7 @@ func (c *Client) CheckL1ReorgFromL2EE(
 		"l1CurrentToResetNumber", l1CurrentToReset.Number,
 		"l1CurrentToResetHash", l1CurrentToReset.Hash(),
 		"blockIDToReset", blockIDToReset,
+	)
 
 	return reorged, l1CurrentToReset, blockIDToReset, nil
 }
