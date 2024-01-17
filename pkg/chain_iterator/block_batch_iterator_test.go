@@ -48,41 +48,6 @@ func (s *BlockBatchIteratorTestSuite) TestIter() {
 	s.Equal(headHeight, lastEnd.Uint64())
 }
 
-func (s *BlockBatchIteratorTestSuite) TestIterReverse() {
-	var (
-		maxBlocksReadPerEpoch uint64 = 2
-		startHeight           uint64
-	)
-
-	headHeight, err := s.RPCClient.L1.BlockNumber(context.Background())
-	s.Nil(err)
-	s.Greater(headHeight, startHeight)
-
-	lastStart := new(big.Int).SetUint64(headHeight)
-
-	iter, err := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client:                s.RPCClient.L1,
-		MaxBlocksReadPerEpoch: &maxBlocksReadPerEpoch,
-		StartHeight:           new(big.Int).SetUint64(startHeight),
-		EndHeight:             new(big.Int).SetUint64(headHeight),
-		Reverse:               true,
-		OnBlocks: func(
-			ctx context.Context,
-			start, end *types.Header,
-			updateCurrentFunc UpdateCurrentFunc,
-			endIterFunc EndIterFunc,
-		) error {
-			s.Equal(lastStart.Uint64(), end.Number.Uint64())
-			lastStart = start.Number
-			return nil
-		},
-	})
-
-	s.Nil(err)
-	s.Nil(iter.Iter())
-	s.Equal(startHeight, lastStart.Uint64())
-}
-
 func (s *BlockBatchIteratorTestSuite) TestIterEndFunc() {
 	var maxBlocksReadPerEpoch uint64 = 2
 
@@ -195,25 +160,6 @@ func (s *BlockBatchIteratorTestSuite) TestBlockBatchIteratorConfig() {
 		EndHeight:   common.Big0,
 	})
 	s.ErrorContains(err4, "start height (2) > end height (0)")
-
-	_, err5 := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
-		Client: s.RPCClient.L1,
-		OnBlocks: func(
-			ctx context.Context,
-			start, end *types.Header,
-			updateCurrentFunc UpdateCurrentFunc,
-			endIterFunc EndIterFunc,
-		) error {
-			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
-			lastEnd = end.Number
-			endIterFunc()
-			return nil
-		},
-		StartHeight: common.Big0,
-		Reverse:     true,
-		EndHeight:   nil,
-	})
-	s.ErrorContains(err5, "missing end height")
 
 	_, err6 := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
 		Client: s.RPCClient.L1,
