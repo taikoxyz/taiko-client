@@ -19,6 +19,8 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 var (
@@ -386,7 +388,11 @@ func (c *Client) GetStorageRoot(
 
 // CheckL1ReorgFromL2EE checks whether the L1 chain has been reorged from the L1Origin records in L2 EE,
 // if so, returns the l1Current cursor and L2 blockID that need to reset to.
-func (c *Client) CheckL1ReorgFromL2EE(ctx context.Context, blockID *big.Int) (bool, *types.Header, *big.Int, error) {
+func (c *Client) CheckL1ReorgFromL2EE(
+	ctx context.Context,
+	blockID *big.Int,
+	l1SignalService common.Address,
+) (bool, *types.Header, *big.Int, error) {
 	var (
 		reorged          bool
 		l1CurrentToReset *types.Header
@@ -467,6 +473,20 @@ func (c *Client) CheckL1ReorgFromL2EE(ctx context.Context, blockID *big.Int) (bo
 			continue
 		}
 
+		isSyncedL1SnippetValid, err := c.CheckL1ReorgFromAnchor(
+			ctx, blockID, l1Origin.L1BlockHeight.Uint64(), l1SignalService,
+		)
+		if err != nil {
+			return false, nil, nil, fmt.Errorf("failed to check L1 reorg from anchor transaction: %w", err)
+		}
+
+		if !isSyncedL1SnippetValid {
+			log.Info("Reorg detected due to invalid L1 snippet", "blockID", blockID)
+			reorged = true
+			blockID = new(big.Int).Sub(blockID, common.Big1)
+			continue
+		}
+
 		l1CurrentToReset = l1Header
 		blockIDToReset = l1Origin.BlockID
 		break
@@ -478,9 +498,121 @@ func (c *Client) CheckL1ReorgFromL2EE(ctx context.Context, blockID *big.Int) (bo
 		"l1CurrentToResetNumber", l1CurrentToReset.Number,
 		"l1CurrentToResetHash", l1CurrentToReset.Hash(),
 		"blockIDToReset", blockIDToReset,
-	)
 
 	return reorged, l1CurrentToReset, blockIDToReset, nil
+}
+
+func (c *Client) CheckL1ReorgFromAnchor(
+	ctx context.Context,
+	blockID *big.Int,
+	l1Height uint64,
+	l1SignalService common.Address,
+) (bool, error) {
+	log.Info("Check L1 reorg from anchor", "blockID", blockID)
+	block, err := c.L2.BlockByNumber(ctx, blockID)
+	if err != nil {
+		return false, err
+	}
+	parent, err := c.L2.BlockByHash(ctx, block.ParentHash())
+	if err != nil {
+		return false, err
+	}
+
+	l1BlockHash, l1SignalRoot, l1HeightInAnchor, parentGasUsed, err := c.getSyncedL1SnippetFromAnchcor(
+		ctx,
+		block.Transactions()[0],
+	)
+	if err != nil {
+		return false, err
+	}
+
+	if l1HeightInAnchor != l1Height {
+		log.Info("Reorg detected due to L1 height mismatch", "blockID", blockID)
+		return true, nil
+	}
+
+	if parentGasUsed != uint32(parent.GasUsed()) {
+		log.Info("Reorg detected due to parent gas used mismatch", "blockID", blockID)
+		return true, nil
+	}
+
+	l1Header, err := c.L1.HeaderByHash(ctx, l1BlockHash)
+	if err != nil {
+		return false, err
+	}
+
+	currentRoot, err := c.GetStorageRoot(ctx, c.L1GethClient, l1SignalService, l1Header.Number)
+	if err != nil {
+		return false, err
+	}
+
+	if currentRoot != l1SignalRoot {
+		log.Info("Reorg detected due to L1 signal root mismatch", "blockID", blockID)
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (c *Client) getSyncedL1SnippetFromAnchcor(
+	ctx context.Context,
+	tx *types.Transaction,
+) (
+	l1BlockHash common.Hash,
+	l1SignalRoot common.Hash,
+	l1Height uint64,
+	parentGasUsed uint32,
+	err error,
+) {
+	method, err := encoding.TaikoL2ABI.MethodById(tx.Data())
+	if err != nil {
+		return common.Hash{}, common.Hash{}, 0, 0, err
+	}
+
+	if method.Name != "anchor" {
+		return common.Hash{}, common.Hash{}, 0, 0, fmt.Errorf("invalid method name for anchor transaction: %s", method.Name)
+	}
+
+	args := map[string]interface{}{}
+
+	if err := method.Inputs.UnpackIntoMap(args, tx.Data()[4:]); err != nil {
+		return common.Hash{}, common.Hash{}, 0, 0, err
+	}
+
+	l1BlockHash, ok := args["l1BlockHash"].([32]byte)
+	if !ok {
+		return common.Hash{},
+			common.Hash{},
+			0,
+			0,
+			fmt.Errorf("failed to parse l1BlockHash from anchor transaction calldata")
+	}
+	l1SignalRoot, ok = args["l1SignalRoot"].([32]byte)
+	if !ok {
+		return common.Hash{},
+			common.Hash{},
+			0,
+			0,
+			fmt.Errorf("failed to parse l1SignalRoot from anchor transaction calldata")
+	}
+	l1Height, ok = args["l1Height"].(uint64)
+	if !ok {
+		return common.Hash{},
+			common.Hash{},
+			0,
+			0,
+			fmt.Errorf("failed to parse l1Height from anchor transaction calldata")
+	}
+	parentGasUsed, ok = args["parentGasUsed"].(uint32)
+	if !ok {
+		return common.Hash{},
+			common.Hash{},
+			0,
+			0,
+			fmt.Errorf("failed to parse parentGasUsed from anchor transaction calldata")
+	}
+
+	return l1BlockHash, l1SignalRoot, l1Height, parentGasUsed, nil
 }
 
 // CheckL1ReorgFromL1Cursor checks whether the L1 chain has been reorged from the given l1Current cursor,
