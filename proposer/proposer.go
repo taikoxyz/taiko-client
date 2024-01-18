@@ -325,9 +325,7 @@ func (p *Proposer) sendProposeBlockTx(
 	if nonce != nil {
 		opts.Nonce = new(big.Int).SetUint64(*nonce)
 	}
-	if p.ProposeBlockTxGasLimit != nil {
-		opts.GasLimit = *p.ProposeBlockTxGasLimit
-	}
+	opts.GasLimit = p.ProposeBlockTxGasLimit
 	if isReplacement {
 		if opts, err = rpc.IncreaseGasTipCap(
 			ctx,

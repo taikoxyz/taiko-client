@@ -119,7 +119,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		GuardianProverAddress: cfg.GuardianProverAddress,
 		RetryInterval:         cfg.BackOffRetryInterval,
 		Timeout:               cfg.RPCTimeout,
-		BackOffMaxRetries:     p.cfg.BackOffMaxRetrys,
+		BackOffMaxRetries:     cfg.BackOffMaxRetrys,
 	}); err != nil {
 		return err
 	}

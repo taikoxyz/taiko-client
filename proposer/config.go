@@ -27,7 +27,7 @@ type Config struct {
 	LocalAddressesOnly                  bool
 	ProposeEmptyBlocksInterval          *time.Duration
 	MaxProposedTxListsPerEpoch          uint64
-	ProposeBlockTxGasLimit              *uint64
+	ProposeBlockTxGasLimit              uint64
 	ProposeBlockTxReplacementMultiplier uint64
 	WaitReceiptTimeout                  time.Duration
 	ProposeBlockTxGasTipCap             *big.Int
@@ -74,12 +74,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		}
 	}
 
-	var proposeBlockTxGasLimit *uint64
-	if c.IsSet(flags.ProposeBlockTxGasLimit.Name) {
-		gasLimit := c.Uint64(flags.ProposeBlockTxGasLimit.Name)
-		proposeBlockTxGasLimit = &gasLimit
-	}
-
 	proposeBlockTxReplacementMultiplier := c.Uint64(flags.ProposeBlockTxReplacementMultiplier.Name)
 	if proposeBlockTxReplacementMultiplier == 0 {
 		return nil, fmt.Errorf(
@@ -120,7 +114,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		LocalAddressesOnly:                  c.Bool(flags.TxPoolLocalsOnly.Name),
 		ProposeEmptyBlocksInterval:          proposeEmptyBlocksInterval,
 		MaxProposedTxListsPerEpoch:          c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
-		ProposeBlockTxGasLimit:              proposeBlockTxGasLimit,
+		ProposeBlockTxGasLimit:              c.Uint64(flags.ProposeBlockTxGasLimit.Name),
 		ProposeBlockTxReplacementMultiplier: proposeBlockTxReplacementMultiplier,
 		WaitReceiptTimeout:                  c.Duration(flags.WaitReceiptTimeout.Name),
 		ProposeBlockTxGasTipCap:             proposeBlockTxGasTipCap,
