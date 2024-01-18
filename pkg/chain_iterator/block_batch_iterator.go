@@ -63,7 +63,6 @@ type BlockBatchIteratorConfig struct {
 	StartHeight           *big.Int
 	EndHeight             *big.Int
 	OnBlocks              OnBlocksFunc
-	Reverse               bool
 	ReorgRewindDepth      *uint64
 	RetryInterval         *time.Duration
 }
