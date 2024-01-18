@@ -113,7 +113,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
 		"--" + flags.ProposeInterval.Name, proposeInterval,
 		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
 		"--" + flags.TxPoolLocals.Name, "notAnAddress",
-	}), "invalid account in --txpool.LocalAddresses")
+	}), "invalid account in --txpool.locals")
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
