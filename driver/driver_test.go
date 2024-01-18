@@ -148,7 +148,11 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
 
-	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(context.Background(), l2Head2.Number)
+	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(
+		context.Background(),
+		l2Head2.Number,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
+	)
 	s.Nil(err)
 	s.False(reorged)
 
@@ -207,7 +211,11 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
 
-	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(context.Background(), l2Head2.Number)
+	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(
+		context.Background(),
+		l2Head2.Number,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
+	)
 	s.Nil(err)
 	s.False(reorged)
 
@@ -263,7 +271,11 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
 
-	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(context.Background(), l2Head2.Number)
+	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(
+		context.Background(),
+		l2Head2.Number,
+		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
+	)
 	s.Nil(err)
 	s.False(reorged)
 

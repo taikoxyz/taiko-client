@@ -64,6 +64,7 @@ type Prover struct {
 	l1Current              *types.Header
 	reorgDetectedFlag      bool
 	tiers                  []*rpc.TierProviderTierWithID
+	l1SignalService        common.Address
 
 	// Proof submitters
 	proofSubmitters []proofSubmitter.Submitter
@@ -131,6 +132,14 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.protocolConfigs = &protocolConfigs
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
+
+	if p.l1SignalService, err = p.rpc.TaikoL1.Resolve0(
+		&bind.CallOpts{Context: ctx},
+		rpc.StringToBytes32("signal_service"),
+		false,
+	); err != nil {
+		return fmt.Errorf("failed to resolve L1 signal service address: %w", err)
+	}
 
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 
@@ -551,6 +560,7 @@ func (p *Prover) onBlockProposed(
 	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1ReorgFromL2EE(
 		ctx,
 		new(big.Int).Sub(event.BlockId, common.Big1),
+		p.l1SignalService,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to check whether L1 chain was reorged from L2EE (eventID %d): %w", event.BlockId, err)
