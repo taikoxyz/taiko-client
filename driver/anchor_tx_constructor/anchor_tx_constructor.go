@@ -153,3 +153,8 @@ func (c *AnchorTxConstructor) signTxPayload(hash []byte) ([]byte, error) {
 func (c *AnchorTxConstructor) GasLimit() uint64 {
 	return anchorGasLimit
 }
+
+// SignalServiceAddress returns protocol's L1 singalService constant address.
+func (c *AnchorTxConstructor) SignalServiceAddress() common.Address {
+	return c.signalServiceAddress
+}
