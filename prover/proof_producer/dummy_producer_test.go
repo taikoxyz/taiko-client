@@ -13,13 +13,6 @@ import (
 )
 
 func TestDummyProducerRequestProof(t *testing.T) {
-	producer := &DummyProofProducer{}
-
-	resCh := make(chan *ProofWithHeader, 1)
-
-	var tier uint16 = 1024
-
-	blockID := common.Big32
 	header := &types.Header{
 		ParentHash:  randHash(),
 		UncleHash:   randHash(),
@@ -36,17 +29,22 @@ func TestDummyProducerRequestProof(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, producer.RequestProof(
+
+	var (
+		producer        = &DummyProofProducer{}
+		tier     uint16 = 1024
+		blockID         = common.Big32
+	)
+	res, err := producer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
 		&bindings.TaikoDataBlockMetadata{},
 		header,
 		tier,
-		resCh,
-	))
+	)
+	require.Nil(t, err)
 
-	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
 	require.Equal(t, tier, res.Tier)

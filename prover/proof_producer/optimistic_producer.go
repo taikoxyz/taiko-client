@@ -21,8 +21,7 @@ func (o *OptimisticProofProducer) RequestProof(
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,
 	header *types.Header,
-	resultCh chan *ProofWithHeader,
-) error {
+) (*ProofWithHeader, error) {
 	log.Info(
 		"Request optimistic proof",
 		"blockID", blockID,
@@ -31,7 +30,7 @@ func (o *OptimisticProofProducer) RequestProof(
 		"hash", header.Hash(),
 	)
 
-	return o.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, o.Tier(), resultCh)
+	return o.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, o.Tier())
 }
 
 // Tier implements the ProofProducer interface.

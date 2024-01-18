@@ -151,8 +151,7 @@ func (p *ZkevmRpcdProducer) RequestProof(
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,
 	header *types.Header,
-	resultCh chan *ProofWithHeader,
-) error {
+) (*ProofWithHeader, error) {
 	log.Info(
 		"Request proof from zkevm-chain proverd service",
 		"blockID", blockID,
@@ -162,7 +161,7 @@ func (p *ZkevmRpcdProducer) RequestProof(
 	)
 
 	if p.DummyProofProducer != nil {
-		return p.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, p.Tier(), resultCh)
+		return p.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, p.Tier())
 	}
 
 	var (
@@ -176,14 +175,16 @@ func (p *ZkevmRpcdProducer) RequestProof(
 		proof, degree, err = p.callProverDaemon(ctx, opts, meta)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if proof, err = encoding.EncodeZKEvmProof(proof); err != nil {
-		return err
+		return nil, err
 	}
 
-	resultCh <- &ProofWithHeader{
+	metrics.ProverPseProofGeneratedCounter.Inc(1)
+
+	return &ProofWithHeader{
 		BlockID: blockID,
 		Header:  header,
 		Meta:    meta,
@@ -191,11 +192,7 @@ func (p *ZkevmRpcdProducer) RequestProof(
 		Degree:  degree,
 		Opts:    opts,
 		Tier:    p.Tier(),
-	}
-
-	metrics.ProverPseProofGeneratedCounter.Inc(1)
-
-	return nil
+	}, nil
 }
 
 // callProverDaemon keeps polling the proverd service to get the requested proof.

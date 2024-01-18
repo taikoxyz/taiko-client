@@ -14,11 +14,6 @@ import (
 )
 
 func TestGuardianProducerRequestProof(t *testing.T) {
-	producer := &GuardianProofProducer{}
-
-	resCh := make(chan *ProofWithHeader, 1)
-
-	blockID := common.Big32
 	header := &types.Header{
 		ParentHash:  randHash(),
 		UncleHash:   randHash(),
@@ -35,16 +30,20 @@ func TestGuardianProducerRequestProof(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, producer.RequestProof(
+
+	var (
+		producer = &GuardianProofProducer{}
+		blockID  = common.Big32
+	)
+	res, err := producer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
 		&bindings.TaikoDataBlockMetadata{},
 		header,
-		resCh,
-	))
+	)
+	require.Nil(t, err)
 
-	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
 	require.Equal(t, res.Tier, encoding.TierGuardianID)

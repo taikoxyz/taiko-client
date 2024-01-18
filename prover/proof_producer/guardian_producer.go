@@ -22,8 +22,7 @@ func (g *GuardianProofProducer) RequestProof(
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,
 	header *types.Header,
-	resultCh chan *ProofWithHeader,
-) error {
+) (*ProofWithHeader, error) {
 	log.Info(
 		"Request guardian proof",
 		"blockID", blockID,
@@ -32,7 +31,7 @@ func (g *GuardianProofProducer) RequestProof(
 		"hash", header.Hash(),
 	)
 
-	return g.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, g.Tier(), resultCh)
+	return g.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, g.Tier())
 }
 
 // Tier implements the ProofProducer interface.
