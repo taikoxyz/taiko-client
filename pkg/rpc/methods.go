@@ -472,14 +472,14 @@ func (c *Client) CheckL1ReorgFromL2EE(
 			continue
 		}
 
-		isSyncedL1SnippetValid, err := c.checkSyncedL1SnippetFromAnchor(
+		isSyncedL1SnippetInvalid, err := c.checkSyncedL1SnippetFromAnchor(
 			ctx, blockID, l1Origin.L1BlockHeight.Uint64(), l1SignalService,
 		)
 		if err != nil {
 			return false, nil, nil, fmt.Errorf("failed to check L1 reorg from anchor transaction: %w", err)
 		}
 
-		if !isSyncedL1SnippetValid {
+		if isSyncedL1SnippetInvalid {
 			log.Info("Reorg detected due to invalid L1 snippet", "blockID", blockID)
 			reorged = true
 			blockID = new(big.Int).Sub(blockID, common.Big1)
@@ -527,19 +527,39 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 		return false, err
 	}
 
-	if l1HeightInAnchor != l1Height {
-		log.Info("Reorg detected due to L1 height mismatch", "blockID", blockID)
+	if l1HeightInAnchor+1 != l1Height {
+		log.Info(
+			"Reorg detected due to L1 height mismatch",
+			"blockID", blockID,
+			"l1HeightInAnchor", l1HeightInAnchor,
+			"l1Height", l1Height,
+		)
 		return true, nil
 	}
 
 	if parentGasUsed != uint32(parent.GasUsed()) {
-		log.Info("Reorg detected due to parent gas used mismatch", "blockID", blockID)
+		log.Info(
+			"Reorg detected due to parent gas used mismatch",
+			"blockID", blockID,
+			"parentGasUsedInAnchor", parentGasUsed,
+			"parentGasUsed", parent.GasUsed(),
+		)
 		return true, nil
 	}
 
-	l1Header, err := c.L1.HeaderByHash(ctx, l1BlockHash)
+	l1Header, err := c.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(l1HeightInAnchor))
 	if err != nil {
 		return false, err
+	}
+
+	if l1Header.Hash() != l1BlockHash {
+		log.Info(
+			"Reorg detected due to L1 block hash mismatch",
+			"blockID", blockID,
+			"l1BlockHashInAnchor", l1BlockHash,
+			"l1BlockHash", l1Header.Hash(),
+		)
+		return true, nil
 	}
 
 	currentRoot, err := c.GetStorageRoot(ctx, c.L1GethClient, l1SignalService, l1Header.Number)
@@ -548,7 +568,12 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 	}
 
 	if currentRoot != l1SignalRoot {
-		log.Info("Reorg detected due to L1 signal root mismatch", "blockID", blockID)
+		log.Info(
+			"Reorg detected due to L1 signal root mismatch",
+			"blockID", blockID,
+			"l1SignalRootInAnchor", l1SignalRoot,
+			"l1SignalRoot", currentRoot,
+		)
 		return true, nil
 	}
 
