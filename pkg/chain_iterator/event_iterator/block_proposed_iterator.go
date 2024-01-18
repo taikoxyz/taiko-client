@@ -42,7 +42,6 @@ type BlockProposedIteratorConfig struct {
 	StartHeight           *big.Int
 	EndHeight             *big.Int
 	FilterQuery           []*big.Int
-	Reverse               bool
 	OnBlockProposedEvent  OnBlockProposedEvent
 }
 
@@ -64,7 +63,6 @@ func NewBlockProposedIterator(ctx context.Context, cfg *BlockProposedIteratorCon
 		MaxBlocksReadPerEpoch: cfg.MaxBlocksReadPerEpoch,
 		StartHeight:           cfg.StartHeight,
 		EndHeight:             cfg.EndHeight,
-		Reverse:               cfg.Reverse,
 		OnBlocks: assembleBlockProposedIteratorCallback(
 			cfg.Client,
 			cfg.TaikoL1,

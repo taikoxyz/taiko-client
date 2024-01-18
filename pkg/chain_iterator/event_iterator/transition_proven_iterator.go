@@ -42,7 +42,6 @@ type TransitionProvenIteratorConfig struct {
 	StartHeight           *big.Int
 	EndHeight             *big.Int
 	FilterQuery           []*big.Int
-	Reverse               bool
 	OnTransitionProved    OnTransitionProved
 }
 
@@ -67,7 +66,6 @@ func NewTransitionProvedIterator(
 		MaxBlocksReadPerEpoch: cfg.MaxBlocksReadPerEpoch,
 		StartHeight:           cfg.StartHeight,
 		EndHeight:             cfg.EndHeight,
-		Reverse:               cfg.Reverse,
 		OnBlocks: assembleTransitionProvedIteratorCallback(
 			cfg.Client,
 			cfg.TaikoL1,

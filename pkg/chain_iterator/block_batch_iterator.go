@@ -52,7 +52,6 @@ type BlockBatchIterator struct {
 	current            *types.Header
 	onBlocks           OnBlocksFunc
 	isEnd              bool
-	reverse            bool
 	reorgRewindDepth   uint64
 	retryInterval      time.Duration
 }
@@ -64,7 +63,6 @@ type BlockBatchIteratorConfig struct {
 	StartHeight           *big.Int
 	EndHeight             *big.Int
 	OnBlocks              OnBlocksFunc
-	Reverse               bool
 	ReorgRewindDepth      *uint64
 	RetryInterval         *time.Duration
 }
@@ -97,11 +95,7 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 		return nil, fmt.Errorf("failed to get start header, height: %s, error: %w", cfg.StartHeight, err)
 	}
 
-	var endHeader *types.Header
-	if cfg.Reverse && cfg.EndHeight == nil {
-		return nil, fmt.Errorf("missing end height")
-	}
-	if endHeader, err = cfg.Client.HeaderByNumber(ctx, cfg.EndHeight); err != nil {
+	if _, err = cfg.Client.HeaderByNumber(ctx, cfg.EndHeight); err != nil {
 		return nil, fmt.Errorf("failed to get end header, height: %s, error: %w", cfg.EndHeight, err)
 	}
 
@@ -111,13 +105,7 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 		chainID:     chainID,
 		startHeight: cfg.StartHeight.Uint64(),
 		onBlocks:    cfg.OnBlocks,
-		reverse:     cfg.Reverse,
-	}
-
-	if cfg.Reverse {
-		iterator.current = endHeader
-	} else {
-		iterator.current = startHeader
+		current:     startHeader,
 	}
 
 	if cfg.MaxBlocksReadPerEpoch != nil {
@@ -143,11 +131,6 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 // Iter iterates the given chain between the given start and end heights,
 // will call the callback when a batch of blocks in chain are iterated.
 func (i *BlockBatchIterator) Iter() error {
-	iterFunc := i.iter
-	if i.reverse {
-		iterFunc = i.reverseIter
-	}
-
 	iterOp := func() error {
 		for {
 			if i.ctx.Err() != nil {
@@ -159,7 +142,7 @@ func (i *BlockBatchIterator) Iter() error {
 				)
 				break
 			}
-			if err := iterFunc(); err != nil {
+			if err := i.iter(); err != nil {
 				if errors.Is(err, io.EOF) {
 					break
 				}
@@ -225,49 +208,6 @@ func (i *BlockBatchIterator) iter() (err error) {
 	}
 
 	i.current = endHeader
-
-	if !isLastEpoch && !i.isEnd {
-		return errContinue
-	}
-
-	return io.EOF
-}
-
-func (i *BlockBatchIterator) reverseIter() (err error) {
-	if err := i.ensureCurrentNotReorged(); err != nil {
-		return fmt.Errorf("failed to check whether iterator.current cursor has been reorged: %w", err)
-	}
-
-	var (
-		startHeight uint64
-		startHeader *types.Header
-		isLastEpoch bool
-	)
-
-	if i.current.Number.Uint64() <= i.startHeight {
-		return io.EOF
-	}
-
-	if i.current.Number.Uint64() <= i.blocksReadPerEpoch {
-		startHeight = 0
-	} else {
-		startHeight = i.current.Number.Uint64() - i.blocksReadPerEpoch
-	}
-
-	if startHeight <= i.startHeight {
-		startHeight = i.startHeight
-		isLastEpoch = true
-	}
-
-	if startHeader, err = i.client.HeaderByNumber(i.ctx, new(big.Int).SetUint64(startHeight)); err != nil {
-		return err
-	}
-
-	if err := i.onBlocks(i.ctx, startHeader, i.current, i.updateCurrent, i.end); err != nil {
-		return err
-	}
-
-	i.current = startHeader
 
 	if !isLastEpoch && !i.isEnd {
 		return errContinue
