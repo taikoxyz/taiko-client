@@ -132,6 +132,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
+
+	chBufferSize := p.protocolConfigs.BlockMaxProposals
+	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
+	p.proofWindowExpiredCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
 
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
@@ -439,7 +443,6 @@ func (p *Prover) eventLoop() {
 	blockVerifiedSub := rpc.SubscribeBlockVerified(p.rpc.TaikoL1, blockVerifiedCh)
 	transitionProvedSub := rpc.SubscribeTransitionProved(p.rpc.TaikoL1, transitionProvedCh)
 	transitionContestedSub := rpc.SubscribeTransitionContested(p.rpc.TaikoL1, transitionContestedCh)
-
 	defer func() {
 		blockProposedSub.Unsubscribe()
 		blockVerifiedSub.Unsubscribe()
