@@ -68,7 +68,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	if c.IsSet(flags.TxPoolLocals.Name) {
 		for _, account := range strings.Split(c.String(flags.TxPoolLocals.Name), ",") {
 			if trimmed := strings.TrimSpace(account); !common.IsHexAddress(trimmed) {
-				return nil, fmt.Errorf("invalid account in --txpool.LocalAddresses: %s", trimmed)
+				return nil, fmt.Errorf("invalid account in --txpool.locals: %s", trimmed)
 			}
 			localAddresses = append(localAddresses, common.HexToAddress(account))
 		}
