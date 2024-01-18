@@ -37,9 +37,8 @@ type Driver struct {
 	l1HeadSub  event.Subscription
 	syncNotify chan struct{}
 
-	RetryInterval time.Duration
-	ctx           context.Context
-	wg            sync.WaitGroup
+	ctx context.Context
+	wg  sync.WaitGroup
 }
 
 // InitFromCli New initializes the given driver instance based on the command line flags.
