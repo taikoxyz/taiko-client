@@ -223,10 +223,18 @@ func GetBlockProofStatus(
 	}
 
 	if proverAddress == transition.Prover {
-		log.Info("📬 Block's proof has already been submitted by current prover", "blockID", id)
+		log.Info(
+			"📬 Block's proof has already been submitted by current prover",
+			"blockID", id,
+			"parent", parent.Hash().Hex(),
+			"hash", common.Bytes2Hex(transition.BlockHash[:]),
+			"signalRoot", common.Bytes2Hex(transition.SignalRoot[:]),
+			"timestamp", transition.Timestamp,
+			"contester", transition.Contester,
+		)
 		return &BlockProofStatus{
 			IsSubmitted:            true,
-			Invalid:                false,
+			Invalid:                transition.Contester != ZeroAddress,
 			ParentHeader:           parent,
 			CurrentTransitionState: &transition,
 		}, nil
@@ -236,12 +244,16 @@ func GetBlockProofStatus(
 		"📬 Block's proof has already been submitted by another prover",
 		"blockID", id,
 		"prover", transition.Prover,
+		"parent", parent.Hash().Hex(),
+		"hash", common.Bytes2Hex(transition.BlockHash[:]),
+		"signalRoot", common.Bytes2Hex(transition.SignalRoot[:]),
 		"timestamp", transition.Timestamp,
+		"contester", transition.Contester,
 	)
 
 	return &BlockProofStatus{
 		IsSubmitted:            true,
-		Invalid:                false,
+		Invalid:                transition.Contester != ZeroAddress,
 		ParentHeader:           parent,
 		CurrentTransitionState: &transition,
 	}, nil
