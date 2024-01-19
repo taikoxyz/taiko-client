@@ -169,6 +169,10 @@ var (
 			Type: "bytes32",
 		},
 		{
+			Name: "parentMetaHash",
+			Type: "bytes32",
+		},
+		{
 			Name: "tierFees",
 			Type: "tuple[]",
 			Components: []abi.ArgumentMarshaling{
@@ -246,6 +250,7 @@ var (
 		{Name: "taikoAddress", Type: addressType},
 		{Name: "assignmentHookAddress", Type: addressType},
 		{Name: "metaHash", Type: bytes32Type},
+		{Name: "parentMetaHash", Type: bytes32Type},
 		{Name: "blobHash", Type: bytes32Type},
 		{Name: "assignment.feeToken", Type: addressType},
 		{Name: "assignment.expiry", Type: uint64Type},
@@ -334,6 +339,7 @@ func EncodeProverAssignmentPayload(
 		chainID,
 		taikoAddress,
 		assignmentHookAddress,
+		common.Hash{},
 		common.Hash{},
 		txListHash,
 		feeToken,
