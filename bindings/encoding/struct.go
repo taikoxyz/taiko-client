@@ -65,13 +65,14 @@ type TierFee struct {
 
 // ProverAssignment should be same with TaikoData.ProverAssignment.
 type ProverAssignment struct {
-	FeeToken      common.Address
-	Expiry        uint64
-	MaxBlockId    uint64 // nolint: revive,stylecheck
-	MaxProposedIn uint64
-	MetaHash      [32]byte
-	TierFees      []TierFee
-	Signature     []byte
+	FeeToken       common.Address
+	Expiry         uint64
+	MaxBlockId     uint64 // nolint: revive,stylecheck
+	MaxProposedIn  uint64
+	MetaHash       [32]byte
+	ParentMetaHash [32]byte
+	TierFees       []TierFee
+	Signature      []byte
 }
 
 // AssignmentHookInput should be same as AssignmentHook.Input
