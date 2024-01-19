@@ -7,8 +7,7 @@ services:
     restart: unless-stopped
     pull_policy: always
     ports:
-      - "18545:8545"
-      - "18546:8545"
+      - "8545"
     entrypoint:
       - anvil
       - --host
@@ -22,9 +21,9 @@ services:
     volumes:
       - .:/host
     ports:
-      - "28545:8545"
-      - "28546:8546"
-      - "28551:8551"
+      - "8545"
+      - "8546"
+      - "8551"
     command:
       - --nodiscover
       - --gcmode
