@@ -10,7 +10,10 @@ export L2_EXECUTION_ENGINE_WS_ENDPOINT=ws://localhost:$(docker port l2_node | aw
 export L2_EXECUTION_ENGINE_AUTH_ENDPOINT=http://localhost:$(docker port l2_node | awk -F ':' 'NR==3 {print $2}')
 export JWT_SECRET=$DIR/nodes/jwt.hex
 
-export DOCKER_SERVICE_LIST=("l1_node" "l2_execution_engine")
+# check until L1 chain is ready
+until cast chain-id --rpc-url "$L2_EXECUTION_ENGINE_HTTP_ENDPOINT" 2> /dev/null; do
+    sleep 1
+done
 
 echo -e "L1_NODE PORTS: \n$(docker port l1_node)"
 echo -e "L2_NODE PORTS: \n$(docker port l2_node)"

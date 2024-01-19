@@ -1,18 +1,13 @@
 #!/bin/bash
 
 source scripts/common.sh
-source internal/docker/docker_env.sh
+
+DOCKER_SERVICE_LIST=("l1_node" "l2_execution_engine")
 
 # start docker compose service list
 echo "start docker compose service: ${DOCKER_SERVICE_LIST[*]}"
 
 compose_up "${DOCKER_SERVICE_LIST[@]}"
-
-# check until L1 chain is ready
-until cast chain-id --rpc-url "$L2_EXECUTION_ENGINE_HTTP_ENDPOINT" 2> /dev/null; do
-    source internal/docker/docker_env.sh
-    sleep 1
-done
 
 # show all the running containers
 echo
