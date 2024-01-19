@@ -1,8 +1,8 @@
 #!/bin/bash
 
-
 source scripts/common.sh
-source internal/docker/docker_env.sh
+
+DOCKER_SERVICE_LIST=("l1_node" "l2_execution_engine")
 
 echo "stop docker compose service: ${DOCKER_SERVICE_LIST[*]}"
 
