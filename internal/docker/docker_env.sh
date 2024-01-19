@@ -12,6 +12,9 @@ export JWT_SECRET=$DIR/nodes/jwt.hex
 
 export DOCKER_SERVICE_LIST=("l1_node" "l2_execution_engine")
 
+echo -e "L1_NODE PORTS: \n$(docker port l1_node)"
+echo -e "L2_NODE PORTS: \n$(docker port l2_node)"
+
 echo "L1_NODE_HTTP_ENDPOINT: $L1_NODE_HTTP_ENDPOINT"
 echo "L1_NODE_WS_ENDPOINT: $L1_NODE_WS_ENDPOINT"
 echo "L2_EXECUTION_ENGINE_HTTP_ENDPOINT: $L2_EXECUTION_ENGINE_HTTP_ENDPOINT"
