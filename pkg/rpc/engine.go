@@ -18,7 +18,7 @@ type EngineClient struct {
 }
 
 func NewJWTEngineClient(url, jwtSecret string) (*EngineClient, error) {
-	var jwt = common.HexToHash(jwtSecret)
+	var jwt = StringToBytes32(jwtSecret)
 	if jwt == (common.Hash{}) || url == "" {
 		return nil, fmt.Errorf("url is empty or jwt secret is illegal")
 	}
