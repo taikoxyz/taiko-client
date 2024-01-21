@@ -107,6 +107,7 @@ var (
 		Name:     "rpc.timeout",
 		Usage:    "Timeout in seconds for RPC calls",
 		Category: commonCategory,
+		Value:    1 * time.Minute,
 	}
 	WaitReceiptTimeout = &cli.DurationFlag{
 		Name:     "rpc.waitReceiptTimeout",

@@ -44,22 +44,14 @@ type Proposer struct {
 	// RPC clients
 	rpc *rpc.Client
 
+	*Config
 	// Private keys and account addresses
-	proposerPrivKey *ecdsa.PrivateKey
 	proposerAddress common.Address
 
-	// Proposing configurations
-	proposingInterval          *time.Duration
-	proposeEmptyBlocksInterval *time.Duration
-	proposingTimer             *time.Timer
-	locals                     []common.Address
-	localsOnly                 bool
-	maxProposedTxListsPerEpoch uint64
-	proposeBlockTxGasLimit     *uint64
-	txReplacementTipMultiplier uint64
-	proposeBlockTxGasTipCap    *big.Int
-	tiers                      []*rpc.TierProviderTierWithID
-	tierFees                   []encoding.TierFee
+	proposingTimer *time.Timer
+
+	tiers    []*rpc.TierProviderTierWithID
+	tierFees []encoding.TierFee
 
 	// Prover selector
 	proverSelector selector.ProverSelector
@@ -73,10 +65,6 @@ type Proposer struct {
 
 	ctx context.Context
 	wg  sync.WaitGroup
-
-	waitReceiptTimeout time.Duration
-
-	cfg *Config
 }
 
 // InitFromCli New initializes the given proposer instance based on the command line flags.
@@ -86,36 +74,18 @@ func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
 		return err
 	}
 
-	return InitFromConfig(ctx, p, cfg)
+	return p.InitFromConfig(ctx, cfg)
 }
 
 // InitFromConfig initializes the proposer instance based on the given configurations.
-func InitFromConfig(ctx context.Context, p *Proposer, cfg *Config) (err error) {
-	p.proposerPrivKey = cfg.L1ProposerPrivKey
+func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 	p.proposerAddress = crypto.PubkeyToAddress(cfg.L1ProposerPrivKey.PublicKey)
-	p.proposingInterval = cfg.ProposeInterval
-	p.proposeEmptyBlocksInterval = cfg.ProposeEmptyBlocksInterval
-	p.proposeBlockTxGasLimit = cfg.ProposeBlockTxGasLimit
 	p.wg = sync.WaitGroup{}
-	p.locals = cfg.LocalAddresses
-	p.localsOnly = cfg.LocalAddressesOnly
-	p.maxProposedTxListsPerEpoch = cfg.MaxProposedTxListsPerEpoch
-	p.txReplacementTipMultiplier = cfg.ProposeBlockTxReplacementMultiplier
-	p.proposeBlockTxGasTipCap = cfg.ProposeBlockTxGasTipCap
 	p.ctx = ctx
-	p.waitReceiptTimeout = cfg.WaitReceiptTimeout
-	p.cfg = cfg
+	p.Config = cfg
 
 	// RPC clients
-	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
-		L1Endpoint:        cfg.L1Endpoint,
-		L2Endpoint:        cfg.L2Endpoint,
-		TaikoL1Address:    cfg.TaikoL1Address,
-		TaikoL2Address:    cfg.TaikoL2Address,
-		TaikoTokenAddress: cfg.TaikoTokenAddress,
-		RetryInterval:     cfg.BackOffRetryInterval,
-		Timeout:           cfg.RPCTimeout,
-	}); err != nil {
+	if p.rpc, err = rpc.NewClient(p.ctx, cfg.ClientConfig); err != nil {
 		return fmt.Errorf("initialize rpc clients error: %w", err)
 	}
 
@@ -184,8 +154,8 @@ func (p *Proposer) eventLoop() {
 					continue
 				}
 				// if no new transactions and empty block interval has passed, propose an empty block
-				if p.proposeEmptyBlocksInterval != nil {
-					if time.Now().Before(lastNonEmptyBlockProposedAt.Add(*p.proposeEmptyBlocksInterval)) {
+				if p.ProposeEmptyBlocksInterval != nil {
+					if time.Now().Before(lastNonEmptyBlockProposedAt.Add(*p.ProposeEmptyBlocksInterval)) {
 						continue
 					}
 
@@ -246,14 +216,14 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		baseFee,
 		p.protocolConfigs.BlockMaxGasLimit,
 		p.protocolConfigs.BlockMaxTxListBytes.Uint64(),
-		p.locals,
-		p.maxProposedTxListsPerEpoch,
+		p.LocalAddresses,
+		p.MaxProposedTxListsPerEpoch,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
 	}
 
-	if p.localsOnly {
+	if p.LocalAddressesOnly {
 		var (
 			localTxsLists []types.Transactions
 			signer        = types.LatestSignerForChainID(p.rpc.L2ChainID)
@@ -266,7 +236,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 					return err
 				}
 
-				for _, localAddress := range p.locals {
+				for _, localAddress := range p.LocalAddresses {
 					if sender == localAddress {
 						filtered = append(filtered, tx)
 					}
@@ -292,7 +262,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	}
 	nonce, err := p.rpc.L1Client.NonceAt(
 		ctx,
-		crypto.PubkeyToAddress(p.proposerPrivKey.PublicKey),
+		crypto.PubkeyToAddress(p.L1ProposerPrivKey.PublicKey),
 		new(big.Int).SetUint64(head),
 	)
 	if err != nil {
@@ -305,7 +275,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	for i, txs := range txLists {
 		func(i int, txs types.Transactions) {
 			g.Go(func() error {
-				if i >= int(p.maxProposedTxListsPerEpoch) {
+				if i >= int(p.MaxProposedTxListsPerEpoch) {
 					return nil
 				}
 
@@ -348,31 +318,29 @@ func (p *Proposer) sendProposeBlockTx(
 	isReplacement bool,
 ) (*types.Transaction, error) {
 	// Propose the transactions list
-	opts, err := getTxOpts(ctx, p.rpc.L1Client, p.proposerPrivKey, p.rpc.L1ChainID, maxFee)
+	opts, err := getTxOpts(ctx, p.rpc.L1Client, p.L1ProposerPrivKey, p.rpc.L1ChainID, maxFee)
 	if err != nil {
 		return nil, err
 	}
 	if nonce != nil {
 		opts.Nonce = new(big.Int).SetUint64(*nonce)
 	}
-	if p.proposeBlockTxGasLimit != nil {
-		opts.GasLimit = *p.proposeBlockTxGasLimit
-	}
+	opts.GasLimit = p.ProposeBlockTxGasLimit
 	if isReplacement {
 		if opts, err = rpc.IncreaseGasTipCap(
 			ctx,
 			p.rpc,
 			opts,
 			p.proposerAddress,
-			new(big.Int).SetUint64(p.txReplacementTipMultiplier),
-			p.proposeBlockTxGasTipCap,
+			new(big.Int).SetUint64(p.ProposeBlockTxReplacementMultiplier),
+			p.ProposeBlockTxGasTipCap,
 		); err != nil {
 			return nil, err
 		}
 	}
 
 	var parentMetaHash = [32]byte{}
-	if p.cfg.IncludeParentMetaHash {
+	if p.IncludeParentMetaHash {
 		state, err := p.rpc.TaikoL1.State(&bind.CallOpts{Context: ctx})
 		if err != nil {
 			return nil, err
@@ -399,13 +367,13 @@ func (p *Proposer) sendProposeBlockTx(
 	}
 
 	hookCalls = append(hookCalls, encoding.HookCall{
-		Hook: p.cfg.AssignmentHookAddress,
+		Hook: p.AssignmentHookAddress,
 		Data: hookInputData,
 	})
 
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		AssignedProver:    assignedProver,
-		ExtraData:         rpc.StringToBytes32(p.cfg.ExtraData),
+		ExtraData:         rpc.StringToBytes32(p.ExtraData),
 		TxListByteOffset:  common.Big0,
 		TxListByteSize:    common.Big0,
 		BlobHash:          [32]byte{},
@@ -491,7 +459,7 @@ func (p *Proposer) ProposeTxList(
 		return err
 	}
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, p.waitReceiptTimeout)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, p.WaitReceiptTimeout)
 	defer cancel()
 
 	if _, err := rpc.WaitReceipt(ctxWithTimeout, p.rpc.L1Client, tx); err != nil {
@@ -522,8 +490,8 @@ func (p *Proposer) updateProposingTicker() {
 	}
 
 	var duration time.Duration
-	if p.proposingInterval != nil {
-		duration = *p.proposingInterval
+	if p.ProposeInterval != nil {
+		duration = *p.ProposeInterval
 	} else {
 		// Random number between 12 - 120
 		randomSeconds := rand.Intn(120-11) + 12 // nolint: gosec
@@ -553,13 +521,13 @@ func (p *Proposer) initTierFees() error {
 
 		switch tier.ID {
 		case encoding.TierOptimisticID:
-			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.cfg.OptimisticTierFee})
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.OptimisticTierFee})
 		case encoding.TierSgxID:
-			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.cfg.SgxTierFee})
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.SgxTierFee})
 		case encoding.TierPseZkevmID:
-			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.cfg.PseZkevmTierFee})
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.PseZkevmTierFee})
 		case encoding.TierSgxAndPseZkevmID:
-			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.cfg.SgxAndPseZkevmTierFee})
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.SgxAndPseZkevmTierFee})
 		case encoding.TierGuardianID:
 			// Guardian prover should not charge any fee.
 			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: common.Big0})

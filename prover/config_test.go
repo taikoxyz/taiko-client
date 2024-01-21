@@ -43,7 +43,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal("", c.Graffiti)
 		s.True(c.ProveUnassignedBlocks)
 		s.True(c.ContesterMode)
-		s.Equal(rpcTimeout, *c.RPCTimeout)
+		s.Equal(rpcTimeout, c.RPCTimeout)
 		s.Equal(uint64(8), c.Capacity)
 		s.Equal(uint64(minTierFee), c.MinOptimisticTierFee.Uint64())
 		s.Equal(uint64(minTierFee), c.MinSgxTierFee.Uint64())

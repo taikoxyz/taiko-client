@@ -47,8 +47,8 @@ type ClientConfig struct {
 	L2EngineEndpoint      string
 	JwtSecret             string
 	RetryInterval         time.Duration
-	Timeout               *time.Duration
-	BackOffMaxRetrys      *big.Int
+	Timeout               time.Duration
+	BackOffMaxRetries     uint64
 }
 
 // NewClient initializes all RPC clients used by Taiko client software.
@@ -66,9 +66,8 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	if cfg.BackOffMaxRetrys == nil {
-		defaultRetrys := new(big.Int).SetInt64(10)
-		cfg.BackOffMaxRetrys = defaultRetrys
+	if cfg.BackOffMaxRetries == 0 {
+		cfg.BackOffMaxRetries = 10
 	}
 
 	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, L1Client)

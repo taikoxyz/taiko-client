@@ -15,6 +15,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 type ProposerTestSuite struct {
@@ -34,12 +35,14 @@ func (s *ProposerTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.Background())
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
-	s.Nil(InitFromConfig(ctx, p, &Config{
-		L1Endpoint:                          os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                          os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:                      common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                      common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:                   common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+	s.Nil(p.InitFromConfig(ctx, &Config{
+		ClientConfig: &rpc.ClientConfig{
+			L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+			L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+			TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		},
 		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		ProposeInterval:                     &proposeInterval,
@@ -115,8 +118,8 @@ func (s *ProposerTestSuite) TestProposeOp() {
 }
 
 func (s *ProposerTestSuite) TestProposeOpLocalsOnly() {
-	s.p.locals = []common.Address{common.BytesToAddress(testutils.RandomBytes(20))}
-	s.p.localsOnly = true
+	s.p.LocalAddresses = []common.Address{common.BytesToAddress(testutils.RandomBytes(20))}
+	s.p.LocalAddressesOnly = true
 
 	// Propose txs in L2Client execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
@@ -152,7 +155,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	opts, err := getTxOpts(
 		context.Background(),
 		s.p.rpc.L1Client,
-		s.p.proposerPrivKey,
+		s.p.L1ProposerPrivKey,
 		s.RPCClient.L1ChainID,
 		fee,
 	)
@@ -174,7 +177,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L1ChainID), s.p.proposerPrivKey)
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L1ChainID), s.p.L1ProposerPrivKey)
 	s.Nil(err)
 	s.Nil(s.RPCClient.L1Client.SendTransaction(context.Background(), signedTx))
 
@@ -209,15 +212,15 @@ func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
 	_, _, fee, err := s.p.proverSelector.AssignProver(context.Background(), s.p.tierFees, testutils.RandomHash())
 
 	s.Nil(err)
-	s.Equal(fee.Uint64(), s.p.cfg.OptimisticTierFee.Uint64())
+	s.Equal(fee.Uint64(), s.p.OptimisticTierFee.Uint64())
 }
 
 func (s *ProposerTestSuite) TestUpdateProposingTicker() {
 	oneHour := 1 * time.Hour
-	s.p.proposingInterval = &oneHour
+	s.p.ProposeInterval = &oneHour
 	s.NotPanics(s.p.updateProposingTicker)
 
-	s.p.proposingInterval = nil
+	s.p.ProposeInterval = nil
 	s.NotPanics(s.p.updateProposingTicker)
 }
 

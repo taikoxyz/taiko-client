@@ -14,6 +14,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 )
 
@@ -27,37 +28,41 @@ type DriverTestSuite struct {
 func (s *DriverTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	// Init driver
+	// InitFromConfig driver
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
 	s.Nil(err)
 	s.NotEmpty(jwtSecret)
 
 	d := new(Driver)
 	ctx, cancel := context.WithCancel(context.Background())
-	s.Nil(InitFromConfig(ctx, d, &Config{
-		L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2EngineEndpoint: os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
-		TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		JwtSecret:        string(jwtSecret),
+	s.Nil(d.InitFromConfig(ctx, &Config{
+		ClientConfig: &rpc.ClientConfig{
+			L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
+			L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+			L2EngineEndpoint: os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
+			TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+			TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+			JwtSecret:        string(jwtSecret),
+		},
 	}))
 	s.d = d
 	s.cancel = cancel
 
-	// Init proposer
+	// InitFromConfig proposer
 	p := new(proposer.Proposer)
 
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
-	s.Nil(proposer.InitFromConfig(context.Background(), p, &proposer.Config{
-		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+	s.Nil(p.InitFromConfig(context.Background(), &proposer.Config{
+		ClientConfig: &rpc.ClientConfig{
+			L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+			L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+			TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		},
 		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		ProposeInterval:            &proposeInterval,

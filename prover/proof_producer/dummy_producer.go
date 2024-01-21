@@ -21,9 +21,8 @@ func (o *DummyProofProducer) RequestProof(
 	meta *bindings.TaikoDataBlockMetadata,
 	header *types.Header,
 	tier uint16,
-	resultCh chan *ProofWithHeader,
-) error {
-	resultCh <- &ProofWithHeader{
+) (*ProofWithHeader, error) {
+	return &ProofWithHeader{
 		BlockID: blockID,
 		Meta:    meta,
 		Header:  header,
@@ -31,7 +30,5 @@ func (o *DummyProofProducer) RequestProof(
 		Degree:  CircuitsIdx,
 		Opts:    opts,
 		Tier:    tier,
-	}
-
-	return nil
+	}, nil
 }

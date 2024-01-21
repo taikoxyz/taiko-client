@@ -84,8 +84,7 @@ func (s *SGXProofProducer) RequestProof(
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,
 	header *types.Header,
-	resultCh chan *ProofWithHeader,
-) error {
+) (*ProofWithHeader, error) {
 	log.Info(
 		"Request proof from raiko-host service",
 		"blockID", blockID,
@@ -95,15 +94,17 @@ func (s *SGXProofProducer) RequestProof(
 	)
 
 	if s.DummyProofProducer != nil {
-		return s.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, s.Tier(), resultCh)
+		return s.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, s.Tier())
 	}
 
 	proof, err := s.callProverDaemon(ctx, opts)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	resultCh <- &ProofWithHeader{
+	metrics.ProverSgxProofGeneratedCounter.Inc(1)
+
+	return &ProofWithHeader{
 		BlockID: blockID,
 		Header:  header,
 		Meta:    meta,
@@ -111,11 +112,7 @@ func (s *SGXProofProducer) RequestProof(
 		Degree:  0,
 		Opts:    opts,
 		Tier:    s.Tier(),
-	}
-
-	metrics.ProverSgxProofGeneratedCounter.Inc(1)
-
-	return nil
+	}, nil
 }
 
 // callProverDaemon keeps polling the proverd service to get the requested proof.

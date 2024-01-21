@@ -37,7 +37,7 @@ type Config struct {
 	BackOffRetryInterval                    time.Duration
 	ProveUnassignedBlocks                   bool
 	ContesterMode                           bool
-	RPCTimeout                              *time.Duration
+	RPCTimeout                              time.Duration
 	WaitReceiptTimeout                      time.Duration
 	ProveBlockGasLimit                      *uint64
 	ProveBlockTxReplacementMultiplier       uint64
@@ -68,12 +68,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	var startingBlockID *big.Int
 	if c.IsSet(flags.StartingBlockID.Name) {
 		startingBlockID = new(big.Int).SetUint64(c.Uint64(flags.StartingBlockID.Name))
-	}
-
-	var timeout *time.Duration
-	if c.IsSet(flags.RPCTimeout.Name) {
-		duration := c.Duration(flags.RPCTimeout.Name)
-		timeout = &duration
 	}
 
 	var proveBlockTxGasLimit *uint64
@@ -152,7 +146,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		BackOffRetryInterval:                    c.Duration(flags.BackOffRetryInterval.Name),
 		ProveUnassignedBlocks:                   c.Bool(flags.ProveUnassignedBlocks.Name),
 		ContesterMode:                           c.Bool(flags.ContesterMode.Name),
-		RPCTimeout:                              timeout,
+		RPCTimeout:                              c.Duration(flags.RPCTimeout.Name),
 		WaitReceiptTimeout:                      c.Duration(flags.WaitReceiptTimeout.Name),
 		ProveBlockGasLimit:                      proveBlockTxGasLimit,
 		Capacity:                                c.Uint64(flags.ProverCapacity.Name),

@@ -2,11 +2,9 @@ package rpc
 
 import (
 	"context"
-	"math/big"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
@@ -19,7 +17,7 @@ func DialClientWithBackoff(
 	ctx context.Context,
 	url string,
 	retryInterval time.Duration,
-	maxRetrys *big.Int) (*ethclient.Client, error) {
+	maxRetrys uint64) (*ethclient.Client, error) {
 	var client *ethclient.Client
 	if err := backoff.Retry(
 		func() (err error) {
@@ -34,7 +32,7 @@ func DialClientWithBackoff(
 
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewConstantBackOff(retryInterval), maxRetrys.Uint64()),
+		backoff.WithMaxRetries(backoff.NewConstantBackOff(retryInterval), maxRetrys),
 	); err != nil {
 		return nil, err
 	}
@@ -49,7 +47,7 @@ func DialEngineClientWithBackoff(
 	url string,
 	jwtSecret string,
 	retryInterval time.Duration,
-	maxRetrys *big.Int,
+	maxRetry uint64,
 ) (*EngineClient, error) {
 	var engineClient *EngineClient
 	if err := backoff.Retry(
@@ -57,7 +55,7 @@ func DialEngineClientWithBackoff(
 			ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 			defer cancel()
 
-			jwtAuth := node.NewJWTAuth(common.HexToHash(jwtSecret))
+			jwtAuth := node.NewJWTAuth(StringToBytes32(jwtSecret))
 			client, err := rpc.DialOptions(ctxWithTimeout, url, rpc.WithHTTPAuth(jwtAuth))
 			if err != nil {
 				log.Error("Dial engine client error", "url", url, "error", err)
@@ -67,7 +65,7 @@ func DialEngineClientWithBackoff(
 			engineClient = &EngineClient{client}
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewConstantBackOff(retryInterval), maxRetrys.Uint64()),
+		backoff.WithMaxRetries(backoff.NewConstantBackOff(retryInterval), maxRetry),
 	); err != nil {
 		return nil, err
 	}
