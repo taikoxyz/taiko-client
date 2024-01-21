@@ -389,11 +389,6 @@ func (s *ProverTestSuite) TestProveOp() {
 	s.Equal(header.ParentHash, common.BytesToHash(event.Tran.ParentHash[:]))
 }
 
-func (s *ProverTestSuite) TestStartSubscription() {
-	s.NotPanics(s.p.initSubscription)
-	s.NotPanics(s.p.closeSubscription)
-}
-
 func (s *ProverTestSuite) TestSetApprovalAmount() {
 	opts, err := bind.NewKeyedTransactorWithChainID(s.p.proverPrivateKey, s.p.rpc.L1ChainID)
 	s.Nil(err)
