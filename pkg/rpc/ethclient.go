@@ -30,13 +30,13 @@ type EthClient struct {
 	timeout time.Duration
 }
 
-func NewEthClient(url string, timeout time.Duration) (*EthClient, error) {
+func NewEthClient(ctx context.Context, url string, timeout time.Duration) (*EthClient, error) {
 	var timeoutVal = defaultTimeout
 	if timeout != 0 {
 		timeoutVal = timeout
 	}
 
-	client, err := rpc.Dial(url)
+	client, err := rpc.DialContext(ctx, url)
 	if err != nil {
 		return nil, err
 	}

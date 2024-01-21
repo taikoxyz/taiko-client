@@ -56,12 +56,12 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	L1Client, err := NewEthClient(cfg.L1Endpoint, cfg.Timeout)
+	L1Client, err := NewEthClient(ctxWithTimeout, cfg.L1Endpoint, cfg.Timeout)
 	if err != nil {
 		return nil, err
 	}
 
-	L2Client, err := NewEthClient(cfg.L2Endpoint, cfg.Timeout)
+	L2Client, err := NewEthClient(ctxWithTimeout, cfg.L2Endpoint, cfg.Timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 
 	var l2CheckPoint *EthClient
 	if cfg.L2CheckPoint != "" {
-		l2CheckPoint, err = NewEthClient(cfg.L2CheckPoint, cfg.Timeout)
+		l2CheckPoint, err = NewEthClient(ctxWithTimeout, cfg.L2CheckPoint, cfg.Timeout)
 		if err != nil {
 			return nil, err
 		}
