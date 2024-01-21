@@ -19,25 +19,25 @@ var (
 var (
 	L1WSEndpoint = &cli.StringFlag{
 		Name:     "l1.ws",
-		Usage:    "Websocket RPC endpoint of a L1 ethereum node",
+		Usage:    "Websocket RPC endpoint of a L1Client ethereum node",
 		Required: true,
 		Category: commonCategory,
 	}
 	L2WSEndpoint = &cli.StringFlag{
 		Name:     "l2.ws",
-		Usage:    "Websocket RPC endpoint of a L2 taiko-geth execution engine",
+		Usage:    "Websocket RPC endpoint of a L2Client taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
 	}
 	L1HTTPEndpoint = &cli.StringFlag{
 		Name:     "l1.http",
-		Usage:    "HTTP RPC endpoint of a L1 ethereum node",
+		Usage:    "HTTP RPC endpoint of a L1Client ethereum node",
 		Required: true,
 		Category: commonCategory,
 	}
 	L2HTTPEndpoint = &cli.StringFlag{
 		Name:     "l2.http",
-		Usage:    "HTTP RPC endpoint of a L2 taiko-geth execution engine",
+		Usage:    "HTTP RPC endpoint of a L2Client taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
 	}

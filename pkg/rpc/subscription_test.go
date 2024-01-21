@@ -54,7 +54,7 @@ func TestSubscribeTransitionContested(t *testing.T) {
 
 func TestSubscribeChainHead(t *testing.T) {
 	require.NotNil(t, SubscribeChainHead(
-		newTestClient(t).L1,
+		newTestClient(t).L1Client,
 		make(chan *types.Header, 1024)),
 	)
 }

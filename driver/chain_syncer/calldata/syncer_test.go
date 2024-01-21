@@ -36,7 +36,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		context.Background(),
 		s.RPCClient,
 		state,
-		beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 1*time.Hour),
+		beaconsync.NewSyncProgressTracker(s.RPCClient.L2Client, 1*time.Hour),
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
@@ -84,13 +84,13 @@ func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
 }
 
 func (s *CalldataSyncerTestSuite) TestProcessL1Blocks() {
-	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
+	head, err := s.s.rpc.L1Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Nil(s.s.ProcessL1Blocks(context.Background(), head))
 }
 
 func (s *CalldataSyncerTestSuite) TestProcessL1BlocksReorg() {
-	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
+	head, err := s.s.rpc.L1Client.HeaderByNumber(context.Background(), nil)
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
 	s.Nil(err)
 	s.Nil(s.s.ProcessL1Blocks(context.Background(), head))
@@ -110,9 +110,9 @@ func (s *CalldataSyncerTestSuite) TestOnBlockProposed() {
 }
 
 func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
-	parent, err := s.s.rpc.L2.HeaderByNumber(context.Background(), nil)
+	parent, err := s.s.rpc.L2Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	l1Head, err := s.s.rpc.L1.BlockByNumber(context.Background(), nil)
+	l1Head, err := s.s.rpc.L1Client.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
 	_, err = s.s.insertNewHead(
 		context.Background(),
@@ -145,18 +145,18 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())
 
-	balance, err := s.RPCClient.L2.BalanceAt(context.Background(), treasury, nil)
+	balance, err := s.RPCClient.L2Client.BalanceAt(context.Background(), treasury, nil)
 	s.Nil(err)
 
-	headBefore, err := s.RPCClient.L2.BlockNumber(context.Background())
+	headBefore, err := s.RPCClient.L2Client.BlockNumber(context.Background())
 	s.Nil(err)
 
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
 
-	headAfter, err := s.RPCClient.L2.BlockNumber(context.Background())
+	headAfter, err := s.RPCClient.L2Client.BlockNumber(context.Background())
 	s.Nil(err)
 
-	balanceAfter, err := s.RPCClient.L2.BalanceAt(context.Background(), treasury, nil)
+	balanceAfter, err := s.RPCClient.L2Client.BalanceAt(context.Background(), treasury, nil)
 	s.Nil(err)
 
 	s.Greater(headAfter, headBefore)
@@ -167,19 +167,19 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())
 
-	balance, err := s.RPCClient.L2.BalanceAt(context.Background(), treasury, nil)
+	balance, err := s.RPCClient.L2Client.BalanceAt(context.Background(), treasury, nil)
 	s.Nil(err)
 
-	headBefore, err := s.RPCClient.L2.BlockNumber(context.Background())
+	headBefore, err := s.RPCClient.L2Client.BlockNumber(context.Background())
 	s.Nil(err)
 
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.s)
 
-	headAfter, err := s.RPCClient.L2.BlockNumber(context.Background())
+	headAfter, err := s.RPCClient.L2Client.BlockNumber(context.Background())
 	s.Nil(err)
 
-	balanceAfter, err := s.RPCClient.L2.BalanceAt(context.Background(), treasury, nil)
+	balanceAfter, err := s.RPCClient.L2Client.BalanceAt(context.Background(), treasury, nil)
 	s.Nil(err)
 
 	s.Greater(headAfter, headBefore)
@@ -187,7 +187,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 
 	var hasNoneAnchorTxs bool
 	for i := headBefore + 1; i <= headAfter; i++ {
-		block, err := s.RPCClient.L2.BlockByNumber(context.Background(), new(big.Int).SetUint64(i))
+		block, err := s.RPCClient.L2Client.BlockByNumber(context.Background(), new(big.Int).SetUint64(i))
 		s.Nil(err)
 		s.GreaterOrEqual(block.Transactions().Len(), 1)
 		s.Greater(block.BaseFee().Uint64(), uint64(0))
@@ -198,7 +198,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 			}
 
 			hasNoneAnchorTxs = true
-			receipt, err := s.RPCClient.L2.TransactionReceipt(context.Background(), tx.Hash())
+			receipt, err := s.RPCClient.L2Client.TransactionReceipt(context.Background(), tx.Hash())
 			s.Nil(err)
 
 			fee := new(big.Int).Mul(block.BaseFee(), new(big.Int).SetUint64(receipt.GasUsed))

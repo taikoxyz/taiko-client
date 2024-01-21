@@ -13,10 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/txpool"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rpc"
-
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/utils"
@@ -137,7 +134,7 @@ func WaitReceipt(
 	return nil, fmt.Errorf("failed to find the receipt for transaction %s", tx.Hash())
 }
 
-// BlockProofStatus represents the proving status of the given L2 block.
+// BlockProofStatus represents the proving status of the given L2Client block.
 type BlockProofStatus struct {
 	IsSubmitted            bool
 	Invalid                bool
@@ -145,7 +142,7 @@ type BlockProofStatus struct {
 	ParentHeader           *types.Header
 }
 
-// GetBlockProofStatus checks whether the L2 block still needs a new proof or a new contest.
+// GetBlockProofStatus checks whether the L2Client block still needs a new proof or a new contest.
 func GetBlockProofStatus(
 	ctx context.Context,
 	cli *Client,
@@ -157,7 +154,7 @@ func GetBlockProofStatus(
 
 	var parent *types.Header
 	if id.Cmp(common.Big1) == 0 {
-		header, err := cli.L2.HeaderByNumber(ctxWithTimeout, common.Big0)
+		header, err := cli.L2Client.HeaderByNumber(ctxWithTimeout, common.Big0)
 		if err != nil {
 			return nil, err
 		}
@@ -169,7 +166,7 @@ func GetBlockProofStatus(
 			return nil, err
 		}
 
-		if parent, err = cli.L2.HeaderByHash(ctxWithTimeout, parentL1Origin.L2BlockHash); err != nil {
+		if parent, err = cli.L2Client.HeaderByHash(ctxWithTimeout, parentL1Origin.L2BlockHash); err != nil {
 			return nil, err
 		}
 	}
@@ -201,7 +198,7 @@ func GetBlockProofStatus(
 		return nil, err
 	}
 
-	root, err := cli.GetStorageRoot(ctx, cli.L2GethClient, l2SignalService, id)
+	root, err := cli.GetStorageRoot(ctx, cli.L2Client, l2SignalService, id)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +261,7 @@ type AccountPoolContent map[string]map[string]*types.Transaction
 // ContentFrom fetches a given account's transactions list from a node's transactions pool.
 func ContentFrom(
 	ctx context.Context,
-	rawRPC *rpc.Client,
+	rawRPC *EthClient,
 	address common.Address,
 ) (AccountPoolContent, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
@@ -338,7 +335,7 @@ func GetPendingTxByNonce(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	content, err := ContentFrom(ctxWithTimeout, cli.L1RawRPC, address)
+	content, err := ContentFrom(ctxWithTimeout, cli.L1Client, address)
 	if err != nil {
 		return nil, err
 	}
@@ -356,11 +353,11 @@ func GetPendingTxByNonce(
 
 // SetHead makes a `debug_setHead` RPC call to set the chain's head, should only be used
 // for testing purpose.
-func SetHead(ctx context.Context, rpc *rpc.Client, headNum *big.Int) error {
+func SetHead(ctx context.Context, client *EthClient, headNum *big.Int) error {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	return gethclient.New(rpc).SetHead(ctxWithTimeout, headNum)
+	return client.SetHead(ctxWithTimeout, headNum)
 }
 
 // StringToBytes32 converts the given string to [32]byte.

@@ -146,7 +146,7 @@ func (s *GuardianProverBlockSender) sendSignedBlockReq(
 func (s *GuardianProverBlockSender) sign(ctx context.Context, blockID *big.Int) ([]byte, *types.Header, error) {
 	log.Info("Guardian prover signing block", "blockID", blockID.Uint64())
 
-	head, err := s.rpc.L2.BlockNumber(ctx)
+	head, err := s.rpc.L2Client.BlockNumber(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -162,13 +162,13 @@ func (s *GuardianProverBlockSender) sign(ctx context.Context, blockID *big.Int) 
 			return nil, nil, err
 		}
 
-		head, err = s.rpc.L2.BlockNumber(ctx)
+		head, err = s.rpc.L2Client.BlockNumber(ctx)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 
-	header, err := s.rpc.L2.HeaderByNumber(ctx, blockID)
+	header, err := s.rpc.L2Client.HeaderByNumber(ctx, blockID)
 	if err != nil {
 		return nil, nil, err
 	}

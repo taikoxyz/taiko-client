@@ -25,7 +25,7 @@ const (
 	exchangeTransitionConfigInterval = 1 * time.Minute
 )
 
-// Driver keeps the L2 execution engine's local block chain in sync with the TaikoL1
+// Driver keeps the L2Client execution engine's local block chain in sync with the TaikoL1
 // contract.
 type Driver struct {
 	rpc           *rpc.Client
@@ -77,13 +77,13 @@ func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
 		return err
 	}
 
-	peers, err := d.rpc.L2.PeerCount(d.ctx)
+	peers, err := d.rpc.L2Client.PeerCount(d.ctx)
 	if err != nil {
 		return err
 	}
 
 	if cfg.P2PSyncVerifiedBlocks && peers == 0 {
-		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
+		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2Client execution engine")
 	}
 
 	signalServiceAddress, err := d.rpc.TaikoL1.Resolve0(
@@ -128,7 +128,7 @@ func (d *Driver) Close(ctx context.Context) {
 	d.wg.Wait()
 }
 
-// eventLoop starts the main loop of a L2 execution engine's driver.
+// eventLoop starts the main loop of a L2Client execution engine's driver.
 func (d *Driver) eventLoop() {
 	defer d.wg.Done()
 
@@ -144,11 +144,11 @@ func (d *Driver) eventLoop() {
 	// doSyncWithBackoff performs a synchronising operation with a backoff strategy.
 	doSyncWithBackoff := func() {
 		if err := backoff.Retry(d.doSync, backoff.NewConstantBackOff(d.backOffRetryInterval)); err != nil {
-			log.Error("Sync L2 execution engine's block chain error", "error", err)
+			log.Error("Sync L2Client execution engine's block chain error", "error", err)
 		}
 	}
 
-	// Call doSync() right away to catch up with the latest known L1 head.
+	// Call doSync() right away to catch up with the latest known L1Client head.
 	doSyncWithBackoff()
 
 	for {
@@ -164,8 +164,8 @@ func (d *Driver) eventLoop() {
 }
 
 // doSync fetches all `BlockProposed` events emitted from local
-// L1 sync cursor to the L1 head, and then applies all corresponding
-// L2 blocks into node's local blockchain.
+// L1Client sync cursor to the L1Client head, and then applies all corresponding
+// L2Client blocks into node's local blockchain.
 func (d *Driver) doSync() error {
 	// Check whether the application is closing.
 	if d.ctx.Err() != nil {
@@ -176,7 +176,7 @@ func (d *Driver) doSync() error {
 	l1Head := d.state.GetL1Head()
 
 	if err := d.l2ChainSyncer.Sync(l1Head); err != nil {
-		log.Error("Process new L1 blocks error", "error", err)
+		log.Error("Process new L1Client blocks error", "error", err)
 		return err
 	}
 
@@ -238,7 +238,7 @@ func (d *Driver) reportProtocolStatus() {
 }
 
 // exchangeTransitionConfigLoop keeps exchanging transition configs with the
-// L2 execution engine.
+// L2Client execution engine.
 func (d *Driver) exchangeTransitionConfigLoop() {
 	ticker := time.NewTicker(exchangeTransitionConfigInterval)
 	defer func() {
@@ -252,7 +252,7 @@ func (d *Driver) exchangeTransitionConfigLoop() {
 			return
 		case <-ticker.C:
 			func() {
-				tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
+				tc, err := d.rpc.L2AuthClient.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
 					TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
 					TerminalBlockHash:       common.Hash{},
 					TerminalBlockNumber:     0,

@@ -13,7 +13,7 @@ import (
 )
 
 // AnchorTxValidator is responsible for validating the anchor transaction (TaikoL2.anchor) in
-// each L2 block, which is always the first transaction.
+// each L2Client block, which is always the first transaction.
 type AnchorTxValidator struct {
 	taikoL2Address     common.Address
 	goldenTouchAddress common.Address
@@ -59,7 +59,7 @@ func (v *AnchorTxValidator) GetAndValidateAnchorTxReceipt(
 	ctx context.Context,
 	tx *types.Transaction,
 ) (*types.Receipt, error) {
-	receipt, err := v.rpc.L2.TransactionReceipt(ctx, tx.Hash())
+	receipt, err := v.rpc.L2Client.TransactionReceipt(ctx, tx.Hash())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get TaikoL2.anchor transaction receipt, err: %w", err)
 	}

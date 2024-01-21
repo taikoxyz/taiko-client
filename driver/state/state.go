@@ -21,8 +21,8 @@ import (
 // State contains all states which will be used by driver.
 type State struct {
 	// Subscriptions, will automatically resubscribe on errors
-	l1HeadSub             event.Subscription // L1 new heads
-	l2HeadSub             event.Subscription // L2 new heads
+	l1HeadSub             event.Subscription // L1Client new heads
+	l2HeadSub             event.Subscription // L2Client new heads
 	l2TransitionProvedSub event.Subscription // TaikoL1.TransitionProved events
 	l2BlockVerifiedSub    event.Subscription // TaikoL1.BlockVerified events
 	l2BlockProposedSub    event.Subscription // TaikoL1.BlockProposed events
@@ -36,13 +36,13 @@ type State struct {
 	crossChainSynced   chan *bindings.TaikoL1ClientCrossChainSynced
 
 	// Feeds
-	l1HeadsFeed event.Feed // L1 new heads notification feed
+	l1HeadsFeed event.Feed // L1Client new heads notification feed
 
-	l1Head         *atomic.Value // Latest known L1 head
-	l2Head         *atomic.Value // Current L2 execution engine's local chain head
-	l2HeadBlockID  *atomic.Value // Latest known L2 block ID
-	l2VerifiedHead *atomic.Value // Latest known L2 verified head
-	l1Current      *atomic.Value // Current L1 block sync cursor
+	l1Head         *atomic.Value // Latest known L1Client head
+	l2Head         *atomic.Value // Current L2Client execution engine's local chain head
+	l2HeadBlockID  *atomic.Value // Latest known L2Client block ID
+	l2VerifiedHead *atomic.Value // Latest known L2Client verified head
+	l1Current      *atomic.Value // Current L1Client block sync cursor
 
 	// Constants
 	GenesisL1Height  *big.Int
@@ -96,30 +96,30 @@ func (s *State) init(ctx context.Context) error {
 		return err
 	}
 
-	log.Info("Genesis L1 height", "height", stateVars.A.GenesisHeight)
+	log.Info("Genesis L1Client height", "height", stateVars.A.GenesisHeight)
 	s.GenesisL1Height = new(big.Int).SetUint64(stateVars.A.GenesisHeight)
 
-	// Set the L2 head's latest known L1 origin as current L1 sync cursor.
+	// Set the L2Client head's latest known L1Client origin as current L1Client sync cursor.
 	latestL2KnownL1Header, err := s.rpc.LatestL2KnownL1Header(ctx)
 	if err != nil {
 		return err
 	}
 	s.l1Current.Store(latestL2KnownL1Header)
 
-	// L1 head
-	l1Head, err := s.rpc.L1.HeaderByNumber(ctx, nil)
+	// L1Client head
+	l1Head, err := s.rpc.L1Client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return err
 	}
 	s.setL1Head(l1Head)
 
-	// L2 head
-	l2Head, err := s.rpc.L2.HeaderByNumber(ctx, nil)
+	// L2Client head
+	l2Head, err := s.rpc.L2Client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	log.Info("L2 execution engine head", "height", l2Head.Number, "hash", l2Head.Hash())
+	log.Info("L2Client execution engine head", "height", l2Head.Number, "hash", l2Head.Hash())
 	s.setL2Head(l2Head)
 
 	snippet, err := s.rpc.TaikoL1.GetSyncedSnippet(
@@ -142,8 +142,8 @@ func (s *State) init(ctx context.Context) error {
 
 // startSubscriptions initializes all subscriptions in the given state instance.
 func (s *State) startSubscriptions(ctx context.Context) {
-	s.l1HeadSub = rpc.SubscribeChainHead(s.rpc.L1, s.l1HeadCh)
-	s.l2HeadSub = rpc.SubscribeChainHead(s.rpc.L2, s.l2HeadCh)
+	s.l1HeadSub = rpc.SubscribeChainHead(s.rpc.L1Client, s.l1HeadCh)
+	s.l2HeadSub = rpc.SubscribeChainHead(s.rpc.L2Client, s.l2HeadCh)
 	s.l2HeaderSyncedSub = rpc.SubscribeXchainSynced(s.rpc.TaikoL1, s.crossChainSynced)
 	s.l2BlockVerifiedSub = rpc.SubscribeBlockVerified(s.rpc.TaikoL1, s.blockVerifiedCh)
 	s.l2BlockProposedSub = rpc.SubscribeBlockProposed(s.rpc.TaikoL1, s.blockProposedCh)
@@ -176,10 +176,10 @@ func (s *State) startSubscriptions(ctx context.Context) {
 				)
 			case e := <-s.crossChainSynced:
 				// Verify the protocol synced block, check if it exists in
-				// L2 execution engine.
+				// L2Client execution engine.
 				if s.GetL2Head().Number.Uint64() >= e.BlockId {
 					if err := s.VerifyL2Block(ctx, new(big.Int).SetUint64(e.BlockId), e.BlockHash); err != nil {
-						log.Error("Check new verified L2 block error", "error", err)
+						log.Error("Check new verified L2Client block error", "error", err)
 						continue
 					}
 				}
@@ -199,56 +199,56 @@ func (s *State) startSubscriptions(ctx context.Context) {
 	}()
 }
 
-// setL1Head sets the L1 head concurrent safely.
+// setL1Head sets the L1Client head concurrent safely.
 func (s *State) setL1Head(l1Head *types.Header) {
 	if l1Head == nil {
-		log.Warn("Empty new L1 head")
+		log.Warn("Empty new L1Client head")
 		return
 	}
 
-	log.Debug("New L1 head", "height", l1Head.Number, "hash", l1Head.Hash(), "timestamp", l1Head.Time)
+	log.Debug("New L1Client head", "height", l1Head.Number, "hash", l1Head.Hash(), "timestamp", l1Head.Time)
 	metrics.DriverL1HeadHeightGauge.Update(l1Head.Number.Int64())
 
 	s.l1Head.Store(l1Head)
 }
 
-// GetL1Head reads the L1 head concurrent safely.
+// GetL1Head reads the L1Client head concurrent safely.
 func (s *State) GetL1Head() *types.Header {
 	return s.l1Head.Load().(*types.Header)
 }
 
-// setL1Head sets the L2 head concurrent safely.
+// setL1Head sets the L2Client head concurrent safely.
 func (s *State) setL2Head(l2Head *types.Header) {
 	if l2Head == nil {
-		log.Warn("Empty new L2 head")
+		log.Warn("Empty new L2Client head")
 		return
 	}
 
-	log.Debug("New L2 head", "height", l2Head.Number, "hash", l2Head.Hash(), "timestamp", l2Head.Time)
+	log.Debug("New L2Client head", "height", l2Head.Number, "hash", l2Head.Hash(), "timestamp", l2Head.Time)
 	metrics.DriverL2HeadHeightGauge.Update(l2Head.Number.Int64())
 
 	s.l2Head.Store(l2Head)
 }
 
-// GetL2Head reads the L2 head concurrent safely.
+// GetL2Head reads the L2Client head concurrent safely.
 func (s *State) GetL2Head() *types.Header {
 	return s.l2Head.Load().(*types.Header)
 }
 
-// VerifiedHeaderInfo contains information about a verified L2 block header.
+// VerifiedHeaderInfo contains information about a verified L2Client block header.
 type VerifiedHeaderInfo struct {
 	ID   *big.Int
 	Hash common.Hash
 }
 
-// setLatestVerifiedBlockHash sets the latest verified L2 block hash concurrent safely.
+// setLatestVerifiedBlockHash sets the latest verified L2Client block hash concurrent safely.
 func (s *State) setLatestVerifiedBlockHash(id *big.Int, height *big.Int, hash common.Hash) {
 	log.Debug("New verified block", "height", height, "hash", hash)
 	metrics.DriverL2VerifiedHeightGauge.Update(height.Int64())
 	s.l2VerifiedHead.Store(&VerifiedHeaderInfo{ID: id, Hash: hash})
 }
 
-// GetLatestVerifiedBlock reads the latest verified L2 block concurrent safely.
+// GetLatestVerifiedBlock reads the latest verified L2Client block concurrent safely.
 func (s *State) GetLatestVerifiedBlock() *VerifiedHeaderInfo {
 	return s.l2VerifiedHead.Load().(*VerifiedHeaderInfo)
 }
@@ -265,14 +265,14 @@ func (s *State) GetHeadBlockID() *big.Int {
 	return s.l2HeadBlockID.Load().(*big.Int)
 }
 
-// SubL1HeadsFeed registers a subscription of new L1 heads.
+// SubL1HeadsFeed registers a subscription of new L1Client heads.
 func (s *State) SubL1HeadsFeed(ch chan *types.Header) event.Subscription {
 	return s.l1HeadsFeed.Subscribe(ch)
 }
 
-// VerifyL2Block checks whether the given block is in L2 execution engine's local chain.
+// VerifyL2Block checks whether the given block is in L2Client execution engine's local chain.
 func (s *State) VerifyL2Block(ctx context.Context, height *big.Int, hash common.Hash) error {
-	header, err := s.rpc.L2.HeaderByNumber(ctx, height)
+	header, err := s.rpc.L2Client.HeaderByNumber(ctx, height)
 	if err != nil {
 		return err
 	}
@@ -282,14 +282,14 @@ func (s *State) VerifyL2Block(ctx context.Context, height *big.Int, hash common.
 		log.Crit(
 			"Verified block hash mismatch",
 			"protocolBlockHash", hash,
-			"block number in L2 execution engine", header.Number,
-			"block hash in L2 execution engine", header.Hash(),
+			"block number in L2Client execution engine", header.Number,
+			"block hash in L2Client execution engine", header.Hash(),
 		)
 	}
 	return nil
 }
 
-// getSyncedHeaderID fetches the block ID of the synced L2 header.
+// getSyncedHeaderID fetches the block ID of the synced L2Client header.
 func (s *State) getSyncedHeaderID(ctx context.Context, l1Height uint64, hash common.Hash) (*big.Int, error) {
 	iter, err := s.rpc.TaikoL1.FilterBlockVerified(&bind.FilterOpts{
 		Start:   l1Height,

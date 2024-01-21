@@ -41,7 +41,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	)
 
 	if p2pSyncVerifiedBlocks && len(l2CheckPoint) == 0 {
-		return nil, errors.New("empty L2 check point URL")
+		return nil, errors.New("empty L2Client check point URL")
 	}
 
 	var timeout *time.Duration

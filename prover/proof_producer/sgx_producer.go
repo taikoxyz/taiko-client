@@ -24,8 +24,8 @@ import (
 // SGXProofProducer generates a SGX proof for the given block.
 type SGXProofProducer struct {
 	RaikoHostEndpoint string // a proverd RPC endpoint
-	L1Endpoint        string // a L1 node RPC endpoint
-	L2Endpoint        string // a L2 execution engine's RPC endpoint
+	L1Endpoint        string // a L1Client node RPC endpoint
+	L2Endpoint        string // a L2Client execution engine's RPC endpoint
 	*DummyProofProducer
 }
 

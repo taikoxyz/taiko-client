@@ -97,7 +97,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextProverKeyError() {
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"--" + flags.L1ProverPrivKey.Name, "0x",
-	}), "invalid L1 prover private key")
+	}), "invalid L1Client prover private key")
 }
 
 func (s *ProverTestSuite) SetupApp() *cli.App {

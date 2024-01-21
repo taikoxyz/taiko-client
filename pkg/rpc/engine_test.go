@@ -13,26 +13,26 @@ import (
 func TestL2EngineForbidden(t *testing.T) {
 	c := newTestClient(t)
 
-	_, err := c.L2Engine.ForkchoiceUpdate(
+	_, err := c.L2AuthClient.ForkchoiceUpdate(
 		context.Background(),
 		&engine.ForkchoiceStateV1{},
 		&engine.PayloadAttributes{},
 	)
 	require.ErrorContains(t, err, "Unauthorized")
 
-	_, err = c.L2Engine.NewPayload(
+	_, err = c.L2AuthClient.NewPayload(
 		context.Background(),
 		&engine.ExecutableData{},
 	)
 	require.ErrorContains(t, err, "Unauthorized")
 
-	_, err = c.L2Engine.GetPayload(
+	_, err = c.L2AuthClient.GetPayload(
 		context.Background(),
 		&engine.PayloadID{},
 	)
 	require.ErrorContains(t, err, "Unauthorized")
 
-	_, err = c.L2Engine.ExchangeTransitionConfiguration(context.Background(), &engine.TransitionConfigurationV1{
+	_, err = c.L2AuthClient.ExchangeTransitionConfiguration(context.Background(), &engine.TransitionConfigurationV1{
 		TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
 		TerminalBlockHash:       common.Hash{},
 		TerminalBlockNumber:     0,

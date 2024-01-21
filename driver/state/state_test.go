@@ -26,7 +26,7 @@ func (s *DriverStateTestSuite) SetupTest() {
 }
 
 func (s *DriverStateTestSuite) TestVerifyL2Block() {
-	head, err := s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
+	head, err := s.RPCClient.L2Client.HeaderByNumber(context.Background(), nil)
 
 	s.Nil(err)
 	s.Nil(s.s.VerifyL2Block(context.Background(), head.Number, head.Hash()))
@@ -64,7 +64,7 @@ func (s *DriverStateTestSuite) TestSubL1HeadsFeed() {
 }
 
 func (s *DriverStateTestSuite) TestGetSyncedHeaderID() {
-	l2Genesis, err := s.RPCClient.L2.BlockByNumber(context.Background(), common.Big0)
+	l2Genesis, err := s.RPCClient.L2Client.BlockByNumber(context.Background(), common.Big0)
 	s.Nil(err)
 
 	id, err := s.s.getSyncedHeaderID(context.Background(), s.s.GenesisL1Height.Uint64(), l2Genesis.Hash())

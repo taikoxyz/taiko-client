@@ -242,7 +242,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 
 	// Submit a wrong proof at first.
 	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
-	header, err := s.p.rpc.L2.HeaderByNumber(context.Background(), e.BlockId)
+	header, err := s.p.rpc.L2Client.HeaderByNumber(context.Background(), e.BlockId)
 	s.Nil(err)
 
 	sub, err := s.p.rpc.TaikoL1.WatchTransitionProved(nil, sink, nil)
@@ -301,7 +301,7 @@ func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
 
-	header, err := s.p.rpc.L2.HeaderByNumber(context.Background(), e.BlockId)
+	header, err := s.p.rpc.L2Client.HeaderByNumber(context.Background(), e.BlockId)
 	s.Nil(err)
 
 	sub, err := s.p.rpc.TaikoL1.WatchTransitionProved(nil, sink, nil)
@@ -366,7 +366,7 @@ func (s *ProverTestSuite) TestProveOp() {
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
 
-	header, err := s.p.rpc.L2.HeaderByNumber(context.Background(), e.BlockId)
+	header, err := s.p.rpc.L2Client.HeaderByNumber(context.Background(), e.BlockId)
 	s.Nil(err)
 
 	sub, err := s.p.rpc.TaikoL1.WatchTransitionProved(nil, sink, nil)
@@ -397,7 +397,7 @@ func (s *ProverTestSuite) TestSetApprovalAmount() {
 	tx, err := s.p.rpc.TaikoToken.Approve(opts, s.p.cfg.AssignmentHookAddress, common.Big0)
 	s.Nil(err)
 
-	_, err = rpc.WaitReceipt(context.Background(), s.p.rpc.L1, tx)
+	_, err = rpc.WaitReceipt(context.Background(), s.p.rpc.L1Client, tx)
 	s.Nil(err)
 
 	allowance, err := s.p.rpc.TaikoToken.Allowance(nil, s.p.proverAddress, s.p.cfg.AssignmentHookAddress)
@@ -420,7 +420,7 @@ func (s *ProverTestSuite) TestSetApprovalAmount() {
 }
 
 func (s *ProverTestSuite) TestGetBlockProofStatus() {
-	parent, err := s.p.rpc.L2.HeaderByNumber(context.Background(), nil)
+	parent, err := s.p.rpc.L2Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
@@ -452,7 +452,7 @@ func (s *ProverTestSuite) TestGetBlockProofStatus() {
 	s.Equal(s.p.proverAddress, status.CurrentTransitionState.Prover)
 
 	// Invalid proof submitted
-	parent, err = s.p.rpc.L2.HeaderByNumber(context.Background(), nil)
+	parent, err = s.p.rpc.L2Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	e = testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())

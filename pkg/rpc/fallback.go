@@ -15,7 +15,7 @@ var (
 	)
 
 	// FallbackGasTipCap is the default fallback gasTipCap used when we are
-	// unable to query an L1 backend for a suggested gasTipCap.
+	// unable to query an L1Client backend for a suggested gasTipCap.
 	FallbackGasTipCap = big.NewInt(1500000000)
 )
 

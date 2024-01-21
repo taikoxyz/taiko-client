@@ -138,7 +138,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		rpc.StringToBytes32("signal_service"),
 		false,
 	); err != nil {
-		return fmt.Errorf("failed to resolve L1 signal service address: %w", err)
+		return fmt.Errorf("failed to resolve L1Client signal service address: %w", err)
 	}
 
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
@@ -153,7 +153,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proveNotify = make(chan struct{}, 1)
 
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
-		return fmt.Errorf("initialize L1 current cursor error: %w", err)
+		return fmt.Errorf("initialize L1Client current cursor error: %w", err)
 	}
 
 	// Concurrency guards
@@ -375,7 +375,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return err
 	}
 
-	receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx)
+	receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1Client, tx)
 	if err != nil {
 		return err
 	}
@@ -399,7 +399,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 	return nil
 }
 
-// Start starts the main loop of the L2 block prover.
+// Start starts the main loop of the L2Client block prover.
 func (p *Prover) Start() error {
 	for _, contract := range []common.Address{p.cfg.TaikoL1Address, p.cfg.AssignmentHookAddress} {
 		if err := p.setApprovalAmount(p.ctx, contract); err != nil {
@@ -509,7 +509,7 @@ func (p *Prover) proveOp() error {
 		firstTry = false
 
 		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
-			Client:               p.rpc.L1,
+			Client:               p.rpc.L1Client,
 			TaikoL1:              p.rpc.TaikoL1,
 			StartHeight:          new(big.Int).SetUint64(p.l1Current.Number.Uint64()),
 			OnBlockProposedEvent: p.onBlockProposed,
@@ -551,22 +551,22 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
-	// Wait for the corresponding L2 block being mined.
+	// Wait for the corresponding L2Client block being mined.
 	if _, err := p.rpc.WaitL1Origin(ctx, event.BlockId); err != nil {
 		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
 	}
 
-	// Check whether the L2 EE's anchored L1 info, to see if the L1 chain has been reorged.
+	// Check whether the L2Client EE's anchored L1Client info, to see if the L1Client chain has been reorged.
 	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1ReorgFromL2EE(
 		ctx,
 		new(big.Int).Sub(event.BlockId, common.Big1),
 		p.l1SignalService,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to check whether L1 chain was reorged from L2EE (eventID %d): %w", event.BlockId, err)
+		return fmt.Errorf("failed to check whether L1Client chain was reorged from L2EE (eventID %d): %w", event.BlockId, err)
 	}
 
-	// Then check the l1Current cursor at first, to see if the L1 chain has been reorged.
+	// Then check the l1Current cursor at first, to see if the L1Client chain has been reorged.
 	if !reorged {
 		if reorged, l1CurrentToReset, lastHandledBlockIDToReset, err = p.rpc.CheckL1ReorgFromL1Cursor(
 			ctx,
@@ -574,7 +574,7 @@ func (p *Prover) onBlockProposed(
 			p.genesisHeightL1,
 		); err != nil {
 			return fmt.Errorf(
-				"failed to check whether L1 chain was reorged from l1Current (eventID %d): %w",
+				"failed to check whether L1Client chain was reorged from l1Current (eventID %d): %w",
 				event.BlockId,
 				err,
 			)
@@ -604,21 +604,21 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
-	lastL1OriginHeader, err := p.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
+	lastL1OriginHeader, err := p.rpc.L1Client.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
 	if err != nil {
-		return fmt.Errorf("failed to get L1 header, height %d: %w", event.Meta.L1Height, err)
+		return fmt.Errorf("failed to get L1Client header, height %d: %w", event.Meta.L1Height, err)
 	}
 
 	if lastL1OriginHeader.Hash() != event.Meta.L1Hash {
 		log.Warn(
-			"L1 block hash mismatch due to L1 reorg",
+			"L1Client block hash mismatch due to L1Client reorg",
 			"height", event.Meta.L1Height,
 			"lastL1OriginHeader", lastL1OriginHeader.Hash(),
 			"l1HashInEvent", event.Meta.L1Hash,
 		)
 
 		return fmt.Errorf(
-			"L1 block hash mismatch due to L1 reorg: %s != %s",
+			"L1Client block hash mismatch due to L1Client reorg: %s != %s",
 			lastL1OriginHeader.Hash(),
 			event.Meta.L1Hash,
 		)
@@ -637,7 +637,7 @@ func (p *Prover) onBlockProposed(
 	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
 
 	// Move l1Current cursor.
-	newL1Current, err := p.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash)
+	newL1Current, err := p.rpc.L1Client.HeaderByHash(ctx, event.Raw.BlockHash)
 	if err != nil {
 		return err
 	}
@@ -677,7 +677,7 @@ func (p *Prover) handleNewBlockProposedEvent(ctx context.Context, e *bindings.Ta
 	// Check whether the block has been verified.
 	isVerified, err := p.isBlockVerified(e.BlockId)
 	if err != nil {
-		return fmt.Errorf("failed to check if the current L2 block is verified: %w", err)
+		return fmt.Errorf("failed to check if the current L2Client block is verified: %w", err)
 	}
 	if isVerified {
 		log.Info("📋 Block has been verified", "blockID", e.BlockId)
@@ -692,7 +692,7 @@ func (p *Prover) handleNewBlockProposedEvent(ctx context.Context, e *bindings.Ta
 		p.proverAddress,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
+		return fmt.Errorf("failed to check whether the L2Client block needs a new proof: %w", err)
 	}
 
 	if proofStatus.IsSubmitted {
@@ -786,7 +786,7 @@ func (p *Prover) handleNewBlockProposedEvent(ctx context.Context, e *bindings.Ta
 					"blockID", e.BlockId,
 				)
 				time.AfterFunc(
-					// Add another 60 seconds, to ensure one more L1 block will be mined before the proof submission
+					// Add another 60 seconds, to ensure one more L1Client block will be mined before the proof submission
 					timeToExpire+60*time.Second,
 					func() { p.proofWindowExpiredCh <- e },
 				)
@@ -907,7 +907,7 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 		return err
 	}
 
-	// Compare the contested transition to the block in local L2 canonical chain.
+	// Compare the contested transition to the block in local L2Client canonical chain.
 	isValidProof, err := p.isValidProof(
 		ctx,
 		e.BlockId,
@@ -1027,7 +1027,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 
 	if startingBlockID == nil {
 		if stateVars.B.LastVerifiedBlockId == 0 {
-			genesisL1Header, err := p.rpc.L1.HeaderByNumber(p.ctx, new(big.Int).SetUint64(stateVars.A.GenesisHeight))
+			genesisL1Header, err := p.rpc.L1Client.HeaderByNumber(p.ctx, new(big.Int).SetUint64(stateVars.A.GenesisHeight))
 			if err != nil {
 				return err
 			}
@@ -1041,11 +1041,11 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 
 	log.Info("Init L1Current cursor", "startingBlockID", startingBlockID)
 
-	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
+	latestVerifiedHeaderL1Origin, err := p.rpc.L2Client.L1OriginByID(p.ctx, startingBlockID)
 	if err != nil {
 		if err.Error() == ethereum.NotFound.Error() {
-			log.Warn("Failed to find L1Origin for blockID, use latest L1 head instead", "blockID", startingBlockID)
-			l1Head, err := p.rpc.L1.HeaderByNumber(p.ctx, nil)
+			log.Warn("Failed to find L1Origin for blockID, use latest L1Client head instead", "blockID", startingBlockID)
+			l1Head, err := p.rpc.L1Client.HeaderByNumber(p.ctx, nil)
 			if err != nil {
 				return err
 			}
@@ -1056,14 +1056,14 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 		return err
 	}
 
-	if p.l1Current, err = p.rpc.L1.HeaderByHash(p.ctx, latestVerifiedHeaderL1Origin.L1BlockHash); err != nil {
+	if p.l1Current, err = p.rpc.L1Client.HeaderByHash(p.ctx, latestVerifiedHeaderL1Origin.L1BlockHash); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// isBlockVerified checks whether the given L2 block has been verified.
+// isBlockVerified checks whether the given L2Client block has been verified.
 func (p *Prover) isBlockVerified(id *big.Int) (bool, error) {
 	stateVars, err := p.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: p.ctx})
 	if err != nil {
@@ -1089,7 +1089,7 @@ func (p *Prover) closeSubscription() {
 	p.transitionContestedSub.Unsubscribe()
 }
 
-// isValidProof checks if the given proof is a valid one, comparing to current L2 node canonical chain.
+// isValidProof checks if the given proof is a valid one, comparing to current L2Client node canonical chain.
 func (p *Prover) isValidProof(
 	ctx context.Context,
 	blockID *big.Int,
@@ -1102,7 +1102,7 @@ func (p *Prover) isValidProof(
 		return false, err
 	}
 
-	block, err := p.rpc.L2.BlockByNumber(ctx, blockID)
+	block, err := p.rpc.L2Client.BlockByNumber(ctx, blockID)
 	if err != nil {
 		return false, err
 	}
@@ -1117,7 +1117,7 @@ func (p *Prover) isValidProof(
 	}
 	root, err := p.rpc.GetStorageRoot(
 		ctx,
-		p.rpc.L2GethClient,
+		p.rpc.L2Client,
 		l2SignalService,
 		blockID,
 	)
@@ -1138,8 +1138,8 @@ func (p *Prover) requestProofByBlockID(
 	// If this event is not nil, then the prover will try contesting the transition.
 	transitionProvedEvent *bindings.TaikoL1ClientTransitionProved,
 ) error {
-	// NOTE: since this callback function will only be called after a L2 block's proving window is expired,
-	// or a wrong proof's submission, so we won't check if L1 chain has been reorged here.
+	// NOTE: since this callback function will only be called after a L2Client block's proving window is expired,
+	// or a wrong proof's submission, so we won't check if L1Client chain has been reorged here.
 	onBlockProposed := func(
 		ctx context.Context,
 		event *bindings.TaikoL1ClientBlockProposed,
@@ -1153,7 +1153,7 @@ func (p *Prover) requestProofByBlockID(
 		// Check whether the block has been verified.
 		isVerified, err := p.isBlockVerified(event.BlockId)
 		if err != nil {
-			return fmt.Errorf("failed to check if the current L2 block is verified: %w", err)
+			return fmt.Errorf("failed to check if the current L2Client block is verified: %w", err)
 		}
 		if isVerified {
 			log.Info("📋 Block has been verified", "blockID", event.BlockId)
@@ -1183,10 +1183,10 @@ func (p *Prover) requestProofByBlockID(
 	}
 
 	handleBlockProposedEvent := func() error {
-		// Make sure `end` height is less than the latest L1 head.
-		l1Head, err := p.rpc.L1.BlockNumber(p.ctx)
+		// Make sure `end` height is less than the latest L1Client head.
+		l1Head, err := p.rpc.L1Client.BlockNumber(p.ctx)
 		if err != nil {
-			log.Error("Failed to get L1 block head", "error", err)
+			log.Error("Failed to get L1Client block head", "error", err)
 			return err
 		}
 		end := new(big.Int).Add(l1Height, common.Big1)
@@ -1195,7 +1195,7 @@ func (p *Prover) requestProofByBlockID(
 		}
 
 		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
-			Client:               p.rpc.L1,
+			Client:               p.rpc.L1Client,
 			TaikoL1:              p.rpc.TaikoL1,
 			StartHeight:          new(big.Int).Sub(l1Height, common.Big1),
 			EndHeight:            end,

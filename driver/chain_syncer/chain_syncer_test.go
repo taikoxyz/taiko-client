@@ -79,7 +79,7 @@ func (s *ChainSyncerTestSuite) TestGetInnerSyncers() {
 }
 
 func (s *ChainSyncerTestSuite) TestSync() {
-	head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
+	head, err := s.RPCClient.L1Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Nil(s.s.Sync(head))
 }
@@ -96,10 +96,10 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.RPCClient.L1ChainID)
 	s.Nil(err)
 
-	head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
+	head, err := s.RPCClient.L1Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	l2Head, err := s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
+	l2Head, err := s.RPCClient.L2Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Equal("test", string(bytes.TrimRight(l2Head.Extra, "\x00")))
 	log.Info("L1HeaderByNumber head", "number", head.Number)
@@ -110,15 +110,15 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	// increase evm time to make blocks verifiable.
 	s.IncreaseTime(uint64((1024 * time.Hour).Seconds()))
 
-	// interact with TaikoL1 contract to allow for verification of L2 blocks
+	// interact with TaikoL1 contract to allow for verification of L2Client blocks
 	tx, err := s.s.rpc.TaikoL1.VerifyBlocks(opts, uint64(3))
 	s.Nil(err)
 	s.NotNil(tx)
 
-	head2, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
+	head2, err := s.RPCClient.L1Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	l2Head2, err := s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
+	l2Head2, err := s.RPCClient.L2Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	log.Info("L1HeaderByNumber head2", "number", head2.Number)
@@ -134,15 +134,15 @@ func TestChainSyncerTestSuite(t *testing.T) {
 
 func (s *ChainSyncerTestSuite) TakeSnapshot() {
 	// record snapshot state to revert to before changes
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &s.snapshotID, "evm_snapshot"))
+	s.Nil(s.RPCClient.L1Client.CallContext(context.Background(), &s.snapshotID, "evm_snapshot"))
 }
 
 func (s *ChainSyncerTestSuite) RevertSnapshot() {
 	// revert to the snapshot state so protocol configs are unaffected
 	var revertRes bool
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", s.snapshotID))
+	s.Nil(s.RPCClient.L1Client.CallContext(context.Background(), &revertRes, "evm_revert", s.snapshotID))
 	s.True(revertRes)
-	s.Nil(rpc.SetHead(context.Background(), s.RPCClient.L2RawRPC, common.Big0))
+	s.Nil(rpc.SetHead(context.Background(), s.RPCClient.L2Client, common.Big0))
 }
 
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead() {

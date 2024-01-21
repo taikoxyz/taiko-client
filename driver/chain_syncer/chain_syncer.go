@@ -15,12 +15,12 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-// L2ChainSyncer is responsible for keeping the L2 execution engine's local chain in sync with the one
+// L2ChainSyncer is responsible for keeping the L2Client execution engine's local chain in sync with the one
 // in TaikoL1 contract.
 type L2ChainSyncer struct {
 	ctx   context.Context
 	state *state.State // Driver's state
-	rpc   *rpc.Client  // L1/L2 RPC clients
+	rpc   *rpc.Client  // L1Client/L2Client RPC clients
 
 	// Syncers
 	beaconSyncer   *beaconsync.Syncer
@@ -43,7 +43,7 @@ func New(
 	p2pSyncTimeout time.Duration,
 	signalServiceAddress common.Address,
 ) (*L2ChainSyncer, error) {
-	tracker := beaconsync.NewSyncProgressTracker(rpc.L2, p2pSyncTimeout)
+	tracker := beaconsync.NewSyncProgressTracker(rpc.L2Client, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
 	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, tracker)
@@ -63,10 +63,10 @@ func New(
 	}, nil
 }
 
-// Sync performs a sync operation to L2 execution engine's local chain.
+// Sync performs a sync operation to L2Client execution engine's local chain.
 func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
-	// If current L2 execution engine's chain is behind of the protocol's latest verified block head, and the
-	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
+	// If current L2Client execution engine's chain is behind of the protocol's latest verified block head, and the
+	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2Client execution engine to catch up the
 	// latest verified block head.
 	if s.needNewBeaconSyncTriggered() {
 		if err := s.beaconSyncer.TriggerBeaconSync(); err != nil {
@@ -76,8 +76,8 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		return nil
 	}
 
-	// We have triggered at least a beacon sync in L2 execution engine, we should reset the L1Current
-	// cursor at first, before start inserting pending L2 blocks one by one.
+	// We have triggered at least a beacon sync in L2Client execution engine, we should reset the L1Current
+	// cursor at first, before start inserting pending L2Client blocks one by one.
 	if s.progressTracker.Triggered() {
 		log.Info(
 			"Switch to insert pending blocks one by one",
@@ -86,13 +86,13 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		)
 
 		// Get the execution engine's chain head.
-		l2Head, err := s.rpc.L2.HeaderByNumber(s.ctx, nil)
+		l2Head, err := s.rpc.L2Client.HeaderByNumber(s.ctx, nil)
 		if err != nil {
 			return err
 		}
 
 		log.Info(
-			"L2 head information",
+			"L2Client head information",
 			"number", l2Head.Number,
 			"hash", l2Head.Hash(),
 			"LastSyncedVerifiedBlockID", s.progressTracker.LastSyncedVerifiedBlockID(),
@@ -104,7 +104,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 			return err
 		}
 
-		// Reset to the latest L2 execution engine's chain status.
+		// Reset to the latest L2Client execution engine's chain status.
 		s.progressTracker.UpdateMeta(l2Head.Number, l2Head.Hash())
 	}
 
@@ -112,7 +112,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	return s.calldataSyncer.ProcessL1Blocks(s.ctx, l1End)
 }
 
-// AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
+// AheadOfProtocolVerifiedHead checks whether the L2Client chain is ahead of verified head in protocol.
 func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 	verifiedHeightToCompare := s.state.GetLatestVerifiedBlock().ID.Uint64()
 	log.Debug(
@@ -121,7 +121,7 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 		"executionEngineHead", s.state.GetL2Head().Number,
 	)
 	if verifiedHeightToCompare > 0 {
-		// If latest verified head height is equal to L2 execution engine's synced head height minus one,
+		// If latest verified head height is equal to L2Client execution engine's synced head height minus one,
 		// we also mark the triggered P2P sync progress as finished to prevent a potential `InsertBlockWithoutSetHead` in
 		// execution engine, which may cause errors since we do not pass all transactions in ExecutePayload when calling
 		// NewPayloadV1.
@@ -139,7 +139,7 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 	return true
 }
 
-// needNewBeaconSyncTriggered checks whether the current L2 execution engine needs to trigger
+// needNewBeaconSyncTriggered checks whether the current L2Client execution engine needs to trigger
 // another new beacon sync.
 func (s *L2ChainSyncer) needNewBeaconSyncTriggered() bool {
 	return s.p2pSyncVerifiedBlocks &&

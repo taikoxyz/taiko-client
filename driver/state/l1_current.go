@@ -11,22 +11,22 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 )
 
-// GetL1Current reads the L1 current cursor concurrent safely.
+// GetL1Current reads the L1Client current cursor concurrent safely.
 func (s *State) GetL1Current() *types.Header {
 	return s.l1Current.Load().(*types.Header)
 }
 
-// SetL1Current sets the L1 current cursor concurrent safely.
+// SetL1Current sets the L1Client current cursor concurrent safely.
 func (s *State) SetL1Current(h *types.Header) {
 	if h == nil {
 		log.Warn("Empty l1 current cursor")
 		return
 	}
-	log.Debug("Set L1 current cursor", "number", h.Number)
+	log.Debug("Set L1Client current cursor", "number", h.Number)
 	s.l1Current.Store(h)
 }
 
-// ResetL1Current resets the l1Current cursor to the L1 height which emitted a
+// ResetL1Current resets the l1Current cursor to the L1Client height which emitted a
 // BlockProposed event with given blockID / blockHash.
 func (s *State) ResetL1Current(
 	ctx context.Context,
@@ -36,10 +36,10 @@ func (s *State) ResetL1Current(
 		return fmt.Errorf("empty block ID")
 	}
 
-	log.Info("Reset L1 current cursor", "blockID", blockID)
+	log.Info("Reset L1Client current cursor", "blockID", blockID)
 
 	if blockID.Cmp(common.Big0) == 0 {
-		l1Current, err := s.rpc.L1.HeaderByNumber(ctx, s.GenesisL1Height)
+		l1Current, err := s.rpc.L1Client.HeaderByNumber(ctx, s.GenesisL1Height)
 		if err != nil {
 			return err
 		}
@@ -52,13 +52,13 @@ func (s *State) ResetL1Current(
 		return err
 	}
 
-	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.ProposedIn))
+	l1Current, err := s.rpc.L1Client.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.ProposedIn))
 	if err != nil {
 		return err
 	}
 	s.SetL1Current(l1Current)
 
-	log.Info("Reset L1 current cursor", "height", s.GetL1Current().Number, "hash", s.GetL1Current().Hash())
+	log.Info("Reset L1Client current cursor", "height", s.GetL1Current().Number, "hash", s.GetL1Current().Hash())
 
 	return nil
 }
