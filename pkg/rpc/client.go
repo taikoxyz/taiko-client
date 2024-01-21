@@ -56,8 +56,8 @@ type ClientConfig struct {
 	L2EngineEndpoint      string
 	JwtSecret             string
 	RetryInterval         time.Duration
-	Timeout               *time.Duration
-	BackOffMaxRetrys      *big.Int
+	Timeout               time.Duration
+	BackOffMaxRetries     uint64
 }
 
 // NewClient initializes all RPC clients used by Taiko client software.
@@ -65,17 +65,16 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	if cfg.BackOffMaxRetrys == nil {
-		defaultRetrys := new(big.Int).SetInt64(10)
-		cfg.BackOffMaxRetrys = defaultRetrys
+	if cfg.BackOffMaxRetries == 0 {
+		cfg.BackOffMaxRetries = 10
 	}
 
-	l1EthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L1Endpoint, cfg.RetryInterval, cfg.BackOffMaxRetrys)
+	l1EthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L1Endpoint, cfg.RetryInterval, cfg.BackOffMaxRetries)
 	if err != nil {
 		return nil, err
 	}
 
-	l2EthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L2Endpoint, cfg.RetryInterval, cfg.BackOffMaxRetrys)
+	l2EthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L2Endpoint, cfg.RetryInterval, cfg.BackOffMaxRetries)
 	if err != nil {
 		return nil, err
 	}
@@ -84,13 +83,8 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		l1RPC *EthClient
 		l2RPC *EthClient
 	)
-	if cfg.Timeout != nil {
-		l1RPC = NewEthClientWithTimeout(l1EthClient, *cfg.Timeout)
-		l2RPC = NewEthClientWithTimeout(l2EthClient, *cfg.Timeout)
-	} else {
-		l1RPC = NewEthClientWithDefaultTimeout(l1EthClient)
-		l2RPC = NewEthClientWithDefaultTimeout(l2EthClient)
-	}
+	l1RPC = NewEthClientWithTimeout(l1EthClient, cfg.Timeout)
+	l2RPC = NewEthClientWithTimeout(l2EthClient, cfg.Timeout)
 
 	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1RPC)
 	if err != nil {
@@ -160,7 +154,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 			cfg.L2EngineEndpoint,
 			cfg.JwtSecret,
 			cfg.RetryInterval,
-			cfg.BackOffMaxRetrys,
+			cfg.BackOffMaxRetries,
 		); err != nil {
 			return nil, err
 		}
@@ -172,16 +166,11 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 			ctxWithTimeout,
 			cfg.L2CheckPoint,
 			cfg.RetryInterval,
-			cfg.BackOffMaxRetrys)
+			cfg.BackOffMaxRetries)
 		if err != nil {
 			return nil, err
 		}
-
-		if cfg.Timeout != nil {
-			l2CheckPoint = NewEthClientWithTimeout(l2CheckPointEthClient, *cfg.Timeout)
-		} else {
-			l2CheckPoint = NewEthClientWithDefaultTimeout(l2CheckPointEthClient)
-		}
+		l2CheckPoint = NewEthClientWithTimeout(l2CheckPointEthClient, cfg.Timeout)
 	}
 
 	client := &Client{

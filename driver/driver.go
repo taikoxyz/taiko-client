@@ -28,6 +28,7 @@ const (
 // Driver keeps the L2 execution engine's local block chain in sync with the TaikoL1
 // contract.
 type Driver struct {
+	*Config
 	rpc           *rpc.Client
 	l2ChainSyncer *chainSyncer.L2ChainSyncer
 	state         *state.State
@@ -36,9 +37,8 @@ type Driver struct {
 	l1HeadSub  event.Subscription
 	syncNotify chan struct{}
 
-	backOffRetryInterval time.Duration
-	ctx                  context.Context
-	wg                   sync.WaitGroup
+	ctx context.Context
+	wg  sync.WaitGroup
 }
 
 // InitFromCli New initializes the given driver instance based on the command line flags.
@@ -48,28 +48,18 @@ func (d *Driver) InitFromCli(ctx context.Context, c *cli.Context) error {
 		return err
 	}
 
-	return InitFromConfig(ctx, d, cfg)
+	return d.InitFromConfig(ctx, cfg)
 }
 
 // InitFromConfig initializes the driver instance based on the given configurations.
-func InitFromConfig(ctx context.Context, d *Driver, cfg *Config) (err error) {
+func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 	d.l1HeadCh = make(chan *types.Header, 1024)
 	d.wg = sync.WaitGroup{}
 	d.syncNotify = make(chan struct{}, 1)
 	d.ctx = ctx
-	d.backOffRetryInterval = cfg.BackOffRetryInterval
+	d.Config = cfg
 
-	if d.rpc, err = rpc.NewClient(d.ctx, &rpc.ClientConfig{
-		L1Endpoint:       cfg.L1Endpoint,
-		L2Endpoint:       cfg.L2Endpoint,
-		L2CheckPoint:     cfg.L2CheckPoint,
-		TaikoL1Address:   cfg.TaikoL1Address,
-		TaikoL2Address:   cfg.TaikoL2Address,
-		L2EngineEndpoint: cfg.L2EngineEndpoint,
-		JwtSecret:        cfg.JwtSecret,
-		RetryInterval:    cfg.BackOffRetryInterval,
-		Timeout:          cfg.RPCTimeout,
-	}); err != nil {
+	if d.rpc, err = rpc.NewClient(d.ctx, cfg.ClientConfig); err != nil {
 		return err
 	}
 
@@ -143,7 +133,7 @@ func (d *Driver) eventLoop() {
 
 	// doSyncWithBackoff performs a synchronising operation with a backoff strategy.
 	doSyncWithBackoff := func() {
-		if err := backoff.Retry(d.doSync, backoff.NewConstantBackOff(d.backOffRetryInterval)); err != nil {
+		if err := backoff.Retry(d.doSync, backoff.NewConstantBackOff(d.RetryInterval)); err != nil {
 			log.Error("Sync L2 execution engine's block chain error", "error", err)
 		}
 	}
@@ -210,7 +200,7 @@ func (d *Driver) reportProtocolStatus() {
 			maxNumBlocks = configs.BlockMaxProposals
 			return nil
 		},
-		backoff.NewConstantBackOff(d.backOffRetryInterval),
+		backoff.NewConstantBackOff(d.RetryInterval),
 	); err != nil {
 		log.Error("Failed to get protocol state variables", "error", err)
 		return
