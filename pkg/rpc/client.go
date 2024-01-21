@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultTimeout = 1 * time.Minute
+	defaultTimeout = 10 * time.Minute
 )
 
 // Client contains all L1Client/L2Client RPC clients that a driver needs.
@@ -66,8 +66,14 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	if cfg.BackOffMaxRetries == 0 {
-		cfg.BackOffMaxRetries = 10
+	l1ChainID, err := L1Client.ChainID(ctxWithTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	l2ChainID, err := L2Client.ChainID(ctxWithTimeout)
+	if err != nil {
+		return nil, err
 	}
 
 	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, L1Client)
@@ -105,16 +111,6 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	}
 	if !isArchive {
 		return nil, fmt.Errorf("error with RPC endpoint: node (%s) must be archive node", cfg.L1Endpoint)
-	}
-
-	l1ChainID, err := L1Client.ChainID(ctxWithTimeout)
-	if err != nil {
-		return nil, err
-	}
-
-	l2ChainID, err := L2Client.ChainID(ctxWithTimeout)
-	if err != nil {
-		return nil, err
 	}
 
 	// If not providing L2EngineEndpoint or JwtSecret, then the L2AuthClient client
