@@ -26,20 +26,10 @@ func NewEthClientWithTimeout(
 	if ethclient == nil {
 		return nil
 	}
-
-	return &EthClient{Client: ethclient, timeout: timeout}
-}
-
-// NewEthClientWithDefaultTimeout creates a new EthClient instance with the default
-// timeout.
-func NewEthClientWithDefaultTimeout(
-	ethclient *ethclient.Client,
-) *EthClient {
-	if ethclient == nil {
-		return nil
+	if timeout == 0 {
+		timeout = defaultTimeout
 	}
-
-	return &EthClient{Client: ethclient, timeout: defaultTimeout}
+	return &EthClient{Client: ethclient, timeout: timeout}
 }
 
 // ChainID retrieves the current chain ID for transaction replay protection.

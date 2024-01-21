@@ -99,13 +99,15 @@ func (s *ProverTestSuite) SetupTest() {
 	s.NotEmpty(jwtSecret)
 
 	d := new(driver.Driver)
-	s.Nil(driver.InitFromConfig(context.Background(), d, &driver.Config{
-		L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2EngineEndpoint: os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
-		TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		JwtSecret:        string(jwtSecret),
+	s.Nil(d.InitFromConfig(context.Background(), &driver.Config{
+		ClientConfig: &rpc.ClientConfig{
+			L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
+			L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+			L2EngineEndpoint: os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
+			TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+			TaikoL2Address:   common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+			JwtSecret:        string(jwtSecret),
+		},
 	}))
 	s.d = d
 
@@ -116,12 +118,14 @@ func (s *ProverTestSuite) SetupTest() {
 	prop := new(proposer.Proposer)
 
 	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
-	s.Nil(proposer.InitFromConfig(context.Background(), prop, (&proposer.Config{
-		L1Endpoint:                 os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L2Endpoint:                 os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		TaikoL1Address:             common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:             common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:          common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+	s.Nil(prop.InitFromConfig(context.Background(), &proposer.Config{
+		ClientConfig: &rpc.ClientConfig{
+			L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+			L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+			TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		},
 		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		ProposeInterval:            &proposeInterval,
@@ -134,7 +138,7 @@ func (s *ProverTestSuite) SetupTest() {
 		SgxAndPseZkevmTierFee:      common.Big256,
 		MaxTierFeePriceBumps:       3,
 		TierFeePriceBump:           common.Big2,
-	})))
+	}))
 
 	s.proposer = prop
 }
@@ -151,7 +155,7 @@ func (s *ProverTestSuite) TestInitError() {
 
 	p := new(Prover)
 	// Error should be "context canceled", instead is "Dial ethclient error:"
-	s.ErrorContains(InitFromConfig(ctx, p, (&Config{
+	s.ErrorContains(InitFromConfig(ctx, p, &Config{
 		L1WsEndpoint:                      os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L1HttpEndpoint:                    os.Getenv("L1_NODE_HTTP_ENDPOINT"),
 		L2WsEndpoint:                      os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -164,7 +168,7 @@ func (s *ProverTestSuite) TestInitError() {
 		Dummy:                             true,
 		ProveUnassignedBlocks:             true,
 		ProveBlockTxReplacementMultiplier: 2,
-	})), "dial tcp:")
+	}), "dial tcp:")
 }
 
 func (s *ProverTestSuite) TestOnBlockProposed() {

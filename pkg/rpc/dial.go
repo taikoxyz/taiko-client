@@ -3,7 +3,6 @@ package rpc
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"net/url"
 	"time"
 
@@ -21,7 +20,7 @@ func DialClientWithBackoff(
 	ctx context.Context,
 	url string,
 	retryInterval time.Duration,
-	maxRetrys *big.Int) (*ethclient.Client, error) {
+	maxRetrys uint64) (*ethclient.Client, error) {
 	var client *ethclient.Client
 	if err := backoff.Retry(
 		func() (err error) {
@@ -36,7 +35,7 @@ func DialClientWithBackoff(
 
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewConstantBackOff(retryInterval), maxRetrys.Uint64()),
+		backoff.WithMaxRetries(backoff.NewConstantBackOff(retryInterval), maxRetrys),
 	); err != nil {
 		return nil, err
 	}
@@ -51,7 +50,7 @@ func DialEngineClientWithBackoff(
 	url string,
 	jwtSecret string,
 	retryInterval time.Duration,
-	maxRetrys *big.Int,
+	maxRetry uint64,
 ) (*EngineClient, error) {
 	var engineClient *EngineClient
 	if err := backoff.Retry(
@@ -68,7 +67,7 @@ func DialEngineClientWithBackoff(
 			engineClient = &EngineClient{client}
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewConstantBackOff(retryInterval), maxRetrys.Uint64()),
+		backoff.WithMaxRetries(backoff.NewConstantBackOff(retryInterval), maxRetry),
 	); err != nil {
 		return nil, err
 	}
