@@ -16,11 +16,6 @@ import (
 )
 
 func TestOptimisticRequestProof(t *testing.T) {
-	producer := &OptimisticProofProducer{}
-
-	resCh := make(chan *ProofWithHeader, 1)
-
-	blockID := common.Big32
 	header := &types.Header{
 		ParentHash:  randHash(),
 		UncleHash:   randHash(),
@@ -37,16 +32,20 @@ func TestOptimisticRequestProof(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, producer.RequestProof(
+
+	var (
+		producer = &OptimisticProofProducer{}
+		blockID  = common.Big32
+	)
+	res, err := producer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
 		&bindings.TaikoDataBlockMetadata{},
 		header,
-		resCh,
-	))
+	)
+	require.Nil(t, err)
 
-	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
 	require.Equal(t, res.Tier, encoding.TierOptimisticID)
@@ -54,11 +53,6 @@ func TestOptimisticRequestProof(t *testing.T) {
 }
 
 func TestProofCancel(t *testing.T) {
-	optimisticProofProducer := &OptimisticProofProducer{}
-
-	resCh := make(chan *ProofWithHeader, 1)
-
-	blockID := common.Big32
 	header := &types.Header{
 		ParentHash:  randHash(),
 		UncleHash:   randHash(),
@@ -75,14 +69,19 @@ func TestProofCancel(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, optimisticProofProducer.RequestProof(
+
+	var (
+		optimisticProofProducer = &OptimisticProofProducer{}
+		blockID                 = common.Big32
+	)
+	_, err := optimisticProofProducer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
 		&bindings.TaikoDataBlockMetadata{},
 		header,
-		resCh,
-	))
+	)
+	require.Nil(t, err)
 
 	// Cancel the proof request, should return nil
 	require.Nil(t, optimisticProofProducer.Cancel(context.Background(), blockID))

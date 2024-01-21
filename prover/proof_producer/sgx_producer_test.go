@@ -14,13 +14,6 @@ import (
 )
 
 func TestSGXProducerRequestProof(t *testing.T) {
-	producer := &SGXProofProducer{
-		DummyProofProducer: &DummyProofProducer{},
-	}
-
-	resCh := make(chan *ProofWithHeader, 1)
-
-	blockID := common.Big32
 	header := &types.Header{
 		ParentHash:  randHash(),
 		UncleHash:   randHash(),
@@ -37,16 +30,22 @@ func TestSGXProducerRequestProof(t *testing.T) {
 		MixDigest:   randHash(),
 		Nonce:       types.BlockNonce{},
 	}
-	require.Nil(t, producer.RequestProof(
+
+	var (
+		producer = &SGXProofProducer{
+			DummyProofProducer: &DummyProofProducer{},
+		}
+		blockID = common.Big32
+	)
+	res, err := producer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
 		&bindings.TaikoDataBlockMetadata{},
 		header,
-		resCh,
-	))
+	)
+	require.Nil(t, err)
 
-	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
 	require.Equal(t, res.Tier, encoding.TierSgxID)

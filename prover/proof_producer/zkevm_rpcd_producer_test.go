@@ -28,8 +28,6 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 		return []byte{0}, CircuitsIdx, nil
 	}
 
-	resCh := make(chan *ProofWithHeader, 1)
-
 	blockID := common.Big32
 	header := &types.Header{
 		ParentHash:  randHash(),
@@ -48,16 +46,15 @@ func TestNewZkevmRpcdProducer(t *testing.T) {
 		Nonce:       types.BlockNonce{},
 	}
 
-	require.Nil(t, dummyZkevmRpcdProducer.RequestProof(
+	res, err := dummyZkevmRpcdProducer.RequestProof(
 		context.Background(),
 		&ProofRequestOptions{},
 		blockID,
 		&bindings.TaikoDataBlockMetadata{},
 		header,
-		resCh,
-	))
+	)
+	require.Nil(t, err)
 
-	res := <-resCh
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
 	require.NotEmpty(t, res.Proof)
