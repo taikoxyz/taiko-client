@@ -25,8 +25,7 @@ func (o *SGXAndZkevmRpcdProducer) RequestProof(
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,
 	header *types.Header,
-	resultCh chan *ProofWithHeader,
-) error {
+) (*ProofWithHeader, error) {
 	log.Info(
 		"Request SGX+PSE proof",
 		"blockID", blockID,
@@ -35,30 +34,34 @@ func (o *SGXAndZkevmRpcdProducer) RequestProof(
 		"hash", header.Hash(),
 	)
 
-	sgxProofCh := make(chan *ProofWithHeader, 1)
-	pseZkEvmProofCh := make(chan *ProofWithHeader, 1)
-
+	proofs := make([][]byte, 2)
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
-		return o.SGXProofProducer.RequestProof(ctx, opts, blockID, meta, header, sgxProofCh)
+		res, err := o.SGXProofProducer.RequestProof(ctx, opts, blockID, meta, header)
+		if err == nil {
+			proofs[0] = res.Proof
+		}
+		return err
 	})
 	g.Go(func() error {
-		return o.ZkevmRpcdProducer.RequestProof(ctx, opts, blockID, meta, header, pseZkEvmProofCh)
+		res, err := o.ZkevmRpcdProducer.RequestProof(ctx, opts, blockID, meta, header)
+		if err == nil {
+			proofs[1] = res.Proof
+		}
+		return err
 	})
 	if err := g.Wait(); err != nil {
-		return err
+		return nil, err
 	}
 
-	resultCh <- &ProofWithHeader{
+	return &ProofWithHeader{
 		BlockID: blockID,
 		Meta:    meta,
 		Header:  header,
-		Proof:   append((<-sgxProofCh).Proof, (<-pseZkEvmProofCh).Proof...),
+		Proof:   append(proofs[0], proofs[1]...),
 		Opts:    opts,
 		Tier:    o.Tier(),
-	}
-
-	return nil
+	}, nil
 }
 
 // Tier implements the ProofProducer interface.

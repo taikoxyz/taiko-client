@@ -49,8 +49,7 @@ type ProofProducer interface {
 		blockID *big.Int,
 		meta *bindings.TaikoDataBlockMetadata,
 		header *types.Header,
-		resultCh chan *ProofWithHeader,
-	) error
+	) (*ProofWithHeader, error)
 	Cancellable() bool
 	Cancel(ctx context.Context, blockID *big.Int) error
 	Tier() uint16
