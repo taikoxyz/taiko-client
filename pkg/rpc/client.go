@@ -85,13 +85,13 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		taikoToken     *bindings.TaikoToken
 		guardianProver *bindings.GuardianProver
 	)
-	if cfg.TaikoTokenAddress != ZeroAddress {
+	if cfg.TaikoTokenAddress.Hex() != ZeroAddress.Hex() {
 		if taikoToken, err = bindings.NewTaikoToken(cfg.TaikoTokenAddress, L1Client); err != nil {
 			return nil, err
 		}
 	}
-	if cfg.GuardianProverAddress != ZeroAddress {
-		if guardianProver, err = bindings.NewGuardianProver(cfg.GuardianProverAddress, L2Client); err != nil {
+	if cfg.GuardianProverAddress.Hex() != ZeroAddress.Hex() {
+		if guardianProver, err = bindings.NewGuardianProver(cfg.GuardianProverAddress, L1Client); err != nil {
 			return nil, err
 		}
 	}
