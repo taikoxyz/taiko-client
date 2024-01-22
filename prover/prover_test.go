@@ -53,7 +53,7 @@ func (s *ProverTestSuite) SetupTest() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	p := new(Prover)
-	s.Nil(InitFromConfig(ctx, p, (&Config{
+	s.Nil(InitFromConfig(ctx, p, &Config{
 		L1WsEndpoint:             os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L1HttpEndpoint:           os.Getenv("L1_NODE_HTTP_ENDPOINT"),
 		L2WsEndpoint:             os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -75,7 +75,9 @@ func (s *ProverTestSuite) SetupTest() {
 		WaitReceiptTimeout:       12 * time.Second,
 		DatabasePath:             "",
 		Allowance:                allowance,
-	})))
+		RPCTimeout:               3 * time.Second,
+		BackOffMaxRetrys:         3,
+	}))
 	p.srv = testutils.NewTestProverServer(
 		&s.ClientTestSuite,
 		l1ProverPrivKey,
@@ -168,6 +170,8 @@ func (s *ProverTestSuite) TestInitError() {
 		Dummy:                             true,
 		ProveUnassignedBlocks:             true,
 		ProveBlockTxReplacementMultiplier: 2,
+		RPCTimeout:                        10 * time.Minute,
+		BackOffMaxRetrys:                  3,
 	}), "dial tcp:")
 }
 

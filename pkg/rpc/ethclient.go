@@ -5,31 +5,48 @@ import (
 	"math/big"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
-// EthClient is a wrapper for go-ethereum ethclient with a timeout attached.
-type EthClient struct {
+type gethClient struct {
+	*gethclient.Client
+}
+
+type ethClient struct {
 	*ethclient.Client
+}
+
+// EthClient is a wrapper for go-ethereum eth client with a timeout attached.
+type EthClient struct {
+	*rpc.Client
+	*gethClient
+	*ethClient
+
 	timeout time.Duration
 }
 
-// NewEthClientWithTimeout creates a new EthClient instance with the given
-// request timeout.
-func NewEthClientWithTimeout(
-	ethclient *ethclient.Client,
-	timeout time.Duration,
-) *EthClient {
-	if ethclient == nil {
-		return nil
+func NewEthClient(ctx context.Context, url string, timeout time.Duration) (*EthClient, error) {
+	var timeoutVal = defaultTimeout
+	if timeout != 0 {
+		timeoutVal = timeout
 	}
-	if timeout == 0 {
-		timeout = defaultTimeout
+
+	client, err := rpc.DialContext(ctx, url)
+	if err != nil {
+		return nil, err
 	}
-	return &EthClient{Client: ethclient, timeout: timeout}
+
+	return &EthClient{
+		Client:     client,
+		gethClient: &gethClient{gethclient.New(client)},
+		ethClient:  &ethClient{ethclient.NewClient(client)},
+		timeout:    timeoutVal,
+	}, nil
 }
 
 // ChainID retrieves the current chain ID for transaction replay protection.
@@ -37,7 +54,7 @@ func (c *EthClient) ChainID(ctx context.Context) (*big.Int, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.ChainID(ctxWithTimeout)
+	return c.ethClient.ChainID(ctxWithTimeout)
 }
 
 // BlockByHash returns the given full block.
@@ -48,7 +65,7 @@ func (c *EthClient) BlockByHash(ctx context.Context, hash common.Hash) (*types.B
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.BlockByHash(ctxWithTimeout, hash)
+	return c.ethClient.BlockByHash(ctxWithTimeout, hash)
 }
 
 // BlockByNumber returns a block from the current canonical chain. If number is nil, the
@@ -60,7 +77,7 @@ func (c *EthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.BlockByNumber(ctxWithTimeout, number)
+	return c.ethClient.BlockByNumber(ctxWithTimeout, number)
 }
 
 // BlockNumber returns the most recent block number
@@ -68,7 +85,7 @@ func (c *EthClient) BlockNumber(ctx context.Context) (uint64, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.BlockNumber(ctxWithTimeout)
+	return c.ethClient.BlockNumber(ctxWithTimeout)
 }
 
 // PeerCount returns the number of p2p peers as reported by the net_peerCount method.
@@ -76,7 +93,7 @@ func (c *EthClient) PeerCount(ctx context.Context) (uint64, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.PeerCount(ctxWithTimeout)
+	return c.ethClient.PeerCount(ctxWithTimeout)
 }
 
 // HeaderByHash returns the block header with the given hash.
@@ -84,7 +101,7 @@ func (c *EthClient) HeaderByHash(ctx context.Context, hash common.Hash) (*types.
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.HeaderByHash(ctxWithTimeout, hash)
+	return c.ethClient.HeaderByHash(ctxWithTimeout, hash)
 }
 
 // HeaderByNumber returns a block header from the current canonical chain. If number is
@@ -93,7 +110,7 @@ func (c *EthClient) HeaderByNumber(ctx context.Context, number *big.Int) (*types
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.HeaderByNumber(ctxWithTimeout, number)
+	return c.ethClient.HeaderByNumber(ctxWithTimeout, number)
 }
 
 // TransactionByHash returns the transaction with the given hash.
@@ -104,7 +121,7 @@ func (c *EthClient) TransactionByHash(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.TransactionByHash(ctxWithTimeout, hash)
+	return c.ethClient.TransactionByHash(ctxWithTimeout, hash)
 }
 
 // TransactionSender returns the sender address of the given transaction. The transaction
@@ -122,7 +139,7 @@ func (c *EthClient) TransactionSender(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.TransactionSender(ctxWithTimeout, tx, block, index)
+	return c.ethClient.TransactionSender(ctxWithTimeout, tx, block, index)
 }
 
 // TransactionCount returns the total number of transactions in the given block.
@@ -130,7 +147,7 @@ func (c *EthClient) TransactionCount(ctx context.Context, blockHash common.Hash)
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.TransactionCount(ctxWithTimeout, blockHash)
+	return c.ethClient.TransactionCount(ctxWithTimeout, blockHash)
 }
 
 // TransactionInBlock returns a single transaction at index in the given block.
@@ -142,7 +159,7 @@ func (c *EthClient) TransactionInBlock(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.TransactionInBlock(ctxWithTimeout, blockHash, index)
+	return c.ethClient.TransactionInBlock(ctxWithTimeout, blockHash, index)
 }
 
 // SyncProgress retrieves the current progress of the sync algorithm. If there's
@@ -151,7 +168,7 @@ func (c *EthClient) SyncProgress(ctx context.Context) (*ethereum.SyncProgress, e
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.SyncProgress(ctxWithTimeout)
+	return c.ethClient.SyncProgress(ctxWithTimeout)
 }
 
 // NetworkID returns the network ID for this client.
@@ -159,7 +176,7 @@ func (c *EthClient) NetworkID(ctx context.Context) (*big.Int, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.NetworkID(ctxWithTimeout)
+	return c.ethClient.NetworkID(ctxWithTimeout)
 }
 
 // BalanceAt returns the wei balance of the given account.
@@ -172,7 +189,7 @@ func (c *EthClient) BalanceAt(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.BalanceAt(ctxWithTimeout, account, blockNumber)
+	return c.ethClient.BalanceAt(ctxWithTimeout, account, blockNumber)
 }
 
 // StorageAt returns the value of key in the contract storage of the given account.
@@ -186,7 +203,7 @@ func (c *EthClient) StorageAt(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.StorageAt(ctxWithTimeout, account, key, blockNumber)
+	return c.ethClient.StorageAt(ctxWithTimeout, account, key, blockNumber)
 }
 
 // CodeAt returns the contract code of the given account.
@@ -199,7 +216,7 @@ func (c *EthClient) CodeAt(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.CodeAt(ctxWithTimeout, account, blockNumber)
+	return c.ethClient.CodeAt(ctxWithTimeout, account, blockNumber)
 }
 
 // NonceAt returns the account nonce of the given account.
@@ -212,7 +229,7 @@ func (c *EthClient) NonceAt(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.NonceAt(ctxWithTimeout, account, blockNumber)
+	return c.ethClient.NonceAt(ctxWithTimeout, account, blockNumber)
 }
 
 // PendingBalanceAt returns the wei balance of the given account in the pending state.
@@ -220,7 +237,7 @@ func (c *EthClient) PendingBalanceAt(ctx context.Context, account common.Address
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.PendingBalanceAt(ctxWithTimeout, account)
+	return c.ethClient.PendingBalanceAt(ctxWithTimeout, account)
 }
 
 // PendingStorageAt returns the value of key in the contract storage of the given account in the pending state.
@@ -232,7 +249,7 @@ func (c *EthClient) PendingStorageAt(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.PendingStorageAt(ctxWithTimeout, account, key)
+	return c.ethClient.PendingStorageAt(ctxWithTimeout, account, key)
 }
 
 // PendingCodeAt returns the contract code of the given account in the pending state.
@@ -240,7 +257,7 @@ func (c *EthClient) PendingCodeAt(ctx context.Context, account common.Address) (
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.PendingCodeAt(ctxWithTimeout, account)
+	return c.ethClient.PendingCodeAt(ctxWithTimeout, account)
 }
 
 // PendingNonceAt returns the account nonce of the given account in the pending state.
@@ -249,7 +266,7 @@ func (c *EthClient) PendingNonceAt(ctx context.Context, account common.Address) 
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.PendingNonceAt(ctxWithTimeout, account)
+	return c.ethClient.PendingNonceAt(ctxWithTimeout, account)
 }
 
 // PendingTransactionCount returns the total number of transactions in the pending state.
@@ -257,7 +274,7 @@ func (c *EthClient) PendingTransactionCount(ctx context.Context) (uint, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.PendingTransactionCount(ctxWithTimeout)
+	return c.ethClient.PendingTransactionCount(ctxWithTimeout)
 }
 
 // CallContract executes a message call transaction, which is directly executed in the VM
@@ -274,7 +291,7 @@ func (c *EthClient) CallContract(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.CallContract(ctxWithTimeout, msg, blockNumber)
+	return c.ethClient.CallContract(ctxWithTimeout, msg, blockNumber)
 }
 
 // CallContractAtHash is almost the same as CallContract except that it selects
@@ -287,7 +304,7 @@ func (c *EthClient) CallContractAtHash(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.CallContractAtHash(ctxWithTimeout, msg, blockHash)
+	return c.ethClient.CallContractAtHash(ctxWithTimeout, msg, blockHash)
 }
 
 // PendingCallContract executes a message call transaction using the EVM.
@@ -296,7 +313,7 @@ func (c *EthClient) PendingCallContract(ctx context.Context, msg ethereum.CallMs
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.PendingCallContract(ctxWithTimeout, msg)
+	return c.ethClient.PendingCallContract(ctxWithTimeout, msg)
 }
 
 // SuggestGasPrice retrieves the currently suggested gas price to allow a timely
@@ -305,7 +322,7 @@ func (c *EthClient) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.SuggestGasPrice(ctxWithTimeout)
+	return c.ethClient.SuggestGasPrice(ctxWithTimeout)
 }
 
 // SuggestGasTipCap retrieves the currently suggested gas tip cap after 1559 to
@@ -314,7 +331,7 @@ func (c *EthClient) SuggestGasTipCap(ctx context.Context) (*big.Int, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.SuggestGasTipCap(ctxWithTimeout)
+	return c.ethClient.SuggestGasTipCap(ctxWithTimeout)
 }
 
 // FeeHistory retrieves the fee market history.
@@ -327,7 +344,7 @@ func (c *EthClient) FeeHistory(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.FeeHistory(ctxWithTimeout, blockCount, lastBlock, rewardPercentiles)
+	return c.ethClient.FeeHistory(ctxWithTimeout, blockCount, lastBlock, rewardPercentiles)
 }
 
 // EstimateGas tries to estimate the gas needed to execute a specific transaction based on
@@ -338,7 +355,7 @@ func (c *EthClient) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.EstimateGas(ctxWithTimeout, msg)
+	return c.ethClient.EstimateGas(ctxWithTimeout, msg)
 }
 
 // SendTransaction injects a signed transaction into the pending pool for execution.
@@ -349,5 +366,5 @@ func (c *EthClient) SendTransaction(ctx context.Context, tx *types.Transaction) 
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
 
-	return c.Client.SendTransaction(ctxWithTimeout, tx)
+	return c.ethClient.SendTransaction(ctxWithTimeout, tx)
 }

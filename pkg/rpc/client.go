@@ -8,9 +8,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient/gethclient"
-	"github.com/ethereum/go-ethereum/rpc"
-
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
@@ -24,12 +21,6 @@ type Client struct {
 	L1           *EthClient
 	L2           *EthClient
 	L2CheckPoint *EthClient
-	// Geth gethclient clients
-	L1GethClient *gethclient.Client
-	L2GethClient *gethclient.Client
-	// Geth raw RPC clients
-	L1RawRPC *rpc.Client
-	L2RawRPC *rpc.Client
 	// Geth Engine API clients
 	L2Engine *EngineClient
 	// Protocol contracts clients
@@ -65,33 +56,32 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	if cfg.BackOffMaxRetries == 0 {
-		cfg.BackOffMaxRetries = 10
-	}
-
-	l1EthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L1Endpoint, cfg.RetryInterval, cfg.BackOffMaxRetries)
+	l1Client, err := NewEthClient(ctxWithTimeout, cfg.L1Endpoint, cfg.Timeout)
 	if err != nil {
 		return nil, err
 	}
 
-	l2EthClient, err := DialClientWithBackoff(ctxWithTimeout, cfg.L2Endpoint, cfg.RetryInterval, cfg.BackOffMaxRetries)
+	l2Client, err := NewEthClient(ctxWithTimeout, cfg.L2Endpoint, cfg.Timeout)
 	if err != nil {
 		return nil, err
 	}
 
-	var (
-		l1RPC *EthClient
-		l2RPC *EthClient
-	)
-	l1RPC = NewEthClientWithTimeout(l1EthClient, cfg.Timeout)
-	l2RPC = NewEthClientWithTimeout(l2EthClient, cfg.Timeout)
-
-	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1RPC)
+	l1ChainID, err := l1Client.ChainID(ctxWithTimeout)
 	if err != nil {
 		return nil, err
 	}
 
-	taikoL2, err := bindings.NewTaikoL2Client(cfg.TaikoL2Address, l2RPC)
+	l2ChainID, err := l2Client.ChainID(ctxWithTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1Client)
+	if err != nil {
+		return nil, err
+	}
+
+	taikoL2, err := bindings.NewTaikoL2Client(cfg.TaikoL2Address, l2Client)
 	if err != nil {
 		return nil, err
 	}
@@ -101,12 +91,12 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		guardianProver *bindings.GuardianProver
 	)
 	if cfg.TaikoTokenAddress.Hex() != ZeroAddress.Hex() {
-		if taikoToken, err = bindings.NewTaikoToken(cfg.TaikoTokenAddress, l1RPC); err != nil {
+		if taikoToken, err = bindings.NewTaikoToken(cfg.TaikoTokenAddress, l1Client); err != nil {
 			return nil, err
 		}
 	}
 	if cfg.GuardianProverAddress.Hex() != ZeroAddress.Hex() {
-		if guardianProver, err = bindings.NewGuardianProver(cfg.GuardianProverAddress, l1RPC); err != nil {
+		if guardianProver, err = bindings.NewGuardianProver(cfg.GuardianProverAddress, l1Client); err != nil {
 			return nil, err
 		}
 	}
@@ -115,73 +105,37 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	isArchive, err := IsArchiveNode(ctxWithTimeout, l1RPC, stateVars.A.GenesisHeight)
+	isArchive, err := IsArchiveNode(ctxWithTimeout, l1Client, stateVars.A.GenesisHeight)
 	if err != nil {
 		return nil, err
 	}
-
 	if !isArchive {
 		return nil, fmt.Errorf("error with RPC endpoint: node (%s) must be archive node", cfg.L1Endpoint)
 	}
 
-	l1RawRPC, err := rpc.Dial(cfg.L1Endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	l2RawRPC, err := rpc.Dial(cfg.L2Endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	l1ChainID, err := l1RPC.ChainID(ctxWithTimeout)
-	if err != nil {
-		return nil, err
-	}
-
-	l2ChainID, err := l2RPC.ChainID(ctxWithTimeout)
-	if err != nil {
-		return nil, err
-	}
-
 	// If not providing L2EngineEndpoint or JwtSecret, then the L2Engine client
 	// won't be initialized.
-	var l2AuthRPC *EngineClient
+	var l2AuthClient *EngineClient
 	if len(cfg.L2EngineEndpoint) != 0 && len(cfg.JwtSecret) != 0 {
-		if l2AuthRPC, err = DialEngineClientWithBackoff(
-			ctxWithTimeout,
-			cfg.L2EngineEndpoint,
-			cfg.JwtSecret,
-			cfg.RetryInterval,
-			cfg.BackOffMaxRetries,
-		); err != nil {
+		l2AuthClient, err = NewJWTEngineClient(cfg.L2EngineEndpoint, cfg.JwtSecret)
+		if err != nil {
 			return nil, err
 		}
 	}
 
 	var l2CheckPoint *EthClient
-	if len(cfg.L2CheckPoint) != 0 {
-		l2CheckPointEthClient, err := DialClientWithBackoff(
-			ctxWithTimeout,
-			cfg.L2CheckPoint,
-			cfg.RetryInterval,
-			cfg.BackOffMaxRetries)
+	if cfg.L2CheckPoint != "" {
+		l2CheckPoint, err = NewEthClient(ctxWithTimeout, cfg.L2CheckPoint, cfg.Timeout)
 		if err != nil {
 			return nil, err
 		}
-		l2CheckPoint = NewEthClientWithTimeout(l2CheckPointEthClient, cfg.Timeout)
 	}
 
 	client := &Client{
-		L1:             l1RPC,
-		L2:             l2RPC,
+		L1:             l1Client,
+		L2:             l2Client,
 		L2CheckPoint:   l2CheckPoint,
-		L1RawRPC:       l1RawRPC,
-		L2RawRPC:       l2RawRPC,
-		L1GethClient:   gethclient.New(l1RawRPC),
-		L2GethClient:   gethclient.New(l2RawRPC),
-		L2Engine:       l2AuthRPC,
+		L2Engine:       l2AuthClient,
 		TaikoL1:        taikoL1,
 		TaikoL2:        taikoL2,
 		TaikoToken:     taikoToken,
