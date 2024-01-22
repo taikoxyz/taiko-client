@@ -28,7 +28,7 @@ func (s *AnchorTxConstructorTestSuite) SetupTest() {
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
-	head, err := s.RPCClient.L1Client.BlockByNumber(context.Background(), nil)
+	head, err := s.RPCClient.L1.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.l1Height = head.Number()
 	s.l1Hash = head.Hash()

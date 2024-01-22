@@ -43,7 +43,7 @@ func New(
 	p2pSyncTimeout time.Duration,
 	signalServiceAddress common.Address,
 ) (*L2ChainSyncer, error) {
-	tracker := beaconsync.NewSyncProgressTracker(rpc.L2Client, p2pSyncTimeout)
+	tracker := beaconsync.NewSyncProgressTracker(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
 	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, tracker)
@@ -86,7 +86,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		)
 
 		// Get the execution engine's chain head.
-		l2Head, err := s.rpc.L2Client.HeaderByNumber(s.ctx, nil)
+		l2Head, err := s.rpc.L2.HeaderByNumber(s.ctx, nil)
 		if err != nil {
 			return err
 		}

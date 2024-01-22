@@ -84,10 +84,10 @@ func (s *DriverTestSuite) TestName() {
 }
 
 func (s *DriverTestSuite) TestProcessL1Blocks() {
-	l1Head1, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	l2Head1, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head1))
@@ -95,7 +95,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	// Propose a valid L2 block
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
-	l2Head2, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head2, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
@@ -104,20 +104,20 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(err)
 
-	l2Head3, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	s.Greater(l2Head3.Number.Uint64(), l2Head2.Number.Uint64())
 
 	for _, height := range []uint64{l2Head3.Number.Uint64(), l2Head3.Number.Uint64() - 1} {
-		header, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), new(big.Int).SetUint64(height))
+		header, err := s.d.rpc.L2.HeaderByNumber(context.Background(), new(big.Int).SetUint64(height))
 		s.Nil(err)
 
-		txCount, err := s.d.rpc.L2Client.TransactionCount(context.Background(), header.Hash())
+		txCount, err := s.d.rpc.L2.TransactionCount(context.Background(), header.Hash())
 		s.Nil(err)
 		s.Equal(uint(1), txCount)
 
-		anchorTx, err := s.d.rpc.L2Client.TransactionInBlock(context.Background(), header.Hash(), 0)
+		anchorTx, err := s.d.rpc.L2.TransactionInBlock(context.Background(), header.Hash(), 0)
 		s.Nil(err)
 
 		method, err := encoding.TaikoL2ABI.MethodById(anchorTx.Data())
@@ -128,12 +128,12 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 
 func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	var testnetL1SnapshotID string
-	s.Nil(s.RPCClient.L1Client.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(testnetL1SnapshotID)
 
-	l1Head1, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	l2Head1, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	// Propose two L2 blocks
@@ -141,9 +141,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
-	l1Head2, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	l2Head2, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head2, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
@@ -158,10 +158,10 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 	// Reorg back to l2Head1
 	var revertRes bool
-	s.Nil(s.RPCClient.L1Client.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
 	s.True(revertRes)
 
-	l1Head3, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
@@ -171,19 +171,19 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 		testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 	}
 
-	l1Head4, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	s.Greater(l1Head4.Number.Uint64(), l1Head2.Number.Uint64())
 
 	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head4))
 
-	l2Head3, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	s.Equal(l2Head1.Number.Uint64()+10, l2Head3.Number.Uint64())
 
-	parent, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), new(big.Int).SetUint64(l2Head1.Number.Uint64()+1))
+	parent, err := s.d.rpc.L2.HeaderByNumber(context.Background(), new(big.Int).SetUint64(l2Head1.Number.Uint64()+1))
 	s.Nil(err)
 	s.Equal(parent.ParentHash, l2Head1.Hash())
 	s.NotEqual(parent.Hash(), l2Head2.ParentHash)
@@ -191,12 +191,12 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	var testnetL1SnapshotID string
-	s.Nil(s.RPCClient.L1Client.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(testnetL1SnapshotID)
 
-	l1Head1, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	l2Head1, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	// Propose two L2 blocks
@@ -204,9 +204,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	time.Sleep(3 * time.Second)
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
-	l1Head2, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	l2Head2, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head2, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
@@ -221,10 +221,10 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 
 	// Reorg back to l2Head1
 	var revertRes bool
-	s.Nil(s.RPCClient.L1Client.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
 	s.True(revertRes)
 
-	l1Head3, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
@@ -232,7 +232,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	// Propose one blocks on another fork
 	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 
-	l1Head4, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	s.Greater(l1Head4.Number.Uint64(), l1Head3.Number.Uint64())
@@ -240,10 +240,10 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 
 	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head4))
 
-	l2Head3, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	parent, err := s.d.rpc.L2Client.HeaderByHash(context.Background(), l2Head3.ParentHash)
+	parent, err := s.d.rpc.L2.HeaderByHash(context.Background(), l2Head3.ParentHash)
 	s.Nil(err)
 	s.Equal(l2Head3.Number.Uint64(), l2Head2.Number.Uint64()-1)
 	s.Equal(parent.Hash(), l2Head1.Hash())
@@ -251,12 +251,12 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 
 func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	var testnetL1SnapshotID string
-	s.Nil(s.RPCClient.L1Client.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(testnetL1SnapshotID)
 
-	l1Head1, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	l2Head1, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	// Propose two L2 blocks
@@ -264,9 +264,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	time.Sleep(3 * time.Second)
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
-	l1Head2, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	l2Head2, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head2, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
@@ -281,10 +281,10 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 
 	// Reorg back to l2Head1
 	var revertRes bool
-	s.Nil(s.RPCClient.L1Client.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
 	s.True(revertRes)
 
-	l1Head3, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
@@ -294,7 +294,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	time.Sleep(3 * time.Second)
 	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 
-	l1Head4, err := s.d.rpc.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	s.Greater(l1Head4.Number.Uint64(), l1Head3.Number.Uint64())
@@ -302,10 +302,10 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 
 	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head4))
 
-	l2Head3, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	parent, err := s.d.rpc.L2Client.HeaderByHash(context.Background(), l2Head3.ParentHash)
+	parent, err := s.d.rpc.L2.HeaderByHash(context.Background(), l2Head3.ParentHash)
 	s.Nil(err)
 	s.Equal(l2Head3.Number.Uint64(), l2Head2.Number.Uint64())
 	s.NotEqual(l2Head3.Hash(), l2Head2.Hash())

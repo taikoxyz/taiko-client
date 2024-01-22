@@ -78,12 +78,12 @@ func (s *ProposerTestSuite) TestProposeOp() {
 		close(sink)
 	}()
 
-	nonce, err := s.p.rpc.L2Client.PendingNonceAt(context.Background(), s.TestAddr)
+	nonce, err := s.p.rpc.L2.PendingNonceAt(context.Background(), s.TestAddr)
 	s.Nil(err)
 
 	gaslimit := 21000
 
-	parent, err := s.p.rpc.L2Client.BlockByNumber(context.Background(), nil)
+	parent, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	baseFee, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
@@ -102,17 +102,17 @@ func (s *ProposerTestSuite) TestProposeOp() {
 
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.p.rpc.L2ChainID), s.TestAddrPrivKey)
 	s.Nil(err)
-	s.Nil(s.p.rpc.L2Client.SendTransaction(context.Background(), signedTx))
+	s.Nil(s.p.rpc.L2.SendTransaction(context.Background(), signedTx))
 
 	s.Nil(s.p.ProposeOp(context.Background()))
 
 	event := <-sink
 
-	_, isPending, err := s.p.rpc.L1Client.TransactionByHash(context.Background(), event.Raw.TxHash)
+	_, isPending, err := s.p.rpc.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
 
-	receipt, err := s.p.rpc.L1Client.TransactionReceipt(context.Background(), event.Raw.TxHash)
+	receipt, err := s.p.rpc.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
 }
@@ -154,7 +154,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	fee := big.NewInt(10000)
 	opts, err := getTxOpts(
 		context.Background(),
-		s.p.rpc.L1Client,
+		s.p.rpc.L1,
 		s.p.L1ProposerPrivKey,
 		s.RPCClient.L1ChainID,
 		fee,
@@ -162,7 +162,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.Nil(err)
 	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
 
-	nonce, err := s.RPCClient.L1Client.PendingNonceAt(context.Background(), s.p.proposerAddress)
+	nonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
 	s.Nil(err)
 
 	tx := types.NewTransaction(
@@ -179,7 +179,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L1ChainID), s.p.L1ProposerPrivKey)
 	s.Nil(err)
-	s.Nil(s.RPCClient.L1Client.SendTransaction(context.Background(), signedTx))
+	s.Nil(s.RPCClient.L1.SendTransaction(context.Background(), signedTx))
 
 	var emptyTxs []types.Transaction
 	encoded, err := rlp.EncodeToBytes(emptyTxs)

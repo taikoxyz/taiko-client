@@ -174,7 +174,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
 
-	l1Head, err := srv.rpc.L1Client.BlockNumber(c.Request().Context())
+	l1Head, err := srv.rpc.L1.BlockNumber(c.Request().Context())
 	if err != nil {
 		log.Error("Failed to get L1 block head", "error", err)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)

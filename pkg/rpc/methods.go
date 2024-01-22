@@ -56,7 +56,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	}
 
 	// Fetch the node's genesis block.
-	nodeGenesis, err := c.L2Client.HeaderByNumber(ctxWithTimeout, common.Big0)
+	nodeGenesis, err := c.L2.HeaderByNumber(ctxWithTimeout, common.Big0)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, erro
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	headL1Origin, err := c.L2Client.HeadL1Origin(ctxWithTimeout)
+	headL1Origin, err := c.L2.HeadL1Origin(ctxWithTimeout)
 	if err != nil {
 		switch err.Error() {
 		case ethereum.NotFound.Error():
@@ -134,7 +134,7 @@ func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, erro
 		return c.GetGenesisL1Header(ctxWithTimeout)
 	}
 
-	header, err := c.L1Client.HeaderByHash(ctxWithTimeout, headL1Origin.L1BlockHash)
+	header, err := c.L1.HeaderByHash(ctxWithTimeout, headL1Origin.L1BlockHash)
 	if err != nil {
 		switch err.Error() {
 		case ethereum.NotFound.Error():
@@ -160,7 +160,7 @@ func (c *Client) GetGenesisL1Header(ctx context.Context) (*types.Header, error) 
 		return nil, err
 	}
 
-	return c.L1Client.HeaderByNumber(ctxWithTimeout, new(big.Int).SetUint64(stateVars.A.GenesisHeight))
+	return c.L1.HeaderByNumber(ctxWithTimeout, new(big.Int).SetUint64(stateVars.A.GenesisHeight))
 }
 
 // L2ParentByBlockID fetches the block header from L2 execution engine with the largest block id that
@@ -174,17 +174,17 @@ func (c *Client) L2ParentByBlockID(ctx context.Context, blockID *big.Int) (*type
 	log.Debug("Get parent block by block ID", "parentBlockID", parentBlockID)
 
 	if parentBlockID.Cmp(common.Big0) == 0 {
-		return c.L2Client.HeaderByNumber(ctxWithTimeout, common.Big0)
+		return c.L2.HeaderByNumber(ctxWithTimeout, common.Big0)
 	}
 
-	l1Origin, err := c.L2Client.L1OriginByID(ctxWithTimeout, parentBlockID)
+	l1Origin, err := c.L2.L1OriginByID(ctxWithTimeout, parentBlockID)
 	if err != nil {
 		return nil, err
 	}
 
 	log.Debug("Parent block L1 origin", "l1Origin", l1Origin, "parentBlockID", parentBlockID)
 
-	return c.L2Client.HeaderByHash(ctxWithTimeout, l1Origin.L2BlockHash)
+	return c.L2.HeaderByHash(ctxWithTimeout, l1Origin.L2BlockHash)
 }
 
 // WaitL1Origin keeps waiting until the L1Origin with given block ID appears on the L2 execution engine.
@@ -212,7 +212,7 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 			return nil, ctxWithTimeout.Err()
 		}
 
-		l1Origin, err = c.L2Client.L1OriginByID(ctxWithTimeout, blockID)
+		l1Origin, err = c.L2.L1OriginByID(ctxWithTimeout, blockID)
 		if err != nil {
 			log.Debug("L1Origin from L2 execution engine not found, keep retrying", "blockID", blockID, "error", err)
 			continue
@@ -248,7 +248,7 @@ func (c *Client) GetPoolContent(
 	}
 
 	var result []types.Transactions
-	err := c.L2Client.CallContext(
+	err := c.L2.CallContext(
 		ctxWithTimeout,
 		&result,
 		"taiko_txPoolContent",
@@ -274,7 +274,7 @@ func (c *Client) L2AccountNonce(
 	defer cancel()
 
 	var result hexutil.Uint64
-	err := c.L2Client.CallContext(ctxWithTimeout, &result, "eth_getTransactionCount", account, hexutil.EncodeBig(height))
+	err := c.L2.CallContext(ctxWithTimeout, &result, "eth_getTransactionCount", account, hexutil.EncodeBig(height))
 	return uint64(result), err
 }
 
@@ -306,7 +306,7 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 	g, ctx := errgroup.WithContext(ctxWithTimeout)
 
 	g.Go(func() error {
-		progress.SyncProgress, err = c.L2Client.SyncProgress(ctx)
+		progress.SyncProgress, err = c.L2.SyncProgress(ctx)
 		return err
 	})
 	g.Go(func() error {
@@ -318,7 +318,7 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 		return nil
 	})
 	g.Go(func() error {
-		headL1Origin, err := c.L2Client.HeadL1Origin(ctx)
+		headL1Origin, err := c.L2.HeadL1Origin(ctx)
 		if err != nil {
 			switch err.Error() {
 			case ethereum.NotFound.Error():
@@ -406,7 +406,7 @@ func (c *Client) CheckL1ReorgFromL2EE(
 				return false, nil, nil, err
 			}
 
-			if l1CurrentToReset, err = c.L1Client.HeaderByNumber(
+			if l1CurrentToReset, err = c.L1.HeaderByNumber(
 				ctxWithTimeout,
 				new(big.Int).SetUint64(stateVars.A.GenesisHeight),
 			); err != nil {
@@ -417,7 +417,7 @@ func (c *Client) CheckL1ReorgFromL2EE(
 			break
 		}
 
-		l1Origin, err := c.L2Client.L1OriginByID(ctxWithTimeout, blockID)
+		l1Origin, err := c.L2.L1OriginByID(ctxWithTimeout, blockID)
 		if err != nil {
 			if err.Error() == ethereum.NotFound.Error() {
 				log.Info("L1Origin not found", "blockID", blockID)
@@ -450,7 +450,7 @@ func (c *Client) CheckL1ReorgFromL2EE(
 			return false, nil, nil, err
 		}
 
-		l1Header, err := c.L1Client.HeaderByNumber(ctxWithTimeout, l1Origin.L1BlockHeight)
+		l1Header, err := c.L1.HeaderByNumber(ctxWithTimeout, l1Origin.L1BlockHeight)
 		if err != nil {
 			if err.Error() == ethereum.NotFound.Error() {
 				continue
@@ -509,11 +509,11 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 	l1SignalService common.Address,
 ) (bool, error) {
 	log.Info("Check synced L1 snippet from anchor", "blockID", blockID)
-	block, err := c.L2Client.BlockByNumber(ctx, blockID)
+	block, err := c.L2.BlockByNumber(ctx, blockID)
 	if err != nil {
 		return false, err
 	}
-	parent, err := c.L2Client.BlockByHash(ctx, block.ParentHash())
+	parent, err := c.L2.BlockByHash(ctx, block.ParentHash())
 	if err != nil {
 		return false, err
 	}
@@ -546,7 +546,7 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 		return true, nil
 	}
 
-	l1Header, err := c.L1Client.HeaderByNumber(ctx, new(big.Int).SetUint64(l1HeightInAnchor))
+	l1Header, err := c.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(l1HeightInAnchor))
 	if err != nil {
 		return false, err
 	}
@@ -561,7 +561,7 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 		return true, nil
 	}
 
-	currentRoot, err := c.GetStorageRoot(ctx, c.L1Client, l1SignalService, l1Header.Number)
+	currentRoot, err := c.GetStorageRoot(ctx, c.L1, l1SignalService, l1Header.Number)
 	if err != nil {
 		return false, err
 	}
@@ -657,7 +657,7 @@ func (c *Client) CheckL1ReorgFromL1Cursor(
 		defer cancel()
 
 		if l1Current.Number.Uint64() <= genesisHeightL1 {
-			newL1Current, err := c.L1Client.HeaderByNumber(ctxWithTimeout, new(big.Int).SetUint64(genesisHeightL1))
+			newL1Current, err := c.L1.HeaderByNumber(ctxWithTimeout, new(big.Int).SetUint64(genesisHeightL1))
 			if err != nil {
 				return false, nil, nil, err
 			}
@@ -666,7 +666,7 @@ func (c *Client) CheckL1ReorgFromL1Cursor(
 			break
 		}
 
-		l1Header, err := c.L1Client.BlockByNumber(ctxWithTimeout, l1Current.Number)
+		l1Header, err := c.L1.BlockByNumber(ctxWithTimeout, l1Current.Number)
 		if err != nil {
 			if err.Error() == ethereum.NotFound.Error() {
 				continue
@@ -683,7 +683,7 @@ func (c *Client) CheckL1ReorgFromL1Cursor(
 				"l1HashNew", l1Header.Hash(),
 			)
 			reorged = true
-			if l1Current, err = c.L1Client.HeaderByHash(ctxWithTimeout, l1Current.ParentHash); err != nil {
+			if l1Current, err = c.L1.HeaderByHash(ctxWithTimeout, l1Current.ParentHash); err != nil {
 				return false, nil, nil, err
 			}
 			continue
@@ -709,12 +709,12 @@ func (c *Client) IsJustSyncedByP2P(ctx context.Context) (bool, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	l2Head, err := c.L2Client.HeaderByNumber(ctxWithTimeout, nil)
+	l2Head, err := c.L2.HeaderByNumber(ctxWithTimeout, nil)
 	if err != nil {
 		return false, err
 	}
 
-	if _, err = c.L2Client.L1OriginByID(ctxWithTimeout, l2Head.Number); err != nil {
+	if _, err = c.L2.L1OriginByID(ctxWithTimeout, l2Head.Number); err != nil {
 		if err.Error() == ethereum.NotFound.Error() {
 			return true, nil
 		}

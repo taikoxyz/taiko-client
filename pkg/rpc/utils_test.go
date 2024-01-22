@@ -20,14 +20,14 @@ func TestWaitReceiptTimeout(t *testing.T) {
 	defer cancel()
 
 	_, err := WaitReceipt(
-		ctx, client.L1Client, types.NewTransaction(0, common.Address{}, common.Big0, 0, common.Big0, []byte{}),
+		ctx, client.L1, types.NewTransaction(0, common.Address{}, common.Big0, 0, common.Big0, []byte{}),
 	)
 
 	require.ErrorContains(t, err, "context deadline exceeded")
 }
 
 func TestSetHead(t *testing.T) {
-	require.Nil(t, SetHead(context.Background(), newTestClient(t).L2Client, common.Big0))
+	require.Nil(t, SetHead(context.Background(), newTestClient(t).L2, common.Big0))
 }
 
 func TestStringToBytes32(t *testing.T) {
@@ -37,7 +37,7 @@ func TestStringToBytes32(t *testing.T) {
 
 func TestL1ContentFrom(t *testing.T) {
 	client := newTestClient(t)
-	l2Head, err := client.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head, err := client.L2.HeaderByNumber(context.Background(), nil)
 	require.Nil(t, err)
 
 	baseFee, err := client.TaikoL2.GetBasefee(nil, 0, uint32(l2Head.GasUsed))
@@ -48,7 +48,7 @@ func TestL1ContentFrom(t *testing.T) {
 
 	testAddr := crypto.PubkeyToAddress(testAddrPrivKey.PublicKey)
 
-	nonce, err := client.L2Client.PendingNonceAt(context.Background(), testAddr)
+	nonce, err := client.L2.PendingNonceAt(context.Background(), testAddr)
 	require.Nil(t, err)
 
 	tx := types.NewTransaction(
@@ -61,9 +61,9 @@ func TestL1ContentFrom(t *testing.T) {
 	)
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(client.L2ChainID), testAddrPrivKey)
 	require.Nil(t, err)
-	require.Nil(t, client.L2Client.SendTransaction(context.Background(), signedTx))
+	require.Nil(t, client.L2.SendTransaction(context.Background(), signedTx))
 
-	content, err := ContentFrom(context.Background(), client.L2Client, testAddr)
+	content, err := ContentFrom(context.Background(), client.L2, testAddr)
 	require.Nil(t, err)
 
 	require.NotZero(t, len(content["pending"]))

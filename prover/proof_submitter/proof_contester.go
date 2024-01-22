@@ -109,17 +109,17 @@ func (c *ProofContester) SubmitContest(
 		return nil
 	}
 
-	header, err := c.rpc.L2Client.HeaderByNumber(ctx, blockID)
+	header, err := c.rpc.L2.HeaderByNumber(ctx, blockID)
 	if err != nil {
 		return err
 	}
 
-	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L2Client, c.l2SignalService, blockID)
+	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L2, c.l2SignalService, blockID)
 	if err != nil {
 		return fmt.Errorf("failed to get L2 signal service storage root: %w", err)
 	}
 
-	l1HeaderProposedIn, err := c.rpc.L1Client.HeaderByNumber(ctx, proposedIn)
+	l1HeaderProposedIn, err := c.rpc.L1.HeaderByNumber(ctx, proposedIn)
 	if err != nil {
 		return err
 	}

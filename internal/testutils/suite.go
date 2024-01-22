@@ -93,7 +93,7 @@ func (s *ClientTestSuite) SetupTest() {
 
 		tx, err := rpcCli.TaikoToken.Transfer(opts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), proverBalance)
 		s.Nil(err)
-		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1Client, tx)
+		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)
 
 		decimal, err := rpcCli.TaikoToken.Decimals(nil)
@@ -118,10 +118,10 @@ func (s *ClientTestSuite) SetupTest() {
 		)
 		s.Nil(err)
 
-		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1Client, tx)
+		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)
 	}
-	s.Nil(rpcCli.L1Client.CallContext(context.Background(), &s.testnetL1SnapshotID, "evm_snapshot"))
+	s.Nil(rpcCli.L1.CallContext(context.Background(), &s.testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(s.testnetL1SnapshotID)
 }
 
@@ -132,7 +132,7 @@ func (s *ClientTestSuite) setAddress(ownerPrivKey *ecdsa.PrivateKey, name [32]by
 
 	controller, err := bindings.NewTaikoTimelockController(
 		common.HexToAddress(os.Getenv("TIMELOCK_CONTROLLER")),
-		s.RPCClient.L1Client,
+		s.RPCClient.L1,
 	)
 	s.Nil(err)
 
@@ -156,7 +156,7 @@ func (s *ClientTestSuite) setAddress(ownerPrivKey *ecdsa.PrivateKey, name [32]by
 	)
 	s.Nil(err)
 
-	_, err = rpc.WaitReceipt(context.Background(), s.RPCClient.L1Client, tx)
+	_, err = rpc.WaitReceipt(context.Background(), s.RPCClient.L1, tx)
 	s.Nil(err)
 
 	tx, err = controller.Execute(
@@ -169,25 +169,25 @@ func (s *ClientTestSuite) setAddress(ownerPrivKey *ecdsa.PrivateKey, name [32]by
 	)
 	s.Nil(err)
 
-	_, err = rpc.WaitReceipt(context.Background(), s.RPCClient.L1Client, tx)
+	_, err = rpc.WaitReceipt(context.Background(), s.RPCClient.L1, tx)
 	s.Nil(err)
 }
 
 func (s *ClientTestSuite) TearDownTest() {
 	var revertRes bool
-	s.Nil(s.RPCClient.L1Client.CallContext(context.Background(), &revertRes, "evm_revert", s.testnetL1SnapshotID))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", s.testnetL1SnapshotID))
 	s.True(revertRes)
 
-	s.Nil(rpc.SetHead(context.Background(), s.RPCClient.L2Client, common.Big0))
+	s.Nil(rpc.SetHead(context.Background(), s.RPCClient.L2, common.Big0))
 	s.Nil(s.proverServer.Shutdown(context.Background()))
 }
 
 func (s *ClientTestSuite) SetL1Automine(automine bool) {
-	s.Nil(s.RPCClient.L1Client.CallContext(context.Background(), nil, "evm_setAutomine", automine))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), nil, "evm_setAutomine", automine))
 }
 
 func (s *ClientTestSuite) IncreaseTime(time uint64) {
 	var result uint64
-	s.Nil(s.RPCClient.L1Client.CallContext(context.Background(), &result, "evm_increaseTime", time))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &result, "evm_increaseTime", time))
 	s.NotNil(result)
 }

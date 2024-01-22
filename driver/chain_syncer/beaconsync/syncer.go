@@ -54,7 +54,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 		}
 	}
 
-	status, err := s.rpc.L2AuthClient.NewPayload(
+	status, err := s.rpc.L2Engine.NewPayload(
 		s.ctx,
 		latestVerifiedHeadPayload,
 	)
@@ -66,7 +66,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 		return fmt.Errorf("unexpected NewPayload response status: %s", status.Status)
 	}
 
-	fcRes, err := s.rpc.L2AuthClient.ForkchoiceUpdate(s.ctx, &engine.ForkchoiceStateV1{
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &engine.ForkchoiceStateV1{
 		HeadBlockHash:      latestVerifiedHeadPayload.BlockHash,
 		SafeBlockHash:      latestVerifiedHeadPayload.BlockHash,
 		FinalizedBlockHash: latestVerifiedHeadPayload.BlockHash,

@@ -12,17 +12,17 @@ import (
 )
 
 const (
-	defaultTimeout = 10 * time.Minute
+	defaultTimeout = 1 * time.Minute
 )
 
 // Client contains all L1/L2 RPC clients that a driver needs.
 type Client struct {
 	// Geth ethclient clients
-	L1Client     *EthClient
-	L2Client     *EthClient
+	L1           *EthClient
+	L2           *EthClient
 	L2CheckPoint *EthClient
 	// Geth Engine API clients
-	L2AuthClient *EngineClient
+	L2Engine *EngineClient
 	// Protocol contracts clients
 	TaikoL1        *bindings.TaikoL1Client
 	TaikoL2        *bindings.TaikoL2Client
@@ -34,7 +34,7 @@ type Client struct {
 }
 
 // ClientConfig contains all configs which will be used to initializing an
-// RPC client. If not providing L2EngineEndpoint or JwtSecret, then the L2AuthClient client
+// RPC client. If not providing L2EngineEndpoint or JwtSecret, then the L2Engine client
 // won't be initialized.
 type ClientConfig struct {
 	L1Endpoint            string
@@ -56,32 +56,32 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	L1Client, err := NewEthClient(ctxWithTimeout, cfg.L1Endpoint, cfg.Timeout)
+	l1Client, err := NewEthClient(ctxWithTimeout, cfg.L1Endpoint, cfg.Timeout)
 	if err != nil {
 		return nil, err
 	}
 
-	L2Client, err := NewEthClient(ctxWithTimeout, cfg.L2Endpoint, cfg.Timeout)
+	l2Client, err := NewEthClient(ctxWithTimeout, cfg.L2Endpoint, cfg.Timeout)
 	if err != nil {
 		return nil, err
 	}
 
-	l1ChainID, err := L1Client.ChainID(ctxWithTimeout)
+	l1ChainID, err := l1Client.ChainID(ctxWithTimeout)
 	if err != nil {
 		return nil, err
 	}
 
-	l2ChainID, err := L2Client.ChainID(ctxWithTimeout)
+	l2ChainID, err := l2Client.ChainID(ctxWithTimeout)
 	if err != nil {
 		return nil, err
 	}
 
-	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, L1Client)
+	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1Client)
 	if err != nil {
 		return nil, err
 	}
 
-	taikoL2, err := bindings.NewTaikoL2Client(cfg.TaikoL2Address, L2Client)
+	taikoL2, err := bindings.NewTaikoL2Client(cfg.TaikoL2Address, l2Client)
 	if err != nil {
 		return nil, err
 	}
@@ -91,12 +91,12 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		guardianProver *bindings.GuardianProver
 	)
 	if cfg.TaikoTokenAddress.Hex() != ZeroAddress.Hex() {
-		if taikoToken, err = bindings.NewTaikoToken(cfg.TaikoTokenAddress, L1Client); err != nil {
+		if taikoToken, err = bindings.NewTaikoToken(cfg.TaikoTokenAddress, l1Client); err != nil {
 			return nil, err
 		}
 	}
 	if cfg.GuardianProverAddress.Hex() != ZeroAddress.Hex() {
-		if guardianProver, err = bindings.NewGuardianProver(cfg.GuardianProverAddress, L1Client); err != nil {
+		if guardianProver, err = bindings.NewGuardianProver(cfg.GuardianProverAddress, l1Client); err != nil {
 			return nil, err
 		}
 	}
@@ -105,7 +105,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	isArchive, err := IsArchiveNode(ctxWithTimeout, L1Client, stateVars.A.GenesisHeight)
+	isArchive, err := IsArchiveNode(ctxWithTimeout, l1Client, stateVars.A.GenesisHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, fmt.Errorf("error with RPC endpoint: node (%s) must be archive node", cfg.L1Endpoint)
 	}
 
-	// If not providing L2EngineEndpoint or JwtSecret, then the L2AuthClient client
+	// If not providing L2EngineEndpoint or JwtSecret, then the L2Engine client
 	// won't be initialized.
 	var l2AuthClient *EngineClient
 	if len(cfg.L2EngineEndpoint) != 0 && len(cfg.JwtSecret) != 0 {
@@ -132,10 +132,10 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	}
 
 	client := &Client{
-		L1Client:       L1Client,
-		L2Client:       L2Client,
+		L1:             l1Client,
+		L2:             l2Client,
 		L2CheckPoint:   l2CheckPoint,
-		L2AuthClient:   l2AuthClient,
+		L2Engine:       l2AuthClient,
 		TaikoL1:        taikoL1,
 		TaikoL2:        taikoL2,
 		TaikoToken:     taikoToken,

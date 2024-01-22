@@ -89,7 +89,7 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 		startL1Current := s.state.GetL1Current()
 		// If there is a L1 reorg, sometimes this will happen.
 		if startL1Current.Number.Uint64() >= l1End.Number.Uint64() && startL1Current.Hash() != l1End.Hash() {
-			newL1Current, err := s.rpc.L1Client.HeaderByNumber(ctx, new(big.Int).Sub(l1End.Number, common.Big1))
+			newL1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).Sub(l1End.Number, common.Big1))
 			if err != nil {
 				return err
 			}
@@ -108,7 +108,7 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 		}
 
 		iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
-			Client:               s.rpc.L1Client,
+			Client:               s.rpc.L1,
 			TaikoL1:              s.rpc.TaikoL1,
 			StartHeight:          s.state.GetL1Current().Number,
 			EndHeight:            l1End.Number,
@@ -218,7 +218,7 @@ func (s *Syncer) onBlockProposed(
 			return nil
 		}
 
-		parent, err = s.rpc.L2Client.HeaderByHash(ctx, s.progressTracker.LastSyncedVerifiedBlockHash())
+		parent, err = s.rpc.L2.HeaderByHash(ctx, s.progressTracker.LastSyncedVerifiedBlockHash())
 	} else {
 		parent, err = s.rpc.L2ParentByBlockID(ctx, event.BlockId)
 	}
@@ -229,7 +229,7 @@ func (s *Syncer) onBlockProposed(
 
 	log.Debug("Parent block", "height", parent.Number, "hash", parent.Hash())
 
-	tx, err := s.rpc.L1Client.TransactionInBlock(
+	tx, err := s.rpc.L1.TransactionInBlock(
 		ctx,
 		event.Raw.BlockHash,
 		event.Raw.TxIndex,
@@ -393,7 +393,7 @@ func (s *Syncer) insertNewHead(
 
 	// Update the fork choice
 	fc.HeadBlockHash = payload.BlockHash
-	fcRes, err := s.rpc.L2AuthClient.ForkchoiceUpdate(ctx, fc, nil)
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -453,7 +453,7 @@ func (s *Syncer) createExecutionPayloads(
 	)
 
 	// Step 1, prepare a payload
-	fcRes, err := s.rpc.L2AuthClient.ForkchoiceUpdate(ctx, fc, attributes)
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, attributes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update fork choice: %w", err)
 	}
@@ -465,7 +465,7 @@ func (s *Syncer) createExecutionPayloads(
 	}
 
 	// Step 2, get the payload
-	payload, err := s.rpc.L2AuthClient.GetPayload(ctx, fcRes.PayloadID)
+	payload, err := s.rpc.L2Engine.GetPayload(ctx, fcRes.PayloadID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get payload: %w", err)
 	}
@@ -483,7 +483,7 @@ func (s *Syncer) createExecutionPayloads(
 	)
 
 	// Step 3, execute the payload
-	execStatus, err := s.rpc.L2AuthClient.NewPayload(ctx, payload)
+	execStatus, err := s.rpc.L2Engine.NewPayload(ctx, payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new payload: %w", err)
 	}
@@ -502,7 +502,7 @@ func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, erro
 		return false, nil
 	}
 
-	l2Header, err := s.rpc.L2Client.HeaderByNumber(ctx, lastVerifiedBlockInfo.ID)
+	l2Header, err := s.rpc.L2.HeaderByNumber(ctx, lastVerifiedBlockInfo.ID)
 	if err != nil {
 		return false, err
 	}

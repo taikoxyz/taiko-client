@@ -38,7 +38,7 @@ func ProposeAndInsertEmptyBlocks(
 ) []*bindings.TaikoL1ClientBlockProposed {
 	var events []*bindings.TaikoL1ClientBlockProposed
 
-	l1Head, err := s.RPCClient.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
@@ -64,15 +64,15 @@ func ProposeAndInsertEmptyBlocks(
 
 	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
 
-	_, isPending, err := s.RPCClient.L1Client.TransactionByHash(context.Background(), events[len(events)-1].Raw.TxHash)
+	_, isPending, err := s.RPCClient.L1.TransactionByHash(context.Background(), events[len(events)-1].Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
 
-	newL1Head, err := s.RPCClient.L1Client.HeaderByNumber(context.Background(), nil)
+	newL1Head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Greater(newL1Head.Number.Uint64(), l1Head.Number.Uint64())
 
-	syncProgress, err := s.RPCClient.L2Client.SyncProgress(context.Background())
+	syncProgress, err := s.RPCClient.L2.SyncProgress(context.Background())
 	s.Nil(err)
 	s.Nil(syncProgress)
 
@@ -91,10 +91,10 @@ func ProposeAndInsertValidBlock(
 	proposer Proposer,
 	calldataSyncer CalldataSyncer,
 ) *bindings.TaikoL1ClientBlockProposed {
-	l1Head, err := s.RPCClient.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	l2Head, err := s.RPCClient.L2Client.HeaderByNumber(context.Background(), nil)
+	l2Head, err := s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	// Propose txs in L2 execution engine's mempool
@@ -110,7 +110,7 @@ func ProposeAndInsertValidBlock(
 	baseFee, err := s.RPCClient.TaikoL2.GetBasefee(nil, 0, uint32(l2Head.GasUsed))
 	s.Nil(err)
 
-	nonce, err := s.RPCClient.L2Client.PendingNonceAt(context.Background(), s.TestAddr)
+	nonce, err := s.RPCClient.L2.PendingNonceAt(context.Background(), s.TestAddr)
 	s.Nil(err)
 
 	tx := types.NewTransaction(
@@ -123,25 +123,25 @@ func ProposeAndInsertValidBlock(
 	)
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L2ChainID), s.TestAddrPrivKey)
 	s.Nil(err)
-	s.Nil(s.RPCClient.L2Client.SendTransaction(context.Background(), signedTx))
+	s.Nil(s.RPCClient.L2.SendTransaction(context.Background(), signedTx))
 
 	s.Nil(proposer.ProposeOp(context.Background()))
 
 	event := <-sink
 
-	_, isPending, err := s.RPCClient.L1Client.TransactionByHash(context.Background(), event.Raw.TxHash)
+	_, isPending, err := s.RPCClient.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
 
-	receipt, err := s.RPCClient.L1Client.TransactionReceipt(context.Background(), event.Raw.TxHash)
+	receipt, err := s.RPCClient.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
 
-	newL1Head, err := s.RPCClient.L1Client.HeaderByNumber(context.Background(), nil)
+	newL1Head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	s.Greater(newL1Head.Number.Uint64(), l1Head.Number.Uint64())
 
-	syncProgress, err := s.RPCClient.L2Client.SyncProgress(context.Background())
+	syncProgress, err := s.RPCClient.L2.SyncProgress(context.Background())
 	s.Nil(err)
 	s.Nil(syncProgress)
 
@@ -150,7 +150,7 @@ func ProposeAndInsertValidBlock(
 
 	s.Nil(calldataSyncer.ProcessL1Blocks(ctx, newL1Head))
 
-	_, err = s.RPCClient.L2Client.HeaderByNumber(context.Background(), nil)
+	_, err = s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	return event

@@ -194,7 +194,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
-	l2Head, err := p.rpc.L2Client.HeaderByNumber(ctx, nil)
+	l2Head, err := p.rpc.L2.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -256,11 +256,11 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return errNoNewTxs
 	}
 
-	head, err := p.rpc.L1Client.BlockNumber(ctx)
+	head, err := p.rpc.L1.BlockNumber(ctx)
 	if err != nil {
 		return err
 	}
-	nonce, err := p.rpc.L1Client.NonceAt(
+	nonce, err := p.rpc.L1.NonceAt(
 		ctx,
 		crypto.PubkeyToAddress(p.L1ProposerPrivKey.PublicKey),
 		new(big.Int).SetUint64(head),
@@ -318,7 +318,7 @@ func (p *Proposer) sendProposeBlockTx(
 	isReplacement bool,
 ) (*types.Transaction, error) {
 	// Propose the transactions list
-	opts, err := getTxOpts(ctx, p.rpc.L1Client, p.L1ProposerPrivKey, p.rpc.L1ChainID, maxFee)
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.L1ProposerPrivKey, p.rpc.L1ChainID, maxFee)
 	if err != nil {
 		return nil, err
 	}
@@ -462,7 +462,7 @@ func (p *Proposer) ProposeTxList(
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, p.WaitReceiptTimeout)
 	defer cancel()
 
-	if _, err := rpc.WaitReceipt(ctxWithTimeout, p.rpc.L1Client, tx); err != nil {
+	if _, err := rpc.WaitReceipt(ctxWithTimeout, p.rpc.L1, tx); err != nil {
 		return err
 	}
 

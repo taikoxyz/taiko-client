@@ -68,7 +68,7 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 		return nil, err
 	}
 
-	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L1Client, c.signalServiceAddress, l1Height)
+	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L1, c.signalServiceAddress, l1Height)
 	if err != nil {
 		return nil, err
 	}

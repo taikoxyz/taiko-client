@@ -67,7 +67,7 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 		return err
 	}
 
-	peers, err := d.rpc.L2Client.PeerCount(d.ctx)
+	peers, err := d.rpc.L2.PeerCount(d.ctx)
 	if err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ func (d *Driver) exchangeTransitionConfigLoop() {
 			return
 		case <-ticker.C:
 			func() {
-				tc, err := d.rpc.L2AuthClient.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
+				tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
 					TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
 					TerminalBlockHash:       common.Hash{},
 					TerminalBlockNumber:     0,

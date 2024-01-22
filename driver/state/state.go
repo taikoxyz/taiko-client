@@ -107,14 +107,14 @@ func (s *State) init(ctx context.Context) error {
 	s.l1Current.Store(latestL2KnownL1Header)
 
 	// L1 head
-	l1Head, err := s.rpc.L1Client.HeaderByNumber(ctx, nil)
+	l1Head, err := s.rpc.L1.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return err
 	}
 	s.setL1Head(l1Head)
 
 	// L2 head
-	l2Head, err := s.rpc.L2Client.HeaderByNumber(ctx, nil)
+	l2Head, err := s.rpc.L2.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -142,8 +142,8 @@ func (s *State) init(ctx context.Context) error {
 
 // startSubscriptions initializes all subscriptions in the given state instance.
 func (s *State) startSubscriptions(ctx context.Context) {
-	s.l1HeadSub = rpc.SubscribeChainHead(s.rpc.L1Client, s.l1HeadCh)
-	s.l2HeadSub = rpc.SubscribeChainHead(s.rpc.L2Client, s.l2HeadCh)
+	s.l1HeadSub = rpc.SubscribeChainHead(s.rpc.L1, s.l1HeadCh)
+	s.l2HeadSub = rpc.SubscribeChainHead(s.rpc.L2, s.l2HeadCh)
 	s.l2HeaderSyncedSub = rpc.SubscribeXchainSynced(s.rpc.TaikoL1, s.crossChainSynced)
 	s.l2BlockVerifiedSub = rpc.SubscribeBlockVerified(s.rpc.TaikoL1, s.blockVerifiedCh)
 	s.l2BlockProposedSub = rpc.SubscribeBlockProposed(s.rpc.TaikoL1, s.blockProposedCh)
@@ -272,7 +272,7 @@ func (s *State) SubL1HeadsFeed(ch chan *types.Header) event.Subscription {
 
 // VerifyL2Block checks whether the given block is in L2 execution engine's local chain.
 func (s *State) VerifyL2Block(ctx context.Context, height *big.Int, hash common.Hash) error {
-	header, err := s.rpc.L2Client.HeaderByNumber(ctx, height)
+	header, err := s.rpc.L2.HeaderByNumber(ctx, height)
 	if err != nil {
 		return err
 	}

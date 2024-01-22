@@ -361,7 +361,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return err
 	}
 
-	receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1Client, tx)
+	receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx)
 	if err != nil {
 		return err
 	}
@@ -507,7 +507,7 @@ func (p *Prover) proveOp() error {
 		firstTry = false
 
 		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
-			Client:               p.rpc.L1Client,
+			Client:               p.rpc.L1,
 			TaikoL1:              p.rpc.TaikoL1,
 			StartHeight:          new(big.Int).SetUint64(p.l1Current.Number.Uint64()),
 			OnBlockProposedEvent: p.onBlockProposed,
@@ -602,7 +602,7 @@ func (p *Prover) onBlockProposed(
 		return nil
 	}
 
-	lastL1OriginHeader, err := p.rpc.L1Client.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
+	lastL1OriginHeader, err := p.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
 	if err != nil {
 		return fmt.Errorf("failed to get L1 header, height %d: %w", event.Meta.L1Height, err)
 	}
@@ -635,7 +635,7 @@ func (p *Prover) onBlockProposed(
 	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
 
 	// Move l1Current cursor.
-	newL1Current, err := p.rpc.L1Client.HeaderByHash(ctx, event.Raw.BlockHash)
+	newL1Current, err := p.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash)
 	if err != nil {
 		return err
 	}
@@ -1025,7 +1025,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 
 	if startingBlockID == nil {
 		if stateVars.B.LastVerifiedBlockId == 0 {
-			genesisL1Header, err := p.rpc.L1Client.HeaderByNumber(p.ctx, new(big.Int).SetUint64(stateVars.A.GenesisHeight))
+			genesisL1Header, err := p.rpc.L1.HeaderByNumber(p.ctx, new(big.Int).SetUint64(stateVars.A.GenesisHeight))
 			if err != nil {
 				return err
 			}
@@ -1039,11 +1039,11 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 
 	log.Info("Init L1Current cursor", "startingBlockID", startingBlockID)
 
-	latestVerifiedHeaderL1Origin, err := p.rpc.L2Client.L1OriginByID(p.ctx, startingBlockID)
+	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
 	if err != nil {
 		if err.Error() == ethereum.NotFound.Error() {
 			log.Warn("Failed to find L1Origin for blockID, use latest L1 head instead", "blockID", startingBlockID)
-			l1Head, err := p.rpc.L1Client.HeaderByNumber(p.ctx, nil)
+			l1Head, err := p.rpc.L1.HeaderByNumber(p.ctx, nil)
 			if err != nil {
 				return err
 			}
@@ -1054,7 +1054,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 		return err
 	}
 
-	if p.l1Current, err = p.rpc.L1Client.HeaderByHash(p.ctx, latestVerifiedHeaderL1Origin.L1BlockHash); err != nil {
+	if p.l1Current, err = p.rpc.L1.HeaderByHash(p.ctx, latestVerifiedHeaderL1Origin.L1BlockHash); err != nil {
 		return err
 	}
 
@@ -1084,7 +1084,7 @@ func (p *Prover) isValidProof(
 		return false, err
 	}
 
-	block, err := p.rpc.L2Client.BlockByNumber(ctx, blockID)
+	block, err := p.rpc.L2.BlockByNumber(ctx, blockID)
 	if err != nil {
 		return false, err
 	}
@@ -1099,7 +1099,7 @@ func (p *Prover) isValidProof(
 	}
 	root, err := p.rpc.GetStorageRoot(
 		ctx,
-		p.rpc.L2Client,
+		p.rpc.L2,
 		l2SignalService,
 		blockID,
 	)
@@ -1166,9 +1166,9 @@ func (p *Prover) requestProofByBlockID(
 
 	handleBlockProposedEvent := func() error {
 		// Make sure `end` height is less than the latest L1 head.
-		l1Head, err := p.rpc.L1Client.BlockNumber(p.ctx)
+		l1Head, err := p.rpc.L1.BlockNumber(p.ctx)
 		if err != nil {
-			log.Error("Failed to get L1Client block head", "error", err)
+			log.Error("Failed to get L1 block head", "error", err)
 			return err
 		}
 		end := new(big.Int).Add(l1Height, common.Big1)
@@ -1177,7 +1177,7 @@ func (p *Prover) requestProofByBlockID(
 		}
 
 		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
-			Client:               p.rpc.L1Client,
+			Client:               p.rpc.L1,
 			TaikoL1:              p.rpc.TaikoL1,
 			StartHeight:          new(big.Int).Sub(l1Height, common.Big1),
 			EndHeight:            end,

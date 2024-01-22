@@ -39,7 +39,7 @@ func (s *State) ResetL1Current(
 	log.Info("Reset L1 current cursor", "blockID", blockID)
 
 	if blockID.Cmp(common.Big0) == 0 {
-		l1Current, err := s.rpc.L1Client.HeaderByNumber(ctx, s.GenesisL1Height)
+		l1Current, err := s.rpc.L1.HeaderByNumber(ctx, s.GenesisL1Height)
 		if err != nil {
 			return err
 		}
@@ -52,7 +52,7 @@ func (s *State) ResetL1Current(
 		return err
 	}
 
-	l1Current, err := s.rpc.L1Client.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.ProposedIn))
+	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.ProposedIn))
 	if err != nil {
 		return err
 	}

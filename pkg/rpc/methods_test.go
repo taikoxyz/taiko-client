@@ -72,7 +72,7 @@ func TestGetProtocolStateVariables(t *testing.T) {
 func TestCheckL1ReorgFromL1Cursor(t *testing.T) {
 	client := newTestClient(t)
 
-	l1Head, err := client.L1Client.HeaderByNumber(context.Background(), nil)
+	l1Head, err := client.L1.HeaderByNumber(context.Background(), nil)
 	require.Nil(t, err)
 
 	_, newL1Current, _, err := client.CheckL1ReorgFromL1Cursor(context.Background(), l1Head, l1Head.Number.Uint64())
@@ -160,7 +160,7 @@ func TestGetPoolContentValid(t *testing.T) {
 	require.Nil(t, err)
 	goldenTouchAddress, err := client.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	require.Nil(t, err)
-	parent, err := client.L2Client.BlockByNumber(context.Background(), nil)
+	parent, err := client.L2.BlockByNumber(context.Background(), nil)
 	require.Nil(t, err)
 	baseFee, err := client.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
 	require.Nil(t, err)
@@ -185,7 +185,7 @@ func TestGetStorageRootNewestBlock(t *testing.T) {
 	client := newTestClient(t)
 	_, err := client.GetStorageRoot(
 		context.Background(),
-		client.L1Client,
+		client.L1,
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 		nil)
 	require.Nil(t, err)

@@ -99,7 +99,7 @@ func (s *Sender) Send(
 		ctxWithTimeout, cancel := context.WithTimeout(ctx, s.waitReceiptTimeout)
 		defer cancel()
 
-		if _, err := rpc.WaitReceipt(ctxWithTimeout, s.rpc.L1Client, tx); err != nil {
+		if _, err := rpc.WaitReceipt(ctxWithTimeout, s.rpc.L1, tx); err != nil {
 			log.Warn(
 				"Failed to wait till transaction executed",
 				"blockID", proofWithHeader.BlockID,
@@ -142,7 +142,7 @@ func (s *Sender) Send(
 // latest verified head is not ahead of this block proof.
 func (s *Sender) validateProof(ctx context.Context, proofWithHeader *producer.ProofWithHeader) (bool, error) {
 	// 1. Check if the corresponding L1 block is still in the canonical chain.
-	l1Header, err := s.rpc.L1Client.HeaderByNumber(ctx, new(big.Int).SetUint64(proofWithHeader.Meta.L1Height+1))
+	l1Header, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(proofWithHeader.Meta.L1Height+1))
 	if err != nil {
 		log.Warn(
 			"Failed to fetch L1 block",

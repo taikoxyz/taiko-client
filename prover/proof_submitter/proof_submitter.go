@@ -114,7 +114,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 	}
 
 	// Get the header of the block to prove from L2 execution engine.
-	block, err := s.rpc.L2Client.BlockByHash(ctx, l1Origin.L2BlockHash)
+	block, err := s.rpc.L2.BlockByHash(ctx, l1Origin.L2BlockHash)
 	if err != nil {
 		return fmt.Errorf("failed to get the current L2 block by hash (%s): %w", l1Origin.L2BlockHash, err)
 	}
@@ -123,7 +123,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		return errors.New("no transaction in block")
 	}
 
-	parent, err := s.rpc.L2Client.BlockByHash(ctx, block.ParentHash())
+	parent, err := s.rpc.L2.BlockByHash(ctx, block.ParentHash())
 	if err != nil {
 		return fmt.Errorf("failed to get the L2 parent block by hash (%s): %w", block.ParentHash(), err)
 	}
@@ -133,7 +133,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		return err
 	}
 
-	signalRoot, err := s.rpc.GetStorageRoot(ctx, s.rpc.L2Client, s.l2SignalService, block.Number())
+	signalRoot, err := s.rpc.GetStorageRoot(ctx, s.rpc.L2, s.l2SignalService, block.Number())
 	if err != nil {
 		return fmt.Errorf("failed to get L2 signal service storage root: %w", err)
 	}
@@ -191,7 +191,7 @@ func (s *ProofSubmitter) SubmitProof(
 	metrics.ProverReceivedProofCounter.Inc(1)
 
 	// Get the corresponding L2 block.
-	block, err := s.rpc.L2Client.BlockByHash(ctx, proofWithHeader.Header.Hash())
+	block, err := s.rpc.L2.BlockByHash(ctx, proofWithHeader.Header.Hash())
 	if err != nil {
 		return fmt.Errorf("failed to get L2 block with given hash %s: %w", proofWithHeader.Header.Hash(), err)
 	}

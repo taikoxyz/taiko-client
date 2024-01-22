@@ -154,7 +154,7 @@ func GetBlockProofStatus(
 
 	var parent *types.Header
 	if id.Cmp(common.Big1) == 0 {
-		header, err := cli.L2Client.HeaderByNumber(ctxWithTimeout, common.Big0)
+		header, err := cli.L2.HeaderByNumber(ctxWithTimeout, common.Big0)
 		if err != nil {
 			return nil, err
 		}
@@ -166,7 +166,7 @@ func GetBlockProofStatus(
 			return nil, err
 		}
 
-		if parent, err = cli.L2Client.HeaderByHash(ctxWithTimeout, parentL1Origin.L2BlockHash); err != nil {
+		if parent, err = cli.L2.HeaderByHash(ctxWithTimeout, parentL1Origin.L2BlockHash); err != nil {
 			return nil, err
 		}
 	}
@@ -198,7 +198,7 @@ func GetBlockProofStatus(
 		return nil, err
 	}
 
-	root, err := cli.GetStorageRoot(ctx, cli.L2Client, l2SignalService, id)
+	root, err := cli.GetStorageRoot(ctx, cli.L2, l2SignalService, id)
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +335,7 @@ func GetPendingTxByNonce(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	content, err := ContentFrom(ctxWithTimeout, cli.L1Client, address)
+	content, err := ContentFrom(ctxWithTimeout, cli.L1, address)
 	if err != nil {
 		return nil, err
 	}
