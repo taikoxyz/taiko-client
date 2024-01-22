@@ -101,12 +101,17 @@ func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockI
 		return err
 	}
 
-	return s.db.Put(
+	if err := s.db.Put(
 		db.BuildBlockKey(header.Time, header.Number.Uint64()),
 		db.BuildBlockValue(header.Hash().Bytes(),
 			signed,
 			blockID,
 		),
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // sendSignedBlockReq is the actual method that sends the signed block to the health check server.
@@ -128,7 +133,8 @@ func (s *GuardianProverBlockSender) sendSignedBlockReq(
 		Prover:    s.proverAddress,
 	}
 
-	if err := s.post(ctx, "signedBlock", req); err != nil {[]byte{
+	if err := s.post(ctx, "signedBlock", req); err != nil {
+		return err
 	}
 
 	log.Info("Guardian prover successfully signed block", "blockID", blockID.Uint64())
