@@ -1042,7 +1042,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 	latestVerifiedHeaderL1Origin, err := p.rpc.L2Client.L1OriginByID(p.ctx, startingBlockID)
 	if err != nil {
 		if err.Error() == ethereum.NotFound.Error() {
-			log.Warn("Failed to find L1Origin for blockID, use latest L1Client head instead", "blockID", startingBlockID)
+			log.Warn("Failed to find L1Origin for blockID, use latest L1 head instead", "blockID", startingBlockID)
 			l1Head, err := p.rpc.L1Client.HeaderByNumber(p.ctx, nil)
 			if err != nil {
 				return err
@@ -1121,7 +1121,7 @@ func (p *Prover) requestProofByBlockID(
 	transitionProvedEvent *bindings.TaikoL1ClientTransitionProved,
 ) error {
 	// NOTE: since this callback function will only be called after a L2 block's proving window is expired,
-	// or a wrong proof's submission, so we won't check if L1Client chain has been reorged here.
+	// or a wrong proof's submission, so we won't check if L1 chain has been reorged here.
 	onBlockProposed := func(
 		ctx context.Context,
 		event *bindings.TaikoL1ClientBlockProposed,

@@ -87,7 +87,7 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 		firstTry = false
 
 		startL1Current := s.state.GetL1Current()
-		// If there is a L1Client reorg, sometimes this will happen.
+		// If there is a L1 reorg, sometimes this will happen.
 		if startL1Current.Number.Uint64() >= l1End.Number.Uint64() && startL1Current.Hash() != l1End.Hash() {
 			newL1Current, err := s.rpc.L1Client.HeaderByNumber(ctx, new(big.Int).Sub(l1End.Number, common.Big1))
 			if err != nil {

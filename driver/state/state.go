@@ -202,11 +202,11 @@ func (s *State) startSubscriptions(ctx context.Context) {
 // setL1Head sets the L1 head concurrent safely.
 func (s *State) setL1Head(l1Head *types.Header) {
 	if l1Head == nil {
-		log.Warn("Empty new L1Client head")
+		log.Warn("Empty new L1 head")
 		return
 	}
 
-	log.Debug("New L1Client head", "height", l1Head.Number, "hash", l1Head.Hash(), "timestamp", l1Head.Time)
+	log.Debug("New L1 head", "height", l1Head.Number, "hash", l1Head.Hash(), "timestamp", l1Head.Time)
 	metrics.DriverL1HeadHeightGauge.Update(l1Head.Number.Int64())
 
 	s.l1Head.Store(l1Head)
