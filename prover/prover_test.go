@@ -260,6 +260,15 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 		close(sink)
 	}()
 
+	// Contest the transition.
+	contestedSink := make(chan *bindings.TaikoL1ClientTransitionContested, 3)
+	contestedSub, err := s.p.rpc.TaikoL1.WatchTransitionContested(nil, contestedSink, nil)
+	s.Nil(err)
+	defer func() {
+		contestedSub.Unsubscribe()
+		close(contestedSink)
+	}()
+
 	s.Nil(s.p.proveOp())
 	proofWithHeader := <-s.p.proofGenerationCh
 	proofWithHeader.Opts.BlockHash = testutils.RandomHash()
@@ -270,15 +279,6 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.Equal(common.BytesToHash(proofWithHeader.Opts.BlockHash[:]), common.BytesToHash(event.Tran.BlockHash[:]))
 	s.NotEqual(header.Hash(), common.BytesToHash(event.Tran.BlockHash[:]))
 	s.Equal(header.ParentHash, common.BytesToHash(event.Tran.ParentHash[:]))
-
-	// Contest the transition.
-	contestedSink := make(chan *bindings.TaikoL1ClientTransitionContested)
-	contestedSub, err := s.p.rpc.TaikoL1.WatchTransitionContested(nil, contestedSink, nil)
-	s.Nil(err)
-	defer func() {
-		contestedSub.Unsubscribe()
-		close(contestedSink)
-	}()
 
 	s.Greater(header.Number.Uint64(), uint64(0))
 	s.Nil(s.p.onTransitionProved(context.Background(), event))
