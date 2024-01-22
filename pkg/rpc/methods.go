@@ -22,10 +22,10 @@ import (
 )
 
 var (
-	// errSyncing is returned when the L2Client execution engine is syncing.
+	// errSyncing is returned when the L2 execution engine is syncing.
 	errSyncing        = errors.New("syncing")
 	errEmptyTiersList = errors.New("empty proof tiers list in protocol")
-	// syncProgressRecheckDelay is the time delay of rechecking the L2Client execution engine's sync progress again,
+	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
 	// if the previous check failed.
 	syncProgressRecheckDelay       = 12 * time.Second
 	waitL1OriginPollingInterval    = 3 * time.Second
@@ -33,7 +33,7 @@ var (
 	defaultMaxTransactionsPerBlock = uint64(79)
 )
 
-// ensureGenesisMatched fetches the L2Client genesis block from TaikoL1 contract,
+// ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
 // and checks whether the fetched genesis is same to the node local genesis.
 func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
@@ -83,7 +83,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	return nil
 }
 
-// WaitTillL2ExecutionEngineSynced keeps waiting until the L2Client execution engine is fully synced.
+// WaitTillL2ExecutionEngineSynced keeps waiting until the L2 execution engine is fully synced.
 func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
@@ -95,13 +95,13 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 			}
 			progress, err := c.L2ExecutionEngineSyncProgress(ctx)
 			if err != nil {
-				log.Error("Fetch L2Client execution engine sync progress error", "error", err)
+				log.Error("Fetch L2 execution engine sync progress error", "error", err)
 				return err
 			}
 
 			if progress.isSyncing() {
 				log.Info(
-					"L2Client execution engine is syncing",
+					"L2 execution engine is syncing",
 					"currentBlockID", progress.CurrentBlockID,
 					"highestBlockID", progress.HighestBlockID,
 					"progress", progress.SyncProgress,
@@ -115,7 +115,7 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 	)
 }
 
-// LatestL2KnownL1Header fetches the L2Client execution engine's latest known L1Client header.
+// LatestL2KnownL1Header fetches the L2 execution engine's latest known L1 header.
 func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
@@ -138,19 +138,19 @@ func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, erro
 	if err != nil {
 		switch err.Error() {
 		case ethereum.NotFound.Error():
-			log.Warn("Latest L2Client known L1Client header not found, use genesis instead", "hash", headL1Origin.L1BlockHash)
+			log.Warn("Latest L2 known L1 header not found, use genesis instead", "hash", headL1Origin.L1BlockHash)
 			return c.GetGenesisL1Header(ctxWithTimeout)
 		default:
 			return nil, err
 		}
 	}
 
-	log.Info("Latest L2Client known L1Client header", "height", header.Number, "hash", header.Hash())
+	log.Info("Latest L2 known L1 header", "height", header.Number, "hash", header.Hash())
 
 	return header, nil
 }
 
-// GetGenesisL1Header fetches the L1Client header that including L2Client genesis block.
+// GetGenesisL1Header fetches the L1 header that including L2 genesis block.
 func (c *Client) GetGenesisL1Header(ctx context.Context) (*types.Header, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
@@ -163,7 +163,7 @@ func (c *Client) GetGenesisL1Header(ctx context.Context) (*types.Header, error) 
 	return c.L1Client.HeaderByNumber(ctxWithTimeout, new(big.Int).SetUint64(stateVars.A.GenesisHeight))
 }
 
-// L2ParentByBlockID fetches the block header from L2Client execution engine with the largest block id that
+// L2ParentByBlockID fetches the block header from L2 execution engine with the largest block id that
 // smaller than the given `blockId`.
 func (c *Client) L2ParentByBlockID(ctx context.Context, blockID *big.Int) (*types.Header, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
@@ -182,12 +182,12 @@ func (c *Client) L2ParentByBlockID(ctx context.Context, blockID *big.Int) (*type
 		return nil, err
 	}
 
-	log.Debug("Parent block L1Client origin", "l1Origin", l1Origin, "parentBlockID", parentBlockID)
+	log.Debug("Parent block L1 origin", "l1Origin", l1Origin, "parentBlockID", parentBlockID)
 
 	return c.L2Client.HeaderByHash(ctxWithTimeout, l1Origin.L2BlockHash)
 }
 
-// WaitL1Origin keeps waiting until the L1Origin with given block ID appears on the L2Client execution engine.
+// WaitL1Origin keeps waiting until the L1Origin with given block ID appears on the L2 execution engine.
 func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1Origin, error) {
 	var (
 		l1Origin *rawdb.L1Origin
@@ -206,7 +206,7 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 		defer cancel()
 	}
 
-	log.Debug("Start fetching L1Origin from L2Client execution engine", "blockID", blockID)
+	log.Debug("Start fetching L1Origin from L2 execution engine", "blockID", blockID)
 	for ; true; <-ticker.C {
 		if ctxWithTimeout.Err() != nil {
 			return nil, ctxWithTimeout.Err()
@@ -214,7 +214,7 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 
 		l1Origin, err = c.L2Client.L1OriginByID(ctxWithTimeout, blockID)
 		if err != nil {
-			log.Debug("L1Origin from L2Client execution engine not found, keep retrying", "blockID", blockID, "error", err)
+			log.Debug("L1Origin from L2 execution engine not found, keep retrying", "blockID", blockID, "error", err)
 			continue
 		}
 
@@ -225,10 +225,10 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 		return l1Origin, nil
 	}
 
-	return nil, fmt.Errorf("failed to fetch L1Origin from L2Client execution engine, blockID: %d", blockID)
+	return nil, fmt.Errorf("failed to fetch L1Origin from L2 execution engine, blockID: %d", blockID)
 }
 
-// GetPoolContent fetches the transactions list from L2Client execution engine's transactions pool with given
+// GetPoolContent fetches the transactions list from L2 execution engine's transactions pool with given
 // upper limit.
 func (c *Client) GetPoolContent(
 	ctx context.Context,
@@ -264,7 +264,7 @@ func (c *Client) GetPoolContent(
 	return result, err
 }
 
-// L2AccountNonce fetches the nonce of the given L2Client account at a specified height.
+// L2AccountNonce fetches the nonce of the given L2 account at a specified height.
 func (c *Client) L2AccountNonce(
 	ctx context.Context,
 	account common.Address,
@@ -278,7 +278,7 @@ func (c *Client) L2AccountNonce(
 	return uint64(result), err
 }
 
-// L2SyncProgress represents the sync progress of a L2Client execution engine, `ethereum.SyncProgress` is used to check
+// L2SyncProgress represents the sync progress of a L2 execution engine, `ethereum.SyncProgress` is used to check
 // the sync progress of verified blocks, and block IDs are used to check the sync progress of pending blocks.
 type L2SyncProgress struct {
 	*ethereum.SyncProgress
@@ -286,7 +286,7 @@ type L2SyncProgress struct {
 	HighestBlockID *big.Int
 }
 
-// isSyncing returns true if the L2Client execution engine is syncing with L1Client.
+// isSyncing returns true if the L2 execution engine is syncing with L1.
 func (p *L2SyncProgress) isSyncing() bool {
 	return p.SyncProgress != nil ||
 		p.CurrentBlockID == nil ||
@@ -294,7 +294,7 @@ func (p *L2SyncProgress) isSyncing() bool {
 		p.CurrentBlockID.Cmp(p.HighestBlockID) < 0
 }
 
-// L2ExecutionEngineSyncProgress fetches the sync progress of the given L2Client execution engine.
+// L2ExecutionEngineSyncProgress fetches the sync progress of the given L2 execution engine.
 func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProgress, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
@@ -322,7 +322,7 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 		if err != nil {
 			switch err.Error() {
 			case ethereum.NotFound.Error():
-				// There is only genesis block in the L2Client execution engine, or it has not started
+				// There is only genesis block in the L2 execution engine, or it has not started
 				// syncing the pending blocks yet.
 				progress.CurrentBlockID = common.Big0
 				return nil
@@ -384,8 +384,8 @@ func (c *Client) GetStorageRoot(
 	return proof.StorageHash, nil
 }
 
-// CheckL1ReorgFromL2EE checks whether the L1Client chain has been reorged from the L1Origin records in L2Client EE,
-// if so, returns the l1Current cursor and L2Client blockID that need to reset to.
+// CheckL1ReorgFromL2EE checks whether the L1 chain has been reorged from the L1Origin records in L2 EE,
+// if so, returns the l1Current cursor and L2 blockID that need to reset to.
 func (c *Client) CheckL1ReorgFromL2EE(
 	ctx context.Context,
 	blockID *big.Int,
@@ -422,18 +422,18 @@ func (c *Client) CheckL1ReorgFromL2EE(
 			if err.Error() == ethereum.NotFound.Error() {
 				log.Info("L1Origin not found", "blockID", blockID)
 
-				// If the L2Client EE is just synced through P2P, there is a chance that the EE do not have
+				// If the L2 EE is just synced through P2P, there is a chance that the EE do not have
 				// the chain head L1Origin information recorded.
 				justSyncedByP2P, err := c.IsJustSyncedByP2P(ctxWithTimeout)
 				if err != nil {
 					return false,
 						nil,
 						nil,
-						fmt.Errorf("failed to check whether the L2Client execution engine has just finished a P2P sync: %w", err)
+						fmt.Errorf("failed to check whether the L2 execution engine has just finished a P2P sync: %w", err)
 				}
 
 				log.Info(
-					"Check whether the L2Client execution engine has just finished a P2P sync",
+					"Check whether the L2 execution engine has just finished a P2P sync",
 					"justSyncedByP2P",
 					justSyncedByP2P,
 				)
@@ -455,7 +455,7 @@ func (c *Client) CheckL1ReorgFromL2EE(
 			if err.Error() == ethereum.NotFound.Error() {
 				continue
 			}
-			return false, nil, nil, fmt.Errorf("failed to fetch L1Client header (%d): %w", l1Origin.L1BlockHeight, err)
+			return false, nil, nil, fmt.Errorf("failed to fetch L1 header (%d): %w", l1Origin.L1BlockHeight, err)
 		}
 
 		if l1Header.Hash() != l1Origin.L1BlockHash {
@@ -475,11 +475,11 @@ func (c *Client) CheckL1ReorgFromL2EE(
 			ctx, blockID, l1Origin.L1BlockHeight.Uint64(), l1SignalService,
 		)
 		if err != nil {
-			return false, nil, nil, fmt.Errorf("failed to check L1Client reorg from anchor transaction: %w", err)
+			return false, nil, nil, fmt.Errorf("failed to check L1 reorg from anchor transaction: %w", err)
 		}
 
 		if isSyncedL1SnippetInvalid {
-			log.Info("Reorg detected due to invalid L1Client snippet", "blockID", blockID)
+			log.Info("Reorg detected due to invalid L1 snippet", "blockID", blockID)
 			reorged = true
 			blockID = new(big.Int).Sub(blockID, common.Big1)
 			continue
@@ -491,7 +491,7 @@ func (c *Client) CheckL1ReorgFromL2EE(
 	}
 
 	log.Debug(
-		"Check L1Client reorg from L2Client EE",
+		"Check L1 reorg from L2 EE",
 		"reorged", reorged,
 		"l1CurrentToResetNumber", l1CurrentToReset.Number,
 		"l1CurrentToResetHash", l1CurrentToReset.Hash(),
@@ -501,14 +501,14 @@ func (c *Client) CheckL1ReorgFromL2EE(
 	return reorged, l1CurrentToReset, blockIDToReset, nil
 }
 
-// checkSyncedL1SnippetFromAnchor checks whether the L1Client snippet synced from the anchor transaction is valid.
+// checkSyncedL1SnippetFromAnchor checks whether the L1 snippet synced from the anchor transaction is valid.
 func (c *Client) checkSyncedL1SnippetFromAnchor(
 	ctx context.Context,
 	blockID *big.Int,
 	l1Height uint64,
 	l1SignalService common.Address,
 ) (bool, error) {
-	log.Info("Check synced L1Client snippet from anchor", "blockID", blockID)
+	log.Info("Check synced L1 snippet from anchor", "blockID", blockID)
 	block, err := c.L2Client.BlockByNumber(ctx, blockID)
 	if err != nil {
 		return false, err
@@ -528,7 +528,7 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 
 	if l1HeightInAnchor+1 != l1Height {
 		log.Info(
-			"Reorg detected due to L1Client height mismatch",
+			"Reorg detected due to L1 height mismatch",
 			"blockID", blockID,
 			"l1HeightInAnchor", l1HeightInAnchor,
 			"l1Height", l1Height,
@@ -553,7 +553,7 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 
 	if l1Header.Hash() != l1BlockHash {
 		log.Info(
-			"Reorg detected due to L1Client block hash mismatch",
+			"Reorg detected due to L1 block hash mismatch",
 			"blockID", blockID,
 			"l1BlockHashInAnchor", l1BlockHash,
 			"l1BlockHash", l1Header.Hash(),
@@ -568,7 +568,7 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 
 	if currentRoot != l1SignalRoot {
 		log.Info(
-			"Reorg detected due to L1Client signal root mismatch",
+			"Reorg detected due to L1 signal root mismatch",
 			"blockID", blockID,
 			"l1SignalRootInAnchor", l1SignalRoot,
 			"l1SignalRoot", currentRoot,
@@ -579,7 +579,7 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 	return false, nil
 }
 
-// getSyncedL1SnippetFromAnchor parses the anchor transaction calldata, and returns the synced L1Client snippet,
+// getSyncedL1SnippetFromAnchor parses the anchor transaction calldata, and returns the synced L1 snippet,
 func (c *Client) getSyncedL1SnippetFromAnchor(
 	ctx context.Context,
 	tx *types.Transaction,
@@ -641,7 +641,7 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 	return l1BlockHash, l1SignalRoot, l1Height, parentGasUsed, nil
 }
 
-// CheckL1ReorgFromL1Cursor checks whether the L1Client chain has been reorged from the given l1Current cursor,
+// CheckL1ReorgFromL1Cursor checks whether the L1 chain has been reorged from the given l1Current cursor,
 // if so, returns the l1Current cursor that need to reset to.
 func (c *Client) CheckL1ReorgFromL1Cursor(
 	ctx context.Context,
@@ -694,7 +694,7 @@ func (c *Client) CheckL1ReorgFromL1Cursor(
 	}
 
 	log.Debug(
-		"Check L1Client reorg from l1Current cursor",
+		"Check L1 reorg from l1Current cursor",
 		"reorged", reorged,
 		"l1CurrentToResetNumber", l1CurrentToReset.Number,
 		"l1CurrentToResetHash", l1CurrentToReset.Hash(),
@@ -703,7 +703,7 @@ func (c *Client) CheckL1ReorgFromL1Cursor(
 	return reorged, l1CurrentToReset, nil, nil
 }
 
-// IsJustSyncedByP2P checks whether the given L2Client execution engine has just finished a P2P
+// IsJustSyncedByP2P checks whether the given L2 execution engine has just finished a P2P
 // sync.
 func (c *Client) IsJustSyncedByP2P(ctx context.Context) (bool, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)

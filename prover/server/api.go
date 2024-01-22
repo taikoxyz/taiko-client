@@ -176,7 +176,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 
 	l1Head, err := srv.rpc.L1Client.BlockNumber(c.Request().Context())
 	if err != nil {
-		log.Error("Failed to get L1Client block head", "error", err)
+		log.Error("Failed to get L1 block head", "error", err)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
 	}
 

@@ -22,7 +22,7 @@ import (
 
 var _ Contester = (*ProofContester)(nil)
 
-// ProofContester is responsible for contesting wrong L2Client transitions.
+// ProofContester is responsible for contesting wrong L2 transitions.
 type ProofContester struct {
 	rpc             *rpc.Client
 	txBuilder       *transaction.ProveBlockTxBuilder
@@ -72,7 +72,7 @@ func NewProofContester(
 	}, nil
 }
 
-// SubmitContest submits a taikoL1.proveBlock transaction to contest a L2Client block transition.
+// SubmitContest submits a taikoL1.proveBlock transaction to contest a L2 block transition.
 func (c *ProofContester) SubmitContest(
 	ctx context.Context,
 	blockID *big.Int,
@@ -116,7 +116,7 @@ func (c *ProofContester) SubmitContest(
 
 	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L2Client, c.l2SignalService, blockID)
 	if err != nil {
-		return fmt.Errorf("failed to get L2Client signal service storage root: %w", err)
+		return fmt.Errorf("failed to get L2 signal service storage root: %w", err)
 	}
 
 	l1HeaderProposedIn, err := c.rpc.L1Client.HeaderByNumber(ctx, proposedIn)

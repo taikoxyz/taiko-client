@@ -85,7 +85,7 @@ func ProposeAndInsertEmptyBlocks(
 }
 
 // ProposeAndInsertValidBlock proposes an valid tx list and then insert it
-// into L2Client execution engine's local chain.
+// into L2 execution engine's local chain.
 func ProposeAndInsertValidBlock(
 	s *ClientTestSuite,
 	proposer Proposer,
@@ -97,7 +97,7 @@ func ProposeAndInsertValidBlock(
 	l2Head, err := s.RPCClient.L2Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	// Propose txs in L2Client execution engine's mempool
+	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
 	sub, err := s.RPCClient.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)

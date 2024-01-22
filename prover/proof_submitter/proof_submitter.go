@@ -24,7 +24,7 @@ import (
 
 var _ Submitter = (*ProofSubmitter)(nil)
 
-// ProofSubmitter is responsible requesting proofs for the given L2Client
+// ProofSubmitter is responsible requesting proofs for the given L2
 // blocks, and submitting the generated proofs to the TaikoL1 smart contract.
 type ProofSubmitter struct {
 	rpc             *rpc.Client
@@ -113,10 +113,10 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.BlockId, err)
 	}
 
-	// Get the header of the block to prove from L2Client execution engine.
+	// Get the header of the block to prove from L2 execution engine.
 	block, err := s.rpc.L2Client.BlockByHash(ctx, l1Origin.L2BlockHash)
 	if err != nil {
-		return fmt.Errorf("failed to get the current L2Client block by hash (%s): %w", l1Origin.L2BlockHash, err)
+		return fmt.Errorf("failed to get the current L2 block by hash (%s): %w", l1Origin.L2BlockHash, err)
 	}
 
 	if block.Transactions().Len() == 0 {
@@ -125,7 +125,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 
 	parent, err := s.rpc.L2Client.BlockByHash(ctx, block.ParentHash())
 	if err != nil {
-		return fmt.Errorf("failed to get the L2Client parent block by hash (%s): %w", block.ParentHash(), err)
+		return fmt.Errorf("failed to get the L2 parent block by hash (%s): %w", block.ParentHash(), err)
 	}
 
 	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId.Uint64())
@@ -135,7 +135,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 
 	signalRoot, err := s.rpc.GetStorageRoot(ctx, s.rpc.L2Client, s.l2SignalService, block.Number())
 	if err != nil {
-		return fmt.Errorf("failed to get L2Client signal service storage root: %w", err)
+		return fmt.Errorf("failed to get L2 signal service storage root: %w", err)
 	}
 
 	// Request proof.
@@ -190,17 +190,17 @@ func (s *ProofSubmitter) SubmitProof(
 
 	metrics.ProverReceivedProofCounter.Inc(1)
 
-	// Get the corresponding L2Client block.
+	// Get the corresponding L2 block.
 	block, err := s.rpc.L2Client.BlockByHash(ctx, proofWithHeader.Header.Hash())
 	if err != nil {
-		return fmt.Errorf("failed to get L2Client block with given hash %s: %w", proofWithHeader.Header.Hash(), err)
+		return fmt.Errorf("failed to get L2 block with given hash %s: %w", proofWithHeader.Header.Hash(), err)
 	}
 
 	if block.Transactions().Len() == 0 {
 		return fmt.Errorf("invalid block without anchor transaction, blockID %s", proofWithHeader.BlockID)
 	}
 
-	// Validate TaikoL2.anchor transaction inside the L2Client block.
+	// Validate TaikoL2.anchor transaction inside the L2 block.
 	anchorTx := block.Transactions()[0]
 	if err := s.anchorValidator.ValidateAnchorTx(ctx, anchorTx); err != nil {
 		return fmt.Errorf("invalid anchor transaction: %w", err)

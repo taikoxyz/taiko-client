@@ -25,7 +25,7 @@ const (
 	exchangeTransitionConfigInterval = 1 * time.Minute
 )
 
-// Driver keeps the L2Client execution engine's local block chain in sync with the TaikoL1
+// Driver keeps the L2 execution engine's local block chain in sync with the TaikoL1
 // contract.
 type Driver struct {
 	*Config
@@ -73,7 +73,7 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 	}
 
 	if cfg.P2PSyncVerifiedBlocks && peers == 0 {
-		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2Client execution engine")
+		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
 	}
 
 	signalServiceAddress, err := d.rpc.TaikoL1.Resolve0(
@@ -118,7 +118,7 @@ func (d *Driver) Close(ctx context.Context) {
 	d.wg.Wait()
 }
 
-// eventLoop starts the main loop of a L2Client execution engine's driver.
+// eventLoop starts the main loop of a L2 execution engine's driver.
 func (d *Driver) eventLoop() {
 	defer d.wg.Done()
 
@@ -138,7 +138,7 @@ func (d *Driver) eventLoop() {
 		}
 	}
 
-	// Call doSync() right away to catch up with the latest known L1Client head.
+	// Call doSync() right away to catch up with the latest known L1 head.
 	doSyncWithBackoff()
 
 	for {
@@ -154,8 +154,8 @@ func (d *Driver) eventLoop() {
 }
 
 // doSync fetches all `BlockProposed` events emitted from local
-// L1Client sync cursor to the L1Client head, and then applies all corresponding
-// L2Client blocks into node's local blockchain.
+// L1 sync cursor to the L1 head, and then applies all corresponding
+// L2 blocks into node's local blockchain.
 func (d *Driver) doSync() error {
 	// Check whether the application is closing.
 	if d.ctx.Err() != nil {
@@ -166,7 +166,7 @@ func (d *Driver) doSync() error {
 	l1Head := d.state.GetL1Head()
 
 	if err := d.l2ChainSyncer.Sync(l1Head); err != nil {
-		log.Error("Process new L1Client blocks error", "error", err)
+		log.Error("Process new L1 blocks error", "error", err)
 		return err
 	}
 
@@ -228,7 +228,7 @@ func (d *Driver) reportProtocolStatus() {
 }
 
 // exchangeTransitionConfigLoop keeps exchanging transition configs with the
-// L2Client execution engine.
+// L2 execution engine.
 func (d *Driver) exchangeTransitionConfigLoop() {
 	ticker := time.NewTicker(exchangeTransitionConfigInterval)
 	defer func() {

@@ -66,7 +66,7 @@ var (
 	// Proposing epoch related.
 	ProposeInterval = &cli.DurationFlag{
 		Name:     "epoch.interval",
-		Usage:    "Time interval to propose L2Client pending transactions",
+		Usage:    "Time interval to propose L2 pending transactions",
 		Category: proposerCategory,
 	}
 	ProposeEmptyBlocksInterval = &cli.DurationFlag{

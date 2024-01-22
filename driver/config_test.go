@@ -70,7 +70,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContextEmptyL2CheckPoint() {
 		"--" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
 		"--" + flags.P2PSyncVerifiedBlocks.Name,
 		"--" + flags.L2WSEndpoint.Name, "",
-	}), "empty L2Client check point URL")
+	}), "empty L2 check point URL")
 }
 
 func (s *DriverTestSuite) SetupApp() *cli.App {

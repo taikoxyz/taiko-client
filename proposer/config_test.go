@@ -98,7 +98,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextPrivKeyErr() {
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextPrivKeyErr",
 		"--" + flags.L1ProposerPrivKey.Name, string(common.FromHex("0x")),
-	}), "invalid L1Client proposer private key")
+	}), "invalid L1 proposer private key")
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {

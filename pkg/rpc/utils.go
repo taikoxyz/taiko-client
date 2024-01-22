@@ -134,7 +134,7 @@ func WaitReceipt(
 	return nil, fmt.Errorf("failed to find the receipt for transaction %s", tx.Hash())
 }
 
-// BlockProofStatus represents the proving status of the given L2Client block.
+// BlockProofStatus represents the proving status of the given L2 block.
 type BlockProofStatus struct {
 	IsSubmitted            bool
 	Invalid                bool
@@ -142,7 +142,7 @@ type BlockProofStatus struct {
 	ParentHeader           *types.Header
 }
 
-// GetBlockProofStatus checks whether the L2Client block still needs a new proof or a new contest.
+// GetBlockProofStatus checks whether the L2 block still needs a new proof or a new contest.
 func GetBlockProofStatus(
 	ctx context.Context,
 	cli *Client,

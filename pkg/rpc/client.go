@@ -15,7 +15,7 @@ const (
 	defaultTimeout = 10 * time.Minute
 )
 
-// Client contains all L1Client/L2Client RPC clients that a driver needs.
+// Client contains all L1/L2 RPC clients that a driver needs.
 type Client struct {
 	// Geth ethclient clients
 	L1Client     *EthClient

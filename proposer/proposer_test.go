@@ -68,7 +68,7 @@ func (s *ProposerTestSuite) TestName() {
 }
 
 func (s *ProposerTestSuite) TestProposeOp() {
-	// Propose txs in L2Client execution engine's mempool
+	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
 	sub, err := s.p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
@@ -121,7 +121,7 @@ func (s *ProposerTestSuite) TestProposeOpLocalsOnly() {
 	s.p.LocalAddresses = []common.Address{common.BytesToAddress(testutils.RandomBytes(20))}
 	s.p.LocalAddressesOnly = true
 
-	// Propose txs in L2Client execution engine's mempool
+	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
 	sub, err := s.p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)

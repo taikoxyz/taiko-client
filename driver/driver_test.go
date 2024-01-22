@@ -92,7 +92,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 
 	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head1))
 
-	// Propose a valid L2Client block
+	// Propose a valid L2 block
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l2Head2, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
@@ -136,7 +136,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	l2Head1, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	// Propose two L2Client blocks
+	// Propose two L2 blocks
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
@@ -199,7 +199,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	l2Head1, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	// Propose two L2Client blocks
+	// Propose two L2 blocks
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 	time.Sleep(3 * time.Second)
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
@@ -259,7 +259,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	l2Head1, err := s.d.rpc.L2Client.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	// Propose two L2Client blocks
+	// Propose two L2 blocks
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
 	time.Sleep(3 * time.Second)
 	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())

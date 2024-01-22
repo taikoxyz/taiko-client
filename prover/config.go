@@ -62,7 +62,7 @@ type Config struct {
 func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(c.String(flags.L1ProverPrivKey.Name)))
 	if err != nil {
-		return nil, fmt.Errorf("invalid L1Client prover private key: %w", err)
+		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
 	}
 
 	var startingBlockID *big.Int

@@ -17,8 +17,8 @@ var (
 	syncProgressCheckInterval = 12 * time.Second
 )
 
-// SyncProgressTracker is responsible for tracking the L2Client execution engine's sync progress, after
-// a beacon sync is triggered in it, and check whether the L2Client execution is not able to sync through P2P (due to no
+// SyncProgressTracker is responsible for tracking the L2 execution engine's sync progress, after
+// a beacon sync is triggered in it, and check whether the L2 execution is not able to sync through P2P (due to no
 // connected peer or some other reasons).
 type SyncProgressTracker struct {
 	// RPC client
@@ -58,7 +58,7 @@ func (t *SyncProgressTracker) Track(ctx context.Context) {
 }
 
 // track is the internal implementation of MonitorSyncProgress, tries to
-// track the L2Client execution engine's beacon sync progress.
+// track the L2 execution engine's beacon sync progress.
 func (t *SyncProgressTracker) track(ctx context.Context) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
@@ -74,13 +74,13 @@ func (t *SyncProgressTracker) track(ctx context.Context) {
 
 	progress, err := t.client.SyncProgress(ctx)
 	if err != nil {
-		log.Error("Get L2Client execution engine sync progress error", "error", err)
+		log.Error("Get L2 execution engine sync progress error", "error", err)
 		return
 	}
 
 	if progress != nil {
 		log.Info(
-			"L2Client execution engine sync progress",
+			"L2 execution engine sync progress",
 			"progress", progress,
 			"lastProgressedTime", t.lastProgressedTime,
 			"timeout", t.timeout,
@@ -90,13 +90,13 @@ func (t *SyncProgressTracker) track(ctx context.Context) {
 	if progress == nil {
 		headHeight, err := t.client.BlockNumber(ctx)
 		if err != nil {
-			log.Error("Get L2Client execution engine head height error", "error", err)
+			log.Error("Get L2 execution engine head height error", "error", err)
 			return
 		}
 
 		if new(big.Int).SetUint64(headHeight).Cmp(t.lastSyncedVerifiedBlockID) >= 0 {
 			t.lastProgressedTime = time.Now()
-			log.Info("L2Client execution engine has finished the P2P sync work, all verified blocks synced, "+
+			log.Info("L2 execution engine has finished the P2P sync work, all verified blocks synced, "+
 				"will switch to insert pending blocks one by one",
 				"lastSyncedVerifiedBlockID", t.lastSyncedVerifiedBlockID,
 				"lastSyncedVerifiedBlockHash", t.lastSyncedVerifiedBlockHash,
@@ -105,14 +105,14 @@ func (t *SyncProgressTracker) track(ctx context.Context) {
 		}
 
 		log.Debug(
-			"L2Client execution engine has not started P2P syncing yet",
+			"L2 execution engine has not started P2P syncing yet",
 			"timeout", t.timeout,
 		)
 	}
 
 	defer func() { t.lastSyncProgress = progress }()
 
-	// Check whether the L2Client execution engine has synced any new block through P2P since last event loop.
+	// Check whether the L2 execution engine has synced any new block through P2P since last event loop.
 	if syncProgressed(t.lastSyncProgress, progress) {
 		t.outOfSync = false
 		t.lastProgressedTime = time.Now()
@@ -121,11 +121,11 @@ func (t *SyncProgressTracker) track(ctx context.Context) {
 
 	// Has not synced any new block since last loop, check whether reaching the timeout.
 	if time.Since(t.lastProgressedTime) > t.timeout {
-		// Mark the L2Client execution engine out of sync.
+		// Mark the L2 execution engine out of sync.
 		t.outOfSync = true
 
 		log.Warn(
-			"L2Client execution engine is not able to sync through P2P",
+			"L2 execution engine is not able to sync through P2P",
 			"lastProgressedTime", t.lastProgressedTime,
 			"timeout", t.timeout,
 		)
@@ -173,7 +173,7 @@ func (t *SyncProgressTracker) HeadChanged(newID *big.Int) bool {
 	return t.lastSyncedVerifiedBlockID != nil && t.lastSyncedVerifiedBlockID != newID
 }
 
-// OutOfSync tells whether the L2Client execution engine is marked as out of sync.
+// OutOfSync tells whether the L2 execution engine is marked as out of sync.
 func (t *SyncProgressTracker) OutOfSync() bool {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()

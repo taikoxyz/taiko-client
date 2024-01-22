@@ -39,7 +39,7 @@ var (
 	requestProverServerTimeout = 12 * time.Second
 )
 
-// Proposer keep proposing new transactions from L2Client execution engine's tx pool at a fixed interval.
+// Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
 type Proposer struct {
 	// RPC clients
 	rpc *rpc.Client
@@ -180,19 +180,19 @@ func (p *Proposer) Close(ctx context.Context) {
 }
 
 // ProposeOp performs a proposing operation, fetching transactions
-// from L2Client execution engine's tx pool, splitting them by proposing constraints,
+// from L2 execution engine's tx pool, splitting them by proposing constraints,
 // and then proposing them to TaikoL1 contract.
 func (p *Proposer) ProposeOp(ctx context.Context) error {
 	if p.CustomProposeOpHook != nil {
 		return p.CustomProposeOpHook()
 	}
 
-	// Wait until L2Client execution engine is synced at first.
+	// Wait until L2 execution engine is synced at first.
 	if err := p.rpc.WaitTillL2ExecutionEngineSynced(ctx); err != nil {
-		return fmt.Errorf("failed to wait until L2Client execution engine synced: %w", err)
+		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
 	}
 
-	log.Info("Start fetching L2Client execution engine's transaction pool content")
+	log.Info("Start fetching L2 execution engine's transaction pool content")
 
 	l2Head, err := p.rpc.L2Client.HeaderByNumber(ctx, nil)
 	if err != nil {

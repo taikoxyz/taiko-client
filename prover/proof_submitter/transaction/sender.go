@@ -138,14 +138,14 @@ func (s *Sender) Send(
 	return nil
 }
 
-// validateProof checks if the proof's corresponding L1Client block is still in the canonical chain and if the
+// validateProof checks if the proof's corresponding L1 block is still in the canonical chain and if the
 // latest verified head is not ahead of this block proof.
 func (s *Sender) validateProof(ctx context.Context, proofWithHeader *producer.ProofWithHeader) (bool, error) {
-	// 1. Check if the corresponding L1Client block is still in the canonical chain.
+	// 1. Check if the corresponding L1 block is still in the canonical chain.
 	l1Header, err := s.rpc.L1Client.HeaderByNumber(ctx, new(big.Int).SetUint64(proofWithHeader.Meta.L1Height+1))
 	if err != nil {
 		log.Warn(
-			"Failed to fetch L1Client block",
+			"Failed to fetch L1 block",
 			"blockID", proofWithHeader.BlockID,
 			"l1Height", proofWithHeader.Meta.L1Height+1,
 			"error", err,

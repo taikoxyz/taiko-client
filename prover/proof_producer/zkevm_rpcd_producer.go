@@ -30,8 +30,8 @@ var (
 type ZkevmRpcdProducer struct {
 	RpcdEndpoint        string                         // a proverd RPC endpoint
 	Param               string                         // parameter file to use
-	L1Endpoint          string                         // a L1Client node RPC endpoint
-	L2Endpoint          string                         // a L2Client execution engine's RPC endpoint
+	L1Endpoint          string                         // a L1 node RPC endpoint
+	L2Endpoint          string                         // a L2 execution engine's RPC endpoint
 	Retry               bool                           // retry proof computation if error
 	ProofTimeTarget     uint64                         // used for calculating proof delay
 	ProtocolConfig      *bindings.TaikoDataConfig      // protocol configurations

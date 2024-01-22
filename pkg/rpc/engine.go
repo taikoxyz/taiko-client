@@ -81,7 +81,7 @@ func (c *EngineClient) GetPayload(
 	return result.ExecutionPayload, nil
 }
 
-// ExchangeTransitionConfiguration exchanges transition configs with the L2Client execution engine.
+// ExchangeTransitionConfiguration exchanges transition configs with the L2 execution engine.
 func (c *EngineClient) ExchangeTransitionConfiguration(
 	ctx context.Context,
 	cfg *engine.TransitionConfigurationV1,

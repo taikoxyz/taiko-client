@@ -31,8 +31,8 @@ var (
 	defaultMaxTxPerBlock = uint64(79)
 )
 
-// Syncer responsible for letting the L2Client execution engine catching up with protocol's latest
-// pending block through deriving L1Client calldata.
+// Syncer responsible for letting the L2 execution engine catching up with protocol's latest
+// pending block through deriving L1 calldata.
 type Syncer struct {
 	ctx               context.Context
 	rpc               *rpc.Client
@@ -79,7 +79,7 @@ func NewSyncer(
 }
 
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
-// L1Client block heights, and then tries inserting them into L2Client execution engine's blockchain.
+// L1 block heights, and then tries inserting them into L2 execution engine's blockchain.
 func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
 	firstTry := true
 	for firstTry || s.reorgDetectedFlag {
@@ -131,7 +131,7 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 }
 
 // OnBlockProposed is a `BlockProposed` event callback which responsible for
-// inserting the proposed block one by one to the L2Client execution engine.
+// inserting the proposed block one by one to the L2 execution engine.
 func (s *Syncer) onBlockProposed(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
@@ -142,7 +142,7 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	if !s.progressTracker.Triggered() {
-		// Check whether we need to reorg the L2Client chain at first.
+		// Check whether we need to reorg the L2 chain at first.
 		// 1. Last verified block
 		var (
 			reorged                    bool
@@ -152,7 +152,7 @@ func (s *Syncer) onBlockProposed(
 		)
 		reorged, err = s.checkLastVerifiedBlockMismatch(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to check if last verified block in L2Client EE has been reorged: %w", err)
+			return fmt.Errorf("failed to check if last verified block in L2 EE has been reorged: %w", err)
 		}
 
 		// 2. Parent block
@@ -207,7 +207,7 @@ func (s *Syncer) onBlockProposed(
 		"removed", event.Raw.Removed,
 	)
 
-	// Fetch the L2Client parent block.
+	// Fetch the L2 parent block.
 	var (
 		parent *types.Header
 		err    error
@@ -224,7 +224,7 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to fetch L2Client parent block: %w", err)
+		return fmt.Errorf("failed to fetch L2 parent block: %w", err)
 	}
 
 	log.Debug("Parent block", "height", parent.Number, "hash", parent.Hash())
@@ -259,13 +259,13 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	if event.Meta.Timestamp > uint64(time.Now().Unix()) {
-		log.Warn("Future L2Client block, waiting", "L2BlockTimestamp", event.Meta.Timestamp, "now", time.Now().Unix())
+		log.Warn("Future L2 block, waiting", "L2BlockTimestamp", event.Meta.Timestamp, "now", time.Now().Unix())
 		time.Sleep(time.Until(time.Unix(int64(event.Meta.Timestamp), 0)))
 	}
 
-	// If the transactions list is invalid, we simply insert an empty L2Client block.
+	// If the transactions list is invalid, we simply insert an empty L2 block.
 	if hint != txListValidator.HintOK {
-		log.Info("Invalid transactions list, insert an empty L2Client block instead", "blockID", event.BlockId)
+		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", event.BlockId)
 		txListBytes = []byte{}
 	}
 
@@ -278,13 +278,13 @@ func (s *Syncer) onBlockProposed(
 		l1Origin,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to insert new head to L2Client execution engine: %w", err)
+		return fmt.Errorf("failed to insert new head to L2 execution engine: %w", err)
 	}
 
 	log.Debug("Payload data", "hash", payloadData.BlockHash, "txs", len(payloadData.Transactions))
 
 	log.Info(
-		"🔗 New L2Client block inserted",
+		"🔗 New L2 block inserted",
 		"blockID", event.BlockId,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
@@ -305,7 +305,7 @@ func (s *Syncer) onBlockProposed(
 	return nil
 }
 
-// insertNewHead tries to insert a new head block to the L2Client execution engine's local
+// insertNewHead tries to insert a new head block to the L2 execution engine's local
 // block chain through Engine APIs.
 func (s *Syncer) insertNewHead(
 	ctx context.Context,
@@ -316,7 +316,7 @@ func (s *Syncer) insertNewHead(
 	l1Origin *rawdb.L1Origin,
 ) (*engine.ExecutableData, error) {
 	log.Debug(
-		"Try to insert a new L2Client head block",
+		"Try to insert a new L2 head block",
 		"parentNumber", parent.Number,
 		"parentHash", parent.Hash(),
 		"headBlockID", headBlockID,
@@ -332,18 +332,18 @@ func (s *Syncer) insertNewHead(
 		}
 	}
 
-	// Get L2Client baseFee
+	// Get L2 baseFee
 	baseFee, err := s.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{BlockNumber: parent.Number, Context: ctx},
 		event.Meta.L1Height,
 		uint32(parent.GasUsed),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get L2Client baseFee: %w", encoding.TryParsingCustomError(err))
+		return nil, fmt.Errorf("failed to get L2 baseFee: %w", encoding.TryParsingCustomError(err))
 	}
 
 	log.Info(
-		"L2Client baseFee",
+		"L2 baseFee",
 		"blockID", event.BlockId,
 		"baseFee", baseFee,
 		"syncedL1Height", event.Meta.L1Height,
@@ -495,7 +495,7 @@ func (s *Syncer) createExecutionPayloads(
 }
 
 // checkLastVerifiedBlockMismatch checks if there is a mismatch between protocol's last verified block hash and
-// the corresponding L2Client EE block hash.
+// the corresponding L2 EE block hash.
 func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, error) {
 	lastVerifiedBlockInfo := s.state.GetLatestVerifiedBlock()
 	if s.state.GetL2Head().Number.Cmp(lastVerifiedBlockInfo.ID) < 0 {

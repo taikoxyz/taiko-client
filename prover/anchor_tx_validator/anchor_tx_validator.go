@@ -13,7 +13,7 @@ import (
 )
 
 // AnchorTxValidator is responsible for validating the anchor transaction (TaikoL2.anchor) in
-// each L2Client block, which is always the first transaction.
+// each L2 block, which is always the first transaction.
 type AnchorTxValidator struct {
 	taikoL2Address     common.Address
 	goldenTouchAddress common.Address

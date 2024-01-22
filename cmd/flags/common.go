@@ -25,7 +25,7 @@ var (
 	}
 	L2WSEndpoint = &cli.StringFlag{
 		Name:     "l2.ws",
-		Usage:    "Websocket RPC endpoint of a L2Client taiko-geth execution engine",
+		Usage:    "Websocket RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
 	}
@@ -37,7 +37,7 @@ var (
 	}
 	L2HTTPEndpoint = &cli.StringFlag{
 		Name:     "l2.http",
-		Usage:    "HTTP RPC endpoint of a L2Client taiko-geth execution engine",
+		Usage:    "HTTP RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
 	}
