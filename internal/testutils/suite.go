@@ -121,7 +121,7 @@ func (s *ClientTestSuite) SetupTest() {
 		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
 		s.Nil(err)
 	}
-	s.Nil(rpcCli.L1RawRPC.CallContext(context.Background(), &s.testnetL1SnapshotID, "evm_snapshot"))
+	s.Nil(rpcCli.L1.CallContext(context.Background(), &s.testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(s.testnetL1SnapshotID)
 }
 
@@ -175,19 +175,19 @@ func (s *ClientTestSuite) setAddress(ownerPrivKey *ecdsa.PrivateKey, name [32]by
 
 func (s *ClientTestSuite) TearDownTest() {
 	var revertRes bool
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", s.testnetL1SnapshotID))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", s.testnetL1SnapshotID))
 	s.True(revertRes)
 
-	s.Nil(rpc.SetHead(context.Background(), s.RPCClient.L2RawRPC, common.Big0))
+	s.Nil(rpc.SetHead(context.Background(), s.RPCClient.L2, common.Big0))
 	s.Nil(s.proverServer.Shutdown(context.Background()))
 }
 
 func (s *ClientTestSuite) SetL1Automine(automine bool) {
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), nil, "evm_setAutomine", automine))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), nil, "evm_setAutomine", automine))
 }
 
 func (s *ClientTestSuite) IncreaseTime(time uint64) {
 	var result uint64
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &result, "evm_increaseTime", time))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &result, "evm_increaseTime", time))
 	s.NotNil(result)
 }

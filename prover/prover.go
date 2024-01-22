@@ -1099,7 +1099,7 @@ func (p *Prover) isValidProof(
 	}
 	root, err := p.rpc.GetStorageRoot(
 		ctx,
-		p.rpc.L2GethClient,
+		p.rpc.L2,
 		l2SignalService,
 		blockID,
 	)

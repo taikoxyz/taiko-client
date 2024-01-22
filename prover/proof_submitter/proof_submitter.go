@@ -133,7 +133,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		return err
 	}
 
-	signalRoot, err := s.rpc.GetStorageRoot(ctx, s.rpc.L2GethClient, s.l2SignalService, block.Number())
+	signalRoot, err := s.rpc.GetStorageRoot(ctx, s.rpc.L2, s.l2SignalService, block.Number())
 	if err != nil {
 		return fmt.Errorf("failed to get L2 signal service storage root: %w", err)
 	}
