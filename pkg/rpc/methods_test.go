@@ -185,7 +185,7 @@ func TestGetStorageRootNewestBlock(t *testing.T) {
 	client := newTestClient(t)
 	_, err := client.GetStorageRoot(
 		context.Background(),
-		client.L1GethClient,
+		client.L1,
 		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 		nil)
 	require.Nil(t, err)
