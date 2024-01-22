@@ -14,6 +14,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/txpool"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
+
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/utils"
@@ -23,6 +25,7 @@ var (
 	ZeroAddress                common.Address
 	waitReceiptPollingInterval = 3 * time.Second
 	defaultWaitReceiptTimeout  = 1 * time.Minute
+	BlobBytes                  = params.BlobTxBytesPerFieldElement * params.BlobTxFieldElementsPerBlob
 )
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.
