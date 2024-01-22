@@ -325,7 +325,7 @@ func (s *DriverTestSuite) TestStartClose() {
 func (s *DriverTestSuite) TestL1Current() {
 	// propose and insert a block
 	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
-	// reset L1Client current with increased height
+	// reset L1 current with increased height
 	s.Nil(s.d.state.ResetL1Current(s.d.ctx, common.Big1))
 }
 

@@ -19,7 +19,7 @@ var (
 var (
 	L1WSEndpoint = &cli.StringFlag{
 		Name:     "l1.ws",
-		Usage:    "Websocket RPC endpoint of a L1Client ethereum node",
+		Usage:    "Websocket RPC endpoint of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
 	}
@@ -31,7 +31,7 @@ var (
 	}
 	L1HTTPEndpoint = &cli.StringFlag{
 		Name:     "l1.http",
-		Usage:    "HTTP RPC endpoint of a L1Client ethereum node",
+		Usage:    "HTTP RPC endpoint of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
 	}

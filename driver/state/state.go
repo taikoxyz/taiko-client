@@ -212,7 +212,7 @@ func (s *State) setL1Head(l1Head *types.Header) {
 	s.l1Head.Store(l1Head)
 }
 
-// GetL1Head reads the L1Client head concurrent safely.
+// GetL1Head reads the L1 head concurrent safely.
 func (s *State) GetL1Head() *types.Header {
 	return s.l1Head.Load().(*types.Header)
 }
@@ -265,7 +265,7 @@ func (s *State) GetHeadBlockID() *big.Int {
 	return s.l2HeadBlockID.Load().(*big.Int)
 }
 
-// SubL1HeadsFeed registers a subscription of new L1Client heads.
+// SubL1HeadsFeed registers a subscription of new L1 heads.
 func (s *State) SubL1HeadsFeed(ch chan *types.Header) event.Subscription {
 	return s.l1HeadsFeed.Subscribe(ch)
 }

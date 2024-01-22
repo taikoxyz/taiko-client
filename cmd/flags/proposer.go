@@ -10,7 +10,7 @@ import (
 var (
 	L1ProposerPrivKey = &cli.StringFlag{
 		Name:     "l1.proposerPrivKey",
-		Usage:    "Private key of the L1Client proposer, who will send TaikoL1.proposeBlock transactions",
+		Usage:    "Private key of the L1 proposer, who will send TaikoL1.proposeBlock transactions",
 		Required: true,
 		Category: proposerCategory,
 	}

@@ -159,7 +159,7 @@ func (s *Syncer) onBlockProposed(
 		if reorged {
 			genesisL1Header, err := s.rpc.GetGenesisL1Header(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to fetch genesis L1Client header: %w", err)
+				return fmt.Errorf("failed to fetch genesis L1 header: %w", err)
 			}
 
 			l1CurrentToReset = genesisL1Header
@@ -171,13 +171,13 @@ func (s *Syncer) onBlockProposed(
 				s.anchorConstructor.SignalServiceAddress(),
 			)
 			if err != nil {
-				return fmt.Errorf("failed to check whether L1Client chain has been reorged: %w", err)
+				return fmt.Errorf("failed to check whether L1 chain has been reorged: %w", err)
 			}
 		}
 
 		if reorged {
 			log.Info(
-				"Reset L1Current cursor due to L1Client reorg",
+				"Reset L1Current cursor due to L1 reorg",
 				"l1CurrentHeightOld", s.state.GetL1Current().Number,
 				"l1CurrentHashOld", s.state.GetL1Current().Hash(),
 				"l1CurrentHeightNew", l1CurrentToReset.Number,

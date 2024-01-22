@@ -1165,7 +1165,7 @@ func (p *Prover) requestProofByBlockID(
 	}
 
 	handleBlockProposedEvent := func() error {
-		// Make sure `end` height is less than the latest L1Client head.
+		// Make sure `end` height is less than the latest L1 head.
 		l1Head, err := p.rpc.L1Client.BlockNumber(p.ctx)
 		if err != nil {
 			log.Error("Failed to get L1Client block head", "error", err)

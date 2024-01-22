@@ -10,7 +10,7 @@ import (
 var (
 	L1ProverPrivKey = &cli.StringFlag{
 		Name:     "l1.proverPrivKey",
-		Usage:    "Private key of L1Client prover, who will send TaikoL1.proveBlock transactions",
+		Usage:    "Private key of L1 prover, who will send TaikoL1.proveBlock transactions",
 		Required: true,
 		Category: proverCategory,
 	}
@@ -153,10 +153,10 @@ var (
 		Value:    1024,
 		Category: proverCategory,
 	}
-	// Max amount of L1Client blocks that can pass before block is invalid
+	// Max amount of L1 blocks that can pass before block is invalid
 	MaxProposedIn = &cli.Uint64Flag{
 		Name:     "prover.maxProposedIn",
-		Usage:    "Maximum amount of L1Client blocks that can pass before block can not be proposed. 0 means no limit.",
+		Usage:    "Maximum amount of L1 blocks that can pass before block can not be proposed. 0 means no limit.",
 		Value:    0,
 		Category: proverCategory,
 	}
