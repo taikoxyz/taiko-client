@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	blockKeyPrefix = "block-"
+	blockKeyPrefix = "block"
 	separator      = "++"
 )
 
@@ -26,9 +26,8 @@ func BuildBlockKey(blockTimestamp uint64, blockNumber uint64) []byte {
 		[][]byte{
 			[]byte(blockKeyPrefix),
 			[]byte(strconv.Itoa(int(blockTimestamp))),
-			[]byte(separator),
 			[]byte(strconv.Itoa(int(blockNumber))),
-		}, []byte{})
+		}, []byte(separator))
 }
 
 // BuildBlockValue will build a block value for a signed block

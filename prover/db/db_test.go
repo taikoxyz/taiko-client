@@ -10,7 +10,7 @@ import (
 )
 
 func Test_BuildBlockKey(t *testing.T) {
-	assert.Equal(t, []byte("block-1++300"), BuildBlockKey(1, 300))
+	assert.Equal(t, []byte("block++1++300"), BuildBlockKey(1, 300))
 }
 
 func Test_BuildBlockValue(t *testing.T) {
