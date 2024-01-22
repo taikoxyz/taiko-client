@@ -31,7 +31,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/prover_server.CreateAssignmentRequestBody"
+                            "$ref": "#/definitions/server.CreateAssignmentRequestBody"
                         }
                     }
                 ],
@@ -39,7 +39,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/prover_server.ProposeBlockResponse"
+                            "$ref": "#/definitions/server.ProposeBlockResponse"
                         }
                     },
                     "422": {
@@ -65,7 +65,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/prover_server.Status"
+                            "$ref": "#/definitions/server.Status"
                         }
                     }
                 }
@@ -76,7 +76,7 @@
         "big.Int": {
             "type": "object"
         },
-        "github_com_taikoxyz_taiko-client_bindings_encoding.TierFee": {
+        "encoding.TierFee": {
             "type": "object",
             "properties": {
                 "fee": {
@@ -87,7 +87,7 @@
                 }
             }
         },
-        "prover_server.CreateAssignmentRequestBody": {
+        "server.CreateAssignmentRequestBody": {
             "type": "object",
             "properties": {
                 "expiry": {
@@ -99,7 +99,7 @@
                 "tierFees": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_taikoxyz_taiko-client_bindings_encoding.TierFee"
+                        "$ref": "#/definitions/encoding.TierFee"
                     }
                 },
                 "txListHash": {
@@ -110,7 +110,7 @@
                 }
             }
         },
-        "prover_server.ProposeBlockResponse": {
+        "server.ProposeBlockResponse": {
             "type": "object",
             "properties": {
                 "maxBlockID": {
@@ -130,7 +130,7 @@
                 }
             }
         },
-        "prover_server.Status": {
+        "server.Status": {
             "type": "object",
             "properties": {
                 "maxExpiry": {
