@@ -192,9 +192,13 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	)
 	s.Nil(err)
 
+	// Send blob tx.
+	blobTx, err := s.p.sendTxListByBlobTx(context.Background(), encoded)
+	s.Nil(err)
+
 	newTx, err := s.p.sendProposeBlockTx(
 		context.Background(),
-		encoded,
+		blobTx.BlobHashes()[0],
 		&nonce,
 		signedAssignment,
 		proverAddress,

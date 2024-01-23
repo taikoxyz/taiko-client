@@ -65,7 +65,7 @@ func (c *EthClient) createBlobTx(opts *bind.TransactOpts, data []byte) (*types.T
 	gasLimit := opts.GasLimit
 	if opts.GasLimit == 0 {
 		var err error
-		gasLimit, err = c.EstimateGas(nil, ethereum.CallMsg{
+		gasLimit, err = c.EstimateGas(opts.Context, ethereum.CallMsg{
 			From:      opts.From,
 			To:        nil,
 			GasPrice:  nil,
@@ -114,9 +114,8 @@ func (c *EthClient) createBlobTx(opts *bind.TransactOpts, data []byte) (*types.T
 func (c *EthClient) getNonce(opts *bind.TransactOpts) (uint64, error) {
 	if opts.Nonce == nil {
 		return c.PendingNonceAt(opts.Context, opts.From)
-	} else {
-		return opts.Nonce.Uint64(), nil
 	}
+	return opts.Nonce.Uint64(), nil
 }
 
 func makeSidecarWithSingleBlob(data []byte) (*types.BlobTxSidecar, error) {
