@@ -2,6 +2,7 @@ package prover
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"math/big"
 	"net/url"
 	"os"
@@ -42,57 +43,8 @@ func (s *ProverTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	proverServerURL := testutils.LocalRandomProverEndpoint()
-	port, err := strconv.Atoi(proverServerURL.Port())
-	s.Nil(err)
-
-	decimal, err := s.RPCClient.TaikoToken.Decimals(nil)
-	s.Nil(err)
-
-	allowance := new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil)
-
 	ctx, cancel := context.WithCancel(context.Background())
-	p := new(Prover)
-	s.Nil(InitFromConfig(ctx, p, &Config{
-		L1WsEndpoint:             os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L1HttpEndpoint:           os.Getenv("L1_NODE_HTTP_ENDPOINT"),
-		L2WsEndpoint:             os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2HttpEndpoint:           os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:        common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		AssignmentHookAddress:    common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-		GuardianProverAddress:    common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
-		L1ProverPrivKey:          l1ProverPrivKey,
-		Dummy:                    true,
-		ProveUnassignedBlocks:    true,
-		Capacity:                 1024,
-		MinOptimisticTierFee:     common.Big1,
-		MinSgxTierFee:            common.Big1,
-		MinPseZkevmTierFee:       common.Big1,
-		MinSgxAndPseZkevmTierFee: common.Big1,
-		HTTPServerPort:           uint64(port),
-		WaitReceiptTimeout:       12 * time.Second,
-		DatabasePath:             "",
-		Allowance:                allowance,
-		RPCTimeout:               3 * time.Second,
-		BackOffMaxRetrys:         3,
-	}))
-	p.srv = testutils.NewTestProverServer(
-		&s.ClientTestSuite,
-		l1ProverPrivKey,
-		proverServerURL,
-	)
-
-	p.guardianProverSender = guardianproversender.New(
-		p.cfg.L1ProverPrivKey,
-		p.cfg.GuardianProverHealthCheckServerEndpoint,
-		memorydb.New(),
-		p.rpc,
-		p.proverAddress,
-	)
-
-	s.p = p
+	proverServerURL := s.initProver(ctx, l1ProverPrivKey)
 	s.cancel = cancel
 
 	// Init driver
@@ -279,6 +231,12 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 		contestedSub.Unsubscribe()
 		close(contestedSink)
 	}()
+
+	contesterKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	s.NotNil(s.initProver(context.Background(), contesterKey))
+	s.p.cfg.ContesterMode = true
 
 	s.Greater(header.Number.Uint64(), uint64(0))
 	s.Nil(s.p.onTransitionProved(context.Background(), event))
@@ -495,4 +453,59 @@ func (s *ProverTestSuite) TestSetApprovalAlreadySetHigher() {
 
 func TestProverTestSuite(t *testing.T) {
 	suite.Run(t, new(ProverTestSuite))
+}
+
+func (s *ProverTestSuite) initProver(ctx context.Context, key *ecdsa.PrivateKey) *url.URL {
+	proverServerURL := testutils.LocalRandomProverEndpoint()
+	port, err := strconv.Atoi(proverServerURL.Port())
+	s.Nil(err)
+
+	decimal, err := s.RPCClient.TaikoToken.Decimals(nil)
+	s.Nil(err)
+
+	allowance := new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil)
+
+	p := new(Prover)
+	s.Nil(InitFromConfig(ctx, p, &Config{
+		L1WsEndpoint:             os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:           os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:             os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:           os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:           common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:        common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		AssignmentHookAddress:    common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
+		GuardianProverAddress:    common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
+		L1ProverPrivKey:          key,
+		Dummy:                    true,
+		ProveUnassignedBlocks:    true,
+		Capacity:                 1024,
+		MinOptimisticTierFee:     common.Big1,
+		MinSgxTierFee:            common.Big1,
+		MinPseZkevmTierFee:       common.Big1,
+		MinSgxAndPseZkevmTierFee: common.Big1,
+		HTTPServerPort:           uint64(port),
+		WaitReceiptTimeout:       12 * time.Second,
+		DatabasePath:             "",
+		Allowance:                allowance,
+		RPCTimeout:               3 * time.Second,
+		BackOffMaxRetrys:         3,
+	}))
+	p.srv = testutils.NewTestProverServer(
+		&s.ClientTestSuite,
+		key,
+		proverServerURL,
+	)
+
+	p.guardianProverSender = guardianproversender.New(
+		key,
+		p.cfg.GuardianProverHealthCheckServerEndpoint,
+		memorydb.New(),
+		p.rpc,
+		p.proverAddress,
+	)
+
+	s.p = p
+
+	return proverServerURL
 }
