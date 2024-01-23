@@ -36,7 +36,7 @@ func (c *EthClient) TransactBlobTx(opts *bind.TransactOpts, data []byte) (*types
 }
 
 func (c *EthClient) createBlobTx(opts *bind.TransactOpts, data []byte) (*types.Transaction, error) {
-	block, err := c.BlockByNumber(opts.Context, nil)
+	header, err := c.HeaderByNumber(opts.Context, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (c *EthClient) createBlobTx(opts *bind.TransactOpts, data []byte) (*types.T
 	if gasFeeCap == nil {
 		gasFeeCap = new(big.Int).Add(
 			gasTipCap,
-			new(big.Int).Mul(block.Header().BaseFee, big.NewInt(2)),
+			new(big.Int).Mul(header.BaseFee, big.NewInt(2)),
 		)
 	}
 	if gasFeeCap.Cmp(gasTipCap) < 0 {
@@ -92,13 +92,18 @@ func (c *EthClient) createBlobTx(opts *bind.TransactOpts, data []byte) (*types.T
 		return nil, err
 	}
 
+	var blobFeeCap uint64 = 100066
+	if header.ExcessBlobGas != nil {
+		blobFeeCap = *header.ExcessBlobGas
+	}
+
 	baseTx := &types.BlobTx{
 		ChainID:    uint256.NewInt(chainID.Uint64()),
 		Nonce:      nonce,
 		GasTipCap:  uint256.NewInt(gasTipCap.Uint64()),
 		GasFeeCap:  uint256.NewInt(gasFeeCap.Uint64()),
 		Gas:        gasLimit,
-		BlobFeeCap: uint256.MustFromBig(eip4844.CalcBlobFee(*block.ExcessBlobGas())),
+		BlobFeeCap: uint256.MustFromBig(eip4844.CalcBlobFee(blobFeeCap)),
 		BlobHashes: sidecar.BlobHashes(),
 		Sidecar:    sidecar,
 	}
