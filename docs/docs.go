@@ -19,7 +19,7 @@ const docTemplate = `{
             "name": "MIT",
             "url": "https://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md"
         },
-        "version": "{{.JsonRPC}}"
+        "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
@@ -40,7 +40,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/prover_server.CreateAssignmentRequestBody"
+                            "$ref": "#/definitions/server.CreateAssignmentRequestBody"
                         }
                     }
                 ],
@@ -48,7 +48,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/prover_server.ProposeBlockResponse"
+                            "$ref": "#/definitions/server.ProposeBlockResponse"
                         }
                     },
                     "422": {
@@ -74,7 +74,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/prover_server.Status"
+                            "$ref": "#/definitions/server.Status"
                         }
                     }
                 }
@@ -85,7 +85,7 @@ const docTemplate = `{
         "big.Int": {
             "type": "object"
         },
-        "github_com_taikoxyz_taiko-client_bindings_encoding.TierFee": {
+        "encoding.TierFee": {
             "type": "object",
             "properties": {
                 "fee": {
@@ -96,7 +96,7 @@ const docTemplate = `{
                 }
             }
         },
-        "prover_server.CreateAssignmentRequestBody": {
+        "server.CreateAssignmentRequestBody": {
             "type": "object",
             "properties": {
                 "expiry": {
@@ -108,7 +108,7 @@ const docTemplate = `{
                 "tierFees": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_taikoxyz_taiko-client_bindings_encoding.TierFee"
+                        "$ref": "#/definitions/encoding.TierFee"
                     }
                 },
                 "txListHash": {
@@ -119,7 +119,7 @@ const docTemplate = `{
                 }
             }
         },
-        "prover_server.ProposeBlockResponse": {
+        "server.ProposeBlockResponse": {
             "type": "object",
             "properties": {
                 "maxBlockID": {
@@ -139,7 +139,7 @@ const docTemplate = `{
                 }
             }
         },
-        "prover_server.Status": {
+        "server.Status": {
             "type": "object",
             "properties": {
                 "maxExpiry": {
