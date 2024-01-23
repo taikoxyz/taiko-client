@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	blockKeyPrefix = "block-"
+	blockKeyPrefix = "block"
 	separator      = "++"
 )
 
@@ -21,12 +21,13 @@ type SignedBlockData struct {
 }
 
 // BuildBlockKey will build a block key for a signed block
-func BuildBlockKey(blockTimestamp uint64) []byte {
+func BuildBlockKey(blockTimestamp uint64, blockNumber uint64) []byte {
 	return bytes.Join(
 		[][]byte{
 			[]byte(blockKeyPrefix),
 			[]byte(strconv.Itoa(int(blockTimestamp))),
-		}, []byte{})
+			[]byte(strconv.Itoa(int(blockNumber))),
+		}, []byte(separator))
 }
 
 // BuildBlockValue will build a block value for a signed block
