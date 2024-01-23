@@ -1,3 +1,3 @@
 #/bin/sh
 
-swag init -g prover/server/api.go --parseDependency --parseGoList
+swag init -g api.go -d prover/server --pd
