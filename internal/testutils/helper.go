@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -154,20 +153,6 @@ func ProposeAndInsertValidBlock(
 	s.Nil(err)
 
 	return event
-}
-
-func DepositEtherToL2(s *ClientTestSuite, depositerPrivKey *ecdsa.PrivateKey, recipient common.Address) {
-	config, err := s.RPCClient.TaikoL1.GetConfig(nil)
-	s.Nil(err)
-
-	opts, err := bind.NewKeyedTransactorWithChainID(depositerPrivKey, s.RPCClient.L1ChainID)
-	s.Nil(err)
-	opts.Value = config.EthDepositMinAmount
-
-	for i := 0; i < int(config.EthDepositMinCountPerBlock); i++ {
-		_, err = s.RPCClient.TaikoL1.DepositEtherToL2(opts, recipient)
-		s.Nil(err)
-	}
 }
 
 // NewTestProverServer starts a new prover server that has channel listeners to respond and react
