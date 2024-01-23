@@ -1,14 +1,14 @@
 definitions:
   big.Int:
     type: object
-  github_com_taikoxyz_taiko-client_bindings_encoding.TierFee:
+  encoding.TierFee:
     properties:
       fee:
         $ref: '#/definitions/big.Int'
       tier:
         type: integer
     type: object
-  prover_server.CreateAssignmentRequestBody:
+  server.CreateAssignmentRequestBody:
     properties:
       expiry:
         type: integer
@@ -16,14 +16,14 @@ definitions:
         type: string
       tierFees:
         items:
-          $ref: '#/definitions/github_com_taikoxyz_taiko-client_bindings_encoding.TierFee'
+          $ref: '#/definitions/encoding.TierFee'
         type: array
       txListHash:
         items:
           type: integer
         type: array
     type: object
-  prover_server.ProposeBlockResponse:
+  server.ProposeBlockResponse:
     properties:
       maxBlockID:
         type: integer
@@ -36,7 +36,7 @@ definitions:
           type: integer
         type: array
     type: object
-  prover_server.Status:
+  server.Status:
     properties:
       maxExpiry:
         type: integer
@@ -71,14 +71,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/prover_server.CreateAssignmentRequestBody'
+          $ref: '#/definitions/server.CreateAssignmentRequestBody'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/prover_server.ProposeBlockResponse'
+            $ref: '#/definitions/server.ProposeBlockResponse'
         "422":
           description: prover does not have capacity
           schema:
@@ -95,6 +95,6 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/prover_server.Status'
+            $ref: '#/definitions/server.Status'
       summary: Get current prover server status
 swagger: "2.0"
