@@ -16,7 +16,7 @@ func TestBlockTx(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	url := "https://rpc.ankr.com/eth_goerli" //os.Getenv("L1_NODE_WS_ENDPOINT")
+	url := os.Getenv("L1_NODE_WS_ENDPOINT")
 	l1Client, err := NewEthClient(ctx, url, time.Second*20)
 	assert.NoError(t, err)
 
