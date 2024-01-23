@@ -3,13 +3,14 @@ package rpc
 import (
 	"errors"
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/consensus/misc/eip4844"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/holiman/uint256"
-	"math/big"
 )
 
 func (c *EthClient) TransactBlobTx(opts *bind.TransactOpts, data []byte) (*types.Transaction, error) {
