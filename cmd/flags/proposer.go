@@ -122,6 +122,12 @@ var (
 		Value:    false,
 		Category: proposerCategory,
 	}
+	BlobAllowed = &cli.BoolFlag{
+		Name:     "blobAllowed",
+		Usage:    "Send blob tx when propose block",
+		Value:    false,
+		Category: proposerCategory,
+	}
 )
 
 // ProposerFlags All proposer flags.

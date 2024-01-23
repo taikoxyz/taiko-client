@@ -324,16 +324,14 @@ func (p *Proposer) sendTxListByBlobTx(ctx context.Context, txListBytes []byte) (
 	return tx, nil
 }
 
-// sendProposeBlockTx tries to send a TaikoL1.proposeBlock transaction.
-func (p *Proposer) sendProposeBlockTx(
+func (p *Proposer) sendProposeBlockTxWithBlobHash(
 	ctx context.Context,
 	blobHash common.Hash,
 	nonce *uint64,
 	assignment *encoding.ProverAssignment,
 	assignedProver common.Address,
 	maxFee *big.Int,
-	isReplacement bool,
-) (*types.Transaction, error) {
+	isReplacement bool) (*types.Transaction, error) {
 	// Propose the transactions list
 	opts, err := getTxOpts(ctx, p.rpc.L1, p.L1ProposerPrivKey, p.rpc.L1ChainID, maxFee)
 	if err != nil {
@@ -415,6 +413,96 @@ func (p *Proposer) sendProposeBlockTx(
 	return proposeTx, nil
 }
 
+// sendProposeBlockTx tries to send a TaikoL1.proposeBlock transaction.
+func (p *Proposer) sendProposeBlockTx(
+	ctx context.Context,
+	txListBytes []byte,
+	nonce *uint64,
+	assignment *encoding.ProverAssignment,
+	assignedProver common.Address,
+	maxFee *big.Int,
+	isReplacement bool,
+) (*types.Transaction, error) {
+	// Propose the transactions list
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.L1ProposerPrivKey, p.rpc.L1ChainID, maxFee)
+	if err != nil {
+		return nil, err
+	}
+	if nonce != nil {
+		opts.Nonce = new(big.Int).SetUint64(*nonce)
+	}
+	opts.GasLimit = p.ProposeBlockTxGasLimit
+	if isReplacement {
+		if opts, err = rpc.IncreaseGasTipCap(
+			ctx,
+			p.rpc,
+			opts,
+			p.proposerAddress,
+			new(big.Int).SetUint64(p.ProposeBlockTxReplacementMultiplier),
+			p.ProposeBlockTxGasTipCap,
+		); err != nil {
+			return nil, err
+		}
+	}
+
+	var parentMetaHash = [32]byte{}
+	if p.IncludeParentMetaHash {
+		state, err := p.rpc.TaikoL1.State(&bind.CallOpts{Context: ctx})
+		if err != nil {
+			return nil, err
+		}
+
+		parent, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, state.SlotB.NumBlocks-1)
+		if err != nil {
+			return nil, err
+		}
+
+		parentMetaHash = parent.MetaHash
+	}
+
+	hookCalls := make([]encoding.HookCall, 0)
+
+	// initially just use the AssignmentHook default.
+	// TODO: flag for additional hook addresses and data.
+	hookInputData, err := encoding.EncodeAssignmentHookInput(&encoding.AssignmentHookInput{
+		Assignment: assignment,
+		Tip:        common.Big0, // TODO: flag for tip
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	hookCalls = append(hookCalls, encoding.HookCall{
+		Hook: p.AssignmentHookAddress,
+		Data: hookInputData,
+	})
+
+	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
+		AssignedProver:    assignedProver,
+		ExtraData:         rpc.StringToBytes32(p.ExtraData),
+		TxListByteOffset:  common.Big0,
+		TxListByteSize:    common.Big0,
+		BlobHash:          [32]byte{},
+		CacheBlobForReuse: false,
+		ParentMetaHash:    parentMetaHash,
+		HookCalls:         hookCalls,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(
+		opts,
+		encodedParams,
+		txListBytes,
+	)
+	if err != nil {
+		return nil, encoding.TryParsingCustomError(err)
+	}
+
+	return proposeTx, nil
+}
+
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
@@ -433,7 +521,6 @@ func (p *Proposer) ProposeTxList(
 
 	var (
 		isReplacement bool
-		blobTx        *types.Transaction
 		tx            *types.Transaction
 	)
 	if err := backoff.Retry(
@@ -443,16 +530,37 @@ func (p *Proposer) ProposeTxList(
 			}
 
 			// Send tx list by blob tx.
-			if blobTx == nil {
-				blobTx, err = p.sendTxListByBlobTx(ctx, txListBytes)
+			if p.BlobAllowed {
+				blobTx, err := p.sendTxListByBlobTx(ctx, txListBytes)
 				if err != nil {
 					return nil
 				}
+				if tx, err = p.sendProposeBlockTxWithBlobHash(
+					ctx,
+					blobTx.BlobHashes()[0],
+					nonce,
+					assignment,
+					proverAddress,
+					maxFee,
+					isReplacement,
+				); err != nil {
+					log.Warn("Failed to send taikoL1.proposeBlock blob transaction", "error", encoding.TryParsingCustomError(err))
+					if strings.Contains(err.Error(), core.ErrNonceTooLow.Error()) {
+						return nil
+					}
+					if strings.Contains(err.Error(), txpool.ErrReplaceUnderpriced.Error()) {
+						isReplacement = true
+					} else {
+						isReplacement = false
+					}
+					return err
+				}
+				return nil
 			}
 
 			if tx, err = p.sendProposeBlockTx(
 				ctx,
-				blobTx.BlobHashes()[0],
+				txListBytes,
 				nonce,
 				assignment,
 				proverAddress,

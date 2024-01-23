@@ -192,19 +192,32 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	)
 	s.Nil(err)
 
-	// Send blob tx.
-	blobTx, err := s.p.sendTxListByBlobTx(context.Background(), encoded)
-	s.Nil(err)
-
-	newTx, err := s.p.sendProposeBlockTx(
-		context.Background(),
-		blobTx.BlobHashes()[0],
-		&nonce,
-		signedAssignment,
-		proverAddress,
-		fee,
-		true,
+	var (
+		ctx   = context.Background()
+		newTx *types.Transaction
 	)
+	if s.p.BlobAllowed {
+		blobTx, blobErr := s.p.sendTxListByBlobTx(ctx, encoded)
+		s.Nil(blobErr)
+		newTx, err = s.p.sendProposeBlockTxWithBlobHash(
+			ctx,
+			blobTx.BlobHashes()[0],
+			&nonce,
+			signedAssignment,
+			proverAddress,
+			fee,
+			true)
+	} else {
+		newTx, err = s.p.sendProposeBlockTx(
+			context.Background(),
+			encoded,
+			&nonce,
+			signedAssignment,
+			proverAddress,
+			fee,
+			true,
+		)
+	}
 	s.Nil(err)
 	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }
