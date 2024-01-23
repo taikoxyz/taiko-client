@@ -18,7 +18,7 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-// @title Taiko Prover API
+// @title Taiko Prover Server API
 // @version 1.0
 // @termsOfService http://swagger.io/terms/
 
@@ -29,7 +29,6 @@ import (
 // @license.name MIT
 // @license.url https://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md
 
-// @host prover-api.test.taiko.xyz
 // ProverServer represents a prover server instance.
 type ProverServer struct {
 	echo                     *echo.Echo
