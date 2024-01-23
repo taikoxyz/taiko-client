@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
+
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 )
 
@@ -77,9 +78,4 @@ func TestDialEngineClientWithBackoff_CtxError(t *testing.T) {
 		10,
 	)
 	require.NotNil(t, err2)
-}
-
-func TestDialEngineClient_UrlError(t *testing.T) {
-	_, err := DialEngineClient(context.Background(), "invalid", "invalid")
-	require.NotNil(t, err)
 }

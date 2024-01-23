@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"golang.org/x/sync/errgroup"
 
@@ -249,7 +248,7 @@ func (c *Client) GetPoolContent(
 	}
 
 	var result []types.Transactions
-	err := c.L2RawRPC.CallContext(
+	err := c.L2.CallContext(
 		ctxWithTimeout,
 		&result,
 		"taiko_txPoolContent",
@@ -275,7 +274,7 @@ func (c *Client) L2AccountNonce(
 	defer cancel()
 
 	var result hexutil.Uint64
-	err := c.L2RawRPC.CallContext(ctxWithTimeout, &result, "eth_getTransactionCount", account, hexutil.EncodeBig(height))
+	err := c.L2.CallContext(ctxWithTimeout, &result, "eth_getTransactionCount", account, hexutil.EncodeBig(height))
 	return uint64(result), err
 }
 
@@ -365,14 +364,14 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*struct {
 // GetStorageRoot returns a contract's storage root at the given height.
 func (c *Client) GetStorageRoot(
 	ctx context.Context,
-	gethclient *gethclient.Client,
+	client *EthClient,
 	contract common.Address,
 	height *big.Int,
 ) (common.Hash, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	proof, err := gethclient.GetProof(
+	proof, err := client.GetProof(
 		ctxWithTimeout,
 		contract,
 		[]string{"0x0000000000000000000000000000000000000000000000000000000000000000"},
@@ -562,7 +561,7 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 		return true, nil
 	}
 
-	currentRoot, err := c.GetStorageRoot(ctx, c.L1GethClient, l1SignalService, l1Header.Number)
+	currentRoot, err := c.GetStorageRoot(ctx, c.L1, l1SignalService, l1Header.Number)
 	if err != nil {
 		return false, err
 	}

@@ -2,8 +2,11 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/beacon/engine"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
@@ -12,6 +15,21 @@ import (
 // ref: https://github.com/ethereum/execution-apis/blob/main/src/engine/specification.md
 type EngineClient struct {
 	*rpc.Client
+}
+
+func NewJWTEngineClient(url, jwtSecret string) (*EngineClient, error) {
+	var jwt = StringToBytes32(jwtSecret)
+	if jwt == (common.Hash{}) || url == "" {
+		return nil, fmt.Errorf("url is empty or jwt secret is illegal")
+	}
+	authClient, err := rpc.DialOptions(context.Background(), url, rpc.WithHTTPAuth(node.NewJWTAuth(jwt)))
+	if err != nil {
+		return nil, err
+	}
+
+	return &EngineClient{
+		Client: authClient,
+	}, nil
 }
 
 // ForkchoiceUpdate updates the forkchoice on the execution client.
@@ -31,7 +49,7 @@ func (c *EngineClient) ForkchoiceUpdate(
 	return result, nil
 }
 
-// ExecutePayload executes a built block on the execution engine.
+// NewPayload executes a built block on the execution engine.
 func (c *EngineClient) NewPayload(
 	ctx context.Context,
 	payload *engine.ExecutableData,

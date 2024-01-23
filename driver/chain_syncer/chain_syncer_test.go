@@ -136,15 +136,15 @@ func TestChainSyncerTestSuite(t *testing.T) {
 
 func (s *ChainSyncerTestSuite) TakeSnapshot() {
 	// record snapshot state to revert to before changes
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &s.snapshotID, "evm_snapshot"))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &s.snapshotID, "evm_snapshot"))
 }
 
 func (s *ChainSyncerTestSuite) RevertSnapshot() {
 	// revert to the snapshot state so protocol configs are unaffected
 	var revertRes bool
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", s.snapshotID))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", s.snapshotID))
 	s.True(revertRes)
-	s.Nil(rpc.SetHead(context.Background(), s.RPCClient.L2RawRPC, common.Big0))
+	s.Nil(rpc.SetHead(context.Background(), s.RPCClient.L2, common.Big0))
 }
 
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead() {

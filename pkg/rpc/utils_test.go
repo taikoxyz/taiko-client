@@ -27,7 +27,7 @@ func TestWaitReceiptTimeout(t *testing.T) {
 }
 
 func TestSetHead(t *testing.T) {
-	require.Nil(t, SetHead(context.Background(), newTestClient(t).L2RawRPC, common.Big0))
+	require.Nil(t, SetHead(context.Background(), newTestClient(t).L2, common.Big0))
 }
 
 func TestStringToBytes32(t *testing.T) {
@@ -63,7 +63,7 @@ func TestL1ContentFrom(t *testing.T) {
 	require.Nil(t, err)
 	require.Nil(t, client.L2.SendTransaction(context.Background(), signedTx))
 
-	content, err := ContentFrom(context.Background(), client.L2RawRPC, testAddr)
+	content, err := ContentFrom(context.Background(), client.L2, testAddr)
 	require.Nil(t, err)
 
 	require.NotZero(t, len(content["pending"]))

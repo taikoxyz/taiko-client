@@ -128,7 +128,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 
 func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	var testnetL1SnapshotID string
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(testnetL1SnapshotID)
 
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -158,7 +158,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 	// Reorg back to l2Head1
 	var revertRes bool
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
 	s.True(revertRes)
 
 	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -191,7 +191,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	var testnetL1SnapshotID string
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(testnetL1SnapshotID)
 
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -221,7 +221,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 
 	// Reorg back to l2Head1
 	var revertRes bool
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
 	s.True(revertRes)
 
 	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -251,7 +251,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 
 func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	var testnetL1SnapshotID string
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(testnetL1SnapshotID)
 
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -281,7 +281,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 
 	// Reorg back to l2Head1
 	var revertRes bool
-	s.Nil(s.RPCClient.L1RawRPC.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
 	s.True(revertRes)
 
 	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)

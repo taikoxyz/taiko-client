@@ -114,7 +114,7 @@ func (c *ProofContester) SubmitContest(
 		return err
 	}
 
-	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L2GethClient, c.l2SignalService, blockID)
+	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L2, c.l2SignalService, blockID)
 	if err != nil {
 		return fmt.Errorf("failed to get L2 signal service storage root: %w", err)
 	}
