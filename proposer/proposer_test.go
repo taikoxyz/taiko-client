@@ -57,6 +57,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		TierFeePriceBump:                    common.Big2,
 		MaxTierFeePriceBumps:                3,
 		ExtraData:                           "test",
+		BlobAllowed:                         true,
 	}))
 
 	s.p = p
