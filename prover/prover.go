@@ -401,13 +401,12 @@ func (p *Prover) Start() error {
 	}()
 
 	if p.IsGuardianProver() {
-		revision, err := getRevision()
+		revision, version, err := getRevision()
 		if err != nil {
 			log.Crit("Unable to get revision", "error", err)
 		}
 
-		// use default version for now when sending, since we dont publish new versions right now.
-		if err := p.guardianProverSender.SendStartup(p.ctx, revision, "v1.0.0"); err != nil {
+		if err := p.guardianProverSender.SendStartup(p.ctx, revision, version); err != nil {
 			log.Crit("Failed to send guardian prover startup", "error", err)
 		}
 
@@ -1332,10 +1331,14 @@ func (p *Prover) heartbeatInterval(ctx context.Context) {
 	}
 }
 
-func getRevision() (string, error) {
+func getRevision() (string, string, error) {
 	var revision string
 
+	var version string
+
 	if info, ok := debug.ReadBuildInfo(); ok {
+		version = info.Main.Version
+
 		for _, setting := range info.Settings {
 			if setting.Key == "vcs.revision" {
 				revision = setting.Value
@@ -1343,9 +1346,9 @@ func getRevision() (string, error) {
 		}
 	}
 
-	if revision == "" {
-		return "", errors.New("unable to get revision")
+	if revision == "" || version == "" {
+		return "", "", fmt.Errorf("unable to get revision or version. revision: %v, version: %v", revision, version)
 	}
 
-	return revision, nil
+	return revision, version, nil
 }
