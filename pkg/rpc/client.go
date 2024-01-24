@@ -8,6 +8,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/prysmaticlabs/prysm/v4/api/client"
+	"github.com/prysmaticlabs/prysm/v4/api/client/beacon"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
@@ -23,6 +25,8 @@ type Client struct {
 	L2CheckPoint *EthClient
 	// Geth Engine API clients
 	L2Engine *EngineClient
+	// Beacon clients
+	L1Beacon *beacon.Client
 	// Protocol contracts clients
 	TaikoL1        *bindings.TaikoL1Client
 	TaikoL2        *bindings.TaikoL2Client
@@ -39,6 +43,7 @@ type Client struct {
 type ClientConfig struct {
 	L1Endpoint            string
 	L2Endpoint            string
+	L1BeaconEndpoint      string
 	L2CheckPoint          string
 	TaikoL1Address        common.Address
 	TaikoL2Address        common.Address
@@ -123,6 +128,13 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		}
 	}
 
+	var l1BeaconClient *beacon.Client
+	if cfg.L1BeaconEndpoint != "" {
+		if l1BeaconClient, err = beacon.NewClient(cfg.L1BeaconEndpoint, client.WithTimeout(defaultTimeout)); err != nil {
+			return nil, err
+		}
+	}
+
 	var l2CheckPoint *EthClient
 	if cfg.L2CheckPoint != "" {
 		l2CheckPoint, err = NewEthClient(ctxWithTimeout, cfg.L2CheckPoint, cfg.Timeout)
@@ -133,6 +145,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 
 	client := &Client{
 		L1:             l1Client,
+		L1Beacon:       l1BeaconClient,
 		L2:             l2Client,
 		L2CheckPoint:   l2CheckPoint,
 		L2Engine:       l2AuthClient,
