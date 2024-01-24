@@ -34,6 +34,14 @@ type signedBlockReq struct {
 	Prover    common.Address `json:"proverAddress"`
 }
 
+// startupReq is the request body send to the health check server when the guardian prover starts up.
+type startupReq struct {
+	ProverAddress string `json:"prover"`
+	Version       string `json:"version"`
+	Revision      string `json:"revision"`
+	Signature     []byte `json:"signature"`
+}
+
 // GuardianProverBlockSender is responsible for signing and sending known blocks to the health check server.
 type GuardianProverBlockSender struct {
 	privateKey                *ecdsa.PrivateKey
@@ -88,7 +96,7 @@ func (s *GuardianProverBlockSender) post(ctx context.Context, route string, req 
 
 // SignAndSendBlock signs the given block and sends it to the health check server.
 func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockID *big.Int) error {
-	signed, header, err := s.sign(ctx, blockID)
+	signed, header, err := s.signBlock(ctx, blockID)
 	if err != nil {
 		return nil
 	}
@@ -108,6 +116,40 @@ func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockI
 			blockID,
 		),
 	)
+}
+
+func (s *GuardianProverBlockSender) SendStartup(ctx context.Context, revision string, version string) error {
+	if s.healthCheckServerEndpoint == nil {
+		log.Info("No health check server endpoint set, returning early")
+		return nil
+	}
+
+	sig, err := crypto.Sign(
+		crypto.Keccak256Hash(
+			s.proverAddress.Bytes(),
+			[]byte(revision),
+			[]byte(version)).Bytes(),
+		s.privateKey)
+	if err != nil {
+		return err
+	}
+
+	req := &startupReq{
+		Revision:      revision,
+		Version:       version,
+		ProverAddress: s.proverAddress.Hex(),
+		Signature:     sig,
+	}
+
+	if err := s.post(ctx, "startup", req); err != nil {
+		return err
+	}
+
+	log.Info("Guardian prover successfully sent startup",
+		"revision", revision,
+	)
+
+	return nil
 }
 
 // sendSignedBlockReq is the actual method that sends the signed block to the health check server.
@@ -139,7 +181,7 @@ func (s *GuardianProverBlockSender) sendSignedBlockReq(
 }
 
 // sign signs the given block and returns the signature and header.
-func (s *GuardianProverBlockSender) sign(ctx context.Context, blockID *big.Int) ([]byte, *types.Header, error) {
+func (s *GuardianProverBlockSender) signBlock(ctx context.Context, blockID *big.Int) ([]byte, *types.Header, error) {
 	log.Info("Guardian prover signing block", "blockID", blockID.Uint64())
 
 	head, err := s.rpc.L2.BlockNumber(ctx)
