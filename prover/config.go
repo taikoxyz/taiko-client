@@ -37,6 +37,7 @@ type Config struct {
 	BackOffRetryInterval                    time.Duration
 	ProveUnassignedBlocks                   bool
 	ContesterMode                           bool
+	EnableLivenessBondProof                 bool
 	RPCTimeout                              time.Duration
 	WaitReceiptTimeout                      time.Duration
 	ProveBlockGasLimit                      *uint64
@@ -146,6 +147,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		BackOffRetryInterval:                    c.Duration(flags.BackOffRetryInterval.Name),
 		ProveUnassignedBlocks:                   c.Bool(flags.ProveUnassignedBlocks.Name),
 		ContesterMode:                           c.Bool(flags.ContesterMode.Name),
+		EnableLivenessBondProof:                 c.Bool(flags.EnableLivenessBondProof.Name),
 		RPCTimeout:                              c.Duration(flags.RPCTimeout.Name),
 		WaitReceiptTimeout:                      c.Duration(flags.WaitReceiptTimeout.Name),
 		ProveBlockGasLimit:                      proveBlockTxGasLimit,
