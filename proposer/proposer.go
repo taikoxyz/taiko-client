@@ -307,23 +307,9 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	return nil
 }
 
-func (p *Proposer) sendTxListByBlobTx(ctx context.Context, txListBytes []byte) (*types.Transaction, error) {
-	blobOpts, err := getTxOpts(ctx, p.rpc.L1, p.L1ProposerPrivKey, p.rpc.L1ChainID, nil)
-	if err != nil {
-		return nil, err
-	}
-	tx, err := p.rpc.L1.TransactBlobTx(blobOpts, txListBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return tx, nil
-}
-
 func (p *Proposer) sendProposeBlockTxWithBlobHash(
 	ctx context.Context,
-	blobHash common.Hash,
-	txListSize *big.Int,
+	txListBytes []byte,
 	nonce *uint64,
 	assignment *encoding.ProverAssignment,
 	assignedProver common.Address,
@@ -383,12 +369,17 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 		Data: hookInputData,
 	})
 
+	// Make sidecar in order to get blob hash.
+	sideCar, err := rpc.MakeSidecarWithSingleBlob(txListBytes)
+	if err != nil {
+		return nil, err
+	}
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		AssignedProver:    assignedProver,
 		ExtraData:         rpc.StringToBytes32(p.ExtraData),
 		TxListByteOffset:  common.Big0,
-		TxListByteSize:    txListSize,
-		BlobHash:          blobHash,
+		TxListByteSize:    big.NewInt(int64(len(txListBytes))),
+		BlobHash:          sideCar.BlobHashes()[0],
 		CacheBlobForReuse: false,
 		ParentMetaHash:    parentMetaHash,
 		HookCalls:         hookCalls,
@@ -397,14 +388,21 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 		return nil, err
 	}
 
-	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(
+	opts.NoSend = true
+	rawTx, err := p.rpc.TaikoL1.ProposeBlock(
 		opts,
 		encodedParams,
 		nil,
 	)
-
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
+	}
+
+	// Create blob tx and send it.
+	opts.NoSend = false
+	proposeTx, err := p.rpc.L1.TransactBlobTx(opts, &p.TaikoL1Address, rawTx.Data(), txListBytes)
+	if err != nil {
+		return nil, err
 	}
 
 	return proposeTx, nil
@@ -519,7 +517,6 @@ func (p *Proposer) ProposeTxList(
 	var (
 		isReplacement bool
 		tx            *types.Transaction
-		blobTx        *types.Transaction
 	)
 	if err = backoff.Retry(
 		func() error {
@@ -529,16 +526,9 @@ func (p *Proposer) ProposeTxList(
 
 			// Send tx list by blob tx.
 			if p.BlobAllowed {
-				if blobTx == nil {
-					blobTx, err = p.sendTxListByBlobTx(ctx, txListBytes)
-					if err != nil {
-						return err
-					}
-				}
 				tx, err = p.sendProposeBlockTxWithBlobHash(
 					ctx,
-					blobTx.BlobHashes()[0],
-					big.NewInt(int64(len(txListBytes))),
+					txListBytes,
 					nonce,
 					assignment,
 					proverAddress,
@@ -587,11 +577,6 @@ func (p *Proposer) ProposeTxList(
 
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, p.WaitReceiptTimeout)
 	defer cancel()
-	if blobTx != nil {
-		if _, err = bind.WaitMined(ctxWithTimeout, p.rpc.L1, blobTx); err != nil {
-			return err
-		}
-	}
 	if tx != nil {
 		if _, err = rpc.WaitReceipt(ctxWithTimeout, p.rpc.L1, tx); err != nil {
 			return err

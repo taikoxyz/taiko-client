@@ -198,12 +198,9 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		newTx *types.Transaction
 	)
 	if s.p.BlobAllowed {
-		blobTx, blobErr := s.p.sendTxListByBlobTx(ctx, encoded)
-		s.Nil(blobErr)
 		newTx, err = s.p.sendProposeBlockTxWithBlobHash(
 			ctx,
-			blobTx.BlobHashes()[0],
-			big.NewInt(int64(len(encoded))),
+			encoded,
 			&nonce,
 			signedAssignment,
 			proverAddress,
