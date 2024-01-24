@@ -316,10 +316,6 @@ func (p *Proposer) sendTxListByBlobTx(ctx context.Context, txListBytes []byte) (
 	if err != nil {
 		return nil, err
 	}
-	// Wait until blob tx is mined.
-	if _, err := bind.WaitMined(ctx, p.rpc.L1, tx); err != nil {
-		return nil, err
-	}
 
 	return tx, nil
 }
@@ -327,6 +323,7 @@ func (p *Proposer) sendTxListByBlobTx(ctx context.Context, txListBytes []byte) (
 func (p *Proposer) sendProposeBlockTxWithBlobHash(
 	ctx context.Context,
 	blobHash common.Hash,
+	txListSize *big.Int,
 	nonce *uint64,
 	assignment *encoding.ProverAssignment,
 	assignedProver common.Address,
@@ -390,7 +387,7 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 		AssignedProver:    assignedProver,
 		ExtraData:         rpc.StringToBytes32(p.ExtraData),
 		TxListByteOffset:  common.Big0,
-		TxListByteSize:    common.Big0,
+		TxListByteSize:    txListSize,
 		BlobHash:          blobHash,
 		CacheBlobForReuse: false,
 		ParentMetaHash:    parentMetaHash,
@@ -522,8 +519,9 @@ func (p *Proposer) ProposeTxList(
 	var (
 		isReplacement bool
 		tx            *types.Transaction
+		blobTx        *types.Transaction
 	)
-	if err := backoff.Retry(
+	if err = backoff.Retry(
 		func() error {
 			if ctx.Err() != nil {
 				return nil
@@ -531,42 +529,32 @@ func (p *Proposer) ProposeTxList(
 
 			// Send tx list by blob tx.
 			if p.BlobAllowed {
-				blobTx, err := p.sendTxListByBlobTx(ctx, txListBytes)
+				blobTx, err = p.sendTxListByBlobTx(ctx, txListBytes)
 				if err != nil {
-					return nil
+					return err
 				}
-				if tx, err = p.sendProposeBlockTxWithBlobHash(
+				tx, err = p.sendProposeBlockTxWithBlobHash(
 					ctx,
 					blobTx.BlobHashes()[0],
+					big.NewInt(int64(len(txListBytes))),
 					nonce,
 					assignment,
 					proverAddress,
 					maxFee,
 					isReplacement,
-				); err != nil {
-					log.Warn("Failed to send taikoL1.proposeBlock blob transaction", "error", encoding.TryParsingCustomError(err))
-					if strings.Contains(err.Error(), core.ErrNonceTooLow.Error()) {
-						return nil
-					}
-					if strings.Contains(err.Error(), txpool.ErrReplaceUnderpriced.Error()) {
-						isReplacement = true
-					} else {
-						isReplacement = false
-					}
-					return err
-				}
-				return nil
+				)
+			} else {
+				tx, err = p.sendProposeBlockTx(
+					ctx,
+					txListBytes,
+					nonce,
+					assignment,
+					proverAddress,
+					maxFee,
+					isReplacement,
+				)
 			}
-
-			if tx, err = p.sendProposeBlockTx(
-				ctx,
-				txListBytes,
-				nonce,
-				assignment,
-				proverAddress,
-				maxFee,
-				isReplacement,
-			); err != nil {
+			if err != nil {
 				log.Warn("Failed to send taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				if strings.Contains(err.Error(), core.ErrNonceTooLow.Error()) {
 					return nil
@@ -597,9 +585,15 @@ func (p *Proposer) ProposeTxList(
 
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, p.WaitReceiptTimeout)
 	defer cancel()
-
-	if _, err := rpc.WaitReceipt(ctxWithTimeout, p.rpc.L1, tx); err != nil {
-		return err
+	if blobTx != nil {
+		if _, err = bind.WaitMined(ctxWithTimeout, p.rpc.L1, blobTx); err != nil {
+			return err
+		}
+	}
+	if tx != nil {
+		if _, err = rpc.WaitReceipt(ctxWithTimeout, p.rpc.L1, tx); err != nil {
+			return err
+		}
 	}
 
 	log.Info("📝 Propose transactions succeeded", "txs", txNum)
