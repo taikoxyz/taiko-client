@@ -203,6 +203,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		newTx, err = s.p.sendProposeBlockTxWithBlobHash(
 			ctx,
 			blobTx.BlobHashes()[0],
+			big.NewInt(int64(len(encoded))),
 			&nonce,
 			signedAssignment,
 			proverAddress,

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,7 +17,7 @@ func TestBlockTx(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	url := os.Getenv("L1_NODE_WS_ENDPOINT")
+	url := "https://rpc.dencun-devnet-12.ethpandaops.io" //os.Getenv("L1_NODE_WS_ENDPOINT")
 	l1Client, err := NewEthClient(ctx, url, time.Second*20)
 	assert.NoError(t, err)
 
@@ -41,5 +42,9 @@ func TestBlockTx(t *testing.T) {
 
 	receipt, err := bind.WaitMined(ctx, l1Client, tx)
 	assert.NoError(t, err)
-	t.Log(receipt)
+	assert.Equal(t, true, receipt.Status == types.ReceiptStatusSuccessful)
+
+	t.Log("blob hash: ", tx.BlobHashes()[0].String())
+	t.Log("block number: ", receipt.BlockNumber.Uint64())
+	t.Log("tx hash: ", receipt.TxHash.String())
 }

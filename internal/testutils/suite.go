@@ -36,9 +36,7 @@ func (s *ClientTestSuite) SetupTest() {
 	glogger := log.NewGlogHandler(log.NewTerminalHandlerWithLevel(os.Stdout, log.LevelInfo, true))
 	log.SetDefault(log.NewLogger(glogger))
 
-	testAddrPrivKey, err := crypto.ToECDSA(
-		common.Hex2Bytes("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"),
-	)
+	testAddrPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 
 	s.TestAddrPrivKey = testAddrPrivKey
