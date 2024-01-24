@@ -147,6 +147,7 @@ func (s *GuardianProverBlockSender) SendStartup(ctx context.Context, revision st
 
 	log.Info("Guardian prover successfully sent startup",
 		"revision", revision,
+		"version", version,
 	)
 
 	return nil
