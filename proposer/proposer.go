@@ -529,9 +529,11 @@ func (p *Proposer) ProposeTxList(
 
 			// Send tx list by blob tx.
 			if p.BlobAllowed {
-				blobTx, err = p.sendTxListByBlobTx(ctx, txListBytes)
-				if err != nil {
-					return err
+				if blobTx == nil {
+					blobTx, err = p.sendTxListByBlobTx(ctx, txListBytes)
+					if err != nil {
+						return err
+					}
 				}
 				tx, err = p.sendProposeBlockTxWithBlobHash(
 					ctx,
