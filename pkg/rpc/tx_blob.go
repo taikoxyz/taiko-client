@@ -3,29 +3,23 @@ package rpc
 import (
 	"errors"
 	"fmt"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/consensus/misc/eip4844"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
 )
 
-// TransactBlobTx create, sign and send blob tx.
-func (c *EthClient) TransactBlobTx(
-	opts *bind.TransactOpts,
-	contract *common.Address,
-	input []byte,
-	sidecar *types.BlobTxSidecar,
-) (*types.Transaction, error) {
+func (c *EthClient) TransactBlobTx(opts *bind.TransactOpts, data []byte) (*types.Transaction, error) {
 	// Sign the transaction and schedule it for execution
 	if opts.Signer == nil {
 		return nil, errors.New("no signer to authorize the transaction with")
 	}
 	// Create blob tx.
-	rawTx, err := c.createBlobTx(opts, contract, input, sidecar)
+	rawTx, err := c.createBlobTx(opts, data)
 	if err != nil {
 		return nil, err
 	}
@@ -42,76 +36,94 @@ func (c *EthClient) TransactBlobTx(
 	return signedTx, nil
 }
 
-func (c *EthClient) createBlobTx(
-	opts *bind.TransactOpts,
-	contract *common.Address,
-	input []byte,
-	sidecar *types.BlobTxSidecar,
-) (*types.Transaction, error) {
-	// Get nonce.
-	var nonce *hexutil.Uint64
-	if opts.Nonce != nil {
-		curNonce := hexutil.Uint64(opts.Nonce.Uint64())
-		nonce = &curNonce
+func (c *EthClient) createBlobTx(opts *bind.TransactOpts, data []byte) (*types.Transaction, error) {
+	header, err := c.HeaderByNumber(opts.Context, nil)
+	if err != nil {
+		return nil, err
 	}
-
-	if input == nil {
-		input = []byte{}
+	// Estimate TipCap
+	gasTipCap := opts.GasTipCap
+	if gasTipCap == nil {
+		tip, err := c.SuggestGasTipCap(opts.Context)
+		if err != nil {
+			return nil, err
+		}
+		gasTipCap = tip
 	}
-
-	if contract == nil {
-		contract = &common.Address{}
+	// Estimate FeeCap
+	gasFeeCap := opts.GasFeeCap
+	if gasFeeCap == nil {
+		gasFeeCap = new(big.Int).Add(
+			gasTipCap,
+			new(big.Int).Mul(header.BaseFee, big.NewInt(2)),
+		)
 	}
-
-	var gas *hexutil.Uint64
-	if opts.GasLimit != 0 {
-		var gasVal = hexutil.Uint64(opts.GasLimit)
-		gas = &gasVal
+	if gasFeeCap.Cmp(gasTipCap) < 0 {
+		return nil, fmt.Errorf("maxFeePerGas (%v) < maxPriorityFeePerGas (%v)", gasFeeCap, gasTipCap)
 	}
-
-	rawTx, err := c.FillTransaction(opts.Context, &TransactionArgs{
-		From:                 &opts.From,
-		To:                   contract,
-		Gas:                  gas,
-		GasPrice:             (*hexutil.Big)(opts.GasPrice),
-		MaxFeePerGas:         (*hexutil.Big)(opts.GasFeeCap),
-		MaxPriorityFeePerGas: (*hexutil.Big)(opts.GasTipCap),
-		Value:                (*hexutil.Big)(opts.Value),
-		Nonce:                nonce,
-		Data:                 (*hexutil.Bytes)(&input),
-		AccessList:           nil,
-		ChainID:              nil,
-		BlobFeeCap:           nil,
-		BlobHashes:           sidecar.BlobHashes(),
-	})
+	// Estimate GasLimit
+	gasLimit := opts.GasLimit
+	if opts.GasLimit == 0 {
+		var err error
+		gasLimit, err = c.EstimateGas(opts.Context, ethereum.CallMsg{
+			From:      opts.From,
+			To:        nil,
+			GasPrice:  nil,
+			GasTipCap: gasTipCap,
+			GasFeeCap: gasFeeCap,
+			Value:     nil,
+			Data:      nil,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	// create the transaction
+	nonce, err := c.getNonce(opts)
+	if err != nil {
+		return nil, err
+	}
+	chainID, err := c.ChainID(opts.Context)
 	if err != nil {
 		return nil, err
 	}
 
-	blobTx := &types.BlobTx{
-		ChainID:    uint256.MustFromBig(rawTx.ChainId()),
-		Nonce:      rawTx.Nonce(),
-		GasTipCap:  uint256.MustFromBig(rawTx.GasTipCap()),
-		GasFeeCap:  uint256.MustFromBig(rawTx.GasFeeCap()),
-		Gas:        rawTx.Gas(),
-		To:         *rawTx.To(),
-		Value:      uint256.MustFromBig(rawTx.Value()),
-		Data:       rawTx.Data(),
-		AccessList: rawTx.AccessList(),
-		BlobFeeCap: uint256.MustFromBig(rawTx.BlobGasFeeCap()),
+	sidecar, err := makeSidecarWithSingleBlob(data)
+	if err != nil {
+		return nil, err
+	}
+
+	var blobFeeCap uint64 = 100066
+	if header.ExcessBlobGas != nil {
+		blobFeeCap = *header.ExcessBlobGas
+	}
+
+	baseTx := &types.BlobTx{
+		ChainID:    uint256.NewInt(chainID.Uint64()),
+		Nonce:      nonce,
+		GasTipCap:  uint256.NewInt(gasTipCap.Uint64()),
+		GasFeeCap:  uint256.NewInt(gasFeeCap.Uint64()),
+		Gas:        gasLimit,
+		BlobFeeCap: uint256.MustFromBig(eip4844.CalcBlobFee(blobFeeCap)),
 		BlobHashes: sidecar.BlobHashes(),
 		Sidecar:    sidecar,
 	}
-
-	return types.NewTx(blobTx), nil
+	return types.NewTx(baseTx), nil
 }
 
-// MakeSidecarWithSingleBlob make a sidecar that just include one blob.
-func MakeSidecarWithSingleBlob(data []byte) (*types.BlobTxSidecar, error) {
+func (c *EthClient) getNonce(opts *bind.TransactOpts) (uint64, error) {
+	if opts.Nonce == nil {
+		return c.PendingNonceAt(opts.Context, opts.From)
+	}
+	return opts.Nonce.Uint64(), nil
+}
+
+func makeSidecarWithSingleBlob(data []byte) (*types.BlobTxSidecar, error) {
 	if len(data) > BlobBytes {
 		return nil, fmt.Errorf("data is bigger than 128k")
 	}
-	blob := EncodeBlobs(data)[0]
+	blob := kzg4844.Blob{}
+	copy(blob[:], data)
 	commitment, err := kzg4844.BlobToCommitment(blob)
 	if err != nil {
 		return nil, err
@@ -125,50 +137,4 @@ func MakeSidecarWithSingleBlob(data []byte) (*types.BlobTxSidecar, error) {
 		Commitments: []kzg4844.Commitment{commitment},
 		Proofs:      []kzg4844.Proof{proof},
 	}, nil
-}
-
-// EncodeBlobs encode bytes into Blob type.
-func EncodeBlobs(data []byte) []kzg4844.Blob {
-	blobs := []kzg4844.Blob{{}}
-	blobIndex := 0
-	fieldIndex := -1
-	numOfElems := BlobBytes / 32
-	for i := 0; i < len(data); i += 31 {
-		fieldIndex++
-		if fieldIndex == numOfElems {
-			if blobIndex >= 1 {
-				break
-			}
-			blobs = append(blobs, kzg4844.Blob{})
-			blobIndex++
-			fieldIndex = 0
-		}
-		max := i + 31
-		if max > len(data) {
-			max = len(data)
-		}
-		copy(blobs[blobIndex][fieldIndex*32+1:], data[i:max])
-	}
-	return blobs
-}
-
-// DecodeBlob decode blob data.
-func DecodeBlob(blob []byte) []byte {
-	if len(blob) != params.BlobTxFieldElementsPerBlob*32 {
-		panic("invalid blob encoding")
-	}
-	var data []byte
-	for i, j := 0, 0; i < params.BlobTxFieldElementsPerBlob; i++ {
-		data = append(data, blob[j:j+31]...)
-		j += 32
-	}
-
-	i := len(data) - 1
-	for ; i >= 0; i-- {
-		if data[i] != 0x00 {
-			break
-		}
-	}
-	data = data[:i+1]
-	return data
 }
