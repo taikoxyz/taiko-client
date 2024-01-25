@@ -272,6 +272,12 @@ var (
 var (
 	TaikoL1ABI        *abi.ABI
 	TaikoL2ABI        *abi.ABI
+	GuardianProverABI *abi.ABI
+	LibDepositingABI  *abi.ABI
+	LibProposingABI   *abi.ABI
+	LibProvingABI     *abi.ABI
+	LibUtilsABI       *abi.ABI
+	LibVerifyingABI   *abi.ABI
 	AssignmentHookABI *abi.ABI
 )
 
@@ -284,6 +290,30 @@ func init() {
 
 	if TaikoL2ABI, err = bindings.TaikoL2ClientMetaData.GetAbi(); err != nil {
 		log.Crit("Get TaikoL2 ABI error", "error", err)
+	}
+
+	if GuardianProverABI, err = bindings.GuardianProverMetaData.GetAbi(); err != nil {
+		log.Crit("Get GuardianProver ABI error", "error", err)
+	}
+
+	if LibDepositingABI, err = bindings.LibDepositingMetaData.GetAbi(); err != nil {
+		log.Crit("Get LibDepositing ABI error", "error", err)
+	}
+
+	if LibProposingABI, err = bindings.LibProposingMetaData.GetAbi(); err != nil {
+		log.Crit("Get LibProposing ABI error", "error", err)
+	}
+
+	if LibProvingABI, err = bindings.LibProvingMetaData.GetAbi(); err != nil {
+		log.Crit("Get LibProving ABI error", "error", err)
+	}
+
+	if LibUtilsABI, err = bindings.LibUtilsMetaData.GetAbi(); err != nil {
+		log.Crit("Get LibUtils ABI error", "error", err)
+	}
+
+	if LibVerifyingABI, err = bindings.LibVerifyingMetaData.GetAbi(); err != nil {
+		log.Crit("Get LibVerifying ABI error", "error", err)
 	}
 
 	if AssignmentHookABI, err = bindings.AssignmentHookMetaData.GetAbi(); err != nil {

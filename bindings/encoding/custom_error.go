@@ -3,7 +3,21 @@ package encoding
 import (
 	"errors"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/accounts/abi"
 )
+
+var customErrors = []map[string]abi.Error{
+	TaikoL1ABI.Errors,
+	TaikoL2ABI.Errors,
+	GuardianProverABI.Errors,
+	LibDepositingABI.Errors,
+	LibProposingABI.Errors,
+	LibProvingABI.Errors,
+	LibUtilsABI.Errors,
+	LibVerifyingABI.Errors,
+	AssignmentHookABI.Errors,
+}
 
 // TryParsingCustomError tries to checks whether the given error is one of the
 // custom errors defined the TaikoL1 / TaikoL2's ABI, if so, it will return
@@ -16,15 +30,11 @@ func TryParsingCustomError(originalError error) error {
 		return originalError
 	}
 
-	for _, l1CustomError := range TaikoL1ABI.Errors {
-		if strings.HasPrefix(l1CustomError.ID.Hex(), errData) {
-			return errors.New(l1CustomError.Name)
-		}
-	}
-
-	for _, l2CustomError := range TaikoL2ABI.Errors {
-		if strings.HasPrefix(l2CustomError.ID.Hex(), errData) {
-			return errors.New(l2CustomError.Name)
+	for _, customErrors := range customErrors {
+		for _, cuscustomError := range customErrors {
+			if strings.HasPrefix(cuscustomError.ID.Hex(), errData) {
+				return errors.New(cuscustomError.Name)
+			}
 		}
 	}
 
