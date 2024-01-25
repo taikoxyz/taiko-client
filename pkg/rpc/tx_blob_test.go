@@ -37,7 +37,10 @@ func TestBlockTx(t *testing.T) {
 	assert.NoError(t, err)
 	t.Logf("address: %s, balance: %s", opts.From.String(), balance.String())
 
-	tx, err := l1Client.TransactBlobTx(opts, nil, nil, []byte("s"))
+	sidecar, err := MakeSidecarWithSingleBlob([]byte("s"))
+	assert.NoError(t, err)
+
+	tx, err := l1Client.TransactBlobTx(opts, nil, nil, sidecar)
 	assert.NoError(t, err)
 
 	receipt, err := bind.WaitMined(ctx, l1Client, tx)

@@ -400,7 +400,7 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 
 	// Create blob tx and send it.
 	opts.NoSend = false
-	proposeTx, err := p.rpc.L1.TransactBlobTx(opts, &p.TaikoL1Address, rawTx.Data(), txListBytes)
+	proposeTx, err := p.rpc.L1.TransactBlobTx(opts, &p.TaikoL1Address, rawTx.Data(), sideCar)
 	if err != nil {
 		return nil, err
 	}

@@ -1,31 +1,30 @@
 package rpc
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/misc/eip4844"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
-	"github.com/holiman/uint256"
 )
 
 // TransactBlobTx create, sign and send blob tx.
 func (c *EthClient) TransactBlobTx(
 	opts *bind.TransactOpts,
 	contract *common.Address,
-	input, blobData []byte,
+	input []byte,
+	sidecar *types.BlobTxSidecar,
 ) (*types.Transaction, error) {
 	// Sign the transaction and schedule it for execution
 	if opts.Signer == nil {
 		return nil, errors.New("no signer to authorize the transaction with")
 	}
 	// Create blob tx.
-	rawTx, err := c.createBlobTx(opts, contract, input, blobData)
+	rawTx, err := c.createBlobTx(opts, contract, input, sidecar)
 	if err != nil {
 		return nil, err
 	}
@@ -45,113 +44,55 @@ func (c *EthClient) TransactBlobTx(
 func (c *EthClient) createBlobTx(
 	opts *bind.TransactOpts,
 	contract *common.Address,
-	input,
-	blobData []byte,
+	input []byte,
+	sidecar *types.BlobTxSidecar,
 ) (*types.Transaction, error) {
-	header, err := c.HeaderByNumber(opts.Context, nil)
-	if err != nil {
-		return nil, err
-	}
-	// Estimate TipCap
-	gasTipCap := opts.GasTipCap
-	if gasTipCap == nil {
-		tip, err := c.SuggestGasTipCap(opts.Context)
-		if err != nil {
-			return nil, err
-		}
-		gasTipCap = tip
-	}
-	// Estimate FeeCap
-	gasFeeCap := opts.GasFeeCap
-	if gasFeeCap == nil {
-		gasFeeCap = new(big.Int).Add(
-			gasTipCap,
-			new(big.Int).Mul(header.BaseFee, big.NewInt(2)),
-		)
-	}
-	if gasFeeCap.Cmp(gasTipCap) < 0 {
-		return nil, fmt.Errorf("maxFeePerGas (%v) < maxPriorityFeePerGas (%v)", gasFeeCap, gasTipCap)
-	}
-	// Estimate GasLimit
-	gasLimit := opts.GasLimit
-	if opts.GasLimit == 0 {
-		var err error
-		gasLimit, err = c.EstimateGas(opts.Context, ethereum.CallMsg{
-			From:      opts.From,
-			To:        contract,
-			GasPrice:  nil,
-			GasTipCap: gasTipCap,
-			GasFeeCap: gasFeeCap,
-			Value:     nil,
-			Data:      input,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// Get nonce.
-	var nonce uint64
-	if opts.Nonce == nil {
-		nonce, err = c.getNonce(opts)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		nonce = opts.Nonce.Uint64()
+	var nonce *uint64
+	if opts.Nonce != nil {
+		curNonce := opts.Nonce.Uint64()
+		nonce = &curNonce
 	}
 
-	// Get chainID.
-	chainID, err := c.ChainID(opts.Context)
+	if input == nil {
+		input = []byte{}
+	}
+
+	rawTx, err := c.FillTransaction(opts.Context, &TransactionArgs{
+		From:                 &opts.From,
+		To:                   contract,
+		Gas:                  (*hexutil.Uint64)(&opts.GasLimit),
+		GasPrice:             (*hexutil.Big)(opts.GasPrice),
+		MaxFeePerGas:         (*hexutil.Big)(opts.GasFeeCap),
+		MaxPriorityFeePerGas: (*hexutil.Big)(opts.GasTipCap),
+		Value:                (*hexutil.Big)(opts.Value),
+		Nonce:                (*hexutil.Uint64)(nonce),
+		Data:                 (*hexutil.Bytes)(&input),
+		AccessList:           nil,
+		ChainID:              nil,
+		BlobFeeCap:           nil,
+		BlobHashes:           sidecar.BlobHashes(),
+	})
 	if err != nil {
 		return nil, err
 	}
+	if rawTx.Type() != types.BlobTxType {
+		return nil, fmt.Errorf("expect tx type: %d, actual tx type: %d", types.BlobTxType, rawTx.Type())
+	}
 
-	// Make sidecar.
-	sidecar, err := MakeSidecarWithSingleBlob(blobData)
+	var buf []byte
+	buf, err = rawTx.MarshalJSON()
 	if err != nil {
 		return nil, err
 	}
-	sidecar.BlobHashes()
-
-	// Calculate blob fee cap.
-	var blobFeeCap uint64 = 100066
-	if header.ExcessBlobGas != nil {
-		blobFeeCap = *header.ExcessBlobGas
+	var blobTx = new(types.BlobTx)
+	err = json.Unmarshal(buf, blobTx)
+	if err != nil {
+		return nil, err
 	}
+	blobTx.Sidecar = sidecar
 
-	// Normalize value
-	var value = uint256.NewInt(0)
-	if opts.Value != nil {
-		value.SetFromBig(opts.Value)
-	}
-
-	var addr common.Address
-	if contract != nil {
-		addr = *contract
-	}
-
-	var baseTx = &types.BlobTx{
-		ChainID:    uint256.NewInt(chainID.Uint64()),
-		Nonce:      nonce,
-		GasTipCap:  uint256.MustFromBig(gasTipCap),
-		GasFeeCap:  uint256.MustFromBig(gasFeeCap),
-		Gas:        gasLimit,
-		To:         addr,
-		Value:      value,
-		Data:       input,
-		BlobFeeCap: uint256.MustFromBig(eip4844.CalcBlobFee(blobFeeCap)),
-		BlobHashes: sidecar.BlobHashes(),
-		Sidecar:    sidecar,
-	}
-	return types.NewTx(baseTx), nil
-}
-
-func (c *EthClient) getNonce(opts *bind.TransactOpts) (uint64, error) {
-	if opts.Nonce == nil {
-		return c.PendingNonceAt(opts.Context, opts.From)
-	}
-	return opts.Nonce.Uint64(), nil
+	return types.NewTx(blobTx), nil
 }
 
 // MakeSidecarWithSingleBlob make a sidecar that just include one blob.
