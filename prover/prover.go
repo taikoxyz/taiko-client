@@ -24,6 +24,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
+	"github.com/taikoxyz/taiko-client/internal/version"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	guardianproversender "github.com/taikoxyz/taiko-client/prover/guardian_prover_sender"
@@ -400,6 +401,14 @@ func (p *Prover) Start() error {
 	}()
 
 	if p.IsGuardianProver() {
+		if err := p.guardianProverSender.SendStartup(
+			p.ctx,
+			version.CommitVersion(),
+			version.CommitVersion(),
+		); err != nil {
+			log.Crit("Failed to send guardian prover startup", "error", err)
+		}
+
 		p.wg.Add(1)
 		go p.heartbeatInterval(p.ctx)
 	}

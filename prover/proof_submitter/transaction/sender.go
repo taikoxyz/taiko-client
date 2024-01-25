@@ -189,7 +189,7 @@ func (s *Sender) validateProof(ctx context.Context, proofWithHeader *producer.Pr
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
-	if !strings.HasPrefix(err.Error(), "L1_") {
+	if !strings.HasPrefix(err.Error(), "L1_") && !strings.HasPrefix(err.Error(), "PROVING_FAILED") {
 		return true
 	}
 
