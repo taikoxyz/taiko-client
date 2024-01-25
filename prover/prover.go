@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -400,6 +401,15 @@ func (p *Prover) Start() error {
 	}()
 
 	if p.IsGuardianProver() {
+		revision, version, err := getRevision()
+		if err != nil {
+			log.Crit("Unable to get revision", "error", err)
+		}
+
+		if err := p.guardianProverSender.SendStartup(p.ctx, revision, version); err != nil {
+			log.Crit("Failed to send guardian prover startup", "error", err)
+		}
+
 		p.wg.Add(1)
 		go p.heartbeatInterval(p.ctx)
 	}
@@ -1319,4 +1329,26 @@ func (p *Prover) heartbeatInterval(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func getRevision() (string, string, error) {
+	var revision string
+
+	var version string
+
+	if info, ok := debug.ReadBuildInfo(); ok {
+		version = info.Main.Version
+
+		for _, setting := range info.Settings {
+			if setting.Key == "vcs.revision" {
+				revision = setting.Value
+			}
+		}
+	}
+
+	if revision == "" || version == "" {
+		return "", "", fmt.Errorf("unable to get revision or version. revision: %v, version: %v", revision, version)
+	}
+
+	return revision, version, nil
 }
