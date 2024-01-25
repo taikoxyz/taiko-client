@@ -31,6 +31,26 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoL1.sol/TaikoL1.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoL1Client --pkg bindings --out $DIR/../bindings/gen_taiko_l1.go
 
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/LibProvingAlt.sol/LibProvingAlt.json |
+	jq .abi |
+	${ABIGEN_BIN} --abi - --type LibProving --pkg bindings --out $DIR/../bindings/gen_lib_proving.go
+
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/LibProposing.sol/LibProposing.json |
+	jq .abi |
+	${ABIGEN_BIN} --abi - --type LibProposing --pkg bindings --out $DIR/../bindings/gen_lib_proposing.go
+
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/LibDepositing.sol/LibDepositing.json |
+	jq .abi |
+	${ABIGEN_BIN} --abi - --type LibDepositing --pkg bindings --out $DIR/../bindings/gen_lib_depositing.go
+
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/LibUtils.sol/LibUtils.json |
+	jq .abi |
+	${ABIGEN_BIN} --abi - --type LibUtils --pkg bindings --out $DIR/../bindings/gen_lib_utils.go
+
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/LibVerifying.sol/LibVerifying.json |
+	jq .abi |
+	${ABIGEN_BIN} --abi - --type LibVerifying --pkg bindings --out $DIR/../bindings/gen_lib_verifying.go
+
 cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoL2.sol/TaikoL2.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoL2Client --pkg bindings --out $DIR/../bindings/gen_taiko_l2.go

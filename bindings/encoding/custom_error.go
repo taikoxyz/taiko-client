@@ -16,15 +16,11 @@ func TryParsingCustomError(originalError error) error {
 		return originalError
 	}
 
-	for _, l1CustomError := range TaikoL1ABI.Errors {
-		if strings.HasPrefix(l1CustomError.ID.Hex(), errData) {
-			return errors.New(l1CustomError.Name)
-		}
-	}
-
-	for _, l2CustomError := range TaikoL2ABI.Errors {
-		if strings.HasPrefix(l2CustomError.ID.Hex(), errData) {
-			return errors.New(l2CustomError.Name)
+	for _, customErrors := range customErrorMaps {
+		for _, customError := range customErrors {
+			if strings.HasPrefix(customError.ID.Hex(), errData) {
+				return errors.New(customError.Name)
+			}
 		}
 	}
 
