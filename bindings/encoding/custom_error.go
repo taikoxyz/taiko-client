@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
-var customErrors = []map[string]abi.Error{
+var customErrorMaps = []map[string]abi.Error{
 	TaikoL1ABI.Errors,
 	TaikoL2ABI.Errors,
 	GuardianProverABI.Errors,
@@ -30,7 +30,7 @@ func TryParsingCustomError(originalError error) error {
 		return originalError
 	}
 
-	for _, customErrors := range customErrors {
+	for _, customErrors := range customErrorMaps {
 		for _, cuscustomError := range customErrors {
 			if strings.HasPrefix(cuscustomError.ID.Hex(), errData) {
 				return errors.New(cuscustomError.Name)
