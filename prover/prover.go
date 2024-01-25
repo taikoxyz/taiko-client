@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
-	"runtime/debug"
 	"sync"
 	"time"
 
@@ -25,6 +24,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
+	"github.com/taikoxyz/taiko-client/internal/version"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	guardianproversender "github.com/taikoxyz/taiko-client/prover/guardian_prover_sender"
@@ -401,12 +401,11 @@ func (p *Prover) Start() error {
 	}()
 
 	if p.IsGuardianProver() {
-		revision, version, err := getRevision()
-		if err != nil {
-			log.Crit("Unable to get revision", "error", err)
-		}
-
-		if err := p.guardianProverSender.SendStartup(p.ctx, revision, version); err != nil {
+		if err := p.guardianProverSender.SendStartup(
+			p.ctx,
+			version.CommitVersion(),
+			version.CommitVersion(),
+		); err != nil {
 			log.Crit("Failed to send guardian prover startup", "error", err)
 		}
 
@@ -1335,26 +1334,4 @@ func (p *Prover) heartbeatInterval(ctx context.Context) {
 			}
 		}
 	}
-}
-
-func getRevision() (string, string, error) {
-	var revision string
-
-	var version string
-
-	if info, ok := debug.ReadBuildInfo(); ok {
-		version = info.Main.Version
-
-		for _, setting := range info.Settings {
-			if setting.Key == "vcs.revision" {
-				revision = setting.Value
-			}
-		}
-	}
-
-	if revision == "" || version == "" {
-		return "", "", fmt.Errorf("unable to get revision or version. revision: %v, version: %v", revision, version)
-	}
-
-	return revision, version, nil
 }
