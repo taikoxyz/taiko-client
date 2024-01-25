@@ -14,8 +14,8 @@ import (
 
 // GuardianProofProducer always returns an optimistic (dummy) proof.
 type GuardianProofProducer struct {
-	*DummyProofProducer
 	livenessBond bool
+	*DummyProofProducer
 }
 
 // RequestProof implements the ProofProducer interface.
