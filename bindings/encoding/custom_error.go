@@ -31,9 +31,9 @@ func TryParsingCustomError(originalError error) error {
 	}
 
 	for _, customErrors := range customErrorMaps {
-		for _, cuscustomError := range customErrors {
-			if strings.HasPrefix(cuscustomError.ID.Hex(), errData) {
-				return errors.New(cuscustomError.Name)
+		for _, customError := range customErrors {
+			if strings.HasPrefix(customError.ID.Hex(), errData) {
+				return errors.New(customError.Name)
 			}
 		}
 	}
