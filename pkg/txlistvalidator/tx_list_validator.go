@@ -6,8 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
-
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 // InvalidTxListReason represents a reason why a transactions list is invalid.
@@ -45,19 +43,15 @@ func NewTxListValidator(
 // input data is valid.
 func (v *TxListValidator) ValidateTxList(
 	blockID *big.Int,
-	proposeBlockTxInput []byte,
-) (txListBytes []byte, hint InvalidTxListReason, txIdx int, err error) {
-	if txListBytes, err = encoding.UnpackTxListBytes(proposeBlockTxInput); err != nil {
-		return nil, HintNone, 0, err
-	}
-
+	txListBytes []byte,
+) (hint InvalidTxListReason, txIdx int, err error) {
 	if len(txListBytes) == 0 {
-		return txListBytes, HintOK, 0, nil
+		return HintOK, 0, nil
 	}
 
 	hint, txIdx = v.isTxListValid(blockID, txListBytes)
 
-	return txListBytes, hint, txIdx, nil
+	return hint, txIdx, nil
 }
 
 // isTxListValid checks whether the transaction list is valid.

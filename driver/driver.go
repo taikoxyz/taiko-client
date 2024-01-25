@@ -41,7 +41,7 @@ type Driver struct {
 	wg  sync.WaitGroup
 }
 
-// InitFromCli New initializes the given driver instance based on the command line flags.
+// InitFromCli initializes the given driver instance based on the command line flags.
 func (d *Driver) InitFromCli(ctx context.Context, c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {
