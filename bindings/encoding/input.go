@@ -279,6 +279,8 @@ var (
 	LibUtilsABI       *abi.ABI
 	LibVerifyingABI   *abi.ABI
 	AssignmentHookABI *abi.ABI
+
+	customErrorMaps []map[string]abi.Error
 )
 
 func init() {
@@ -318,6 +320,18 @@ func init() {
 
 	if AssignmentHookABI, err = bindings.AssignmentHookMetaData.GetAbi(); err != nil {
 		log.Crit("Get AssignmentHook ABI error", "error", err)
+	}
+
+	customErrorMaps = []map[string]abi.Error{
+		TaikoL1ABI.Errors,
+		TaikoL2ABI.Errors,
+		GuardianProverABI.Errors,
+		LibDepositingABI.Errors,
+		LibProposingABI.Errors,
+		LibProvingABI.Errors,
+		LibUtilsABI.Errors,
+		LibVerifyingABI.Errors,
+		AssignmentHookABI.Errors,
 	}
 }
 

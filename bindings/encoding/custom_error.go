@@ -3,21 +3,7 @@ package encoding
 import (
 	"errors"
 	"strings"
-
-	"github.com/ethereum/go-ethereum/accounts/abi"
 )
-
-var customErrorMaps = []map[string]abi.Error{
-	TaikoL1ABI.Errors,
-	TaikoL2ABI.Errors,
-	GuardianProverABI.Errors,
-	LibDepositingABI.Errors,
-	LibProposingABI.Errors,
-	LibProvingABI.Errors,
-	LibUtilsABI.Errors,
-	LibVerifyingABI.Errors,
-	AssignmentHookABI.Errors,
-}
 
 // TryParsingCustomError tries to checks whether the given error is one of the
 // custom errors defined the TaikoL1 / TaikoL2's ABI, if so, it will return
