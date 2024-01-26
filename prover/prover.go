@@ -803,17 +803,23 @@ func (p *Prover) handleNewBlockProposedEvent(ctx context.Context, e *bindings.Ta
 		}
 	}
 
+	tier := e.Meta.MinTier
+	if p.IsGuardianProver() {
+		tier = encoding.TierGuardianID
+	}
+
 	log.Info(
 		"Proposed block is provable",
 		"blockID", e.BlockId,
 		"prover", e.AssignedProver,
 		"expiresAt", provingWindowExpiresAt,
 		"minTier", e.Meta.MinTier,
+		"currentTier", tier,
 	)
 
 	metrics.ProverProofsAssigned.Inc(1)
 
-	if proofSubmitter := p.selectSubmitter(e.Meta.MinTier); proofSubmitter != nil {
+	if proofSubmitter := p.selectSubmitter(tier); proofSubmitter != nil {
 		return proofSubmitter.RequestProof(ctx, e)
 	}
 
