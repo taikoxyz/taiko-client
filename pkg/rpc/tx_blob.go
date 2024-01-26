@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
+	"github.com/holiman/uint256"
 )
 
 // TransactBlobTx create, sign and send blob tx.
@@ -48,9 +48,9 @@ func (c *EthClient) createBlobTx(
 	sidecar *types.BlobTxSidecar,
 ) (*types.Transaction, error) {
 	// Get nonce.
-	var nonce *uint64
+	var nonce *hexutil.Uint64
 	if opts.Nonce != nil {
-		curNonce := opts.Nonce.Uint64()
+		curNonce := hexutil.Uint64(opts.Nonce.Uint64())
 		nonce = &curNonce
 	}
 
@@ -58,15 +58,25 @@ func (c *EthClient) createBlobTx(
 		input = []byte{}
 	}
 
+	if contract == nil {
+		contract = &common.Address{}
+	}
+
+	var gas *hexutil.Uint64
+	if opts.GasLimit != 0 {
+		var gasVal = hexutil.Uint64(opts.GasLimit)
+		gas = &gasVal
+	}
+
 	rawTx, err := c.FillTransaction(opts.Context, &TransactionArgs{
 		From:                 &opts.From,
 		To:                   contract,
-		Gas:                  (*hexutil.Uint64)(&opts.GasLimit),
+		Gas:                  gas,
 		GasPrice:             (*hexutil.Big)(opts.GasPrice),
 		MaxFeePerGas:         (*hexutil.Big)(opts.GasFeeCap),
 		MaxPriorityFeePerGas: (*hexutil.Big)(opts.GasTipCap),
 		Value:                (*hexutil.Big)(opts.Value),
-		Nonce:                (*hexutil.Uint64)(nonce),
+		Nonce:                nonce,
 		Data:                 (*hexutil.Bytes)(&input),
 		AccessList:           nil,
 		ChainID:              nil,
@@ -80,17 +90,20 @@ func (c *EthClient) createBlobTx(
 		return nil, fmt.Errorf("expect tx type: %d, actual tx type: %d", types.BlobTxType, rawTx.Type())
 	}
 
-	var buf []byte
-	buf, err = rawTx.MarshalJSON()
-	if err != nil {
-		return nil, err
+	blobTx := &types.BlobTx{
+		ChainID:    uint256.MustFromBig(rawTx.ChainId()),
+		Nonce:      rawTx.Nonce(),
+		GasTipCap:  uint256.MustFromBig(rawTx.GasTipCap()),
+		GasFeeCap:  uint256.MustFromBig(rawTx.GasFeeCap()),
+		Gas:        rawTx.Gas(),
+		To:         *rawTx.To(),
+		Value:      uint256.MustFromBig(rawTx.Value()),
+		Data:       rawTx.Data(),
+		AccessList: rawTx.AccessList(),
+		BlobFeeCap: uint256.MustFromBig(rawTx.BlobGasFeeCap()),
+		BlobHashes: rawTx.BlobHashes(),
+		Sidecar:    sidecar,
 	}
-	var blobTx = new(types.BlobTx)
-	err = json.Unmarshal(buf, blobTx)
-	if err != nil {
-		return nil, err
-	}
-	blobTx.Sidecar = sidecar
 
 	return types.NewTx(blobTx), nil
 }
