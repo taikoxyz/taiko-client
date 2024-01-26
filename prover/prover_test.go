@@ -192,8 +192,6 @@ func (s *ProverTestSuite) TestOnBlockVerified() {
 }
 
 func (s *ProverTestSuite) TestContestWrongBlocks() {
-	// TODO(david): update this test.
-	s.T().Skip()
 	s.p.cfg.ContesterMode = false
 	e := testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.onTransitionProved(context.Background(), &bindings.TaikoL1ClientTransitionProved{
@@ -237,7 +235,10 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	contesterKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	s.NotNil(s.initProver(context.Background(), contesterKey))
+	s.NotNil(s.initProver(
+		context.Background(),
+		contesterKey,
+	))
 	s.p.cfg.ContesterMode = true
 
 	s.Greater(header.Number.Uint64(), uint64(0))
@@ -249,7 +250,12 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.Equal(header.ParentHash, common.BytesToHash(contestedEvent.Tran.ParentHash[:]))
 
 	s.Nil(s.p.onTransitionContested(context.Background(), contestedEvent))
+
+	s.p.cfg.GuardianProverAddress = common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"))
 	s.True(s.p.IsGuardianProver())
+
+	s.p.rpc.GuardianProver, err = bindings.NewGuardianProver(s.p.cfg.GuardianProverAddress, s.p.rpc.L1)
+	s.Nil(err)
 
 	approvedSink := make(chan *bindings.GuardianProverApproved)
 	approvedSub, err := s.p.rpc.GuardianProver.WatchApproved(nil, approvedSink, [](*big.Int){})
@@ -457,7 +463,10 @@ func TestProverTestSuite(t *testing.T) {
 	suite.Run(t, new(ProverTestSuite))
 }
 
-func (s *ProverTestSuite) initProver(ctx context.Context, key *ecdsa.PrivateKey) *url.URL {
+func (s *ProverTestSuite) initProver(
+	ctx context.Context,
+	key *ecdsa.PrivateKey,
+) *url.URL {
 	proverServerURL := testutils.LocalRandomProverEndpoint()
 	port, err := strconv.Atoi(proverServerURL.Port())
 	s.Nil(err)
@@ -477,7 +486,6 @@ func (s *ProverTestSuite) initProver(ctx context.Context, key *ecdsa.PrivateKey)
 		TaikoL2Address:           common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		TaikoTokenAddress:        common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		AssignmentHookAddress:    common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-		GuardianProverAddress:    common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
 		L1ProverPrivKey:          key,
 		Dummy:                    true,
 		ProveUnassignedBlocks:    true,
