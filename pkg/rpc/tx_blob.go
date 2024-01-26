@@ -62,10 +62,16 @@ func (c *EthClient) createBlobTx(
 		contract = &common.Address{}
 	}
 
+	var gas *hexutil.Uint64
+	if opts.GasLimit != 0 {
+		var gasVal = hexutil.Uint64(opts.GasLimit)
+		gas = &gasVal
+	}
+
 	rawTx, err := c.FillTransaction(opts.Context, &TransactionArgs{
 		From:                 &opts.From,
 		To:                   contract,
-		Gas:                  (*hexutil.Uint64)(&opts.GasLimit),
+		Gas:                  gas,
 		GasPrice:             (*hexutil.Big)(opts.GasPrice),
 		MaxFeePerGas:         (*hexutil.Big)(opts.GasFeeCap),
 		MaxPriorityFeePerGas: (*hexutil.Big)(opts.GasTipCap),
