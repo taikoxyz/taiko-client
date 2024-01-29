@@ -1,5 +1,4 @@
 #!/bin/bash
-
 source scripts/common.sh
 
 DOCKER_SERVICE_LIST=("l1_node" "l2_execution_engine")
