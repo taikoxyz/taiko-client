@@ -153,4 +153,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxTierFeePriceBumps,
 	ProposeBlockIncludeParentMetaHash,
 	ProposerAssignmentHookAddress,
+	BlobAllowed,
 })
