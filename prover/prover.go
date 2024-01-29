@@ -218,7 +218,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			}
 			producer = zkEvmRpcdProducer
 		case encoding.TierGuardianID:
-			producer = &proofProducer.GuardianProofProducer{livenessBond: p.cfg.EnableLivenessBondProof, DummyProofProducer: new(proofProducer.DummyProofProducer)}
+			producer = &proofProducer.GuardianProofProducer{
+				LivenessBond:       p.cfg.EnableLivenessBondProof,
+				DummyProofProducer: new(proofProducer.DummyProofProducer),
+			}
 		}
 
 		if submitter, err = proofSubmitter.New(
