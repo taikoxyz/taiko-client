@@ -14,8 +14,20 @@ import (
 
 // GuardianProofProducer always returns an optimistic (dummy) proof.
 type GuardianProofProducer struct {
-	LivenessBond bool
+	returnLivenessBond bool
 	*DummyProofProducer
+}
+
+func NewGuardianProofProducer(returnLivenessBond bool) *GuardianProofProducer {
+	gp := &GuardianProofProducer{
+		returnLivenessBond: returnLivenessBond,
+	}
+
+	if !returnLivenessBond {
+		gp.DummyProofProducer = new(DummyProofProducer)
+	}
+
+	return gp
 }
 
 // RequestProof implements the ProofProducer interface.
@@ -34,7 +46,7 @@ func (g *GuardianProofProducer) RequestProof(
 		"hash", header.Hash(),
 	)
 
-	if g.LivenessBond {
+	if g.returnLivenessBond {
 		return &ProofWithHeader{
 			BlockID: blockID,
 			Meta:    meta,

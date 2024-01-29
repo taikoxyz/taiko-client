@@ -33,7 +33,7 @@ func TestGuardianProducerRequestProof(t *testing.T) {
 	}
 
 	var (
-		producer = &GuardianProofProducer{}
+		producer = NewGuardianProofProducer(false)
 		blockID  = common.Big32
 	)
 	res, err := producer.RequestProof(
@@ -70,7 +70,7 @@ func TestGuardianProducerRequestProofReturnLivenessBond(t *testing.T) {
 	}
 
 	var (
-		producer = &GuardianProofProducer{LivenessBond: true}
+		producer = NewGuardianProofProducer(true)
 		blockID  = common.Big32
 	)
 	res, err := producer.RequestProof(
