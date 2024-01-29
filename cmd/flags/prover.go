@@ -183,6 +183,13 @@ var (
 		Usage:    "HTTP endpoint for main guardian prover health check server",
 		Category: proverCategory,
 	}
+	// Guardian prover specific flag
+	EnableLivenessBondProof = &cli.BoolFlag{
+		Name:     "prover.enableLivenessBondProof",
+		Usage:    "Toggles whether the proof is a dummy proof or returns keccak256(RETURN_LIVENESS_BOND) as proof",
+		Value:    false,
+		Category: proverCategory,
+	}
 )
 
 // ProverFlags All prover flags.

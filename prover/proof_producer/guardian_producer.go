@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -12,10 +13,24 @@ import (
 )
 
 // GuardianProofProducer always returns an optimistic (dummy) proof.
-type GuardianProofProducer struct{ *DummyProofProducer }
+type GuardianProofProducer struct {
+	returnLivenessBond bool
+	*DummyProofProducer
+}
+
+func NewGuardianProofProducer(returnLivenessBond bool) *GuardianProofProducer {
+	gp := &GuardianProofProducer{
+		returnLivenessBond: returnLivenessBond,
+	}
+
+	if !returnLivenessBond {
+		gp.DummyProofProducer = new(DummyProofProducer)
+	}
+
+	return gp
+}
 
 // RequestProof implements the ProofProducer interface.
-// TODO: support returning `keccak256("RETURN_LIVENESS_BOND")` as proof.
 func (g *GuardianProofProducer) RequestProof(
 	ctx context.Context,
 	opts *ProofRequestOptions,
@@ -30,6 +45,18 @@ func (g *GuardianProofProducer) RequestProof(
 		"height", header.Number,
 		"hash", header.Hash(),
 	)
+
+	if g.returnLivenessBond {
+		return &ProofWithHeader{
+			BlockID: blockID,
+			Meta:    meta,
+			Header:  header,
+			Proof:   crypto.Keccak256([]byte("RETURN_LIVENESS_BOND")),
+			Degree:  CircuitsIdx,
+			Opts:    opts,
+			Tier:    g.Tier(),
+		}, nil
+	}
 
 	return g.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, g.Tier())
 }
