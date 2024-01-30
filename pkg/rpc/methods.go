@@ -293,10 +293,15 @@ type L2SyncProgress struct {
 
 // isSyncing returns true if the L2 execution engine is syncing with L1.
 func (p *L2SyncProgress) isSyncing() bool {
-	return p.SyncProgress != nil ||
-		p.CurrentBlockID == nil ||
-		p.HighestBlockID == nil ||
-		p.CurrentBlockID.Cmp(p.HighestBlockID) < 0
+	if p.SyncProgress == nil {
+		return false
+	}
+
+	if p.CurrentBlockID == nil || p.HighestBlockID == nil {
+		return true
+	}
+
+	return p.CurrentBlockID.Cmp(p.HighestBlockID) < 0
 }
 
 // L2ExecutionEngineSyncProgress fetches the sync progress of the given L2 execution engine.
@@ -764,7 +769,6 @@ func (c *Client) GetTiers(ctx context.Context) ([]*TierProviderTierWithID, error
 // GetBlobs fetches blobs by the given slot from a L1 consensus client.
 func (c *Client) GetBlobs(ctx context.Context, slot *big.Int) ([]*blob.Sidecar, error) {
 	var sidecars *blob.SidecarsResponse
-
 	resBytes, err := c.L1Beacon.Get(ctx, fmt.Sprintf(sidecarsRequestURL, slot))
 	if err != nil {
 		return nil, err

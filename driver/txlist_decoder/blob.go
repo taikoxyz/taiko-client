@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -32,7 +33,11 @@ func (d *BlobDecoder) DecodeTxList(
 		return nil, err
 	}
 
+	log.Info("Fetch sidecars", "sidecars", sidecars)
+
 	for _, sidecar := range sidecars {
+		log.Info("Found sidecar", "KzgCommitment", sidecar.KzgCommitment, "blobHash", common.Bytes2Hex(meta.BlobHash[:]))
+
 		if sidecar.KzgCommitment == common.Bytes2Hex(meta.BlobHash[:]) {
 			return common.Hex2Bytes(sidecar.Blob), nil
 		}

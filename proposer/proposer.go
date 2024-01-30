@@ -379,7 +379,7 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 		ExtraData:         rpc.StringToBytes32(p.ExtraData),
 		TxListByteOffset:  common.Big0,
 		TxListByteSize:    big.NewInt(int64(len(txListBytes))),
-		BlobHash:          sideCar.BlobHashes()[0],
+		BlobHash:          [32]byte{},
 		CacheBlobForReuse: false,
 		ParentMetaHash:    parentMetaHash,
 		HookCalls:         hookCalls,
@@ -404,6 +404,8 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 	if err != nil {
 		return nil, err
 	}
+
+	log.Info("Tx", "proposeBlockTx", proposeTx, "type", proposeTx.Type())
 
 	return proposeTx, nil
 }
