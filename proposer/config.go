@@ -39,6 +39,7 @@ type Config struct {
 	TierFeePriceBump                    *big.Int
 	MaxTierFeePriceBumps                uint64
 	IncludeParentMetaHash               bool
+	L1BlockBuilderTip                   *big.Int
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -87,6 +88,11 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proposeBlockTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProposeBlockTxGasTipCap.Name))
 	}
 
+	// var l1BlockBuilderTip *big.Int
+	// if c.IsSet(flags.L1BlockBuilderTip.Name) {
+	// 	l1BlockBuilderTip = new(big.Int).SetUint64(c.Uint64(flags.L1BlockBuilderTip.Name))
+	// }
+
 	var proverEndpoints []*url.URL
 	for _, e := range strings.Split(c.String(flags.ProverEndpoints.Name), ",") {
 		endpoint, err := url.Parse(e)
@@ -126,5 +132,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		TierFeePriceBump:                    new(big.Int).SetUint64(c.Uint64(flags.TierFeePriceBump.Name)),
 		MaxTierFeePriceBumps:                c.Uint64(flags.MaxTierFeePriceBumps.Name),
 		IncludeParentMetaHash:               c.Bool(flags.ProposeBlockIncludeParentMetaHash.Name),
+		L1BlockBuilderTip:                   new(big.Int).SetUint64(c.Uint64(flags.L1BlockBuilderTip.Name)),
 	}, nil
 }

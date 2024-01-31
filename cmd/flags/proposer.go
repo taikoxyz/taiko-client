@@ -122,6 +122,12 @@ var (
 		Value:    false,
 		Category: proposerCategory,
 	}
+	L1BlockBuilderTip = &cli.Uint64Flag{
+		Name:     "l1BlockBuilderTip",
+		Usage:    "Amount you wish to tip the L1 block builder",
+		Value:    0,
+		Category: proposerCategory,
+	}
 )
 
 // ProposerFlags All proposer flags.
@@ -147,4 +153,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxTierFeePriceBumps,
 	ProposeBlockIncludeParentMetaHash,
 	ProposerAssignmentHookAddress,
+	L1BlockBuilderTip,
 })
