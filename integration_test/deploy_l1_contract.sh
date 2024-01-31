@@ -14,6 +14,6 @@ cd "$TAIKO_MONO_DIR"/packages/protocol &&
   --broadcast \
   --ffi \
   -vvvvv \
+  --evm-version cancun \
   --private-key "$PRIVATE_KEY" \
   --block-gas-limit 100000000
-  
