@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/driver/signer"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -34,14 +35,9 @@ func New(rpc *rpc.Client, signalServiceAddress common.Address) (*AnchorTxConstru
 		return nil, err
 	}
 
-	goldenTouchPrivKey, err := rpc.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
+	signer, err := signer.NewFixedKSigner(encoding.GoldenTouchPrivKey)
 	if err != nil {
-		return nil, err
-	}
-
-	signer, err := signer.NewFixedKSigner("0x" + common.Bytes2Hex(goldenTouchPrivKey.Bytes()))
-	if err != nil {
-		return nil, fmt.Errorf("invalid golden touch private key %s", goldenTouchPrivKey)
+		return nil, fmt.Errorf("invalid golden touch private key %s", encoding.GoldenTouchPrivKey)
 	}
 
 	return &AnchorTxConstructor{
