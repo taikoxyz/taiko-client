@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/urfave/cli/v2"
 
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 )
 
@@ -28,9 +29,6 @@ var (
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 	goldenTouchAddress, err := s.RPCClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
-	s.Nil(err)
-
-	goldenTouchPrivKey, err := s.RPCClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
 	s.Nil(err)
 
 	app := s.SetupApp()
@@ -73,7 +71,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.TaikoL1Address.Name, taikoL1,
 		"--" + flags.TaikoL2Address.Name, taikoL2,
 		"--" + flags.TaikoTokenAddress.Name, taikoToken,
-		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"--" + flags.L1ProposerPrivKey.Name, encoding.GoldenTouchPrivKey,
 		"--" + flags.ProposeInterval.Name, proposeInterval,
 		"--" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
 		"--" + flags.ProposeBlockTxReplacementMultiplier.Name, "5",
@@ -102,14 +100,11 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextPrivKeyErr() {
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
-	goldenTouchPrivKey, err := s.RPCClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
-	s.Nil(err)
-
 	app := s.SetupApp()
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextTxPoolLocalsErr",
-		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"--" + flags.L1ProposerPrivKey.Name, encoding.GoldenTouchPrivKey,
 		"--" + flags.ProposeInterval.Name, proposeInterval,
 		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
 		"--" + flags.TxPoolLocals.Name, "notAnAddress",
@@ -120,14 +115,11 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
 	goldenTouchAddress, err := s.RPCClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)
 
-	goldenTouchPrivKey, err := s.RPCClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
-	s.Nil(err)
-
 	app := s.SetupApp()
 
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextReplMultErr",
-		"--" + flags.L1ProposerPrivKey.Name, common.Bytes2Hex(goldenTouchPrivKey.Bytes()),
+		"--" + flags.L1ProposerPrivKey.Name, encoding.GoldenTouchPrivKey,
 		"--" + flags.ProposeInterval.Name, proposeInterval,
 		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
 		"--" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
