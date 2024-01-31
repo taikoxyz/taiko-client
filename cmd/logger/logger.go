@@ -10,18 +10,10 @@ import (
 
 // InitLogger initializes the root logger with the command line flags.
 func InitLogger(c *cli.Context) {
-	var handler log.Handler
-	if c.Bool(flags.LogJson.Name) {
-		handler = log.LvlFilterHandler(
-			log.Lvl(c.Int(flags.Verbosity.Name)),
-			log.StreamHandler(os.Stdout, log.JSONFormat()),
-		)
-	} else {
-		handler = log.LvlFilterHandler(
-			log.Lvl(c.Int(flags.Verbosity.Name)),
-			log.StreamHandler(os.Stdout, log.TerminalFormat(true)),
-		)
-	}
+	var (
+		slogVerbosity = log.FromLegacyLevel(c.Int(flags.Verbosity.Name))
+	)
 
-	log.Root().SetHandler(handler)
+	glogger := log.NewGlogHandler(log.NewTerminalHandlerWithLevel(os.Stdout, slogVerbosity, true))
+	log.SetDefault(log.NewLogger(glogger))
 }

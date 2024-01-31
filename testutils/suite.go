@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -31,21 +30,6 @@ type ClientTestSuite struct {
 }
 
 func (s *ClientTestSuite) SetupTest() {
-	// Default logger
-	log.Root().SetHandler(
-		log.LvlFilterHandler(log.LvlInfo, log.StreamHandler(os.Stdout, log.TerminalFormat(true))),
-	)
-
-	if os.Getenv("LOG_LEVEL") != "" {
-		level, err := log.LvlFromString(os.Getenv("LOG_LEVEL"))
-		if err != nil {
-			log.Crit("Invalid log level", "level", os.Getenv("LOG_LEVEL"))
-		}
-		log.Root().SetHandler(
-			log.LvlFilterHandler(level, log.StreamHandler(os.Stdout, log.TerminalFormat(true))),
-		)
-	}
-
 	testAddrPrivKey, err := crypto.ToECDSA(
 		common.Hex2Bytes("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"),
 	)
