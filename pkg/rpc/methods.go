@@ -447,12 +447,21 @@ func (c *Client) CheckL1ReorgFromL2EE(ctx context.Context, blockID *big.Int) (bo
 			return false, nil, nil, fmt.Errorf("failed to fetch L1 header (%d): %w", l1Origin.L1BlockHeight, err)
 		}
 
+		log.Info(
+			"l1Header",
+			"l1Header", *l1Header,
+			"hegiht", l1Header.Number,
+			"hash", l1Header.Hash(),
+			"parent", l1Header.ParentHash,
+		)
+
 		if l1Header.Hash() != l1Origin.L1BlockHash {
 			log.Info(
 				"Reorg detected",
 				"blockID", blockID,
 				"l1Height", l1Origin.L1BlockHeight,
 				"l1HashOld", l1Origin.L1BlockHash,
+				"l1HashNewNumber", l1Header.Number,
 				"l1HashNew", l1Header.Hash(),
 			)
 			reorged = true
