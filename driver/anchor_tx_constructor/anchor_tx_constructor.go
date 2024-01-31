@@ -35,7 +35,7 @@ func New(rpc *rpc.Client, signalServiceAddress common.Address) (*AnchorTxConstru
 		return nil, err
 	}
 
-	signer, err := signer.NewFixedKSigner(encoding.GoldenTouchPrivKey)
+	signer, err := signer.NewFixedKSigner("0x" + encoding.GoldenTouchPrivKey)
 	if err != nil {
 		return nil, fmt.Errorf("invalid golden touch private key %s", encoding.GoldenTouchPrivKey)
 	}
