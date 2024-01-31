@@ -501,7 +501,7 @@ func (c *Client) CheckL1ReorgFromL1Cursor(
 			break
 		}
 
-		l1Header, err := c.L1.BlockByNumber(ctxWithTimeout, l1Current.Number)
+		l1Header, err := c.L1.HeaderByNumber(ctxWithTimeout, l1Current.Number)
 		if err != nil {
 			if err.Error() == ethereum.NotFound.Error() {
 				continue
@@ -509,6 +509,15 @@ func (c *Client) CheckL1ReorgFromL1Cursor(
 
 			return false, nil, nil, err
 		}
+
+		log.Info(
+			"l1Header",
+			"l1Header", *l1Header,
+			"current", *l1Current,
+			"hegiht", l1Header.Number,
+			"hash", l1Header.Hash(),
+			"parent", l1Header.ParentHash,
+		)
 
 		if l1Header.Hash() != l1Current.Hash() {
 			log.Info(
