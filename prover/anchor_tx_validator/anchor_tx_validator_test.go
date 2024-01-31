@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 )
 
@@ -30,11 +31,8 @@ func (s *AnchorTxValidatorTestSuite) TestValidateAnchorTx() {
 	wrongPrivKey, err := crypto.HexToECDSA("2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200")
 	s.Nil(err)
 
-	goldenTouchPrivKey, err := s.RPCClient.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
-	s.Nil(err)
-
 	// 0x92954368afd3caa1f3ce3ead0069c1af414054aefe1ef9aeacc1bf426222ce38
-	goldenTouchPriKey, err := crypto.HexToECDSA(common.Bytes2Hex(goldenTouchPrivKey.Bytes()))
+	goldenTouchPriKey, err := crypto.HexToECDSA(encoding.GoldenTouchPrivKey)
 	s.Nil(err)
 
 	// invalid To

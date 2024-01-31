@@ -31,7 +31,7 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoL1.sol/TaikoL1.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoL1Client --pkg bindings --out $DIR/../bindings/gen_taiko_l1.go
 
-cat ${TAIKO_MONO_DIR}/packages/protocol/out/LibProvingAlt.sol/LibProvingAlt.json |
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/LibProving.sol/LibProving.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type LibProving --pkg bindings --out $DIR/../bindings/gen_lib_proving.go
 

@@ -17,27 +17,8 @@ var (
 	TierGuardianID       uint16 = 1000
 	ProtocolTiers               = []uint16{TierOptimisticID, TierSgxID, TierSgxAndPseZkevmID, TierGuardianID}
 	AnchorTxGasLimit     uint64 = 250_000
+	GoldenTouchPrivKey          = "92954368afd3caa1f3ce3ead0069c1af414054aefe1ef9aeacc1bf426222ce38"
 )
-
-// BlockHeader represents an Ethereum block header.
-type BlockHeader struct {
-	ParentHash       [32]byte
-	OmmersHash       [32]byte
-	Beneficiary      common.Address
-	StateRoot        [32]byte
-	TransactionsRoot [32]byte
-	ReceiptsRoot     [32]byte
-	LogsBloom        [8][32]byte
-	Difficulty       *big.Int
-	Height           *big.Int
-	GasLimit         uint64
-	GasUsed          uint64
-	Timestamp        uint64
-	ExtraData        []byte
-	MixHash          [32]byte
-	Nonce            uint64
-	BaseFeePerGas    *big.Int
-}
 
 // HookCall should be same with TaikoData.HookCall
 type HookCall struct {
@@ -86,58 +67,6 @@ type ZKEvmProof struct {
 	VerifierId uint16 // nolint: revive, stylecheck
 	Zkp        []byte
 	PointProof []byte
-}
-
-// FromGethHeader converts a GETH *types.Header to *BlockHeader.
-func FromGethHeader(header *types.Header) *BlockHeader {
-	baseFeePerGas := header.BaseFee
-	if baseFeePerGas == nil {
-		baseFeePerGas = common.Big0
-	}
-	return &BlockHeader{
-		ParentHash:       header.ParentHash,
-		OmmersHash:       header.UncleHash,
-		Beneficiary:      header.Coinbase,
-		StateRoot:        header.Root,
-		TransactionsRoot: header.TxHash,
-		ReceiptsRoot:     header.ReceiptHash,
-		LogsBloom:        BloomToBytes(header.Bloom),
-		Difficulty:       header.Difficulty,
-		Height:           header.Number,
-		GasLimit:         header.GasLimit,
-		GasUsed:          header.GasUsed,
-		Timestamp:        header.Time,
-		ExtraData:        header.Extra,
-		MixHash:          header.MixDigest,
-		Nonce:            header.Nonce.Uint64(),
-		BaseFeePerGas:    baseFeePerGas,
-	}
-}
-
-// ToGethHeader converts a *BlockHeader to GETH *types.Header.
-func ToGethHeader(header *BlockHeader) *types.Header {
-	baseFeePerGas := header.BaseFeePerGas
-	if baseFeePerGas.Cmp(common.Big0) == 0 {
-		baseFeePerGas = nil
-	}
-	return &types.Header{
-		ParentHash:  header.ParentHash,
-		UncleHash:   header.OmmersHash,
-		Coinbase:    header.Beneficiary,
-		Root:        header.StateRoot,
-		TxHash:      header.TransactionsRoot,
-		ReceiptHash: header.ReceiptsRoot,
-		Bloom:       BytesToBloom(header.LogsBloom),
-		Difficulty:  header.Difficulty,
-		Number:      header.Height,
-		GasLimit:    header.GasLimit,
-		GasUsed:     header.GasUsed,
-		Time:        header.Timestamp,
-		Extra:       header.ExtraData,
-		MixDigest:   header.MixHash,
-		Nonce:       types.EncodeNonce(header.Nonce),
-		BaseFee:     baseFeePerGas,
-	}
 }
 
 // ToExecutableData converts a GETH *types.Header to *engine.ExecutableData.

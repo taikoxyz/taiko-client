@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 var (
@@ -119,9 +120,7 @@ func TestGetSyncedL1SnippetFromAnchor(t *testing.T) {
 	l1Height := randomHash().Big().Uint64()
 	parentGasUsed := uint32(randomHash().Big().Uint64())
 
-	key, err := client.TaikoL2.GOLDENTOUCHPRIVATEKEY(nil)
-	require.Nil(t, err)
-	testAddrPrivKey, err := crypto.ToECDSA(key.Bytes())
+	testAddrPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(encoding.GoldenTouchPrivKey))
 	require.Nil(t, err)
 
 	opts, err := bind.NewKeyedTransactorWithChainID(testAddrPrivKey, client.L2ChainID)
