@@ -88,11 +88,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proposeBlockTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProposeBlockTxGasTipCap.Name))
 	}
 
-	// var l1BlockBuilderTip *big.Int
-	// if c.IsSet(flags.L1BlockBuilderTip.Name) {
-	// 	l1BlockBuilderTip = new(big.Int).SetUint64(c.Uint64(flags.L1BlockBuilderTip.Name))
-	// }
-
 	var proverEndpoints []*url.URL
 	for _, e := range strings.Split(c.String(flags.ProverEndpoints.Name), ",") {
 		endpoint, err := url.Parse(e)
