@@ -87,9 +87,6 @@ func (c *EthClient) createBlobTx(
 	if err != nil {
 		return nil, err
 	}
-	if rawTx.Type() != types.BlobTxType {
-		return nil, fmt.Errorf("expect tx type: %d, actual tx type: %d", types.BlobTxType, rawTx.Type())
-	}
 
 	blobTx := &types.BlobTx{
 		ChainID:    uint256.MustFromBig(rawTx.ChainId()),
@@ -102,7 +99,7 @@ func (c *EthClient) createBlobTx(
 		Data:       rawTx.Data(),
 		AccessList: rawTx.AccessList(),
 		BlobFeeCap: uint256.MustFromBig(rawTx.BlobGasFeeCap()),
-		BlobHashes: rawTx.BlobHashes(),
+		BlobHashes: sidecar.BlobHashes(),
 		Sidecar:    sidecar,
 	}
 
