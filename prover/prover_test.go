@@ -92,6 +92,7 @@ func (s *ProverTestSuite) SetupTest() {
 		SgxAndPseZkevmTierFee:      common.Big256,
 		MaxTierFeePriceBumps:       3,
 		TierFeePriceBump:           common.Big2,
+		L1BlockBuilderTip:          common.Big0,
 	}))
 
 	s.proposer = prop

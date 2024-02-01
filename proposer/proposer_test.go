@@ -57,6 +57,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		TierFeePriceBump:                    common.Big2,
 		MaxTierFeePriceBumps:                3,
 		ExtraData:                           "test",
+		L1BlockBuilderTip:                   common.Big0,
 	}))
 
 	s.p = p
