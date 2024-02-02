@@ -14,6 +14,6 @@ var (
 	errSidecarNotFound = errors.New("sidecar not found")
 )
 
-type TxListDecoder interface {
-	DecodeTxList(ctx context.Context, tx *types.Transaction, meta *bindings.TaikoDataBlockMetadata) ([]byte, error)
+type TxListFetcher interface {
+	Fetch(ctx context.Context, tx *types.Transaction, meta *bindings.TaikoDataBlockMetadata) ([]byte, error)
 }

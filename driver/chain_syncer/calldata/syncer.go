@@ -20,7 +20,7 @@ import (
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	txlistdecoder "github.com/taikoxyz/taiko-client/driver/txlist_decoder"
+	txlistfetcher "github.com/taikoxyz/taiko-client/driver/txlist_fetcher"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -239,13 +239,13 @@ func (s *Syncer) onBlockProposed(
 		return fmt.Errorf("failed to fetch original TaikoL1.ProposeBlock transaction: %w", err)
 	}
 
-	var txListDecoder txlistdecoder.TxListDecoder
+	var txListDecoder txlistfetcher.TxListFetcher
 	if event.Meta.BlobUsed {
-		txListDecoder = txlistdecoder.NewBlobDecoder(s.rpc)
+		txListDecoder = txlistfetcher.NewBlobTxListFetcher(s.rpc)
 	} else {
-		txListDecoder = &txlistdecoder.CalldataDecoder{}
+		txListDecoder = &txlistfetcher.CalldataFetcher{}
 	}
-	txListBytes, err := txListDecoder.DecodeTxList(ctx, tx, &event.Meta)
+	txListBytes, err := txListDecoder.Fetch(ctx, tx, &event.Meta)
 	if err != nil {
 		return fmt.Errorf("failed to decode tx list: %w", err)
 	}

@@ -11,15 +11,15 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-type BlobDecoder struct {
+type BlobFetcher struct {
 	rpc *rpc.Client
 }
 
-func NewBlobDecoder(rpc *rpc.Client) *BlobDecoder {
-	return &BlobDecoder{rpc}
+func NewBlobTxListFetcher(rpc *rpc.Client) *BlobFetcher {
+	return &BlobFetcher{rpc}
 }
 
-func (d *BlobDecoder) DecodeTxList(
+func (d *BlobFetcher) Fetch(
 	ctx context.Context,
 	tx *types.Transaction,
 	meta *bindings.TaikoDataBlockMetadata,

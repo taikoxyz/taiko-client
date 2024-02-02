@@ -8,9 +8,9 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
-type CalldataDecoder struct{}
+type CalldataFetcher struct{}
 
-func (d *CalldataDecoder) DecodeTxList(
+func (d *CalldataFetcher) Fetch(
 	ctx context.Context,
 	tx *types.Transaction,
 	meta *bindings.TaikoDataBlockMetadata,
