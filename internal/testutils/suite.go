@@ -75,8 +75,8 @@ func (s *ClientTestSuite) SetupTest() {
 		// Do not verify zk && sgx proofs in tests.
 		securityConcilPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_SECURITY_COUNCIL_PRIVATE_KEY")))
 		s.Nil(err)
-		s.setAddress(securityConcilPrivKey, rpc.StringToBytes32("tier_sgx_and_pse_zkevm"), common.Address{})
-		s.setAddress(securityConcilPrivKey, rpc.StringToBytes32("tier_sgx"), common.Address{})
+		s.setAddress(securityConcilPrivKey, rpc.StringToBytes32("tier_sgx_and_pse_zkevm"), common.Address{1})
+		s.setAddress(securityConcilPrivKey, rpc.StringToBytes32("tier_sgx"), common.Address{1})
 
 		ownerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
 		s.Nil(err)
