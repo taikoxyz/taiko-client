@@ -2,10 +2,13 @@
 
 source scripts/common.sh
 
+DOCKER_INIT_LIST=("create-beacon-chain-genesis" "geth-remove-db" "geth-genesis")
 DOCKER_SERVICE_LIST=("beacon-chain" "geth" "validator" "l2_execution_engine")
 
-echo "stop docker compose service: ${DOCKER_SERVICE_LIST[*]}"
+echo "stop docker compose service: ${DOCKER_INIT_LIST[*]}"
+compose_down "${DOCKER_INIT_LIST[@]}"
 
+echo "stop docker compose service: ${DOCKER_SERVICE_LIST[*]}"
 compose_down "${DOCKER_SERVICE_LIST[@]}"
 
 # Delete exited containers.
