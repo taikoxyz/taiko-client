@@ -88,10 +88,14 @@ services:
       - --http.api=eth,net,web3
       - --http.addr=0.0.0.0
       - --http.corsdomain=*
+      - --http.api
+      - admin,debug,eth,net,web3,txpool,miner,evm
       - --ws
       - --ws.api=eth,net,web3
       - --ws.addr=0.0.0.0
       - --ws.origins=*
+      - --ws.api
+      - admin,debug,eth,net,web3,txpool,miner,evm
       - --authrpc.vhosts=*
       - --authrpc.addr=0.0.0.0
       - --authrpc.jwtsecret=/execution/jwtsecret
@@ -101,6 +105,7 @@ services:
       - --password=/execution/geth_password.txt
       - --nodiscover
       - --syncmode=full
+      - --gcmode=archive
     ports:
       - "8545"
       - "8546"

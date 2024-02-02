@@ -23,7 +23,7 @@ export L1_NODE_WS_ENDPOINT=ws://localhost:$(docker port geth | grep '0.0.0.0' | 
 export L2_EXECUTION_ENGINE_HTTP_ENDPOINT=http://localhost:$(docker port l2_node | grep "0.0.0.0" | awk -F ':' 'NR==1 {print $2}')
 export L2_EXECUTION_ENGINE_WS_ENDPOINT=ws://localhost:$(docker port l2_node | grep "0.0.0.0" | awk -F ':' 'NR==2 {print $2}')
 export L2_EXECUTION_ENGINE_AUTH_ENDPOINT=http://localhost:$(docker port l2_node | grep "0.0.0.0" | awk -F ':' 'NR==3 {print $2}')
-export JWT_SECRET=$DIR/nodes/jwt.hex
+export JWT_SECRET=$DIR/taikogeth/jwt.hex
 
 echo
 echo -e "L1_NODE PORTS: \n$(docker port geth)"
