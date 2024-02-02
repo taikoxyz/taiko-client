@@ -1,5 +1,4 @@
 #!/bin/bash
-
 source scripts/common.sh
 
 DOCKER_INIT_LIST=("create-beacon-chain-genesis" "geth-remove-db" "geth-genesis")

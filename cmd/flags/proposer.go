@@ -123,9 +123,14 @@ var (
 		Category: proposerCategory,
 	}
 	BlobAllowed = &cli.BoolFlag{
-		Name:     "blobAllowed",
-		Usage:    "Send blob tx when propose block",
-		Value:    false,
+		Name:  "blobAllowed",
+		Usage: "Send blob tx when propose block",
+		Value: false,
+	}
+	L1BlockBuilderTip = &cli.Uint64Flag{
+		Name:     "l1BlockBuilderTip",
+		Usage:    "Amount you wish to tip the L1 block builder",
+		Value:    0,
 		Category: proposerCategory,
 	}
 )
@@ -154,4 +159,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProposeBlockIncludeParentMetaHash,
 	ProposerAssignmentHookAddress,
 	BlobAllowed,
+	L1BlockBuilderTip,
 })

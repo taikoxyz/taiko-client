@@ -42,6 +42,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	return &Config{
 		ClientConfig: &rpc.ClientConfig{
 			L1Endpoint:       c.String(flags.L1WSEndpoint.Name),
+			L1BeaconEndpoint: c.String(flags.L1BeaconEndpoint.Name),
 			L2Endpoint:       c.String(flags.L2WSEndpoint.Name),
 			L2CheckPoint:     l2CheckPoint,
 			TaikoL1Address:   common.HexToAddress(c.String(flags.TaikoL1Address.Name)),

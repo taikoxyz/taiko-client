@@ -20,6 +20,7 @@ import (
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
+	txlistfetcher "github.com/taikoxyz/taiko-client/driver/txlist_fetcher"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -235,11 +236,22 @@ func (s *Syncer) onBlockProposed(
 		event.Raw.TxIndex,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to fetch original TaikoL1.proposeBlock transaction: %w", err)
+		return fmt.Errorf("failed to fetch original TaikoL1.ProposeBlock transaction: %w", err)
+	}
+
+	var txListDecoder txlistfetcher.TxListFetcher
+	if event.Meta.BlobUsed {
+		txListDecoder = txlistfetcher.NewBlobTxListFetcher(s.rpc)
+	} else {
+		txListDecoder = &txlistfetcher.CalldataFetcher{}
+	}
+	txListBytes, err := txListDecoder.Fetch(ctx, tx, &event.Meta)
+	if err != nil {
+		return fmt.Errorf("failed to decode tx list: %w", err)
 	}
 
 	// Check whether the transactions list is valid.
-	txListBytes, hint, invalidTxIndex, err := s.txListValidator.ValidateTxList(event.BlockId, tx.Data())
+	hint, invalidTxIndex, err := s.txListValidator.ValidateTxList(event.BlockId, txListBytes)
 	if err != nil {
 		return fmt.Errorf("failed to validate transactions list: %w", err)
 	}

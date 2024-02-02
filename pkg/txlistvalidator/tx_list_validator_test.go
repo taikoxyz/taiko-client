@@ -40,8 +40,7 @@ func TestValidateTxList(t *testing.T) {
 	)
 
 	// Binary is not unpackable
-	txListBytes, _, _, err := v.ValidateTxList(common.Big0, randBytes(5))
-	require.Empty(t, txListBytes)
+	_, _, err := v.ValidateTxList(common.Big0, randBytes(5))
 	require.NotNil(t, err)
 }
 

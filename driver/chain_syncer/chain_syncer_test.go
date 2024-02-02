@@ -70,6 +70,7 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		MaxTierFeePriceBumps:       3,
 		TierFeePriceBump:           common.Big2,
 		ExtraData:                  "test",
+		L1BlockBuilderTip:          common.Big0,
 	}))
 
 	s.p = prop
