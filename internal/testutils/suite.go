@@ -72,12 +72,6 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 
 	if balance.Cmp(common.Big0) == 0 {
-		// Do not verify zk && sgx proofs in tests.
-		securityConcilPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_SECURITY_COUNCIL_PRIVATE_KEY")))
-		s.Nil(err)
-		s.setAddress(securityConcilPrivKey, rpc.StringToBytes32("tier_sgx_and_pse_zkevm"), common.Address{})
-		s.setAddress(securityConcilPrivKey, rpc.StringToBytes32("tier_sgx"), common.Address{})
-
 		ownerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
 		s.Nil(err)
 
@@ -124,54 +118,6 @@ func (s *ClientTestSuite) setAllowance(key *ecdsa.PrivateKey) {
 		opts,
 		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		bigInt,
-	)
-	s.Nil(err)
-
-	_, err = rpc.WaitReceipt(context.Background(), s.RPCClient.L1, tx)
-	s.Nil(err)
-}
-
-func (s *ClientTestSuite) setAddress(ownerPrivKey *ecdsa.PrivateKey, name [32]byte, address common.Address) {
-	var (
-		salt = RandomHash()
-	)
-
-	controller, err := bindings.NewTaikoTimelockController(
-		common.HexToAddress(os.Getenv("TIMELOCK_CONTROLLER")),
-		s.RPCClient.L1,
-	)
-	s.Nil(err)
-
-	opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, s.RPCClient.L1ChainID)
-	s.Nil(err)
-
-	addressManagerABI, err := bindings.AddressManagerMetaData.GetAbi()
-	s.Nil(err)
-
-	data, err := addressManagerABI.Pack("setAddress", s.RPCClient.L1ChainID.Uint64(), name, address)
-	s.Nil(err)
-
-	tx, err := controller.Schedule(
-		opts,
-		common.HexToAddress(os.Getenv("ROLLUP_ADDRESS_MANAGER_CONTRACT_ADDRESS")),
-		common.Big0,
-		data,
-		[32]byte{},
-		salt,
-		common.Big0,
-	)
-	s.Nil(err)
-
-	_, err = rpc.WaitReceipt(context.Background(), s.RPCClient.L1, tx)
-	s.Nil(err)
-
-	tx, err = controller.Execute(
-		opts,
-		common.HexToAddress(os.Getenv("ROLLUP_ADDRESS_MANAGER_CONTRACT_ADDRESS")),
-		common.Big0,
-		data,
-		[32]byte{},
-		salt,
 	)
 	s.Nil(err)
 
