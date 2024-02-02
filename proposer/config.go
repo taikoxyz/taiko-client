@@ -40,6 +40,7 @@ type Config struct {
 	MaxTierFeePriceBumps                uint64
 	IncludeParentMetaHash               bool
 	BlobAllowed                         bool
+	L1BlockBuilderTip                   *big.Int
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -128,5 +129,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		MaxTierFeePriceBumps:                c.Uint64(flags.MaxTierFeePriceBumps.Name),
 		IncludeParentMetaHash:               c.Bool(flags.ProposeBlockIncludeParentMetaHash.Name),
 		BlobAllowed:                         c.Bool(flags.BlobAllowed.Name),
+		L1BlockBuilderTip:                   new(big.Int).SetUint64(c.Uint64(flags.L1BlockBuilderTip.Name)),
 	}, nil
 }
