@@ -43,6 +43,7 @@ func (s *ProposerTestSuite) SetupTest() {
 			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		},
+		ProposeBlockTxGasLimit:              1000000,
 		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		ProposeInterval:                     &proposeInterval,
