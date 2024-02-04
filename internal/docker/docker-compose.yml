@@ -85,17 +85,13 @@ services:
     container_name: geth
     command:
       - --http
-      - --http.api=eth,net,web3
       - --http.addr=0.0.0.0
       - --http.corsdomain=*
-      - --http.api
-      - admin,debug,eth,net,web3,txpool,miner,evm
+      - --http.api=admin,debug,web3,eth,txpool,personal,miner,net
       - --ws
-      - --ws.api=eth,net,web3
       - --ws.addr=0.0.0.0
       - --ws.origins=*
-      - --ws.api
-      - admin,debug,eth,net,web3,txpool,miner,evm
+      - --ws.api=admin,debug,web3,eth,txpool,personal,miner,net
       - --authrpc.vhosts=*
       - --authrpc.addr=0.0.0.0
       - --authrpc.jwtsecret=/execution/jwtsecret
