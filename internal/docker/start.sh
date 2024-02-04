@@ -1,8 +1,8 @@
 #!/bin/bash
-source scripts/common.sh
 
-DOCKER_INIT_LIST=("create-beacon-chain-genesis" "geth-remove-db" "geth-genesis")
-DOCKER_SERVICE_LIST=("beacon-chain" "geth" "validator" "l2_execution_engine")
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+source "$DIR"/common.sh
 
 # start docker compose service list
 echo "start docker compose service: ${DOCKER_SERVICE_LIST[*]}"
