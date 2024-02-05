@@ -72,7 +72,7 @@ services:
       create-beacon-chain-genesis:
         condition: service_completed_successfully
     ports:
-      - "4000"
+      - "3500"
     volumes:
       - ./consensus:/consensus
       - ./execution:/execution
