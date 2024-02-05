@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+.env
 bin
 coverage.out
 prover/dbPath
