@@ -27,9 +27,11 @@ export JWT_SECRET=$DIR/taikogeth/jwt.hex
 
 echo
 echo -e "L1_NODE PORTS: \n$(docker port geth)"
-echo "L1_BEACON_HTTP_ENDPOINT: $L1_BEACON_HTTP_ENDPOINT"
 echo "L1_NODE_HTTP_ENDPOINT: $L1_NODE_HTTP_ENDPOINT"
 echo "L1_NODE_WS_ENDPOINT: $L1_NODE_WS_ENDPOINT"
+echo
+echo -e "L1_BEACON PORTS: \n$(docker port beacon-chain)"
+echo "L1_BEACON_HTTP_ENDPOINT: $L1_BEACON_HTTP_ENDPOINT"
 echo
 echo -e "L2_NODE PORTS: \n$(docker port l2_node)"
 echo "L2_EXECUTION_ENGINE_HTTP_ENDPOINT: $L2_EXECUTION_ENGINE_HTTP_ENDPOINT"

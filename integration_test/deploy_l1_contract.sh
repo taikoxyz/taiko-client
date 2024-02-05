@@ -17,3 +17,6 @@ cd "$TAIKO_MONO_DIR"/packages/protocol &&
   --evm-version cancun \
   --private-key "$PRIVATE_KEY" \
   --block-gas-limit 100000000
+
+# Expose test environment variables.
+source integration_test/test_env.sh
