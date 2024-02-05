@@ -311,10 +311,22 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 	ctx context.Context,
 	txListBytes []byte,
 	nonce *uint64,
-	assignment *encoding.ProverAssignment,
-	assignedProver common.Address,
-	maxFee *big.Int,
 	isReplacement bool) (*types.Transaction, error) {
+	// Make sidecar in order to get blob hash.
+	sideCar, err := rpc.MakeSidecarWithSingleBlob(txListBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	assignment, assignedProver, maxFee, err := p.proverSelector.AssignProver(
+		ctx,
+		p.tierFees,
+		sideCar.BlobHashes()[0],
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	// Propose the transactions list
 	opts, err := getTxOpts(ctx, p.rpc.L1, p.L1ProposerPrivKey, p.rpc.L1ChainID, maxFee)
 	if err != nil {
@@ -368,12 +380,6 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 		Hook: p.AssignmentHookAddress,
 		Data: hookInputData,
 	})
-
-	// Make sidecar in order to get blob hash.
-	sideCar, err := rpc.MakeSidecarWithSingleBlob(txListBytes)
-	if err != nil {
-		return nil, err
-	}
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		AssignedProver:    assignedProver,
 		ExtraData:         rpc.StringToBytes32(p.ExtraData),
@@ -400,6 +406,7 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 
 	// Create blob tx and send it.
 	opts.NoSend = false
+	opts.GasLimit = 0
 	proposeTx, err := p.rpc.L1.TransactBlobTx(opts, &p.TaikoL1Address, rawTx.Data(), sideCar)
 	if err != nil {
 		return nil, err
@@ -415,11 +422,17 @@ func (p *Proposer) sendProposeBlockTx(
 	ctx context.Context,
 	txListBytes []byte,
 	nonce *uint64,
-	assignment *encoding.ProverAssignment,
-	assignedProver common.Address,
-	maxFee *big.Int,
 	isReplacement bool,
 ) (*types.Transaction, error) {
+	assignment, assignedProver, maxFee, err := p.proverSelector.AssignProver(
+		ctx,
+		p.tierFees,
+		crypto.Keccak256Hash(txListBytes),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	// Propose the transactions list
 	opts, err := getTxOpts(ctx, p.rpc.L1, p.L1ProposerPrivKey, p.rpc.L1ChainID, maxFee)
 	if err != nil {
@@ -507,34 +520,22 @@ func (p *Proposer) ProposeTxList(
 	txNum uint,
 	nonce *uint64,
 ) error {
-	assignment, proverAddress, maxFee, err := p.proverSelector.AssignProver(
-		ctx,
-		p.tierFees,
-		crypto.Keccak256Hash(txListBytes),
-	)
-	if err != nil {
-		return err
-	}
-
 	var (
 		isReplacement bool
 		tx            *types.Transaction
+		err           error
 	)
 	if err = backoff.Retry(
 		func() error {
 			if ctx.Err() != nil {
 				return nil
 			}
-
 			// Send tx list by blob tx.
 			if p.BlobAllowed {
 				tx, err = p.sendProposeBlockTxWithBlobHash(
 					ctx,
 					txListBytes,
 					nonce,
-					assignment,
-					proverAddress,
-					maxFee,
 					isReplacement,
 				)
 			} else {
@@ -542,9 +543,6 @@ func (p *Proposer) ProposeTxList(
 					ctx,
 					txListBytes,
 					nonce,
-					assignment,
-					proverAddress,
-					maxFee,
 					isReplacement,
 				)
 			}

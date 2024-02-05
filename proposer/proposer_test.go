@@ -177,8 +177,8 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		[]byte{},
 	)
 
-	s.SetL1Automine(false)
-	defer s.SetL1Automine(true)
+	//s.SetL1Automine(false)
+	//defer s.SetL1Automine(true)
 
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L1ChainID), s.p.L1ProposerPrivKey)
 	s.Nil(err)
@@ -188,34 +188,22 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	signedAssignment, proverAddress, fee, err := s.p.proverSelector.AssignProver(
-		context.Background(),
-		s.p.tierFees,
-		crypto.Keccak256Hash(encoded),
-	)
-	s.Nil(err)
-
 	var (
 		ctx   = context.Background()
 		newTx *types.Transaction
 	)
+	nonce++
 	if s.p.BlobAllowed {
 		newTx, err = s.p.sendProposeBlockTxWithBlobHash(
 			ctx,
 			encoded,
 			&nonce,
-			signedAssignment,
-			proverAddress,
-			fee,
 			true)
 	} else {
 		newTx, err = s.p.sendProposeBlockTx(
 			context.Background(),
 			encoded,
 			&nonce,
-			signedAssignment,
-			proverAddress,
-			fee,
 			true,
 		)
 	}
