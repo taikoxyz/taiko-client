@@ -72,7 +72,7 @@ services:
       create-beacon-chain-genesis:
         condition: service_completed_successfully
     ports:
-      - "3500"
+      - "3500:3500"
     volumes:
       - ./consensus:/consensus
       - ./execution:/execution
@@ -103,8 +103,8 @@ services:
       - --syncmode=full
       - --gcmode=archive
     ports:
-      - "8545"
-      - "8546"
+      - "8545:8545"
+      - "8546:8546"
     depends_on:
       geth-genesis:
         condition: service_completed_successfully

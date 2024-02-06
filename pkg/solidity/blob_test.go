@@ -2,7 +2,6 @@ package solidity
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -20,7 +19,7 @@ func TestBlob(t *testing.T) {
 	utils.LoadEnv()
 	ctx := context.Background()
 
-	url := os.Getenv("L1_NODE_WS_ENDPOINT")
+	url := "ws://localhost:8546" //os.Getenv("L1_NODE_WS_ENDPOINT")
 	client, err := rpc.NewEthClient(ctx, url, time.Second*20)
 	assert.NoError(t, err)
 
@@ -33,8 +32,8 @@ func TestBlob(t *testing.T) {
 	opts, err := bind.NewKeyedTransactorWithChainID(sk, chainID)
 	assert.NoError(t, err)
 
-	addr, tx, token, err := DeployBallotTest(opts, client)
-	_, err = bind.WaitDeployed(ctx, client, tx)
+	addr, tx, token, _ := DeployBallotTest(opts, client)
+	_, err = bind.WaitMined(ctx, client, tx)
 	assert.NoError(t, err)
 
 	t.Log("blob test address", "address", addr.String())
@@ -51,17 +50,15 @@ func TestBlob(t *testing.T) {
 	opts.GasLimit = 0
 	tx, err = client.TransactBlobTx(opts, &addr, input, sideCar)
 	assert.Error(t, err)
-	t.Log("can't get blob hash", "err", err)
+	t.Logf("can't get blob hash, err: %v", err)
 
 	opts.GasLimit = 1000000
 	blobTx, err := client.TransactBlobTx(opts, &addr, input, sideCar)
 	assert.NoError(t, err)
-	t.Log("send blob tx successful", "tx hash", blobTx.Hash())
 
 	receipt, err := bind.WaitMined(ctx, client, blobTx)
 	assert.NoError(t, err)
 	assert.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 
-	t.Log("block message", "number", receipt.BlockNumber.Uint64())
-	t.Log("block message", "tx hash", receipt.TxHash.String())
+	t.Logf("send blob tx successful, number: %d, tx_hash: %s", receipt.BlockNumber.Uint64(), blobTx.Hash())
 }
