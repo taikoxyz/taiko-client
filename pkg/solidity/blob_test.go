@@ -24,7 +24,7 @@ func TestBlob(t *testing.T) {
 	client, err := rpc.NewEthClient(ctx, url, time.Second*20)
 	assert.NoError(t, err)
 
-	sk, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
+	sk, err := crypto.ToECDSA(common.FromHex("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"))
 	assert.NoError(t, err)
 
 	chainID, err := client.ChainID(ctx)
@@ -51,10 +51,13 @@ func TestBlob(t *testing.T) {
 	opts.GasLimit = 0
 	tx, err = client.TransactBlobTx(opts, &addr, input, sideCar)
 	assert.Error(t, err)
+	t.Log("can't get blob hash", "err", err)
 
 	opts.GasLimit = 1000000
 	blobTx, err := client.TransactBlobTx(opts, &addr, input, sideCar)
 	assert.NoError(t, err)
+	t.Log("send blob tx successful", "tx hash", blobTx.Hash())
+
 	receipt, err := bind.WaitMined(ctx, client, blobTx)
 	assert.NoError(t, err)
 	assert.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
