@@ -58,4 +58,7 @@ func TestBlob(t *testing.T) {
 	receipt, err := bind.WaitMined(ctx, client, blobTx)
 	assert.NoError(t, err)
 	assert.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+
+	t.Log("block message", "number", receipt.BlockNumber.Uint64())
+	t.Log("block message", "tx hash", receipt.TxHash.String())
 }
