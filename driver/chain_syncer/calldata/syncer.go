@@ -205,6 +205,8 @@ func (s *Syncer) onBlockProposed(
 		"l1Height", event.Raw.BlockNumber,
 		"l1Hash", event.Raw.BlockHash,
 		"blockID", event.BlockId,
+		"blobUsed", event.Meta.BlobUsed,
+		"blobHash", common.Bytes2Hex(event.Meta.BlobHash[:]),
 		"removed", event.Raw.Removed,
 	)
 

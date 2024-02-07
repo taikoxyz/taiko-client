@@ -35,13 +35,15 @@ func (d *BlobFetcher) Fetch(
 
 	log.Info("Fetch sidecars", "sidecars", sidecars)
 
-	for _, sidecar := range sidecars {
-		log.Info("Found sidecar", "KzgCommitment", sidecar.KzgCommitment, "blobHash", common.Bytes2Hex(meta.BlobHash[:]))
+	// for _, sidecar := range sidecars {
+	// 	log.Info("Found sidecar", "KzgCommitment", sidecar.KzgCommitment, "blobHash", common.Bytes2Hex(meta.BlobHash[:]))
 
-		if sidecar.KzgCommitment == common.Bytes2Hex(meta.BlobHash[:]) {
-			return common.Hex2Bytes(sidecar.Blob), nil
-		}
-	}
+	// 	if sidecar.KzgCommitment == common.Bytes2Hex(meta.BlobHash[:]) {
+	// 		return common.Hex2Bytes(sidecar.Blob), nil
+	// 	}
+	// }
+
+	return common.Hex2Bytes(sidecars[0].Blob), nil
 
 	return nil, errSidecarNotFound
 }
