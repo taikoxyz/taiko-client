@@ -5,10 +5,11 @@ go 1.21
 require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2
 	github.com/cenkalti/backoff/v4 v4.1.3
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0
 	github.com/ethereum/go-ethereum v1.13.11
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/holiman/uint256 v1.2.4
+	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
@@ -92,7 +93,6 @@ require (
 	github.com/ipfs/go-log/v2 v2.5.1 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jbenet/go-temp-err-catcher v0.1.0 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213 // indirect
@@ -195,10 +195,10 @@ require (
 	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611 // indirect
 	golang.org/x/mod v0.14.0 // indirect
+	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
-	golang.org/x/net v0.18.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/term v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.16.0 // indirect
