@@ -221,4 +221,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.13.11 => github.com/taikoxyz/taiko-geth v0.0.0-20240207044711-7f625e6a8228
+replace github.com/ethereum/go-ethereum v1.13.11 => github.com/taikoxyz/taiko-geth v0.0.0-20240207045737-1f775750a248
