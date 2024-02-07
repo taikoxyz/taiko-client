@@ -32,7 +32,7 @@ func TestDialEngineClientWithBackoff(t *testing.T) {
 	var result engine.ExecutableData
 	err = client.CallContext(context.Background(), &result, "engine_getPayloadV1", engine.PayloadID{})
 
-	require.Equal(t, engine.UnknownPayload.Error(), err.Error())
+	require.Equal(t, engine.UnsupportedFork.Error(), err.Error())
 }
 
 func TestDialClientWithBackoff(t *testing.T) {
