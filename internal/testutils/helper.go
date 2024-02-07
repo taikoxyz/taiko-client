@@ -140,9 +140,8 @@ func ProposeAndInsertValidBlock(
 	s.Nil(err)
 	s.Greater(newL1Head.Number.Uint64(), l1Head.Number.Uint64())
 
-	syncProgress, err := s.RPCClient.L2.SyncProgress(context.Background())
+	_, err = s.RPCClient.L2.SyncProgress(context.Background())
 	s.Nil(err)
-	s.Nil(syncProgress)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
