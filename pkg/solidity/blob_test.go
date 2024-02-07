@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/taikoxyz/taiko-client/internal/utils"
@@ -44,7 +45,21 @@ func TestBlob(t *testing.T) {
 	assert.NoError(t, err)
 	input := tx.Data()
 
-	sideCar, err := rpc.MakeSidecarWithSingleBlob([]byte("s"))
+	data := make([]byte, rpc.BlobBytes+1)
+	for i := 0; i < rpc.BlobBytes+1; i++ {
+		data[i] = 's'
+	}
+	sideCar := &types.BlobTxSidecar{
+		Blobs: rpc.EncodeBlobs(data),
+	}
+	for _, blob := range sideCar.Blobs {
+		commitment, err := kzg4844.BlobToCommitment(blob)
+		assert.NoError(t, err)
+		sideCar.Commitments = append(sideCar.Commitments, commitment)
+		proof, err := kzg4844.ComputeBlobProof(blob, commitment)
+		assert.NoError(t, err)
+		sideCar.Proofs = append(sideCar.Proofs, proof)
+	}
 
 	opts.NoSend = false
 	opts.GasLimit = 0
@@ -60,5 +75,8 @@ func TestBlob(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 
+	for index, hash := range sideCar.BlobHashes() {
+		t.Logf("blob content, index: %d, blob hash: %s", index, hash.String())
+	}
 	t.Logf("send blob tx successful, number: %d, tx_hash: %s", receipt.BlockNumber.Uint64(), blobTx.Hash())
 }
