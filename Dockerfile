@@ -8,7 +8,7 @@ RUN make build
 
 FROM alpine:latest
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates libstdc++
 
 COPY --from=builder /taiko-client/bin/taiko-client /usr/local/bin/
 
