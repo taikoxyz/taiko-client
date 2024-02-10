@@ -261,6 +261,7 @@ func (s *Syncer) onBlockProposed(
 		"blockID", event.BlockId,
 		"hint", hint,
 		"invalidTxIndex", invalidTxIndex,
+		"bytes", len(txListBytes),
 	)
 
 	l1Origin := &rawdb.L1Origin{

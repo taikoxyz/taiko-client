@@ -49,7 +49,7 @@ func (d *BlobFetcher) Fetch(
 			"blobHash", common.Bytes2Hex(meta.BlobHash[:]),
 		)
 
-		if kZGToVersionedHash(
+		if KZGToVersionedHash(
 			kzg4844.Commitment(common.FromHex(sidecar.KzgCommitment)),
 		) == common.BytesToHash(meta.BlobHash[:]) {
 			return common.Hex2Bytes(sidecar.Blob), nil
@@ -59,8 +59,8 @@ func (d *BlobFetcher) Fetch(
 	return nil, errSidecarNotFound
 }
 
-// kZGToVersionedHash implements kzg_to_versioned_hash from EIP-4844
-func kZGToVersionedHash(kzg kzg4844.Commitment) common.Hash {
+// KZGToVersionedHash implements kzg_to_versioned_hash from EIP-4844
+func KZGToVersionedHash(kzg kzg4844.Commitment) common.Hash {
 	h := sha256.Sum256(kzg[:])
 	h[0] = blobCommitmentVersionKZG
 
