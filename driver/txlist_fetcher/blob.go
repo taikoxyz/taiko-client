@@ -3,18 +3,21 @@ package txlistdecoder
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-const (
+var (
 	blobCommitmentVersionKZG uint8 = 0x01 // Version byte for the point evaluation precompile.
+	errBlobInvalid                 = errors.New("invalid blob encoding")
 )
 
 type BlobFetcher struct {
@@ -52,17 +55,39 @@ func (d *BlobFetcher) Fetch(
 		if KZGToVersionedHash(
 			kzg4844.Commitment(common.FromHex(sidecar.KzgCommitment)),
 		) == common.BytesToHash(meta.BlobHash[:]) {
-			return common.Hex2Bytes(sidecar.Blob), nil
+			return DecodeBlob(common.FromHex(sidecar.Blob))
 		}
 	}
 
 	return nil, errSidecarNotFound
 }
 
-// KZGToVersionedHash implements kzg_to_versioned_hash from EIP-4844
+// KZGToVersionedHash implements kzg_to_versioned_hash from EIP-4844.
 func KZGToVersionedHash(kzg kzg4844.Commitment) common.Hash {
 	h := sha256.Sum256(kzg[:])
 	h[0] = blobCommitmentVersionKZG
 
 	return h
+}
+
+// DecodeBlob decode blob data.
+func DecodeBlob(blob []byte) ([]byte, error) {
+	if len(blob) != params.BlobTxFieldElementsPerBlob*32 {
+		return nil, errBlobInvalid
+	}
+	log.Info("OK")
+	var data []byte
+	for i, j := 0, 0; i < params.BlobTxFieldElementsPerBlob; i++ {
+		data = append(data, blob[j:j+31]...)
+		j += 32
+	}
+
+	i := len(data) - 1
+	for ; i >= 0; i-- {
+		if data[i] != 0x00 {
+			break
+		}
+	}
+	data = data[:i+1]
+	return data, nil
 }

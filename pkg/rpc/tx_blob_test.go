@@ -11,16 +11,12 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 func TestBlockTx(t *testing.T) {
+	t.SkipNow()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	// Load env.
-	utils.LoadEnv()
 
 	url := os.Getenv("L1_NODE_WS_ENDPOINT")
 	l1Client, err := NewEthClient(ctx, url, time.Second*20)

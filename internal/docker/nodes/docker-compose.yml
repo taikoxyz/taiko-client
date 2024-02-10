@@ -3,7 +3,7 @@ version: "3.9"
 services:
   l1_node:
     container_name: l1_node
-    image: ghcr.dockerproxy.com/foundry-rs/foundry:latest
+    image: ghcr.dockerproxy.com/foundry-rs/foundry:nightly-4a643801d0b3855934cdec778e33e79c79971783
     restart: unless-stopped
     pull_policy: always
     ports:
@@ -12,8 +12,6 @@ services:
       - anvil
       - --host
       - "0.0.0.0"
-      - --hardfork
-      - "cancun"
 
   l2_execution_engine:
     container_name: l2_node
@@ -21,7 +19,7 @@ services:
     restart: unless-stopped
     pull_policy: always
     volumes:
-      - ./taikogeth:/host
+      - .:/host
     ports:
       - "8545"
       - "8546"
@@ -33,7 +31,7 @@ services:
       - --syncmode
       - full
       - --datadir
-      - /host/taiko-geth
+      - /data/taiko-geth
       - --networkid
       - "167001"
       - --metrics

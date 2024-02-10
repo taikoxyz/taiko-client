@@ -1,16 +1,12 @@
 #!/bin/bash
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source scripts/common.sh
 
-source "$DIR"/common.sh
+DOCKER_SERVICE_LIST=("l1_node" "l2_execution_engine")
 
 # start docker compose service list
 echo "start docker compose service: ${DOCKER_SERVICE_LIST[*]}"
 
-# Init docker
-compose_up "${DOCKER_INIT_LIST[@]}"
-
-# Start docker containers.
 compose_up "${DOCKER_SERVICE_LIST[@]}"
 
 # show all the running containers

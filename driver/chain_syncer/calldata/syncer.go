@@ -251,7 +251,7 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	// Check whether the transactions list is valid.
-	hint, invalidTxIndex, err := s.txListValidator.ValidateTxList(event.BlockId, txListBytes)
+	hint, invalidTxIndex, err := s.txListValidator.ValidateTxList(event.BlockId, txListBytes, event.Meta.BlobUsed)
 	if err != nil {
 		return fmt.Errorf("failed to validate transactions list: %w", err)
 	}

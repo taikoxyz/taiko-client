@@ -311,7 +311,8 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 	ctx context.Context,
 	txListBytes []byte,
 	nonce *uint64,
-	isReplacement bool) (*types.Transaction, error) {
+	isReplacement bool,
+) (*types.Transaction, error) {
 	// Make sidecar in order to get blob hash.
 	sideCar, err := rpc.MakeSidecarWithSingleBlob(txListBytes)
 	if err != nil {

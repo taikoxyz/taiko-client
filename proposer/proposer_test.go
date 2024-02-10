@@ -43,7 +43,6 @@ func (s *ProposerTestSuite) SetupTest() {
 			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		},
-		ProposeBlockTxGasLimit:              1000000,
 		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		ProposeInterval:                     &proposeInterval,
@@ -58,7 +57,6 @@ func (s *ProposerTestSuite) SetupTest() {
 		TierFeePriceBump:                    common.Big2,
 		MaxTierFeePriceBumps:                3,
 		ExtraData:                           "test",
-		BlobAllowed:                         true,
 		L1BlockBuilderTip:                   common.Big0,
 	}))
 
@@ -177,8 +175,8 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		[]byte{},
 	)
 
-	//s.SetL1Automine(false)
-	//defer s.SetL1Automine(true)
+	s.SetL1Automine(false)
+	defer s.SetL1Automine(true)
 
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L1ChainID), s.p.L1ProposerPrivKey)
 	s.Nil(err)
@@ -188,25 +186,12 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	var (
-		ctx   = context.Background()
-		newTx *types.Transaction
+	newTx, err := s.p.sendProposeBlockTx(
+		context.Background(),
+		encoded,
+		&nonce,
+		true,
 	)
-	nonce++
-	if s.p.BlobAllowed {
-		newTx, err = s.p.sendProposeBlockTxWithBlobHash(
-			ctx,
-			encoded,
-			&nonce,
-			true)
-	} else {
-		newTx, err = s.p.sendProposeBlockTx(
-			context.Background(),
-			encoded,
-			&nonce,
-			true,
-		)
-	}
 	s.Nil(err)
 	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }

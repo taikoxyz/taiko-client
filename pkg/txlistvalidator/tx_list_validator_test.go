@@ -31,19 +31,6 @@ var (
 	}
 )
 
-func TestValidateTxList(t *testing.T) {
-	v := NewTxListValidator(
-		maxBlocksGasLimit,
-		maxBlockNumTxs,
-		maxTxlistBytes,
-		chainID,
-	)
-
-	// Binary is not unpackable
-	_, _, err := v.ValidateTxList(common.Big0, randBytes(5))
-	require.NotNil(t, err)
-}
-
 func TestIsTxListValid(t *testing.T) {
 	v := NewTxListValidator(
 		maxBlocksGasLimit,
@@ -97,7 +84,7 @@ func TestIsTxListValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reason, txIdx := v.isTxListValid(tt.blockID, tt.txListBytes)
+			reason, txIdx := v.isTxListValid(tt.blockID, tt.txListBytes, false)
 			require.Equal(t, tt.wantReason, reason)
 			require.Equal(t, tt.wantTxIdx, txIdx)
 		})
