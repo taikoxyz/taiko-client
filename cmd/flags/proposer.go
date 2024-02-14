@@ -124,7 +124,7 @@ var (
 	}
 	BlobAllowed = &cli.BoolFlag{
 		Name:  "blobAllowed",
-		Usage: "Send blob tx when propose block",
+		Usage: "Send EIP-4844 blob transactions when proposing blocks",
 		Value: false,
 	}
 	L1BlockBuilderTip = &cli.Uint64Flag{
