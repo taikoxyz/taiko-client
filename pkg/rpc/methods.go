@@ -364,29 +364,6 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*struct {
 	return GetProtocolStateVariables(c.TaikoL1, opts)
 }
 
-// GetStorageRoot returns a contract's storage root at the given height.
-func (c *Client) GetStorageRoot(
-	ctx context.Context,
-	client *EthClient,
-	contract common.Address,
-	height *big.Int,
-) (common.Hash, error) {
-	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
-	defer cancel()
-
-	proof, err := client.GetProof(
-		ctxWithTimeout,
-		contract,
-		[]string{"0x0000000000000000000000000000000000000000000000000000000000000000"},
-		height,
-	)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	return proof.StorageHash, nil
-}
-
 // CheckL1ReorgFromL2EE checks whether the L1 chain has been reorged from the L1Origin records in L2 EE,
 // if so, returns the l1Current cursor and L2 blockID that need to reset to.
 func (c *Client) CheckL1ReorgFromL2EE(
@@ -521,7 +498,7 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 		return false, err
 	}
 
-	l1BlockHash, l1SignalRoot, l1HeightInAnchor, parentGasUsed, err := c.getSyncedL1SnippetFromAnchor(
+	l1BlockHash, l1StateRoot, l1HeightInAnchor, parentGasUsed, err := c.getSyncedL1SnippetFromAnchor(
 		ctx,
 		block.Transactions()[0],
 	)
@@ -564,17 +541,12 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 		return true, nil
 	}
 
-	currentRoot, err := c.GetStorageRoot(ctx, c.L1, l1SignalService, l1Header.Number)
-	if err != nil {
-		return false, err
-	}
-
-	if currentRoot != l1SignalRoot {
+	if l1Header.Root != l1StateRoot {
 		log.Info(
-			"Reorg detected due to L1 signal root mismatch",
+			"Reorg detected due to L1 state root mismatch",
 			"blockID", blockID,
-			"l1SignalRootInAnchor", l1SignalRoot,
-			"l1SignalRoot", currentRoot,
+			"l1StateRootInAnchor", l1StateRoot,
+			"l1StateRoot", l1Header.Root,
 		)
 		return true, nil
 	}
@@ -588,7 +560,7 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 	tx *types.Transaction,
 ) (
 	l1BlockHash common.Hash,
-	l1SignalRoot common.Hash,
+	l1StateRoot common.Hash,
 	l1Height uint64,
 	parentGasUsed uint32,
 	err error,
@@ -616,13 +588,13 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 			0,
 			fmt.Errorf("failed to parse l1BlockHash from anchor transaction calldata")
 	}
-	l1SignalRoot, ok = args["l1SignalRoot"].([32]byte)
+	l1StateRoot, ok = args["l1StateRoot"].([32]byte)
 	if !ok {
 		return common.Hash{},
 			common.Hash{},
 			0,
 			0,
-			fmt.Errorf("failed to parse l1SignalRoot from anchor transaction calldata")
+			fmt.Errorf("failed to parse l1StateRoot from anchor transaction calldata")
 	}
 	l1Height, ok = args["l1Height"].(uint64)
 	if !ok {
@@ -641,7 +613,7 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 			fmt.Errorf("failed to parse parentGasUsed from anchor transaction calldata")
 	}
 
-	return l1BlockHash, l1SignalRoot, l1Height, parentGasUsed, nil
+	return l1BlockHash, l1StateRoot, l1Height, parentGasUsed, nil
 }
 
 // CheckL1ReorgFromL1Cursor checks whether the L1 chain has been reorged from the given l1Current cursor,

@@ -356,8 +356,7 @@ func (p *Proposer) sendProposeBlockTx(
 
 	hookCalls := make([]encoding.HookCall, 0)
 
-	// initially just use the AssignmentHook default.
-	// TODO: flag for additional hook addresses and data.
+	// Initially just use the AssignmentHook default.
 	hookInputData, err := encoding.EncodeAssignmentHookInput(&encoding.AssignmentHookInput{
 		Assignment: assignment,
 		Tip:        p.L1BlockBuilderTip,
@@ -373,6 +372,7 @@ func (p *Proposer) sendProposeBlockTx(
 
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		AssignedProver:    assignedProver,
+		Coinbase:          p.proposerAddress,
 		ExtraData:         rpc.StringToBytes32(p.ExtraData),
 		TxListByteOffset:  common.Big0,
 		TxListByteSize:    common.Big0,

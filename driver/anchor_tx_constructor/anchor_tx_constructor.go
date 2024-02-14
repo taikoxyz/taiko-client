@@ -64,7 +64,7 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 		return nil, err
 	}
 
-	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L1, c.signalServiceAddress, l1Height)
+	l1Header, err := c.rpc.L1.HeaderByHash(ctx, l1Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -72,12 +72,12 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 	log.Info(
 		"Anchor arguments",
 		"l1Hash", l1Hash,
-		"signalRoot", signalRoot,
+		"stateRoot", l1Header.Root,
 		"l1Height", l1Height,
 		"gasUsed", parentGasUsed,
 	)
 
-	return c.rpc.TaikoL2.Anchor(opts, l1Hash, signalRoot, l1Height.Uint64(), uint32(parentGasUsed))
+	return c.rpc.TaikoL2.Anchor(opts, l1Hash, l1Header.Root, l1Height.Uint64(), uint32(parentGasUsed))
 }
 
 // transactOpts is a utility method to create some transact options of the anchor transaction in given L2 block with

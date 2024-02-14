@@ -85,12 +85,16 @@ var (
 			Type: "bytes32",
 		},
 		{
-			Name: "signalRoot",
+			Name: "stateRoot",
 			Type: "bytes32",
 		},
 		{
 			Name: "graffiti",
 			Type: "bytes32",
+		},
+		{
+			Name: "__reserved",
+			Type: "bytes32[2]",
 		},
 	}
 	tierProofComponents = []abi.ArgumentMarshaling{
@@ -106,6 +110,10 @@ var (
 	blockParamsComponents = []abi.ArgumentMarshaling{
 		{
 			Name: "assignedProver",
+			Type: "address",
+		},
+		{
+			Name: "coinbase",
 			Type: "address",
 		},
 		{

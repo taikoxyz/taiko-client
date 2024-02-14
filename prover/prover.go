@@ -1099,14 +1099,24 @@ func (p *Prover) isValidProof(
 		return false, err
 	}
 
-	header, err := p.rpc.L2.HeaderByNumber(ctx, blockID)
+	l2Header, err := p.rpc.L2.HeaderByNumber(ctx, blockID)
+	if err != nil {
+		return false, err
+	}
+
+	l1Origin, err := p.rpc.L2.L1OriginByID(ctx, blockID)
+	if err != nil {
+		return false, err
+	}
+
+	l1Header, err := p.rpc.L1.HeaderByNumber(ctx, new(big.Int).Sub(l1Origin.L1BlockHeight, common.Big1))
 	if err != nil {
 		return false, err
 	}
 
 	return parent.Hash() == parentHash &&
-		header.Hash() == blockHash &&
-		header.Root == stateRoot, nil
+		l2Header.Hash() == blockHash &&
+		l1Header.Root == stateRoot, nil
 }
 
 // requestProofByBlockID performs a proving operation for the given block.

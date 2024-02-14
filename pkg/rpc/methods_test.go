@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"math/big"
-	"os"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -116,7 +115,7 @@ func TestGetSyncedL1SnippetFromAnchor(t *testing.T) {
 	client := newTestClient(t)
 
 	l1BlockHash := randomHash()
-	l1SignalRoot := randomHash()
+	l1StateRoot := randomHash()
 	l1Height := randomHash().Big().Uint64()
 	parentGasUsed := uint32(randomHash().Big().Uint64())
 
@@ -129,17 +128,17 @@ func TestGetSyncedL1SnippetFromAnchor(t *testing.T) {
 	opts.NoSend = true
 	opts.GasLimit = 1_000_000
 
-	tx, err := client.TaikoL2.Anchor(opts, l1BlockHash, l1SignalRoot, l1Height, parentGasUsed)
+	tx, err := client.TaikoL2.Anchor(opts, l1BlockHash, l1StateRoot, l1Height, parentGasUsed)
 	require.Nil(t, err)
 
 	syncedL1BlockHash,
-		syncedL1SignalRoot,
+		syncedL1StateRoot,
 		syncedL1Height,
 		syncedParentGasUsed,
 		err := client.getSyncedL1SnippetFromAnchor(context.Background(), tx)
 	require.Nil(t, err)
 	require.Equal(t, l1BlockHash, syncedL1BlockHash)
-	require.Equal(t, l1SignalRoot, syncedL1SignalRoot)
+	require.Equal(t, l1StateRoot, syncedL1StateRoot)
 	require.Equal(t, l1Height, syncedL1Height)
 	require.Equal(t, parentGasUsed, syncedParentGasUsed)
 }
@@ -178,16 +177,6 @@ func TestGetPoolContentValid(t *testing.T) {
 		defaultMaxTransactionsPerBlock,
 	)
 	require.Nil(t, err2)
-}
-
-func TestGetStorageRootNewestBlock(t *testing.T) {
-	client := newTestClient(t)
-	_, err := client.GetStorageRoot(
-		context.Background(),
-		client.L1,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
-		nil)
-	require.Nil(t, err)
 }
 
 // randomHash generates a random blob of data and returns it as a hash.

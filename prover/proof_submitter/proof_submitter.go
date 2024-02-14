@@ -133,9 +133,9 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		return err
 	}
 
-	signalRoot, err := s.rpc.GetStorageRoot(ctx, s.rpc.L2, s.l2SignalService, block.Number())
+	l1Header, err := s.rpc.L1.HeaderByHash(ctx, event.Meta.L1Hash)
 	if err != nil {
-		return fmt.Errorf("failed to get L2 signal service storage root: %w", err)
+		return err
 	}
 
 	// Request proof.
@@ -149,7 +149,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		MetaHash:           blockInfo.MetaHash,
 		BlockHash:          block.Hash(),
 		ParentHash:         block.ParentHash(),
-		StateRoot:          signalRoot,
+		StateRoot:          l1Header.Root,
 		EventL1Hash:        event.Raw.BlockHash,
 		Graffiti:           common.Bytes2Hex(s.graffiti[:]),
 		GasUsed:            block.GasUsed(),

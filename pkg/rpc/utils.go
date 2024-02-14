@@ -189,17 +189,17 @@ func GetBlockProofStatus(
 		return nil, err
 	}
 
-	l2Header, err := cli.L2.HeaderByHash(ctxWithTimeout, l1Origin.L2BlockHash)
+	l1Header, err := cli.L1.HeaderByNumber(ctxWithTimeout, new(big.Int).Sub(l1Origin.L1BlockHeight, common.Big1))
 	if err != nil {
 		return nil, err
 	}
 
-	if l1Origin.L2BlockHash != transition.BlockHash || transition.StateRoot != l2Header.Root {
+	if l1Origin.L2BlockHash != transition.BlockHash || transition.StateRoot != l1Header.Root {
 		log.Info(
 			"Different block hash or state root detected, try submitting a contest",
 			"localBlockHash", common.BytesToHash(l1Origin.L2BlockHash[:]),
 			"protocolTransitionBlockHash", common.BytesToHash(transition.BlockHash[:]),
-			"localStateRoot", l2Header.Root,
+			"localStateRoot", l1Header.Root,
 			"protocolTransitionStateRoot", common.BytesToHash(transition.StateRoot[:]),
 		)
 		return &BlockProofStatus{

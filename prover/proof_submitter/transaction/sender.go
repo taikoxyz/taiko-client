@@ -114,7 +114,7 @@ func (s *Sender) Send(
 			"blockID", proofWithHeader.BlockID,
 			"parentHash", proofWithHeader.Header.ParentHash,
 			"hash", proofWithHeader.Header.Hash(),
-			"signalRoot", proofWithHeader.Opts.StateRoot,
+			"stateRoot", proofWithHeader.Opts.StateRoot,
 			"txHash", tx.Hash(),
 			"tier", proofWithHeader.Tier,
 			"isContest", len(proofWithHeader.Proof) == 0,
