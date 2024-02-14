@@ -31,7 +31,7 @@ var (
 
 // LibProvingMetaData contains all meta data concerning the LibProving contract.
 var LibProvingMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"RETURN_LIVENESS_BOND\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"TIER_OP\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"ProvingPaused\",\"inputs\":[{\"name\":\"paused\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransitionContested\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"tran\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.Transition\",\"components\":[{\"name\":\"parentHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"signalRoot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"graffiti\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"name\":\"contester\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"contestBond\",\"type\":\"uint96\",\"indexed\":false,\"internalType\":\"uint96\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransitionProved\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"tran\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.Transition\",\"components\":[{\"name\":\"parentHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"signalRoot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"graffiti\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"name\":\"prover\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"validityBond\",\"type\":\"uint96\",\"indexed\":false,\"internalType\":\"uint96\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"L1_ALREADY_CONTESTED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_ALREADY_PROVED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_ASSIGNED_PROVER_NOT_ALLOWED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_BLOCK_MISMATCH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_BLOCK_ID\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_PAUSE_STATUS\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_TIER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_TRANSITION\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_MISSING_VERIFIER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_NOT_ASSIGNED_PROVER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_UNEXPECTED_TRANSITION_ID\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_UNEXPECTED_TRANSITION_TIER\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"RETURN_LIVENESS_BOND\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"TIER_OP\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"ProvingPaused\",\"inputs\":[{\"name\":\"paused\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransitionContested\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"tran\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.Transition\",\"components\":[{\"name\":\"parentHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"graffiti\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"__reserved\",\"type\":\"bytes32[2]\",\"internalType\":\"bytes32[2]\"}]},{\"name\":\"contester\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"contestBond\",\"type\":\"uint96\",\"indexed\":false,\"internalType\":\"uint96\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransitionProved\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"tran\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.Transition\",\"components\":[{\"name\":\"parentHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"graffiti\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"__reserved\",\"type\":\"bytes32[2]\",\"internalType\":\"bytes32[2]\"}]},{\"name\":\"prover\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"validityBond\",\"type\":\"uint96\",\"indexed\":false,\"internalType\":\"uint96\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"L1_ALREADY_CONTESTED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_ALREADY_PROVED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_ASSIGNED_PROVER_NOT_ALLOWED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_BLOCK_MISMATCH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_BLOCK_ID\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_PAUSE_STATUS\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_TIER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_TRANSITION\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_MISSING_VERIFIER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_NOT_ASSIGNED_PROVER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_UNEXPECTED_TRANSITION_ID\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_UNEXPECTED_TRANSITION_TIER\",\"inputs\":[]}]",
 }
 
 // LibProvingABI is the input ABI used to generate the binding from.
@@ -453,9 +453,9 @@ type LibProvingTransitionContested struct {
 	Raw         types.Log // Blockchain specific contextual infos
 }
 
-// FilterTransitionContested is a free log retrieval operation binding the contract event 0xb4c0a86c1ff239277697775b1e91d3375fd3a5ef6b345aa4e2f6001c890558f6.
+// FilterTransitionContested is a free log retrieval operation binding the contract event 0x92ee4daf4a9124a814c1d90529646bd7211ca10a263f1fedf17a79274a8365da.
 //
-// Solidity: event TransitionContested(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32) tran, address contester, uint96 contestBond, uint16 tier)
+// Solidity: event TransitionContested(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32,bytes32[2]) tran, address contester, uint96 contestBond, uint16 tier)
 func (_LibProving *LibProvingFilterer) FilterTransitionContested(opts *bind.FilterOpts, blockId []*big.Int) (*LibProvingTransitionContestedIterator, error) {
 
 	var blockIdRule []interface{}
@@ -470,9 +470,9 @@ func (_LibProving *LibProvingFilterer) FilterTransitionContested(opts *bind.Filt
 	return &LibProvingTransitionContestedIterator{contract: _LibProving.contract, event: "TransitionContested", logs: logs, sub: sub}, nil
 }
 
-// WatchTransitionContested is a free log subscription operation binding the contract event 0xb4c0a86c1ff239277697775b1e91d3375fd3a5ef6b345aa4e2f6001c890558f6.
+// WatchTransitionContested is a free log subscription operation binding the contract event 0x92ee4daf4a9124a814c1d90529646bd7211ca10a263f1fedf17a79274a8365da.
 //
-// Solidity: event TransitionContested(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32) tran, address contester, uint96 contestBond, uint16 tier)
+// Solidity: event TransitionContested(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32,bytes32[2]) tran, address contester, uint96 contestBond, uint16 tier)
 func (_LibProving *LibProvingFilterer) WatchTransitionContested(opts *bind.WatchOpts, sink chan<- *LibProvingTransitionContested, blockId []*big.Int) (event.Subscription, error) {
 
 	var blockIdRule []interface{}
@@ -512,9 +512,9 @@ func (_LibProving *LibProvingFilterer) WatchTransitionContested(opts *bind.Watch
 	}), nil
 }
 
-// ParseTransitionContested is a log parse operation binding the contract event 0xb4c0a86c1ff239277697775b1e91d3375fd3a5ef6b345aa4e2f6001c890558f6.
+// ParseTransitionContested is a log parse operation binding the contract event 0x92ee4daf4a9124a814c1d90529646bd7211ca10a263f1fedf17a79274a8365da.
 //
-// Solidity: event TransitionContested(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32) tran, address contester, uint96 contestBond, uint16 tier)
+// Solidity: event TransitionContested(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32,bytes32[2]) tran, address contester, uint96 contestBond, uint16 tier)
 func (_LibProving *LibProvingFilterer) ParseTransitionContested(log types.Log) (*LibProvingTransitionContested, error) {
 	event := new(LibProvingTransitionContested)
 	if err := _LibProving.contract.UnpackLog(event, "TransitionContested", log); err != nil {
@@ -601,9 +601,9 @@ type LibProvingTransitionProved struct {
 	Raw          types.Log // Blockchain specific contextual infos
 }
 
-// FilterTransitionProved is a free log retrieval operation binding the contract event 0xc195e4be3b936845492b8be4b1cf604db687a4d79ad84d979499c136f8e6701f.
+// FilterTransitionProved is a free log retrieval operation binding the contract event 0x1efc698e2ebb5505ec4e3374917edad08ecb1e298103bed89c04aad9e901f47f.
 //
-// Solidity: event TransitionProved(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32) tran, address prover, uint96 validityBond, uint16 tier)
+// Solidity: event TransitionProved(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32,bytes32[2]) tran, address prover, uint96 validityBond, uint16 tier)
 func (_LibProving *LibProvingFilterer) FilterTransitionProved(opts *bind.FilterOpts, blockId []*big.Int) (*LibProvingTransitionProvedIterator, error) {
 
 	var blockIdRule []interface{}
@@ -618,9 +618,9 @@ func (_LibProving *LibProvingFilterer) FilterTransitionProved(opts *bind.FilterO
 	return &LibProvingTransitionProvedIterator{contract: _LibProving.contract, event: "TransitionProved", logs: logs, sub: sub}, nil
 }
 
-// WatchTransitionProved is a free log subscription operation binding the contract event 0xc195e4be3b936845492b8be4b1cf604db687a4d79ad84d979499c136f8e6701f.
+// WatchTransitionProved is a free log subscription operation binding the contract event 0x1efc698e2ebb5505ec4e3374917edad08ecb1e298103bed89c04aad9e901f47f.
 //
-// Solidity: event TransitionProved(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32) tran, address prover, uint96 validityBond, uint16 tier)
+// Solidity: event TransitionProved(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32,bytes32[2]) tran, address prover, uint96 validityBond, uint16 tier)
 func (_LibProving *LibProvingFilterer) WatchTransitionProved(opts *bind.WatchOpts, sink chan<- *LibProvingTransitionProved, blockId []*big.Int) (event.Subscription, error) {
 
 	var blockIdRule []interface{}
@@ -660,9 +660,9 @@ func (_LibProving *LibProvingFilterer) WatchTransitionProved(opts *bind.WatchOpt
 	}), nil
 }
 
-// ParseTransitionProved is a log parse operation binding the contract event 0xc195e4be3b936845492b8be4b1cf604db687a4d79ad84d979499c136f8e6701f.
+// ParseTransitionProved is a log parse operation binding the contract event 0x1efc698e2ebb5505ec4e3374917edad08ecb1e298103bed89c04aad9e901f47f.
 //
-// Solidity: event TransitionProved(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32) tran, address prover, uint96 validityBond, uint16 tier)
+// Solidity: event TransitionProved(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32,bytes32[2]) tran, address prover, uint96 validityBond, uint16 tier)
 func (_LibProving *LibProvingFilterer) ParseTransitionProved(log types.Log) (*LibProvingTransitionProved, error) {
 	event := new(LibProvingTransitionProved)
 	if err := _LibProving.contract.UnpackLog(event, "TransitionProved", log); err != nil {

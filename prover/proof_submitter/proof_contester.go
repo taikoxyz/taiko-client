@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
-	"fmt"
 	"math/big"
 	"strings"
 	"time"
@@ -114,11 +113,6 @@ func (c *ProofContester) SubmitContest(
 		return err
 	}
 
-	signalRoot, err := c.rpc.GetStorageRoot(ctx, c.rpc.L2, c.l2SignalService, blockID)
-	if err != nil {
-		return fmt.Errorf("failed to get L2 signal service storage root: %w", err)
-	}
-
 	l1HeaderProposedIn, err := c.rpc.L1.HeaderByNumber(ctx, proposedIn)
 	if err != nil {
 		return err
@@ -133,7 +127,7 @@ func (c *ProofContester) SubmitContest(
 			Proof:   []byte{},
 			Opts: &proofProducer.ProofRequestOptions{
 				EventL1Hash: l1HeaderProposedIn.Hash(),
-				SignalRoot:  signalRoot,
+				StateRoot:   l1HeaderProposedIn.Root,
 			},
 			Tier: tier,
 		},
@@ -144,7 +138,7 @@ func (c *ProofContester) SubmitContest(
 			&bindings.TaikoDataTransition{
 				ParentHash: header.ParentHash,
 				BlockHash:  header.Hash(),
-				SignalRoot: signalRoot,
+				StateRoot:  header.Root,
 				Graffiti:   c.graffiti,
 			},
 			&bindings.TaikoDataTierProof{
