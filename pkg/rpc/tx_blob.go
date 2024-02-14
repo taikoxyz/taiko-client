@@ -2,14 +2,11 @@ package rpc
 
 import (
 	"errors"
-	"fmt"
-
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
 )
 
@@ -106,69 +103,82 @@ func (c *EthClient) createBlobTx(
 	return types.NewTx(blobTx), nil
 }
 
-// MakeSidecarWithSingleBlob make a sidecar that just include one blob.
-func MakeSidecarWithSingleBlob(data []byte) (*types.BlobTxSidecar, error) {
-	if len(data) > BlobBytes {
-		return nil, fmt.Errorf("data is bigger than 128k")
+// MakeSidecar make a sidecar that just include one blob.
+func MakeSidecar(data []byte) (*types.BlobTxSidecar, error) {
+	sideCar := &types.BlobTxSidecar{Blobs: EncodeBlobs(data)}
+	for _, blob := range sideCar.Blobs {
+		commitment, err := kzg4844.BlobToCommitment(blob)
+		if err != nil {
+			return nil, err
+		}
+		proof, err := kzg4844.ComputeBlobProof(blob, commitment)
+		if err != nil {
+			return nil, err
+		}
+		sideCar.Commitments = append(sideCar.Commitments, commitment)
+		sideCar.Proofs = append(sideCar.Proofs, proof)
 	}
-	blob := EncodeBlobs(data)[0]
-	commitment, err := kzg4844.BlobToCommitment(blob)
-	if err != nil {
-		return nil, err
+	return sideCar, nil
+}
+
+func encode(origin []byte) []byte {
+	var res []byte
+	for ; len(origin) >= 31; origin = origin[31:] {
+		data := [32]byte{}
+		copy(data[1:], origin[:31])
+		res = append(res, data[:]...)
 	}
-	proof, err := kzg4844.ComputeBlobProof(blob, commitment)
-	if err != nil {
-		return nil, err
+	if len(origin) > 0 {
+		data := make([]byte, len(origin)+1)
+		copy(data[1:], origin)
+		res = append(res, data...)
 	}
-	return &types.BlobTxSidecar{
-		Blobs:       []kzg4844.Blob{blob},
-		Commitments: []kzg4844.Commitment{commitment},
-		Proofs:      []kzg4844.Proof{proof},
-	}, nil
+	return res
 }
 
 // EncodeBlobs encode bytes into Blob type.
-func EncodeBlobs(data []byte) []kzg4844.Blob {
-	blobs := []kzg4844.Blob{{}}
-	blobIndex := 0
-	fieldIndex := -1
-	numOfElems := BlobBytes / 32
-	for i := 0; i < len(data); i += 31 {
-		fieldIndex++
-		if fieldIndex == numOfElems {
-			if blobIndex >= 1 {
-				break
-			}
-			blobs = append(blobs, kzg4844.Blob{})
-			blobIndex++
-			fieldIndex = 0
-		}
-		max := i + 31
-		if max > len(data) {
-			max = len(data)
-		}
-		copy(blobs[blobIndex][fieldIndex*32+1:], data[i:max])
+func EncodeBlobs(origin []byte) []kzg4844.Blob {
+	data := encode(origin)
+	var blobs []kzg4844.Blob
+	for ; len(data) >= BlobBytes; data = data[BlobBytes:] {
+		blob := kzg4844.Blob{}
+		copy(blob[:], data[:BlobBytes])
+		blobs = append(blobs, blob)
+	}
+	if len(data) > 0 {
+		blob := kzg4844.Blob{}
+		copy(blob[:], data)
+		blobs = append(blobs, blob)
 	}
 	return blobs
 }
 
-// DecodeBlob decode blob data.
-func DecodeBlob(blob []byte) []byte {
-	if len(blob) != params.BlobTxFieldElementsPerBlob*32 {
-		panic("invalid blob encoding")
-	}
-	var data []byte
-	for i, j := 0, 0; i < params.BlobTxFieldElementsPerBlob; i++ {
-		data = append(data, blob[j:j+31]...)
-		j += 32
-	}
-
-	i := len(data) - 1
+func decode(origin []byte) []byte {
+	var i = len(origin) - 1
 	for ; i >= 0; i-- {
-		if data[i] != 0x00 {
+		if origin[i] != 0 {
 			break
 		}
 	}
-	data = data[:i+1]
-	return data
+	origin = origin[:i+1]
+
+	var res []byte
+	for ; len(origin) >= 32; origin = origin[32:] {
+		data := [31]byte{}
+		copy(data[:], origin[1:])
+		res = append(res, data[:]...)
+	}
+	if len(origin) > 0 {
+		res = append(res, origin[1:]...)
+	}
+	return res
+}
+
+// DecodeBlobs decode blob data.
+func DecodeBlobs(blobs []kzg4844.Blob) ([]byte, error) {
+	var res []byte
+	for _, blob := range blobs {
+		res = append(res, decode(blob[:])...)
+	}
+	return res, nil
 }

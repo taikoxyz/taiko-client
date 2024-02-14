@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"math/big"
 	"os"
 	"testing"
 	"time"
@@ -12,6 +13,12 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 )
+
+var _modulus big.Int // q stored as big.Int
+
+func init() {
+	_modulus.SetString("73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001", 16)
+}
 
 func TestBlockTx(t *testing.T) {
 	t.SkipNow()
@@ -38,10 +45,13 @@ func TestBlockTx(t *testing.T) {
 	assert.NoError(t, err)
 	t.Logf("address: %s, balance: %s", opts.From.String(), balance.String())
 
-	sidecar, err := MakeSidecarWithSingleBlob([]byte("s"))
-	assert.NoError(t, err)
+	data, dErr := os.ReadFile("./tx_blob.go")
+	assert.NoError(t, dErr)
+	//data := []byte{'s'}
+	sideCar, sErr := MakeSidecar(data)
+	assert.NoError(t, sErr)
 
-	tx, err := l1Client.TransactBlobTx(opts, nil, nil, sidecar)
+	tx, err := l1Client.TransactBlobTx(opts, nil, nil, sideCar)
 	assert.NoError(t, err)
 
 	receipt, err := bind.WaitMined(ctx, l1Client, tx)
@@ -51,4 +61,16 @@ func TestBlockTx(t *testing.T) {
 	t.Log("blob hash: ", tx.BlobHashes()[0].String())
 	t.Log("block number: ", receipt.BlockNumber.Uint64())
 	t.Log("tx hash: ", receipt.TxHash.String())
+}
+
+func TestMakeSideCar(t *testing.T) {
+	origin, err := os.ReadFile("./tx_blob.go")
+	assert.NoError(t, err)
+
+	sideCar, mErr := MakeSidecar(origin)
+	assert.NoError(t, mErr)
+
+	origin1, dErr := DecodeBlobs(sideCar.Blobs)
+	assert.NoError(t, dErr)
+	assert.Equal(t, origin, origin1)
 }
