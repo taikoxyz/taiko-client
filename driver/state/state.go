@@ -162,7 +162,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 					"blockID", e.BlockId,
 					"parentHash", common.Hash(e.Tran.ParentHash),
 					"hash", common.Hash(e.Tran.BlockHash),
-					"signalRoot", common.Hash(e.Tran.SignalRoot),
+					"stateRoot", common.Hash(e.Tran.StateRoot),
 					"prover", e.Prover,
 				)
 			case e := <-s.blockVerifiedCh:
@@ -170,7 +170,7 @@ func (s *State) startSubscriptions(ctx context.Context) {
 					"📈 Block verified",
 					"blockID", e.BlockId,
 					"hash", common.Hash(e.BlockHash),
-					"signalRoot", common.Hash(e.SignalRoot),
+					"stateRoot", common.Hash(e.StateRoot),
 					"assignedProver", e.AssignedProver,
 					"prover", e.Prover,
 				)

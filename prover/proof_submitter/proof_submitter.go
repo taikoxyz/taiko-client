@@ -149,7 +149,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		MetaHash:           blockInfo.MetaHash,
 		BlockHash:          block.Hash(),
 		ParentHash:         block.ParentHash(),
-		SignalRoot:         signalRoot,
+		StateRoot:          signalRoot,
 		EventL1Hash:        event.Raw.BlockHash,
 		Graffiti:           common.Bytes2Hex(s.graffiti[:]),
 		GasUsed:            block.GasUsed(),
@@ -218,7 +218,7 @@ func (s *ProofSubmitter) SubmitProof(
 		&bindings.TaikoDataTransition{
 			ParentHash: proofWithHeader.Header.ParentHash,
 			BlockHash:  proofWithHeader.Opts.BlockHash,
-			SignalRoot: proofWithHeader.Opts.SignalRoot,
+			StateRoot:  proofWithHeader.Opts.StateRoot,
 			Graffiti:   s.graffiti,
 		},
 		&bindings.TaikoDataTierProof{

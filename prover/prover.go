@@ -901,7 +901,7 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 		"blockID", e.BlockId,
 		"parentHash", common.Bytes2Hex(e.Tran.ParentHash[:]),
 		"hash", common.Bytes2Hex(e.Tran.BlockHash[:]),
-		"signalRoot", common.BytesToHash(e.Tran.SignalRoot[:]),
+		"stateRoot", common.BytesToHash(e.Tran.StateRoot[:]),
 		"contester", e.Contester,
 		"bond", e.ContestBond,
 	)
@@ -926,7 +926,7 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 		e.BlockId,
 		e.Tran.ParentHash,
 		contestedTransition.BlockHash,
-		contestedTransition.SignalRoot,
+		contestedTransition.StateRoot,
 	)
 	if err != nil {
 		return err
@@ -937,7 +937,7 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 			"blockID", e.BlockId,
 			"parentHash", common.Bytes2Hex(e.Tran.ParentHash[:]),
 			"hash", common.Bytes2Hex(contestedTransition.BlockHash[:]),
-			"signalRoot", common.BytesToHash(contestedTransition.SignalRoot[:]),
+			"stateRoot", common.BytesToHash(contestedTransition.StateRoot[:]),
 			"contester", e.Contester,
 			"bond", e.ContestBond,
 		)
@@ -963,7 +963,7 @@ func (p *Prover) onBlockVerified(_ context.Context, e *bindings.TaikoL1ClientBlo
 		"New verified block",
 		"blockID", e.BlockId,
 		"hash", common.BytesToHash(e.BlockHash[:]),
-		"signalRoot", common.BytesToHash(e.SignalRoot[:]),
+		"stateRoot", common.BytesToHash(e.StateRoot[:]),
 		"assignedProver", e.AssignedProver,
 		"prover", e.Prover,
 	)
@@ -994,7 +994,7 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 		event.BlockId,
 		event.Tran.ParentHash,
 		event.Tran.BlockHash,
-		event.Tran.SignalRoot,
+		event.Tran.StateRoot,
 	)
 	if err != nil {
 		return err
@@ -1015,7 +1015,7 @@ func (p *Prover) onTransitionProved(ctx context.Context, event *bindings.TaikoL1
 		"tier", event.Tier,
 		"parentHash", common.Bytes2Hex(event.Tran.ParentHash[:]),
 		"blockHash", common.Bytes2Hex(event.Tran.BlockHash[:]),
-		"signalRoot", common.Bytes2Hex(event.Tran.SignalRoot[:]),
+		"stateRoot", common.Bytes2Hex(event.Tran.StateRoot[:]),
 	)
 
 	return p.requestProofByBlockID(event.BlockId, new(big.Int).SetUint64(blockInfo.ProposedIn), event.Tier, event)
@@ -1092,39 +1092,21 @@ func (p *Prover) isValidProof(
 	blockID *big.Int,
 	parentHash common.Hash,
 	blockHash common.Hash,
-	signalRoot common.Hash,
+	stateRoot common.Hash,
 ) (bool, error) {
 	parent, err := p.rpc.L2ParentByBlockID(ctx, blockID)
 	if err != nil {
 		return false, err
 	}
 
-	block, err := p.rpc.L2.BlockByNumber(ctx, blockID)
-	if err != nil {
-		return false, err
-	}
-
-	l2SignalService, err := p.rpc.TaikoL2.Resolve0(
-		&bind.CallOpts{Context: ctx, BlockNumber: blockID},
-		rpc.StringToBytes32("signal_service"),
-		false,
-	)
-	if err != nil {
-		return false, err
-	}
-	root, err := p.rpc.GetStorageRoot(
-		ctx,
-		p.rpc.L2,
-		l2SignalService,
-		blockID,
-	)
+	header, err := p.rpc.L2.HeaderByNumber(ctx, blockID)
 	if err != nil {
 		return false, err
 	}
 
 	return parent.Hash() == parentHash &&
-		block.Hash() == blockHash &&
-		root == signalRoot, nil
+		header.Hash() == blockHash &&
+		header.Root == stateRoot, nil
 }
 
 // requestProofByBlockID performs a proving operation for the given block.
