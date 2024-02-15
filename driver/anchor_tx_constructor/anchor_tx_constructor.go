@@ -17,7 +17,7 @@ import (
 )
 
 // Each TaikoL2.anchor transaction should use this value as it's gas limit.
-const anchorGasLimit = 250_000
+const AnchorGasLimit = 1_000_000
 
 // AnchorTxConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
 // each L2 block, which is always the first transaction.
@@ -121,7 +121,7 @@ func (c *AnchorTxConstructor) transactOpts(
 		Context:   ctx,
 		GasFeeCap: baseFee,
 		GasTipCap: common.Big0,
-		GasLimit:  c.GasLimit(),
+		GasLimit:  AnchorGasLimit,
 		NoSend:    true,
 	}, nil
 }
@@ -143,11 +143,6 @@ func (c *AnchorTxConstructor) signTxPayload(hash []byte) ([]byte, error) {
 	}
 
 	return sig[:], nil
-}
-
-// GasLimit returns protocol's anchorTxGasLimit constant.
-func (c *AnchorTxConstructor) GasLimit() uint64 {
-	return anchorGasLimit
 }
 
 // SignalServiceAddress returns protocol's L1 singalService constant address.

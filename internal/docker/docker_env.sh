@@ -14,7 +14,6 @@ until cast chain-id --rpc-url "$L2_PROBE_URL" 2> /dev/null; do
     sleep 1
 done
 
-
 L1_NODE_PORT=$(docker port l1_node | grep '0.0.0.0' | awk -F ':' '{print $2}')
 export L1_NODE_HTTP_ENDPOINT=http://localhost:$L1_NODE_PORT
 export L1_NODE_WS_ENDPOINT=ws://localhost:$L1_NODE_PORT
