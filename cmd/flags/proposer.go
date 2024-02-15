@@ -22,7 +22,7 @@ var (
 	}
 	L2SuggestedFeeRecipient = &cli.StringFlag{
 		Name:     "l2.suggestedFeeRecipient",
-		Usage:    "Address of the proposed block's suggested fee recipient",
+		Usage:    "Address of the proposed block's suggested L2 fee recipient",
 		Required: true,
 		Category: proposerCategory,
 	}
