@@ -100,6 +100,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		AssignmentHookAddress: common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 
 		L1ProposerPrivKey:          l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:            &proposeInterval,
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         12 * time.Second,
