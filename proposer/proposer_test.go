@@ -110,6 +110,8 @@ func (s *ProposerTestSuite) TestProposeOp() {
 
 	event := <-sink
 
+	s.Equal(event.Meta.Coinbase, s.p.L2SuggestedFeeRecipient)
+
 	_, isPending, err := s.p.rpc.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	s.Nil(err)
 	s.False(isPending)
