@@ -367,8 +367,7 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 
 	hookCalls := make([]encoding.HookCall, 0)
 
-	// initially just use the AssignmentHook default.
-	// TODO: flag for additional hook addresses and data.
+	// Initially just use the AssignmentHook default.
 	hookInputData, err := encoding.EncodeAssignmentHookInput(&encoding.AssignmentHookInput{
 		Assignment: assignment,
 		Tip:        common.Big0, // TODO: flag for tip
