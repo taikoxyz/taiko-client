@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"context"
-	"math/big"
 	"os"
 	"testing"
 	"time"
@@ -13,12 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 )
-
-var _modulus big.Int // q stored as big.Int
-
-func init() {
-	_modulus.SetString("73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001", 16)
-}
 
 func TestBlockTx(t *testing.T) {
 	t.SkipNow()
