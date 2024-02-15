@@ -25,7 +25,7 @@ type ProofRequestOptions struct {
 	MetaHash           common.Hash
 	BlockHash          common.Hash
 	ParentHash         common.Hash
-	SignalRoot         common.Hash
+	StateRoot          common.Hash
 	EventL1Hash        common.Hash
 	Graffiti           string
 	GasUsed            uint64

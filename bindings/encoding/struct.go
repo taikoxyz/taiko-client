@@ -29,6 +29,7 @@ type HookCall struct {
 // BlockParams should be same with TaikoData.BlockParams.
 type BlockParams struct {
 	AssignedProver    common.Address
+	Coinbase          common.Address
 	ExtraData         [32]byte
 	BlobHash          [32]byte
 	TxListByteOffset  *big.Int

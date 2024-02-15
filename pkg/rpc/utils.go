@@ -189,27 +189,18 @@ func GetBlockProofStatus(
 		return nil, err
 	}
 
-	l2SignalService, err := cli.TaikoL2.Resolve0(
-		&bind.CallOpts{Context: ctx, BlockNumber: id},
-		StringToBytes32("signal_service"),
-		false,
-	)
+	l1Header, err := cli.L1.HeaderByNumber(ctxWithTimeout, new(big.Int).Sub(l1Origin.L1BlockHeight, common.Big1))
 	if err != nil {
 		return nil, err
 	}
 
-	root, err := cli.GetStorageRoot(ctx, cli.L2, l2SignalService, id)
-	if err != nil {
-		return nil, err
-	}
-
-	if l1Origin.L2BlockHash != transition.BlockHash || transition.SignalRoot != root {
+	if l1Origin.L2BlockHash != transition.BlockHash || transition.StateRoot != l1Header.Root {
 		log.Info(
-			"Different block hash or signal root detected, try submitting a contest",
+			"Different block hash or state root detected, try submitting a contest",
 			"localBlockHash", common.BytesToHash(l1Origin.L2BlockHash[:]),
 			"protocolTransitionBlockHash", common.BytesToHash(transition.BlockHash[:]),
-			"localSignalRoot", root,
-			"protocolTransitionSignalRoot", common.BytesToHash(transition.SignalRoot[:]),
+			"localStateRoot", l1Header.Root,
+			"protocolTransitionStateRoot", common.BytesToHash(transition.StateRoot[:]),
 		)
 		return &BlockProofStatus{
 			IsSubmitted:            true,
@@ -225,7 +216,7 @@ func GetBlockProofStatus(
 			"blockID", id,
 			"parent", parent.Hash().Hex(),
 			"hash", common.Bytes2Hex(transition.BlockHash[:]),
-			"signalRoot", common.Bytes2Hex(transition.SignalRoot[:]),
+			"stateRoot", common.Bytes2Hex(transition.StateRoot[:]),
 			"timestamp", transition.Timestamp,
 			"contester", transition.Contester,
 		)
@@ -243,7 +234,7 @@ func GetBlockProofStatus(
 		"prover", transition.Prover,
 		"parent", parent.Hash().Hex(),
 		"hash", common.Bytes2Hex(transition.BlockHash[:]),
-		"signalRoot", common.Bytes2Hex(transition.SignalRoot[:]),
+		"stateRoot", common.Bytes2Hex(transition.StateRoot[:]),
 		"timestamp", transition.Timestamp,
 		"contester", transition.Contester,
 	)

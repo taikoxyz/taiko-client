@@ -279,7 +279,7 @@ func (p *ZkevmRpcdProducer) requestProof(
 				MetaHash:          opts.MetaHash.Hex()[2:],
 				BlockHash:         opts.BlockHash.Hex()[2:],
 				ParentHash:        opts.ParentHash.Hex()[2:],
-				SignalRoot:        opts.SignalRoot.Hex()[2:],
+				SignalRoot:        opts.StateRoot.Hex()[2:],
 				Graffiti:          opts.Graffiti,
 				GasUsed:           opts.GasUsed,
 				ParentGasUsed:     opts.ParentGasUsed,
