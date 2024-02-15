@@ -18,6 +18,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 )
 
@@ -285,7 +286,7 @@ func (p *ZkevmRpcdProducer) requestProof(
 				ParentGasUsed:     opts.ParentGasUsed,
 				BlockMaxGasLimit:  uint64(p.ProtocolConfig.BlockMaxGasLimit),
 				MaxBytesPerTxList: p.ProtocolConfig.BlockMaxTxListBytes.Uint64(),
-				AnchorGasLimit:    encoding.AnchorTxGasLimit,
+				AnchorGasLimit:    anchorTxConstructor.AnchorGasLimit,
 				RequestMetaData: &RequestMetaData{
 					L1Hash:           common.BytesToHash(meta.L1Hash[:]).Hex()[2:],
 					Difficulty:       common.BytesToHash(meta.Difficulty[:]).Hex()[2:],

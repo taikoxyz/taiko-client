@@ -36,7 +36,7 @@ func (s *AnchorTxConstructorTestSuite) SetupTest() {
 }
 
 func (s *AnchorTxConstructorTestSuite) TestGasLimit() {
-	s.Greater(s.c.GasLimit(), uint64(0))
+	s.Greater(AnchorGasLimit, 0)
 }
 
 func (s *AnchorTxConstructorTestSuite) TestAssembleAnchorTx() {
