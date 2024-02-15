@@ -425,7 +425,7 @@ func (s *Syncer) createExecutionPayloads(
 		BlockMetadata: &engine.BlockMetadata{
 			HighestBlockID: headBlockID,
 			Beneficiary:    event.Meta.Coinbase,
-			GasLimit:       uint64(event.Meta.GasLimit) + s.anchorConstructor.GasLimit(),
+			GasLimit:       uint64(event.Meta.GasLimit) + anchorTxConstructor.AnchorGasLimit,
 			Timestamp:      event.Meta.Timestamp,
 			TxList:         txListBytes,
 			MixHash:        event.Meta.Difficulty,
