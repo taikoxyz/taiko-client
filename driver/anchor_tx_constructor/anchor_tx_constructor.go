@@ -121,7 +121,7 @@ func (c *AnchorTxConstructor) transactOpts(
 		Context:   ctx,
 		GasFeeCap: baseFee,
 		GasTipCap: common.Big0,
-		GasLimit:  c.GasLimit(),
+		GasLimit:  AnchorGasLimit,
 		NoSend:    true,
 	}, nil
 }
@@ -143,11 +143,6 @@ func (c *AnchorTxConstructor) signTxPayload(hash []byte) ([]byte, error) {
 	}
 
 	return sig[:], nil
-}
-
-// GasLimit returns protocol's anchorTxGasLimit constant.
-func (c *AnchorTxConstructor) GasLimit() uint64 {
-	return AnchorGasLimit
 }
 
 // SignalServiceAddress returns protocol's L1 singalService constant address.
