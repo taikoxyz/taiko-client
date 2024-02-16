@@ -42,6 +42,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(taikoL2, c.TaikoL2Address.String())
 		s.Equal(taikoToken, c.TaikoTokenAddress.String())
 		s.Equal(goldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
+		s.Equal(goldenTouchAddress, c.L2SuggestedFeeRecipient)
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
 		s.Equal(1, len(c.LocalAddresses))
 		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
@@ -72,6 +73,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.TaikoL2Address.Name, taikoL2,
 		"--" + flags.TaikoTokenAddress.Name, taikoToken,
 		"--" + flags.L1ProposerPrivKey.Name, encoding.GoldenTouchPrivKey,
+		"--" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"--" + flags.ProposeInterval.Name, proposeInterval,
 		"--" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
 		"--" + flags.ProposeBlockTxReplacementMultiplier.Name, "5",
@@ -99,7 +101,22 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextPrivKeyErr() {
 	}), "invalid L1 proposer private key")
 }
 
+func (s *ProposerTestSuite) TestNewConfigFromCliContextL2RecipErr() {
+	app := s.SetupApp()
+
+	s.ErrorContains(app.Run([]string{
+		"TestNewConfigFromCliContextL2RecipErr",
+		"--" + flags.L1ProposerPrivKey.Name, encoding.GoldenTouchPrivKey,
+		"--" + flags.ProposeInterval.Name, proposeInterval,
+		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
+		"--" + flags.L2SuggestedFeeRecipient.Name, "notAnAddress",
+	}), "invalid L2 suggested fee recipient address")
+}
+
 func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
+	goldenTouchAddress, err := s.RPCClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	s.Nil(err)
+
 	app := s.SetupApp()
 
 	s.ErrorContains(app.Run([]string{
@@ -107,6 +124,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
 		"--" + flags.L1ProposerPrivKey.Name, encoding.GoldenTouchPrivKey,
 		"--" + flags.ProposeInterval.Name, proposeInterval,
 		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
+		"--" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"--" + flags.TxPoolLocals.Name, "notAnAddress",
 	}), "invalid account in --txpool.locals")
 }
@@ -120,6 +138,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContextReplMultErr",
 		"--" + flags.L1ProposerPrivKey.Name, encoding.GoldenTouchPrivKey,
+		"--" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"--" + flags.ProposeInterval.Name, proposeInterval,
 		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
 		"--" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
@@ -136,6 +155,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
 		&cli.StringFlag{Name: flags.TaikoTokenAddress.Name},
 		&cli.StringFlag{Name: flags.L1ProposerPrivKey.Name},
+		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
 		&cli.DurationFlag{Name: flags.ProposeEmptyBlocksInterval.Name},
 		&cli.DurationFlag{Name: flags.ProposeInterval.Name},
 		&cli.StringFlag{Name: flags.TxPoolLocals.Name},

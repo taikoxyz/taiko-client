@@ -21,6 +21,7 @@ type Config struct {
 	*rpc.ClientConfig
 	AssignmentHookAddress               common.Address
 	L1ProposerPrivKey                   *ecdsa.PrivateKey
+	L2SuggestedFeeRecipient             common.Address
 	ExtraData                           string
 	ProposeInterval                     *time.Duration
 	LocalAddresses                      []common.Address
@@ -63,6 +64,11 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	if c.IsSet(flags.ProposeEmptyBlocksInterval.Name) {
 		interval := c.Duration(flags.ProposeEmptyBlocksInterval.Name)
 		proposeEmptyBlocksInterval = &interval
+	}
+
+	l2SuggestedFeeRecipient := c.String(flags.L2SuggestedFeeRecipient.Name)
+	if !common.IsHexAddress(l2SuggestedFeeRecipient) {
+		return nil, fmt.Errorf("invalid L2 suggested fee recipient address: %s", l2SuggestedFeeRecipient)
 	}
 
 	var localAddresses []common.Address
@@ -109,6 +115,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		},
 		AssignmentHookAddress:               common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:             common.HexToAddress(l2SuggestedFeeRecipient),
 		ExtraData:                           c.String(flags.ExtraData.Name),
 		ProposeInterval:                     proposingInterval,
 		LocalAddresses:                      localAddresses,
