@@ -17,7 +17,7 @@ type BlockSigner interface {
 }
 
 type Heartbeater interface {
-	SendHeartbeat(ctx context.Context) error
+	SendHeartbeat(ctx context.Context, latestL1Block uint64, latestL2Block uint64) error
 }
 
 // BlockSenderHeartbeater defines an interface that communicates with a central Guardian Prover server,

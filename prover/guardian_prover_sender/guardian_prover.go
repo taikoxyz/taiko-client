@@ -24,6 +24,8 @@ import (
 type healthCheckReq struct {
 	ProverAddress      string `json:"prover"`
 	HeartBeatSignature []byte `json:"heartBeatSignature"`
+	LatestL1Block      uint64 `json:"latestL1Block"`
+	LatestL2Block      uint64 `json:"latestL2Block"`
 }
 
 // signedBlockReq is the request body sent to the health check server when a block is signed.
@@ -255,7 +257,11 @@ func (s *GuardianProverBlockSender) Close() error {
 }
 
 // SendHeartbeat sends a heartbeat to the health check server.
-func (s *GuardianProverBlockSender) SendHeartbeat(ctx context.Context) error {
+func (s *GuardianProverBlockSender) SendHeartbeat(
+	ctx context.Context,
+	latestL1Block uint64,
+	latestL2Block uint64,
+) error {
 	sig, err := crypto.Sign(crypto.Keccak256Hash([]byte("HEART_BEAT")).Bytes(), s.privateKey)
 	if err != nil {
 		return err
@@ -264,6 +270,8 @@ func (s *GuardianProverBlockSender) SendHeartbeat(ctx context.Context) error {
 	req := &healthCheckReq{
 		HeartBeatSignature: sig,
 		ProverAddress:      s.proverAddress.Hex(),
+		LatestL1Block:      latestL1Block,
+		LatestL2Block:      latestL2Block,
 	}
 
 	if err := s.post(ctx, "healthCheck", req); err != nil {

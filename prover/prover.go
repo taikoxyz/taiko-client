@@ -1323,7 +1323,23 @@ func (p *Prover) heartbeatInterval(ctx context.Context) {
 		case <-p.ctx.Done():
 			return
 		case <-t.C:
-			if err := p.guardianProverSender.SendHeartbeat(ctx); err != nil {
+			latestL1Block, err := p.rpc.L1.BlockByNumber(ctx, nil)
+			if err != nil {
+				log.Error("guardian prover error getting latestL1Block", err)
+				continue
+			}
+
+			latestL2Block, err := p.rpc.L2.BlockByNumber(ctx, nil)
+			if err != nil {
+				log.Error("guardian prover error getting latestL2Block", err)
+				continue
+			}
+
+			if err := p.guardianProverSender.SendHeartbeat(
+				ctx,
+				latestL1Block.NumberU64(),
+				latestL2Block.NumberU64(),
+			); err != nil {
 				log.Error("Failed to send guardian prover heartbeat", "error", err)
 			}
 		}
