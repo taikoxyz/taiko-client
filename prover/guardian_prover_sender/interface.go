@@ -7,11 +7,17 @@ import (
 
 type BlockSigner interface {
 	SignAndSendBlock(ctx context.Context, blockID *big.Int) error
-	SendStartup(ctx context.Context, revision string, version string) error
+	SendStartup(
+		ctx context.Context,
+		revision string,
+		version string,
+		l1NodeVersion string,
+		l2NodeVersion string,
+	) error
 }
 
 type Heartbeater interface {
-	SendHeartbeat(ctx context.Context) error
+	SendHeartbeat(ctx context.Context, latestL1Block uint64, latestL2Block uint64) error
 }
 
 // BlockSenderHeartbeater defines an interface that communicates with a central Guardian Prover server,
