@@ -45,6 +45,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		},
 		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:             common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:                     &proposeInterval,
 		MaxProposedTxListsPerEpoch:          1,
 		ProposeBlockTxReplacementMultiplier: 2,
@@ -108,6 +109,8 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	s.Nil(s.p.ProposeOp(context.Background()))
 
 	event := <-sink
+
+	s.Equal(event.Meta.Coinbase, s.p.L2SuggestedFeeRecipient)
 
 	_, isPending, err := s.p.rpc.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
 	s.Nil(err)

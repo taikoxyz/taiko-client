@@ -372,7 +372,7 @@ func (p *Proposer) sendProposeBlockTx(
 
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		AssignedProver:    assignedProver,
-		Coinbase:          p.proposerAddress,
+		Coinbase:          p.L2SuggestedFeeRecipient,
 		ExtraData:         rpc.StringToBytes32(p.ExtraData),
 		TxListByteOffset:  common.Big0,
 		TxListByteSize:    common.Big0,
