@@ -36,10 +36,12 @@ type signedBlockReq struct {
 
 // startupReq is the request body send to the health check server when the guardian prover starts up.
 type startupReq struct {
-	ProverAddress string `json:"prover"`
-	Version       string `json:"version"`
-	Revision      string `json:"revision"`
-	Signature     []byte `json:"signature"`
+	ProverAddress   string `json:"prover"`
+	GuardianVersion string `json:"guardianVersion"`
+	L1NodeVersion   string `json:"l1NodeVersion"`
+	L2NodeVersion   string `json:"l2NodeVersion"`
+	Revision        string `json:"revision"`
+	Signature       []byte `json:"signature"`
 }
 
 // GuardianProverBlockSender is responsible for signing and sending known blocks to the health check server.
@@ -118,7 +120,13 @@ func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockI
 	)
 }
 
-func (s *GuardianProverBlockSender) SendStartup(ctx context.Context, revision string, version string) error {
+func (s *GuardianProverBlockSender) SendStartup(
+	ctx context.Context,
+	revision string,
+	version string,
+	l1NodeVersion string,
+	l2NodeVersion string,
+) error {
 	if s.healthCheckServerEndpoint == nil {
 		log.Info("No health check server endpoint set, returning early")
 		return nil
@@ -128,17 +136,22 @@ func (s *GuardianProverBlockSender) SendStartup(ctx context.Context, revision st
 		crypto.Keccak256Hash(
 			s.proverAddress.Bytes(),
 			[]byte(revision),
-			[]byte(version)).Bytes(),
+			[]byte(version),
+			[]byte(l1NodeVersion),
+			[]byte(l2NodeVersion),
+		).Bytes(),
 		s.privateKey)
 	if err != nil {
 		return err
 	}
 
 	req := &startupReq{
-		Revision:      revision,
-		Version:       version,
-		ProverAddress: s.proverAddress.Hex(),
-		Signature:     sig,
+		Revision:        revision,
+		GuardianVersion: version,
+		L1NodeVersion:   l1NodeVersion,
+		L2NodeVersion:   l2NodeVersion,
+		ProverAddress:   s.proverAddress.Hex(),
+		Signature:       sig,
 	}
 
 	if err := s.post(ctx, "startup", req); err != nil {

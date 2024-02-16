@@ -405,6 +405,8 @@ func (p *Prover) Start() error {
 			p.ctx,
 			version.CommitVersion(),
 			version.CommitVersion(),
+			"placeholder", // todo: get l1 node version
+			"placeholder", // todo: get l2 node version
 		); err != nil {
 			log.Crit("Failed to send guardian prover startup", "error", err)
 		}

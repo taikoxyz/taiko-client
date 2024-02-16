@@ -7,7 +7,13 @@ import (
 
 type BlockSigner interface {
 	SignAndSendBlock(ctx context.Context, blockID *big.Int) error
-	SendStartup(ctx context.Context, revision string, version string) error
+	SendStartup(
+		ctx context.Context,
+		revision string,
+		version string,
+		l1NodeVersion string,
+		l2NodeVersion string,
+	) error
 }
 
 type Heartbeater interface {
