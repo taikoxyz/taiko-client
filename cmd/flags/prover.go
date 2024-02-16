@@ -194,13 +194,11 @@ var (
 		Name:     "prover.l1NodeVersion",
 		Usage:    "Version or tag or the L1 Node Version used as an L1 RPC Url by this guardian prover",
 		Category: proverCategory,
-		Value:    "",
 	}
 	L2NodeVersion = &cli.StringFlag{
 		Name:     "prover.l1NodeVersion",
 		Usage:    "Version or tag or the L1 Node Version used as an L1 RPC Url by this guardian prover",
 		Category: proverCategory,
-		Value:    "",
 	}
 )
 
