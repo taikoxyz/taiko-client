@@ -11,6 +11,10 @@ import (
 	"github.com/holiman/uint256"
 )
 
+var (
+	errBlobInvalid = errors.New("invalid blob encoding")
+)
+
 // TransactBlobTx create, sign and send blob tx.
 func (c *EthClient) TransactBlobTx(
 	opts *bind.TransactOpts,
@@ -154,32 +158,39 @@ func EncodeBlobs(origin []byte) []kzg4844.Blob {
 	return blobs
 }
 
-func decode(origin []byte) []byte {
-	var i = len(origin) - 1
+func DecodeBlob(blob []byte) ([]byte, error) {
+	if len(blob) != BlobBytes {
+		return nil, errBlobInvalid
+	}
+	var i = len(blob) - 1
 	for ; i >= 0; i-- {
-		if origin[i] != 0 {
+		if blob[i] != 0 {
 			break
 		}
 	}
-	origin = origin[:i+1]
+	blob = blob[:i+1]
 
 	var res []byte
-	for ; len(origin) >= 32; origin = origin[32:] {
+	for ; len(blob) >= 32; blob = blob[32:] {
 		data := [31]byte{}
-		copy(data[:], origin[1:])
+		copy(data[:], blob[1:])
 		res = append(res, data[:]...)
 	}
-	if len(origin) > 0 {
-		res = append(res, origin[1:]...)
+	if len(blob) > 0 {
+		res = append(res, blob[1:]...)
 	}
-	return res
+	return res, nil
 }
 
 // DecodeBlobs decode blob data.
 func DecodeBlobs(blobs []kzg4844.Blob) ([]byte, error) {
 	var res []byte
 	for _, blob := range blobs {
-		res = append(res, decode(blob[:])...)
+		data, err := DecodeBlob(blob[:])
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, data...)
 	}
 	return res, nil
 }
