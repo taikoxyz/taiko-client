@@ -2,6 +2,7 @@ package prover
 
 import (
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 	"net/url"
@@ -57,6 +58,8 @@ type Config struct {
 	Allowance                               *big.Int
 	GuardianProverHealthCheckServerEndpoint *url.URL
 	RaikoHostEndpoint                       string
+	L1NodeVersion                           string
+	L2NodeVersion                           string
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -114,8 +117,18 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		if err := c.Set(flags.ProveUnassignedBlocks.Name, "true"); err != nil {
 			return nil, err
 		}
+
 		if err := c.Set(flags.ContesterMode.Name, "true"); err != nil {
 			return nil, err
+		}
+
+		// l1 and l2 node version flags are required only if guardian prover
+		if !c.IsSet(flags.L1NodeVersion.Name) {
+			return nil, errors.New("L1NodeVersion is required if guardian prover is set")
+		}
+
+		if !c.IsSet(flags.L2NodeVersion.Name) {
+			return nil, errors.New("L2NodeVersion is required if guardian prover is set")
 		}
 	}
 
@@ -165,5 +178,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		DatabasePath:                            c.String(flags.DatabasePath.Name),
 		DatabaseCacheSize:                       c.Uint64(flags.DatabaseCacheSize.Name),
 		Allowance:                               allowance,
+		L1NodeVersion:                           c.String(flags.L1NodeVersion.Name),
+		L2NodeVersion:                           c.String(flags.L2NodeVersion.Name),
 	}, nil
 }

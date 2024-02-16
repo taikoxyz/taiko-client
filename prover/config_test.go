@@ -15,8 +15,10 @@ import (
 var (
 	l1WsEndpoint   = os.Getenv("L1_NODE_WS_ENDPOINT")
 	l1HttpEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
+	l1NodeVersion  = "1.0.0"
 	l2WsEndpoint   = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
 	l2HttpEndpoint = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+	l2NodeVersion  = "0.1.0"
 	taikoL1        = os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2        = os.Getenv("TAIKO_L2_ADDRESS")
 	allowance      = "10000000000000000000000000000000000000000000000000"
@@ -50,6 +52,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal(uint64(minTierFee), c.MinPseZkevmTierFee.Uint64())
 		s.Equal(uint64(3), c.ProveBlockTxReplacementMultiplier)
 		s.Equal(uint64(256), c.ProveBlockMaxTxGasTipCap.Uint64())
+		s.Equal(c.L1NodeVersion, l1NodeVersion)
+		s.Equal(c.L2NodeVersion, l2NodeVersion)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 		s.True(c.ProveUnassignedBlocks)
 		s.Equal("dbPath", c.DatabasePath)
@@ -88,6 +92,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.DatabaseCacheSize.Name, "128",
 		"--" + flags.MaxProposedIn.Name, "100",
 		"--" + flags.Allowance.Name, allowance,
+		"--" + flags.L1NodeVersion.Name, l1NodeVersion,
+		"--" + flags.L2NodeVersion.Name, l2NodeVersion,
 	}))
 }
 
@@ -129,6 +135,8 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.ProverAssignmentHookAddress.Name},
 		&cli.StringFlag{Name: flags.Allowance.Name},
 		&cli.StringFlag{Name: flags.ContesterMode.Name},
+		&cli.StringFlag{Name: flags.L1NodeVersion.Name},
+		&cli.StringFlag{Name: flags.L2NodeVersion.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
