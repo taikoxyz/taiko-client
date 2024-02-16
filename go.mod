@@ -9,6 +9,7 @@ require (
 	github.com/ethereum/go-ethereum v1.13.11
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/holiman/uint256 v1.2.4
+	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5

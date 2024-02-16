@@ -11,10 +11,15 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 func TestBlockTx(t *testing.T) {
 	t.SkipNow()
+	// Load environment variables.
+	utils.LoadEnv()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
