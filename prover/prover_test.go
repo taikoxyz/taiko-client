@@ -502,6 +502,8 @@ func (s *ProverTestSuite) initProver(
 		Allowance:                allowance,
 		RPCTimeout:               3 * time.Second,
 		BackOffMaxRetrys:         3,
+		L1NodeVersion:            "1.0.0",
+		L2NodeVersion:            "0.1.0",
 	}))
 	p.srv = testutils.NewTestProverServer(
 		&s.ClientTestSuite,

@@ -190,6 +190,16 @@ var (
 		Value:    false,
 		Category: proverCategory,
 	}
+	L1NodeVersion = &cli.StringFlag{
+		Name:     "prover.l1NodeVersion",
+		Usage:    "Version or tag or the L1 Node Version used as an L1 RPC Url by this guardian prover",
+		Category: proverCategory,
+	}
+	L2NodeVersion = &cli.StringFlag{
+		Name:     "prover.l2NodeVersion",
+		Usage:    "Version or tag or the L2 Node Version used as an L2 RPC Url by this guardian prover",
+		Category: proverCategory,
+	}
 )
 
 // ProverFlags All prover flags.
@@ -227,4 +237,6 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	DatabaseCacheSize,
 	ProverAssignmentHookAddress,
 	Allowance,
+	L1NodeVersion,
+	L2NodeVersion,
 })

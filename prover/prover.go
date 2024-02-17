@@ -405,6 +405,8 @@ func (p *Prover) Start() error {
 			p.ctx,
 			version.CommitVersion(),
 			version.CommitVersion(),
+			p.cfg.L1NodeVersion,
+			p.cfg.L2NodeVersion,
 		); err != nil {
 			log.Crit("Failed to send guardian prover startup", "error", err)
 		}
@@ -1321,7 +1323,23 @@ func (p *Prover) heartbeatInterval(ctx context.Context) {
 		case <-p.ctx.Done():
 			return
 		case <-t.C:
-			if err := p.guardianProverSender.SendHeartbeat(ctx); err != nil {
+			latestL1Block, err := p.rpc.L1.BlockNumber(ctx)
+			if err != nil {
+				log.Error("guardian prover error getting latestL1Block", err)
+				continue
+			}
+
+			latestL2Block, err := p.rpc.L2.BlockNumber(ctx)
+			if err != nil {
+				log.Error("guardian prover error getting latestL2Block", err)
+				continue
+			}
+
+			if err := p.guardianProverSender.SendHeartbeat(
+				ctx,
+				latestL1Block,
+				latestL2Block,
+			); err != nil {
 				log.Error("Failed to send guardian prover heartbeat", "error", err)
 			}
 		}
