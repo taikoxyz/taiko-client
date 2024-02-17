@@ -128,6 +128,11 @@ var (
 		Value:    false,
 		Category: proposerCategory,
 	}
+	BlobAllowed = &cli.BoolFlag{
+		Name:  "blobAllowed",
+		Usage: "Send EIP-4844 blob transactions when proposing blocks",
+		Value: false,
+	}
 	L1BlockBuilderTip = &cli.Uint64Flag{
 		Name:     "l1BlockBuilderTip",
 		Usage:    "Amount you wish to tip the L1 block builder",
@@ -160,5 +165,6 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxTierFeePriceBumps,
 	ProposeBlockIncludeParentMetaHash,
 	ProposerAssignmentHookAddress,
+	BlobAllowed,
 	L1BlockBuilderTip,
 })

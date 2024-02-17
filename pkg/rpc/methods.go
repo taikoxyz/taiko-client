@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -15,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/prysmaticlabs/prysm/v4/beacon-chain/rpc/eth/blob"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -31,6 +33,9 @@ var (
 	waitL1OriginPollingInterval    = 3 * time.Second
 	defaultWaitL1OriginTimeout     = 3 * time.Minute
 	defaultMaxTransactionsPerBlock = uint64(79)
+
+	// Requset urls.
+	sidecarsRequestURL = "eth/v1/beacon/blob_sidecars/%d"
 )
 
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
@@ -292,9 +297,11 @@ func (p *L2SyncProgress) isSyncing() bool {
 		return false
 	}
 
-	return p.CurrentBlockID == nil ||
-		p.HighestBlockID == nil ||
-		p.CurrentBlockID.Cmp(p.HighestBlockID) < 0
+	if p.CurrentBlockID == nil || p.HighestBlockID == nil {
+		return true
+	}
+
+	return p.CurrentBlockID.Cmp(p.HighestBlockID) < 0
 }
 
 // L2ExecutionEngineSyncProgress fetches the sync progress of the given L2 execution engine.
@@ -729,4 +736,15 @@ func (c *Client) GetTiers(ctx context.Context) ([]*TierProviderTierWithID, error
 	}
 
 	return tiers, nil
+}
+
+// GetBlobs fetches blobs by the given slot from a L1 consensus client.
+func (c *Client) GetBlobs(ctx context.Context, slot *big.Int) ([]*blob.Sidecar, error) {
+	var sidecars *blob.SidecarsResponse
+	resBytes, err := c.L1Beacon.Get(ctx, fmt.Sprintf(sidecarsRequestURL, slot))
+	if err != nil {
+		return nil, err
+	}
+
+	return sidecars.Data, json.Unmarshal(resBytes, &sidecars)
 }

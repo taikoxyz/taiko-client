@@ -189,20 +189,10 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	signedAssignment, proverAddress, fee, err := s.p.proverSelector.AssignProver(
-		context.Background(),
-		s.p.tierFees,
-		crypto.Keccak256Hash(encoded),
-	)
-	s.Nil(err)
-
 	newTx, err := s.p.sendProposeBlockTx(
 		context.Background(),
 		encoded,
 		&nonce,
-		signedAssignment,
-		proverAddress,
-		fee,
 		true,
 	)
 	s.Nil(err)
