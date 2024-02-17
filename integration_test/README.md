@@ -10,7 +10,7 @@
 TAIKO_MONO_DIR=$taiko-mono ./integration_test/deploy_l1_contract.sh
 ```
 
-* show environment variables
+* expose environment variables into .env file.
 ```
 # replace $taiko-mono with the taiko-mono repo path.
 TAIKO_MONO_DIR=$taiko-mono ./integration_test/test_env.sh

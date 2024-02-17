@@ -2,11 +2,32 @@ package utils
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
+	"os"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/joho/godotenv"
 	"github.com/modern-go/reflect2"
 )
+
+func LoadEnv() {
+	// load test environment variables.
+	currentPath, err := os.Getwd()
+	if err != nil {
+		log.Warn("get current path failed", "err", err)
+	}
+	path := strings.Split(currentPath, "/taiko-client")
+	if len(path) == 0 {
+		log.Warn("not a taiko-client repo")
+	}
+	err = godotenv.Load(fmt.Sprintf("%s/taiko-client/.env", path[0]))
+	if err != nil {
+		log.Warn("failed to load env", "current path", currentPath, "err", err)
+	}
+}
 
 func RandUint64(max *big.Int) uint64 {
 	if max == nil {

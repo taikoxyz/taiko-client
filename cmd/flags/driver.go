@@ -14,6 +14,12 @@ var (
 		Required: true,
 		Category: driverCategory,
 	}
+	L1BeaconEndpoint = &cli.StringFlag{
+		Name:     "l1.beacon",
+		Usage:    "HTTP RPC endpoint of a L1 consensus client",
+		Required: true,
+		Category: driverCategory,
+	}
 	JWTSecret = &cli.StringFlag{
 		Name:     "jwtSecret",
 		Usage:    "Path to a JWT secret to use for authenticated RPC endpoints",
@@ -47,6 +53,7 @@ var (
 
 // DriverFlags All driver flags.
 var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
+	L1BeaconEndpoint,
 	L2WSEndpoint,
 	L2AuthEndpoint,
 	JWTSecret,
