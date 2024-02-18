@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/log"
 
@@ -96,22 +97,17 @@ func (s *Syncer) TriggerBeaconSync() error {
 // getVerifiedBlockPayload fetches the latest verified block's header, and converts it to an Engine API executable data,
 // which will be used to let the node to start beacon syncing.
 func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *engine.ExecutableData, error) {
-	var (
-		latestVerifiedBlock = s.state.GetLatestVerifiedBlock()
-	)
-
-	header, err := s.rpc.L2CheckPoint.HeaderByNumber(s.ctx, latestVerifiedBlock.ID)
+	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if header.Hash() != latestVerifiedBlock.Hash {
-		return nil, nil, fmt.Errorf(
-			"latest verified block hash mismatch: %s != %s", header.Hash(), latestVerifiedBlock.Hash,
-		)
+	header, err := s.rpc.L2CheckPoint.HeaderByNumber(s.ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
+	if err != nil {
+		return nil, nil, err
 	}
 
 	log.Info("Latest verified block header retrieved", "hash", header.Hash())
 
-	return latestVerifiedBlock.ID, encoding.ToExecutableData(header), nil
+	return new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId), encoding.ToExecutableData(header), nil
 }
