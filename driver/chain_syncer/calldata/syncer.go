@@ -517,5 +517,5 @@ func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, erro
 		return false, nil
 	}
 
-	return false, nil
+	return true, nil
 }
