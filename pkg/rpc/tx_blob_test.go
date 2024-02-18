@@ -16,7 +16,7 @@ import (
 )
 
 func TestBlockTx(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	// Load environment variables.
 	utils.LoadEnv()
 
