@@ -15,7 +15,7 @@ var (
 	errBlobInvalid = errors.New("invalid blob encoding")
 )
 
-// TransactBlobTx create, sign and send blob tx.
+// TransactBlobTx creates, signs and then sends blob transactions.
 func (c *EthClient) TransactBlobTx(
 	opts *bind.TransactOpts,
 	contract *common.Address,
@@ -26,7 +26,7 @@ func (c *EthClient) TransactBlobTx(
 	if opts.Signer == nil {
 		return nil, errors.New("no signer to authorize the transaction with")
 	}
-	// Create blob tx.
+	// Create blob tx
 	rawTx, err := c.createBlobTx(opts, contract, input, sidecar)
 	if err != nil {
 		return nil, err
@@ -44,14 +44,18 @@ func (c *EthClient) TransactBlobTx(
 	return signedTx, nil
 }
 
+// createBlobTx creates a blob transaction by given parameters.
 func (c *EthClient) createBlobTx(
 	opts *bind.TransactOpts,
 	contract *common.Address,
 	input []byte,
 	sidecar *types.BlobTxSidecar,
 ) (*types.Transaction, error) {
-	// Get nonce.
-	var nonce *hexutil.Uint64
+	// Fetch the nonce for the account
+	var (
+		nonce *hexutil.Uint64
+		gas   *hexutil.Uint64
+	)
 	if opts.Nonce != nil {
 		curNonce := hexutil.Uint64(opts.Nonce.Uint64())
 		nonce = &curNonce
@@ -65,9 +69,8 @@ func (c *EthClient) createBlobTx(
 		contract = &common.Address{}
 	}
 
-	var gas *hexutil.Uint64
 	if opts.GasLimit != 0 {
-		var gasVal = hexutil.Uint64(opts.GasLimit)
+		gasVal := hexutil.Uint64(opts.GasLimit)
 		gas = &gasVal
 	}
 
@@ -108,7 +111,7 @@ func (c *EthClient) createBlobTx(
 	return types.NewTx(blobTx), nil
 }
 
-// MakeSidecar make a sidecar that just include one blob.
+// MakeSidecar makes a sidecar which only includes one blob with the given data.
 func MakeSidecar(data []byte) (*types.BlobTxSidecar, error) {
 	sideCar := &types.BlobTxSidecar{Blobs: EncodeBlobs(data)}
 	for _, blob := range sideCar.Blobs {
@@ -141,7 +144,7 @@ func encode(origin []byte) []byte {
 	return res
 }
 
-// EncodeBlobs encode bytes into Blob type.
+// EncodeBlobs encodes bytes into a EIP-4844 blob.
 func EncodeBlobs(origin []byte) []kzg4844.Blob {
 	data := encode(origin)
 	var blobs []kzg4844.Blob
@@ -158,6 +161,7 @@ func EncodeBlobs(origin []byte) []kzg4844.Blob {
 	return blobs
 }
 
+// DecodeBlob decodes the given blob data.
 func DecodeBlob(blob []byte) ([]byte, error) {
 	if len(blob) != BlobBytes {
 		return nil, errBlobInvalid
@@ -182,7 +186,7 @@ func DecodeBlob(blob []byte) ([]byte, error) {
 	return res, nil
 }
 
-// DecodeBlobs decode blob data.
+// DecodeBlobs decodes the given blobs.
 func DecodeBlobs(blobs []kzg4844.Blob) ([]byte, error) {
 	var res []byte
 	for _, blob := range blobs {
