@@ -37,11 +37,6 @@ func (s *DriverStateTestSuite) TestGetL1Head() {
 	s.NotNil(l1Head)
 }
 
-func (s *DriverStateTestSuite) TestGetLatestVerifiedBlock() {
-	b := s.s.GetLatestVerifiedBlock()
-	s.NotNil(b.Hash)
-}
-
 func (s *DriverStateTestSuite) TestGetHeadBlockID() {
 	s.Equal(uint64(0), s.s.GetHeadBlockID().Uint64())
 }

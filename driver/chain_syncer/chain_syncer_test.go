@@ -109,7 +109,6 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	log.Info("L1HeaderByNumber head", "number", head.Number)
 	// (equiv to s.state.GetL2Head().Number)
 	log.Info("L2HeaderByNumber head", "number", l2Head.Number)
-	log.Info("LatestVerifiedBlock number", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
 
 	// increase evm time to make blocks verifiable.
 	s.IncreaseTime(uint64((1024 * time.Hour).Seconds()))
@@ -127,7 +126,6 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 
 	log.Info("L1HeaderByNumber head2", "number", head2.Number)
 	log.Info("L2HeaderByNumber head", "number", l2Head2.Number)
-	log.Info("LatestVerifiedBlock number", "number", s.s.state.GetLatestVerifiedBlock().ID.Uint64())
 
 	s.RevertSnapshot()
 }
@@ -150,5 +148,5 @@ func (s *ChainSyncerTestSuite) RevertSnapshot() {
 }
 
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead() {
-	s.True(s.s.AheadOfProtocolVerifiedHead())
+	s.True(s.s.AheadOfProtocolVerifiedHead(0))
 }
