@@ -31,7 +31,7 @@ var (
 
 // LibVerifyingMetaData contains all meta data concerning the LibVerifying contract.
 var LibVerifyingMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"isConfigValid\",\"inputs\":[{\"name\":\"config\",\"type\":\"tuple\",\"internalType\":\"structTaikoData.Config\",\"components\":[{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"blockMaxProposals\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"blockRingBufferSize\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"maxBlocksToVerifyPerProposal\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"blockMaxGasLimit\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"blockMaxTxListBytes\",\"type\":\"uint24\",\"internalType\":\"uint24\"},{\"name\":\"blobExpiry\",\"type\":\"uint24\",\"internalType\":\"uint24\"},{\"name\":\"blobAllowedForDA\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"livenessBond\",\"type\":\"uint96\",\"internalType\":\"uint96\"},{\"name\":\"ethDepositRingBufferSize\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ethDepositMinCountPerBlock\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"ethDepositMaxCountPerBlock\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"ethDepositMinAmount\",\"type\":\"uint96\",\"internalType\":\"uint96\"},{\"name\":\"ethDepositMaxAmount\",\"type\":\"uint96\",\"internalType\":\"uint96\"},{\"name\":\"ethDepositGas\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ethDepositMaxFee\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[{\"name\":\"isValid\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"pure\"},{\"type\":\"event\",\"name\":\"BlockVerified\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"assignedProver\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"prover\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"contestations\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"CrossChainSynced\",\"inputs\":[{\"name\":\"syncedInBlock\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"blockId\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"L1_BLOCK_MISMATCH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_CONFIG\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_TRANSITION_ID_ZERO\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"isConfigValid\",\"inputs\":[{\"name\":\"config\",\"type\":\"tuple\",\"internalType\":\"structTaikoData.Config\",\"components\":[{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"blockMaxProposals\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"blockRingBufferSize\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"maxBlocksToVerifyPerProposal\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"blockMaxGasLimit\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"blockMaxTxListBytes\",\"type\":\"uint24\",\"internalType\":\"uint24\"},{\"name\":\"blobExpiry\",\"type\":\"uint24\",\"internalType\":\"uint24\"},{\"name\":\"blobAllowedForDA\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"livenessBond\",\"type\":\"uint96\",\"internalType\":\"uint96\"},{\"name\":\"ethDepositRingBufferSize\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ethDepositMinCountPerBlock\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"ethDepositMaxCountPerBlock\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"ethDepositMinAmount\",\"type\":\"uint96\",\"internalType\":\"uint96\"},{\"name\":\"ethDepositMaxAmount\",\"type\":\"uint96\",\"internalType\":\"uint96\"},{\"name\":\"ethDepositGas\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ethDepositMaxFee\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"blockSyncThreshold\",\"type\":\"uint8\",\"internalType\":\"uint8\"}]}],\"outputs\":[{\"name\":\"isValid\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"pure\"},{\"type\":\"event\",\"name\":\"BlockVerified\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"assignedProver\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"prover\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"contestations\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"L1_BLOCK_MISMATCH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_CONFIG\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_TRANSITION_ID_ZERO\",\"inputs\":[]}]",
 }
 
 // LibVerifyingABI is the input ABI used to generate the binding from.
@@ -180,9 +180,9 @@ func (_LibVerifying *LibVerifyingTransactorRaw) Transact(opts *bind.TransactOpts
 	return _LibVerifying.Contract.contract.Transact(opts, method, params...)
 }
 
-// IsConfigValid is a free data retrieval call binding the contract method 0x3a5a6743.
+// IsConfigValid is a free data retrieval call binding the contract method 0xadcb4eac.
 //
-// Solidity: function isConfigValid((uint64,uint64,uint64,uint64,uint32,uint24,uint24,bool,uint96,uint256,uint64,uint64,uint96,uint96,uint256,uint256) config) pure returns(bool isValid)
+// Solidity: function isConfigValid((uint64,uint64,uint64,uint64,uint32,uint24,uint24,bool,uint96,uint256,uint64,uint64,uint96,uint96,uint256,uint256,uint8) config) pure returns(bool isValid)
 func (_LibVerifying *LibVerifyingCaller) IsConfigValid(opts *bind.CallOpts, config TaikoDataConfig) (bool, error) {
 	var out []interface{}
 	err := _LibVerifying.contract.Call(opts, &out, "isConfigValid", config)
@@ -197,16 +197,16 @@ func (_LibVerifying *LibVerifyingCaller) IsConfigValid(opts *bind.CallOpts, conf
 
 }
 
-// IsConfigValid is a free data retrieval call binding the contract method 0x3a5a6743.
+// IsConfigValid is a free data retrieval call binding the contract method 0xadcb4eac.
 //
-// Solidity: function isConfigValid((uint64,uint64,uint64,uint64,uint32,uint24,uint24,bool,uint96,uint256,uint64,uint64,uint96,uint96,uint256,uint256) config) pure returns(bool isValid)
+// Solidity: function isConfigValid((uint64,uint64,uint64,uint64,uint32,uint24,uint24,bool,uint96,uint256,uint64,uint64,uint96,uint96,uint256,uint256,uint8) config) pure returns(bool isValid)
 func (_LibVerifying *LibVerifyingSession) IsConfigValid(config TaikoDataConfig) (bool, error) {
 	return _LibVerifying.Contract.IsConfigValid(&_LibVerifying.CallOpts, config)
 }
 
-// IsConfigValid is a free data retrieval call binding the contract method 0x3a5a6743.
+// IsConfigValid is a free data retrieval call binding the contract method 0xadcb4eac.
 //
-// Solidity: function isConfigValid((uint64,uint64,uint64,uint64,uint32,uint24,uint24,bool,uint96,uint256,uint64,uint64,uint96,uint96,uint256,uint256) config) pure returns(bool isValid)
+// Solidity: function isConfigValid((uint64,uint64,uint64,uint64,uint32,uint24,uint24,bool,uint96,uint256,uint64,uint64,uint96,uint96,uint256,uint256,uint8) config) pure returns(bool isValid)
 func (_LibVerifying *LibVerifyingCallerSession) IsConfigValid(config TaikoDataConfig) (bool, error) {
 	return _LibVerifying.Contract.IsConfigValid(&_LibVerifying.CallOpts, config)
 }
@@ -371,161 +371,6 @@ func (_LibVerifying *LibVerifyingFilterer) WatchBlockVerified(opts *bind.WatchOp
 func (_LibVerifying *LibVerifyingFilterer) ParseBlockVerified(log types.Log) (*LibVerifyingBlockVerified, error) {
 	event := new(LibVerifyingBlockVerified)
 	if err := _LibVerifying.contract.UnpackLog(event, "BlockVerified", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// LibVerifyingCrossChainSyncedIterator is returned from FilterCrossChainSynced and is used to iterate over the raw logs and unpacked data for CrossChainSynced events raised by the LibVerifying contract.
-type LibVerifyingCrossChainSyncedIterator struct {
-	Event *LibVerifyingCrossChainSynced // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *LibVerifyingCrossChainSyncedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(LibVerifyingCrossChainSynced)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(LibVerifyingCrossChainSynced)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *LibVerifyingCrossChainSyncedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *LibVerifyingCrossChainSyncedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// LibVerifyingCrossChainSynced represents a CrossChainSynced event raised by the LibVerifying contract.
-type LibVerifyingCrossChainSynced struct {
-	SyncedInBlock uint64
-	BlockId       uint64
-	BlockHash     [32]byte
-	StateRoot     [32]byte
-	Raw           types.Log // Blockchain specific contextual infos
-}
-
-// FilterCrossChainSynced is a free log retrieval operation binding the contract event 0xf35ec3b262cf74881db1b8051c635496bccb1497a1e776dacb463d0e0e2b0f51.
-//
-// Solidity: event CrossChainSynced(uint64 indexed syncedInBlock, uint64 indexed blockId, bytes32 blockHash, bytes32 stateRoot)
-func (_LibVerifying *LibVerifyingFilterer) FilterCrossChainSynced(opts *bind.FilterOpts, syncedInBlock []uint64, blockId []uint64) (*LibVerifyingCrossChainSyncedIterator, error) {
-
-	var syncedInBlockRule []interface{}
-	for _, syncedInBlockItem := range syncedInBlock {
-		syncedInBlockRule = append(syncedInBlockRule, syncedInBlockItem)
-	}
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-
-	logs, sub, err := _LibVerifying.contract.FilterLogs(opts, "CrossChainSynced", syncedInBlockRule, blockIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return &LibVerifyingCrossChainSyncedIterator{contract: _LibVerifying.contract, event: "CrossChainSynced", logs: logs, sub: sub}, nil
-}
-
-// WatchCrossChainSynced is a free log subscription operation binding the contract event 0xf35ec3b262cf74881db1b8051c635496bccb1497a1e776dacb463d0e0e2b0f51.
-//
-// Solidity: event CrossChainSynced(uint64 indexed syncedInBlock, uint64 indexed blockId, bytes32 blockHash, bytes32 stateRoot)
-func (_LibVerifying *LibVerifyingFilterer) WatchCrossChainSynced(opts *bind.WatchOpts, sink chan<- *LibVerifyingCrossChainSynced, syncedInBlock []uint64, blockId []uint64) (event.Subscription, error) {
-
-	var syncedInBlockRule []interface{}
-	for _, syncedInBlockItem := range syncedInBlock {
-		syncedInBlockRule = append(syncedInBlockRule, syncedInBlockItem)
-	}
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-
-	logs, sub, err := _LibVerifying.contract.WatchLogs(opts, "CrossChainSynced", syncedInBlockRule, blockIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(LibVerifyingCrossChainSynced)
-				if err := _LibVerifying.contract.UnpackLog(event, "CrossChainSynced", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseCrossChainSynced is a log parse operation binding the contract event 0xf35ec3b262cf74881db1b8051c635496bccb1497a1e776dacb463d0e0e2b0f51.
-//
-// Solidity: event CrossChainSynced(uint64 indexed syncedInBlock, uint64 indexed blockId, bytes32 blockHash, bytes32 stateRoot)
-func (_LibVerifying *LibVerifyingFilterer) ParseCrossChainSynced(log types.Log) (*LibVerifyingCrossChainSynced, error) {
-	event := new(LibVerifyingCrossChainSynced)
-	if err := _LibVerifying.contract.UnpackLog(event, "CrossChainSynced", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

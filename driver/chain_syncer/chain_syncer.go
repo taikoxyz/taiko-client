@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
@@ -65,10 +66,14 @@ func New(
 
 // Sync performs a sync operation to L2 execution engine's local chain.
 func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
+	needNewBeaconSyncTriggered, err := s.needNewBeaconSyncTriggered()
+	if err != nil {
+		return err
+	}
 	// If current L2 execution engine's chain is behind of the protocol's latest verified block head, and the
 	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
 	// latest verified block head.
-	if s.needNewBeaconSyncTriggered() {
+	if needNewBeaconSyncTriggered {
 		if err := s.beaconSyncer.TriggerBeaconSync(); err != nil {
 			return fmt.Errorf("trigger beacon sync error: %w", err)
 		}
@@ -113,8 +118,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 }
 
 // AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
-func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
-	verifiedHeightToCompare := s.state.GetLatestVerifiedBlock().ID.Uint64()
+func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead(verifiedHeightToCompare uint64) bool {
 	log.Debug(
 		"Checking whether the execution engine is ahead of protocol's verified head",
 		"latestVerifiedBlock", verifiedHeightToCompare,
@@ -141,11 +145,16 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead() bool {
 
 // needNewBeaconSyncTriggered checks whether the current L2 execution engine needs to trigger
 // another new beacon sync.
-func (s *L2ChainSyncer) needNewBeaconSyncTriggered() bool {
+func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (bool, error) {
+	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: s.ctx})
+	if err != nil {
+		return false, err
+	}
+
 	return s.p2pSyncVerifiedBlocks &&
-		s.state.GetLatestVerifiedBlock().ID.Uint64() > 0 &&
-		!s.AheadOfProtocolVerifiedHead() &&
-		!s.progressTracker.OutOfSync()
+		stateVars.B.LastVerifiedBlockId > 0 &&
+		!s.AheadOfProtocolVerifiedHead(stateVars.B.LastVerifiedBlockId) &&
+		!s.progressTracker.OutOfSync(), nil
 }
 
 // BeaconSyncer returns the inner beacon syncer.
