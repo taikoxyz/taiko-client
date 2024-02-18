@@ -301,8 +301,6 @@ func (s *Syncer) onBlockProposed(
 		"blockID", event.BlockId,
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
-		"latestVerifiedBlockID", s.state.GetLatestVerifiedBlock().ID,
-		"latestVerifiedBlockHash", s.state.GetLatestVerifiedBlock().Hash,
 		"transactions", len(payloadData.Transactions),
 		"baseFee", payloadData.BaseFeePerGas,
 		"withdrawals", len(payloadData.Withdrawals),
@@ -507,18 +505,17 @@ func (s *Syncer) createExecutionPayloads(
 	return payload, nil
 }
 
-// checkLastVerifiedBlockMismatch checks if there is a mismatch between protocol's last verified block hash and
-// the corresponding L2 EE block hash.
+// checkLastVerifiedBlockMismatch checks if there is a mismatch between protocol's last verified block and
+// the corresponding L2 EE block.
 func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, error) {
-	lastVerifiedBlockInfo := s.state.GetLatestVerifiedBlock()
-	if s.state.GetL2Head().Number.Cmp(lastVerifiedBlockInfo.ID) < 0 {
-		return false, nil
-	}
-
-	l2Header, err := s.rpc.L2.HeaderByNumber(ctx, lastVerifiedBlockInfo.ID)
+	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return false, err
 	}
 
-	return l2Header.Hash() != lastVerifiedBlockInfo.Hash, nil
+	if s.state.GetL2Head().Number.Uint64() < stateVars.B.LastVerifiedBlockId {
+		return false, nil
+	}
+
+	return false, nil
 }

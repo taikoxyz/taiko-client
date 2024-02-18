@@ -603,7 +603,7 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 			0,
 			fmt.Errorf("failed to parse l1StateRoot from anchor transaction calldata")
 	}
-	l1Height, ok = args["l1Height"].(uint64)
+	l1Height, ok = args["l1BlockId"].(uint64)
 	if !ok {
 		return common.Hash{},
 			common.Hash{},
