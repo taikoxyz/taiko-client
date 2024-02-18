@@ -26,7 +26,6 @@ type State struct {
 	l2TransitionProvedSub event.Subscription // TaikoL1.TransitionProved events
 	l2BlockVerifiedSub    event.Subscription // TaikoL1.BlockVerified events
 	l2BlockProposedSub    event.Subscription // TaikoL1.BlockProposed events
-	l2HeaderSyncedSub     event.Subscription // TaikoL1.HeaderSynced events
 
 	l1HeadCh           chan *types.Header
 	l2HeadCh           chan *types.Header
@@ -84,7 +83,6 @@ func (s *State) Close() {
 	s.l2BlockVerifiedSub.Unsubscribe()
 	s.l2BlockProposedSub.Unsubscribe()
 	s.l2TransitionProvedSub.Unsubscribe()
-	s.l2HeaderSyncedSub.Unsubscribe()
 }
 
 // init fetches the latest status and initializes the state instance.
