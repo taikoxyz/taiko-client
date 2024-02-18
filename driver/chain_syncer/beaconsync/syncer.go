@@ -95,7 +95,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 }
 
 // getVerifiedBlockPayload fetches the latest verified block's header, and converts it to an Engine API executable data,
-// which will be used to let the node to start beacon syncing.
+// which will be used to let the node start beacon syncing.
 func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *engine.ExecutableData, error) {
 	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 	if err != nil {
