@@ -513,9 +513,5 @@ func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, erro
 		return false, err
 	}
 
-	if s.state.GetL2Head().Number.Uint64() < stateVars.B.LastVerifiedBlockId {
-		return false, nil
-	}
-
-	return true, nil
+	return s.state.GetL2Head().Number.Uint64() < stateVars.B.LastVerifiedBlockId, nil
 }
