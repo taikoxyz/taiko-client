@@ -129,12 +129,12 @@ var (
 		Category: proposerCategory,
 	}
 	BlobAllowed = &cli.BoolFlag{
-		Name:  "blobAllowed",
+		Name:  "l1.blobAllowed",
 		Usage: "Send EIP-4844 blob transactions when proposing blocks",
 		Value: false,
 	}
 	L1BlockBuilderTip = &cli.Uint64Flag{
-		Name:     "l1BlockBuilderTip",
+		Name:     "l1.blockBuilderTip",
 		Usage:    "Amount you wish to tip the L1 block builder",
 		Value:    0,
 		Category: proposerCategory,
