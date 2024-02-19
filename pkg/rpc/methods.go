@@ -32,7 +32,7 @@ var (
 	syncProgressRecheckDelay       = 12 * time.Second
 	waitL1OriginPollingInterval    = 3 * time.Second
 	defaultWaitL1OriginTimeout     = 3 * time.Minute
-	defaultMaxTransactionsPerBlock = uint64(79)
+	defaultMaxTransactionsPerBlock = uint64(149)
 
 	// Requset urls.
 	sidecarsRequestURL = "eth/v1/beacon/blob_sidecars/%d"
