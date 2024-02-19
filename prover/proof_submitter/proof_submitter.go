@@ -146,7 +146,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		L1SignalService:    s.l1SignalService,
 		L2SignalService:    s.l2SignalService,
 		TaikoL2:            s.taikoL2Address,
-		MetaHash:           blockInfo.MetaHash,
+		MetaHash:           blockInfo.Blk.MetaHash,
 		BlockHash:          block.Hash(),
 		ParentHash:         block.ParentHash(),
 		StateRoot:          l1Header.Root,

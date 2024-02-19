@@ -7,10 +7,13 @@ import (
 	"math/big"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"modernc.org/mathutil"
 
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -20,26 +23,38 @@ type Config struct {
 	Confirmations uint64
 	// The maximum gas price can be used to send transaction.
 	MaxGasPrice uint64
+	gasRate     uint64
+	// The maximum number of pending transactions.
+	maxPendTxs int
+
+	retryTimes uint64
 }
 
 type TxConfirm struct {
+	retryTimes uint64
+	confirms   uint64
+
 	TxID    uint64
-	Confirm uint64
+	baseTx  *types.DynamicFeeTx
 	Tx      *types.Transaction
 	Receipt *types.Receipt
+
+	Error error
 }
 
 type Sender struct {
 	ctx context.Context
-	cfg *Config
+	*Config
 
 	chainID *big.Int
+	header  *types.Header
 	client  *rpc.EthClient
 
 	Opts *bind.TransactOpts
 
-	unconfirmedTxs map[uint64]*types.Transaction
-	txConfirmCh    map[uint64]chan<- *TxConfirm
+	globalTxID     uint64
+	unconfirmedTxs map[uint64]*TxConfirm
+	txConfirmCh    map[uint64]chan *TxConfirm
 
 	wg     sync.WaitGroup
 	stopCh chan struct{}
@@ -52,19 +67,29 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	if err != nil {
 		return nil, err
 	}
+	header, err := client.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create a new transactor
 	opts, err := bind.NewKeyedTransactorWithChainID(priv, chainID)
 	if err != nil {
 		return nil, err
 	}
+	// Do not automatically send transactions
 	opts.NoSend = true
 
 	sender := &Sender{
-		ctx:     ctx,
-		cfg:     cfg,
-		chainID: chainID,
-		client:  client,
-		Opts:    opts,
+		ctx:            ctx,
+		Config:         cfg,
+		chainID:        chainID,
+		header:         header,
+		client:         client,
+		Opts:           opts,
+		unconfirmedTxs: make(map[uint64]*TxConfirm, cfg.maxPendTxs),
+		txConfirmCh:    make(map[uint64]chan *TxConfirm, cfg.maxPendTxs),
+		stopCh:         make(chan struct{}),
 	}
 
 	sender.wg.Add(1)
@@ -78,49 +103,98 @@ func (s *Sender) Stop() {
 	s.wg.Wait()
 }
 
-func (s *Sender) WaitTxConfirm(txID uint64) <-chan *TxConfirm {
-	s.txConfirmCh[txID] <- s.updateGasTipGasFee[txID]
-	return ch
+// WaitTxConfirm returns a channel to receive the transaction confirmation.
+func (s *Sender) WaitTxConfirm(txID uint64) (bool, <-chan *TxConfirm) {
+	confirmCh, ok := s.txConfirmCh[txID]
+	return ok, confirmCh
 }
 
 // SendTransaction sends a transaction to the target address.
-func (s *Sender) SendTransaction(tx *types.Transaction) error {
-	baseTx := &types.DynamicFeeTx{
-		ChainID:   s.chainID,
-		To:        tx.To(),
-		Nonce:     s.Opts.Nonce.Uint64(),
-		GasFeeCap: new(big.Int).Set(s.Opts.GasFeeCap),
-		GasTipCap: new(big.Int).Set(s.Opts.GasTipCap),
-		Gas:       tx.Gas(),
-		Value:     tx.Value(),
-		Data:      tx.Data(),
+func (s *Sender) SendTransaction(tx *types.Transaction) (uint64, error) {
+	if len(s.unconfirmedTxs) >= s.maxPendTxs {
+		return 0, fmt.Errorf("too many pending transactions")
 	}
-	rawTx, err := s.Opts.Signer(s.Opts.From, types.NewTx(baseTx))
+	txID := atomic.AddUint64(&s.globalTxID, 1)
+	confirmTx := &TxConfirm{
+		TxID: txID,
+		baseTx: &types.DynamicFeeTx{
+			ChainID:   s.chainID,
+			To:        tx.To(),
+			GasFeeCap: tx.GasFeeCap(),
+			GasTipCap: tx.GasTipCap(),
+			Gas:       tx.Gas(),
+			Value:     tx.Value(),
+			Data:      tx.Data(),
+		},
+		Tx: tx,
+	}
+	err := s.sendTx(confirmTx)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	// Send the transaction
-	err = s.client.SendTransaction(s.ctx, rawTx)
-	// Check if the error is nonce too low or nonce too high
-	if err == nil ||
-		strings.Contains(err.Error(), "nonce too low") ||
-		strings.Contains(err.Error(), "nonce too high") {
+	// Add the transaction to the unconfirmed transactions
+	s.unconfirmedTxs[txID] = confirmTx
+	s.txConfirmCh[txID] = make(chan *TxConfirm, 1)
 
-		return nil
-	}
-
-	return err
+	return txID, nil
 }
 
-func (s *Sender) setNonce() error {
-	// Get the nonce
-	nonce, err := s.client.PendingNonceAt(s.ctx, s.Opts.From)
-	if err != nil {
-		return err
+func (s *Sender) sendTx(confirmTx *TxConfirm) error {
+	confirmTx.retryTimes++
+	tx := confirmTx.baseTx
+	baseTx := &types.DynamicFeeTx{
+		ChainID:   s.chainID,
+		To:        tx.To,
+		GasFeeCap: tx.GasFeeCap,
+		GasTipCap: tx.GasTipCap,
+		Gas:       tx.Gas,
+		Value:     tx.Value,
+		Data:      tx.Data,
 	}
-	s.Opts.Nonce = new(big.Int).SetUint64(nonce)
+	var (
+		rawTx *types.Transaction
+	)
+	// Try 3 retryTimes if nonce is not correct.
+	for i := 0; i < 3; i++ {
+		nonce, err := s.client.NonceAt(s.ctx, s.Opts.From, nil)
+		if err != nil {
+			return err
+		}
+		baseTx.Nonce = nonce
+		rawTx, err = s.Opts.Signer(s.Opts.From, types.NewTx(baseTx))
+		if err != nil {
+			return err
+		}
+		confirmTx.Error = s.client.SendTransaction(s.ctx, rawTx)
+		// Check if the error is nonce too low or nonce too high
+		if strings.Contains(err.Error(), "nonce too low") ||
+			strings.Contains(err.Error(), "nonce too high") {
+			log.Warn("nonce is not correct, retry to send transaction", "tx_hash", rawTx.Hash().String(), "nonce", nonce, "err", err)
+			time.Sleep(time.Millisecond * 500)
+			continue
+		} else if err != nil {
+			log.Error("failed to send transaction", "tx_hash", rawTx.Hash().String(), "err", err)
+			return err
+		}
+
+		confirmTx.baseTx = baseTx
+		confirmTx.Tx = rawTx
+		break
+	}
 
 	return nil
+}
+
+func (s *Sender) resendTx(confirmTx *TxConfirm) {
+	if confirmTx.retryTimes >= s.retryTimes {
+		// TODO: add the transaction to the failed transactions
+	}
+
+	// Increase the gas price.
+	gas := confirmTx.baseTx.Gas
+	confirmTx.baseTx.Gas = mathutil.MinUint64(s.MaxGasPrice, gas+gas/s.gasRate)
+
+	confirmTx.Error = s.sendTx(confirmTx)
 }
 
 func (s *Sender) updateGasTipGasFee(head *types.Header) error {
@@ -145,26 +219,67 @@ func (s *Sender) updateGasTipGasFee(head *types.Header) error {
 func (s *Sender) loop() {
 	defer s.wg.Done()
 
-	headCh := make(chan *types.Header, 3)
-	// Subscribe new head
-	sub, err := s.client.SubscribeNewHead(s.ctx, headCh)
-	if err != nil {
-		log.Crit("failed to subscribe new head", "err", err)
-	}
-	defer sub.Unsubscribe()
+	tick := time.NewTicker(time.Second * 3)
+	defer tick.Stop()
 
 	for {
 		select {
-		case head := <-headCh:
+		case <-tick.C:
+			if len(s.unconfirmedTxs) == 0 {
+				continue
+			}
+			head, err := s.client.HeaderByNumber(s.ctx, nil)
+			if err != nil {
+				log.Warn("failed to get the latest header", "err", err)
+				continue
+			}
+			if s.header.Hash() == head.Hash() {
+				continue
+			}
+			s.header = head
+
 			// Update the gas tip and gas fee
 			err = s.updateGasTipGasFee(head)
 			if err != nil {
 				log.Warn("failed to update gas tip and gas fee", "err", err)
 			}
+			// Check the unconfirmed transactions
+			s.checkPendingTransactions()
+
 		case <-s.ctx.Done():
 			return
 		case <-s.stopCh:
 			return
+		}
+	}
+}
+
+func (s *Sender) checkPendingTransactions() {
+	for txID, txConfirm := range s.unconfirmedTxs {
+		if txConfirm.Error != nil {
+			s.resendTx(txConfirm)
+			continue
+		}
+		if txConfirm.Receipt == nil {
+			// Get the transaction receipt
+			receipt, err := s.client.TransactionReceipt(s.ctx, txConfirm.Tx.Hash())
+			if err != nil {
+				log.Warn("failed to get the transaction receipt", "tx_hash", txConfirm.Tx.Hash().String(), "err", err)
+				continue
+			}
+			txConfirm.Receipt = receipt
+		}
+
+		txConfirm.confirms = s.header.Number.Uint64() - txConfirm.Receipt.BlockNumber.Uint64()
+		// Check if the transaction is confirmed
+		if s.header.Number.Uint64()-txConfirm.confirms >= s.Confirmations {
+			select {
+			case s.txConfirmCh[txID] <- txConfirm:
+			default:
+			}
+			// Remove the transaction from the unconfirmed transactions
+			delete(s.unconfirmedTxs, txID)
+			delete(s.txConfirmCh, txID)
 		}
 	}
 }

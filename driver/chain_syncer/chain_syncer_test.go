@@ -107,7 +107,7 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	s.Nil(err)
 	s.Equal("test", string(bytes.TrimRight(l2Head.Extra, "\x00")))
 	log.Info("L1HeaderByNumber head", "number", head.Number)
-	// (equiv to s.state.GetL2Head().Number)
+	// (equiv to s.state.GetL2Head().number)
 	log.Info("L2HeaderByNumber head", "number", l2Head.Number)
 
 	// increase evm time to make blocks verifiable.

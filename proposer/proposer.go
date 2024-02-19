@@ -362,7 +362,7 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 			return nil, err
 		}
 
-		parentMetaHash = parent.MetaHash
+		parentMetaHash = parent.Blk.MetaHash
 	}
 
 	hookCalls := make([]encoding.HookCall, 0)
@@ -466,7 +466,7 @@ func (p *Proposer) sendProposeBlockTx(
 			return nil, err
 		}
 
-		parentMetaHash = parent.MetaHash
+		parentMetaHash = parent.Blk.MetaHash
 	}
 
 	hookCalls := make([]encoding.HookCall, 0)
