@@ -505,13 +505,27 @@ func (s *Syncer) createExecutionPayloads(
 	return payload, nil
 }
 
-// checkLastVerifiedBlockMismatch checks if there is a mismatch between protocol's last verified block and
-// the corresponding L2 EE block.
+// checkLastVerifiedBlockMismatch checks if there is a mismatch between protocol's last verified block hash and
+// the corresponding L2 EE block hash.
 func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, error) {
 	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return false, err
 	}
 
-	return s.state.GetL2Head().Number.Uint64() < stateVars.B.LastVerifiedBlockId, nil
+	if s.state.GetL2Head().Number.Uint64() < stateVars.B.LastVerifiedBlockId {
+		return false, nil
+	}
+
+	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, stateVars.B.LastVerifiedBlockId)
+	if err != nil {
+		return false, err
+	}
+
+	l2Header, err := s.rpc.L2.HeaderByNumber(ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
+	if err != nil {
+		return false, err
+	}
+
+	return blockInfo.Ts.BlockHash != l2Header.Hash(), nil
 }
