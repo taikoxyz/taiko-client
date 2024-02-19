@@ -52,7 +52,7 @@ func (s *State) ResetL1Current(
 		return err
 	}
 
-	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.ProposedIn))
+	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.Blk.ProposedIn))
 	if err != nil {
 		return err
 	}

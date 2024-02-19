@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/beacon/engine"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -102,9 +103,20 @@ func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *engine
 		return nil, nil, err
 	}
 
+	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, stateVars.B.LastVerifiedBlockId)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	header, err := s.rpc.L2CheckPoint.HeaderByNumber(s.ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if header.Hash() != blockInfo.Ts.BlockHash {
+		return nil, nil, fmt.Errorf(
+			"latest verified block hash mismatch: %s != %s", header.Hash(), common.BytesToHash(blockInfo.Ts.BlockHash[:]),
+		)
 	}
 
 	log.Info("Latest verified block header retrieved", "hash", header.Hash())
