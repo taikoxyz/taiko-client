@@ -17,7 +17,7 @@ import (
 )
 
 // Each TaikoL2.anchor transaction should use this value as it's gas limit.
-const AnchorGasLimit = 1_000_000
+const AnchorGasLimit = 250_000
 
 // AnchorTxConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
 // each L2 block, which is always the first transaction.
