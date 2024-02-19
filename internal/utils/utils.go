@@ -23,9 +23,9 @@ func LoadEnv() {
 	if len(path) == 0 {
 		log.Warn("not a taiko-client repo")
 	}
-	err = godotenv.Load(fmt.Sprintf("%s/taiko-client/.env", path[0]))
+	err = godotenv.Load(fmt.Sprintf("%s/taiko-client/integration_test/.env", path[0]))
 	if err != nil {
-		log.Warn("failed to load env", "current path", currentPath, "err", err)
+		log.Warn("failed to load test env", "current path", currentPath, "err", err)
 	}
 }
 
