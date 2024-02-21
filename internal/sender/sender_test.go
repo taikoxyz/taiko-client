@@ -40,16 +40,14 @@ func setSender(cfg *sender.Config) (*rpc.EthClient, *sender.Sender, error) {
 func TestNormalSender(t *testing.T) {
 	utils.LoadEnv()
 	_, send, err := setSender(&sender.Config{
-		Confirmations:  0,
-		MaxGasPrice:    big.NewInt(20000000000),
+		MaxGasFee:      20000000000,
 		GasGrowthRate:  50,
-		MaxPendTxs:     10,
 		RetryTimes:     0,
 		GasLimit:       2000000,
 		MaxWaitingTime: time.Second * 10,
 	})
 	assert.NoError(t, err)
-	defer send.Stop()
+	defer send.Close()
 
 	var (
 		batchSize  = 5
@@ -83,19 +81,17 @@ func TestReplacement(t *testing.T) {
 	utils.LoadEnv()
 
 	client, send, err := setSender(&sender.Config{
-		Confirmations:  0,
-		MaxGasPrice:    big.NewInt(20000000000),
+		MaxGasFee:      20000000000,
 		GasGrowthRate:  50,
-		MaxPendTxs:     10,
 		RetryTimes:     0,
 		GasLimit:       2000000,
 		MaxWaitingTime: time.Second * 10,
 	})
 	assert.NoError(t, err)
-	defer send.Stop()
+	defer send.Close()
 
 	// Let max gas price be 2 times of the gas fee cap.
-	send.MaxGasPrice = new(big.Int).Mul(send.Opts.GasFeeCap, big.NewInt(2))
+	send.MaxGasFee = send.Opts.GasFeeCap.Uint64() * 2
 
 	nonce, err := client.NonceAt(context.Background(), send.Opts.From, nil)
 	assert.NoError(t, err)
@@ -111,8 +107,8 @@ func TestReplacement(t *testing.T) {
 	baseTx := &types.DynamicFeeTx{
 		ChainID:   send.ChainID,
 		To:        &common.Address{},
-		GasFeeCap: send.MaxGasPrice,
-		GasTipCap: send.MaxGasPrice,
+		GasFeeCap: big.NewInt(int64(send.MaxGasFee - 1)),
+		GasTipCap: big.NewInt(int64(send.MaxGasFee - 1)),
 		Nonce:     nonce,
 		Gas:       21000,
 		Value:     big.NewInt(1),
@@ -142,10 +138,9 @@ func TestReplacement(t *testing.T) {
 		confirm := <-confirmsCh[0]
 		// Check the replaced transaction's gasFeeTap touch the max gas price.
 		if confirm.Tx.Nonce() == nonce {
-			assert.Equal(t, send.MaxGasPrice, confirm.Tx.GasFeeCap())
+			assert.Equal(t, send.MaxGasFee, confirm.Tx.GasFeeCap().Uint64())
 		}
 		assert.NoError(t, confirm.Err)
-		t.Log(confirm.Receipt.BlockNumber.String())
 	}
 
 	_, err = client.TransactionReceipt(context.Background(), rawTx.Hash())
@@ -157,16 +152,14 @@ func TestNonceTooLow(t *testing.T) {
 	utils.LoadEnv()
 
 	client, send, err := setSender(&sender.Config{
-		Confirmations:  0,
-		MaxGasPrice:    big.NewInt(20000000000),
+		MaxGasFee:      20000000000,
 		GasGrowthRate:  50,
-		MaxPendTxs:     10,
 		RetryTimes:     0,
 		GasLimit:       2000000,
 		MaxWaitingTime: time.Second * 10,
 	})
 	assert.NoError(t, err)
-	defer send.Stop()
+	defer send.Close()
 
 	nonce, err := client.NonceAt(context.Background(), send.Opts.From, nil)
 	assert.NoError(t, err)

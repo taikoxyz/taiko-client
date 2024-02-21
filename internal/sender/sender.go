@@ -24,29 +24,26 @@ var (
 )
 
 type Config struct {
-	// The gap number between a block be confirmed and the latest block.
-	Confirmations uint64
-	// The maximum gas price can be used to send transaction.
-	MaxGasPrice *big.Int
-	// The gas rate to increase the gas price, 20 means 20% gas growth rate.
-	GasGrowthRate uint64
-	// The maximum number of pending transactions.
-	MaxPendTxs int
 	// The maximum retry times to send transaction.
 	RetryTimes uint64
-	// The gas limit for raw transaction.
-	GasLimit uint64
 	// The maximum waiting time for transaction in mempool.
 	MaxWaitingTime time.Duration
+
+	// The gas limit for raw transaction.
+	GasLimit uint64
+	// The gas rate to increase the gas price, 20 means 20% gas growth rate.
+	GasGrowthRate uint64
+	// The maximum gas price can be used to send transaction.
+	MaxGasFee  uint64
+	MaxBlobFee uint64
 }
 
 type TxConfirm struct {
 	RetryTimes uint64
-	confirms   uint64
 
 	TxID string
 
-	baseTx  *types.DynamicFeeTx
+	baseTx  types.TxData
 	Tx      *types.Transaction
 	Receipt *types.Receipt
 
@@ -127,7 +124,7 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	return sender, nil
 }
 
-func (s *Sender) Stop() {
+func (s *Sender) Close() {
 	close(s.stopCh)
 	s.wg.Wait()
 }
@@ -154,25 +151,20 @@ func (s *Sender) SendRaw(nonce uint64, target *common.Address, value *big.Int, d
 
 // SendTransaction sends a transaction to the target address.
 func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
-	if s.unconfirmedTxs.Count() >= s.MaxPendTxs {
+	if s.unconfirmedTxs.Count() >= 100 {
 		return "", fmt.Errorf("too many pending transactions")
+	}
+	txData, err := s.makeTxData(tx)
+	if err != nil {
+		return "", err
 	}
 	txID := fmt.Sprint(atomic.AddUint64(&s.globalTxID, 1))
 	confirmTx := &TxConfirm{
-		TxID: txID,
-		baseTx: &types.DynamicFeeTx{
-			ChainID:   s.ChainID,
-			To:        tx.To(),
-			Nonce:     tx.Nonce(),
-			GasFeeCap: s.Opts.GasFeeCap,
-			GasTipCap: s.Opts.GasTipCap,
-			Gas:       tx.Gas(),
-			Value:     tx.Value(),
-			Data:      tx.Data(),
-		},
-		Tx: tx,
+		TxID:   txID,
+		baseTx: txData,
+		Tx:     tx,
 	}
-	err := s.sendTx(confirmTx)
+	err = s.sendTx(confirmTx)
 	if err != nil && !strings.Contains(err.Error(), "replacement transaction") {
 		log.Error("failed to send transaction", "tx_id", txID, "tx_hash", tx.Hash().String(), "err", err)
 		return "", err
@@ -218,33 +210,6 @@ func (s *Sender) sendTx(confirmTx *TxConfirm) error {
 	return nil
 }
 
-func (s *Sender) adjustGas(baseTx *types.DynamicFeeTx) {
-	rate := big.NewInt(int64(100 + s.GasGrowthRate))
-	baseTx.GasFeeCap = new(big.Int).Mul(baseTx.GasFeeCap, rate)
-	baseTx.GasFeeCap.Div(baseTx.GasFeeCap, big.NewInt(100))
-	if s.MaxGasPrice.Cmp(baseTx.GasFeeCap) < 0 {
-		baseTx.GasFeeCap = new(big.Int).Set(s.MaxGasPrice)
-	}
-
-	baseTx.GasTipCap = new(big.Int).Mul(baseTx.GasTipCap, rate)
-	baseTx.GasTipCap.Div(baseTx.GasTipCap, big.NewInt(100))
-	if baseTx.GasTipCap.Cmp(baseTx.GasFeeCap) > 0 {
-		baseTx.GasTipCap = new(big.Int).Set(baseTx.GasFeeCap)
-	}
-}
-
-func (s *Sender) adjustNonce(baseTx *types.DynamicFeeTx) {
-	nonce, err := s.client.NonceAt(s.ctx, s.Opts.From, nil)
-	if err != nil {
-		log.Warn("failed to get the nonce", "from", s.Opts.From, "err", err)
-		return
-	}
-	s.Opts.Nonce = new(big.Int).SetUint64(nonce)
-	if baseTx != nil {
-		baseTx.Nonce = nonce
-	}
-}
-
 func (s *Sender) updateGasTipGasFee(head *types.Header) error {
 	// Get the gas tip cap
 	gasTipCap, err := s.client.SuggestGasTipCap(s.ctx)
@@ -258,9 +223,10 @@ func (s *Sender) updateGasTipGasFee(head *types.Header) error {
 	if gasFeeCap.Cmp(gasTipCap) < 0 {
 		return fmt.Errorf("maxFeePerGas (%v) < maxPriorityFeePerGas (%v)", gasFeeCap, gasTipCap)
 	}
-	if gasFeeCap.Cmp(s.MaxGasPrice) > 0 {
-		gasFeeCap = new(big.Int).Set(s.MaxGasPrice)
-		gasTipCap = new(big.Int).Set(s.MaxGasPrice)
+	maxGasFee := big.NewInt(int64(s.MaxGasFee))
+	if gasFeeCap.Cmp(maxGasFee) > 0 {
+		gasFeeCap = new(big.Int).Set(maxGasFee)
+		gasTipCap = new(big.Int).Set(maxGasFee)
 	}
 
 	s.Opts.GasTipCap = gasTipCap
@@ -298,7 +264,7 @@ func (s *Sender) loop() {
 				log.Warn("failed to update gas tip and gas fee", "err", err)
 			}
 			// Check the unconfirmed transactions
-			s.checkPendingTransactions(header)
+			s.checkPendingTransactions()
 		case <-s.ctx.Done():
 			return
 		case <-s.stopCh:
@@ -321,7 +287,7 @@ func (s *Sender) resendTransaction() {
 	}
 }
 
-func (s *Sender) checkPendingTransactions(header *types.Header) {
+func (s *Sender) checkPendingTransactions() {
 	curTime := time.Now()
 	for txID, txConfirm := range s.unconfirmedTxs.Items() {
 		if txConfirm.Err != nil {
@@ -355,12 +321,7 @@ func (s *Sender) checkPendingTransactions(header *types.Header) {
 				continue
 			}
 		}
-
-		txConfirm.confirms = header.Number.Uint64() - txConfirm.Receipt.BlockNumber.Uint64()
-		// Check if the transaction is confirmed
-		if s.header.Number.Uint64()-txConfirm.confirms >= s.Confirmations {
-			s.releaseConfirm(txID)
-		}
+		s.releaseConfirm(txID)
 	}
 }
 

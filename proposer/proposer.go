@@ -105,10 +105,8 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	}
 
 	if p.sender, err = sender.NewSender(ctx, &sender.Config{
-		Confirmations: 0,
-		MaxGasPrice:   big.NewInt(20000000000),
+		MaxGasFee:     20000000000,
 		GasGrowthRate: 10,
-		MaxPendTxs:    100,
 		RetryTimes:    0,
 		GasLimit:      cfg.ProposeBlockTxGasLimit,
 	}, p.rpc.L1, cfg.L1ProposerPrivKey); err != nil {
@@ -186,6 +184,7 @@ func (p *Proposer) eventLoop() {
 
 // Close closes the proposer instance.
 func (p *Proposer) Close(ctx context.Context) {
+	p.sender.Close()
 	p.wg.Wait()
 }
 
