@@ -40,11 +40,13 @@ func setSender(cfg *sender.Config) (*rpc.EthClient, *sender.Sender, error) {
 func TestNormalSender(t *testing.T) {
 	utils.LoadEnv()
 	_, send, err := setSender(&sender.Config{
-		Confirmations: 0,
-		MaxGasPrice:   big.NewInt(20000000000),
-		GasRate:       50,
-		MaxPendTxs:    10,
-		RetryTimes:    0,
+		Confirmations:  0,
+		MaxGasPrice:    big.NewInt(20000000000),
+		GasGrowthRate:  50,
+		MaxPendTxs:     10,
+		RetryTimes:     0,
+		GasLimit:       2000000,
+		MaxWaitingTime: time.Second * 10,
 	})
 	assert.NoError(t, err)
 	defer send.Stop()
@@ -81,11 +83,13 @@ func TestReplacement(t *testing.T) {
 	utils.LoadEnv()
 
 	client, send, err := setSender(&sender.Config{
-		Confirmations: 0,
-		MaxGasPrice:   big.NewInt(20000000000),
-		GasRate:       50,
-		MaxPendTxs:    10,
-		RetryTimes:    0,
+		Confirmations:  0,
+		MaxGasPrice:    big.NewInt(20000000000),
+		GasGrowthRate:  50,
+		MaxPendTxs:     10,
+		RetryTimes:     0,
+		GasLimit:       2000000,
+		MaxWaitingTime: time.Second * 10,
 	})
 	assert.NoError(t, err)
 	defer send.Stop()
@@ -153,11 +157,13 @@ func TestNonceTooLow(t *testing.T) {
 	utils.LoadEnv()
 
 	client, send, err := setSender(&sender.Config{
-		Confirmations: 0,
-		MaxGasPrice:   big.NewInt(20000000000),
-		GasRate:       50,
-		MaxPendTxs:    10,
-		RetryTimes:    0,
+		Confirmations:  0,
+		MaxGasPrice:    big.NewInt(20000000000),
+		GasGrowthRate:  50,
+		MaxPendTxs:     10,
+		RetryTimes:     0,
+		GasLimit:       2000000,
+		MaxWaitingTime: time.Second * 10,
 	})
 	assert.NoError(t, err)
 	defer send.Stop()

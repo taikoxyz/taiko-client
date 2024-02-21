@@ -107,7 +107,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	if p.sender, err = sender.NewSender(ctx, &sender.Config{
 		Confirmations: 0,
 		MaxGasPrice:   big.NewInt(20000000000),
-		GasRate:       10,
+		GasGrowthRate: 10,
 		MaxPendTxs:    100,
 		RetryTimes:    0,
 		GasLimit:      cfg.ProposeBlockTxGasLimit,

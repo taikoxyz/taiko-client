@@ -28,13 +28,16 @@ type Config struct {
 	Confirmations uint64
 	// The maximum gas price can be used to send transaction.
 	MaxGasPrice *big.Int
-	// The gas rate to increase the gas price.
-	GasRate uint64
+	// The gas rate to increase the gas price, 20 means 20% gas growth rate.
+	GasGrowthRate uint64
 	// The maximum number of pending transactions.
 	MaxPendTxs int
 	// The maximum retry times to send transaction.
 	RetryTimes uint64
-	GasLimit   uint64
+	// The gas limit for raw transaction.
+	GasLimit uint64
+	// The maximum waiting time for transaction in mempool.
+	MaxWaitingTime time.Duration
 }
 
 type TxConfirm struct {
@@ -88,6 +91,11 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	}
 	// Do not automatically send transactions
 	opts.NoSend = true
+
+	// Set default MaxWaitingTime.
+	if cfg.MaxWaitingTime == 0 {
+		cfg.MaxWaitingTime = time.Minute * 5
+	}
 
 	sender := &Sender{
 		ctx:            ctx,
@@ -211,7 +219,7 @@ func (s *Sender) sendTx(confirmTx *TxConfirm) error {
 }
 
 func (s *Sender) adjustGas(baseTx *types.DynamicFeeTx) {
-	rate := big.NewInt(int64(100 + s.GasRate))
+	rate := big.NewInt(int64(100 + s.GasGrowthRate))
 	baseTx.GasFeeCap = new(big.Int).Mul(baseTx.GasFeeCap, rate)
 	baseTx.GasFeeCap.Div(baseTx.GasFeeCap, big.NewInt(100))
 	if s.MaxGasPrice.Cmp(baseTx.GasFeeCap) < 0 {
@@ -273,28 +281,24 @@ func (s *Sender) loop() {
 	for {
 		select {
 		case <-tickResend.C:
-			if s.unconfirmedTxs.Count() == 0 {
-				continue
-			}
 			s.resendTransaction()
-			// Check the unconfirmed transactions
-			s.checkPendingTransactions()
 		case <-tickHead.C:
-			head, err := s.client.HeaderByNumber(s.ctx, nil)
+			header, err := s.client.HeaderByNumber(s.ctx, nil)
 			if err != nil {
 				log.Warn("failed to get the latest header", "err", err)
 				continue
 			}
-			if s.header.Hash() == head.Hash() {
+			if s.header.Hash() == header.Hash() {
 				continue
 			}
-			s.header = head
-
+			s.header = header
 			// Update the gas tip and gas fee
-			err = s.updateGasTipGasFee(head)
+			err = s.updateGasTipGasFee(header)
 			if err != nil {
 				log.Warn("failed to update gas tip and gas fee", "err", err)
 			}
+			// Check the unconfirmed transactions
+			s.checkPendingTransactions(header)
 		case <-s.ctx.Done():
 			return
 		case <-s.stopCh:
@@ -317,15 +321,21 @@ func (s *Sender) resendTransaction() {
 	}
 }
 
-func (s *Sender) checkPendingTransactions() {
+func (s *Sender) checkPendingTransactions(header *types.Header) {
+	curTime := time.Now()
 	for txID, txConfirm := range s.unconfirmedTxs.Items() {
 		if txConfirm.Err != nil {
 			continue
 		}
 		if txConfirm.Receipt == nil {
 			// Ignore the transaction if it is pending.
-			_, isPending, err := s.client.TransactionByHash(s.ctx, txConfirm.Tx.Hash())
+			tx, isPending, err := s.client.TransactionByHash(s.ctx, txConfirm.Tx.Hash())
 			if err != nil || isPending {
+				continue
+			}
+			// If the transaction is in mempool for too long, replace it.
+			if waitTime := curTime.Sub(tx.Time()); waitTime > s.MaxWaitingTime {
+				txConfirm.Err = fmt.Errorf("transaction in mempool for too long")
 				continue
 			}
 			// Get the transaction receipt.
@@ -346,7 +356,7 @@ func (s *Sender) checkPendingTransactions() {
 			}
 		}
 
-		txConfirm.confirms = s.header.Number.Uint64() - txConfirm.Receipt.BlockNumber.Uint64()
+		txConfirm.confirms = header.Number.Uint64() - txConfirm.Receipt.BlockNumber.Uint64()
 		// Check if the transaction is confirmed
 		if s.header.Number.Uint64()-txConfirm.confirms >= s.Confirmations {
 			s.releaseConfirm(txID)
