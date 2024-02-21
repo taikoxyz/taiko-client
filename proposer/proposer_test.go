@@ -157,7 +157,7 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	fee := big.NewInt(10000)
 	opts := s.p.sender.Opts
-	opts.GasTipCap = fee
+	opts.Value = fee
 	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
 
 	nonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
