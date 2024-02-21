@@ -20,6 +20,5 @@ type Proposer interface {
 		ctx context.Context,
 		txListBytes []byte,
 		txNum uint,
-		nonce *uint64,
 	) error
 }

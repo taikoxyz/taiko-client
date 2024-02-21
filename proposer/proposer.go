@@ -3,20 +3,16 @@ package proposer
 import (
 	"bytes"
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"math/big"
 	"math/rand"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/txpool"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -27,6 +23,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
 )
@@ -62,6 +59,8 @@ type Proposer struct {
 	// Only for testing purposes
 	CustomProposeOpHook func() error
 	AfterCommitHook     func() error
+
+	sender *sender.Sender
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -102,6 +101,17 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 		return err
 	}
 	if err := p.initTierFees(); err != nil {
+		return err
+	}
+
+	if p.sender, err = sender.NewSender(ctx, &sender.Config{
+		Confirmations: 0,
+		MaxGasPrice:   big.NewInt(20000000000),
+		GasRate:       10,
+		MaxPendTxs:    100,
+		RetryTimes:    0,
+		GasLimit:      cfg.ProposeBlockTxGasLimit,
+	}, p.rpc.L1, cfg.L1ProposerPrivKey); err != nil {
 		return err
 	}
 
@@ -255,22 +265,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	if len(txLists) == 0 {
 		return errNoNewTxs
 	}
-
-	head, err := p.rpc.L1.BlockNumber(ctx)
-	if err != nil {
-		return err
-	}
-	nonce, err := p.rpc.L1.NonceAt(
-		ctx,
-		crypto.PubkeyToAddress(p.L1ProposerPrivKey.PublicKey),
-		new(big.Int).SetUint64(head),
-	)
-	if err != nil {
-		return err
-	}
-
-	log.Info("Proposer account information", "chainHead", head, "nonce", nonce)
-
 	g := new(errgroup.Group)
 	for i, txs := range txLists {
 		func(i int, txs types.Transactions) {
@@ -284,8 +278,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 					return fmt.Errorf("failed to encode transactions: %w", err)
 				}
 
-				txNonce := nonce + uint64(i)
-				if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len()), &txNonce); err != nil {
+				if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len())); err != nil {
 					return fmt.Errorf("failed to propose transactions: %w", err)
 				}
 
@@ -307,11 +300,9 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	return nil
 }
 
-func (p *Proposer) sendProposeBlockTxWithBlobHash(
+func (p *Proposer) makeProposeBlockTxWithBlobHash(
 	ctx context.Context,
 	txListBytes []byte,
-	nonce *uint64,
-	isReplacement bool,
 ) (*types.Transaction, error) {
 	// Make sidecar in order to get blob hash.
 	sideCar, err := rpc.MakeSidecar(txListBytes)
@@ -326,28 +317,6 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 	)
 	if err != nil {
 		return nil, err
-	}
-
-	// Propose the transactions list
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.L1ProposerPrivKey, p.rpc.L1ChainID, maxFee)
-	if err != nil {
-		return nil, err
-	}
-	if nonce != nil {
-		opts.Nonce = new(big.Int).SetUint64(*nonce)
-	}
-	opts.GasLimit = p.ProposeBlockTxGasLimit
-	if isReplacement {
-		if opts, err = rpc.IncreaseGasTipCap(
-			ctx,
-			p.rpc,
-			opts,
-			p.proposerAddress,
-			new(big.Int).SetUint64(p.ProposeBlockTxReplacementMultiplier),
-			p.ProposeBlockTxGasTipCap,
-		); err != nil {
-			return nil, err
-		}
 	}
 
 	var parentMetaHash = [32]byte{}
@@ -365,8 +334,6 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 		parentMetaHash = parent.Blk.MetaHash
 	}
 
-	hookCalls := make([]encoding.HookCall, 0)
-
 	// Initially just use the AssignmentHook default.
 	hookInputData, err := encoding.EncodeAssignmentHookInput(&encoding.AssignmentHookInput{
 		Assignment: assignment,
@@ -376,10 +343,6 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 		return nil, err
 	}
 
-	hookCalls = append(hookCalls, encoding.HookCall{
-		Hook: p.AssignmentHookAddress,
-		Data: hookInputData,
-	})
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		AssignedProver:    assignedProver,
 		ExtraData:         rpc.StringToBytes32(p.ExtraData),
@@ -388,13 +351,17 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 		BlobHash:          [32]byte{},
 		CacheBlobForReuse: false,
 		ParentMetaHash:    parentMetaHash,
-		HookCalls:         hookCalls,
+		HookCalls: []encoding.HookCall{{
+			Hook: p.AssignmentHookAddress,
+			Data: hookInputData,
+		}},
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	opts.NoSend = true
+	opts := p.sender.Opts
+	opts.Value = maxFee
 	rawTx, err := p.rpc.TaikoL1.ProposeBlock(
 		opts,
 		encodedParams,
@@ -404,8 +371,6 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 		return nil, encoding.TryParsingCustomError(err)
 	}
 
-	// Create blob tx and send it.
-	opts.NoSend = false
 	proposeTx, err := p.rpc.L1.TransactBlobTx(opts, &p.TaikoL1Address, rawTx.Data(), sideCar)
 	if err != nil {
 		return nil, err
@@ -416,12 +381,10 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 	return proposeTx, nil
 }
 
-// sendProposeBlockTx tries to send a TaikoL1.proposeBlock transaction.
-func (p *Proposer) sendProposeBlockTx(
+// makeProposeBlockTx tries to send a TaikoL1.proposeBlock transaction.
+func (p *Proposer) makeProposeBlockTx(
 	ctx context.Context,
 	txListBytes []byte,
-	nonce *uint64,
-	isReplacement bool,
 ) (*types.Transaction, error) {
 	assignment, assignedProver, maxFee, err := p.proverSelector.AssignProver(
 		ctx,
@@ -432,27 +395,8 @@ func (p *Proposer) sendProposeBlockTx(
 		return nil, err
 	}
 
-	// Propose the transactions list
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.L1ProposerPrivKey, p.rpc.L1ChainID, maxFee)
-	if err != nil {
-		return nil, err
-	}
-	if nonce != nil {
-		opts.Nonce = new(big.Int).SetUint64(*nonce)
-	}
-	opts.GasLimit = p.ProposeBlockTxGasLimit
-	if isReplacement {
-		if opts, err = rpc.IncreaseGasTipCap(
-			ctx,
-			p.rpc,
-			opts,
-			p.proposerAddress,
-			new(big.Int).SetUint64(p.ProposeBlockTxReplacementMultiplier),
-			p.ProposeBlockTxGasTipCap,
-		); err != nil {
-			return nil, err
-		}
-	}
+	opts := p.sender.Opts
+	opts.Value = maxFee
 
 	var parentMetaHash = [32]byte{}
 	if p.IncludeParentMetaHash {
@@ -517,48 +461,39 @@ func (p *Proposer) ProposeTxList(
 	ctx context.Context,
 	txListBytes []byte,
 	txNum uint,
-	nonce *uint64,
 ) error {
-	var (
-		isReplacement bool
-		tx            *types.Transaction
-		err           error
-	)
-	if err = backoff.Retry(
+	var txID string
+	if err := backoff.Retry(
 		func() error {
 			if ctx.Err() != nil {
 				return nil
 			}
+			var (
+				tx  *types.Transaction
+				err error
+			)
 			// Send tx list by blob tx.
 			if p.BlobAllowed {
-				tx, err = p.sendProposeBlockTxWithBlobHash(
+				tx, err = p.makeProposeBlockTxWithBlobHash(
 					ctx,
 					txListBytes,
-					nonce,
-					isReplacement,
 				)
 			} else {
-				tx, err = p.sendProposeBlockTx(
+				tx, err = p.makeProposeBlockTx(
 					ctx,
 					txListBytes,
-					nonce,
-					isReplacement,
 				)
 			}
 			if err != nil {
-				log.Warn("Failed to send taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
-				if strings.Contains(err.Error(), core.ErrNonceTooLow.Error()) {
-					return nil
-				}
-				if strings.Contains(err.Error(), txpool.ErrReplaceUnderpriced.Error()) {
-					isReplacement = true
-				} else {
-					isReplacement = false
-				}
+				log.Warn("Failed to make taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				return err
 			}
-
-			return nil
+			txID, err = p.sender.SendTransaction(tx)
+			if err != nil {
+				log.Warn("Failed to send taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
+				return err
+			}
+			return err
 		},
 		backoff.WithMaxRetries(
 			backoff.NewConstantBackOff(retryInterval),
@@ -570,16 +505,12 @@ func (p *Proposer) ProposeTxList(
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	if err != nil {
-		return err
-	}
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, p.WaitReceiptTimeout)
-	defer cancel()
-	if tx != nil {
-		if _, err = rpc.WaitReceipt(ctxWithTimeout, p.rpc.L1, tx); err != nil {
-			return err
-		}
+	// Waiting for the transaction to be confirmed.
+	confirmCh, _ := p.sender.WaitTxConfirm(txID)
+	confirm := <-confirmCh
+	if confirm.Err != nil {
+		return confirm.Err
 	}
 
 	log.Info("📝 Propose transactions succeeded", "txs", txNum)
@@ -596,7 +527,7 @@ func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return p.ProposeTxList(ctx, emptyTxListBytes, 0, nil)
+	return p.ProposeTxList(ctx, emptyTxListBytes, 0)
 }
 
 // updateProposingTicker updates the internal proposing timer.
@@ -653,32 +584,4 @@ func (p *Proposer) initTierFees() error {
 	}
 
 	return nil
-}
-
-// getTxOpts creates a bind.TransactOpts instance using the given private key.
-func getTxOpts(
-	ctx context.Context,
-	cli *rpc.EthClient,
-	privKey *ecdsa.PrivateKey,
-	chainID *big.Int,
-	fee *big.Int,
-) (*bind.TransactOpts, error) {
-	opts, err := bind.NewKeyedTransactorWithChainID(privKey, chainID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate prepareBlock transaction options: %w", err)
-	}
-
-	gasTipCap, err := cli.SuggestGasTipCap(ctx)
-	if err != nil {
-		if rpc.IsMaxPriorityFeePerGasNotFoundError(err) {
-			gasTipCap = rpc.FallbackGasTipCap
-		} else {
-			return nil, err
-		}
-	}
-
-	opts.GasTipCap = gasTipCap
-	opts.Value = fee
-
-	return opts, nil
 }

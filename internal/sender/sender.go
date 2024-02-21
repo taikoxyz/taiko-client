@@ -19,6 +19,10 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+var (
+	rootSender = map[common.Address]*Sender{}
+)
+
 type Config struct {
 	// The gap number between a block be confirmed and the latest block.
 	Confirmations uint64
@@ -30,6 +34,7 @@ type Config struct {
 	MaxPendTxs int
 	// The maximum retry times to send transaction.
 	RetryTimes uint64
+	GasLimit   uint64
 }
 
 type TxConfirm struct {
@@ -42,7 +47,7 @@ type TxConfirm struct {
 	Tx      *types.Transaction
 	Receipt *types.Receipt
 
-	Error error
+	Err error
 }
 
 type Sender struct {
@@ -102,6 +107,11 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	if err != nil {
 		return nil, err
 	}
+	// Add the sender to the root sender.
+	if rootSender[opts.From] != nil {
+		return nil, fmt.Errorf("sender already exists")
+	}
+	rootSender[opts.From] = sender
 
 	sender.wg.Add(1)
 	go sender.loop()
@@ -128,7 +138,7 @@ func (s *Sender) SendRaw(nonce uint64, target *common.Address, value *big.Int, d
 		Nonce:     nonce,
 		GasFeeCap: s.Opts.GasFeeCap,
 		GasTipCap: s.Opts.GasTipCap,
-		Gas:       1000000,
+		Gas:       s.GasLimit,
 		Value:     value,
 		Data:      data,
 	}))
@@ -179,7 +189,7 @@ func (s *Sender) sendTx(confirmTx *TxConfirm) error {
 	}
 	confirmTx.Tx = rawTx
 	err = s.client.SendTransaction(s.ctx, rawTx)
-	confirmTx.Error = err
+	confirmTx.Err = err
 	// Check if the error is nonce too low.
 	if err != nil {
 		if strings.Contains(err.Error(), "nonce too low") {
@@ -295,13 +305,12 @@ func (s *Sender) loop() {
 
 func (s *Sender) resendTransaction() {
 	for txID, txConfirm := range s.unconfirmedTxs.Items() {
-		if txConfirm.Error == nil {
+		if txConfirm.Err == nil {
 			continue
 		}
 		txConfirm.RetryTimes++
 		if s.RetryTimes != 0 && txConfirm.RetryTimes >= s.RetryTimes {
-			s.unconfirmedTxs.Remove(txID)
-			s.txConfirmCh.Remove(txID)
+			s.releaseConfirm(txID)
 			continue
 		}
 		_ = s.sendTx(txConfirm)
@@ -310,7 +319,7 @@ func (s *Sender) resendTransaction() {
 
 func (s *Sender) checkPendingTransactions() {
 	for txID, txConfirm := range s.unconfirmedTxs.Items() {
-		if txConfirm.Error != nil {
+		if txConfirm.Err != nil {
 			continue
 		}
 		if txConfirm.Receipt == nil {
@@ -323,24 +332,29 @@ func (s *Sender) checkPendingTransactions() {
 			receipt, err := s.client.TransactionReceipt(s.ctx, txConfirm.Tx.Hash())
 			if err != nil {
 				if err.Error() == "not found" {
-					txConfirm.Error = err
-					s.releaseConfirmCh(txID)
+					txConfirm.Err = err
+					s.releaseConfirm(txID)
 				}
 				log.Warn("failed to get the transaction receipt", "tx_hash", txConfirm.Tx.Hash().String(), "err", err)
 				continue
 			}
 			txConfirm.Receipt = receipt
+			if receipt.Status != types.ReceiptStatusSuccessful {
+				txConfirm.Err = fmt.Errorf("transaction reverted, hash: %s", receipt.TxHash.String())
+				s.releaseConfirm(txID)
+				continue
+			}
 		}
 
 		txConfirm.confirms = s.header.Number.Uint64() - txConfirm.Receipt.BlockNumber.Uint64()
 		// Check if the transaction is confirmed
 		if s.header.Number.Uint64()-txConfirm.confirms >= s.Confirmations {
-			s.releaseConfirmCh(txID)
+			s.releaseConfirm(txID)
 		}
 	}
 }
 
-func (s *Sender) releaseConfirmCh(txID string) {
+func (s *Sender) releaseConfirm(txID string) {
 	txConfirm, _ := s.unconfirmedTxs.Get(txID)
 	confirmCh, _ := s.txConfirmCh.Get(txID)
 	select {

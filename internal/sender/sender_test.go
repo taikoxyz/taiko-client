@@ -72,7 +72,7 @@ func TestNormalSender(t *testing.T) {
 
 	for ; len(confirmsCh) > 0; confirmsCh = confirmsCh[1:] {
 		confirm := <-confirmsCh[0]
-		assert.NoError(t, confirm.Error)
+		assert.NoError(t, confirm.Err)
 	}
 }
 
@@ -140,7 +140,7 @@ func TestReplacement(t *testing.T) {
 		if confirm.Tx.Nonce() == nonce {
 			assert.Equal(t, send.MaxGasPrice, confirm.Tx.GasFeeCap())
 		}
-		assert.NoError(t, confirm.Error)
+		assert.NoError(t, confirm.Err)
 		t.Log(confirm.Receipt.BlockNumber.String())
 	}
 
@@ -175,6 +175,6 @@ func TestNonceTooLow(t *testing.T) {
 	assert.NoError(t, err)
 	confirmCh, _ := send.WaitTxConfirm(txID)
 	confirm := <-confirmCh
-	assert.NoError(t, confirm.Error)
+	assert.NoError(t, confirm.Err)
 	assert.Equal(t, nonce, confirm.Tx.Nonce())
 }

@@ -156,14 +156,8 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 
 func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	fee := big.NewInt(10000)
-	opts, err := getTxOpts(
-		context.Background(),
-		s.p.rpc.L1,
-		s.p.L1ProposerPrivKey,
-		s.RPCClient.L1ChainID,
-		fee,
-	)
-	s.Nil(err)
+	opts := s.p.sender.Opts
+	opts.GasTipCap = fee
 	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
 
 	nonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
@@ -189,11 +183,9 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	newTx, err := s.p.sendProposeBlockTx(
+	newTx, err := s.p.makeProposeBlockTx(
 		context.Background(),
 		encoded,
-		&nonce,
-		true,
 	)
 	s.Nil(err)
 	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
