@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -514,7 +513,6 @@ func (s *ProverTestSuite) initProver(
 	p.guardianProverSender = guardianproversender.New(
 		key,
 		p.cfg.GuardianProverHealthCheckServerEndpoint,
-		memorydb.New(),
 		p.rpc,
 		p.proverAddress,
 	)

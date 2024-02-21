@@ -10,7 +10,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
@@ -48,7 +47,6 @@ type ProverServer struct {
 	protocolConfigs          *bindings.TaikoDataConfig
 	livenessBond             *big.Int
 	isGuardian               bool
-	db                       ethdb.KeyValueStore
 }
 
 // NewProverServerOpts contains all configurations for creating a prover server instance.
@@ -68,7 +66,6 @@ type NewProverServerOpts struct {
 	ProtocolConfigs          *bindings.TaikoDataConfig
 	LivenessBond             *big.Int
 	IsGuardian               bool
-	DB                       ethdb.KeyValueStore
 }
 
 // New creates a new prover server instance.
@@ -91,7 +88,6 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		protocolConfigs:          opts.ProtocolConfigs,
 		livenessBond:             opts.LivenessBond,
 		isGuardian:               opts.IsGuardian,
-		db:                       opts.DB,
 	}
 
 	srv.echo.HideBanner = true

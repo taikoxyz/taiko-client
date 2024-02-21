@@ -16,8 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/ethdb/leveldb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/urfave/cli/v2"
 
@@ -257,20 +255,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		return err
 	}
 
-	// levelDB
-	var db ethdb.KeyValueStore
-	if cfg.DatabasePath != "" {
-		if db, err = leveldb.New(
-			cfg.DatabasePath,
-			int(cfg.DatabaseCacheSize),
-			16, // Minimum number of files handles is 16 in leveldb.
-			"taiko",
-			false,
-		); err != nil {
-			return err
-		}
-	}
-
 	// Prover server
 	proverServerOpts := &server.NewProverServerOpts{
 		ProverPrivateKey:         p.cfg.L1ProverPrivKey,
@@ -287,7 +271,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		ProtocolConfigs:          &protocolConfigs,
 		LivenessBond:             protocolConfigs.LivenessBond,
 		IsGuardian:               p.IsGuardianProver(),
-		DB:                       db,
 	}
 	if p.srv, err = server.New(proverServerOpts); err != nil {
 		return err
@@ -303,7 +286,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.guardianProverSender = guardianproversender.New(
 			p.cfg.L1ProverPrivKey,
 			p.cfg.GuardianProverHealthCheckServerEndpoint,
-			db,
 			p.rpc,
 			p.proverAddress,
 		)
@@ -497,12 +479,6 @@ func (p *Prover) eventLoop() {
 
 // Close closes the prover instance.
 func (p *Prover) Close(ctx context.Context) {
-	if p.guardianProverSender != nil {
-		if err := p.guardianProverSender.Close(); err != nil {
-			log.Error("failed to close database connection", "error", err)
-		}
-	}
-
 	if err := p.srv.Shutdown(ctx); err != nil {
 		log.Error("Failed to shut down prover server", "error", err)
 	}

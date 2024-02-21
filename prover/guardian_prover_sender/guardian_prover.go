@@ -1,23 +1,19 @@
 package guardianproversender
 
 import (
-	"bytes"
 	"context"
 	"crypto/ecdsa"
-	"encoding/json"
 	"fmt"
 	"math/big"
-	"net/http"
 	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/go-resty/resty/v2"
 
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/prover/db"
 )
 
 // healthCheckReq is the request body sent to the health check server when a heartbeat is sent.
@@ -50,7 +46,6 @@ type startupReq struct {
 type GuardianProverBlockSender struct {
 	privateKey                *ecdsa.PrivateKey
 	healthCheckServerEndpoint *url.URL
-	db                        ethdb.KeyValueStore
 	rpc                       *rpc.Client
 	proverAddress             common.Address
 }
@@ -59,14 +54,12 @@ type GuardianProverBlockSender struct {
 func New(
 	privateKey *ecdsa.PrivateKey,
 	healthCheckServerEndpoint *url.URL,
-	db ethdb.KeyValueStore,
 	rpc *rpc.Client,
 	proverAddress common.Address,
 ) *GuardianProverBlockSender {
 	return &GuardianProverBlockSender{
 		privateKey:                privateKey,
 		healthCheckServerEndpoint: healthCheckServerEndpoint,
-		db:                        db,
 		rpc:                       rpc,
 		proverAddress:             proverAddress,
 	}
@@ -74,22 +67,18 @@ func New(
 
 // post sends the given POST request to the health check server.
 func (s *GuardianProverBlockSender) post(ctx context.Context, route string, req interface{}) error {
-	body, err := json.Marshal(req)
+	resp, err := resty.New().
+		R().
+		SetContext(ctx).
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Accept", "application/json").
+		SetBody(req).
+		Post(fmt.Sprintf("%v/%v", s.healthCheckServerEndpoint.String(), route))
 	if err != nil {
 		return err
 	}
 
-	resp, err := http.Post(
-		fmt.Sprintf("%v/%v", s.healthCheckServerEndpoint.String(), route),
-		"application/json",
-		bytes.NewBuffer(body),
-	)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
+	if !resp.IsSuccess() {
 		return fmt.Errorf(
 			"unable to contact health check server endpoint, status code: %v", resp.StatusCode,
 		)
@@ -113,13 +102,7 @@ func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockI
 		return err
 	}
 
-	return s.db.Put(
-		db.BuildBlockKey(header.Time, header.Number.Uint64()),
-		db.BuildBlockValue(header.Hash().Bytes(),
-			signed,
-			blockID,
-		),
-	)
+	return nil
 }
 
 func (s *GuardianProverBlockSender) SendStartup(
@@ -206,7 +189,7 @@ func (s *GuardianProverBlockSender) signBlock(ctx context.Context, blockID *big.
 	}
 
 	for head < blockID.Uint64() {
-		log.Info(
+		log.Debug(
 			"Guardian prover block signing waiting for chain",
 			"latestBlock", head,
 			"eventBlockID", blockID.Uint64(),
@@ -227,16 +210,6 @@ func (s *GuardianProverBlockSender) signBlock(ctx context.Context, blockID *big.
 		return nil, nil, err
 	}
 
-	exists, err := s.db.Has(db.BuildBlockKey(header.Time, header.Number.Uint64()))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if exists {
-		log.Info("Guardian prover already signed block", "blockID", blockID.Uint64())
-		return nil, nil, nil
-	}
-
 	log.Info(
 		"Guardian prover block signing caught up",
 		"latestBlock", head,
@@ -251,11 +224,6 @@ func (s *GuardianProverBlockSender) signBlock(ctx context.Context, blockID *big.
 	return signed, header, nil
 }
 
-// Close closes the underlying database.
-func (s *GuardianProverBlockSender) Close() error {
-	return s.db.Close()
-}
-
 // SendHeartbeat sends a heartbeat to the health check server.
 func (s *GuardianProverBlockSender) SendHeartbeat(
 	ctx context.Context,
@@ -267,18 +235,21 @@ func (s *GuardianProverBlockSender) SendHeartbeat(
 		return err
 	}
 
-	req := &healthCheckReq{
+	if err := s.post(ctx, "healthCheck", &healthCheckReq{
 		HeartBeatSignature: sig,
 		ProverAddress:      s.proverAddress.Hex(),
 		LatestL1Block:      latestL1Block,
 		LatestL2Block:      latestL2Block,
-	}
-
-	if err := s.post(ctx, "healthCheck", req); err != nil {
+	}); err != nil {
 		return err
 	}
 
-	log.Info("Successfully sent heartbeat", "signature", common.Bytes2Hex(sig))
+	log.Info(
+		"Successfully sent heartbeat",
+		"signature", common.Bytes2Hex(sig),
+		"latestL1Block", latestL1Block,
+		"latestL2Block", latestL2Block,
+	)
 
 	return nil
 }
