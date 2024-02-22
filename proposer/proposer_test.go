@@ -2,7 +2,6 @@ package proposer
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"os"
 	"testing"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
-	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -170,14 +168,9 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	nonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
 	s.Nil(err)
 
-	var txID string
-	txID, err = s.p.Sender.SendRaw(nonce, &common.Address{}, common.Big1, nil)
+	txID, err := s.p.Sender.SendRaw(nonce, &common.Address{}, common.Big1, nil)
 	s.Nil(err)
 	tx := s.p.Sender.GetUnconfirmedTx(txID)
-
-	pendingNonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
-	s.Nil(err)
-	fmt.Println(pendingNonce)
 
 	encoded, err := rlp.EncodeToBytes([]types.Transaction{})
 	s.Nil(err)
@@ -192,7 +185,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	}
 	s.Nil(err)
 
-	txID, err = s.p.Sender.SendTransaction(newTx)
+	txID, err = s.p.Sender.SendRaw(nonce, newTx.To(), newTx.Value(), newTx.Data())
 	s.Nil(err)
 	newTx = s.p.Sender.GetUnconfirmedTx(txID)
 
@@ -225,6 +218,5 @@ func (s *ProposerTestSuite) TestStartClose() {
 }
 
 func TestProposerTestSuite(t *testing.T) {
-	utils.LoadEnv()
 	suite.Run(t, new(ProposerTestSuite))
 }
