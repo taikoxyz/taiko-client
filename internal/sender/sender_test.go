@@ -2,7 +2,6 @@ package sender_test
 
 import (
 	"context"
-	"github.com/taikoxyz/taiko-client/internal/utils"
 	"math/big"
 	"os"
 	"runtime"
@@ -16,6 +15,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/taikoxyz/taiko-client/internal/sender"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
