@@ -245,12 +245,8 @@ func (s *Sender) sendTx(confirmTx *TxConfirm) error {
 func (s *Sender) loop() {
 	defer s.wg.Done()
 
-	headCh := make(chan *types.Header, 2)
-	sub, err := s.client.SubscribeNewHead(s.ctx, headCh)
-	if err != nil {
-		panic(err)
-	}
-	defer sub.Unsubscribe()
+	hTick := time.NewTicker(time.Second * 3)
+	defer hTick.Stop()
 
 	tick := time.NewTicker(time.Second * 2)
 	defer tick.Stop()
@@ -259,9 +255,19 @@ func (s *Sender) loop() {
 		select {
 		case <-tick.C:
 			s.resendTransaction()
-		case header := <-headCh:
+		case <-hTick.C:
+			header, err := s.client.HeaderByNumber(s.ctx, nil)
+			if err != nil {
+				log.Error("failed to get the latest header", "err", err)
+				return
+			}
+
 			// If chain appear reorg then handle mempool transactions.
 			// TODO: handle reorg transactions
+
+			if s.header.Hash() == header.Hash() {
+				continue
+			}
 			s.header = header
 			// Update the gas tip and gas fee
 			err = s.updateGasTipGasFee(header)
