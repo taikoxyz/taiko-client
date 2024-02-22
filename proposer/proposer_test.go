@@ -172,9 +172,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 
 	var txID string
 	txID, err = s.p.Sender.SendRaw(nonce, &common.Address{}, common.Big1, nil)
-	confirmCh, _ := s.p.Sender.WaitTxConfirm(txID)
-	confirm := <-confirmCh
-	tx := confirm.Tx
+	tx := s.p.Sender.GetUnconfirmedTx(txID)
 
 	pendingNonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
 	s.Nil(err)
@@ -195,9 +193,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 
 	txID, err = s.p.Sender.SendTransaction(newTx)
 	s.Nil(err)
-	confirmCh, _ = s.p.Sender.WaitTxConfirm(txID)
-	confirm = <-confirmCh
-	s.Nil(confirm.Err)
+	newTx = s.p.Sender.GetUnconfirmedTx(txID)
 
 	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }

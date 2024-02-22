@@ -140,6 +140,15 @@ func (s *Sender) WaitTxConfirm(txID string) (<-chan *TxConfirm, bool) {
 	return confirmCh, ok
 }
 
+// GetUnconfirmedTx returns the unconfirmed transaction by the transaction ID.
+func (s *Sender) GetUnconfirmedTx(txID string) *types.Transaction {
+	txConfirm, ok := s.unconfirmedTxs.Get(txID)
+	if !ok {
+		return nil
+	}
+	return txConfirm.Tx
+}
+
 // SendRaw sends a transaction to the target address.
 func (s *Sender) SendRaw(nonce uint64, target *common.Address, value *big.Int, data []byte) (string, error) {
 	return s.SendTransaction(types.NewTx(&types.DynamicFeeTx{
