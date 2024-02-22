@@ -172,6 +172,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 
 	var txID string
 	txID, err = s.p.Sender.SendRaw(nonce, &common.Address{}, common.Big1, nil)
+	s.Nil(err)
 	tx := s.p.Sender.GetUnconfirmedTx(txID)
 
 	pendingNonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)

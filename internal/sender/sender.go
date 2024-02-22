@@ -169,11 +169,6 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 		return "", fmt.Errorf("too many pending transactions")
 	}
 
-	// Update the gas tip and gas fee.
-	if err := s.updateGasTipGasFee(s.header); err != nil {
-		return "", err
-	}
-
 	txData, err := s.makeTxData(tx)
 	if err != nil {
 		return "", err
@@ -202,31 +197,33 @@ func (s *Sender) sendTx(confirmTx *TxConfirm) error {
 
 	baseTx := confirmTx.baseTx
 
-	// Try 3 RetryTimes if nonce is not correct.
-	rawTx, err := s.Opts.Signer(s.Opts.From, types.NewTx(baseTx))
-	if err != nil {
-		return err
-	}
-	confirmTx.Tx = rawTx
-	err = s.client.SendTransaction(s.ctx, rawTx)
-	confirmTx.Err = err
-	// Check if the error is nonce too low.
-	if err != nil {
-		if strings.Contains(err.Error(), "nonce too low") {
-			s.AdjustNonce(baseTx)
-			log.Warn("nonce is not correct, retry to send transaction", "tx_hash", rawTx.Hash().String(), "err", err)
-			return nil
+	for i := 0; i < 3; i++ {
+		// Try 3 RetryTimes if nonce is not correct.
+		rawTx, err := s.Opts.Signer(s.Opts.From, types.NewTx(baseTx))
+		if err != nil {
+			return err
 		}
-		if err.Error() == "replacement transaction underpriced" {
-			s.adjustGas(baseTx)
-			log.Warn("replacement transaction underpriced", "tx_hash", rawTx.Hash().String(), "err", err)
-			return nil
+		confirmTx.Tx = rawTx
+		err = s.client.SendTransaction(s.ctx, rawTx)
+		confirmTx.Err = err
+		// Check if the error is nonce too low.
+		if err != nil {
+			if strings.Contains(err.Error(), "nonce too low") {
+				s.AdjustNonce(baseTx)
+				log.Warn("nonce is not correct, retry to send transaction", "tx_hash", rawTx.Hash().String(), "err", err)
+				continue
+			}
+			if err.Error() == "replacement transaction underpriced" {
+				s.adjustGas(baseTx)
+				log.Warn("replacement transaction underpriced", "tx_hash", rawTx.Hash().String(), "err", err)
+				continue
+			}
+			log.Error("failed to send transaction", "tx_hash", rawTx.Hash().String(), "err", err)
+			return err
 		}
-		log.Error("failed to send transaction", "tx_hash", rawTx.Hash().String(), "err", err)
-		return err
+		s.Opts.Nonce = big.NewInt(s.Opts.Nonce.Int64() + 1)
+		break
 	}
-	s.Opts.Nonce = big.NewInt(s.Opts.Nonce.Int64() + 1)
-
 	return nil
 }
 
