@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -16,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	cmap "github.com/orcaman/concurrent-map/v2"
+	"github.com/pborman/uuid"
 
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -61,7 +61,6 @@ type Sender struct {
 	ChainID *big.Int
 	Opts    *bind.TransactOpts
 
-	globalTxID     uint64
 	unconfirmedTxs cmap.ConcurrentMap[string, *TxConfirm] //uint64]*TxConfirm
 	txConfirmCh    cmap.ConcurrentMap[string, chan *TxConfirm]
 
@@ -164,7 +163,7 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	txID := fmt.Sprint(atomic.AddUint64(&s.globalTxID, 1))
+	txID := uuid.New()
 	confirmTx := &TxConfirm{
 		TxID:   txID,
 		baseTx: txData,
