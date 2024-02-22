@@ -168,6 +168,12 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 	if s.unconfirmedTxs.Count() >= 100 {
 		return "", fmt.Errorf("too many pending transactions")
 	}
+
+	// Update the gas tip and gas fee.
+	if err := s.updateGasTipGasFee(s.header); err != nil {
+		return "", err
+	}
+
 	txData, err := s.makeTxData(tx)
 	if err != nil {
 		return "", err
