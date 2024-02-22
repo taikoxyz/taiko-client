@@ -8,7 +8,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/holiman/uint256"
+	"github.com/pborman/uuid"
 	"modernc.org/mathutil"
+
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 func (s *Sender) adjustGas(txData types.TxData) {
@@ -118,5 +121,42 @@ func (s *Sender) makeTxData(tx *types.Transaction) (types.TxData, error) {
 		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported transaction type: %v", tx.Type())
+	}
+}
+
+func (s *Sender) handleReorgTransactions() { // nolint: unused
+	content, err := rpc.ContentFrom(s.ctx, s.client, s.Opts.From)
+	if err != nil {
+		log.Warn("failed to get the unconfirmed transactions", "address", s.Opts.From.String(), "err", err)
+		return
+	}
+	if len(content) == 0 {
+		return
+	}
+
+	txs := map[common.Hash]*types.Transaction{}
+	for _, txMap := range content {
+		for _, tx := range txMap {
+			txs[tx.Hash()] = tx
+		}
+	}
+	for _, confirm := range s.unconfirmedTxs.Items() {
+		delete(txs, confirm.Tx.Hash())
+	}
+	for _, tx := range txs {
+		baseTx, err := s.makeTxData(tx)
+		if err != nil {
+			log.Warn("failed to make the transaction data when handle reorg txs", "tx_hash", tx.Hash().String(), "err", err)
+			return
+		}
+		txID := uuid.New()
+		confirm := &TxConfirm{
+			TxID:   txID,
+			Tx:     tx,
+			baseTx: baseTx,
+		}
+		s.unconfirmedTxs.Set(txID, confirm)
+		s.txConfirmCh.Set(txID, make(chan *TxConfirm, 1))
+		log.Info("handle reorg tx", "tx_hash", tx.Hash().String(), "tx_id", txID)
 	}
 }

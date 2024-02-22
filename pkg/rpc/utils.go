@@ -284,7 +284,7 @@ func IncreaseGasTipCap(
 
 	log.Info("Try replacing a transaction with same nonce", "sender", address, "nonce", opts.Nonce)
 
-	originalTx, err := GetPendingTxByNonce(ctxWithTimeout, cli, address, opts.Nonce.Uint64())
+	originalTx, err := GetPendingTxByNonce(ctxWithTimeout, cli.L1, address, opts.Nonce.Uint64())
 	if err != nil || originalTx == nil {
 		log.Warn(
 			"Original transaction not found",
@@ -322,14 +322,14 @@ func IncreaseGasTipCap(
 // GetPendingTxByNonce tries to retrieve a pending transaction with a given nonce in a node's mempool.
 func GetPendingTxByNonce(
 	ctx context.Context,
-	cli *Client,
+	cli *EthClient,
 	address common.Address,
 	nonce uint64,
 ) (*types.Transaction, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	content, err := ContentFrom(ctxWithTimeout, cli.L1, address)
+	content, err := ContentFrom(ctxWithTimeout, cli, address)
 	if err != nil {
 		return nil, err
 	}

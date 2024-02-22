@@ -25,6 +25,8 @@ var (
 )
 
 type Config struct {
+	// The minimum confirmations to consider the transaction is confirmed.
+	Confirm uint64
 	// The maximum retry times to send transaction.
 	RetryTimes uint64
 	// The maximum waiting time for transaction in mempool.
@@ -41,6 +43,7 @@ type Config struct {
 
 type TxConfirm struct {
 	RetryTimes uint64
+	confirm    uint64
 
 	TxID string
 
@@ -134,10 +137,22 @@ func (s *Sender) Close() {
 	s.wg.Wait()
 }
 
-// WaitTxConfirm returns a channel to receive the transaction confirmation.
-func (s *Sender) WaitTxConfirm(txID string) (<-chan *TxConfirm, bool) {
+// ConfirmChannel returns a channel to receive the transaction confirmation.
+func (s *Sender) ConfirmChannel(txID string) <-chan *TxConfirm {
 	confirmCh, ok := s.txConfirmCh.Get(txID)
-	return confirmCh, ok
+	if !ok {
+		log.Warn("transaction not found", "tx_id", txID)
+	}
+	return confirmCh
+}
+
+// ConfirmChannels returns all the transaction confirmation channels.
+func (s *Sender) ConfirmChannels() map[string]<-chan *TxConfirm {
+	channels := map[string]<-chan *TxConfirm{}
+	for txID, confirmCh := range s.txConfirmCh.Items() {
+		channels[txID] = confirmCh
+	}
+	return channels
 }
 
 // GetUnconfirmedTx returns the unconfirmed transaction by the transaction ID.
@@ -230,33 +245,31 @@ func (s *Sender) sendTx(confirmTx *TxConfirm) error {
 func (s *Sender) loop() {
 	defer s.wg.Done()
 
-	tickHead := time.NewTicker(time.Second * 3)
-	defer tickHead.Stop()
+	headCh := make(chan *types.Header, 2)
+	sub, err := s.client.SubscribeNewHead(s.ctx, headCh)
+	if err != nil {
+		panic(err)
+	}
+	defer sub.Unsubscribe()
 
-	tickResend := time.NewTicker(time.Second * 2)
-	defer tickResend.Stop()
+	tick := time.NewTicker(time.Second * 2)
+	defer tick.Stop()
 
 	for {
 		select {
-		case <-tickResend.C:
+		case <-tick.C:
 			s.resendTransaction()
-			// Check the unconfirmed transactions
-			s.checkPendingTransactions()
-		case <-tickHead.C:
-			header, err := s.client.HeaderByNumber(s.ctx, nil)
-			if err != nil {
-				log.Warn("failed to get the latest header", "err", err)
-				continue
-			}
-			if s.header.Hash() == header.Hash() {
-				continue
-			}
+		case header := <-headCh:
+			// If chain appear reorg then handle mempool transactions.
+			// TODO: handle reorg transactions
 			s.header = header
 			// Update the gas tip and gas fee
 			err = s.updateGasTipGasFee(header)
 			if err != nil {
 				log.Warn("failed to update gas tip and gas fee", "err", err)
 			}
+			// Check the unconfirmed transactions
+			s.checkPendingTransactions()
 		case <-s.ctx.Done():
 			return
 		case <-s.stopCh:
@@ -314,7 +327,10 @@ func (s *Sender) checkPendingTransactions() {
 				continue
 			}
 		}
-		s.releaseConfirm(txID)
+		txConfirm.confirm = s.header.Number.Uint64() - txConfirm.Receipt.BlockNumber.Uint64()
+		if txConfirm.confirm >= s.Confirm {
+			s.releaseConfirm(txID)
+		}
 	}
 }
 

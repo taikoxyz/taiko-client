@@ -27,27 +27,22 @@ type SenderTestSuite struct {
 
 func (s *SenderTestSuite) TestNormalSender() {
 	var (
-		batchSize  = 5
-		eg         errgroup.Group
-		confirmsCh = make([]<-chan *sender.TxConfirm, 0, batchSize)
+		batchSize = 5
+		eg        errgroup.Group
 	)
 	eg.SetLimit(runtime.NumCPU())
 	for i := 0; i < batchSize; i++ {
 		i := i
 		eg.Go(func() error {
 			addr := common.BigToAddress(big.NewInt(int64(i)))
-			txID, err := s.sender.SendRaw(s.sender.Opts.Nonce.Uint64(), &addr, big.NewInt(1), nil)
-			if err == nil {
-				confirmCh, _ := s.sender.WaitTxConfirm(txID)
-				confirmsCh = append(confirmsCh, confirmCh)
-			}
+			_, err := s.sender.SendRaw(s.sender.Opts.Nonce.Uint64(), &addr, big.NewInt(1), nil)
 			return err
 		})
 	}
 	s.Nil(eg.Wait())
 
-	for ; len(confirmsCh) > 0; confirmsCh = confirmsCh[1:] {
-		confirm := <-confirmsCh[0]
+	for _, confirmCh := range s.sender.ConfirmChannels() {
+		confirm := <-confirmCh
 		s.Nil(confirm.Err)
 	}
 }
@@ -86,23 +81,17 @@ func (s *SenderTestSuite) TestReplacement() {
 	err = client.SendTransaction(context.Background(), rawTx)
 	s.Nil(err)
 
-	confirmsCh := make([]<-chan *sender.TxConfirm, 0, 5)
-
 	// Replace the transaction with a higher nonce.
-	txID, err := send.SendRaw(nonce, &common.Address{}, big.NewInt(1), nil)
+	_, err = send.SendRaw(nonce, &common.Address{}, big.NewInt(1), nil)
 	s.Nil(err)
-	confirmCh, _ := send.WaitTxConfirm(txID)
-	confirmsCh = append(confirmsCh, confirmCh)
 
 	time.Sleep(time.Second * 6)
 	// Send a transaction with a next nonce and let all the transactions be confirmed.
-	txID, err = send.SendRaw(nonce-1, &common.Address{}, big.NewInt(1), nil)
+	_, err = send.SendRaw(nonce-1, &common.Address{}, big.NewInt(1), nil)
 	s.Nil(err)
-	confirmCh, _ = send.WaitTxConfirm(txID)
-	confirmsCh = append(confirmsCh, confirmCh)
 
-	for ; len(confirmsCh) > 0; confirmsCh = confirmsCh[1:] {
-		confirm := <-confirmsCh[0]
+	for _, confirmCh := range send.ConfirmChannels() {
+		confirm := <-confirmCh
 		// Check the replaced transaction's gasFeeTap touch the max gas price.
 		if confirm.Tx.Nonce() == nonce {
 			s.Equal(send.MaxGasFee, confirm.Tx.GasFeeCap().Uint64())
@@ -130,8 +119,7 @@ func (s *SenderTestSuite) TestNonceTooLow() {
 
 	txID, err := send.SendRaw(nonce-3, &common.Address{}, big.NewInt(1), nil)
 	s.Nil(err)
-	confirmCh, _ := send.WaitTxConfirm(txID)
-	confirm := <-confirmCh
+	confirm := <-send.ConfirmChannel(txID)
 	s.Nil(confirm.Err)
 	s.Equal(nonce, confirm.Tx.Nonce())
 }
