@@ -22,7 +22,7 @@ type AnchorTxValidatorTestSuite struct {
 func (s *AnchorTxValidatorTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	validator, err := New(common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")), s.RPCClient.L2ChainID, s.RPCClient)
+	validator, err := New(common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")), s.RPCClient.L2.ChainID, s.RPCClient)
 	s.Nil(err)
 	s.v = validator
 }
@@ -44,7 +44,7 @@ func (s *AnchorTxValidatorTestSuite) TestValidateAnchorTx() {
 
 	// invalid sender
 	dynamicFeeTxTx := &types.DynamicFeeTx{
-		ChainID:    s.v.rpc.L2ChainID,
+		ChainID:    s.v.rpc.L2.ChainID,
 		Nonce:      0,
 		GasTipCap:  common.Big1,
 		GasFeeCap:  common.Big1,
@@ -55,7 +55,7 @@ func (s *AnchorTxValidatorTestSuite) TestValidateAnchorTx() {
 		AccessList: types.AccessList{},
 	}
 
-	signer := types.LatestSignerForChainID(s.v.rpc.L2ChainID)
+	signer := types.LatestSignerForChainID(s.v.rpc.L2.ChainID)
 	tx = types.MustSignNewTx(wrongPrivKey, signer, dynamicFeeTxTx)
 
 	s.ErrorContains(

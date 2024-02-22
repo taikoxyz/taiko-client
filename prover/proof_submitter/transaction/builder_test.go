@@ -9,11 +9,11 @@ import (
 )
 
 func (s *TransactionTestSuite) TestGetProveBlocksTxOpts() {
-	optsL1, err := getProveBlocksTxOpts(context.Background(), s.RPCClient.L1, s.RPCClient.L1ChainID, s.TestAddrPrivKey)
+	optsL1, err := getProveBlocksTxOpts(context.Background(), s.RPCClient.L1, s.RPCClient.L1.ChainID, s.TestAddrPrivKey)
 	s.Nil(err)
 	s.Greater(optsL1.GasTipCap.Uint64(), uint64(0))
 
-	optsL2, err := getProveBlocksTxOpts(context.Background(), s.RPCClient.L2, s.RPCClient.L2ChainID, s.TestAddrPrivKey)
+	optsL2, err := getProveBlocksTxOpts(context.Background(), s.RPCClient.L2, s.RPCClient.L2.ChainID, s.TestAddrPrivKey)
 	s.Nil(err)
 	s.Greater(optsL2.GasTipCap.Uint64(), uint64(0))
 }

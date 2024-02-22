@@ -31,10 +31,7 @@ func TestBlockTx(t *testing.T) {
 	sk, err := crypto.ToECDSA(common.FromHex(priv))
 	assert.NoError(t, err)
 
-	chainID, err := l1Client.ChainID(ctx)
-	assert.NoError(t, err)
-
-	opts, err := bind.NewKeyedTransactorWithChainID(sk, chainID)
+	opts, err := bind.NewKeyedTransactorWithChainID(sk, l1Client.ChainID)
 	assert.NoError(t, err)
 	opts.Context = ctx
 	//opts.NoSend = true
