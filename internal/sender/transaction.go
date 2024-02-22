@@ -42,7 +42,7 @@ func (s *Sender) adjustGas(txData types.TxData) {
 	}
 }
 
-func (s *Sender) adjustNonce(txData types.TxData) {
+func (s *Sender) AdjustNonce(txData types.TxData) {
 	nonce, err := s.client.NonceAt(s.ctx, s.Opts.From, nil)
 	if err != nil {
 		log.Warn("failed to get the nonce", "from", s.Opts.From, "err", err)
@@ -56,6 +56,31 @@ func (s *Sender) adjustNonce(txData types.TxData) {
 	case *types.BlobTx:
 		baseTx.Nonce = nonce
 	}
+}
+
+func (s *Sender) updateGasTipGasFee(head *types.Header) error {
+	// Get the gas tip cap
+	gasTipCap, err := s.client.SuggestGasTipCap(s.ctx)
+	if err != nil {
+		return err
+	}
+
+	// Get the gas fee cap
+	gasFeeCap := new(big.Int).Add(gasTipCap, new(big.Int).Mul(head.BaseFee, big.NewInt(2)))
+	// Check if the gas fee cap is less than the gas tip cap
+	if gasFeeCap.Cmp(gasTipCap) < 0 {
+		return fmt.Errorf("maxFeePerGas (%v) < maxPriorityFeePerGas (%v)", gasFeeCap, gasTipCap)
+	}
+	maxGasFee := big.NewInt(int64(s.MaxGasFee))
+	if gasFeeCap.Cmp(maxGasFee) > 0 {
+		gasFeeCap = new(big.Int).Set(maxGasFee)
+		gasTipCap = new(big.Int).Set(maxGasFee)
+	}
+
+	s.Opts.GasTipCap = gasTipCap
+	s.Opts.GasFeeCap = gasFeeCap
+
+	return nil
 }
 
 func (s *Sender) makeTxData(tx *types.Transaction) (types.TxData, error) {

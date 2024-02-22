@@ -168,6 +168,8 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
+	// Because of evm_revert operation, the nonce of the proposer need to be adjusted.
+	s.p.Sender.AdjustNonce(nil)
 	// Propose ten blocks on another fork
 	for i := 0; i < 10; i++ {
 		testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
@@ -231,6 +233,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
+	s.p.Sender.AdjustNonce(nil)
 	// Propose one blocks on another fork
 	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 
@@ -291,6 +294,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
+	s.p.Sender.AdjustNonce(nil)
 	// Propose two blocks on another fork
 	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 	time.Sleep(3 * time.Second)

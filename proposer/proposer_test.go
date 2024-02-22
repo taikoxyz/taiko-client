@@ -2,6 +2,7 @@ package proposer
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"os"
 	"testing"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -155,39 +157,48 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 }
 
 func (s *ProposerTestSuite) TestSendProposeBlockTx() {
+	s.SetL1Automine(false)
+	defer s.SetL1Automine(true)
+
+	s.p.Sender.AdjustNonce(nil)
+
 	fee := big.NewInt(10000)
-	opts := s.p.sender.Opts
+	opts := s.p.Sender.Opts
 	opts.Value = fee
 	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
 
 	nonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
 	s.Nil(err)
 
-	tx := types.NewTransaction(
-		nonce,
-		common.BytesToAddress([]byte{}),
-		common.Big1,
-		100000,
-		opts.GasTipCap,
-		[]byte{},
-	)
+	var txID string
+	txID, err = s.p.Sender.SendRaw(nonce, &common.Address{}, common.Big1, nil)
+	confirmCh, _ := s.p.Sender.WaitTxConfirm(txID)
+	confirm := <-confirmCh
+	tx := confirm.Tx
 
-	s.SetL1Automine(false)
-	defer s.SetL1Automine(true)
-
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L1ChainID), s.p.L1ProposerPrivKey)
+	pendingNonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
 	s.Nil(err)
-	s.Nil(s.RPCClient.L1.SendTransaction(context.Background(), signedTx))
+	fmt.Println(pendingNonce)
 
-	var emptyTxs []types.Transaction
-	encoded, err := rlp.EncodeToBytes(emptyTxs)
+	encoded, err := rlp.EncodeToBytes([]types.Transaction{})
+	s.Nil(err)
+	var newTx *types.Transaction
+	if s.p.BlobAllowed {
+		newTx, err = s.p.makeProposeBlockTxWithBlobHash(context.Background(), encoded)
+	} else {
+		newTx, err = s.p.makeProposeBlockTx(
+			context.Background(),
+			encoded,
+		)
+	}
 	s.Nil(err)
 
-	newTx, err := s.p.makeProposeBlockTx(
-		context.Background(),
-		encoded,
-	)
+	txID, err = s.p.Sender.SendTransaction(newTx)
 	s.Nil(err)
+	confirmCh, _ = s.p.Sender.WaitTxConfirm(txID)
+	confirm = <-confirmCh
+	s.Nil(confirm.Err)
+
 	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }
 
@@ -217,5 +228,6 @@ func (s *ProposerTestSuite) TestStartClose() {
 }
 
 func TestProposerTestSuite(t *testing.T) {
+	utils.LoadEnv()
 	suite.Run(t, new(ProposerTestSuite))
 }

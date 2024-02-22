@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -93,6 +94,9 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	if cfg.MaxWaitingTime == 0 {
 		cfg.MaxWaitingTime = time.Minute * 5
 	}
+	if cfg.GasLimit == 0 {
+		cfg.GasLimit = 21000
+	}
 
 	sender := &Sender{
 		ctx:            ctx,
@@ -106,7 +110,7 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 		stopCh:         make(chan struct{}),
 	}
 	// Set the nonce
-	sender.adjustNonce(nil)
+	sender.AdjustNonce(nil)
 	// Update the gas tip and gas fee.
 	err = sender.updateGasTipGasFee(header)
 	if err != nil {
@@ -116,7 +120,9 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	if rootSender[opts.From] != nil {
 		return nil, fmt.Errorf("sender already exists")
 	}
-	rootSender[opts.From] = sender
+	if os.Getenv("RUN_TESTS") == "" {
+		rootSender[opts.From] = sender
+	}
 
 	sender.wg.Add(1)
 	go sender.loop()
@@ -193,7 +199,7 @@ func (s *Sender) sendTx(confirmTx *TxConfirm) error {
 	// Check if the error is nonce too low.
 	if err != nil {
 		if strings.Contains(err.Error(), "nonce too low") {
-			s.adjustNonce(baseTx)
+			s.AdjustNonce(baseTx)
 			log.Warn("nonce is not correct, retry to send transaction", "tx_hash", rawTx.Hash().String(), "err", err)
 			return nil
 		}
@@ -206,31 +212,6 @@ func (s *Sender) sendTx(confirmTx *TxConfirm) error {
 		return err
 	}
 	s.Opts.Nonce = big.NewInt(s.Opts.Nonce.Int64() + 1)
-
-	return nil
-}
-
-func (s *Sender) updateGasTipGasFee(head *types.Header) error {
-	// Get the gas tip cap
-	gasTipCap, err := s.client.SuggestGasTipCap(s.ctx)
-	if err != nil {
-		return err
-	}
-
-	// Get the gas fee cap
-	gasFeeCap := new(big.Int).Add(gasTipCap, new(big.Int).Mul(head.BaseFee, big.NewInt(2)))
-	// Check if the gas fee cap is less than the gas tip cap
-	if gasFeeCap.Cmp(gasTipCap) < 0 {
-		return fmt.Errorf("maxFeePerGas (%v) < maxPriorityFeePerGas (%v)", gasFeeCap, gasTipCap)
-	}
-	maxGasFee := big.NewInt(int64(s.MaxGasFee))
-	if gasFeeCap.Cmp(maxGasFee) > 0 {
-		gasFeeCap = new(big.Int).Set(maxGasFee)
-		gasTipCap = new(big.Int).Set(maxGasFee)
-	}
-
-	s.Opts.GasTipCap = gasTipCap
-	s.Opts.GasFeeCap = gasFeeCap
 
 	return nil
 }
@@ -248,6 +229,8 @@ func (s *Sender) loop() {
 		select {
 		case <-tickResend.C:
 			s.resendTransaction()
+			// Check the unconfirmed transactions
+			s.checkPendingTransactions()
 		case <-tickHead.C:
 			header, err := s.client.HeaderByNumber(s.ctx, nil)
 			if err != nil {
@@ -263,8 +246,6 @@ func (s *Sender) loop() {
 			if err != nil {
 				log.Warn("failed to update gas tip and gas fee", "err", err)
 			}
-			// Check the unconfirmed transactions
-			s.checkPendingTransactions()
 		case <-s.ctx.Done():
 			return
 		case <-s.stopCh:
@@ -288,7 +269,6 @@ func (s *Sender) resendTransaction() {
 }
 
 func (s *Sender) checkPendingTransactions() {
-	curTime := time.Now()
 	for txID, txConfirm := range s.unconfirmedTxs.Items() {
 		if txConfirm.Err != nil {
 			continue
@@ -296,12 +276,14 @@ func (s *Sender) checkPendingTransactions() {
 		if txConfirm.Receipt == nil {
 			// Ignore the transaction if it is pending.
 			tx, isPending, err := s.client.TransactionByHash(s.ctx, txConfirm.Tx.Hash())
-			if err != nil || isPending {
+			if err != nil {
 				continue
 			}
-			// If the transaction is in mempool for too long, replace it.
-			if waitTime := curTime.Sub(tx.Time()); waitTime > s.MaxWaitingTime {
-				txConfirm.Err = fmt.Errorf("transaction in mempool for too long")
+			if isPending {
+				// If the transaction is in mempool for too long, replace it.
+				if waitTime := time.Since(tx.Time()); waitTime > s.MaxWaitingTime {
+					txConfirm.Err = fmt.Errorf("transaction in mempool for too long")
+				}
 				continue
 			}
 			// Get the transaction receipt.

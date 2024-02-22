@@ -60,7 +60,7 @@ type Proposer struct {
 	CustomProposeOpHook func() error
 	AfterCommitHook     func() error
 
-	sender *sender.Sender
+	Sender *sender.Sender
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -104,11 +104,11 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 		return err
 	}
 
-	if p.sender, err = sender.NewSender(ctx, &sender.Config{
-		MaxGasFee:     20000000000,
-		GasGrowthRate: 10,
-		RetryTimes:    0,
-		GasLimit:      cfg.ProposeBlockTxGasLimit,
+	if p.Sender, err = sender.NewSender(ctx, &sender.Config{
+		MaxGasFee:      20000000000,
+		GasGrowthRate:  20,
+		GasLimit:       cfg.ProposeBlockTxGasLimit,
+		MaxWaitingTime: time.Second * 30,
 	}, p.rpc.L1, cfg.L1ProposerPrivKey); err != nil {
 		return err
 	}
@@ -184,7 +184,7 @@ func (p *Proposer) eventLoop() {
 
 // Close closes the proposer instance.
 func (p *Proposer) Close(ctx context.Context) {
-	p.sender.Close()
+	p.Sender.Close()
 	p.wg.Wait()
 }
 
@@ -359,7 +359,7 @@ func (p *Proposer) makeProposeBlockTxWithBlobHash(
 		return nil, err
 	}
 
-	opts := p.sender.Opts
+	opts := p.Sender.Opts
 	opts.Value = maxFee
 	rawTx, err := p.rpc.TaikoL1.ProposeBlock(
 		opts,
@@ -394,7 +394,7 @@ func (p *Proposer) makeProposeBlockTx(
 		return nil, err
 	}
 
-	opts := p.sender.Opts
+	opts := p.Sender.Opts
 	opts.Value = maxFee
 
 	var parentMetaHash = [32]byte{}
@@ -487,7 +487,7 @@ func (p *Proposer) ProposeTxList(
 				log.Warn("Failed to make taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				return err
 			}
-			txID, err = p.sender.SendTransaction(tx)
+			txID, err = p.Sender.SendTransaction(tx)
 			if err != nil {
 				log.Warn("Failed to send taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				return err
@@ -506,7 +506,7 @@ func (p *Proposer) ProposeTxList(
 	}
 
 	// Waiting for the transaction to be confirmed.
-	confirmCh, _ := p.sender.WaitTxConfirm(txID)
+	confirmCh, _ := p.Sender.WaitTxConfirm(txID)
 	confirm := <-confirmCh
 	if confirm.Err != nil {
 		return confirm.Err
