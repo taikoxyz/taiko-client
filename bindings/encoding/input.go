@@ -92,10 +92,6 @@ var (
 			Name: "graffiti",
 			Type: "bytes32",
 		},
-		{
-			Name: "__reserved",
-			Type: "bytes32[2]",
-		},
 	}
 	tierProofComponents = []abi.ArgumentMarshaling{
 		{
