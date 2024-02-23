@@ -142,7 +142,7 @@ func (s *ProofSubmitterTestSuite) TestProofSubmitterSubmitProofMetadataNotFound(
 }
 
 func (s *ProofSubmitterTestSuite) TestSubmitProofs() {
-	events := testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.proposer, s.calldataSyncer)
+	events := s.ProposeAndInsertEmptyBlocks(s.proposer, s.calldataSyncer)
 
 	for _, e := range events {
 		s.Nil(s.submitter.RequestProof(context.Background(), e))
@@ -152,7 +152,7 @@ func (s *ProofSubmitterTestSuite) TestSubmitProofs() {
 }
 
 func (s *ProofSubmitterTestSuite) TestGuardianSubmitProofs() {
-	events := testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.proposer, s.calldataSyncer)
+	events := s.ProposeAndInsertEmptyBlocks(s.proposer, s.calldataSyncer)
 
 	for _, e := range events {
 		s.Nil(s.submitter.RequestProof(context.Background(), e))
