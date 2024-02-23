@@ -12,6 +12,7 @@ import (
 
 var (
 	l1Endpoint       = os.Getenv("L1_NODE_WS_ENDPOINT")
+	l1BeaconEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
 	l2Endpoint       = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
 	l2CheckPoint     = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 	l2EngineEndpoint = os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
@@ -27,6 +28,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		c, err := NewConfigFromCliContext(ctx)
 		s.Nil(err)
 		s.Equal(l1Endpoint, c.L1Endpoint)
+		s.Equal(l1BeaconEndpoint, c.L1BeaconEndpoint)
 		s.Equal(l2Endpoint, c.L2Endpoint)
 		s.Equal(l2EngineEndpoint, c.L2EngineEndpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
@@ -44,6 +46,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"--" + flags.L1WSEndpoint.Name, l1Endpoint,
+		"--" + flags.L1BeaconEndpoint.Name, l1BeaconEndpoint,
 		"--" + flags.L2WSEndpoint.Name, l2Endpoint,
 		"--" + flags.L2AuthEndpoint.Name, l2EngineEndpoint,
 		"--" + flags.TaikoL1Address.Name, taikoL1,
@@ -78,6 +81,7 @@ func (s *DriverTestSuite) SetupApp() *cli.App {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
+		&cli.StringFlag{Name: flags.L1BeaconEndpoint.Name},
 		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
 		&cli.StringFlag{Name: flags.L2AuthEndpoint.Name},
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
