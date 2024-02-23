@@ -35,6 +35,11 @@ var (
 		Required: true,
 		Category: commonCategory,
 	}
+	L1BeaconEndpoint = &cli.StringFlag{
+		Name:     "l1.beacon",
+		Usage:    "HTTP RPC endpoint of a L1 beacon node",
+		Category: commonCategory,
+	}
 	L2HTTPEndpoint = &cli.StringFlag{
 		Name:     "l2.http",
 		Usage:    "HTTP RPC endpoint of a L2 taiko-geth execution engine",

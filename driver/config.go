@@ -38,6 +38,10 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, errors.New("empty L2 check point URL")
 	}
 
+	if !c.IsSet(flags.L1BeaconEndpoint.Name) {
+		return nil, errors.New("empty L1 beacon endpoint")
+	}
+
 	var timeout = c.Duration(flags.RPCTimeout.Name)
 	return &Config{
 		ClientConfig: &rpc.ClientConfig{

@@ -162,7 +162,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		case encoding.TierOptimisticID:
 			producer = &proofProducer.OptimisticProofProducer{DummyProofProducer: new(proofProducer.DummyProofProducer)}
 		case encoding.TierSgxID:
-			sgxProducer, err := proofProducer.NewSGXProducer(cfg.RaikoHostEndpoint, cfg.L1HttpEndpoint, cfg.L2HttpEndpoint)
+			sgxProducer, err := proofProducer.NewSGXProducer(
+				cfg.RaikoHostEndpoint,
+				cfg.L1HttpEndpoint,
+				cfg.L1BeaconEndpoint,
+				cfg.L2HttpEndpoint,
+			)
 			if err != nil {
 				return err
 			}
@@ -186,6 +191,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			sgxProducer, err := proofProducer.NewSGXProducer(
 				cfg.RaikoHostEndpoint,
 				cfg.L1HttpEndpoint,
+				cfg.L1BeaconEndpoint,
 				cfg.L2HttpEndpoint,
 			)
 			if err != nil {
