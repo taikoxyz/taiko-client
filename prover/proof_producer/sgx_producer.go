@@ -169,12 +169,13 @@ func (s *SGXProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOu
 		ID:      common.Big1,
 		Method:  "proof",
 		Params: []*SGXRequestProofBodyParam{{
-			Type:     "Sgx",
-			Block:    opts.BlockID,
-			L2RPC:    s.L2Endpoint,
-			L1RPC:    s.L1Endpoint,
-			Prover:   opts.ProverAddress.Hex()[2:],
-			Graffiti: opts.Graffiti,
+			Type:        "Sgx",
+			Block:       opts.BlockID,
+			L2RPC:       s.L2Endpoint,
+			L1RPC:       s.L1Endpoint,
+			L1BeaconRPC: s.L1BeaconEndpoint,
+			Prover:      opts.ProverAddress.Hex()[2:],
+			Graffiti:    opts.Graffiti,
 		}},
 	}
 
