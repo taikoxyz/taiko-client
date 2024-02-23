@@ -95,7 +95,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head1))
 
 	// Propose a valid L2 block
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l2Head2, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -103,7 +103,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 
 	// Empty blocks
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertEmptyBlocks(s.p, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(err)
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
@@ -139,9 +139,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -170,7 +170,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 	// Propose ten blocks on another fork
 	for i := 0; i < 10; i++ {
-		testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+		s.ProposeInvalidTxListBytes(s.p)
 	}
 
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -202,9 +202,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 	time.Sleep(3 * time.Second)
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -232,7 +232,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
 	// Propose one blocks on another fork
-	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+	s.ProposeInvalidTxListBytes(s.p)
 
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -262,9 +262,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 	time.Sleep(3 * time.Second)
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -292,9 +292,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
 	// Propose two blocks on another fork
-	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+	s.ProposeInvalidTxListBytes(s.p)
 	time.Sleep(3 * time.Second)
-	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+	s.ProposeInvalidTxListBytes(s.p)
 
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -326,7 +326,7 @@ func (s *DriverTestSuite) TestStartClose() {
 
 func (s *DriverTestSuite) TestL1Current() {
 	// propose and insert a block
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertEmptyBlocks(s.p, s.d.ChainSyncer().CalldataSyncer())
 	// reset L1 current with increased height
 	s.Nil(s.d.state.ResetL1Current(s.d.ctx, common.Big1))
 }
