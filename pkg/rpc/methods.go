@@ -238,7 +238,6 @@ func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1O
 func (c *Client) GetPoolContent(
 	ctx context.Context,
 	beneficiary common.Address,
-	baseFee *big.Int,
 	blockMaxGasLimit uint32,
 	maxBytesPerTxList uint64,
 	locals []common.Address,
@@ -247,13 +246,29 @@ func (c *Client) GetPoolContent(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
+	l2Head, err := c.L2.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	baseFee, err := c.TaikoL2.GetBasefee(
+		&bind.CallOpts{Context: ctx},
+		uint64(time.Now().Unix())-l2Head.Time,
+		uint32(l2Head.GasUsed),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info("Current base fee", "fee", baseFee)
+
 	var localsArg []string
 	for _, local := range locals {
 		localsArg = append(localsArg, local.Hex())
 	}
 
 	var result []types.Transactions
-	err := c.L2.CallContext(
+	err = c.L2.CallContext(
 		ctxWithTimeout,
 		&result,
 		"taiko_txPoolContent",
