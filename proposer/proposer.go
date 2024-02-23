@@ -489,7 +489,7 @@ func (p *Proposer) ProposeTxList(
 	}
 
 	// Waiting for the transaction to be confirmed.
-	confirm := <-p.sender.ConfirmChannel(txID)
+	confirm := <-p.sender.TxToConfirmChannel(txID)
 	if confirm.Err != nil {
 		return confirm.Err
 	}

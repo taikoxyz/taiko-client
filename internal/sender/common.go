@@ -15,6 +15,8 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+// adjustGas adjusts the gas fee cap and gas tip cap of the given transaction with the configured
+// growth rate.
 func (s *Sender) adjustGas(txData types.TxData) {
 	rate := s.GasGrowthRate + 100
 	switch baseTx := txData.(type) {
@@ -46,22 +48,26 @@ func (s *Sender) adjustGas(txData types.TxData) {
 	}
 }
 
+// AdjustNonce adjusts the nonce of the given transaction with the current nonce of the sender.
 func (s *Sender) AdjustNonce(txData types.TxData) {
 	nonce, err := s.client.NonceAt(s.ctx, s.Opts.From, nil)
 	if err != nil {
-		log.Warn("failed to get the nonce", "from", s.Opts.From, "err", err)
+		log.Warn("Failed to get the nonce", "from", s.Opts.From, "err", err)
 		return
 	}
 	s.Opts.Nonce = new(big.Int).SetUint64(nonce)
 
-	switch baseTx := txData.(type) {
+	switch tx := txData.(type) {
 	case *types.DynamicFeeTx:
-		baseTx.Nonce = nonce
+		tx.Nonce = nonce
 	case *types.BlobTx:
-		baseTx.Nonce = nonce
+		tx.Nonce = nonce
+	default:
+		log.Warn("Unsupported transaction type", "from", s.Opts.From)
 	}
 }
 
+// updateGasTipGasFee updates the gas tip cap and gas fee cap of the sender with the given chain head info.
 func (s *Sender) updateGasTipGasFee(head *types.Header) error {
 	// Get the gas tip cap
 	gasTipCap, err := s.client.SuggestGasTipCap(s.ctx)
@@ -75,7 +81,7 @@ func (s *Sender) updateGasTipGasFee(head *types.Header) error {
 	if gasFeeCap.Cmp(gasTipCap) < 0 {
 		return fmt.Errorf("maxFeePerGas (%v) < maxPriorityFeePerGas (%v)", gasFeeCap, gasTipCap)
 	}
-	maxGasFee := big.NewInt(int64(s.MaxGasFee))
+	maxGasFee := new(big.Int).SetUint64(s.MaxGasFee)
 	if gasFeeCap.Cmp(maxGasFee) > 0 {
 		gasFeeCap = new(big.Int).Set(maxGasFee)
 		gasTipCap = new(big.Int).Set(maxGasFee)
@@ -87,7 +93,8 @@ func (s *Sender) updateGasTipGasFee(head *types.Header) error {
 	return nil
 }
 
-func (s *Sender) makeTxData(tx *types.Transaction) (types.TxData, error) {
+// buildTxData assembles the transaction data from the given transaction.
+func (s *Sender) buildTxData(tx *types.Transaction) (types.TxData, error) {
 	switch tx.Type() {
 	case types.DynamicFeeTxType:
 		return &types.DynamicFeeTx{
@@ -125,6 +132,7 @@ func (s *Sender) makeTxData(tx *types.Transaction) (types.TxData, error) {
 	}
 }
 
+// handleReorgTransactions handles the transactions which are backed to the mempool due to reorg.
 func (s *Sender) handleReorgTransactions() { // nolint: unused
 	content, err := rpc.Content(s.ctx, s.client)
 	if err != nil {
@@ -149,26 +157,27 @@ func (s *Sender) handleReorgTransactions() { // nolint: unused
 	}
 	// Remove the already handled transactions.
 	for _, confirm := range s.unconfirmedTxs.Items() {
-		delete(txs, confirm.Tx.Hash())
+		delete(txs, confirm.CurrentTx.Hash())
 	}
 	for _, tx := range txs {
-		baseTx, err := s.makeTxData(tx)
+		baseTx, err := s.buildTxData(tx)
 		if err != nil {
 			log.Warn("failed to make the transaction data when handle reorg txs", "tx_hash", tx.Hash().String(), "err", err)
 			return
 		}
 		txID := uuid.New()
-		confirm := &TxConfirm{
-			TxID:   txID,
-			Tx:     tx,
-			baseTx: baseTx,
+		confirm := &TxToConfirm{
+			ID:         txID,
+			CurrentTx:  tx,
+			originalTx: baseTx,
 		}
 		s.unconfirmedTxs.Set(txID, confirm)
-		s.txConfirmCh.Set(txID, make(chan *TxConfirm, 1))
+		s.txToConfirmCh.Set(txID, make(chan *TxToConfirm, 1))
 		log.Info("handle reorg tx", "tx_hash", tx.Hash().String(), "tx_id", txID)
 	}
 }
 
+// setDefault sets the default value if the given value is 0.
 func setDefault[T uint64 | time.Duration](src, dest T) T {
 	if src == 0 {
 		return dest
@@ -176,17 +185,18 @@ func setDefault[T uint64 | time.Duration](src, dest T) T {
 	return src
 }
 
-func setConfig(config *Config) *Config {
+// setConfigWithDefaultValues sets the config with default values if the given config is nil.
+func setConfigWithDefaultValues(config *Config) *Config {
 	if config == nil {
 		return DefaultConfig
 	}
 	return &Config{
-		Confirm:        setDefault(config.Confirm, DefaultConfig.Confirm),
-		RetryTimes:     setDefault(config.RetryTimes, DefaultConfig.RetryTimes),
-		MaxWaitingTime: setDefault(config.MaxWaitingTime, DefaultConfig.MaxWaitingTime),
-		GasLimit:       setDefault(config.GasLimit, DefaultConfig.GasLimit),
-		GasGrowthRate:  setDefault(config.GasGrowthRate, DefaultConfig.GasGrowthRate),
-		MaxGasFee:      setDefault(config.MaxGasFee, DefaultConfig.MaxGasFee),
-		MaxBlobFee:     setDefault(config.MaxBlobFee, DefaultConfig.MaxBlobFee),
+		ConfirmationDepth: setDefault(config.ConfirmationDepth, DefaultConfig.ConfirmationDepth),
+		MaxRetrys:         setDefault(config.MaxRetrys, DefaultConfig.MaxRetrys),
+		MaxWaitingTime:    setDefault(config.MaxWaitingTime, DefaultConfig.MaxWaitingTime),
+		GasLimit:          setDefault(config.GasLimit, DefaultConfig.GasLimit),
+		GasGrowthRate:     setDefault(config.GasGrowthRate, DefaultConfig.GasGrowthRate),
+		MaxGasFee:         setDefault(config.MaxGasFee, DefaultConfig.MaxGasFee),
+		MaxBlobFee:        setDefault(config.MaxBlobFee, DefaultConfig.MaxBlobFee),
 	}
 }

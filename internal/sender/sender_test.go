@@ -30,13 +30,13 @@ func (s *SenderTestSuite) TestNormalSender() {
 		i := i
 		eg.Go(func() error {
 			addr := common.BigToAddress(big.NewInt(int64(i)))
-			_, err := s.sender.SendRaw(s.sender.Opts.Nonce.Uint64(), &addr, big.NewInt(1), nil)
+			_, err := s.sender.SendRawTransaction(s.sender.Opts.Nonce.Uint64(), &addr, big.NewInt(1), nil)
 			return err
 		})
 	}
 	s.Nil(eg.Wait())
 
-	for _, confirmCh := range s.sender.ConfirmChannels() {
+	for _, confirmCh := range s.sender.TxToConfirmChannels() {
 		confirm := <-confirmCh
 		s.Nil(confirm.Err)
 	}
@@ -77,19 +77,19 @@ func (s *SenderTestSuite) TestReplacement() {
 	s.Nil(err)
 
 	// Replace the transaction with a higher nonce.
-	_, err = send.SendRaw(nonce, &common.Address{}, big.NewInt(1), nil)
+	_, err = send.SendRawTransaction(nonce, &common.Address{}, big.NewInt(1), nil)
 	s.Nil(err)
 
 	time.Sleep(time.Second * 6)
 	// Send a transaction with a next nonce and let all the transactions be confirmed.
-	_, err = send.SendRaw(nonce-1, &common.Address{}, big.NewInt(1), nil)
+	_, err = send.SendRawTransaction(nonce-1, &common.Address{}, big.NewInt(1), nil)
 	s.Nil(err)
 
-	for _, confirmCh := range send.ConfirmChannels() {
+	for _, confirmCh := range send.TxToConfirmChannels() {
 		confirm := <-confirmCh
 		// Check the replaced transaction's gasFeeTap touch the max gas price.
-		if confirm.Tx.Nonce() == nonce {
-			s.Equal(send.MaxGasFee, confirm.Tx.GasFeeCap().Uint64())
+		if confirm.CurrentTx.Nonce() == nonce {
+			s.Equal(send.MaxGasFee, confirm.CurrentTx.GasFeeCap().Uint64())
 		}
 		s.Nil(confirm.Err)
 	}
@@ -112,11 +112,11 @@ func (s *SenderTestSuite) TestNonceTooLow() {
 		return
 	}
 
-	txID, err := send.SendRaw(nonce-3, &common.Address{}, big.NewInt(1), nil)
+	txID, err := send.SendRawTransaction(nonce-3, &common.Address{}, big.NewInt(1), nil)
 	s.Nil(err)
-	confirm := <-send.ConfirmChannel(txID)
+	confirm := <-send.TxToConfirmChannel(txID)
 	s.Nil(confirm.Err)
-	s.Equal(nonce, confirm.Tx.Nonce())
+	s.Equal(nonce, confirm.CurrentTx.Nonce())
 }
 
 func (s *SenderTestSuite) SetupTest() {
@@ -129,7 +129,7 @@ func (s *SenderTestSuite) SetupTest() {
 	s.sender, err = sender.NewSender(ctx, &sender.Config{
 		MaxGasFee:      20000000000,
 		GasGrowthRate:  50,
-		RetryTimes:     0,
+		MaxRetrys:      0,
 		GasLimit:       2000000,
 		MaxWaitingTime: time.Second * 10,
 	}, s.RPCClient.L1, priv)

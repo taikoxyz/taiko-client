@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/pborman/uuid"
 
@@ -21,68 +22,75 @@ import (
 )
 
 var (
-	rootSenders   = map[uint64]map[common.Address]*Sender{}
-	DefaultConfig = &Config{
-		Confirm:        0,
-		RetryTimes:     0,
-		MaxWaitingTime: time.Minute * 5,
-		GasLimit:       21000,
-		GasGrowthRate:  50,
-		MaxGasFee:      20000000000,
-		MaxBlobFee:     1000000000,
+	sendersMap                  = map[uint64]map[common.Address]*Sender{}
+	unconfirmedTxsCap           = 100
+	nonceIncorrectRetrys        = 3
+	unconfirmedTxsCheckInternal = 2 * time.Second
+	chainHeadFetchInterval      = 3 * time.Second // nolint:unused
+	errTimeoutInMempool         = fmt.Errorf("transaction in mempool for too long")
+	DefaultConfig               = &Config{
+		ConfirmationDepth: 0,
+		MaxRetrys:         0,
+		MaxWaitingTime:    5 * time.Minute,
+		GasLimit:          params.TxGas,
+		GasGrowthRate:     50,
+		MaxGasFee:         20_000_000_000,
+		MaxBlobFee:        1_000_000_000,
 	}
 )
 
+// Config represents the configuration of the transaction sender.
 type Config struct {
-	// The minimum confirmations to consider the transaction is confirmed.
-	Confirm uint64
-	// The maximum retry times to send transaction, 0 means retry until succeed.
-	RetryTimes uint64
-	// The maximum waiting time for transaction in mempool.
+	// The minimum block confirmations to wait to confirm a transaction.
+	ConfirmationDepth uint64
+	// The maximum retry times when sending transactions.
+	MaxRetrys uint64
+	// The maximum waiting time for the inclusion of transactions.
 	MaxWaitingTime time.Duration
 
-	// The gas limit for raw transaction.
+	// The gas limit for transactions.
 	GasLimit uint64
 	// The gas rate to increase the gas price, 20 means 20% gas growth rate.
 	GasGrowthRate uint64
-	// The maximum gas price can be used to send transaction.
+	// The maximum gas fee can be used when sending transactions.
 	MaxGasFee  uint64
 	MaxBlobFee uint64
 }
 
-type TxConfirm struct {
-	RetryTimes uint64
-	confirm    uint64
+// TxToConfirm represents a transaction which is waiting for its confirmation.
+type TxToConfirm struct {
+	confirmations uint64
+	originalTx    types.TxData
 
-	TxID string
-
-	baseTx  types.TxData
-	Tx      *types.Transaction
-	Receipt *types.Receipt
+	ID        string
+	Retrys    uint64
+	CurrentTx *types.Transaction
+	Receipt   *types.Receipt
 
 	Err error
 }
 
+// Sender represents a global transaction sender.
 type Sender struct {
 	ctx context.Context
 	*Config
 
-	header *types.Header
+	head   *types.Header
 	client *rpc.EthClient
 
 	Opts *bind.TransactOpts
 
-	unconfirmedTxs cmap.ConcurrentMap[string, *TxConfirm] //uint64]*TxConfirm
-	txConfirmCh    cmap.ConcurrentMap[string, chan *TxConfirm]
+	unconfirmedTxs cmap.ConcurrentMap[string, *TxToConfirm]
+	txToConfirmCh  cmap.ConcurrentMap[string, chan *TxToConfirm]
 
 	mu     sync.Mutex
 	wg     sync.WaitGroup
 	stopCh chan struct{}
 }
 
-// NewSender returns a new instance of Sender.
+// NewSender creates a new instance of Sender.
 func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ecdsa.PrivateKey) (*Sender, error) {
-	cfg = setConfig(cfg)
+	cfg = setConfigWithDefaultValues(cfg)
 
 	// Create a new transactor
 	opts, err := bind.NewKeyedTransactorWithChainID(priv, client.ChainID)
@@ -93,8 +101,8 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	opts.NoSend = true
 
 	// Add the sender to the root sender.
-	if root := rootSenders[client.ChainID.Uint64()]; root == nil {
-		rootSenders[client.ChainID.Uint64()] = map[common.Address]*Sender{}
+	if root := sendersMap[client.ChainID.Uint64()]; root == nil {
+		sendersMap[client.ChainID.Uint64()] = map[common.Address]*Sender{}
 	} else {
 		if root[opts.From] != nil {
 			return nil, fmt.Errorf("sender already exists")
@@ -102,7 +110,7 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	}
 
 	// Get the chain ID
-	header, err := client.HeaderByNumber(ctx, nil)
+	head, err := client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -110,22 +118,22 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	sender := &Sender{
 		ctx:            ctx,
 		Config:         cfg,
-		header:         header,
+		head:           head,
 		client:         client,
 		Opts:           opts,
-		unconfirmedTxs: cmap.New[*TxConfirm](),
-		txConfirmCh:    cmap.New[chan *TxConfirm](),
+		unconfirmedTxs: cmap.New[*TxToConfirm](),
+		txToConfirmCh:  cmap.New[chan *TxToConfirm](),
 		stopCh:         make(chan struct{}),
 	}
-	// Set the nonce
+	// Initialize the nonce
 	sender.AdjustNonce(nil)
-	// Update the gas tip and gas fee.
-	err = sender.updateGasTipGasFee(header)
-	if err != nil {
+
+	// Initialize the gas fee related fields
+	if sender.updateGasTipGasFee(head) != nil {
 		return nil, err
 	}
 	if os.Getenv("RUN_TESTS") == "" {
-		rootSenders[client.ChainID.Uint64()][opts.From] = sender
+		sendersMap[client.ChainID.Uint64()][opts.From] = sender
 	}
 
 	sender.wg.Add(1)
@@ -139,19 +147,19 @@ func (s *Sender) Close() {
 	s.wg.Wait()
 }
 
-// ConfirmChannel returns a channel to receive the transaction confirmation.
-func (s *Sender) ConfirmChannel(txID string) <-chan *TxConfirm {
-	confirmCh, ok := s.txConfirmCh.Get(txID)
+// TxToConfirmChannel returns a channel to wait the given transaction's confirmation.
+func (s *Sender) TxToConfirmChannel(txID string) <-chan *TxToConfirm {
+	ch, ok := s.txToConfirmCh.Get(txID)
 	if !ok {
-		log.Warn("transaction not found", "tx_id", txID)
+		log.Warn("Transaction not found", "id", txID)
 	}
-	return confirmCh
+	return ch
 }
 
-// ConfirmChannels returns all the transaction confirmation channels.
-func (s *Sender) ConfirmChannels() map[string]<-chan *TxConfirm {
-	channels := map[string]<-chan *TxConfirm{}
-	for txID, confirmCh := range s.txConfirmCh.Items() {
+// TxToConfirmChannels returns channels to wait the given transactions confirmation.
+func (s *Sender) TxToConfirmChannels() map[string]<-chan *TxToConfirm {
+	channels := map[string]<-chan *TxToConfirm{}
+	for txID, confirmCh := range s.txToConfirmCh.Items() {
 		channels[txID] = confirmCh
 	}
 	return channels
@@ -159,15 +167,15 @@ func (s *Sender) ConfirmChannels() map[string]<-chan *TxConfirm {
 
 // GetUnconfirmedTx returns the unconfirmed transaction by the transaction ID.
 func (s *Sender) GetUnconfirmedTx(txID string) *types.Transaction {
-	txConfirm, ok := s.unconfirmedTxs.Get(txID)
+	txToConfirm, ok := s.unconfirmedTxs.Get(txID)
 	if !ok {
 		return nil
 	}
-	return txConfirm.Tx
+	return txToConfirm.CurrentTx
 }
 
-// SendRaw sends a transaction to the target address.
-func (s *Sender) SendRaw(nonce uint64, target *common.Address, value *big.Int, data []byte) (string, error) {
+// SendRawTransaction sends a transaction to the given Ethereum node.
+func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value *big.Int, data []byte) (string, error) {
 	return s.SendTransaction(types.NewTx(&types.DynamicFeeTx{
 		ChainID:   s.client.ChainID,
 		To:        target,
@@ -180,70 +188,73 @@ func (s *Sender) SendRaw(nonce uint64, target *common.Address, value *big.Int, d
 	}))
 }
 
-// SendTransaction sends a transaction to the target address.
+// SendTransaction sends a transaction to the given Ethereum node.
 func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
-	if s.unconfirmedTxs.Count() >= 100 {
+	if s.unconfirmedTxs.Count() >= unconfirmedTxsCap {
 		return "", fmt.Errorf("too many pending transactions")
 	}
 
-	txData, err := s.makeTxData(tx)
+	txData, err := s.buildTxData(tx)
 	if err != nil {
 		return "", err
 	}
+
 	txID := uuid.New()
-	confirmTx := &TxConfirm{
-		TxID:   txID,
-		baseTx: txData,
-		Tx:     tx,
+	txToConfirm := &TxToConfirm{
+		ID:         txID,
+		originalTx: txData,
+		CurrentTx:  tx,
 	}
-	err = s.sendTx(confirmTx)
-	if err != nil && !strings.Contains(err.Error(), "replacement transaction") {
-		log.Error("failed to send transaction", "tx_id", txID, "tx_hash", tx.Hash().String(), "err", err)
+
+	if err := s.send(txToConfirm); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
+		log.Error("Failed to send transaction", "id", txID, "hash", tx.Hash(), "err", err)
 		return "", err
 	}
+
 	// Add the transaction to the unconfirmed transactions
-	s.unconfirmedTxs.Set(txID, confirmTx)
-	s.txConfirmCh.Set(txID, make(chan *TxConfirm, 1))
+	s.unconfirmedTxs.Set(txID, txToConfirm)
+	s.txToConfirmCh.Set(txID, make(chan *TxToConfirm, 1))
 
 	return txID, nil
 }
 
-func (s *Sender) sendTx(confirmTx *TxConfirm) error {
+// send is the internal method to send the given transaction.
+func (s *Sender) send(tx *TxToConfirm) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	baseTx := confirmTx.baseTx
+	originalTx := tx.originalTx
 
-	for i := 0; i < 3; i++ {
-		// Try 3 RetryTimes if nonce is not correct.
-		rawTx, err := s.Opts.Signer(s.Opts.From, types.NewTx(baseTx))
+	for i := 0; i < nonceIncorrectRetrys; i++ {
+		// Retry when nonce is incorrect
+		rawTx, err := s.Opts.Signer(s.Opts.From, types.NewTx(originalTx))
 		if err != nil {
 			return err
 		}
-		confirmTx.Tx = rawTx
-		err = s.client.SendTransaction(s.ctx, rawTx)
-		confirmTx.Err = err
-		// Check if the error is nonce too low.
+		tx.CurrentTx = rawTx
+		tx.Err = s.client.SendTransaction(s.ctx, rawTx)
+		// Check if the error is nonce too low
 		if err != nil {
 			if strings.Contains(err.Error(), "nonce too low") {
-				s.AdjustNonce(baseTx)
-				log.Warn("nonce is not correct, retry to send transaction", "tx_hash", rawTx.Hash().String(), "err", err)
+				s.AdjustNonce(originalTx)
+				log.Warn("Nonce is incorrect, retry sending the transaction with new nonce", "hash", rawTx.Hash(), "err", err)
 				continue
 			}
 			if err.Error() == "replacement transaction underpriced" {
-				s.adjustGas(baseTx)
-				log.Warn("replacement transaction underpriced", "tx_hash", rawTx.Hash().String(), "err", err)
+				s.adjustGas(originalTx)
+				log.Warn("Replacement transaction underpriced", "hash", rawTx.Hash(), "err", err)
 				continue
 			}
-			log.Error("failed to send transaction", "tx_hash", rawTx.Hash().String(), "err", err)
+			log.Error("Failed to send transaction", "hash", rawTx.Hash(), "err", err)
 			return err
 		}
-		s.Opts.Nonce = big.NewInt(s.Opts.Nonce.Int64() + 1)
+		s.Opts.Nonce = new(big.Int).Add(s.Opts.Nonce, common.Big1)
 		break
 	}
 	return nil
 }
 
+// loop is the main event loop of the transaction sender.
 func (s *Sender) loop() {
 	defer s.wg.Done()
 
@@ -256,100 +267,109 @@ func (s *Sender) loop() {
 	}
 	defer sub.Unsubscribe()
 
-	tick := time.NewTicker(time.Second * 2)
-	defer tick.Stop()
+	unconfirmedTxsCheckTicker := time.NewTicker(unconfirmedTxsCheckInternal)
+	defer unconfirmedTxsCheckTicker.Stop()
 
 	for {
 		select {
-		case <-tick.C:
-			s.resendTransaction()
-		case header := <-headCh:
-			// If chain appear reorg then handle mempool transactions.
-			// Handle reorg transactions
-			//if s.header.Hash() != header.ParentHash {
-			// TODO handle reorg transactions
-			//s.handleReorgTransactions()
-			//}
-			s.header = header
-			// Update the gas tip and gas fee
-			err = s.updateGasTipGasFee(header)
-			if err != nil {
-				log.Warn("failed to update gas tip and gas fee", "err", err)
-			}
-			// Check the unconfirmed transactions
-			s.checkPendingTransactions()
 		case <-s.ctx.Done():
 			return
 		case <-s.stopCh:
 			return
+		case <-unconfirmedTxsCheckTicker.C:
+			s.resendUnconfirmedTxs()
+		case newHead := <-headCh:
+			// If chain appear reorg then handle mempool transactions.
+			// TODO(Huan): handle reorg transactions
+			//if s.header.Hash() != header.ParentHash {
+			//s.handleReorgTransactions()
+			//}
+			s.head = newHead
+			// Update the gas tip and gas fee
+			if err = s.updateGasTipGasFee(newHead); err != nil {
+				log.Warn("Failed to update gas tip and gas fee", "err", err)
+			}
+			// Check the unconfirmed transactions
+			s.checkPendingTransactionsConfirmation()
 		}
 	}
 }
 
-func (s *Sender) resendTransaction() {
-	for txID, txConfirm := range s.unconfirmedTxs.Items() {
-		if txConfirm.Err == nil {
+// resendUnconfirmedTxs resends all unconfirmed transactions.
+func (s *Sender) resendUnconfirmedTxs() {
+	for id, unconfirmedTx := range s.unconfirmedTxs.Items() {
+		if unconfirmedTx.Err == nil {
 			continue
 		}
-		txConfirm.RetryTimes++
-		if s.RetryTimes != 0 && txConfirm.RetryTimes >= s.RetryTimes {
-			s.releaseConfirm(txID)
+		unconfirmedTx.Retrys++
+		if s.MaxRetrys != 0 && unconfirmedTx.Retrys >= s.MaxRetrys {
+			s.releaseUnconfirmedTx(id)
 			continue
 		}
-		_ = s.sendTx(txConfirm)
+		if err := s.send(unconfirmedTx); err != nil {
+			log.Warn(
+				"Failed to resend the transaction",
+				"id", id,
+				"retrys", unconfirmedTx.Retrys,
+				"err", err,
+			)
+		}
 	}
 }
 
-func (s *Sender) checkPendingTransactions() {
-	for txID, txConfirm := range s.unconfirmedTxs.Items() {
-		if txConfirm.Err != nil {
+// checkPendingTransactionsConfirmation checks the confirmation of the pending transactions.
+func (s *Sender) checkPendingTransactionsConfirmation() {
+	for id, pendingTx := range s.unconfirmedTxs.Items() {
+		if pendingTx.Err != nil {
 			continue
 		}
-		if txConfirm.Receipt == nil {
+		if pendingTx.Receipt == nil {
 			// Ignore the transaction if it is pending.
-			tx, isPending, err := s.client.TransactionByHash(s.ctx, txConfirm.Tx.Hash())
+			tx, isPending, err := s.client.TransactionByHash(s.ctx, pendingTx.CurrentTx.Hash())
 			if err != nil {
+				log.Warn("Failed to fetch transaction", "hash", pendingTx.CurrentTx.Hash(), "err", err)
 				continue
 			}
 			if isPending {
 				// If the transaction is in mempool for too long, replace it.
-				if waitTime := time.Since(tx.Time()); waitTime > s.MaxWaitingTime {
-					txConfirm.Err = fmt.Errorf("transaction in mempool for too long")
+				if time.Since(tx.Time()) > s.MaxWaitingTime {
+					pendingTx.Err = errTimeoutInMempool
 				}
 				continue
 			}
 			// Get the transaction receipt.
-			receipt, err := s.client.TransactionReceipt(s.ctx, txConfirm.Tx.Hash())
+			receipt, err := s.client.TransactionReceipt(s.ctx, pendingTx.CurrentTx.Hash())
 			if err != nil {
 				if err.Error() == "not found" {
-					txConfirm.Err = err
-					s.releaseConfirm(txID)
+					pendingTx.Err = err
+					s.releaseUnconfirmedTx(id)
 				}
-				log.Warn("failed to get the transaction receipt", "tx_hash", txConfirm.Tx.Hash().String(), "err", err)
+				log.Warn("Failed to get the transaction receipt", "hash", pendingTx.CurrentTx.Hash(), "err", err)
 				continue
 			}
-			txConfirm.Receipt = receipt
+			pendingTx.Receipt = receipt
 			if receipt.Status != types.ReceiptStatusSuccessful {
-				txConfirm.Err = fmt.Errorf("transaction reverted, hash: %s", receipt.TxHash.String())
-				s.releaseConfirm(txID)
+				pendingTx.Err = fmt.Errorf("transaction reverted, hash: %s", receipt.TxHash)
+				s.releaseUnconfirmedTx(id)
 				continue
 			}
 		}
-		txConfirm.confirm = s.header.Number.Uint64() - txConfirm.Receipt.BlockNumber.Uint64()
-		if txConfirm.confirm >= s.Confirm {
-			s.releaseConfirm(txID)
+		pendingTx.confirmations = s.head.Number.Uint64() - pendingTx.Receipt.BlockNumber.Uint64()
+		if pendingTx.confirmations >= s.ConfirmationDepth {
+			s.releaseUnconfirmedTx(id)
 		}
 	}
 }
 
-func (s *Sender) releaseConfirm(txID string) {
+// releaseUnconfirmedTx releases the unconfirmed transaction by the transaction ID.
+func (s *Sender) releaseUnconfirmedTx(txID string) {
 	txConfirm, _ := s.unconfirmedTxs.Get(txID)
-	confirmCh, _ := s.txConfirmCh.Get(txID)
+	confirmCh, _ := s.txToConfirmCh.Get(txID)
 	select {
 	case confirmCh <- txConfirm:
 	default:
 	}
 	// Remove the transaction from the unconfirmed transactions
 	s.unconfirmedTxs.Remove(txID)
-	s.txConfirmCh.Remove(txID)
+	s.txToConfirmCh.Remove(txID)
 }
