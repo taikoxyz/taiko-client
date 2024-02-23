@@ -13,6 +13,7 @@ import (
 var (
 	l1Endpoint       = os.Getenv("L1_NODE_WS_ENDPOINT")
 	l2Endpoint       = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
+	l2CheckPoint     = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 	l2EngineEndpoint = os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
 	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
@@ -35,7 +36,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.NotEmpty(c.JwtSecret)
 		s.Nil(new(Driver).InitFromCli(context.Background(), ctx))
 		s.True(c.P2PSyncVerifiedBlocks)
-		s.Equal("http://localhost:8545", c.L2CheckPoint)
+		s.Equal(l2CheckPoint, c.L2CheckPoint)
 
 		return err
 	}
@@ -51,7 +52,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.P2PSyncTimeout.Name, "120s",
 		"--" + flags.RPCTimeout.Name, "5s",
 		"--" + flags.P2PSyncVerifiedBlocks.Name,
-		"--" + flags.CheckPointSyncURL.Name, "http://localhost:8545",
+		"--" + flags.CheckPointSyncURL.Name, l2CheckPoint,
 	}))
 }
 

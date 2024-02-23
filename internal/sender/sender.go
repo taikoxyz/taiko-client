@@ -75,17 +75,13 @@ type Sender struct {
 // NewSender returns a new instance of Sender.
 func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ecdsa.PrivateKey) (*Sender, error) {
 	// Get the chain ID
-	chainID, err := client.ChainID(ctx)
-	if err != nil {
-		return nil, err
-	}
 	header, err := client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create a new transactor
-	opts, err := bind.NewKeyedTransactorWithChainID(priv, chainID)
+	opts, err := bind.NewKeyedTransactorWithChainID(priv, client.ChainID)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +99,7 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	sender := &Sender{
 		ctx:            ctx,
 		Config:         cfg,
-		ChainID:        chainID,
+		ChainID:        client.ChainID,
 		header:         header,
 		client:         client,
 		Opts:           opts,

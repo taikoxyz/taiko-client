@@ -78,7 +78,7 @@ func (s *ClientTestSuite) SetupTest() {
 		s.Nil(err)
 		s.Greater(balance.Cmp(common.Big0), 0)
 
-		opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1ChainID)
+		opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, rpcCli.L1.ChainID)
 		s.Nil(err)
 		proverBalance := new(big.Int).Div(balance, common.Big2)
 		s.Greater(proverBalance.Cmp(common.Big0), 0)
@@ -102,7 +102,7 @@ func (s *ClientTestSuite) setAllowance(key *ecdsa.PrivateKey) {
 
 	bigInt := new(big.Int).Exp(big.NewInt(1_000_000_000), new(big.Int).SetUint64(uint64(decimal)), nil)
 
-	opts, err := bind.NewKeyedTransactorWithChainID(key, s.RPCClient.L1ChainID)
+	opts, err := bind.NewKeyedTransactorWithChainID(key, s.RPCClient.L1.ChainID)
 	s.Nil(err)
 
 	_, err = s.RPCClient.TaikoToken.Approve(

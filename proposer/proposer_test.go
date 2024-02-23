@@ -93,7 +93,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 
 	to := common.BytesToAddress(testutils.RandomBytes(32))
 	tx := types.NewTx(&types.DynamicFeeTx{
-		ChainID:   s.RPCClient.L2ChainID,
+		ChainID:   s.RPCClient.L2.ChainID,
 		Nonce:     nonce,
 		GasTipCap: common.Big0,
 		GasFeeCap: new(big.Int).SetUint64(baseFee.Uint64() * 2),
@@ -102,7 +102,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 		Value:     common.Big1,
 	})
 
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.p.rpc.L2ChainID), s.TestAddrPrivKey)
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.p.rpc.L2.ChainID), s.TestAddrPrivKey)
 	s.Nil(err)
 	s.Nil(s.p.rpc.L2.SendTransaction(context.Background(), signedTx))
 

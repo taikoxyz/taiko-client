@@ -74,7 +74,7 @@ func NewSyncer(
 			uint64(configs.BlockMaxGasLimit),
 			defaultMaxTxPerBlock,
 			configs.BlockMaxTxListBytes.Uint64(),
-			rpc.L2ChainID,
+			rpc.L2.ChainID,
 		),
 	}, nil
 }
