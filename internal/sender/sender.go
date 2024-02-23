@@ -129,7 +129,7 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	sender.AdjustNonce(nil)
 
 	// Initialize the gas fee related fields
-	if sender.updateGasTipGasFee(head) != nil {
+	if err = sender.updateGasTipGasFee(head); err != nil {
 		return nil, err
 	}
 	if os.Getenv("RUN_TESTS") == "" {
@@ -232,7 +232,8 @@ func (s *Sender) send(tx *TxToConfirm) error {
 			return err
 		}
 		tx.CurrentTx = rawTx
-		tx.Err = s.client.SendTransaction(s.ctx, rawTx)
+		err = s.client.SendTransaction(s.ctx, rawTx)
+		tx.Err = err
 		// Check if the error is nonce too low
 		if err != nil {
 			if strings.Contains(err.Error(), "nonce too low") {
