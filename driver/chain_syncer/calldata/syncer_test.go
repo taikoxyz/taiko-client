@@ -96,7 +96,7 @@ func (s *CalldataSyncerTestSuite) TestProcessL1Blocks() {
 
 func (s *CalldataSyncerTestSuite) TestProcessL1BlocksReorg() {
 	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
+	s.ProposeAndInsertEmptyBlocks(s.p, s.s)
 	s.Nil(err)
 	s.Nil(s.s.ProcessL1Blocks(context.Background(), head))
 }
@@ -156,7 +156,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
 	headBefore, err := s.RPCClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
+	s.ProposeAndInsertEmptyBlocks(s.p, s.s)
 
 	headAfter, err := s.RPCClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
@@ -178,8 +178,8 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 	headBefore, err := s.RPCClient.L2.BlockNumber(context.Background())
 	s.Nil(err)
 
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s)
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.s)
+	s.ProposeAndInsertEmptyBlocks(s.p, s.s)
+	s.ProposeAndInsertValidBlock(s.p, s.s)
 
 	headAfter, err := s.RPCClient.L2.BlockNumber(context.Background())
 	s.Nil(err)

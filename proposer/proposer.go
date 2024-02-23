@@ -203,26 +203,9 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
-	l2Head, err := p.rpc.L2.HeaderByNumber(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	baseFee, err := p.rpc.TaikoL2.GetBasefee(
-		&bind.CallOpts{Context: ctx},
-		uint64(time.Now().Unix())-l2Head.Time,
-		uint32(l2Head.GasUsed),
-	)
-	if err != nil {
-		return err
-	}
-
-	log.Info("Current base fee", "fee", baseFee)
-
 	txLists, err := p.rpc.GetPoolContent(
 		ctx,
 		p.proposerAddress,
-		baseFee,
 		p.protocolConfigs.BlockMaxGasLimit,
 		p.protocolConfigs.BlockMaxTxListBytes.Uint64(),
 		p.LocalAddresses,

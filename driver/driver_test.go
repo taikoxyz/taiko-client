@@ -95,7 +95,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head1))
 
 	// Propose a valid L2 block
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l2Head2, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -103,7 +103,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 
 	// Empty blocks
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertEmptyBlocks(s.p, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(err)
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
@@ -130,21 +130,18 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 
 func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	var (
-		testnetL1SnapshotID string
+		testnetL1SnapshotID = s.SetL1Snapshot()
 		sender              = s.p.GetSender()
 	)
-	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
-	s.NotEmpty(testnetL1SnapshotID)
-
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -162,9 +159,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.False(reorged)
 
 	// Reorg back to l2Head1
-	var revertRes bool
-	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
-	s.True(revertRes)
+	s.RevertL1Snapshot(testnetL1SnapshotID)
 
 	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -175,7 +170,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	sender.AdjustNonce(nil)
 	// Propose ten blocks on another fork
 	for i := 0; i < 10; i++ {
-		testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+		s.ProposeInvalidTxListBytes(s.p)
 	}
 
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
@@ -198,21 +193,18 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	var (
-		testnetL1SnapshotID string
+		testnetL1SnapshotID = s.SetL1Snapshot()
 		sender              = s.p.GetSender()
 	)
-	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
-	s.NotEmpty(testnetL1SnapshotID)
-
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 	time.Sleep(3 * time.Second)
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -230,9 +222,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.False(reorged)
 
 	// Reorg back to l2Head1
-	var revertRes bool
-	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
-	s.True(revertRes)
+	s.RevertL1Snapshot(testnetL1SnapshotID)
 
 	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -241,7 +231,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 
 	sender.AdjustNonce(nil)
 	// Propose one blocks on another fork
-	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+	s.ProposeInvalidTxListBytes(s.p)
 
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -262,21 +252,18 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 
 func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	var (
-		testnetL1SnapshotID string
+		testnetL1SnapshotID = s.SetL1Snapshot()
 		sender              = s.p.GetSender()
 	)
-	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
-	s.NotEmpty(testnetL1SnapshotID)
-
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 	time.Sleep(3 * time.Second)
-	testutils.ProposeAndInsertValidBlock(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -294,9 +281,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.False(reorged)
 
 	// Reorg back to l2Head1
-	var revertRes bool
-	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", testnetL1SnapshotID))
-	s.True(revertRes)
+	s.RevertL1Snapshot(testnetL1SnapshotID)
 
 	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -305,9 +290,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 
 	sender.AdjustNonce(nil)
 	// Propose two blocks on another fork
-	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+	s.ProposeInvalidTxListBytes(s.p)
 	time.Sleep(3 * time.Second)
-	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
+	s.ProposeInvalidTxListBytes(s.p)
 
 	l1Head4, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -339,7 +324,7 @@ func (s *DriverTestSuite) TestStartClose() {
 
 func (s *DriverTestSuite) TestL1Current() {
 	// propose and insert a block
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertEmptyBlocks(s.p, s.d.ChainSyncer().CalldataSyncer())
 	// reset L1 current with increased height
 	s.Nil(s.d.state.ResetL1Current(s.d.ctx, common.Big1))
 }
