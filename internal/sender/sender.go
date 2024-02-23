@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	rootSender    = map[uint64]map[common.Address]*Sender{}
+	rootSenders   = map[uint64]map[common.Address]*Sender{}
 	DefaultConfig = &Config{
 		Confirm:        0,
 		RetryTimes:     0,
@@ -36,7 +36,7 @@ var (
 type Config struct {
 	// The minimum confirmations to consider the transaction is confirmed.
 	Confirm uint64
-	// The maximum retry times to send transaction, 0 means always retry.
+	// The maximum retry times to send transaction, 0 means retry until succeed.
 	RetryTimes uint64
 	// The maximum waiting time for transaction in mempool.
 	MaxWaitingTime time.Duration
@@ -70,8 +70,7 @@ type Sender struct {
 	header *types.Header
 	client *rpc.EthClient
 
-	ChainID *big.Int
-	Opts    *bind.TransactOpts
+	Opts *bind.TransactOpts
 
 	unconfirmedTxs cmap.ConcurrentMap[string, *TxConfirm] //uint64]*TxConfirm
 	txConfirmCh    cmap.ConcurrentMap[string, chan *TxConfirm]
@@ -84,11 +83,6 @@ type Sender struct {
 // NewSender returns a new instance of Sender.
 func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ecdsa.PrivateKey) (*Sender, error) {
 	cfg = setConfig(cfg)
-	// Get the chain ID
-	header, err := client.HeaderByNumber(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
 
 	// Create a new transactor
 	opts, err := bind.NewKeyedTransactorWithChainID(priv, client.ChainID)
@@ -98,10 +92,24 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	// Do not automatically send transactions
 	opts.NoSend = true
 
+	// Add the sender to the root sender.
+	if root := rootSenders[client.ChainID.Uint64()]; root == nil {
+		rootSenders[client.ChainID.Uint64()] = map[common.Address]*Sender{}
+	} else {
+		if root[opts.From] != nil {
+			return nil, fmt.Errorf("sender already exists")
+		}
+	}
+
+	// Get the chain ID
+	header, err := client.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	sender := &Sender{
 		ctx:            ctx,
 		Config:         cfg,
-		ChainID:        client.ChainID,
 		header:         header,
 		client:         client,
 		Opts:           opts,
@@ -116,17 +124,8 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	if err != nil {
 		return nil, err
 	}
-
-	// Add the sender to the root sender.
-	if root := rootSender[client.ChainID.Uint64()]; root == nil {
-		rootSender[client.ChainID.Uint64()] = map[common.Address]*Sender{}
-	} else {
-		if root[opts.From] != nil {
-			return nil, fmt.Errorf("sender already exists")
-		}
-		if os.Getenv("RUN_TESTS") == "" {
-			root[opts.From] = sender
-		}
+	if os.Getenv("RUN_TESTS") == "" {
+		rootSenders[client.ChainID.Uint64()][opts.From] = sender
 	}
 
 	sender.wg.Add(1)
@@ -170,7 +169,7 @@ func (s *Sender) GetUnconfirmedTx(txID string) *types.Transaction {
 // SendRaw sends a transaction to the target address.
 func (s *Sender) SendRaw(nonce uint64, target *common.Address, value *big.Int, data []byte) (string, error) {
 	return s.SendTransaction(types.NewTx(&types.DynamicFeeTx{
-		ChainID:   s.ChainID,
+		ChainID:   s.client.ChainID,
 		To:        target,
 		Nonce:     nonce,
 		GasFeeCap: s.Opts.GasFeeCap,
@@ -248,8 +247,14 @@ func (s *Sender) sendTx(confirmTx *TxConfirm) error {
 func (s *Sender) loop() {
 	defer s.wg.Done()
 
-	hTick := time.NewTicker(time.Second * 3)
-	defer hTick.Stop()
+	// Subscribe new head.
+	headCh := make(chan *types.Header, 3)
+	sub, err := s.client.SubscribeNewHead(s.ctx, headCh)
+	if err != nil {
+		log.Error("failed to subscribe new head", "err", err)
+		return
+	}
+	defer sub.Unsubscribe()
 
 	tick := time.NewTicker(time.Second * 2)
 	defer tick.Stop()
@@ -258,19 +263,13 @@ func (s *Sender) loop() {
 		select {
 		case <-tick.C:
 			s.resendTransaction()
-		case <-hTick.C:
-			header, err := s.client.HeaderByNumber(s.ctx, nil)
-			if err != nil {
-				log.Error("failed to get the latest header", "err", err)
-				return
-			}
-
+		case header := <-headCh:
 			// If chain appear reorg then handle mempool transactions.
-			// TODO: handle reorg transactions
-
-			if s.header.Hash() == header.Hash() {
-				continue
-			}
+			// Handle reorg transactions
+			//if s.header.Hash() != header.ParentHash {
+			// TODO handle reorg transactions
+			//s.handleReorgTransactions()
+			//}
 			s.header = header
 			// Update the gas tip and gas fee
 			err = s.updateGasTipGasFee(header)

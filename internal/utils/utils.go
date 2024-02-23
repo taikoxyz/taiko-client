@@ -17,15 +17,15 @@ func LoadEnv() {
 	// load test environment variables.
 	currentPath, err := os.Getwd()
 	if err != nil {
-		log.Warn("get current path failed", "err", err)
+		log.Debug("get current path failed", "err", err)
 	}
 	path := strings.Split(currentPath, "/taiko-client")
 	if len(path) == 0 {
-		log.Warn("not a taiko-client repo")
+		log.Debug("not a taiko-client repo")
 	}
 	err = godotenv.Load(fmt.Sprintf("%s/taiko-client/integration_test/.env", path[0]))
 	if err != nil {
-		log.Warn("failed to load test env", "current path", currentPath, "err", err)
+		log.Debug("failed to load test env", "current path", currentPath, "err", err)
 	}
 }
 

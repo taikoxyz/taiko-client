@@ -15,23 +15,18 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/taikoxyz/taiko-client/internal/sender"
-	"github.com/taikoxyz/taiko-client/internal/utils"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/internal/testutils"
 )
 
 type SenderTestSuite struct {
-	suite.Suite
-	client *rpc.EthClient
+	testutils.ClientTestSuite
 	sender *sender.Sender
 }
 
 func (s *SenderTestSuite) TestNormalSender() {
-	var (
-		batchSize = 5
-		eg        errgroup.Group
-	)
+	var eg errgroup.Group
 	eg.SetLimit(runtime.NumCPU())
-	for i := 0; i < batchSize; i++ {
+	for i := 0; i < 5; i++ {
 		i := i
 		eg.Go(func() error {
 			addr := common.BigToAddress(big.NewInt(int64(i)))
@@ -50,12 +45,12 @@ func (s *SenderTestSuite) TestNormalSender() {
 // Test touch max gas price and replacement.
 func (s *SenderTestSuite) TestReplacement() {
 	send := s.sender
-	client := s.client
+	client := s.RPCClient.L1
 
 	// Let max gas price be 2 times of the gas fee cap.
 	send.MaxGasFee = send.Opts.GasFeeCap.Uint64() * 2
 
-	nonce, err := s.client.NonceAt(context.Background(), send.Opts.From, nil)
+	nonce, err := client.NonceAt(context.Background(), send.Opts.From, nil)
 	s.Nil(err)
 
 	pendingNonce, err := client.PendingNonceAt(context.Background(), send.Opts.From)
@@ -67,7 +62,7 @@ func (s *SenderTestSuite) TestReplacement() {
 
 	nonce++
 	baseTx := &types.DynamicFeeTx{
-		ChainID:   send.ChainID,
+		ChainID:   client.ChainID,
 		To:        &common.Address{},
 		GasFeeCap: big.NewInt(int64(send.MaxGasFee - 1)),
 		GasTipCap: big.NewInt(int64(send.MaxGasFee - 1)),
@@ -105,7 +100,7 @@ func (s *SenderTestSuite) TestReplacement() {
 
 // Test nonce too low.
 func (s *SenderTestSuite) TestNonceTooLow() {
-	client := s.client
+	client := s.RPCClient.L1
 	send := s.sender
 
 	nonce, err := client.NonceAt(context.Background(), send.Opts.From, nil)
@@ -125,13 +120,9 @@ func (s *SenderTestSuite) TestNonceTooLow() {
 }
 
 func (s *SenderTestSuite) SetupTest() {
-	utils.LoadEnv()
+	s.ClientTestSuite.SetupTest()
 
 	ctx := context.Background()
-	var err error
-	s.client, err = rpc.NewEthClient(ctx, os.Getenv("L1_NODE_WS_ENDPOINT"), time.Second*10)
-	s.Nil(err)
-
 	priv, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 
@@ -141,13 +132,13 @@ func (s *SenderTestSuite) SetupTest() {
 		RetryTimes:     0,
 		GasLimit:       2000000,
 		MaxWaitingTime: time.Second * 10,
-	}, s.client, priv)
+	}, s.RPCClient.L1, priv)
 	s.Nil(err)
 }
 
-func (s *SenderTestSuite) TestStartClose() {
+func (s *SenderTestSuite) TearDownTest() {
 	s.sender.Close()
-	s.client.Close()
+	s.ClientTestSuite.TearDownTest()
 }
 
 func TestSenderTestSuite(t *testing.T) {

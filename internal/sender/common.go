@@ -91,7 +91,7 @@ func (s *Sender) makeTxData(tx *types.Transaction) (types.TxData, error) {
 	switch tx.Type() {
 	case types.DynamicFeeTxType:
 		return &types.DynamicFeeTx{
-			ChainID:    s.ChainID,
+			ChainID:    s.client.ChainID,
 			To:         tx.To(),
 			Nonce:      tx.Nonce(),
 			GasFeeCap:  s.Opts.GasFeeCap,
@@ -107,7 +107,7 @@ func (s *Sender) makeTxData(tx *types.Transaction) (types.TxData, error) {
 			to = *tx.To()
 		}
 		return &types.BlobTx{
-			ChainID:    uint256.MustFromBig(s.ChainID),
+			ChainID:    uint256.MustFromBig(s.client.ChainID),
 			To:         to,
 			Nonce:      tx.Nonce(),
 			GasFeeCap:  uint256.MustFromBig(s.Opts.GasFeeCap),
@@ -126,7 +126,7 @@ func (s *Sender) makeTxData(tx *types.Transaction) (types.TxData, error) {
 }
 
 func (s *Sender) handleReorgTransactions() { // nolint: unused
-	content, err := rpc.ContentFrom(s.ctx, s.client, s.Opts.From)
+	content, err := rpc.Content(s.ctx, s.client)
 	if err != nil {
 		log.Warn("failed to get the unconfirmed transactions", "address", s.Opts.From.String(), "err", err)
 		return
@@ -136,11 +136,18 @@ func (s *Sender) handleReorgTransactions() { // nolint: unused
 	}
 
 	txs := map[common.Hash]*types.Transaction{}
-	for _, txMap := range content {
-		for _, tx := range txMap {
-			txs[tx.Hash()] = tx
+	for _, txMapStatus := range content {
+		for key, txMapNonce := range txMapStatus {
+			addr := common.HexToAddress(key)
+			if addr != s.Opts.From {
+				continue
+			}
+			for _, tx := range txMapNonce {
+				txs[tx.Hash()] = tx
+			}
 		}
 	}
+	// Remove the already handled transactions.
 	for _, confirm := range s.unconfirmedTxs.Items() {
 		delete(txs, confirm.Tx.Hash())
 	}
