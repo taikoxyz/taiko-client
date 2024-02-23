@@ -77,11 +77,6 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 		return nil, errors.New("invalid callback")
 	}
 
-	chainID, err := cfg.Client.ChainID(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get chain ID, error: %w", err)
-	}
-
 	if cfg.StartHeight == nil {
 		return nil, errors.New("invalid start height")
 	}
@@ -102,7 +97,7 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 	iterator := &BlockBatchIterator{
 		ctx:         ctx,
 		client:      cfg.Client,
-		chainID:     chainID,
+		chainID:     cfg.Client.ChainID,
 		startHeight: cfg.StartHeight.Uint64(),
 		onBlocks:    cfg.OnBlocks,
 		current:     startHeader,

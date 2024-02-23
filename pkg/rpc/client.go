@@ -3,13 +3,13 @@ package rpc
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/prysmaticlabs/prysm/v4/api/client"
 	"github.com/prysmaticlabs/prysm/v4/api/client/beacon"
+
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
@@ -32,9 +32,6 @@ type Client struct {
 	TaikoL2        *bindings.TaikoL2Client
 	TaikoToken     *bindings.TaikoToken
 	GuardianProver *bindings.GuardianProver
-	// Chain IDs
-	L1ChainID *big.Int
-	L2ChainID *big.Int
 }
 
 // ClientConfig contains all configs which will be used to initializing an
@@ -67,16 +64,6 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	}
 
 	l2Client, err := NewEthClient(ctxWithTimeout, cfg.L2Endpoint, cfg.Timeout)
-	if err != nil {
-		return nil, err
-	}
-
-	l1ChainID, err := l1Client.ChainID(ctxWithTimeout)
-	if err != nil {
-		return nil, err
-	}
-
-	l2ChainID, err := l2Client.ChainID(ctxWithTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -153,8 +140,6 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		TaikoL2:        taikoL2,
 		TaikoToken:     taikoToken,
 		GuardianProver: guardianProver,
-		L1ChainID:      l1ChainID,
-		L2ChainID:      l2ChainID,
 	}
 
 	if err := client.ensureGenesisMatched(ctxWithTimeout); err != nil {

@@ -63,7 +63,7 @@ func (a *ProveBlockTxBuilder) Build(
 		a.mutex.Lock()
 		defer a.mutex.Unlock()
 
-		txOpts, err := getProveBlocksTxOpts(ctx, a.rpc.L1, a.rpc.L1ChainID, a.proverPrivateKey)
+		txOpts, err := getProveBlocksTxOpts(ctx, a.rpc.L1, a.rpc.L1.ChainID, a.proverPrivateKey)
 		if err != nil {
 			return nil, err
 		}

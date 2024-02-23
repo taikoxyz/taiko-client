@@ -97,7 +97,7 @@ func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	// generate transactopts to interact with TaikoL1 contract with.
 	privKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
-	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.RPCClient.L1ChainID)
+	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.RPCClient.L1.ChainID)
 	s.Nil(err)
 
 	head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
