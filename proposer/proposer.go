@@ -60,7 +60,7 @@ type Proposer struct {
 	CustomProposeOpHook func() error
 	AfterCommitHook     func() error
 
-	Sender *sender.Sender
+	sender *sender.Sender
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -104,7 +104,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 		return err
 	}
 
-	if p.Sender, err = sender.NewSender(ctx, &sender.Config{
+	if p.sender, err = sender.NewSender(ctx, &sender.Config{
 		MaxGasFee:      20000000000,
 		GasGrowthRate:  20,
 		GasLimit:       cfg.ProposeBlockTxGasLimit,
@@ -184,7 +184,7 @@ func (p *Proposer) eventLoop() {
 
 // Close closes the proposer instance.
 func (p *Proposer) Close(ctx context.Context) {
-	p.Sender.Close()
+	p.sender.Close()
 	p.wg.Wait()
 }
 
@@ -359,7 +359,7 @@ func (p *Proposer) makeProposeBlockTxWithBlobHash(
 		return nil, err
 	}
 
-	opts := p.Sender.Opts
+	opts := p.sender.Opts
 	opts.Value = maxFee
 	rawTx, err := p.rpc.TaikoL1.ProposeBlock(
 		opts,
@@ -394,7 +394,7 @@ func (p *Proposer) makeProposeBlockTx(
 		return nil, err
 	}
 
-	opts := p.Sender.Opts
+	opts := p.sender.Opts
 	opts.Value = maxFee
 
 	var parentMetaHash = [32]byte{}
@@ -487,7 +487,7 @@ func (p *Proposer) ProposeTxList(
 				log.Warn("Failed to make taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				return err
 			}
-			txID, err = p.Sender.SendTransaction(tx)
+			txID, err = p.sender.SendTransaction(tx)
 			if err != nil {
 				log.Warn("Failed to send taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				return err
@@ -506,7 +506,7 @@ func (p *Proposer) ProposeTxList(
 	}
 
 	// Waiting for the transaction to be confirmed.
-	confirm := <-p.Sender.ConfirmChannel(txID)
+	confirm := <-p.sender.ConfirmChannel(txID)
 	if confirm.Err != nil {
 		return confirm.Err
 	}
@@ -549,6 +549,11 @@ func (p *Proposer) updateProposingTicker() {
 // Name returns the application name.
 func (p *Proposer) Name() string {
 	return "proposer"
+}
+
+// GetSender returns the sender instance.
+func (p *Proposer) GetSender() *sender.Sender {
+	return p.sender
 }
 
 // initTierFees initializes the proving fees for every proof tier configured in the protocol for the proposer.

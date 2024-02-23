@@ -155,22 +155,23 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 }
 
 func (s *ProposerTestSuite) TestSendProposeBlockTx() {
+	sender := s.p.GetSender()
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	s.p.Sender.AdjustNonce(nil)
+	sender.AdjustNonce(nil)
 
 	fee := big.NewInt(10000)
-	opts := s.p.Sender.Opts
+	opts := sender.Opts
 	opts.Value = fee
 	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
 
 	nonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
 	s.Nil(err)
 
-	txID, err := s.p.Sender.SendRaw(nonce, &common.Address{}, common.Big1, nil)
+	txID, err := sender.SendRaw(nonce, &common.Address{}, common.Big1, nil)
 	s.Nil(err)
-	tx := s.p.Sender.GetUnconfirmedTx(txID)
+	tx := sender.GetUnconfirmedTx(txID)
 
 	encoded, err := rlp.EncodeToBytes([]types.Transaction{})
 	s.Nil(err)
@@ -185,9 +186,9 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	}
 	s.Nil(err)
 
-	txID, err = s.p.Sender.SendRaw(nonce, newTx.To(), newTx.Value(), newTx.Data())
+	txID, err = sender.SendRaw(nonce, newTx.To(), newTx.Value(), newTx.Data())
 	s.Nil(err)
-	newTx = s.p.Sender.GetUnconfirmedTx(txID)
+	newTx = sender.GetUnconfirmedTx(txID)
 
 	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }

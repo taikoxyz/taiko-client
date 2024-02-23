@@ -129,7 +129,10 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 }
 
 func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
-	var testnetL1SnapshotID string
+	var (
+		testnetL1SnapshotID string
+		sender              = s.p.GetSender()
+	)
 	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(testnetL1SnapshotID)
 
@@ -169,7 +172,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
 	// Because of evm_revert operation, the nonce of the proposer need to be adjusted.
-	s.p.Sender.AdjustNonce(nil)
+	sender.AdjustNonce(nil)
 	// Propose ten blocks on another fork
 	for i := 0; i < 10; i++ {
 		testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
@@ -194,7 +197,10 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 }
 
 func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
-	var testnetL1SnapshotID string
+	var (
+		testnetL1SnapshotID string
+		sender              = s.p.GetSender()
+	)
 	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(testnetL1SnapshotID)
 
@@ -233,7 +239,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
-	s.p.Sender.AdjustNonce(nil)
+	sender.AdjustNonce(nil)
 	// Propose one blocks on another fork
 	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 
@@ -255,7 +261,10 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 }
 
 func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
-	var testnetL1SnapshotID string
+	var (
+		testnetL1SnapshotID string
+		sender              = s.p.GetSender()
+	)
 	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &testnetL1SnapshotID, "evm_snapshot"))
 	s.NotEmpty(testnetL1SnapshotID)
 
@@ -294,7 +303,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
-	s.p.Sender.AdjustNonce(nil)
+	sender.AdjustNonce(nil)
 	// Propose two blocks on another fork
 	testutils.ProposeInvalidTxListBytes(&s.ClientTestSuite, s.p)
 	time.Sleep(3 * time.Second)

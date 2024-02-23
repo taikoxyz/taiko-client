@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/taikoxyz/taiko-client/cmd/utils"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 )
 
 type CalldataSyncer interface {
@@ -21,4 +22,5 @@ type Proposer interface {
 		txListBytes []byte,
 		txNum uint,
 	) error
+	GetSender() *sender.Sender
 }
