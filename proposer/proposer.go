@@ -226,7 +226,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	if p.LocalAddressesOnly {
 		var (
 			localTxsLists []types.Transactions
-			signer        = types.LatestSignerForChainID(p.rpc.L2ChainID)
+			signer        = types.LatestSignerForChainID(p.rpc.L2.ChainID)
 		)
 		for _, txs := range txLists {
 			var filtered types.Transactions
@@ -329,7 +329,7 @@ func (p *Proposer) sendProposeBlockTxWithBlobHash(
 	}
 
 	// Propose the transactions list
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.L1ProposerPrivKey, p.rpc.L1ChainID, maxFee)
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.L1ProposerPrivKey, p.rpc.L1.ChainID, maxFee)
 	if err != nil {
 		return nil, err
 	}
@@ -433,7 +433,7 @@ func (p *Proposer) sendProposeBlockTx(
 	}
 
 	// Propose the transactions list
-	opts, err := getTxOpts(ctx, p.rpc.L1, p.L1ProposerPrivKey, p.rpc.L1ChainID, maxFee)
+	opts, err := getTxOpts(ctx, p.rpc.L1, p.L1ProposerPrivKey, p.rpc.L1.ChainID, maxFee)
 	if err != nil {
 		return nil, err
 	}

@@ -122,7 +122,7 @@ func TestGetSyncedL1SnippetFromAnchor(t *testing.T) {
 	testAddrPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(encoding.GoldenTouchPrivKey))
 	require.Nil(t, err)
 
-	opts, err := bind.NewKeyedTransactorWithChainID(testAddrPrivKey, client.L2ChainID)
+	opts, err := bind.NewKeyedTransactorWithChainID(testAddrPrivKey, client.L2.ChainID)
 	require.Nil(t, err)
 
 	opts.NoSend = true
