@@ -13,17 +13,18 @@ import (
 )
 
 var (
-	l1WsEndpoint   = os.Getenv("L1_NODE_WS_ENDPOINT")
-	l1HttpEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
-	l1NodeVersion  = "1.0.0"
-	l2WsEndpoint   = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
-	l2HttpEndpoint = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
-	l2NodeVersion  = "0.1.0"
-	taikoL1        = os.Getenv("TAIKO_L1_ADDRESS")
-	taikoL2        = os.Getenv("TAIKO_L2_ADDRESS")
-	allowance      = "10000000000000000000000000000000000000000000000000"
-	rpcTimeout     = 5 * time.Second
-	minTierFee     = 1024
+	l1WsEndpoint     = os.Getenv("L1_NODE_WS_ENDPOINT")
+	l1HttpEndpoint   = os.Getenv("L1_NODE_HTTP_ENDPOINT")
+	l1BeaconEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
+	l1NodeVersion    = "1.0.0"
+	l2WsEndpoint     = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
+	l2HttpEndpoint   = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+	l2NodeVersion    = "0.1.0"
+	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
+	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
+	allowance        = "10000000000000000000000000000000000000000000000000"
+	rpcTimeout       = 5 * time.Second
+	minTierFee       = 1024
 )
 
 func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
@@ -33,6 +34,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Nil(err)
 		s.Equal(l1WsEndpoint, c.L1WsEndpoint)
 		s.Equal(l1HttpEndpoint, c.L1HttpEndpoint)
+		s.Equal(l1BeaconEndpoint, c.L1BeaconEndpoint)
 		s.Equal(l2WsEndpoint, c.L2WsEndpoint)
 		s.Equal(l2HttpEndpoint, c.L2HttpEndpoint)
 		s.Equal(taikoL1, c.TaikoL1Address.String())
@@ -69,6 +71,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"TestNewConfigFromCliContextGuardianProver",
 		"--" + flags.L1WSEndpoint.Name, l1WsEndpoint,
 		"--" + flags.L1HTTPEndpoint.Name, l1HttpEndpoint,
+		"--" + flags.L1BeaconEndpoint.Name, l1BeaconEndpoint,
 		"--" + flags.L2WSEndpoint.Name, l2WsEndpoint,
 		"--" + flags.L2HTTPEndpoint.Name, l2HttpEndpoint,
 		"--" + flags.TaikoL1Address.Name, taikoL1,
@@ -111,6 +114,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
 		&cli.StringFlag{Name: flags.L1HTTPEndpoint.Name},
+		&cli.StringFlag{Name: flags.L1BeaconEndpoint.Name},
 		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},
 		&cli.StringFlag{Name: flags.L2HTTPEndpoint.Name},
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
