@@ -21,13 +21,22 @@ import (
 )
 
 var (
-	rootSender = map[common.Address]*Sender{}
+	rootSender    = map[uint64]map[common.Address]*Sender{}
+	DefaultConfig = &Config{
+		Confirm:        0,
+		RetryTimes:     0,
+		MaxWaitingTime: time.Minute * 5,
+		GasLimit:       21000,
+		GasGrowthRate:  50,
+		MaxGasFee:      20000000000,
+		MaxBlobFee:     1000000000,
+	}
 )
 
 type Config struct {
 	// The minimum confirmations to consider the transaction is confirmed.
 	Confirm uint64
-	// The maximum retry times to send transaction.
+	// The maximum retry times to send transaction, 0 means always retry.
 	RetryTimes uint64
 	// The maximum waiting time for transaction in mempool.
 	MaxWaitingTime time.Duration
@@ -74,6 +83,7 @@ type Sender struct {
 
 // NewSender returns a new instance of Sender.
 func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ecdsa.PrivateKey) (*Sender, error) {
+	cfg = setConfig(cfg)
 	// Get the chain ID
 	header, err := client.HeaderByNumber(ctx, nil)
 	if err != nil {
@@ -87,14 +97,6 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	}
 	// Do not automatically send transactions
 	opts.NoSend = true
-
-	// Set default MaxWaitingTime.
-	if cfg.MaxWaitingTime == 0 {
-		cfg.MaxWaitingTime = time.Minute * 5
-	}
-	if cfg.GasLimit == 0 {
-		cfg.GasLimit = 21000
-	}
 
 	sender := &Sender{
 		ctx:            ctx,
@@ -114,12 +116,17 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	if err != nil {
 		return nil, err
 	}
+
 	// Add the sender to the root sender.
-	if rootSender[opts.From] != nil {
-		return nil, fmt.Errorf("sender already exists")
-	}
-	if os.Getenv("RUN_TESTS") == "" {
-		rootSender[opts.From] = sender
+	if root := rootSender[client.ChainID.Uint64()]; root == nil {
+		rootSender[client.ChainID.Uint64()] = map[common.Address]*Sender{}
+	} else {
+		if root[opts.From] != nil {
+			return nil, fmt.Errorf("sender already exists")
+		}
+		if os.Getenv("RUN_TESTS") == "" {
+			root[opts.From] = sender
+		}
 	}
 
 	sender.wg.Add(1)

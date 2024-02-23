@@ -3,6 +3,7 @@ package sender
 import (
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -158,5 +159,27 @@ func (s *Sender) handleReorgTransactions() { // nolint: unused
 		s.unconfirmedTxs.Set(txID, confirm)
 		s.txConfirmCh.Set(txID, make(chan *TxConfirm, 1))
 		log.Info("handle reorg tx", "tx_hash", tx.Hash().String(), "tx_id", txID)
+	}
+}
+
+func setDefault[T uint64 | time.Duration](src, dest T) T {
+	if src == 0 {
+		return dest
+	}
+	return src
+}
+
+func setConfig(config *Config) *Config {
+	if config == nil {
+		return DefaultConfig
+	}
+	return &Config{
+		Confirm:        setDefault(config.Confirm, DefaultConfig.Confirm),
+		RetryTimes:     setDefault(config.RetryTimes, DefaultConfig.RetryTimes),
+		MaxWaitingTime: setDefault(config.MaxWaitingTime, DefaultConfig.MaxWaitingTime),
+		GasLimit:       setDefault(config.GasLimit, DefaultConfig.GasLimit),
+		GasGrowthRate:  setDefault(config.GasGrowthRate, DefaultConfig.GasGrowthRate),
+		MaxGasFee:      setDefault(config.MaxGasFee, DefaultConfig.MaxGasFee),
+		MaxBlobFee:     setDefault(config.MaxBlobFee, DefaultConfig.MaxBlobFee),
 	}
 }
