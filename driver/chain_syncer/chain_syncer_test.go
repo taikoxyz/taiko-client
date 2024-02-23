@@ -91,13 +91,13 @@ func (s *ChainSyncerTestSuite) TestSync() {
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	s.TakeSnapshot()
 	// propose a couple blocks
-	testutils.ProposeAndInsertEmptyBlocks(&s.ClientTestSuite, s.p, s.s.calldataSyncer)
+	s.ProposeAndInsertEmptyBlocks(s.p, s.s.calldataSyncer)
 
 	// NOTE: need to prove the proposed blocks to be verified, writing helper function
 	// generate transactopts to interact with TaikoL1 contract with.
 	privKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
-	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.RPCClient.L1ChainID)
+	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.RPCClient.L1.ChainID)
 	s.Nil(err)
 
 	head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
@@ -136,14 +136,12 @@ func TestChainSyncerTestSuite(t *testing.T) {
 
 func (s *ChainSyncerTestSuite) TakeSnapshot() {
 	// record snapshot state to revert to before changes
-	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &s.snapshotID, "evm_snapshot"))
+	s.snapshotID = s.SetL1Snapshot()
 }
 
 func (s *ChainSyncerTestSuite) RevertSnapshot() {
 	// revert to the snapshot state so protocol configs are unaffected
-	var revertRes bool
-	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", s.snapshotID))
-	s.True(revertRes)
+	s.RevertL1Snapshot(s.snapshotID)
 	s.Nil(rpc.SetHead(context.Background(), s.RPCClient.L2, common.Big0))
 }
 

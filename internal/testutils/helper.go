@@ -24,14 +24,13 @@ import (
 	"github.com/taikoxyz/taiko-client/prover/server"
 )
 
-func ProposeInvalidTxListBytes(s *ClientTestSuite, proposer Proposer) {
+func (s *ClientTestSuite) ProposeInvalidTxListBytes(proposer Proposer) {
 	invalidTxListBytes := RandomBytes(256)
 
 	s.Nil(proposer.ProposeTxList(context.Background(), invalidTxListBytes, 1, nil))
 }
 
-func ProposeAndInsertEmptyBlocks(
-	s *ClientTestSuite,
+func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 	proposer Proposer,
 	calldataSyncer CalldataSyncer,
 ) []*bindings.TaikoL1ClientBlockProposed {
@@ -56,7 +55,7 @@ func ProposeAndInsertEmptyBlocks(
 
 	s.Nil(proposer.ProposeTxList(context.Background(), encoded, 0, nil))
 
-	ProposeInvalidTxListBytes(s, proposer)
+	s.ProposeInvalidTxListBytes(proposer)
 
 	// Random bytes txList
 	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
@@ -85,8 +84,7 @@ func ProposeAndInsertEmptyBlocks(
 
 // ProposeAndInsertValidBlock proposes an valid tx list and then insert it
 // into L2 execution engine's local chain.
-func ProposeAndInsertValidBlock(
-	s *ClientTestSuite,
+func (s *ClientTestSuite) ProposeAndInsertValidBlock(
 	proposer Proposer,
 	calldataSyncer CalldataSyncer,
 ) *bindings.TaikoL1ClientBlockProposed {
@@ -120,7 +118,7 @@ func ProposeAndInsertValidBlock(
 		baseFee,
 		[]byte{},
 	)
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L2ChainID), s.TestAddrPrivKey)
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L2.ChainID), s.TestAddrPrivKey)
 	s.Nil(err)
 	s.Nil(s.RPCClient.L2.SendTransaction(context.Background(), signedTx))
 
@@ -156,8 +154,7 @@ func ProposeAndInsertValidBlock(
 
 // NewTestProverServer starts a new prover server that has channel listeners to respond and react
 // to requests for capacity, which provers can call.
-func NewTestProverServer(
-	s *ClientTestSuite,
+func (s *ClientTestSuite) NewTestProverServer(
 	proverPrivKey *ecdsa.PrivateKey,
 	url *url.URL,
 ) *server.ProverServer {

@@ -350,7 +350,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 
 	opts, err := bind.NewKeyedTransactorWithChainID(
 		p.cfg.L1ProverPrivKey,
-		p.rpc.L1ChainID,
+		p.rpc.L1.ChainID,
 	)
 	if err != nil {
 		return err

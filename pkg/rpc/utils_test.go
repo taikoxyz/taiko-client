@@ -59,7 +59,7 @@ func TestL1ContentFrom(t *testing.T) {
 		baseFee,
 		[]byte{},
 	)
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(client.L2ChainID), testAddrPrivKey)
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(client.L2.ChainID), testAddrPrivKey)
 	require.Nil(t, err)
 	require.Nil(t, client.L2.SendTransaction(context.Background(), signedTx))
 

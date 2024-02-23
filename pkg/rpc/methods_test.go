@@ -122,7 +122,7 @@ func TestGetSyncedL1SnippetFromAnchor(t *testing.T) {
 	testAddrPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(encoding.GoldenTouchPrivKey))
 	require.Nil(t, err)
 
-	opts, err := bind.NewKeyedTransactorWithChainID(testAddrPrivKey, client.L2ChainID)
+	opts, err := bind.NewKeyedTransactorWithChainID(testAddrPrivKey, client.L2.ChainID)
 	require.Nil(t, err)
 
 	opts.NoSend = true
@@ -158,10 +158,6 @@ func TestGetPoolContentValid(t *testing.T) {
 	require.Nil(t, err)
 	goldenTouchAddress, err := client.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	require.Nil(t, err)
-	parent, err := client.L2.BlockByNumber(context.Background(), nil)
-	require.Nil(t, err)
-	baseFee, err := client.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
-	require.Nil(t, err)
 	gasLimit := configs.BlockMaxGasLimit
 	maxBytes := configs.BlockMaxTxListBytes
 
@@ -170,7 +166,6 @@ func TestGetPoolContentValid(t *testing.T) {
 	_, err2 := client.GetPoolContent(
 		context.Background(),
 		goldenTouchAddress,
-		baseFee,
 		gasLimit,
 		maxBytes.Uint64(),
 		txPools,

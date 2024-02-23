@@ -24,6 +24,8 @@ type ethClient struct {
 
 // EthClient is a wrapper for go-ethereum eth client with a timeout attached.
 type EthClient struct {
+	ChainID *big.Int
+
 	*rpc.Client
 	*gethClient
 	*ethClient
@@ -42,20 +44,20 @@ func NewEthClient(ctx context.Context, url string, timeout time.Duration) (*EthC
 		return nil, err
 	}
 
+	ethClient := &ethClient{ethclient.NewClient(client)}
+	// Get chainID.
+	chainID, err := ethClient.ChainID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &EthClient{
+		ChainID:    chainID,
 		Client:     client,
 		gethClient: &gethClient{gethclient.New(client)},
-		ethClient:  &ethClient{ethclient.NewClient(client)},
+		ethClient:  ethClient,
 		timeout:    timeoutVal,
 	}, nil
-}
-
-// ChainID retrieves the current chain ID for transaction replay protection.
-func (c *EthClient) ChainID(ctx context.Context) (*big.Int, error) {
-	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
-	defer cancel()
-
-	return c.ethClient.ChainID(ctxWithTimeout)
 }
 
 // BlockByHash returns the given full block.

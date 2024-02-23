@@ -88,7 +88,7 @@ func (c *AnchorTxConstructor) transactOpts(
 	baseFee *big.Int,
 ) (*bind.TransactOpts, error) {
 	var (
-		signer       = types.LatestSignerForChainID(c.rpc.L2ChainID)
+		signer       = types.LatestSignerForChainID(c.rpc.L2.ChainID)
 		parentHeight = new(big.Int).Sub(l2Height, common.Big1)
 	)
 

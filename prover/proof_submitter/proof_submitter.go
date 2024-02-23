@@ -55,7 +55,7 @@ func New(
 	txReplacementTipMultiplier uint64,
 	proveBlockMaxTxGasTipCap *big.Int,
 ) (*ProofSubmitter, error) {
-	anchorValidator, err := validator.New(taikoL2Address, rpcClient.L2ChainID, rpcClient)
+	anchorValidator, err := validator.New(taikoL2Address, rpcClient.L2.ChainID, rpcClient)
 	if err != nil {
 		return nil, err
 	}
