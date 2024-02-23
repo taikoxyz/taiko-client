@@ -136,12 +136,12 @@ func TestChainSyncerTestSuite(t *testing.T) {
 
 func (s *ChainSyncerTestSuite) TakeSnapshot() {
 	// record snapshot state to revert to before changes
-	s.snapshotID = s.EvmSnapshot()
+	s.snapshotID = s.SetL1Snapshot()
 }
 
 func (s *ChainSyncerTestSuite) RevertSnapshot() {
 	// revert to the snapshot state so protocol configs are unaffected
-	s.EvmRevert(s.snapshotID)
+	s.RevertL1Snapshot(s.snapshotID)
 	s.Nil(rpc.SetHead(context.Background(), s.RPCClient.L2, common.Big0))
 }
 

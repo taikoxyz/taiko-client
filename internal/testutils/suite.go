@@ -92,7 +92,7 @@ func (s *ClientTestSuite) SetupTest() {
 		s.setAllowance(l1ProverPrivKey)
 		s.setAllowance(ownerPrivKey)
 	}
-	s.testnetL1SnapshotID = s.EvmSnapshot()
+	s.testnetL1SnapshotID = s.SetL1Snapshot()
 }
 
 func (s *ClientTestSuite) setAllowance(key *ecdsa.PrivateKey) {
@@ -123,7 +123,7 @@ func (s *ClientTestSuite) setAllowance(key *ecdsa.PrivateKey) {
 }
 
 func (s *ClientTestSuite) TearDownTest() {
-	s.EvmRevert(s.testnetL1SnapshotID)
+	s.RevertL1Snapshot(s.testnetL1SnapshotID)
 
 	s.Nil(rpc.SetHead(context.Background(), s.RPCClient.L2, common.Big0))
 	s.Nil(s.proverServer.Shutdown(context.Background()))
@@ -139,14 +139,14 @@ func (s *ClientTestSuite) IncreaseTime(time uint64) {
 	s.NotNil(result)
 }
 
-func (s *ClientTestSuite) EvmSnapshot() string {
+func (s *ClientTestSuite) SetL1Snapshot() string {
 	var snapshotID string
 	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &snapshotID, "evm_snapshot"))
 	s.NotEmpty(snapshotID)
 	return snapshotID
 }
 
-func (s *ClientTestSuite) EvmRevert(snapshotID string) {
+func (s *ClientTestSuite) RevertL1Snapshot(snapshotID string) {
 	var revertRes bool
 	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", snapshotID))
 	s.True(revertRes)
