@@ -25,6 +25,7 @@ import (
 type SGXProofProducer struct {
 	RaikoHostEndpoint string // a proverd RPC endpoint
 	L1Endpoint        string // a L1 node RPC endpoint
+	L1BeaconEndpoint  string // a L1 beacon node RPC endpoint
 	L2Endpoint        string // a L2 execution engine's RPC endpoint
 	*DummyProofProducer
 }
@@ -39,12 +40,13 @@ type SGXRequestProofBody struct {
 
 // SGXRequestProofBodyParam represents the JSON body of RequestProofBody's `param` field.
 type SGXRequestProofBodyParam struct {
-	Type     string   `json:"type"`
-	Block    *big.Int `json:"block"`
-	L2RPC    string   `json:"l2Rpc"`
-	L1RPC    string   `json:"l1Rpc"`
-	Prover   string   `json:"prover"`
-	Graffiti string   `json:"graffiti"`
+	Type        string   `json:"type"`
+	Block       *big.Int `json:"block"`
+	L2RPC       string   `json:"l2Rpc"`
+	L1RPC       string   `json:"l1Rpc"`
+	L1BeaconRPC string   `json:"l1BeaconRpc"`
+	Prover      string   `json:"prover"`
+	Graffiti    string   `json:"graffiti"`
 }
 
 // SGXRequestProofBodyResponse represents the JSON body of the response of the proof requests.
@@ -68,11 +70,13 @@ type RaikoHostOutput struct {
 func NewSGXProducer(
 	raikoHostEndpoint string,
 	l1Endpoint string,
+	l1BeaconEndpoint string,
 	l2Endpoint string,
 ) (*SGXProofProducer, error) {
 	return &SGXProofProducer{
 		RaikoHostEndpoint: raikoHostEndpoint,
 		L1Endpoint:        l1Endpoint,
+		L1BeaconEndpoint:  l1BeaconEndpoint,
 		L2Endpoint:        l2Endpoint,
 	}, nil
 }
