@@ -129,8 +129,10 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 }
 
 func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
-	var testnetL1SnapshotID = s.SetL1Snapshot()
-
+	var (
+		testnetL1SnapshotID = s.SetL1Snapshot()
+		sender              = s.p.GetSender()
+	)
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
@@ -164,6 +166,8 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
+	// Because of evm_revert operation, the nonce of the proposer need to be adjusted.
+	sender.AdjustNonce(nil)
 	// Propose ten blocks on another fork
 	for i := 0; i < 10; i++ {
 		s.ProposeInvalidTxListBytes(s.p)
@@ -188,8 +192,10 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 }
 
 func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
-	var testnetL1SnapshotID = s.SetL1Snapshot()
-
+	var (
+		testnetL1SnapshotID = s.SetL1Snapshot()
+		sender              = s.p.GetSender()
+	)
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
@@ -223,6 +229,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
+	sender.AdjustNonce(nil)
 	// Propose one blocks on another fork
 	s.ProposeInvalidTxListBytes(s.p)
 
@@ -244,8 +251,10 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 }
 
 func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
-	var testnetL1SnapshotID = s.SetL1Snapshot()
-
+	var (
+		testnetL1SnapshotID = s.SetL1Snapshot()
+		sender              = s.p.GetSender()
+	)
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
@@ -279,6 +288,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
+	sender.AdjustNonce(nil)
 	// Propose two blocks on another fork
 	s.ProposeInvalidTxListBytes(s.p)
 	time.Sleep(3 * time.Second)

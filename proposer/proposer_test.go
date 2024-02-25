@@ -155,47 +155,41 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 }
 
 func (s *ProposerTestSuite) TestSendProposeBlockTx() {
+	sender := s.p.GetSender()
+	s.SetL1Automine(false)
+	defer s.SetL1Automine(true)
+
+	sender.AdjustNonce(nil)
+
 	fee := big.NewInt(10000)
-	opts, err := getTxOpts(
-		context.Background(),
-		s.p.rpc.L1,
-		s.p.L1ProposerPrivKey,
-		s.RPCClient.L1.ChainID,
-		fee,
-	)
-	s.Nil(err)
+	opts := sender.Opts
+	opts.Value = fee
 	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
 
 	nonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
 	s.Nil(err)
 
-	tx := types.NewTransaction(
-		nonce,
-		common.BytesToAddress([]byte{}),
-		common.Big1,
-		100000,
-		opts.GasTipCap,
-		[]byte{},
-	)
-
-	s.SetL1Automine(false)
-	defer s.SetL1Automine(true)
-
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L1.ChainID), s.p.L1ProposerPrivKey)
+	txID, err := sender.SendRawTransaction(nonce, &common.Address{}, common.Big1, nil)
 	s.Nil(err)
-	s.Nil(s.RPCClient.L1.SendTransaction(context.Background(), signedTx))
+	tx := sender.GetUnconfirmedTx(txID)
 
-	var emptyTxs []types.Transaction
-	encoded, err := rlp.EncodeToBytes(emptyTxs)
+	encoded, err := rlp.EncodeToBytes([]types.Transaction{})
+	s.Nil(err)
+	var newTx *types.Transaction
+	if s.p.BlobAllowed {
+		newTx, err = s.p.makeProposeBlockTxWithBlobHash(context.Background(), encoded)
+	} else {
+		newTx, err = s.p.makeProposeBlockTx(
+			context.Background(),
+			encoded,
+		)
+	}
 	s.Nil(err)
 
-	newTx, err := s.p.sendProposeBlockTx(
-		context.Background(),
-		encoded,
-		&nonce,
-		true,
-	)
+	txID, err = sender.SendRawTransaction(nonce, newTx.To(), newTx.Value(), newTx.Data())
 	s.Nil(err)
+	newTx = sender.GetUnconfirmedTx(txID)
+
 	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }
 

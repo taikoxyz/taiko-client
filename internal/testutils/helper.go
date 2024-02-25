@@ -27,7 +27,7 @@ import (
 func (s *ClientTestSuite) ProposeInvalidTxListBytes(proposer Proposer) {
 	invalidTxListBytes := RandomBytes(256)
 
-	s.Nil(proposer.ProposeTxList(context.Background(), invalidTxListBytes, 1, nil))
+	s.Nil(proposer.ProposeTxList(context.Background(), invalidTxListBytes, 1))
 }
 
 func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
@@ -53,7 +53,7 @@ func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 	encoded, err := rlp.EncodeToBytes(emptyTxs)
 	s.Nil(err)
 
-	s.Nil(proposer.ProposeTxList(context.Background(), encoded, 0, nil))
+	s.Nil(proposer.ProposeTxList(context.Background(), encoded, 0))
 
 	s.ProposeInvalidTxListBytes(proposer)
 

@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/prover/server"
@@ -32,6 +33,7 @@ type ClientTestSuite struct {
 }
 
 func (s *ClientTestSuite) SetupTest() {
+	utils.LoadEnv()
 	// Default logger
 	glogger := log.NewGlogHandler(log.NewTerminalHandlerWithLevel(os.Stdout, log.LevelInfo, true))
 	log.SetDefault(log.NewLogger(glogger))
@@ -150,4 +152,10 @@ func (s *ClientTestSuite) RevertL1Snapshot(snapshotID string) {
 	var revertRes bool
 	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", snapshotID))
 	s.True(revertRes)
+}
+
+func (s *ClientTestSuite) MineL1Block() {
+	var blockID string
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &blockID, "evm_mine"))
+	s.NotEmpty(blockID)
 }

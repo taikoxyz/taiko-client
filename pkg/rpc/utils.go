@@ -250,18 +250,28 @@ func GetBlockProofStatus(
 	}, nil
 }
 
-type AccountPoolContent map[string]map[string]*types.Transaction
+type AccountPoolContent map[string]map[string]map[string]*types.Transaction
+type AccountPoolContentFrom map[string]map[string]*types.Transaction
+
+// Content GetPendingTxs fetches the pending transactions from tx pool.
+func Content(ctx context.Context, client *EthClient) (AccountPoolContent, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	var result AccountPoolContent
+	return result, client.CallContext(ctxWithTimeout, &result, "txpool_content")
+}
 
 // ContentFrom fetches a given account's transactions list from a node's transactions pool.
 func ContentFrom(
 	ctx context.Context,
 	rawRPC *EthClient,
 	address common.Address,
-) (AccountPoolContent, error) {
+) (AccountPoolContentFrom, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	var result AccountPoolContent
+	var result AccountPoolContentFrom
 	return result, rawRPC.CallContext(
 		ctxWithTimeout,
 		&result,
@@ -284,7 +294,7 @@ func IncreaseGasTipCap(
 
 	log.Info("Try replacing a transaction with same nonce", "sender", address, "nonce", opts.Nonce)
 
-	originalTx, err := GetPendingTxByNonce(ctxWithTimeout, cli, address, opts.Nonce.Uint64())
+	originalTx, err := GetPendingTxByNonce(ctxWithTimeout, cli.L1, address, opts.Nonce.Uint64())
 	if err != nil || originalTx == nil {
 		log.Warn(
 			"Original transaction not found",
@@ -322,14 +332,14 @@ func IncreaseGasTipCap(
 // GetPendingTxByNonce tries to retrieve a pending transaction with a given nonce in a node's mempool.
 func GetPendingTxByNonce(
 	ctx context.Context,
-	cli *Client,
+	cli *EthClient,
 	address common.Address,
 	nonce uint64,
 ) (*types.Transaction, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	content, err := ContentFrom(ctxWithTimeout, cli.L1, address)
+	content, err := ContentFrom(ctxWithTimeout, cli, address)
 	if err != nil {
 		return nil, err
 	}
