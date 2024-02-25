@@ -9,10 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/holiman/uint256"
-	"github.com/pborman/uuid"
 	"modernc.org/mathutil"
-
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // adjustGas adjusts the gas fee cap and gas tip cap of the given transaction with the configured
@@ -129,51 +126,6 @@ func (s *Sender) buildTxData(tx *types.Transaction) (types.TxData, error) {
 		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported transaction type: %v", tx.Type())
-	}
-}
-
-// handleReorgTransactions handles the transactions which are backed to the mempool due to reorg.
-func (s *Sender) handleReorgTransactions() { // nolint: unused
-	content, err := rpc.Content(s.ctx, s.client)
-	if err != nil {
-		log.Warn("failed to get the unconfirmed transactions", "address", s.Opts.From.String(), "err", err)
-		return
-	}
-	if len(content) == 0 {
-		return
-	}
-
-	txs := map[common.Hash]*types.Transaction{}
-	for _, txMapStatus := range content {
-		for key, txMapNonce := range txMapStatus {
-			addr := common.HexToAddress(key)
-			if addr != s.Opts.From {
-				continue
-			}
-			for _, tx := range txMapNonce {
-				txs[tx.Hash()] = tx
-			}
-		}
-	}
-	// Remove the already handled transactions.
-	for _, confirm := range s.unconfirmedTxs.Items() {
-		delete(txs, confirm.CurrentTx.Hash())
-	}
-	for _, tx := range txs {
-		baseTx, err := s.buildTxData(tx)
-		if err != nil {
-			log.Warn("failed to make the transaction data when handle reorg txs", "tx_hash", tx.Hash().String(), "err", err)
-			return
-		}
-		txID := uuid.New()
-		confirm := &TxToConfirm{
-			ID:         txID,
-			CurrentTx:  tx,
-			originalTx: baseTx,
-		}
-		s.unconfirmedTxs.Set(txID, confirm)
-		s.txToConfirmCh.Set(txID, make(chan *TxToConfirm, 1))
-		log.Info("handle reorg tx", "tx_hash", tx.Hash().String(), "tx_id", txID)
 	}
 }
 

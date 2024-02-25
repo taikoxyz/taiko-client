@@ -26,7 +26,7 @@ var (
 	unconfirmedTxsCap           = 100
 	nonceIncorrectRetrys        = 3
 	unconfirmedTxsCheckInternal = 2 * time.Second
-	chainHeadFetchInterval      = 3 * time.Second // nolint:unused
+	chainHeadFetchInterval      = 3 * time.Second
 	errTimeoutInMempool         = fmt.Errorf("transaction in mempool for too long")
 	DefaultConfig               = &Config{
 		ConfirmationDepth: 0,
@@ -259,14 +259,8 @@ func (s *Sender) send(tx *TxToConfirm) error {
 func (s *Sender) loop() {
 	defer s.wg.Done()
 
-	// Subscribe new head.
-	headCh := make(chan *types.Header, 3)
-	sub, err := s.client.SubscribeNewHead(s.ctx, headCh)
-	if err != nil {
-		log.Error("failed to subscribe new head", "err", err)
-		return
-	}
-	defer sub.Unsubscribe()
+	chainHeadFetchTicker := time.NewTicker(chainHeadFetchInterval)
+	defer chainHeadFetchTicker.Stop()
 
 	unconfirmedTxsCheckTicker := time.NewTicker(unconfirmedTxsCheckInternal)
 	defer unconfirmedTxsCheckTicker.Stop()
@@ -279,12 +273,15 @@ func (s *Sender) loop() {
 			return
 		case <-unconfirmedTxsCheckTicker.C:
 			s.resendUnconfirmedTxs()
-		case newHead := <-headCh:
-			// If chain appear reorg then handle mempool transactions.
-			// TODO(Huan): handle reorg transactions
-			//if s.header.Hash() != header.ParentHash {
-			//s.handleReorgTransactions()
-			//}
+		case <-chainHeadFetchTicker.C:
+			newHead, err := s.client.HeaderByNumber(s.ctx, nil)
+			if err != nil {
+				log.Error("Failed to get the latest header", "err", err)
+				continue
+			}
+			if s.head.Hash() == newHead.Hash() {
+				continue
+			}
 			s.head = newHead
 			// Update the gas tip and gas fee
 			if err = s.updateGasTipGasFee(newHead); err != nil {
