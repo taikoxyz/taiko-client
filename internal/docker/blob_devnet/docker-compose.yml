@@ -1,0 +1,37 @@
+version: "3.9"
+services:
+  # Runs a Prysm beacon chain from a specified genesis state created in the previous step
+  # and connects to go-ethereum in the same network as the execution client.
+  # The account used in go-ethereum is set as the suggested fee recipient for transactions
+  # proposed via the validators attached to the beacon node.
+  beacon-chain:
+    build: l1-beacon-chain
+    container_name: beacon-chain
+    ports:
+      - 4000:4000
+      - 3500:3500
+      - 8080:8080
+      - 6060:6060
+      - 9090:9090
+    depends_on:
+      geth:
+        condition: service_started
+
+  # Runs the go-ethereum execution client with the specified, unlocked account and necessary
+  # APIs to allow for proof-of-stake consensus via Prysm.
+  geth:
+    build: l1-geth
+    container_name: geth
+    ports:
+      - 8551:8551
+      - 8545:8545
+      - 8546:8546
+
+  # We run a validator client with 64, deterministically-generated keys that match
+  # The validator keys present in the beacon chain genesis state generated a few steps above.
+  validator:
+    build: l1-validator
+    container_name: validator
+    depends_on:
+      beacon-chain:
+        condition: service_started
