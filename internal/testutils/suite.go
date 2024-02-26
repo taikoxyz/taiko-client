@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -35,7 +36,10 @@ type ClientTestSuite struct {
 func (s *ClientTestSuite) SetupTest() {
 	utils.LoadEnv()
 	// Default logger
-	glogger := log.NewGlogHandler(log.NewTerminalHandlerWithLevel(os.Stdout, log.LevelInfo, true))
+	ver, err := strconv.Atoi(os.Getenv("VERBOSITY"))
+	s.Nil(err)
+	glogger := log.NewGlogHandler(log.NewTerminalHandler(os.Stdout, true))
+	glogger.Verbosity(log.FromLegacyLevel(ver))
 	log.SetDefault(log.NewLogger(glogger))
 
 	testAddrPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
