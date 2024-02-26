@@ -31,7 +31,7 @@ var (
 
 // AddressManagerMetaData contains all meta data concerning the AddressManager contract.
 var AddressManagerMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"getAddress\",\"inputs\":[{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"name\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"init\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"pause\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"paused\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"proxiableUUID\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setAddress\",\"inputs\":[{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"name\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"newAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"unpause\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"upgradeTo\",\"inputs\":[{\"name\":\"newImplementation\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"upgradeToAndCall\",\"inputs\":[{\"name\":\"newImplementation\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"event\",\"name\":\"AddressSet\",\"inputs\":[{\"name\":\"chainId\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"name\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"oldAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"AdminChanged\",\"inputs\":[{\"name\":\"previousAdmin\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"newAdmin\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"BeaconUpgraded\",\"inputs\":[{\"name\":\"beacon\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Paused\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Unpaused\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Upgraded\",\"inputs\":[{\"name\":\"implementation\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AM_UNSUPPORTED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"INVALID_PAUSE_STATUS\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"REENTRANT_CALL\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"acceptOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"addressManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAddress\",\"inputs\":[{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"name\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"init\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"pause\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"paused\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"pendingOwner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"proxiableUUID\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"resolve\",\"inputs\":[{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"name\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"allowZeroAddress\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[{\"name\":\"addr\",\"type\":\"address\",\"internalType\":\"addresspayable\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"resolve\",\"inputs\":[{\"name\":\"name\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"allowZeroAddress\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[{\"name\":\"addr\",\"type\":\"address\",\"internalType\":\"addresspayable\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"setAddress\",\"inputs\":[{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"name\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"newAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"unpause\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"upgradeTo\",\"inputs\":[{\"name\":\"newImplementation\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"upgradeToAndCall\",\"inputs\":[{\"name\":\"newImplementation\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"event\",\"name\":\"AddressSet\",\"inputs\":[{\"name\":\"chainId\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"name\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"oldAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"AdminChanged\",\"inputs\":[{\"name\":\"previousAdmin\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"newAdmin\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"BeaconUpgraded\",\"inputs\":[{\"name\":\"beacon\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferStarted\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Paused\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Unpaused\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Upgraded\",\"inputs\":[{\"name\":\"implementation\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AM_INVALID_PARAMS\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"AM_UNSUPPORTED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"INVALID_PAUSE_STATUS\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"REENTRANT_CALL\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RESOLVER_DENIED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RESOLVER_INVALID_MANAGER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RESOLVER_UNEXPECTED_CHAINID\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RESOLVER_ZERO_ADDR\",\"inputs\":[{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"name\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"ZERO_ADDR_MANAGER\",\"inputs\":[]}]",
 }
 
 // AddressManagerABI is the input ABI used to generate the binding from.
@@ -180,6 +180,37 @@ func (_AddressManager *AddressManagerTransactorRaw) Transact(opts *bind.Transact
 	return _AddressManager.Contract.contract.Transact(opts, method, params...)
 }
 
+// AddressManager is a free data retrieval call binding the contract method 0x3ab76e9f.
+//
+// Solidity: function addressManager() view returns(address)
+func (_AddressManager *AddressManagerCaller) AddressManager(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _AddressManager.contract.Call(opts, &out, "addressManager")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// AddressManager is a free data retrieval call binding the contract method 0x3ab76e9f.
+//
+// Solidity: function addressManager() view returns(address)
+func (_AddressManager *AddressManagerSession) AddressManager() (common.Address, error) {
+	return _AddressManager.Contract.AddressManager(&_AddressManager.CallOpts)
+}
+
+// AddressManager is a free data retrieval call binding the contract method 0x3ab76e9f.
+//
+// Solidity: function addressManager() view returns(address)
+func (_AddressManager *AddressManagerCallerSession) AddressManager() (common.Address, error) {
+	return _AddressManager.Contract.AddressManager(&_AddressManager.CallOpts)
+}
+
 // GetAddress is a free data retrieval call binding the contract method 0x28f713cc.
 //
 // Solidity: function getAddress(uint64 chainId, bytes32 name) view returns(address)
@@ -273,6 +304,37 @@ func (_AddressManager *AddressManagerCallerSession) Paused() (bool, error) {
 	return _AddressManager.Contract.Paused(&_AddressManager.CallOpts)
 }
 
+// PendingOwner is a free data retrieval call binding the contract method 0xe30c3978.
+//
+// Solidity: function pendingOwner() view returns(address)
+func (_AddressManager *AddressManagerCaller) PendingOwner(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _AddressManager.contract.Call(opts, &out, "pendingOwner")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// PendingOwner is a free data retrieval call binding the contract method 0xe30c3978.
+//
+// Solidity: function pendingOwner() view returns(address)
+func (_AddressManager *AddressManagerSession) PendingOwner() (common.Address, error) {
+	return _AddressManager.Contract.PendingOwner(&_AddressManager.CallOpts)
+}
+
+// PendingOwner is a free data retrieval call binding the contract method 0xe30c3978.
+//
+// Solidity: function pendingOwner() view returns(address)
+func (_AddressManager *AddressManagerCallerSession) PendingOwner() (common.Address, error) {
+	return _AddressManager.Contract.PendingOwner(&_AddressManager.CallOpts)
+}
+
 // ProxiableUUID is a free data retrieval call binding the contract method 0x52d1902d.
 //
 // Solidity: function proxiableUUID() view returns(bytes32)
@@ -304,25 +366,108 @@ func (_AddressManager *AddressManagerCallerSession) ProxiableUUID() ([32]byte, e
 	return _AddressManager.Contract.ProxiableUUID(&_AddressManager.CallOpts)
 }
 
-// Init is a paid mutator transaction binding the contract method 0xe1c7392a.
+// Resolve is a free data retrieval call binding the contract method 0x3eb6b8cf.
 //
-// Solidity: function init() returns()
-func (_AddressManager *AddressManagerTransactor) Init(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _AddressManager.contract.Transact(opts, "init")
+// Solidity: function resolve(uint64 chainId, bytes32 name, bool allowZeroAddress) view returns(address addr)
+func (_AddressManager *AddressManagerCaller) Resolve(opts *bind.CallOpts, chainId uint64, name [32]byte, allowZeroAddress bool) (common.Address, error) {
+	var out []interface{}
+	err := _AddressManager.contract.Call(opts, &out, "resolve", chainId, name, allowZeroAddress)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
-// Init is a paid mutator transaction binding the contract method 0xe1c7392a.
+// Resolve is a free data retrieval call binding the contract method 0x3eb6b8cf.
 //
-// Solidity: function init() returns()
-func (_AddressManager *AddressManagerSession) Init() (*types.Transaction, error) {
-	return _AddressManager.Contract.Init(&_AddressManager.TransactOpts)
+// Solidity: function resolve(uint64 chainId, bytes32 name, bool allowZeroAddress) view returns(address addr)
+func (_AddressManager *AddressManagerSession) Resolve(chainId uint64, name [32]byte, allowZeroAddress bool) (common.Address, error) {
+	return _AddressManager.Contract.Resolve(&_AddressManager.CallOpts, chainId, name, allowZeroAddress)
 }
 
-// Init is a paid mutator transaction binding the contract method 0xe1c7392a.
+// Resolve is a free data retrieval call binding the contract method 0x3eb6b8cf.
 //
-// Solidity: function init() returns()
-func (_AddressManager *AddressManagerTransactorSession) Init() (*types.Transaction, error) {
-	return _AddressManager.Contract.Init(&_AddressManager.TransactOpts)
+// Solidity: function resolve(uint64 chainId, bytes32 name, bool allowZeroAddress) view returns(address addr)
+func (_AddressManager *AddressManagerCallerSession) Resolve(chainId uint64, name [32]byte, allowZeroAddress bool) (common.Address, error) {
+	return _AddressManager.Contract.Resolve(&_AddressManager.CallOpts, chainId, name, allowZeroAddress)
+}
+
+// Resolve0 is a free data retrieval call binding the contract method 0xa86f9d9e.
+//
+// Solidity: function resolve(bytes32 name, bool allowZeroAddress) view returns(address addr)
+func (_AddressManager *AddressManagerCaller) Resolve0(opts *bind.CallOpts, name [32]byte, allowZeroAddress bool) (common.Address, error) {
+	var out []interface{}
+	err := _AddressManager.contract.Call(opts, &out, "resolve0", name, allowZeroAddress)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// Resolve0 is a free data retrieval call binding the contract method 0xa86f9d9e.
+//
+// Solidity: function resolve(bytes32 name, bool allowZeroAddress) view returns(address addr)
+func (_AddressManager *AddressManagerSession) Resolve0(name [32]byte, allowZeroAddress bool) (common.Address, error) {
+	return _AddressManager.Contract.Resolve0(&_AddressManager.CallOpts, name, allowZeroAddress)
+}
+
+// Resolve0 is a free data retrieval call binding the contract method 0xa86f9d9e.
+//
+// Solidity: function resolve(bytes32 name, bool allowZeroAddress) view returns(address addr)
+func (_AddressManager *AddressManagerCallerSession) Resolve0(name [32]byte, allowZeroAddress bool) (common.Address, error) {
+	return _AddressManager.Contract.Resolve0(&_AddressManager.CallOpts, name, allowZeroAddress)
+}
+
+// AcceptOwnership is a paid mutator transaction binding the contract method 0x79ba5097.
+//
+// Solidity: function acceptOwnership() returns()
+func (_AddressManager *AddressManagerTransactor) AcceptOwnership(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _AddressManager.contract.Transact(opts, "acceptOwnership")
+}
+
+// AcceptOwnership is a paid mutator transaction binding the contract method 0x79ba5097.
+//
+// Solidity: function acceptOwnership() returns()
+func (_AddressManager *AddressManagerSession) AcceptOwnership() (*types.Transaction, error) {
+	return _AddressManager.Contract.AcceptOwnership(&_AddressManager.TransactOpts)
+}
+
+// AcceptOwnership is a paid mutator transaction binding the contract method 0x79ba5097.
+//
+// Solidity: function acceptOwnership() returns()
+func (_AddressManager *AddressManagerTransactorSession) AcceptOwnership() (*types.Transaction, error) {
+	return _AddressManager.Contract.AcceptOwnership(&_AddressManager.TransactOpts)
+}
+
+// Init is a paid mutator transaction binding the contract method 0x19ab453c.
+//
+// Solidity: function init(address _owner) returns()
+func (_AddressManager *AddressManagerTransactor) Init(opts *bind.TransactOpts, _owner common.Address) (*types.Transaction, error) {
+	return _AddressManager.contract.Transact(opts, "init", _owner)
+}
+
+// Init is a paid mutator transaction binding the contract method 0x19ab453c.
+//
+// Solidity: function init(address _owner) returns()
+func (_AddressManager *AddressManagerSession) Init(_owner common.Address) (*types.Transaction, error) {
+	return _AddressManager.Contract.Init(&_AddressManager.TransactOpts, _owner)
+}
+
+// Init is a paid mutator transaction binding the contract method 0x19ab453c.
+//
+// Solidity: function init(address _owner) returns()
+func (_AddressManager *AddressManagerTransactorSession) Init(_owner common.Address) (*types.Transaction, error) {
+	return _AddressManager.Contract.Init(&_AddressManager.TransactOpts, _owner)
 }
 
 // Pause is a paid mutator transaction binding the contract method 0x8456cb59.
@@ -1034,6 +1179,159 @@ func (_AddressManager *AddressManagerFilterer) WatchInitialized(opts *bind.Watch
 func (_AddressManager *AddressManagerFilterer) ParseInitialized(log types.Log) (*AddressManagerInitialized, error) {
 	event := new(AddressManagerInitialized)
 	if err := _AddressManager.contract.UnpackLog(event, "Initialized", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// AddressManagerOwnershipTransferStartedIterator is returned from FilterOwnershipTransferStarted and is used to iterate over the raw logs and unpacked data for OwnershipTransferStarted events raised by the AddressManager contract.
+type AddressManagerOwnershipTransferStartedIterator struct {
+	Event *AddressManagerOwnershipTransferStarted // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *AddressManagerOwnershipTransferStartedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(AddressManagerOwnershipTransferStarted)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(AddressManagerOwnershipTransferStarted)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *AddressManagerOwnershipTransferStartedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *AddressManagerOwnershipTransferStartedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// AddressManagerOwnershipTransferStarted represents a OwnershipTransferStarted event raised by the AddressManager contract.
+type AddressManagerOwnershipTransferStarted struct {
+	PreviousOwner common.Address
+	NewOwner      common.Address
+	Raw           types.Log // Blockchain specific contextual infos
+}
+
+// FilterOwnershipTransferStarted is a free log retrieval operation binding the contract event 0x38d16b8cac22d99fc7c124b9cd0de2d3fa1faef420bfe791d8c362d765e22700.
+//
+// Solidity: event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner)
+func (_AddressManager *AddressManagerFilterer) FilterOwnershipTransferStarted(opts *bind.FilterOpts, previousOwner []common.Address, newOwner []common.Address) (*AddressManagerOwnershipTransferStartedIterator, error) {
+
+	var previousOwnerRule []interface{}
+	for _, previousOwnerItem := range previousOwner {
+		previousOwnerRule = append(previousOwnerRule, previousOwnerItem)
+	}
+	var newOwnerRule []interface{}
+	for _, newOwnerItem := range newOwner {
+		newOwnerRule = append(newOwnerRule, newOwnerItem)
+	}
+
+	logs, sub, err := _AddressManager.contract.FilterLogs(opts, "OwnershipTransferStarted", previousOwnerRule, newOwnerRule)
+	if err != nil {
+		return nil, err
+	}
+	return &AddressManagerOwnershipTransferStartedIterator{contract: _AddressManager.contract, event: "OwnershipTransferStarted", logs: logs, sub: sub}, nil
+}
+
+// WatchOwnershipTransferStarted is a free log subscription operation binding the contract event 0x38d16b8cac22d99fc7c124b9cd0de2d3fa1faef420bfe791d8c362d765e22700.
+//
+// Solidity: event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner)
+func (_AddressManager *AddressManagerFilterer) WatchOwnershipTransferStarted(opts *bind.WatchOpts, sink chan<- *AddressManagerOwnershipTransferStarted, previousOwner []common.Address, newOwner []common.Address) (event.Subscription, error) {
+
+	var previousOwnerRule []interface{}
+	for _, previousOwnerItem := range previousOwner {
+		previousOwnerRule = append(previousOwnerRule, previousOwnerItem)
+	}
+	var newOwnerRule []interface{}
+	for _, newOwnerItem := range newOwner {
+		newOwnerRule = append(newOwnerRule, newOwnerItem)
+	}
+
+	logs, sub, err := _AddressManager.contract.WatchLogs(opts, "OwnershipTransferStarted", previousOwnerRule, newOwnerRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(AddressManagerOwnershipTransferStarted)
+				if err := _AddressManager.contract.UnpackLog(event, "OwnershipTransferStarted", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseOwnershipTransferStarted is a log parse operation binding the contract event 0x38d16b8cac22d99fc7c124b9cd0de2d3fa1faef420bfe791d8c362d765e22700.
+//
+// Solidity: event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner)
+func (_AddressManager *AddressManagerFilterer) ParseOwnershipTransferStarted(log types.Log) (*AddressManagerOwnershipTransferStarted, error) {
+	event := new(AddressManagerOwnershipTransferStarted)
+	if err := _AddressManager.contract.UnpackLog(event, "OwnershipTransferStarted", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
