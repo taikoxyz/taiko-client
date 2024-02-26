@@ -18,8 +18,7 @@ import (
 
 var (
 	l1WSEndpoint     = "ws://localhost:8546"
-	l1HTTPEndpoint   = "http://localhost:8545"
-	l1BeaconEndpoint = "http://localhost:3500"
+	l1BeaconEndpoint = "http://localhost:3500" // nolint:unused
 )
 
 func TestBlob(t *testing.T) {
@@ -65,7 +64,7 @@ func TestBlob(t *testing.T) {
 
 	opts.NoSend = false
 	opts.GasLimit = 0
-	tx, err = client.TransactBlobTx(opts, &addr, input, sideCar)
+	_, err = client.TransactBlobTx(opts, &addr, input, sideCar)
 	assert.Error(t, err)
 	t.Logf("can't get blob hash, err: %v", err)
 
