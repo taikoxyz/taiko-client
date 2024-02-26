@@ -25,7 +25,7 @@ const (
 	exchangeTransitionConfigInterval = 1 * time.Minute
 )
 
-// Driver keeps the L2 execution engine's local block chain in sync with the TaikoL1
+// Driver keeps the L2 execution engine's local blockchain in sync with the TaikoL1
 // contract.
 type Driver struct {
 	*Config
@@ -178,7 +178,7 @@ func (d *Driver) ChainSyncer() *chainSyncer.L2ChainSyncer {
 	return d.l2ChainSyncer
 }
 
-// reportProtocolStatus reports some protocol status intervally.
+// reportProtocolStatus reports some protocol status internally.
 func (d *Driver) reportProtocolStatus() {
 	ticker := time.NewTicker(protocolStatusReportInterval)
 	defer func() {

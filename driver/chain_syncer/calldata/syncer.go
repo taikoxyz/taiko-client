@@ -317,7 +317,7 @@ func (s *Syncer) onBlockProposed(
 }
 
 // insertNewHead tries to insert a new head block to the L2 execution engine's local
-// block chain through Engine APIs.
+// blockchain through Engine APIs.
 func (s *Syncer) insertNewHead(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
@@ -404,12 +404,12 @@ func (s *Syncer) insertNewHead(
 
 	// Update the fork choice
 	fc.HeadBlockHash = payload.BlockHash
-	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, nil)
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdatedV2(ctx, fc, nil)
 	if err != nil {
 		return nil, err
 	}
 	if fcRes.PayloadStatus.Status != engine.VALID {
-		return nil, fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
+		return nil, fmt.Errorf("unexpected ForkchoiceUpdatedV2 response status: %s", fcRes.PayloadStatus.Status)
 	}
 
 	return payload, nil
@@ -464,12 +464,12 @@ func (s *Syncer) createExecutionPayloads(
 	)
 
 	// Step 1, prepare a payload
-	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, fc, attributes)
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdatedV2(ctx, fc, attributes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update fork choice: %w", err)
 	}
 	if fcRes.PayloadStatus.Status != engine.VALID {
-		return nil, fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
+		return nil, fmt.Errorf("unexpected ForkchoiceUpdatedV2 response status: %s", fcRes.PayloadStatus.Status)
 	}
 	if fcRes.PayloadID == nil {
 		return nil, errors.New("empty payload ID")

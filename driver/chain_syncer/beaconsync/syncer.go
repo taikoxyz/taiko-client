@@ -68,7 +68,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 		return fmt.Errorf("unexpected NewPayload response status: %s", status.Status)
 	}
 
-	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &engine.ForkchoiceStateV1{
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdatedV2(s.ctx, &engine.ForkchoiceStateV1{
 		HeadBlockHash:      latestVerifiedHeadPayload.BlockHash,
 		SafeBlockHash:      latestVerifiedHeadPayload.BlockHash,
 		FinalizedBlockHash: latestVerifiedHeadPayload.BlockHash,
@@ -77,7 +77,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 		return err
 	}
 	if fcRes.PayloadStatus.Status != engine.SYNCING {
-		return fmt.Errorf("unexpected ForkchoiceUpdate response status: %s", fcRes.PayloadStatus.Status)
+		return fmt.Errorf("unexpected ForkchoiceUpdatedV2 response status: %s", fcRes.PayloadStatus.Status)
 	}
 
 	// Update sync status.

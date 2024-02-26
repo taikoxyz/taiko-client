@@ -13,7 +13,7 @@ import (
 func TestL2EngineForbidden(t *testing.T) {
 	c := newTestClient(t)
 
-	_, err := c.L2Engine.ForkchoiceUpdate(
+	_, err := c.L2Engine.ForkchoiceUpdatedV2(
 		context.Background(),
 		&engine.ForkchoiceStateV1{},
 		&engine.PayloadAttributes{},

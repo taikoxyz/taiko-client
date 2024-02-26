@@ -32,8 +32,8 @@ func NewJWTEngineClient(url, jwtSecret string) (*EngineClient, error) {
 	}, nil
 }
 
-// ForkchoiceUpdate updates the forkchoice on the execution client.
-func (c *EngineClient) ForkchoiceUpdate(
+// ForkchoiceUpdatedV2 updates the forkchoice on the execution client.
+func (c *EngineClient) ForkchoiceUpdatedV2(
 	ctx context.Context,
 	fc *engine.ForkchoiceStateV1,
 	attributes *engine.PayloadAttributes,
