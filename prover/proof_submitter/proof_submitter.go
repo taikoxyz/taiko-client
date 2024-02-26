@@ -133,11 +133,6 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		return err
 	}
 
-	l1Header, err := s.rpc.L1.HeaderByHash(ctx, event.Meta.L1Hash)
-	if err != nil {
-		return err
-	}
-
 	// Request proof.
 	opts := &proofProducer.ProofRequestOptions{
 		BlockID:            block.Number(),
