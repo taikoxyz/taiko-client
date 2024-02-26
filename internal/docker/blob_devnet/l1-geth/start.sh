@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GENESIS_TIME=$(echo "( $(date +%s) + 3599 ) / 3600 * 3600 - 3000" | bc)
+GENESIS_TIME=$(echo "$(date +%s) / 3600 * 3600" | bc)
 echo "GENESIS_TIME=$GENESIS_TIME"
 
 prysmctl \

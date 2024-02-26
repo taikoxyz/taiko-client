@@ -16,12 +16,17 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+var (
+	l1WSEndpoint     = "ws://localhost:8546"
+	l1HTTPEndpoint   = "http://localhost:8545"
+	l1BeaconEndpoint = "http://localhost:3500"
+)
+
 func TestBlob(t *testing.T) {
 	utils.LoadEnv()
 	ctx := context.Background()
 
-	url := "ws://localhost:8546" //os.Getenv("L1_NODE_WS_ENDPOINT")
-	client, err := rpc.NewEthClient(ctx, url, time.Second*20)
+	client, err := rpc.NewEthClient(ctx, l1WSEndpoint, time.Second*20)
 	assert.NoError(t, err)
 
 	sk, err := crypto.ToECDSA(common.FromHex("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"))
