@@ -10,7 +10,8 @@ services:
       - generate-genesis
       - --fork=deneb
       - --num-validators=64
-      - --genesis-time-delay=15
+      - --genesis-time=1709023920
+      - --genesis-time-delay=60
       - --output-ssz=/consensus/genesis.ssz
       - --chain-config-file=/consensus/config.yml
       - --geth-genesis-json-in=/execution/genesis.json
@@ -29,7 +30,7 @@ services:
 
   # Sets up the genesis configuration for the go-ethereum client from a JSON file.
   geth-genesis:
-    image: "ethereum/client-go:v1.13.11"
+    image: "ethereum/client-go:v1.13.13"
     command: --datadir=/execution init /execution/genesis.json
     volumes:
       - ./execution:/execution
@@ -45,7 +46,7 @@ services:
   # The account used in go-ethereum is set as the suggested fee recipient for transactions
   # proposed via the validators attached to the beacon node.
   beacon-chain:
-    image: "gcr.io/prysmaticlabs/prysm/beacon-chain:stable"
+    image: "gcr.io/prysmaticlabs/prysm/beacon-chain:v5.0.0"
     container_name: beacon-chain
     command:
       - --datadir=/consensus/beacondata
@@ -81,7 +82,7 @@ services:
   # Runs the go-ethereum execution client with the specified, unlocked account and necessary
   # APIs to allow for proof-of-stake consensus via Prysm.
   geth:
-    image: "ethereum/client-go:v1.13.11"
+    image: "ethereum/client-go:v1.13.13"
     container_name: geth
     command:
       - --http
@@ -118,7 +119,7 @@ services:
   # We run a validator client with 64, deterministically-generated keys that match
   # The validator keys present in the beacon chain genesis state generated a few steps above.
   validator:
-    image: "gcr.io/prysmaticlabs/prysm/validator:stable"
+    image: "gcr.io/prysmaticlabs/prysm/validator:v5.0.0"
     container_name: validator
     command:
       - --beacon-rpc-provider=beacon-chain:4000
