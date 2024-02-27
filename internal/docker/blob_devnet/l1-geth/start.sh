@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GENESIS_TIME=$(echo "$(date +%s) / 3600 * 3600" | bc)
+GENESIS_TIME=$(echo "$(date +%s) / 60 * 60" | bc)
 echo "GENESIS_TIME=$GENESIS_TIME"
 
 prysmctl \
@@ -9,6 +9,7 @@ prysmctl \
   --fork=deneb \
   --num-validators=64 \
   --genesis-time="$GENESIS_TIME" \
+  --genesis-time-delay=60 \
   --output-ssz=genesis.ssz \
   --chain-config-file=config.yml \
   --geth-genesis-json-in=genesis.json \

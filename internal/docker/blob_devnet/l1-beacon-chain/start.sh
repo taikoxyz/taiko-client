@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GENESIS_TIME=$(echo "$(date +%s) / 3600 * 3600" | bc)
+GENESIS_TIME=$(echo "$(date +%s) / 60 * 60" | bc)
 echo "GENESIS_TIME=$GENESIS_TIME"
 
 prysmctl \
@@ -9,6 +9,7 @@ prysmctl \
   --fork=deneb \
   --num-validators=64 \
   --genesis-time="$GENESIS_TIME" \
+  --genesis-time-delay=60 \
   --output-ssz=/genesis.ssz \
   --chain-config-file=/config.yml \
   --geth-genesis-json-in=/genesis.json \
@@ -32,5 +33,4 @@ beacon-chain \
   --jwt-secret=/jwtsecret \
   --suggested-fee-recipient=0x123463a4b065722e99115d6c222f267d9cabb524 \
   --minimum-peers-per-subnet=0 \
-  --enable-debug-rpc-endpoints \
-  --force-clear-db
+  --enable-debug-rpc-endpoints
