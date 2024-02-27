@@ -21,9 +21,18 @@
                     plugins: [
                         SwaggerUIBundle.plugins.DownloadUrl
                     ],
-                })
-                window.ui = ui
+                    onComplete: function () {
+            // Handle completion and potential error scenarios
+            const error = ui.getSystem().errSelectors.allErrors();
+            if (error && error.length > 0) {
+              // Display error message to the user
+              const errorMessage = error.map((e) => e.message).join("\n");
+              alert("Failed to load API documentation: " + errorMessage);
             }
-        </script>
-    </body>
+          }
+      })
+     window.ui = ui
+  }
+</script>
+ </body>
 </html>
