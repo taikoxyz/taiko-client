@@ -1,6 +1,7 @@
 #!/bin/bash
 
 GENESIS_TIME=$(echo "$(date +%s) / 100 * 100" | bc)
+echo "CURRENT_TIME=$(date +%s)"
 echo "GENESIS_TIME=$GENESIS_TIME"
 
 prysmctl \
