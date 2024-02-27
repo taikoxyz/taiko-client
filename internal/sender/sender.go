@@ -203,7 +203,6 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 	txToConfirm := &TxToConfirm{
 		ID:         txID,
 		originalTx: txData,
-		CurrentTx:  tx,
 	}
 
 	if err := s.send(txToConfirm); err != nil && !strings.Contains(err.Error(), "replacement transaction") {

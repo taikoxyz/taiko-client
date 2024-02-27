@@ -11,11 +11,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
+	"github.com/taikoxyz/taiko-client/internal/utils"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 type SenderTestSuite struct {
@@ -143,4 +146,57 @@ func (s *SenderTestSuite) TearDownTest() {
 
 func TestSenderTestSuite(t *testing.T) {
 	suite.Run(t, new(SenderTestSuite))
+}
+
+func TestBlockTx(t *testing.T) {
+	t.SkipNow()
+	// Load environment variables.
+	utils.LoadEnv()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	url := os.Getenv("L1_NODE_WS_ENDPOINT")
+	l1Client, err := rpc.NewEthClient(ctx, url, time.Second*20)
+	assert.NoError(t, err)
+
+	priv := os.Getenv("L1_PROPOSER_PRIVATE_KEY")
+	sk, err := crypto.ToECDSA(common.FromHex(priv))
+	assert.NoError(t, err)
+
+	send, err := sender.NewSender(ctx, nil, l1Client, sk)
+	assert.NoError(t, err)
+	opts := send.Opts
+
+	balance, err := l1Client.BalanceAt(ctx, opts.From, nil)
+	assert.NoError(t, err)
+	t.Logf("address: %s, balance: %s", opts.From.String(), balance.String())
+
+	data, dErr := os.ReadFile("./sender.go")
+	assert.NoError(t, dErr)
+	//data := []byte{'s'}
+	sideCar, sErr := rpc.MakeSidecar(data)
+	assert.NoError(t, sErr)
+
+	nonce, err := l1Client.NonceAt(ctx, opts.From, nil)
+	assert.NoError(t, err)
+
+	pendingNonce, err := l1Client.PendingNonceAt(ctx, opts.From)
+	assert.NoError(t, err)
+	if pendingNonce > nonce {
+		return
+	}
+
+	tx, err := l1Client.TransactBlobTx(opts, nil, nil, sideCar)
+	assert.NoError(t, err)
+	txID, err := send.SendTransaction(tx)
+	assert.NoError(t, err)
+
+	confirm := <-send.TxToConfirmChannel(txID)
+	assert.NoError(t, confirm.Err)
+
+	receipt := confirm.Receipt
+	t.Log("blob hash: ", tx.BlobHashes()[0].String())
+	t.Log("block number: ", receipt.BlockNumber.Uint64())
+	t.Log("tx hash: ", receipt.TxHash.String())
 }

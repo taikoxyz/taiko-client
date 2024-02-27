@@ -1,6 +1,6 @@
 FROM gcr.io/prysmaticlabs/prysm/cmd/prysmctl:latest AS prysmctl
 
-FROM ethereum/client-go:v1.13.11 AS geth
+FROM ethereum/client-go:v1.13.13 AS geth
 
 FROM ubuntu:22.04
 
