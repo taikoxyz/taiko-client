@@ -16,7 +16,7 @@ import (
 )
 
 func TestBlockTx(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	// Load environment variables.
 	utils.LoadEnv()
 
@@ -56,6 +56,20 @@ func TestBlockTx(t *testing.T) {
 	t.Log("blob hash: ", tx.BlobHashes()[0].String())
 	t.Log("block number: ", receipt.BlockNumber.Uint64())
 	t.Log("tx hash: ", receipt.TxHash.String())
+
+	client, err := NewClient(ctx, &ClientConfig{
+		L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		L1BeaconEndpoint:  "http://localhost:3500",
+	})
+	assert.NoError(t, err)
+
+	sidecars, err := client.GetBlobs(ctx, receipt.BlockNumber)
+	assert.NoError(t, err)
+	t.Log(len(sidecars))
 }
 
 func TestMakeSideCar(t *testing.T) {

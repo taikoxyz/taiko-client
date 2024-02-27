@@ -6,4 +6,5 @@
   --accept-terms-of-use \
   --interop-num-validators=64 \
   --interop-start-index=0 \
-  --chain-config-file=/config.yml
+  --chain-config-file=/config.yml \
+  --force-clear-db

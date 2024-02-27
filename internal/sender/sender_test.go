@@ -149,16 +149,23 @@ func TestSenderTestSuite(t *testing.T) {
 }
 
 func TestBlockTx(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	// Load environment variables.
 	utils.LoadEnv()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	url := os.Getenv("L1_NODE_WS_ENDPOINT")
-	l1Client, err := rpc.NewEthClient(ctx, url, time.Second*20)
+	client, err := rpc.NewClient(ctx, &rpc.ClientConfig{
+		L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		L1BeaconEndpoint:  "http://localhost:3500",
+	})
 	assert.NoError(t, err)
+	l1Client := client.L1
 
 	priv := os.Getenv("L1_PROPOSER_PRIVATE_KEY")
 	sk, err := crypto.ToECDSA(common.FromHex(priv))
@@ -199,4 +206,9 @@ func TestBlockTx(t *testing.T) {
 	t.Log("blob hash: ", tx.BlobHashes()[0].String())
 	t.Log("block number: ", receipt.BlockNumber.Uint64())
 	t.Log("tx hash: ", receipt.TxHash.String())
+
+	sidecars, err := client.GetBlobs(ctx, receipt.BlockNumber)
+	assert.NoError(t, err)
+
+	t.Log(len(sidecars))
 }

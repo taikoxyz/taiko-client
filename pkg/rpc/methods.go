@@ -756,7 +756,7 @@ func (c *Client) GetTiers(ctx context.Context) ([]*TierProviderTierWithID, error
 // GetBlobs fetches blobs by the given slot from a L1 consensus client.
 func (c *Client) GetBlobs(ctx context.Context, slot *big.Int) ([]*blob.Sidecar, error) {
 	var sidecars *blob.SidecarsResponse
-	resBytes, err := c.L1Beacon.Get(ctx, fmt.Sprintf(sidecarsRequestURL, slot))
+	resBytes, err := c.L1Beacon.Get(ctx, fmt.Sprintf("eth/v1/beacon/blob_sidecars/%d", slot))
 	if err != nil {
 		return nil, err
 	}

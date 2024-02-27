@@ -32,4 +32,5 @@ beacon-chain \
   --jwt-secret=/jwtsecret \
   --suggested-fee-recipient=0x123463a4b065722e99115d6c222f267d9cabb524 \
   --minimum-peers-per-subnet=0 \
-  --enable-debug-rpc-endpoints
+  --enable-debug-rpc-endpoints \
+  --force-clear-db
