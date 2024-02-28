@@ -163,54 +163,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 				sgxProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
 			}
 			producer = sgxProducer
-		case encoding.TierSgxAndPseZkevmID:
-			zkEvmRpcdProducer, err := proofProducer.NewZkevmRpcdProducer(
-				cfg.ZKEvmRpcdEndpoint,
-				cfg.ZkEvmRpcdParamsPath,
-				cfg.L1HttpEndpoint,
-				cfg.L2HttpEndpoint,
-				true,
-				p.protocolConfigs,
-			)
-			if err != nil {
-				return err
-			}
-
-			sgxProducer, err := proofProducer.NewSGXProducer(
-				cfg.RaikoHostEndpoint,
-				cfg.L1HttpEndpoint,
-				cfg.L1BeaconEndpoint,
-				cfg.L2HttpEndpoint,
-			)
-			if err != nil {
-				return err
-			}
-
-			if p.cfg.Dummy {
-				zkEvmRpcdProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
-				sgxProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
-			}
-
-			producer = &proofProducer.SGXAndZkevmRpcdProducer{
-				SGXProofProducer:  sgxProducer,
-				ZkevmRpcdProducer: zkEvmRpcdProducer,
-			}
-		case encoding.TierPseZkevmID:
-			zkEvmRpcdProducer, err := proofProducer.NewZkevmRpcdProducer(
-				cfg.ZKEvmRpcdEndpoint,
-				cfg.ZkEvmRpcdParamsPath,
-				cfg.L1HttpEndpoint,
-				cfg.L2HttpEndpoint,
-				true,
-				p.protocolConfigs,
-			)
-			if err != nil {
-				return err
-			}
-			if p.cfg.Dummy {
-				zkEvmRpcdProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
-			}
-			producer = zkEvmRpcdProducer
 		case encoding.TierGuardianID:
 			producer = proofProducer.NewGuardianProofProducer(p.cfg.EnableLivenessBondProof)
 		}
@@ -267,21 +219,19 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	// Prover server
 	proverServerOpts := &server.NewProverServerOpts{
-		ProverPrivateKey:         p.cfg.L1ProverPrivKey,
-		MinOptimisticTierFee:     p.cfg.MinOptimisticTierFee,
-		MinSgxTierFee:            p.cfg.MinSgxTierFee,
-		MinPseZkevmTierFee:       p.cfg.MinPseZkevmTierFee,
-		MinSgxAndPseZkevmTierFee: p.cfg.MinSgxAndPseZkevmTierFee,
-		MaxExpiry:                p.cfg.MaxExpiry,
-		MaxBlockSlippage:         p.cfg.MaxBlockSlippage,
-		TaikoL1Address:           p.cfg.TaikoL1Address,
-		AssignmentHookAddress:    p.cfg.AssignmentHookAddress,
-		ProposeConcurrencyGuard:  p.proposeConcurrencyGuard,
-		RPC:                      p.rpc,
-		ProtocolConfigs:          &protocolConfigs,
-		LivenessBond:             protocolConfigs.LivenessBond,
-		IsGuardian:               p.IsGuardianProver(),
-		DB:                       db,
+		ProverPrivateKey:        p.cfg.L1ProverPrivKey,
+		MinOptimisticTierFee:    p.cfg.MinOptimisticTierFee,
+		MinSgxTierFee:           p.cfg.MinSgxTierFee,
+		MaxExpiry:               p.cfg.MaxExpiry,
+		MaxBlockSlippage:        p.cfg.MaxBlockSlippage,
+		TaikoL1Address:          p.cfg.TaikoL1Address,
+		AssignmentHookAddress:   p.cfg.AssignmentHookAddress,
+		ProposeConcurrencyGuard: p.proposeConcurrencyGuard,
+		RPC:                     p.rpc,
+		ProtocolConfigs:         &protocolConfigs,
+		LivenessBond:            protocolConfigs.LivenessBond,
+		IsGuardian:              p.IsGuardianProver(),
+		DB:                      db,
 	}
 	if p.srv, err = server.New(proverServerOpts); err != nil {
 		return err

@@ -54,8 +54,6 @@ func (s *ProverSelectorTestSuite) TestProverAssignProver() {
 	sig, _, fee, err := s.s.AssignProver(context.Background(), []encoding.TierFee{
 		{Tier: encoding.TierOptimisticID, Fee: common.Big256},
 		{Tier: encoding.TierSgxID, Fee: common.Big256},
-		{Tier: encoding.TierPseZkevmID, Fee: common.Big256},
-		{Tier: encoding.TierSgxAndPseZkevmID, Fee: common.Big256},
 	}, testutils.RandomHash())
 	s.NotEmpty(sig)
 	s.True(fee.Cmp(common.Big0) > 0)

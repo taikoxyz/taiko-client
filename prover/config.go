@@ -27,8 +27,6 @@ type Config struct {
 	TaikoTokenAddress                       common.Address
 	AssignmentHookAddress                   common.Address
 	L1ProverPrivKey                         *ecdsa.PrivateKey
-	ZKEvmRpcdEndpoint                       string
-	ZkEvmRpcdParamsPath                     string
 	StartingBlockID                         *big.Int
 	Dummy                                   bool
 	GuardianProverAddress                   common.Address
@@ -49,8 +47,6 @@ type Config struct {
 	Capacity                                uint64
 	MinOptimisticTierFee                    *big.Int
 	MinSgxTierFee                           *big.Int
-	MinPseZkevmTierFee                      *big.Int
-	MinSgxAndPseZkevmTierFee                *big.Int
 	MaxExpiry                               time.Duration
 	MaxProposedIn                           uint64
 	MaxBlockSlippage                        uint64
@@ -152,8 +148,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		TaikoTokenAddress:                       common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
 		AssignmentHookAddress:                   common.HexToAddress(c.String(flags.ProverAssignmentHookAddress.Name)),
 		L1ProverPrivKey:                         l1ProverPrivKey,
-		ZKEvmRpcdEndpoint:                       c.String(flags.ZkEvmRpcdEndpoint.Name),
-		ZkEvmRpcdParamsPath:                     c.String(flags.ZkEvmRpcdParamsPath.Name),
 		RaikoHostEndpoint:                       c.String(flags.RaikoHostEndpoint.Name),
 		StartingBlockID:                         startingBlockID,
 		Dummy:                                   c.Bool(flags.Dummy.Name),
@@ -176,8 +170,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		HTTPServerPort:                          c.Uint64(flags.ProverHTTPServerPort.Name),
 		MinOptimisticTierFee:                    new(big.Int).SetUint64(c.Uint64(flags.MinOptimisticTierFee.Name)),
 		MinSgxTierFee:                           new(big.Int).SetUint64(c.Uint64(flags.MinSgxTierFee.Name)),
-		MinPseZkevmTierFee:                      new(big.Int).SetUint64(c.Uint64(flags.MinPseZkevmTierFee.Name)),
-		MinSgxAndPseZkevmTierFee:                new(big.Int).SetUint64(c.Uint64(flags.MinSgxAndPseZkevmTierFee.Name)),
 		MaxExpiry:                               c.Duration(flags.MaxExpiry.Name),
 		MaxBlockSlippage:                        c.Uint64(flags.MaxAcceptableBlockSlippage.Name),
 		MaxProposedIn:                           c.Uint64(flags.MaxProposedIn.Name),
