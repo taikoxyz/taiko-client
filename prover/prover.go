@@ -763,7 +763,9 @@ func (p *Prover) handleNewBlockProposedEvent(ctx context.Context, e *bindings.Ta
 			"Proposed block's proving window has expired",
 			"blockID", e.BlockId,
 			"prover", e.AssignedProver,
+			"now", now,
 			"expiresAt", provingWindowExpiresAt,
+			"minTier", e.Meta.MinTier,
 		)
 		if e.AssignedProver == p.proverAddress {
 			log.Warn(
@@ -1271,7 +1273,7 @@ func (p *Prover) onProvingWindowExpired(ctx context.Context, e *bindings.TaikoL1
 func (p *Prover) getProvingWindow(e *bindings.TaikoL1ClientBlockProposed) (time.Duration, error) {
 	for _, t := range p.tiers {
 		if e.Meta.MinTier == t.ID {
-			return time.Duration(t.ProvingWindow) * time.Second, nil
+			return time.Duration(t.ProvingWindow) * time.Minute, nil
 		}
 	}
 
