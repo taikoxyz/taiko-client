@@ -35,8 +35,6 @@ type ProofSubmitter struct {
 	txSender        *transaction.Sender
 	proverAddress   common.Address
 	taikoL2Address  common.Address
-	l1SignalService common.Address
-	l2SignalService common.Address
 	graffiti        [32]byte
 }
 
@@ -56,20 +54,6 @@ func New(
 	proveBlockMaxTxGasTipCap *big.Int,
 ) (*ProofSubmitter, error) {
 	anchorValidator, err := validator.New(taikoL2Address, rpcClient.L2.ChainID, rpcClient)
-	if err != nil {
-		return nil, err
-	}
-
-	l1SignalService, err := rpcClient.TaikoL1.Resolve0(nil, rpc.StringToBytes32("signal_service"), false)
-	if err != nil {
-		return nil, err
-	}
-
-	l2SignalService, err := rpcClient.TaikoL2.Resolve0(
-		nil,
-		rpc.StringToBytes32("signal_service"),
-		false,
-	)
 	if err != nil {
 		return nil, err
 	}
@@ -97,12 +81,10 @@ func New(
 			proveBlockMaxTxGasTipCap,
 			new(big.Int).SetUint64(txReplacementTipMultiplier),
 		),
-		txSender:        transaction.NewSender(rpcClient, retryInterval, maxRetry, waitReceiptTimeout),
-		proverAddress:   crypto.PubkeyToAddress(proverPrivKey.PublicKey),
-		l1SignalService: l1SignalService,
-		l2SignalService: l2SignalService,
-		taikoL2Address:  taikoL2Address,
-		graffiti:        rpc.StringToBytes32(graffiti),
+		txSender:       transaction.NewSender(rpcClient, retryInterval, maxRetry, waitReceiptTimeout),
+		proverAddress:  crypto.PubkeyToAddress(proverPrivKey.PublicKey),
+		taikoL2Address: taikoL2Address,
+		graffiti:       rpc.StringToBytes32(graffiti),
 	}, nil
 }
 
@@ -143,8 +125,6 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		BlockID:            block.Number(),
 		ProverAddress:      s.proverAddress,
 		ProposeBlockTxHash: event.Raw.TxHash,
-		L1SignalService:    s.l1SignalService,
-		L2SignalService:    s.l2SignalService,
 		TaikoL2:            s.taikoL2Address,
 		MetaHash:           blockInfo.Blk.MetaHash,
 		BlockHash:          block.Hash(),

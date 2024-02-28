@@ -3,7 +3,6 @@ package anchortxconstructor
 import (
 	"context"
 	"math/big"
-	"os"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -23,10 +22,7 @@ type AnchorTxConstructorTestSuite struct {
 
 func (s *AnchorTxConstructorTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
-	c, err := New(
-		s.RPCClient,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
-	)
+	c, err := New(s.RPCClient)
 	s.Nil(err)
 	head, err := s.RPCClient.L1.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -49,10 +45,7 @@ func (s *AnchorTxConstructorTestSuite) TestNewAnchorTransactor() {
 	goldenTouchAddress, err := s.RPCClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	s.Nil(err)
 
-	c, err := New(
-		s.RPCClient,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
-	)
+	c, err := New(s.RPCClient)
 	s.Nil(err)
 
 	opts, err := c.transactOpts(context.Background(), common.Big1, common.Big256)

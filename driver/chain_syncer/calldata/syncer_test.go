@@ -38,7 +38,6 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		s.RPCClient,
 		state,
 		beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 1*time.Hour),
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 	s.s = syncer
@@ -82,7 +81,6 @@ func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
 		s.RPCClient,
 		s.s.state,
 		s.s.progressTracker,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(syncer)
 	s.NotNil(err)

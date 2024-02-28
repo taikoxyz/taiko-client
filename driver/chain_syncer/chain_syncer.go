@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 
@@ -42,13 +41,12 @@ func New(
 	state *state.State,
 	p2pSyncVerifiedBlocks bool,
 	p2pSyncTimeout time.Duration,
-	signalServiceAddress common.Address,
 ) (*L2ChainSyncer, error) {
 	tracker := beaconsync.NewSyncProgressTracker(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
 	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, tracker)
-	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, signalServiceAddress)
+	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker)
 	if err != nil {
 		return nil, err
 	}

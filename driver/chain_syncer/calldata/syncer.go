@@ -52,14 +52,13 @@ func NewSyncer(
 	rpc *rpc.Client,
 	state *state.State,
 	progressTracker *beaconsync.SyncProgressTracker,
-	signalServiceAddress common.Address,
 ) (*Syncer, error) {
 	configs, err := rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
 	}
 
-	constructor, err := anchorTxConstructor.New(rpc, signalServiceAddress)
+	constructor, err := anchorTxConstructor.New(rpc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
 	}
