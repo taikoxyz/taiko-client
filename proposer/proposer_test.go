@@ -53,8 +53,6 @@ func (s *ProposerTestSuite) SetupTest() {
 		ProverEndpoints:                     s.ProverEndpoints,
 		OptimisticTierFee:                   common.Big256,
 		SgxTierFee:                          common.Big256,
-		PseZkevmTierFee:                     common.Big256,
-		SgxAndPseZkevmTierFee:               common.Big256,
 		TierFeePriceBump:                    common.Big2,
 		MaxTierFeePriceBumps:                3,
 		ExtraData:                           "test",

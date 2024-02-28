@@ -148,9 +148,6 @@ const docTemplate = `{
                 "minOptimisticTierFee": {
                     "type": "integer"
                 },
-                "minPseZkevmTierFee": {
-                    "type": "integer"
-                },
                 "minSgxTierFee": {
                     "type": "integer"
                 },

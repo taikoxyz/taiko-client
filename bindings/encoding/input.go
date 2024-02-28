@@ -206,27 +206,11 @@ var (
 			Type: "uint256",
 		},
 	}
-	zkEvmProofComponents = []abi.ArgumentMarshaling{
-		{
-			Name: "verifierId",
-			Type: "uint16",
-		},
-		{
-			Name: "zkp",
-			Type: "bytes",
-		},
-		{
-			Name: "pointProof",
-			Type: "bytes",
-		},
-	}
 )
 
 var (
 	assignmentHookInputType, _   = abi.NewType("tuple", "AssignmentHook.Input", assignmentHookInputComponents)
 	assignmentHookInputArgs      = abi.Arguments{{Name: "AssignmentHook.Input", Type: assignmentHookInputType}}
-	zkEvmProofType, _            = abi.NewType("tuple", "ZkEvmProof", zkEvmProofComponents)
-	zkEvmProofArgs               = abi.Arguments{{Name: "ZkEvmProof", Type: zkEvmProofType}}
 	blockParamsComponentsType, _ = abi.NewType("tuple", "TaikoData.BlockParams", blockParamsComponents)
 	blockParamsComponentsArgs    = abi.Arguments{{Name: "TaikoData.BlockParams", Type: blockParamsComponentsType}}
 	// ProverAssignmentPayload
@@ -344,19 +328,6 @@ func EncodeBlockParams(params *BlockParams) ([]byte, error) {
 	b, err := blockParamsComponentsArgs.Pack(params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to abi.encode block params, %w", err)
-	}
-	return b, nil
-}
-
-// EncodeBlockParams performs the solidity `abi.encode` for the given blockParams.
-func EncodeZKEvmProof(proof []byte) ([]byte, error) {
-	b, err := zkEvmProofArgs.Pack(&ZKEvmProof{
-		VerifierId: 0,
-		Zkp:        proof,
-		PointProof: []byte{},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to abi.encode ZkEvmProof, %w", err)
 	}
 	return b, nil
 }

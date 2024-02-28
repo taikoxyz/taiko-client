@@ -31,67 +31,61 @@ import (
 
 // ProverServer represents a prover server instance.
 type ProverServer struct {
-	echo                     *echo.Echo
-	proverPrivateKey         *ecdsa.PrivateKey
-	proverAddress            common.Address
-	minOptimisticTierFee     *big.Int
-	minSgxTierFee            *big.Int
-	minPseZkevmTierFee       *big.Int
-	minSgxAndPseZkevmTierFee *big.Int
-	maxExpiry                time.Duration
-	maxSlippage              uint64
-	maxProposedIn            uint64
-	proposeConcurrencyGuard  chan struct{}
-	taikoL1Address           common.Address
-	assignmentHookAddress    common.Address
-	rpc                      *rpc.Client
-	protocolConfigs          *bindings.TaikoDataConfig
-	livenessBond             *big.Int
-	isGuardian               bool
-	db                       ethdb.KeyValueStore
+	echo                    *echo.Echo
+	proverPrivateKey        *ecdsa.PrivateKey
+	proverAddress           common.Address
+	minOptimisticTierFee    *big.Int
+	minSgxTierFee           *big.Int
+	maxExpiry               time.Duration
+	maxSlippage             uint64
+	maxProposedIn           uint64
+	proposeConcurrencyGuard chan struct{}
+	taikoL1Address          common.Address
+	assignmentHookAddress   common.Address
+	rpc                     *rpc.Client
+	protocolConfigs         *bindings.TaikoDataConfig
+	livenessBond            *big.Int
+	isGuardian              bool
+	db                      ethdb.KeyValueStore
 }
 
 // NewProverServerOpts contains all configurations for creating a prover server instance.
 type NewProverServerOpts struct {
-	ProverPrivateKey         *ecdsa.PrivateKey
-	MinOptimisticTierFee     *big.Int
-	MinSgxTierFee            *big.Int
-	MinPseZkevmTierFee       *big.Int
-	MinSgxAndPseZkevmTierFee *big.Int
-	MaxExpiry                time.Duration
-	MaxBlockSlippage         uint64
-	MaxProposedIn            uint64
-	ProposeConcurrencyGuard  chan struct{}
-	TaikoL1Address           common.Address
-	AssignmentHookAddress    common.Address
-	RPC                      *rpc.Client
-	ProtocolConfigs          *bindings.TaikoDataConfig
-	LivenessBond             *big.Int
-	IsGuardian               bool
-	DB                       ethdb.KeyValueStore
+	ProverPrivateKey        *ecdsa.PrivateKey
+	MinOptimisticTierFee    *big.Int
+	MinSgxTierFee           *big.Int
+	MaxExpiry               time.Duration
+	MaxBlockSlippage        uint64
+	MaxProposedIn           uint64
+	ProposeConcurrencyGuard chan struct{}
+	TaikoL1Address          common.Address
+	AssignmentHookAddress   common.Address
+	RPC                     *rpc.Client
+	ProtocolConfigs         *bindings.TaikoDataConfig
+	LivenessBond            *big.Int
+	IsGuardian              bool
+	DB                      ethdb.KeyValueStore
 }
 
 // New creates a new prover server instance.
 func New(opts *NewProverServerOpts) (*ProverServer, error) {
 	srv := &ProverServer{
-		proverPrivateKey:         opts.ProverPrivateKey,
-		proverAddress:            crypto.PubkeyToAddress(opts.ProverPrivateKey.PublicKey),
-		echo:                     echo.New(),
-		minOptimisticTierFee:     opts.MinOptimisticTierFee,
-		minSgxTierFee:            opts.MinSgxTierFee,
-		minPseZkevmTierFee:       opts.MinPseZkevmTierFee,
-		minSgxAndPseZkevmTierFee: opts.MinSgxAndPseZkevmTierFee,
-		maxExpiry:                opts.MaxExpiry,
-		maxProposedIn:            opts.MaxProposedIn,
-		maxSlippage:              opts.MaxBlockSlippage,
-		proposeConcurrencyGuard:  opts.ProposeConcurrencyGuard,
-		taikoL1Address:           opts.TaikoL1Address,
-		assignmentHookAddress:    opts.AssignmentHookAddress,
-		rpc:                      opts.RPC,
-		protocolConfigs:          opts.ProtocolConfigs,
-		livenessBond:             opts.LivenessBond,
-		isGuardian:               opts.IsGuardian,
-		db:                       opts.DB,
+		proverPrivateKey:        opts.ProverPrivateKey,
+		proverAddress:           crypto.PubkeyToAddress(opts.ProverPrivateKey.PublicKey),
+		echo:                    echo.New(),
+		minOptimisticTierFee:    opts.MinOptimisticTierFee,
+		minSgxTierFee:           opts.MinSgxTierFee,
+		maxExpiry:               opts.MaxExpiry,
+		maxProposedIn:           opts.MaxProposedIn,
+		maxSlippage:             opts.MaxBlockSlippage,
+		proposeConcurrencyGuard: opts.ProposeConcurrencyGuard,
+		taikoL1Address:          opts.TaikoL1Address,
+		assignmentHookAddress:   opts.AssignmentHookAddress,
+		rpc:                     opts.RPC,
+		protocolConfigs:         opts.ProtocolConfigs,
+		livenessBond:            opts.LivenessBond,
+		isGuardian:              opts.IsGuardian,
+		db:                      opts.DB,
 	}
 
 	srv.echo.HideBanner = true
