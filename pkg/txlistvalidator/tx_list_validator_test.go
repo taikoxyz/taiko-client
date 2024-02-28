@@ -24,7 +24,7 @@ var (
 	testAddr          = crypto.PubkeyToAddress(testKey.PublicKey)
 	genesis           = &core.Genesis{
 		Config:    params.AllEthashProtocolChanges,
-		Alloc:     core.GenesisAlloc{testAddr: {Balance: big.NewInt(2e15)}},
+		Alloc:     types.GenesisAlloc{testAddr: {Balance: big.NewInt(2e15)}},
 		ExtraData: []byte("test genesis"),
 		Timestamp: 9000,
 		BaseFee:   big.NewInt(params.InitialBaseFee),
