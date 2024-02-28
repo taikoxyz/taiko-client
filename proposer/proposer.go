@@ -319,7 +319,7 @@ func (p *Proposer) makeProposeBlockTxWithBlobHash(
 	// Initially just use the AssignmentHook default.
 	hookInputData, err := encoding.EncodeAssignmentHookInput(&encoding.AssignmentHookInput{
 		Assignment: assignment,
-		Tip:        common.Big0, // TODO: flag for tip
+		Tip:        p.L1BlockBuilderTip,
 	})
 	if err != nil {
 		return nil, err
