@@ -82,8 +82,6 @@ type RequestMetaData struct {
 
 // ProtocolInstance represents the JSON body of RequestProofBody.Param's `protocol_instance` field.
 type ProtocolInstance struct {
-	L1SignalService         string           `json:"l1_signal_service"`
-	L2SignalService         string           `json:"l2_signal_service"`
 	TaikoL2                 string           `json:"l2_contract"`
 	MetaHash                string           `json:"meta_hash"`
 	BlockHash               string           `json:"block_hash"`
@@ -274,8 +272,6 @@ func (p *ZkevmRpcdProducer) requestProof(
 			ProtocolInstance: &ProtocolInstance{
 				Prover:            opts.ProverAddress.Hex()[2:],
 				Treasury:          opts.TaikoL2.Hex()[2:],
-				L1SignalService:   opts.L1SignalService.Hex()[2:],
-				L2SignalService:   opts.L2SignalService.Hex()[2:],
 				TaikoL2:           opts.TaikoL2.Hex()[2:],
 				MetaHash:          opts.MetaHash.Hex()[2:],
 				BlockHash:         opts.BlockHash.Hex()[2:],

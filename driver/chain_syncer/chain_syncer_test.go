@@ -39,7 +39,6 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		state,
 		false,
 		1*time.Hour,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 	s.s = syncer

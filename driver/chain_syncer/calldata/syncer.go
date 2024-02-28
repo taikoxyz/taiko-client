@@ -52,14 +52,13 @@ func NewSyncer(
 	rpc *rpc.Client,
 	state *state.State,
 	progressTracker *beaconsync.SyncProgressTracker,
-	signalServiceAddress common.Address,
 ) (*Syncer, error) {
 	configs, err := rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
 	}
 
-	constructor, err := anchorTxConstructor.New(rpc, signalServiceAddress)
+	constructor, err := anchorTxConstructor.New(rpc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
 	}
@@ -169,7 +168,6 @@ func (s *Syncer) onBlockProposed(
 			reorged, l1CurrentToReset, lastInsertedBlockIDToReset, err = s.rpc.CheckL1ReorgFromL2EE(
 				ctx,
 				new(big.Int).Sub(event.BlockId, common.Big1),
-				s.anchorConstructor.SignalServiceAddress(),
 			)
 			if err != nil {
 				return fmt.Errorf("failed to check whether L1 chain has been reorged: %w", err)

@@ -38,7 +38,7 @@ var (
 	heartbeatInterval = 12 * time.Second
 )
 
-// Prover keep trying to prove new proposed blocks valid/invalid.
+// Prover keeps trying to prove newly proposed blocks.
 type Prover struct {
 	// Configurations
 	cfg              *Config
@@ -48,23 +48,19 @@ type Prover struct {
 	// Clients
 	rpc *rpc.Client
 
-	// Prover Server
-	srv *server.ProverServer
-
-	// Guardian prover heartbeat and block sending related
+	// Guardian prover related
+	srv                  *server.ProverServer
 	guardianProverSender guardianproversender.BlockSenderHeartbeater
 
 	// Contract configurations
 	protocolConfigs *bindings.TaikoDataConfig
 
 	// States
-	latestVerifiedL1Height uint64
-	lastHandledBlockID     uint64
-	genesisHeightL1        uint64
-	l1Current              *types.Header
-	reorgDetectedFlag      bool
-	tiers                  []*rpc.TierProviderTierWithID
-	l1SignalService        common.Address
+	lastHandledBlockID uint64
+	genesisHeightL1    uint64
+	l1Current          *types.Header
+	reorgDetectedFlag  bool
+	tiers              []*rpc.TierProviderTierWithID
 
 	// Proof submitters
 	proofSubmitters []proofSubmitter.Submitter
@@ -123,14 +119,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.protocolConfigs = &protocolConfigs
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
-
-	if p.l1SignalService, err = p.rpc.TaikoL1.Resolve0(
-		&bind.CallOpts{Context: ctx},
-		rpc.StringToBytes32("signal_service"),
-		false,
-	); err != nil {
-		return fmt.Errorf("failed to resolve L1 signal service address: %w", err)
-	}
 
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 
@@ -575,7 +563,6 @@ func (p *Prover) onBlockProposed(
 	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1ReorgFromL2EE(
 		ctx,
 		new(big.Int).Sub(event.BlockId, common.Big1),
-		p.l1SignalService,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to check whether L1 chain was reorged from L2EE (eventID %d): %w", event.BlockId, err)
@@ -966,8 +953,6 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 // the block being proven if it's verified.
 func (p *Prover) onBlockVerified(_ context.Context, e *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(e.BlockId.Int64())
-
-	p.latestVerifiedL1Height = e.Raw.BlockNumber
 
 	log.Info(
 		"New verified block",

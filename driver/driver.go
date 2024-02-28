@@ -76,22 +76,12 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
 	}
 
-	signalServiceAddress, err := d.rpc.TaikoL1.Resolve0(
-		&bind.CallOpts{Context: ctx},
-		rpc.StringToBytes32("signal_service"),
-		false,
-	)
-	if err != nil {
-		return err
-	}
-
 	if d.l2ChainSyncer, err = chainSyncer.New(
 		d.ctx,
 		d.rpc,
 		d.state,
 		cfg.P2PSyncVerifiedBlocks,
 		cfg.P2PSyncTimeout,
-		signalServiceAddress,
 	); err != nil {
 		return err
 	}

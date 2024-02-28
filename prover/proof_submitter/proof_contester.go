@@ -23,11 +23,10 @@ var _ Contester = (*ProofContester)(nil)
 
 // ProofContester is responsible for contesting wrong L2 transitions.
 type ProofContester struct {
-	rpc             *rpc.Client
-	txBuilder       *transaction.ProveBlockTxBuilder
-	txSender        *transaction.Sender
-	l2SignalService common.Address
-	graffiti        [32]byte
+	rpc       *rpc.Client
+	txBuilder *transaction.ProveBlockTxBuilder
+	txSender  *transaction.Sender
+	graffiti  [32]byte
 }
 
 // NewProofContester creates a new ProofContester instance.
@@ -42,15 +41,6 @@ func NewProofContester(
 	waitReceiptTimeout time.Duration,
 	graffiti string,
 ) (*ProofContester, error) {
-	l2SignalService, err := rpcClient.TaikoL2.Resolve0(
-		nil,
-		rpc.StringToBytes32("signal_service"),
-		false,
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	var txGasLimit *big.Int
 	if proveBlockTxGasLimit != nil {
 		txGasLimit = new(big.Int).SetUint64(*proveBlockTxGasLimit)
@@ -65,9 +55,8 @@ func NewProofContester(
 			proveBlockMaxTxGasTipCap,
 			new(big.Int).SetUint64(txReplacementTipMultiplier),
 		),
-		txSender:        transaction.NewSender(rpcClient, retryInterval, &submissionMaxRetry, waitReceiptTimeout),
-		l2SignalService: l2SignalService,
-		graffiti:        rpc.StringToBytes32(graffiti),
+		txSender: transaction.NewSender(rpcClient, retryInterval, &submissionMaxRetry, waitReceiptTimeout),
+		graffiti: rpc.StringToBytes32(graffiti),
 	}, nil
 }
 

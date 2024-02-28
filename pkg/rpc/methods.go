@@ -388,11 +388,7 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*struct {
 
 // CheckL1ReorgFromL2EE checks whether the L1 chain has been reorged from the L1Origin records in L2 EE,
 // if so, returns the l1Current cursor and L2 blockID that need to reset to.
-func (c *Client) CheckL1ReorgFromL2EE(
-	ctx context.Context,
-	blockID *big.Int,
-	l1SignalService common.Address,
-) (bool, *types.Header, *big.Int, error) {
+func (c *Client) CheckL1ReorgFromL2EE(ctx context.Context, blockID *big.Int) (bool, *types.Header, *big.Int, error) {
 	var (
 		reorged          bool
 		l1CurrentToReset *types.Header
@@ -474,7 +470,7 @@ func (c *Client) CheckL1ReorgFromL2EE(
 		}
 
 		isSyncedL1SnippetInvalid, err := c.checkSyncedL1SnippetFromAnchor(
-			ctx, blockID, l1Origin.L1BlockHeight.Uint64(), l1SignalService,
+			ctx, blockID, l1Origin.L1BlockHeight.Uint64(),
 		)
 		if err != nil {
 			return false, nil, nil, fmt.Errorf("failed to check L1 reorg from anchor transaction: %w", err)
@@ -508,7 +504,6 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 	ctx context.Context,
 	blockID *big.Int,
 	l1Height uint64,
-	l1SignalService common.Address,
 ) (bool, error) {
 	log.Info("Check synced L1 snippet from anchor", "blockID", blockID)
 	block, err := c.L2.BlockByNumber(ctx, blockID)

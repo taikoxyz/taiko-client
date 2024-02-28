@@ -153,7 +153,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(
 		context.Background(),
 		l2Head2.Number,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 	s.False(reorged)
@@ -216,7 +215,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(
 		context.Background(),
 		l2Head2.Number,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 	s.False(reorged)
@@ -275,7 +273,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(
 		context.Background(),
 		l2Head2.Number,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 	s.False(reorged)

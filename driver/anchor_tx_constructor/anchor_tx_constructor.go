@@ -22,14 +22,13 @@ const AnchorGasLimit = 250_000
 // AnchorTxConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
 // each L2 block, which is always the first transaction.
 type AnchorTxConstructor struct {
-	rpc                  *rpc.Client
-	goldenTouchAddress   common.Address
-	signalServiceAddress common.Address
-	signer               *signer.FixedKSigner
+	rpc                *rpc.Client
+	goldenTouchAddress common.Address
+	signer             *signer.FixedKSigner
 }
 
 // New creates a new AnchorConstructor instance.
-func New(rpc *rpc.Client, signalServiceAddress common.Address) (*AnchorTxConstructor, error) {
+func New(rpc *rpc.Client) (*AnchorTxConstructor, error) {
 	goldenTouchAddress, err := rpc.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	if err != nil {
 		return nil, err
@@ -41,10 +40,9 @@ func New(rpc *rpc.Client, signalServiceAddress common.Address) (*AnchorTxConstru
 	}
 
 	return &AnchorTxConstructor{
-		rpc:                  rpc,
-		goldenTouchAddress:   goldenTouchAddress,
-		signalServiceAddress: signalServiceAddress,
-		signer:               signer,
+		rpc:                rpc,
+		goldenTouchAddress: goldenTouchAddress,
+		signer:             signer,
 	}, nil
 }
 
@@ -143,9 +141,4 @@ func (c *AnchorTxConstructor) signTxPayload(hash []byte) ([]byte, error) {
 	}
 
 	return sig[:], nil
-}
-
-// SignalServiceAddress returns protocol's L1 singalService constant address.
-func (c *AnchorTxConstructor) SignalServiceAddress() common.Address {
-	return c.signalServiceAddress
 }
