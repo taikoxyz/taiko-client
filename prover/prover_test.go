@@ -150,13 +150,6 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	}
 }
 
-func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
-	s.Nil(s.p.onBlockVerified(context.Background(), &bindings.TaikoL1ClientBlockVerified{
-		BlockId:   common.Big1,
-		BlockHash: common.Hash{},
-	}))
-}
-
 func (s *ProverTestSuite) TestSubmitProofOp() {
 	s.NotPanics(func() {
 		s.p.submitProofOp(context.Background(), &producer.ProofWithHeader{
@@ -178,18 +171,6 @@ func (s *ProverTestSuite) TestSubmitProofOp() {
 			Opts:    &producer.ProofRequestOptions{},
 		})
 	})
-}
-
-func (s *ProverTestSuite) TestOnBlockVerified() {
-	id := testutils.RandomHash().Big().Uint64()
-	s.Nil(s.p.onBlockVerified(context.Background(), &bindings.TaikoL1ClientBlockVerified{
-		BlockId: testutils.RandomHash().Big(),
-		Raw: types.Log{
-			BlockHash:   testutils.RandomHash(),
-			BlockNumber: id,
-		},
-	}))
-	s.Equal(id, s.p.latestVerifiedL1Height)
 }
 
 func (s *ProverTestSuite) TestContestWrongBlocks() {
