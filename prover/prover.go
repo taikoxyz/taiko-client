@@ -56,11 +56,12 @@ type Prover struct {
 	protocolConfigs *bindings.TaikoDataConfig
 
 	// States
-	lastHandledBlockID uint64
-	genesisHeightL1    uint64
-	l1Current          *types.Header
-	reorgDetectedFlag  bool
-	tiers              []*rpc.TierProviderTierWithID
+	latestVerifiedL1Height uint64
+	lastHandledBlockID     uint64
+	genesisHeightL1        uint64
+	l1Current              *types.Header
+	reorgDetectedFlag      bool
+	tiers                  []*rpc.TierProviderTierWithID
 
 	// Proof submitters
 	proofSubmitters []proofSubmitter.Submitter
@@ -440,14 +441,17 @@ func (p *Prover) eventLoop() {
 
 	chBufferSize := p.protocolConfigs.BlockMaxProposals
 	blockProposedCh := make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
+	blockVerifiedCh := make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	transitionProvedCh := make(chan *bindings.TaikoL1ClientTransitionProved, chBufferSize)
 	transitionContestedCh := make(chan *bindings.TaikoL1ClientTransitionContested, chBufferSize)
 	// Subscriptions
 	blockProposedSub := rpc.SubscribeBlockProposed(p.rpc.TaikoL1, blockProposedCh)
+	blockVerifiedSub := rpc.SubscribeBlockVerified(p.rpc.TaikoL1, blockVerifiedCh)
 	transitionProvedSub := rpc.SubscribeTransitionProved(p.rpc.TaikoL1, transitionProvedCh)
 	transitionContestedSub := rpc.SubscribeTransitionContested(p.rpc.TaikoL1, transitionContestedCh)
 	defer func() {
 		blockProposedSub.Unsubscribe()
+		blockVerifiedSub.Unsubscribe()
 		transitionProvedSub.Unsubscribe()
 		transitionContestedSub.Unsubscribe()
 	}()
@@ -461,6 +465,10 @@ func (p *Prover) eventLoop() {
 		case <-p.proveNotify:
 			if err := p.proveOp(); err != nil {
 				log.Error("Prove new blocks error", "error", err)
+			}
+		case e := <-blockVerifiedCh:
+			if err := p.onBlockVerified(p.ctx, e); err != nil {
+				log.Error("Handle BlockVerified event error", "error", err)
 			}
 		case e := <-transitionProvedCh:
 			if err := p.onTransitionProved(p.ctx, e); err != nil {
@@ -940,6 +948,25 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 	}
 
 	return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(blockInfo.Blk.ProposedIn), e.Tier+1, nil)
+}
+
+// onBlockVerified update the latestVerified block in current state, and cancels
+// the block being proven if it's verified.
+func (p *Prover) onBlockVerified(_ context.Context, e *bindings.TaikoL1ClientBlockVerified) error {
+	metrics.ProverLatestVerifiedIDGauge.Update(e.BlockId.Int64())
+
+	p.latestVerifiedL1Height = e.Raw.BlockNumber
+
+	log.Info(
+		"New verified block",
+		"blockID", e.BlockId,
+		"hash", common.BytesToHash(e.BlockHash[:]),
+		"stateRoot", common.BytesToHash(e.StateRoot[:]),
+		"assignedProver", e.AssignedProver,
+		"prover", e.Prover,
+	)
+
+	return nil
 }
 
 // onTransitionProved verifies the proven block hash and will try contesting it if the block hash is wrong.
