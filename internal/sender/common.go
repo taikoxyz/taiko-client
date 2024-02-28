@@ -42,6 +42,8 @@ func (s *Sender) adjustGas(txData types.TxData) {
 		blobFeeCap = blobFeeCap / 100 * rate
 		blobFeeCap = mathutil.MinUint64(blobFeeCap, s.MaxBlobFee)
 		baseTx.BlobFeeCap = uint256.NewInt(blobFeeCap)
+	default:
+		log.Warn("Unsupported transaction type when adjust gas fee", "from", s.Opts.From)
 	}
 }
 
@@ -59,8 +61,12 @@ func (s *Sender) AdjustNonce(txData types.TxData) {
 		tx.Nonce = nonce
 	case *types.BlobTx:
 		tx.Nonce = nonce
+	case *types.LegacyTx:
+		tx.Nonce = nonce
+	case *types.AccessListTx:
+		tx.Nonce = nonce
 	default:
-		log.Warn("Unsupported transaction type", "from", s.Opts.From)
+		log.Debug("Unsupported transaction type when adjust nonce", "from", s.Opts.From)
 	}
 }
 
