@@ -41,6 +41,7 @@ check_env "L1_PROPOSER_PRIVATE_KEY"
 check_env "L1_PROVER_PRIVATE_KEY"
 check_env "TREASURY"
 check_env "JWT_SECRET"
+check_env "VERBOSITY"
 
 RUN_TESTS=${RUN_TESTS:-false}
 PACKAGE=${PACKAGE:-...}
