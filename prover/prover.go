@@ -751,9 +751,9 @@ func (p *Prover) handleNewBlockProposedEvent(ctx context.Context, e *bindings.Ta
 
 	var (
 		now                    = uint64(time.Now().Unix())
-		provingWindowExpiresAt = e.Meta.Timestamp + uint64(provingWindow.Minutes())
+		provingWindowExpiresAt = e.Meta.Timestamp + uint64(provingWindow.Seconds())
 		provingWindowExpired   = now > provingWindowExpiresAt
-		timeToExpire           = time.Duration(provingWindowExpiresAt-now) * time.Minute
+		timeToExpire           = time.Duration(provingWindowExpiresAt-now) * time.Second
 	)
 	if provingWindowExpired {
 		// If the proving window is expired, we need to check if the current prover is the assigned prover
@@ -763,6 +763,7 @@ func (p *Prover) handleNewBlockProposedEvent(ctx context.Context, e *bindings.Ta
 			"Proposed block's proving window has expired",
 			"blockID", e.BlockId,
 			"prover", e.AssignedProver,
+			"now", now,
 			"expiresAt", provingWindowExpiresAt,
 			"minTier", e.Meta.MinTier,
 		)
