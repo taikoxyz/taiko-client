@@ -189,7 +189,6 @@ func (s *ProverTestSuite) TestOnBlockVerified() {
 			BlockNumber: id,
 		},
 	}))
-	s.Equal(id, s.p.latestVerifiedL1Height)
 }
 
 func (s *ProverTestSuite) TestContestWrongBlocks() {

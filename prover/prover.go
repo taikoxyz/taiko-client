@@ -56,12 +56,11 @@ type Prover struct {
 	protocolConfigs *bindings.TaikoDataConfig
 
 	// States
-	latestVerifiedL1Height uint64
-	lastHandledBlockID     uint64
-	genesisHeightL1        uint64
-	l1Current              *types.Header
-	reorgDetectedFlag      bool
-	tiers                  []*rpc.TierProviderTierWithID
+	lastHandledBlockID uint64
+	genesisHeightL1    uint64
+	l1Current          *types.Header
+	reorgDetectedFlag  bool
+	tiers              []*rpc.TierProviderTierWithID
 
 	// Proof submitters
 	proofSubmitters []proofSubmitter.Submitter
@@ -954,8 +953,6 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 // the block being proven if it's verified.
 func (p *Prover) onBlockVerified(_ context.Context, e *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(e.BlockId.Int64())
-
-	p.latestVerifiedL1Height = e.Raw.BlockNumber
 
 	log.Info(
 		"New verified block",
