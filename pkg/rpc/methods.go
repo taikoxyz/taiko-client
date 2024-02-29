@@ -597,7 +597,7 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 		return common.Hash{}, common.Hash{}, 0, 0, err
 	}
 
-	l1BlockHash, ok := args["l1BlockHash"].([32]byte)
+	l1BlockHash, ok := args["_l1BlockHash"].([32]byte)
 	if !ok {
 		return common.Hash{},
 			common.Hash{},
@@ -605,7 +605,7 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 			0,
 			fmt.Errorf("failed to parse l1BlockHash from anchor transaction calldata")
 	}
-	l1StateRoot, ok = args["l1StateRoot"].([32]byte)
+	l1StateRoot, ok = args["_l1StateRoot"].([32]byte)
 	if !ok {
 		return common.Hash{},
 			common.Hash{},
@@ -613,7 +613,7 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 			0,
 			fmt.Errorf("failed to parse l1StateRoot from anchor transaction calldata")
 	}
-	l1Height, ok = args["l1BlockId"].(uint64)
+	l1Height, ok = args["_l1BlockId"].(uint64)
 	if !ok {
 		return common.Hash{},
 			common.Hash{},
@@ -621,7 +621,7 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 			0,
 			fmt.Errorf("failed to parse l1Height from anchor transaction calldata")
 	}
-	parentGasUsed, ok = args["parentGasUsed"].(uint32)
+	parentGasUsed, ok = args["_parentGasUsed"].(uint32)
 	if !ok {
 		return common.Hash{},
 			common.Hash{},
@@ -728,7 +728,17 @@ func (c *Client) GetTiers(ctx context.Context) ([]*TierProviderTierWithID, error
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	ids, err := c.TaikoL1.GetTierIds(&bind.CallOpts{Context: ctxWithTimeout})
+	tierProviderAddress, err := c.TaikoL1.Resolve0(&bind.CallOpts{Context: ctx}, StringToBytes32("tier_provider"), false)
+	if err != nil {
+		return nil, err
+	}
+
+	tierProvider, err := bindings.NewTierProvider(tierProviderAddress, c.L1)
+	if err != nil {
+		return nil, err
+	}
+
+	ids, err := tierProvider.GetTierIds(&bind.CallOpts{Context: ctxWithTimeout})
 	if err != nil {
 		return nil, err
 	}
@@ -738,7 +748,7 @@ func (c *Client) GetTiers(ctx context.Context) ([]*TierProviderTierWithID, error
 
 	var tiers []*TierProviderTierWithID
 	for _, id := range ids {
-		tier, err := c.TaikoL1.GetTier(&bind.CallOpts{Context: ctxWithTimeout}, id)
+		tier, err := tierProvider.GetTier(&bind.CallOpts{Context: ctxWithTimeout}, id)
 		if err != nil {
 			return nil, err
 		}

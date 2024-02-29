@@ -404,7 +404,7 @@ func UnpackTxListBytes(txData []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	inputs, ok := args["txList"].([]byte)
+	inputs, ok := args["_txList"].([]byte)
 
 	if !ok {
 		return nil, errors.New("failed to get txList bytes")
