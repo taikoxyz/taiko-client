@@ -21,39 +21,52 @@ import (
 )
 
 var (
-	errL1Reorged = errors.New("L1 reorged")
+	errL1Reorged         = errors.New("L1 reorged")
+	proofExpirationDelay = 1 * time.Minute
 )
 
 // BlockProposedEventHandler is responsible for handling the BlockProposed event as a prover.
 type BlockProposedEventHandler struct {
 	sharedState             *state.SharedState
+	proverAddress           common.Address
 	genesisHeightL1         uint64
 	rpc                     *rpc.Client
 	proofGenerationCh       chan *proofProducer.ProofWithHeader
+	proofWindowExpiredCh    chan *bindings.TaikoL1ClientBlockProposed
 	proposeConcurrencyGuard chan struct{}
 	BackOffRetryInterval    time.Duration
 	backOffMaxRetrys        uint64
+	contesterMode           bool
+	proveUnassignedBlocks   bool
 }
 
 // NewBlockProposedEventHandler creates a new BlockProposedEventHandler instance.
 func NewBlockProposedEventHandler(
 	sharedState *state.SharedState,
+	proverAddress common.Address,
 	genesisHeightL1 uint64,
 	rpc *rpc.Client,
 	proofGenerationCh chan *proofProducer.ProofWithHeader,
+	proofWindowExpiredCh chan *bindings.TaikoL1ClientBlockProposed,
 	proposeConcurrencyGuard chan struct{},
 	BackOffRetryInterval time.Duration,
 	backOffMaxRetrys uint64,
 	isGuardian bool,
+	contesterMode bool,
+	proveUnassignedBlocks bool,
 ) BlockProposedHandler {
 	handler := &BlockProposedEventHandler{
 		sharedState,
+		proverAddress,
 		genesisHeightL1,
 		rpc,
 		proofGenerationCh,
+		proofWindowExpiredCh,
 		proposeConcurrencyGuard,
 		BackOffRetryInterval,
 		backOffMaxRetrys,
+		contesterMode,
+		proveUnassignedBlocks,
 	}
 
 	if !isGuardian {
@@ -122,17 +135,16 @@ func (h *BlockProposedEventHandler) OnBlockProposed(
 				h.proposeConcurrencyGuard <- struct{}{}
 				defer func() { <-h.proposeConcurrencyGuard }()
 
-				// TODO(David): fix this
-				// if err := p.handleNewBlockProposedEvent(ctx, event); err != nil {
-				// 	log.Error(
-				// 		"Failed to handle BlockProposed event",
-				// 		"error", err,
-				// 		"blockID", event.BlockId,
-				// 		"minTier", event.Meta.MinTier,
-				// 		"maxRetrys", p.cfg.BackOffMaxRetrys,
-				// 	)
-				// 	return err
-				// }
+				if err := h.checkExpirationAndSubmitProof(ctx, event); err != nil {
+					log.Error(
+						"Failed to check proof status and submit proof",
+						"error", err,
+						"blockID", event.BlockId,
+						"minTier", event.Meta.MinTier,
+						"maxRetrys", h.backOffMaxRetrys,
+					)
+					return err
+				}
 				return nil
 			},
 			backoff.WithMaxRetries(backoff.NewConstantBackOff(h.BackOffRetryInterval), h.backOffMaxRetrys),
@@ -214,10 +226,6 @@ func (h *BlockProposedEventHandler) checkL1Reorg(
 	return nil
 }
 
-type BlockProposedGuaridanEventHandler struct {
-	BlockProposedEventHandler
-}
-
 // isBlockVerified checks whether the given L2 block has been verified.
 func (h *BlockProposedEventHandler) isBlockVerified(ctx context.Context, id *big.Int) (bool, error) {
 	stateVars, err := h.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
@@ -226,6 +234,150 @@ func (h *BlockProposedEventHandler) isBlockVerified(ctx context.Context, id *big
 	}
 
 	return id.Uint64() <= stateVars.B.LastVerifiedBlockId, nil
+}
+
+// checkExpirationAndSubmitProof checks whether the proposed block's proving window is expired,
+// and submits a new proof if necessary.
+func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
+	ctx context.Context,
+	e *bindings.TaikoL1ClientBlockProposed,
+) error {
+	// Check whether the block has been verified.
+	isVerified, err := h.isBlockVerified(ctx, e.BlockId)
+	if err != nil {
+		return fmt.Errorf("failed to check if the current L2 block is verified: %w", err)
+	}
+	if isVerified {
+		log.Info("📋 Block has been verified", "blockID", e.BlockId)
+		return nil
+	}
+
+	// Check whether the block's proof is still needed.
+	proofStatus, err := rpc.GetBlockProofStatus(
+		ctx,
+		h.rpc,
+		e.BlockId,
+		h.proverAddress,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to check whether the L2 block needs a new proof: %w", err)
+	}
+
+	// If there is already a proof submitted on chain.
+	if proofStatus.IsSubmitted {
+		// If there is no need to contest the submitted proof, we skip proving this block here.
+		if !proofStatus.Invalid {
+			log.Info(
+				"A valid proof has been submitted, skip proving",
+				"blockID", e.BlockId,
+				"parent", proofStatus.ParentHeader.Hash(),
+			)
+			return nil
+		}
+
+		// If there is an invalid proof, but current prover is not in contest mode, we skip proving this block.
+		if !h.contesterMode {
+			log.Info(
+				"An invalid proof has been submitted, but current prover is not in contest mode, skip proving",
+				"blockID", e.BlockId,
+				"parent", proofStatus.ParentHeader.Hash(),
+			)
+			return nil
+		}
+
+		// The proof submitted to protocol is invalid.
+		// TODO: Add contesting logic here.
+		return nil
+	}
+
+	windowExpired, timeToExpire, err := isProvingWindowExpired(e, h.sharedState.GetTiers())
+	if err != nil {
+		return fmt.Errorf("failed to check if the proving window is expired: %w", err)
+	}
+
+	if windowExpired {
+		// If the proving window is expired, we need to check if the current prover is the assigned prover
+		// at first, if yes, we should skip proving this block, if no, then we check if the current prover
+		// wants to prove unassigned blocks.
+		log.Info(
+			"Proposed block's proving window has expired",
+			"blockID", e.BlockId,
+			"prover", e.AssignedProver,
+			"expiresAt", timeToExpire,
+			"minTier", e.Meta.MinTier,
+		)
+		if e.AssignedProver == h.proverAddress {
+			log.Warn(
+				"Assigned prover is the current prover, but the proving window has expired, skip proving",
+				"blockID", e.BlockId,
+				"prover", e.AssignedProver,
+			)
+			return nil
+		}
+		// If the current prover doesn't want to prove unassigned blocks, we should skip proving this block.
+		if !h.proveUnassignedBlocks {
+			log.Info(
+				"Skip proving expired blocks",
+				"blockID", e.BlockId,
+				"prover", e.AssignedProver,
+			)
+			return nil
+		}
+	} else {
+		// If the proving window is not expired, we need to check if the current prover is the assigned prover,
+		// if no and the current prover wants to prove unassigned blocks, then we should wait for its expiration.
+		if e.AssignedProver != h.proverAddress {
+			log.Info(
+				"Proposed block is not provable by current prover at the moment",
+				"blockID", e.BlockId,
+				"prover", e.AssignedProver,
+				"timeToExpire", timeToExpire,
+			)
+
+			if h.proveUnassignedBlocks {
+				log.Info(
+					"Add proposed block to wait for proof window expiration",
+					"blockID", e.BlockId,
+					"prover", e.AssignedProver,
+					"timeToExpire", timeToExpire,
+				)
+				time.AfterFunc(
+					// Add another 60 seconds, to ensure one more L1 block will be mined before the proof submission
+					proofExpirationDelay,
+					func() { h.proofWindowExpiredCh <- e },
+				)
+			}
+
+			return nil
+		}
+	}
+
+	tier := e.Meta.MinTier
+	// TODO: Add guardian prover logic here.
+	// if h.rpc.GuardianProver() {
+	// 	tier = encoding.TierGuardianID
+	// }
+
+	log.Info(
+		"Proposed block is provable",
+		"blockID", e.BlockId,
+		"prover", e.AssignedProver,
+		"minTier", e.Meta.MinTier,
+		"currentTier", tier,
+	)
+
+	metrics.ProverProofsAssigned.Inc(1)
+
+	// 	TODO: submit proof
+	// if proofSubmitter := p.selectSubmitter(tier); proofSubmitter != nil {
+	// 	return proofSubmitter.RequestProof(ctx, e)
+	// }
+
+	return nil
+}
+
+type BlockProposedGuaridanEventHandler struct {
+	BlockProposedEventHandler
 }
 
 func (h *BlockProposedGuaridanEventHandler) OnBlockProposed(
