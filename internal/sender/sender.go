@@ -10,11 +10,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/pborman/uuid"
 
@@ -32,7 +32,6 @@ var (
 		ConfirmationDepth: 0,
 		MaxRetrys:         0,
 		MaxWaitingTime:    5 * time.Minute,
-		GasLimit:          params.TxGas,
 		GasGrowthRate:     50,
 		MaxGasFee:         20_000_000_000,
 		MaxBlobFee:        1_000_000_000,
@@ -99,6 +98,7 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	}
 	// Do not automatically send transactions
 	opts.NoSend = true
+	opts.GasLimit = cfg.GasLimit
 
 	// Add the sender to the root sender.
 	if root := sendersMap[client.ChainID.Uint64()]; root == nil {
@@ -176,13 +176,28 @@ func (s *Sender) GetUnconfirmedTx(txID string) *types.Transaction {
 
 // SendRawTransaction sends a transaction to the given Ethereum node.
 func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value *big.Int, data []byte) (string, error) {
+	gasLimit := s.GasLimit
+	if gasLimit == 0 {
+		var err error
+		gasLimit, err = s.client.EstimateGas(s.ctx, ethereum.CallMsg{
+			From:      s.Opts.From,
+			To:        target,
+			Value:     value,
+			Data:      data,
+			GasTipCap: s.Opts.GasTipCap,
+			GasFeeCap: s.Opts.GasFeeCap,
+		})
+		if err != nil {
+			return "", err
+		}
+	}
 	return s.SendTransaction(types.NewTx(&types.DynamicFeeTx{
 		ChainID:   s.client.ChainID,
 		To:        target,
 		Nonce:     nonce,
 		GasFeeCap: s.Opts.GasFeeCap,
 		GasTipCap: s.Opts.GasTipCap,
-		Gas:       s.GasLimit,
+		Gas:       gasLimit,
 		Value:     value,
 		Data:      data,
 	}))
