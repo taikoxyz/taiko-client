@@ -2,7 +2,9 @@ package prover
 
 import (
 	"context"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
@@ -142,6 +144,61 @@ func (p *Prover) initProofSubmitters() error {
 
 		p.proofSubmitters = append(p.proofSubmitters, submitter)
 	}
+
+	return nil
+}
+
+// initL1Current initializes prover's L1Current cursor.
+func (p *Prover) initL1Current(startingBlockID *big.Int) error {
+	if err := p.rpc.WaitTillL2ExecutionEngineSynced(p.ctx); err != nil {
+		return err
+	}
+
+	stateVars, err := p.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: p.ctx})
+	if err != nil {
+		return err
+	}
+	p.genesisHeightL1 = stateVars.A.GenesisHeight
+
+	if startingBlockID == nil {
+		if stateVars.B.LastVerifiedBlockId == 0 {
+			genesisL1Header, err := p.rpc.L1.HeaderByNumber(p.ctx, new(big.Int).SetUint64(stateVars.A.GenesisHeight))
+			if err != nil {
+				return err
+			}
+
+			p.sharedState.SetL1Current(genesisL1Header)
+			return nil
+		}
+
+		startingBlockID = new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId)
+	}
+
+	log.Info("Init L1Current cursor", "startingBlockID", startingBlockID)
+
+	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
+	if err != nil {
+		if err.Error() == ethereum.NotFound.Error() {
+			log.Warn(
+				"Failed to find L1Origin for blockID, use latest L1 head instead",
+				"blockID", startingBlockID,
+			)
+			l1Head, err := p.rpc.L1.HeaderByNumber(p.ctx, nil)
+			if err != nil {
+				return err
+			}
+
+			p.sharedState.SetL1Current(l1Head)
+			return nil
+		}
+		return err
+	}
+
+	l1Current, err := p.rpc.L1.HeaderByHash(p.ctx, latestVerifiedHeaderL1Origin.L1BlockHash)
+	if err != nil {
+		return err
+	}
+	p.sharedState.SetL1Current(l1Current)
 
 	return nil
 }

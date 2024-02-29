@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 
@@ -76,9 +75,9 @@ func NewBlockProposedEventHandler(
 	return &BlockProposedGuaridanEventHandler{*handler}
 }
 
-func (h *BlockProposedEventHandler) OnBlockProposed(
+func (h *BlockProposedEventHandler) Handle(
 	ctx context.Context,
-	event *bindings.TaikoL1ClientBlockProposed,
+	e *bindings.TaikoL1ClientBlockProposed,
 	end eventIterator.EndBlockProposedEventIterFunc,
 ) error {
 	// If there are newly generated proofs, we need to submit them as soon as possible.
@@ -89,12 +88,12 @@ func (h *BlockProposedEventHandler) OnBlockProposed(
 	}
 
 	// Wait for the corresponding L2 block being mined in node.
-	if _, err := h.rpc.WaitL1Origin(ctx, event.BlockId); err != nil {
-		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
+	if _, err := h.rpc.WaitL1Origin(ctx, e.BlockId); err != nil {
+		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", e.BlockId, err)
 	}
 
 	// Check if the L1 chain has reorged at first.
-	if err := h.checkL1Reorg(ctx, event); err != nil {
+	if err := h.checkL1Reorg(ctx, e); err != nil {
 		if errors.Is(err, errL1Reorged) {
 			end()
 			return nil
@@ -104,29 +103,29 @@ func (h *BlockProposedEventHandler) OnBlockProposed(
 	}
 
 	// If the current block is handled, just skip it.
-	if event.BlockId.Uint64() <= h.sharedState.GetLastHandledBlockID() {
+	if e.BlockId.Uint64() <= h.sharedState.GetLastHandledBlockID() {
 		return nil
 	}
 
 	log.Info(
 		"Proposed block",
-		"l1Height", event.Raw.BlockNumber,
-		"l1Hash", event.Raw.BlockHash,
-		"blockID", event.BlockId,
-		"removed", event.Raw.Removed,
-		"assignedProver", event.AssignedProver,
-		"livenessBond", event.LivenessBond,
-		"minTier", event.Meta.MinTier,
+		"l1Height", e.Raw.BlockNumber,
+		"l1Hash", e.Raw.BlockHash,
+		"blockID", e.BlockId,
+		"removed", e.Raw.Removed,
+		"assignedProver", e.AssignedProver,
+		"livenessBond", e.LivenessBond,
+		"minTier", e.Meta.MinTier,
 	)
-	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
+	metrics.ProverReceivedProposedBlockGauge.Update(e.BlockId.Int64())
 
 	// Move l1Current cursor.
-	newL1Current, err := h.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash)
+	newL1Current, err := h.rpc.L1.HeaderByHash(ctx, e.Raw.BlockHash)
 	if err != nil {
 		return err
 	}
 	h.sharedState.SetL1Current(newL1Current)
-	h.sharedState.SetLastHandledBlockID(event.BlockId.Uint64())
+	h.sharedState.SetLastHandledBlockID(e.BlockId.Uint64())
 
 	// Try generating a proof for the proposed block with the given backoff policy.
 	go func() {
@@ -135,12 +134,12 @@ func (h *BlockProposedEventHandler) OnBlockProposed(
 				h.proposeConcurrencyGuard <- struct{}{}
 				defer func() { <-h.proposeConcurrencyGuard }()
 
-				if err := h.checkExpirationAndSubmitProof(ctx, event); err != nil {
+				if err := h.checkExpirationAndSubmitProof(ctx, e); err != nil {
 					log.Error(
 						"Failed to check proof status and submit proof",
 						"error", err,
-						"blockID", event.BlockId,
-						"minTier", event.Meta.MinTier,
+						"blockID", e.BlockId,
+						"minTier", e.Meta.MinTier,
 						"maxRetrys", h.backOffMaxRetrys,
 					)
 					return err
@@ -159,15 +158,15 @@ func (h *BlockProposedEventHandler) OnBlockProposed(
 // checkL1Reorg checks whether the L1 chain has been reorged.
 func (h *BlockProposedEventHandler) checkL1Reorg(
 	ctx context.Context,
-	event *bindings.TaikoL1ClientBlockProposed,
+	e *bindings.TaikoL1ClientBlockProposed,
 ) error {
 	// Check whether the L2 EE's anchored L1 info, to see if the L1 chain has been reorged.
 	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := h.rpc.CheckL1ReorgFromL2EE(
 		ctx,
-		new(big.Int).Sub(event.BlockId, common.Big1),
+		new(big.Int).Sub(e.BlockId, common.Big1),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to check whether L1 chain was reorged from L2EE (eventID %d): %w", event.BlockId, err)
+		return fmt.Errorf("failed to check whether L1 chain was reorged from L2EE (eventID %d): %w", e.BlockId, err)
 	}
 
 	// Then check the l1Current cursor at first, to see if the L1 chain has been reorged.
@@ -179,7 +178,7 @@ func (h *BlockProposedEventHandler) checkL1Reorg(
 		); err != nil {
 			return fmt.Errorf(
 				"failed to check whether L1 chain was reorged from l1Current (eventID %d): %w",
-				event.BlockId,
+				e.BlockId,
 				err,
 			)
 		}
@@ -203,37 +202,27 @@ func (h *BlockProposedEventHandler) checkL1Reorg(
 		return errL1Reorged
 	}
 
-	lastL1OriginHeader, err := h.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
+	lastL1OriginHeader, err := h.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(e.Meta.L1Height))
 	if err != nil {
-		return fmt.Errorf("failed to get L1 header, height %d: %w", event.Meta.L1Height, err)
+		return fmt.Errorf("failed to get L1 header, height %d: %w", e.Meta.L1Height, err)
 	}
 
-	if lastL1OriginHeader.Hash() != event.Meta.L1Hash {
+	if lastL1OriginHeader.Hash() != e.Meta.L1Hash {
 		log.Warn(
 			"L1 block hash mismatch due to L1 reorg",
-			"height", event.Meta.L1Height,
+			"height", e.Meta.L1Height,
 			"lastL1OriginHeader", lastL1OriginHeader.Hash(),
-			"l1HashInEvent", event.Meta.L1Hash,
+			"l1HashInEvent", e.Meta.L1Hash,
 		)
 
 		return fmt.Errorf(
 			"L1 block hash mismatch due to L1 reorg: %s != %s",
 			lastL1OriginHeader.Hash(),
-			event.Meta.L1Hash,
+			e.Meta.L1Hash,
 		)
 	}
 
 	return nil
-}
-
-// isBlockVerified checks whether the given L2 block has been verified.
-func (h *BlockProposedEventHandler) isBlockVerified(ctx context.Context, id *big.Int) (bool, error) {
-	stateVars, err := h.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
-	if err != nil {
-		return false, err
-	}
-
-	return id.Uint64() <= stateVars.B.LastVerifiedBlockId, nil
 }
 
 // checkExpirationAndSubmitProof checks whether the proposed block's proving window is expired,
@@ -243,7 +232,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 	e *bindings.TaikoL1ClientBlockProposed,
 ) error {
 	// Check whether the block has been verified.
-	isVerified, err := h.isBlockVerified(ctx, e.BlockId)
+	isVerified, err := isBlockVerified(ctx, h.rpc, e.BlockId)
 	if err != nil {
 		return fmt.Errorf("failed to check if the current L2 block is verified: %w", err)
 	}
@@ -380,7 +369,7 @@ type BlockProposedGuaridanEventHandler struct {
 	BlockProposedEventHandler
 }
 
-func (h *BlockProposedGuaridanEventHandler) OnBlockProposed(
+func (h *BlockProposedGuaridanEventHandler) Handle(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	end eventIterator.EndBlockProposedEventIterFunc,
@@ -392,5 +381,5 @@ func (h *BlockProposedGuaridanEventHandler) OnBlockProposed(
 	// 		log.Error("Guardian prover unable to sign block", "blockID", event.BlockId, "error", err)
 	// 	}
 	// }()
-	return h.BlockProposedEventHandler.OnBlockProposed(ctx, event, end)
+	return h.BlockProposedEventHandler.Handle(ctx, event, end)
 }

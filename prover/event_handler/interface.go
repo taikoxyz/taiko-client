@@ -7,10 +7,30 @@ import (
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 )
 
+// BlockProposedHandler is the interface for handling `TaikoL1.BlockProposed` events.
 type BlockProposedHandler interface {
-	OnBlockProposed(
-		ctx context.Context,
+	Handle(ctx context.Context,
 		event *bindings.TaikoL1ClientBlockProposed,
 		end eventIterator.EndBlockProposedEventIterFunc,
 	) error
+}
+
+// TransitionContestedHandler is the interface for handling `TaikoL1.TransitionContested` events.
+type TransitionContestedHandler interface {
+	Handle(ctx context.Context, event *bindings.TaikoL1ClientTransitionContested) error
+}
+
+// TransitionContestedHandler is the interface for handling `TaikoL1.TransitionProved` events.
+type TransitionProvedHandler interface {
+	Handle(ctx context.Context, event *bindings.TaikoL1ClientTransitionProved) error
+}
+
+// BlockVerifiedHandler is the interface for handling `TaikoL1.BlockVerified` events.
+type BlockVerifiedHandler interface {
+	Handle(e *bindings.TaikoL1ClientBlockVerified)
+}
+
+// AssignmentExpiredHandler is the interface for handling the proof assignment expiration.
+type AssignmentExpiredHandler interface {
+	Handle(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error
 }
