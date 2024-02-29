@@ -26,11 +26,12 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/version"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	handler "github.com/taikoxyz/taiko-client/prover/event_handler"
 	guardianproversender "github.com/taikoxyz/taiko-client/prover/guardian_prover_sender"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/taikoxyz/taiko-client/prover/server"
-	"github.com/taikoxyz/taiko-client/prover/state"
+	state "github.com/taikoxyz/taiko-client/prover/shared_state"
 )
 
 var (
@@ -56,8 +57,11 @@ type Prover struct {
 	protocolConfigs *bindings.TaikoDataConfig
 
 	// States
-	state           *state.State
+	sharedState     *state.SharedState
 	genesisHeightL1 uint64
+
+	// Event handlers
+	blockProposedHandler handler.BlockProposedHandler
 
 	// Proof submitters
 	proofSubmitters []proofSubmitter.Submitter
@@ -92,7 +96,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
 	p.proverPrivateKey = cfg.L1ProverPrivKey
-	p.state = new(state.State)
+	p.sharedState = new(state.SharedState)
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -138,7 +142,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if err != nil {
 		return err
 	}
-	p.state.SetTiers(tiers)
+	p.sharedState.SetTiers(tiers)
 
 	// Proof submitters
 	if err := p.initProofSubmitters(); err != nil {
@@ -210,6 +214,18 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			p.proverAddress,
 		)
 	}
+
+	// Event handlers
+	p.blockProposedHandler = handler.NewBlockProposedEventHandler(
+		p.sharedState,
+		p.genesisHeightL1,
+		p.rpc,
+		p.proofGenerationCh,
+		p.proposeConcurrencyGuard,
+		p.cfg.BackOffRetryInterval,
+		p.cfg.BackOffMaxRetrys,
+		p.IsGuardianProver(),
+	)
 
 	return nil
 }
@@ -346,15 +362,15 @@ func (p *Prover) Close(ctx context.Context) {
 func (p *Prover) proveOp() error {
 	firstTry := true
 
-	for firstTry || p.state.GetReorgDetectedFlag() {
-		p.state.SetReorgDetectedFlag(false)
+	for firstTry || p.sharedState.GetReorgDetectedFlag() {
+		p.sharedState.SetReorgDetectedFlag(false)
 		firstTry = false
 
 		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
 			Client:               p.rpc.L1,
 			TaikoL1:              p.rpc.TaikoL1,
-			StartHeight:          new(big.Int).SetUint64(p.state.GetL1Current().Number.Uint64()),
-			OnBlockProposedEvent: p.onBlockProposed,
+			StartHeight:          new(big.Int).SetUint64(p.sharedState.GetL1Current().Number.Uint64()),
+			OnBlockProposedEvent: p.blockProposedHandler.OnBlockProposed,
 		})
 		if err != nil {
 			log.Error("Failed to start event iterator", "event", "BlockProposed", "error", err)
@@ -365,150 +381,6 @@ func (p *Prover) proveOp() error {
 			return err
 		}
 	}
-
-	return nil
-}
-
-// onBlockProposed tries to prove that the newly proposed block is valid/invalid.
-func (p *Prover) onBlockProposed(
-	ctx context.Context,
-	event *bindings.TaikoL1ClientBlockProposed,
-	end eventIterator.EndBlockProposedEventIterFunc,
-) error {
-	// If we are operating as a guardian prover,
-	// we should sign all seen proposed blocks as soon as possible.
-	go func() {
-		if !p.IsGuardianProver() {
-			return
-		}
-		if err := p.guardianProverSender.SignAndSendBlock(ctx, event.BlockId); err != nil {
-			log.Error("Guardian prover unable to sign block", "blockID", event.BlockId, "error", err)
-		}
-	}()
-
-	// If there are newly generated proofs, we need to submit them as soon as possible.
-	if len(p.proofGenerationCh) > 0 {
-		log.Info("onBlockProposed early return", "proofGenerationChannelLength", len(p.proofGenerationCh))
-		end()
-		return nil
-	}
-
-	// Wait for the corresponding L2 block being mined.
-	if _, err := p.rpc.WaitL1Origin(ctx, event.BlockId); err != nil {
-		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
-	}
-
-	// Check whether the L2 EE's anchored L1 info, to see if the L1 chain has been reorged.
-	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1ReorgFromL2EE(
-		ctx,
-		new(big.Int).Sub(event.BlockId, common.Big1),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to check whether L1 chain was reorged from L2EE (eventID %d): %w", event.BlockId, err)
-	}
-
-	// Then check the l1Current cursor at first, to see if the L1 chain has been reorged.
-	if !reorged {
-		if reorged, l1CurrentToReset, lastHandledBlockIDToReset, err = p.rpc.CheckL1ReorgFromL1Cursor(
-			ctx,
-			p.state.GetL1Current(),
-			p.genesisHeightL1,
-		); err != nil {
-			return fmt.Errorf(
-				"failed to check whether L1 chain was reorged from l1Current (eventID %d): %w",
-				event.BlockId,
-				err,
-			)
-		}
-	}
-
-	if reorged {
-		log.Info(
-			"Reset L1Current cursor due to reorg",
-			"l1CurrentHeightOld", p.state.GetL1Current(),
-			"l1CurrentHeightNew", l1CurrentToReset.Number,
-			"lastHandledBlockIDOld", p.state.GetLastHandledBlockID(),
-			"lastHandledBlockIDNew", lastHandledBlockIDToReset,
-		)
-		p.state.SetL1Current(l1CurrentToReset)
-		if lastHandledBlockIDToReset == nil {
-			p.state.SetLastHandledBlockID(0)
-		} else {
-			p.state.SetLastHandledBlockID(lastHandledBlockIDToReset.Uint64())
-		}
-		p.state.SetReorgDetectedFlag(true)
-		end()
-		return nil
-	}
-
-	if event.BlockId.Uint64() <= p.state.GetLastHandledBlockID() {
-		return nil
-	}
-
-	lastL1OriginHeader, err := p.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
-	if err != nil {
-		return fmt.Errorf("failed to get L1 header, height %d: %w", event.Meta.L1Height, err)
-	}
-
-	if lastL1OriginHeader.Hash() != event.Meta.L1Hash {
-		log.Warn(
-			"L1 block hash mismatch due to L1 reorg",
-			"height", event.Meta.L1Height,
-			"lastL1OriginHeader", lastL1OriginHeader.Hash(),
-			"l1HashInEvent", event.Meta.L1Hash,
-		)
-
-		return fmt.Errorf(
-			"L1 block hash mismatch due to L1 reorg: %s != %s",
-			lastL1OriginHeader.Hash(),
-			event.Meta.L1Hash,
-		)
-	}
-
-	log.Info(
-		"Proposed block",
-		"l1Height", event.Raw.BlockNumber,
-		"l1Hash", event.Raw.BlockHash,
-		"blockID", event.BlockId,
-		"removed", event.Raw.Removed,
-		"assignedProver", event.AssignedProver,
-		"livenessBond", event.LivenessBond,
-		"minTier", event.Meta.MinTier,
-	)
-	metrics.ProverReceivedProposedBlockGauge.Update(event.BlockId.Int64())
-
-	// Move l1Current cursor.
-	newL1Current, err := p.rpc.L1.HeaderByHash(ctx, event.Raw.BlockHash)
-	if err != nil {
-		return err
-	}
-	p.state.SetL1Current(newL1Current)
-	p.state.SetLastHandledBlockID(event.BlockId.Uint64())
-
-	// Try generating a proof for the proposed block with the given backoff policy.
-	go func() {
-		if err := backoff.Retry(
-			func() error {
-				p.proposeConcurrencyGuard <- struct{}{}
-				defer func() { <-p.proposeConcurrencyGuard }()
-
-				if err := p.handleNewBlockProposedEvent(ctx, event); err != nil {
-					log.Error(
-						"Failed to handle BlockProposed event",
-						"error", err,
-						"blockID", event.BlockId,
-						"minTier", event.Meta.MinTier,
-						"maxRetrys", p.cfg.BackOffMaxRetrys,
-					)
-					return err
-				}
-				return nil
-			},
-			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
-		); err != nil {
-			log.Error("Handle new BlockProposed event error", "error", err)
-		}
-	}()
 
 	return nil
 }
@@ -879,7 +751,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 				return err
 			}
 
-			p.state.SetL1Current(genesisL1Header)
+			p.sharedState.SetL1Current(genesisL1Header)
 			return nil
 		}
 
@@ -900,7 +772,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 				return err
 			}
 
-			p.state.SetL1Current(l1Head)
+			p.sharedState.SetL1Current(l1Head)
 			return nil
 		}
 		return err
@@ -910,7 +782,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 	if err != nil {
 		return err
 	}
-	p.state.SetL1Current(l1Current)
+	p.sharedState.SetL1Current(l1Current)
 
 	return nil
 }
@@ -1100,7 +972,7 @@ func (p *Prover) onProvingWindowExpired(ctx context.Context, e *bindings.TaikoL1
 
 // getProvingWindow returns the provingWindow of the given proposed block.
 func (p *Prover) getProvingWindow(e *bindings.TaikoL1ClientBlockProposed) (time.Duration, error) {
-	for _, t := range p.state.GetTiers() {
+	for _, t := range p.sharedState.GetTiers() {
 		if e.Meta.MinTier == t.ID {
 			return time.Duration(t.ProvingWindow) * time.Minute, nil
 		}

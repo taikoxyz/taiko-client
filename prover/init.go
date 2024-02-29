@@ -17,11 +17,13 @@ import (
 // configured proverAddress as owner and the contract as spender,
 // if `--prover.allowance` flag is provided for allowance.
 func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address) error {
+	// Skip setting approval amount if `--prover.allowance` flag is not set.
 	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
 		log.Info("Skipping setting approval, `--prover.allowance` flag not set")
 		return nil
 	}
 
+	// Check the existing allowance for the contract.
 	allowance, err := p.rpc.TaikoToken.Allowance(
 		&bind.CallOpts{Context: ctx},
 		p.proverAddress,
@@ -33,6 +35,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 
 	log.Info("Existing allowance for the contract", "allowance", allowance.String(), "contract", contract)
 
+	// If the existing allowance is greater or equal to the configured allowance, skip setting allowance.
 	if allowance.Cmp(p.cfg.Allowance) >= 0 {
 		log.Info(
 			"Skipping setting allowance, allowance already greater or equal",
@@ -43,6 +46,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return nil
 	}
 
+	// Start setting the allowance amount.
 	opts, err := bind.NewKeyedTransactorWithChainID(
 		p.cfg.L1ProverPrivKey,
 		p.rpc.L1.ChainID,
@@ -63,6 +67,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return err
 	}
 
+	// Wait for the transaction receipt.
 	receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx)
 	if err != nil {
 		return err
@@ -74,6 +79,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		"contract", contract,
 	)
 
+	// Check the new allowance for the contract.
 	if allowance, err = p.rpc.TaikoToken.Allowance(
 		&bind.CallOpts{Context: ctx},
 		p.proverAddress,
@@ -89,7 +95,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 
 // initProofSubmitters initializes the proof submitters from the given tiers in protocol.
 func (p *Prover) initProofSubmitters() error {
-	for _, tier := range p.state.GetTiers() {
+	for _, tier := range p.sharedState.GetTiers() {
 		var (
 			producer  proofProducer.ProofProducer
 			submitter proofSubmitter.Submitter
