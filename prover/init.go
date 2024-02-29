@@ -18,6 +18,7 @@ import (
 // if `--prover.allowance` flag is provided for allowance.
 func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address) error {
 	// Skip setting approval amount if `--prover.allowance` flag is not set.
+
 	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
 		log.Info("Skipping setting approval, `--prover.allowance` flag not set")
 		return nil

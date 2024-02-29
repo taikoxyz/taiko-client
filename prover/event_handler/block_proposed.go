@@ -2,11 +2,13 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 
@@ -16,6 +18,10 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	state "github.com/taikoxyz/taiko-client/prover/shared_state"
+)
+
+var (
+	errL1Reorged = errors.New("L1 reorged")
 )
 
 // BlockProposedEventHandler is responsible for handling the BlockProposed event as a prover.
@@ -74,71 +80,19 @@ func (h *BlockProposedEventHandler) OnBlockProposed(
 		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", event.BlockId, err)
 	}
 
-	// Check whether the L2 EE's anchored L1 info, to see if the L1 chain has been reorged.
-	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := h.rpc.CheckL1ReorgFromL2EE(
-		ctx,
-		new(big.Int).Sub(event.BlockId, common.Big1),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to check whether L1 chain was reorged from L2EE (eventID %d): %w", event.BlockId, err)
-	}
-
-	// Then check the l1Current cursor at first, to see if the L1 chain has been reorged.
-	if !reorged {
-		if reorged, l1CurrentToReset, lastHandledBlockIDToReset, err = h.rpc.CheckL1ReorgFromL1Cursor(
-			ctx,
-			h.sharedState.GetL1Current(),
-			h.genesisHeightL1,
-		); err != nil {
-			return fmt.Errorf(
-				"failed to check whether L1 chain was reorged from l1Current (eventID %d): %w",
-				event.BlockId,
-				err,
-			)
+	// Check if the L1 chain has reorged at first.
+	if err := h.checkL1Reorg(ctx, event); err != nil {
+		if errors.Is(err, errL1Reorged) {
+			end()
+			return nil
 		}
+
+		return err
 	}
 
-	if reorged {
-		log.Info(
-			"Reset L1Current cursor due to reorg",
-			"l1CurrentHeightOld", h.sharedState.GetL1Current().Number,
-			"l1CurrentHeightNew", l1CurrentToReset.Number,
-			"lastHandledBlockIDOld", h.sharedState.GetLastHandledBlockID(),
-			"lastHandledBlockIDNew", lastHandledBlockIDToReset,
-		)
-		h.sharedState.SetL1Current(l1CurrentToReset)
-		if lastHandledBlockIDToReset == nil {
-			h.sharedState.SetLastHandledBlockID(0)
-		} else {
-			h.sharedState.SetLastHandledBlockID(lastHandledBlockIDToReset.Uint64())
-		}
-		h.sharedState.SetReorgDetectedFlag(true)
-		end()
-		return nil
-	}
-
+	// If the current block is handled, just skip it.
 	if event.BlockId.Uint64() <= h.sharedState.GetLastHandledBlockID() {
 		return nil
-	}
-
-	lastL1OriginHeader, err := h.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
-	if err != nil {
-		return fmt.Errorf("failed to get L1 header, height %d: %w", event.Meta.L1Height, err)
-	}
-
-	if lastL1OriginHeader.Hash() != event.Meta.L1Hash {
-		log.Warn(
-			"L1 block hash mismatch due to L1 reorg",
-			"height", event.Meta.L1Height,
-			"lastL1OriginHeader", lastL1OriginHeader.Hash(),
-			"l1HashInEvent", event.Meta.L1Hash,
-		)
-
-		return fmt.Errorf(
-			"L1 block hash mismatch due to L1 reorg: %s != %s",
-			lastL1OriginHeader.Hash(),
-			event.Meta.L1Hash,
-		)
 	}
 
 	log.Info(
@@ -190,8 +144,88 @@ func (h *BlockProposedEventHandler) OnBlockProposed(
 	return nil
 }
 
+// checkL1Reorg checks whether the L1 chain has been reorged.
+func (h *BlockProposedEventHandler) checkL1Reorg(
+	ctx context.Context,
+	event *bindings.TaikoL1ClientBlockProposed,
+) error {
+	// Check whether the L2 EE's anchored L1 info, to see if the L1 chain has been reorged.
+	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := h.rpc.CheckL1ReorgFromL2EE(
+		ctx,
+		new(big.Int).Sub(event.BlockId, common.Big1),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to check whether L1 chain was reorged from L2EE (eventID %d): %w", event.BlockId, err)
+	}
+
+	// Then check the l1Current cursor at first, to see if the L1 chain has been reorged.
+	if !reorged {
+		if reorged, l1CurrentToReset, lastHandledBlockIDToReset, err = h.rpc.CheckL1ReorgFromL1Cursor(
+			ctx,
+			h.sharedState.GetL1Current(),
+			h.genesisHeightL1,
+		); err != nil {
+			return fmt.Errorf(
+				"failed to check whether L1 chain was reorged from l1Current (eventID %d): %w",
+				event.BlockId,
+				err,
+			)
+		}
+	}
+
+	if reorged {
+		log.Info(
+			"Reset L1Current cursor due to reorg",
+			"l1CurrentHeightOld", h.sharedState.GetL1Current().Number,
+			"l1CurrentHeightNew", l1CurrentToReset.Number,
+			"lastHandledBlockIDOld", h.sharedState.GetLastHandledBlockID(),
+			"lastHandledBlockIDNew", lastHandledBlockIDToReset,
+		)
+		h.sharedState.SetL1Current(l1CurrentToReset)
+		if lastHandledBlockIDToReset == nil {
+			h.sharedState.SetLastHandledBlockID(0)
+		} else {
+			h.sharedState.SetLastHandledBlockID(lastHandledBlockIDToReset.Uint64())
+		}
+		h.sharedState.SetReorgDetectedFlag(true)
+		return errL1Reorged
+	}
+
+	lastL1OriginHeader, err := h.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(event.Meta.L1Height))
+	if err != nil {
+		return fmt.Errorf("failed to get L1 header, height %d: %w", event.Meta.L1Height, err)
+	}
+
+	if lastL1OriginHeader.Hash() != event.Meta.L1Hash {
+		log.Warn(
+			"L1 block hash mismatch due to L1 reorg",
+			"height", event.Meta.L1Height,
+			"lastL1OriginHeader", lastL1OriginHeader.Hash(),
+			"l1HashInEvent", event.Meta.L1Hash,
+		)
+
+		return fmt.Errorf(
+			"L1 block hash mismatch due to L1 reorg: %s != %s",
+			lastL1OriginHeader.Hash(),
+			event.Meta.L1Hash,
+		)
+	}
+
+	return nil
+}
+
 type BlockProposedGuaridanEventHandler struct {
 	BlockProposedEventHandler
+}
+
+// isBlockVerified checks whether the given L2 block has been verified.
+func (h *BlockProposedEventHandler) isBlockVerified(ctx context.Context, id *big.Int) (bool, error) {
+	stateVars, err := h.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
+	if err != nil {
+		return false, err
+	}
+
+	return id.Uint64() <= stateVars.B.LastVerifiedBlockId, nil
 }
 
 func (h *BlockProposedGuaridanEventHandler) OnBlockProposed(
