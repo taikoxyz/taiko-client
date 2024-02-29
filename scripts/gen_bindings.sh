@@ -75,6 +75,10 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoTimelockController.sol/TaikoTim
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoTimelockController --pkg bindings --out $DIR/../bindings/gen_taiko_timelock_controller.go
 
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/MainnetTierProvider.sol/MainnetTierProvider.json |
+	jq .abi |
+	${ABIGEN_BIN} --abi - --type TierProvider --pkg bindings --out $DIR/../bindings/gen_tier_provider.go
+
 git -C ${TAIKO_MONO_DIR} log --format="%H" -n 1 >./bindings/.githead
 
 echo "🍻 Go contract bindings generated!"
