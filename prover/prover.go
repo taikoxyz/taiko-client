@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/ethdb/leveldb"
@@ -31,6 +30,7 @@ import (
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/taikoxyz/taiko-client/prover/server"
+	"github.com/taikoxyz/taiko-client/prover/state"
 )
 
 var (
@@ -56,11 +56,8 @@ type Prover struct {
 	protocolConfigs *bindings.TaikoDataConfig
 
 	// States
-	lastHandledBlockID uint64
-	genesisHeightL1    uint64
-	l1Current          *types.Header
-	reorgDetectedFlag  bool
-	tiers              []*rpc.TierProviderTierWithID
+	state           *state.State
+	genesisHeightL1 uint64
 
 	// Proof submitters
 	proofSubmitters []proofSubmitter.Submitter
@@ -95,6 +92,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
 	p.proverPrivateKey = cfg.L1ProverPrivKey
+	p.state = new(state.State)
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -136,55 +134,15 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.Capacity)
 
 	// Protocol proof tiers
-	if p.tiers, err = p.rpc.GetTiers(ctx); err != nil {
+	tiers, err := p.rpc.GetTiers(ctx)
+	if err != nil {
 		return err
 	}
+	p.state.SetTiers(tiers)
 
 	// Proof submitters
-	for _, tier := range p.tiers {
-		var (
-			producer  proofProducer.ProofProducer
-			submitter proofSubmitter.Submitter
-		)
-		switch tier.ID {
-		case encoding.TierOptimisticID:
-			producer = &proofProducer.OptimisticProofProducer{DummyProofProducer: new(proofProducer.DummyProofProducer)}
-		case encoding.TierSgxID:
-			sgxProducer, err := proofProducer.NewSGXProducer(
-				cfg.RaikoHostEndpoint,
-				cfg.L1HttpEndpoint,
-				cfg.L1BeaconEndpoint,
-				cfg.L2HttpEndpoint,
-			)
-			if err != nil {
-				return err
-			}
-			if p.cfg.Dummy {
-				sgxProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
-			}
-			producer = sgxProducer
-		case encoding.TierGuardianID:
-			producer = proofProducer.NewGuardianProofProducer(p.cfg.EnableLivenessBondProof)
-		}
-
-		if submitter, err = proofSubmitter.New(
-			p.rpc,
-			producer,
-			p.proofGenerationCh,
-			p.cfg.TaikoL2Address,
-			p.cfg.L1ProverPrivKey,
-			p.cfg.Graffiti,
-			p.cfg.ProofSubmissionMaxRetry,
-			p.cfg.BackOffRetryInterval,
-			p.cfg.WaitReceiptTimeout,
-			p.cfg.ProveBlockGasLimit,
-			p.cfg.ProveBlockTxReplacementMultiplier,
-			p.cfg.ProveBlockMaxTxGasTipCap,
-		); err != nil {
-			return err
-		}
-
-		p.proofSubmitters = append(p.proofSubmitters, submitter)
+	if err := p.initProofSubmitters(); err != nil {
+		return err
 	}
 
 	// Proof contester
@@ -256,94 +214,23 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	return nil
 }
 
-// setApprovalAmount will set the allowance on the TaikoToken contract for the
-// configured proverAddress as owner and the contract as spender,
-// if `--prover.allowance` flag is provided for allowance.
-func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address) error {
-	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
-		log.Info("Skipping setting approval, `--prover.allowance` flag not set")
-		return nil
-	}
-
-	allowance, err := p.rpc.TaikoToken.Allowance(
-		&bind.CallOpts{Context: ctx},
-		p.proverAddress,
-		contract,
-	)
-	if err != nil {
-		return err
-	}
-
-	log.Info("Existing allowance for the contract", "allowance", allowance.String(), "contract", contract)
-
-	if allowance.Cmp(p.cfg.Allowance) >= 0 {
-		log.Info(
-			"Skipping setting allowance, allowance already greater or equal",
-			"allowance", allowance.String(),
-			"approvalAmount", p.cfg.Allowance.String(),
-			"contract", contract,
-		)
-		return nil
-	}
-
-	opts, err := bind.NewKeyedTransactorWithChainID(
-		p.cfg.L1ProverPrivKey,
-		p.rpc.L1.ChainID,
-	)
-	if err != nil {
-		return err
-	}
-	opts.Context = ctx
-
-	log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance.String(), "contract", contract)
-
-	tx, err := p.rpc.TaikoToken.Approve(
-		opts,
-		contract,
-		p.cfg.Allowance,
-	)
-	if err != nil {
-		return err
-	}
-
-	receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx)
-	if err != nil {
-		return err
-	}
-
-	log.Info(
-		"Approved the contract for taiko token",
-		"txHash", receipt.TxHash.Hex(),
-		"contract", contract,
-	)
-
-	if allowance, err = p.rpc.TaikoToken.Allowance(
-		&bind.CallOpts{Context: ctx},
-		p.proverAddress,
-		contract,
-	); err != nil {
-		return err
-	}
-
-	log.Info("New allowance for the contract", "allowance", allowance.String(), "contract", contract)
-
-	return nil
-}
-
 // Start starts the main loop of the L2 block prover.
 func (p *Prover) Start() error {
+	// 1. Set approval amount for the contracts.
 	for _, contract := range []common.Address{p.cfg.TaikoL1Address, p.cfg.AssignmentHookAddress} {
 		if err := p.setApprovalAmount(p.ctx, contract); err != nil {
 			log.Crit("Failed to set approval amount", "contract", contract, "error", err)
 		}
 	}
 
+	// 2. Start the prover server.
 	go func() {
 		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
 			log.Crit("Failed to start http server", "error", err)
 		}
 	}()
 
+	// 3. Start the guardian prover heartbeat sender if the current prover is a guardian prover.
 	if p.IsGuardianProver() {
 		if err := p.guardianProverSender.SendStartup(
 			p.ctx,
@@ -359,6 +246,7 @@ func (p *Prover) Start() error {
 		go p.heartbeatInterval(p.ctx)
 	}
 
+	// 4. Start the main event loop of the prover.
 	p.wg.Add(1)
 	go p.eventLoop()
 
@@ -383,11 +271,12 @@ func (p *Prover) eventLoop() {
 	reqProving()
 
 	// If there is too many (TaikoData.Config.blockMaxProposals) pending blocks in TaikoL1 contract, there will be no new
-	// BlockProposed temporarily, so except the BlockProposed subscription, we need another trigger to start
+	// BlockProposed event temporarily, so except the BlockProposed subscription, we need another trigger to start
 	// fetching the proposed blocks.
 	forceProvingTicker := time.NewTicker(15 * time.Second)
 	defer forceProvingTicker.Stop()
 
+	// Channels
 	chBufferSize := p.protocolConfigs.BlockMaxProposals
 	blockProposedCh := make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	blockVerifiedCh := make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
@@ -457,14 +346,14 @@ func (p *Prover) Close(ctx context.Context) {
 func (p *Prover) proveOp() error {
 	firstTry := true
 
-	for firstTry || p.reorgDetectedFlag {
-		p.reorgDetectedFlag = false
+	for firstTry || p.state.GetReorgDetectedFlag() {
+		p.state.SetReorgDetectedFlag(false)
 		firstTry = false
 
 		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
 			Client:               p.rpc.L1,
 			TaikoL1:              p.rpc.TaikoL1,
-			StartHeight:          new(big.Int).SetUint64(p.l1Current.Number.Uint64()),
+			StartHeight:          new(big.Int).SetUint64(p.state.GetL1Current().Number.Uint64()),
 			OnBlockProposedEvent: p.onBlockProposed,
 		})
 		if err != nil {
@@ -522,7 +411,7 @@ func (p *Prover) onBlockProposed(
 	if !reorged {
 		if reorged, l1CurrentToReset, lastHandledBlockIDToReset, err = p.rpc.CheckL1ReorgFromL1Cursor(
 			ctx,
-			p.l1Current,
+			p.state.GetL1Current(),
 			p.genesisHeightL1,
 		); err != nil {
 			return fmt.Errorf(
@@ -536,23 +425,23 @@ func (p *Prover) onBlockProposed(
 	if reorged {
 		log.Info(
 			"Reset L1Current cursor due to reorg",
-			"l1CurrentHeightOld", p.l1Current,
+			"l1CurrentHeightOld", p.state.GetL1Current(),
 			"l1CurrentHeightNew", l1CurrentToReset.Number,
-			"lastHandledBlockIDOld", p.lastHandledBlockID,
+			"lastHandledBlockIDOld", p.state.GetLastHandledBlockID(),
 			"lastHandledBlockIDNew", lastHandledBlockIDToReset,
 		)
-		p.l1Current = l1CurrentToReset
+		p.state.SetL1Current(l1CurrentToReset)
 		if lastHandledBlockIDToReset == nil {
-			p.lastHandledBlockID = 0
+			p.state.SetLastHandledBlockID(0)
 		} else {
-			p.lastHandledBlockID = lastHandledBlockIDToReset.Uint64()
+			p.state.SetLastHandledBlockID(lastHandledBlockIDToReset.Uint64())
 		}
-		p.reorgDetectedFlag = true
+		p.state.SetReorgDetectedFlag(true)
 		end()
 		return nil
 	}
 
-	if event.BlockId.Uint64() <= p.lastHandledBlockID {
+	if event.BlockId.Uint64() <= p.state.GetLastHandledBlockID() {
 		return nil
 	}
 
@@ -593,8 +482,8 @@ func (p *Prover) onBlockProposed(
 	if err != nil {
 		return err
 	}
-	p.l1Current = newL1Current
-	p.lastHandledBlockID = event.BlockId.Uint64()
+	p.state.SetL1Current(newL1Current)
+	p.state.SetLastHandledBlockID(event.BlockId.Uint64())
 
 	// Try generating a proof for the proposed block with the given backoff policy.
 	go func() {
@@ -990,7 +879,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 				return err
 			}
 
-			p.l1Current = genesisL1Header
+			p.state.SetL1Current(genesisL1Header)
 			return nil
 		}
 
@@ -1002,21 +891,26 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
 	if err != nil {
 		if err.Error() == ethereum.NotFound.Error() {
-			log.Warn("Failed to find L1Origin for blockID, use latest L1 head instead", "blockID", startingBlockID)
+			log.Warn(
+				"Failed to find L1Origin for blockID, use latest L1 head instead",
+				"blockID", startingBlockID,
+			)
 			l1Head, err := p.rpc.L1.HeaderByNumber(p.ctx, nil)
 			if err != nil {
 				return err
 			}
 
-			p.l1Current = l1Head
+			p.state.SetL1Current(l1Head)
 			return nil
 		}
 		return err
 	}
 
-	if p.l1Current, err = p.rpc.L1.HeaderByHash(p.ctx, latestVerifiedHeaderL1Origin.L1BlockHash); err != nil {
+	l1Current, err := p.rpc.L1.HeaderByHash(p.ctx, latestVerifiedHeaderL1Origin.L1BlockHash)
+	if err != nil {
 		return err
 	}
+	p.state.SetL1Current(l1Current)
 
 	return nil
 }
@@ -1206,7 +1100,7 @@ func (p *Prover) onProvingWindowExpired(ctx context.Context, e *bindings.TaikoL1
 
 // getProvingWindow returns the provingWindow of the given proposed block.
 func (p *Prover) getProvingWindow(e *bindings.TaikoL1ClientBlockProposed) (time.Duration, error) {
-	for _, t := range p.tiers {
+	for _, t := range p.state.GetTiers() {
 		if e.Meta.MinTier == t.ID {
 			return time.Duration(t.ProvingWindow) * time.Minute, nil
 		}
@@ -1219,6 +1113,7 @@ func (p *Prover) getProvingWindow(e *bindings.TaikoL1ClientBlockProposed) (time.
 func (p *Prover) selectSubmitter(minTier uint16) proofSubmitter.Submitter {
 	for _, s := range p.proofSubmitters {
 		if s.Tier() >= minTier {
+			log.Debug("Proof submitter selected", "tier", s.Tier(), "minTier", minTier)
 			return s
 		}
 	}

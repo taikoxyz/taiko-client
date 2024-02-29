@@ -116,7 +116,7 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewConstantBackOff(syncProgressRecheckDelay), 10),
+		backoff.NewExponentialBackOff(),
 	)
 }
 

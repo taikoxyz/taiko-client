@@ -1,0 +1,140 @@
+package prover
+
+import (
+	"context"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
+
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
+)
+
+// setApprovalAmount will set the allowance on the TaikoToken contract for the
+// configured proverAddress as owner and the contract as spender,
+// if `--prover.allowance` flag is provided for allowance.
+func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address) error {
+	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
+		log.Info("Skipping setting approval, `--prover.allowance` flag not set")
+		return nil
+	}
+
+	allowance, err := p.rpc.TaikoToken.Allowance(
+		&bind.CallOpts{Context: ctx},
+		p.proverAddress,
+		contract,
+	)
+	if err != nil {
+		return err
+	}
+
+	log.Info("Existing allowance for the contract", "allowance", allowance.String(), "contract", contract)
+
+	if allowance.Cmp(p.cfg.Allowance) >= 0 {
+		log.Info(
+			"Skipping setting allowance, allowance already greater or equal",
+			"allowance", allowance.String(),
+			"approvalAmount", p.cfg.Allowance.String(),
+			"contract", contract,
+		)
+		return nil
+	}
+
+	opts, err := bind.NewKeyedTransactorWithChainID(
+		p.cfg.L1ProverPrivKey,
+		p.rpc.L1.ChainID,
+	)
+	if err != nil {
+		return err
+	}
+	opts.Context = ctx
+
+	log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance.String(), "contract", contract)
+
+	tx, err := p.rpc.TaikoToken.Approve(
+		opts,
+		contract,
+		p.cfg.Allowance,
+	)
+	if err != nil {
+		return err
+	}
+
+	receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx)
+	if err != nil {
+		return err
+	}
+
+	log.Info(
+		"Approved the contract for taiko token",
+		"txHash", receipt.TxHash.Hex(),
+		"contract", contract,
+	)
+
+	if allowance, err = p.rpc.TaikoToken.Allowance(
+		&bind.CallOpts{Context: ctx},
+		p.proverAddress,
+		contract,
+	); err != nil {
+		return err
+	}
+
+	log.Info("New allowance for the contract", "allowance", allowance.String(), "contract", contract)
+
+	return nil
+}
+
+// initProofSubmitters initializes the proof submitters from the given tiers in protocol.
+func (p *Prover) initProofSubmitters() error {
+	for _, tier := range p.state.GetTiers() {
+		var (
+			producer  proofProducer.ProofProducer
+			submitter proofSubmitter.Submitter
+			err       error
+		)
+		switch tier.ID {
+		case encoding.TierOptimisticID:
+			producer = &proofProducer.OptimisticProofProducer{DummyProofProducer: new(proofProducer.DummyProofProducer)}
+		case encoding.TierSgxID:
+			sgxProducer, err := proofProducer.NewSGXProducer(
+				p.cfg.RaikoHostEndpoint,
+				p.cfg.L1HttpEndpoint,
+				p.cfg.L1BeaconEndpoint,
+				p.cfg.L2HttpEndpoint,
+			)
+			if err != nil {
+				return err
+			}
+			if p.cfg.Dummy {
+				sgxProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
+			}
+			producer = sgxProducer
+		case encoding.TierGuardianID:
+			producer = proofProducer.NewGuardianProofProducer(p.cfg.EnableLivenessBondProof)
+		}
+
+		if submitter, err = proofSubmitter.New(
+			p.rpc,
+			producer,
+			p.proofGenerationCh,
+			p.cfg.TaikoL2Address,
+			p.cfg.L1ProverPrivKey,
+			p.cfg.Graffiti,
+			p.cfg.ProofSubmissionMaxRetry,
+			p.cfg.BackOffRetryInterval,
+			p.cfg.WaitReceiptTimeout,
+			p.cfg.ProveBlockGasLimit,
+			p.cfg.ProveBlockTxReplacementMultiplier,
+			p.cfg.ProveBlockMaxTxGasTipCap,
+		); err != nil {
+			return err
+		}
+
+		p.proofSubmitters = append(p.proofSubmitters, submitter)
+	}
+
+	return nil
+}
