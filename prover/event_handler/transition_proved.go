@@ -27,19 +27,11 @@ type TransitionProvedEventHandler struct {
 	proveUnassignedBlocks   bool
 }
 
-func (h *TransitionProvedEventHandler) v(
+func (h *TransitionProvedEventHandler) Handle(
 	ctx context.Context,
 	e *bindings.TaikoL1ClientTransitionProved,
 ) error {
 	metrics.ProverReceivedProvenBlockGauge.Update(e.BlockId.Int64())
-
-	// If the proof generation is cancellable, cancel it and release the capacity.
-	// proofSubmitter := p.getSubmitterByTier(e.Tier)
-	// if proofSubmitter != nil && proofSubmitter.Producer().Cancellable() {
-	// 	if err := proofSubmitter.Producer().Cancel(ctx, e.BlockId); err != nil {
-	// 		return err
-	// 	}
-	// }
 
 	// If this prover is in contest mode, we check the validity of this proof and if it's invalid,
 	// contest it with a higher tier proof.

@@ -20,6 +20,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/version"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -71,6 +72,7 @@ type Prover struct {
 	proveNotify          chan struct{}
 
 	// Proof related
+	proofSubmissionCh chan *proofSubmitter.GenerateProofRequest
 	proofGenerationCh chan *proofProducer.ProofWithHeader
 
 	// Concurrency guards
@@ -223,6 +225,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.rpc,
 		p.proofGenerationCh,
 		p.proofWindowExpiredCh,
+		p.proofSubmissionCh,
 		p.proposeConcurrencyGuard,
 		p.cfg.BackOffRetryInterval,
 		p.cfg.BackOffMaxRetrys,
@@ -321,6 +324,10 @@ func (p *Prover) eventLoop() {
 			return
 		case proofWithHeader := <-p.proofGenerationCh:
 			p.submitProofOp(p.ctx, proofWithHeader)
+		case req := <-p.proofSubmissionCh:
+			if err := p.requestProofOp(p.ctx, req.Event, req.Tier); err != nil {
+				log.Error("Request new proof error", "blockID", req.Event.BlockId, "error", err)
+			}
 		case <-p.proveNotify:
 			if err := p.proveOp(); err != nil {
 				log.Error("Prove new blocks error", "error", err)
@@ -386,6 +393,17 @@ func (p *Prover) proveOp() error {
 	}
 
 	return nil
+}
+
+func (p *Prover) requestProofOp(ctx context.Context, e *bindings.TaikoL1ClientBlockProposed, minTier uint16) error {
+	if p.IsGuardianProver() {
+		minTier = encoding.TierGuardianID
+	}
+	if proofSubmitter := p.selectSubmitter(minTier); proofSubmitter != nil {
+		return proofSubmitter.RequestProof(ctx, e)
+	}
+
+	return fmt.Errorf("failed to find proof submitter for minTier: %v", minTier)
 }
 
 // submitProofOp performs a proof submission operation.

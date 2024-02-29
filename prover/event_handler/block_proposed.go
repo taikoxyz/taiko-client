@@ -16,6 +16,7 @@ import (
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	state "github.com/taikoxyz/taiko-client/prover/shared_state"
 )
 
@@ -32,6 +33,7 @@ type BlockProposedEventHandler struct {
 	rpc                     *rpc.Client
 	proofGenerationCh       chan *proofProducer.ProofWithHeader
 	proofWindowExpiredCh    chan *bindings.TaikoL1ClientBlockProposed
+	proofSubmissionCh       chan *proofSubmitter.GenerateProofRequest
 	proposeConcurrencyGuard chan struct{}
 	BackOffRetryInterval    time.Duration
 	backOffMaxRetrys        uint64
@@ -47,6 +49,7 @@ func NewBlockProposedEventHandler(
 	rpc *rpc.Client,
 	proofGenerationCh chan *proofProducer.ProofWithHeader,
 	proofWindowExpiredCh chan *bindings.TaikoL1ClientBlockProposed,
+	proofSubmissionCh chan *proofSubmitter.GenerateProofRequest,
 	proposeConcurrencyGuard chan struct{},
 	BackOffRetryInterval time.Duration,
 	backOffMaxRetrys uint64,
@@ -61,6 +64,7 @@ func NewBlockProposedEventHandler(
 		rpc,
 		proofGenerationCh,
 		proofWindowExpiredCh,
+		proofSubmissionCh,
 		proposeConcurrencyGuard,
 		BackOffRetryInterval,
 		backOffMaxRetrys,
@@ -342,10 +346,6 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 	}
 
 	tier := e.Meta.MinTier
-	// TODO: Add guardian prover logic here.
-	// if h.rpc.GuardianProver() {
-	// 	tier = encoding.TierGuardianID
-	// }
 
 	log.Info(
 		"Proposed block is provable",
@@ -357,10 +357,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 
 	metrics.ProverProofsAssigned.Inc(1)
 
-	// 	TODO: submit proof
-	// if proofSubmitter := p.selectSubmitter(tier); proofSubmitter != nil {
-	// 	return proofSubmitter.RequestProof(ctx, e)
-	// }
+	h.proofSubmissionCh <- &proofSubmitter.GenerateProofRequest{Tier: tier, Event: e}
 
 	return nil
 }

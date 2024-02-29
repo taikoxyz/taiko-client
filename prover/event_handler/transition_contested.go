@@ -10,6 +10,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	state "github.com/taikoxyz/taiko-client/prover/shared_state"
 )
 
@@ -19,6 +20,7 @@ type TransitionContestedEventHandler struct {
 	rpc                     *rpc.Client
 	proofGenerationCh       chan *proofProducer.ProofWithHeader
 	proofWindowExpiredCh    chan *bindings.TaikoL1ClientBlockProposed
+	proofSubmissionCh       chan *proofSubmitter.GenerateProofRequest
 	proposeConcurrencyGuard chan struct{}
 	BackOffRetryInterval    time.Duration
 	backOffMaxRetrys        uint64
@@ -79,12 +81,10 @@ func (h *TransitionContestedEventHandler) Handle(
 		return nil
 	}
 
-	// Submit a proof to contest.
-	// blockInfo, err := h.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, e.BlockId.Uint64())
-	// if err != nil {
-	// 	return err
-	// }
+	h.proofSubmissionCh <- &proofSubmitter.GenerateProofRequest{
+		Tier:  e.Tier + 1,
+		Event: nil, // TODO
+	}
 
 	return nil
-	// return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(blockInfo.Blk.ProposedIn), e.Tier+1, nil)
 }

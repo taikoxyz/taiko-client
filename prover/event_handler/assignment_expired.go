@@ -9,6 +9,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	state "github.com/taikoxyz/taiko-client/prover/shared_state"
 )
 
@@ -19,6 +20,7 @@ type AssignmentExpiredEventHandler struct {
 	rpc                     *rpc.Client
 	proofGenerationCh       chan *proofProducer.ProofWithHeader
 	proofWindowExpiredCh    chan *bindings.TaikoL1ClientBlockProposed
+	proofSubmissionCh       chan *proofSubmitter.GenerateProofRequest
 	proposeConcurrencyGuard chan struct{}
 	BackOffRetryInterval    time.Duration
 	backOffMaxRetrys        uint64
@@ -52,19 +54,19 @@ func (h *BlockProposedEventHandler) OnAssignmentExpired(
 			return nil
 		}
 
-		// return p.handleInvalidProof(
-		// 	ctx,
-		// 	e.BlockId,
-		// 	new(big.Int).SetUint64(e.Raw.BlockNumber),
-		// 	proofStatus.ParentHeader.Hash(),
-		// 	proofStatus.CurrentTransitionState.Contester,
-		// 	&e.Meta,
-		// 	proofStatus.CurrentTransitionState.Tier,
-		// )
+		// If there is no contester, we submit a contest to protocol.
+		if proofStatus.CurrentTransitionState.Contester == rpc.ZeroAddress {
+			// TODO
+			return nil
+		}
+
+		h.proofSubmissionCh <- &proofSubmitter.GenerateProofRequest{
+			Tier:  proofStatus.CurrentTransitionState.Tier + 1,
+			Event: e,
+		}
 		return nil
 	}
 
-	// return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(e.Raw.BlockNumber), e.Meta.MinTier, nil)
-	// return requestProofByBlockID(ctx, e.BlockId, h.rpc, e, nil)
+	h.proofSubmissionCh <- &proofSubmitter.GenerateProofRequest{Tier: e.Meta.MinTier, Event: e}
 	return nil
 }
