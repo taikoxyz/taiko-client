@@ -30,16 +30,6 @@ var (
 
 // Optional flags used by prover.
 var (
-	ZkEvmRpcdEndpoint = &cli.StringFlag{
-		Name:     "zkevm.rpcdEndpoint",
-		Usage:    "RPC endpoint of a ZKEVM RPCD service",
-		Category: proverCategory,
-	}
-	ZkEvmRpcdParamsPath = &cli.StringFlag{
-		Name:     "zkevm.rpcdParamsPath",
-		Usage:    "Path of ZKEVM parameters file to use",
-		Category: proverCategory,
-	}
 	RaikoHostEndpoint = &cli.StringFlag{
 		Name:     "raiko.hostEndpoint",
 		Usage:    "RPC endpoint of a Raiko host service",
@@ -72,16 +62,6 @@ var (
 	MinSgxTierFee = &cli.Uint64Flag{
 		Name:     "minTierFee.sgx",
 		Usage:    "Minimum accepted fee for generating a SGX proof",
-		Category: proverCategory,
-	}
-	MinPseZkevmTierFee = &cli.Uint64Flag{
-		Name:     "minTierFee.pseZKEvm",
-		Usage:    "Minimum accepted fee for generating a PSE zkEVM proof",
-		Category: proverCategory,
-	}
-	MinSgxAndPseZkevmTierFee = &cli.Uint64Flag{
-		Name:     "minTierFee.sgxAndPseZKEvm",
-		Usage:    "Minimum accepted fee for generating a SGX + PSE zkEVM proof",
 		Category: proverCategory,
 	}
 	// Guardian prover related.
@@ -208,14 +188,10 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L1BeaconEndpoint,
 	L2WSEndpoint,
 	L2HTTPEndpoint,
-	ZkEvmRpcdEndpoint,
-	ZkEvmRpcdParamsPath,
 	RaikoHostEndpoint,
 	L1ProverPrivKey,
 	MinOptimisticTierFee,
 	MinSgxTierFee,
-	MinPseZkevmTierFee,
-	MinSgxAndPseZkevmTierFee,
 	StartingBlockID,
 	Dummy,
 	GuardianProver,

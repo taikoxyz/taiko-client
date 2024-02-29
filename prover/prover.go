@@ -38,7 +38,7 @@ var (
 	heartbeatInterval = 12 * time.Second
 )
 
-// Prover keep trying to prove new proposed blocks valid/invalid.
+// Prover keeps trying to prove newly proposed blocks.
 type Prover struct {
 	// Configurations
 	cfg              *Config
@@ -48,23 +48,19 @@ type Prover struct {
 	// Clients
 	rpc *rpc.Client
 
-	// Prover Server
-	srv *server.ProverServer
-
-	// Guardian prover heartbeat and block sending related
+	// Guardian prover related
+	srv                  *server.ProverServer
 	guardianProverSender guardianproversender.BlockSenderHeartbeater
 
 	// Contract configurations
 	protocolConfigs *bindings.TaikoDataConfig
 
 	// States
-	latestVerifiedL1Height uint64
-	lastHandledBlockID     uint64
-	genesisHeightL1        uint64
-	l1Current              *types.Header
-	reorgDetectedFlag      bool
-	tiers                  []*rpc.TierProviderTierWithID
-	l1SignalService        common.Address
+	lastHandledBlockID uint64
+	genesisHeightL1    uint64
+	l1Current          *types.Header
+	reorgDetectedFlag  bool
+	tiers              []*rpc.TierProviderTierWithID
 
 	// Proof submitters
 	proofSubmitters []proofSubmitter.Submitter
@@ -124,14 +120,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
-	if p.l1SignalService, err = p.rpc.TaikoL1.Resolve0(
-		&bind.CallOpts{Context: ctx},
-		rpc.StringToBytes32("signal_service"),
-		false,
-	); err != nil {
-		return fmt.Errorf("failed to resolve L1 signal service address: %w", err)
-	}
-
 	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 
 	chBufferSize := p.protocolConfigs.BlockMaxProposals
@@ -175,54 +163,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 				sgxProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
 			}
 			producer = sgxProducer
-		case encoding.TierSgxAndPseZkevmID:
-			zkEvmRpcdProducer, err := proofProducer.NewZkevmRpcdProducer(
-				cfg.ZKEvmRpcdEndpoint,
-				cfg.ZkEvmRpcdParamsPath,
-				cfg.L1HttpEndpoint,
-				cfg.L2HttpEndpoint,
-				true,
-				p.protocolConfigs,
-			)
-			if err != nil {
-				return err
-			}
-
-			sgxProducer, err := proofProducer.NewSGXProducer(
-				cfg.RaikoHostEndpoint,
-				cfg.L1HttpEndpoint,
-				cfg.L1BeaconEndpoint,
-				cfg.L2HttpEndpoint,
-			)
-			if err != nil {
-				return err
-			}
-
-			if p.cfg.Dummy {
-				zkEvmRpcdProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
-				sgxProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
-			}
-
-			producer = &proofProducer.SGXAndZkevmRpcdProducer{
-				SGXProofProducer:  sgxProducer,
-				ZkevmRpcdProducer: zkEvmRpcdProducer,
-			}
-		case encoding.TierPseZkevmID:
-			zkEvmRpcdProducer, err := proofProducer.NewZkevmRpcdProducer(
-				cfg.ZKEvmRpcdEndpoint,
-				cfg.ZkEvmRpcdParamsPath,
-				cfg.L1HttpEndpoint,
-				cfg.L2HttpEndpoint,
-				true,
-				p.protocolConfigs,
-			)
-			if err != nil {
-				return err
-			}
-			if p.cfg.Dummy {
-				zkEvmRpcdProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
-			}
-			producer = zkEvmRpcdProducer
 		case encoding.TierGuardianID:
 			producer = proofProducer.NewGuardianProofProducer(p.cfg.EnableLivenessBondProof)
 		}
@@ -279,21 +219,19 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	// Prover server
 	proverServerOpts := &server.NewProverServerOpts{
-		ProverPrivateKey:         p.cfg.L1ProverPrivKey,
-		MinOptimisticTierFee:     p.cfg.MinOptimisticTierFee,
-		MinSgxTierFee:            p.cfg.MinSgxTierFee,
-		MinPseZkevmTierFee:       p.cfg.MinPseZkevmTierFee,
-		MinSgxAndPseZkevmTierFee: p.cfg.MinSgxAndPseZkevmTierFee,
-		MaxExpiry:                p.cfg.MaxExpiry,
-		MaxBlockSlippage:         p.cfg.MaxBlockSlippage,
-		TaikoL1Address:           p.cfg.TaikoL1Address,
-		AssignmentHookAddress:    p.cfg.AssignmentHookAddress,
-		ProposeConcurrencyGuard:  p.proposeConcurrencyGuard,
-		RPC:                      p.rpc,
-		ProtocolConfigs:          &protocolConfigs,
-		LivenessBond:             protocolConfigs.LivenessBond,
-		IsGuardian:               p.IsGuardianProver(),
-		DB:                       db,
+		ProverPrivateKey:        p.cfg.L1ProverPrivKey,
+		MinOptimisticTierFee:    p.cfg.MinOptimisticTierFee,
+		MinSgxTierFee:           p.cfg.MinSgxTierFee,
+		MaxExpiry:               p.cfg.MaxExpiry,
+		MaxBlockSlippage:        p.cfg.MaxBlockSlippage,
+		TaikoL1Address:          p.cfg.TaikoL1Address,
+		AssignmentHookAddress:   p.cfg.AssignmentHookAddress,
+		ProposeConcurrencyGuard: p.proposeConcurrencyGuard,
+		RPC:                     p.rpc,
+		ProtocolConfigs:         &protocolConfigs,
+		LivenessBond:            protocolConfigs.LivenessBond,
+		IsGuardian:              p.IsGuardianProver(),
+		DB:                      db,
 	}
 	if p.srv, err = server.New(proverServerOpts); err != nil {
 		return err
@@ -575,7 +513,6 @@ func (p *Prover) onBlockProposed(
 	reorged, l1CurrentToReset, lastHandledBlockIDToReset, err := p.rpc.CheckL1ReorgFromL2EE(
 		ctx,
 		new(big.Int).Sub(event.BlockId, common.Big1),
-		p.l1SignalService,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to check whether L1 chain was reorged from L2EE (eventID %d): %w", event.BlockId, err)
@@ -763,7 +700,9 @@ func (p *Prover) handleNewBlockProposedEvent(ctx context.Context, e *bindings.Ta
 			"Proposed block's proving window has expired",
 			"blockID", e.BlockId,
 			"prover", e.AssignedProver,
+			"now", now,
 			"expiresAt", provingWindowExpiresAt,
+			"minTier", e.Meta.MinTier,
 		)
 		if e.AssignedProver == p.proverAddress {
 			log.Warn(
@@ -964,8 +903,6 @@ func (p *Prover) onTransitionContested(ctx context.Context, e *bindings.TaikoL1C
 // the block being proven if it's verified.
 func (p *Prover) onBlockVerified(_ context.Context, e *bindings.TaikoL1ClientBlockVerified) error {
 	metrics.ProverLatestVerifiedIDGauge.Update(e.BlockId.Int64())
-
-	p.latestVerifiedL1Height = e.Raw.BlockNumber
 
 	log.Info(
 		"New verified block",
@@ -1271,7 +1208,7 @@ func (p *Prover) onProvingWindowExpired(ctx context.Context, e *bindings.TaikoL1
 func (p *Prover) getProvingWindow(e *bindings.TaikoL1ClientBlockProposed) (time.Duration, error) {
 	for _, t := range p.tiers {
 		if e.Meta.MinTier == t.ID {
-			return time.Duration(t.ProvingWindow) * time.Second, nil
+			return time.Duration(t.ProvingWindow) * time.Minute, nil
 		}
 	}
 

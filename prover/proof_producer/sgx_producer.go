@@ -113,7 +113,6 @@ func (s *SGXProofProducer) RequestProof(
 		Header:  header,
 		Meta:    meta,
 		Proof:   proof,
-		Degree:  0,
 		Opts:    opts,
 		Tier:    s.Tier(),
 	}, nil

@@ -2,7 +2,9 @@ package producer
 
 import (
 	"context"
+	"errors"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -10,17 +12,16 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
-const (
-	CircuitsIdx = 0 // Currently we only have one verification contract in protocol.
+var (
+	proofPollingInterval = 10 * time.Second
+	errProofGenerating   = errors.New("proof is generating")
 )
 
-// ProofRequestOptions contains all options that need to be passed to zkEVM rpcd service.
+// ProofRequestOptions contains all options that need to be passed to a backend proof producer service.
 type ProofRequestOptions struct {
 	BlockID            *big.Int
 	ProverAddress      common.Address
 	ProposeBlockTxHash common.Hash
-	L1SignalService    common.Address
-	L2SignalService    common.Address
 	TaikoL2            common.Address
 	MetaHash           common.Hash
 	BlockHash          common.Hash
@@ -37,7 +38,6 @@ type ProofWithHeader struct {
 	Meta    *bindings.TaikoDataBlockMetadata
 	Header  *types.Header
 	Proof   []byte
-	Degree  uint64
 	Opts    *ProofRequestOptions
 	Tier    uint16
 }
@@ -53,8 +53,4 @@ type ProofProducer interface {
 	Cancellable() bool
 	Cancel(ctx context.Context, blockID *big.Int) error
 	Tier() uint16
-}
-
-func DegreeToCircuitsIdx(degree uint64) (uint16, error) {
-	return CircuitsIdx, nil
 }

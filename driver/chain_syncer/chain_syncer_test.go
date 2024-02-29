@@ -39,7 +39,6 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		state,
 		false,
 		1*time.Hour,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 	s.s = syncer
@@ -66,8 +65,6 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		ProverEndpoints:            s.ProverEndpoints,
 		OptimisticTierFee:          common.Big256,
 		SgxTierFee:                 common.Big256,
-		PseZkevmTierFee:            common.Big256,
-		SgxAndPseZkevmTierFee:      common.Big256,
 		MaxTierFeePriceBumps:       3,
 		TierFeePriceBump:           common.Big2,
 		ExtraData:                  "test",

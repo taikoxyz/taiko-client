@@ -72,8 +72,6 @@ func (s *DriverTestSuite) SetupTest() {
 		ProverEndpoints:            s.ProverEndpoints,
 		OptimisticTierFee:          common.Big256,
 		SgxTierFee:                 common.Big256,
-		PseZkevmTierFee:            common.Big256,
-		SgxAndPseZkevmTierFee:      common.Big256,
 		MaxTierFeePriceBumps:       3,
 		TierFeePriceBump:           common.Big2,
 		L1BlockBuilderTip:          common.Big0,
@@ -153,7 +151,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(
 		context.Background(),
 		l2Head2.Number,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 	s.False(reorged)
@@ -216,7 +213,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(
 		context.Background(),
 		l2Head2.Number,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 	s.False(reorged)
@@ -275,7 +271,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(
 		context.Background(),
 		l2Head2.Number,
-		common.HexToAddress(os.Getenv("L1_SIGNAL_SERVICE_CONTRACT_ADDRESS")),
 	)
 	s.Nil(err)
 	s.False(reorged)

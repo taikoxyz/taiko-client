@@ -37,7 +37,6 @@ type CreateAssignmentRequestBody struct {
 type Status struct {
 	MinOptimisticTierFee uint64 `json:"minOptimisticTierFee"`
 	MinSgxTierFee        uint64 `json:"minSgxTierFee"`
-	MinPseZkevmTierFee   uint64 `json:"minPseZkevmTierFee"`
 	MaxExpiry            uint64 `json:"maxExpiry"`
 	Prover               string `json:"prover"`
 }
@@ -54,7 +53,6 @@ func (srv *ProverServer) GetStatus(c echo.Context) error {
 	return c.JSON(http.StatusOK, &Status{
 		MinOptimisticTierFee: srv.minOptimisticTierFee.Uint64(),
 		MinSgxTierFee:        srv.minSgxTierFee.Uint64(),
-		MinPseZkevmTierFee:   srv.minPseZkevmTierFee.Uint64(),
 		MaxExpiry:            uint64(srv.maxExpiry.Seconds()),
 		Prover:               srv.proverAddress.Hex(),
 	})
@@ -139,10 +137,6 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 			minTierFee = srv.minOptimisticTierFee
 		case encoding.TierSgxID:
 			minTierFee = srv.minSgxTierFee
-		case encoding.TierPseZkevmID:
-			minTierFee = srv.minPseZkevmTierFee
-		case encoding.TierSgxAndPseZkevmID:
-			minTierFee = srv.minSgxAndPseZkevmTierFee
 		default:
 			log.Warn("Unknown tier", "tier", tier.Tier, "fee", tier.Fee, "proposerIP", c.RealIP())
 		}

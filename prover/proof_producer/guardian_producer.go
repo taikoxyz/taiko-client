@@ -52,7 +52,6 @@ func (g *GuardianProofProducer) RequestProof(
 			Meta:    meta,
 			Header:  header,
 			Proof:   crypto.Keccak256([]byte("RETURN_LIVENESS_BOND")),
-			Degree:  CircuitsIdx,
 			Opts:    opts,
 			Tier:    g.Tier(),
 		}, nil

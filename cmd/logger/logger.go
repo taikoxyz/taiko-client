@@ -19,7 +19,8 @@ func InitLogger(c *cli.Context) {
 		glogger.Verbosity(slogVerbosity)
 		log.SetDefault(log.NewLogger(glogger))
 	} else {
-		glogger := log.NewGlogHandler(log.NewTerminalHandlerWithLevel(os.Stdout, slogVerbosity, true))
+		glogger := log.NewGlogHandler(log.NewTerminalHandler(os.Stdout, true))
+		glogger.Verbosity(slogVerbosity)
 		log.SetDefault(log.NewLogger(glogger))
 	}
 }
