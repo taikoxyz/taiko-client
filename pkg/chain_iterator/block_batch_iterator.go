@@ -64,7 +64,7 @@ type BlockBatchIteratorConfig struct {
 	EndHeight             *big.Int
 	OnBlocks              OnBlocksFunc
 	ReorgRewindDepth      *uint64
-	RetryInterval         *time.Duration
+	RetryInterval         time.Duration
 }
 
 // NewBlockBatchIterator creates a new block batch iterator instance.
@@ -109,10 +109,10 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 		iterator.blocksReadPerEpoch = DefaultBlocksReadPerEpoch
 	}
 
-	if cfg.RetryInterval == nil {
+	if cfg.RetryInterval == 0 {
 		iterator.retryInterval = DefaultRetryInterval
 	} else {
-		iterator.retryInterval = *cfg.RetryInterval
+		iterator.retryInterval = cfg.RetryInterval
 	}
 
 	if cfg.EndHeight != nil {

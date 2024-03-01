@@ -23,10 +23,10 @@ type Config struct {
 	L1ProposerPrivKey                   *ecdsa.PrivateKey
 	L2SuggestedFeeRecipient             common.Address
 	ExtraData                           string
-	ProposeInterval                     *time.Duration
+	ProposeInterval                     time.Duration
 	LocalAddresses                      []common.Address
 	LocalAddressesOnly                  bool
-	ProposeEmptyBlocksInterval          *time.Duration
+	ProposeEmptyBlocksInterval          time.Duration
 	MaxProposedTxListsPerEpoch          uint64
 	ProposeBlockTxGasLimit              uint64
 	ProposeBlockTxReplacementMultiplier uint64
@@ -50,19 +50,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	)
 	if err != nil {
 		return nil, fmt.Errorf("invalid L1 proposer private key: %w", err)
-	}
-
-	// Proposing configuration
-	var proposingInterval *time.Duration
-	if c.IsSet(flags.ProposeInterval.Name) {
-		interval := c.Duration(flags.ProposeInterval.Name)
-		proposingInterval = &interval
-	}
-
-	var proposeEmptyBlocksInterval *time.Duration
-	if c.IsSet(flags.ProposeEmptyBlocksInterval.Name) {
-		interval := c.Duration(flags.ProposeEmptyBlocksInterval.Name)
-		proposeEmptyBlocksInterval = &interval
 	}
 
 	l2SuggestedFeeRecipient := c.String(flags.L2SuggestedFeeRecipient.Name)
@@ -115,10 +102,10 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:             common.HexToAddress(l2SuggestedFeeRecipient),
 		ExtraData:                           c.String(flags.ExtraData.Name),
-		ProposeInterval:                     proposingInterval,
+		ProposeInterval:                     c.Duration(flags.ProposeInterval.Name),
 		LocalAddresses:                      localAddresses,
 		LocalAddressesOnly:                  c.Bool(flags.TxPoolLocalsOnly.Name),
-		ProposeEmptyBlocksInterval:          proposeEmptyBlocksInterval,
+		ProposeEmptyBlocksInterval:          c.Duration(flags.ProposeEmptyBlocksInterval.Name),
 		MaxProposedTxListsPerEpoch:          c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
 		ProposeBlockTxGasLimit:              c.Uint64(flags.ProposeBlockTxGasLimit.Name),
 		ProposeBlockTxReplacementMultiplier: proposeBlockTxReplacementMultiplier,

@@ -79,7 +79,6 @@ func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
 // InitFromConfig initializes the proposer instance based on the given configurations.
 func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 	p.proposerAddress = crypto.PubkeyToAddress(cfg.L1ProposerPrivKey.PublicKey)
-	p.wg = sync.WaitGroup{}
 	p.ctx = ctx
 	p.Config = cfg
 
@@ -162,8 +161,8 @@ func (p *Proposer) eventLoop() {
 					continue
 				}
 				// if no new transactions and empty block interval has passed, propose an empty block
-				if p.ProposeEmptyBlocksInterval != nil {
-					if time.Now().Before(lastNonEmptyBlockProposedAt.Add(*p.ProposeEmptyBlocksInterval)) {
+				if p.ProposeEmptyBlocksInterval != 0 {
+					if time.Now().Before(lastNonEmptyBlockProposedAt.Add(p.ProposeEmptyBlocksInterval)) {
 						continue
 					}
 
@@ -518,8 +517,8 @@ func (p *Proposer) updateProposingTicker() {
 	}
 
 	var duration time.Duration
-	if p.ProposeInterval != nil {
-		duration = *p.ProposeInterval
+	if p.ProposeInterval != 0 {
+		duration = p.ProposeInterval
 	} else {
 		// Random number between 12 - 120
 		randomSeconds := rand.Intn(120-11) + 12 // nolint: gosec

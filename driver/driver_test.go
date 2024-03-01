@@ -54,7 +54,6 @@ func (s *DriverTestSuite) SetupTest() {
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 	s.Nil(p.InitFromConfig(context.Background(), &proposer.Config{
 		ClientConfig: &rpc.ClientConfig{
 			L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
@@ -66,7 +65,7 @@ func (s *DriverTestSuite) SetupTest() {
 		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:            &proposeInterval,
+		ProposeInterval:            1024 * time.Hour,
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         12 * time.Second,
 		ProverEndpoints:            s.ProverEndpoints,
