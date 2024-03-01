@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"math/big"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/go-resty/resty/v2"
 	"github.com/phayes/freeport"
 
@@ -25,9 +25,16 @@ import (
 )
 
 func (s *ClientTestSuite) ProposeInvalidTxListBytes(proposer Proposer) {
-	invalidTxListBytes := RandomBytes(256)
-
-	s.Nil(proposer.ProposeTxList(context.Background(), invalidTxListBytes, 1))
+	s.Nil(proposer.ProposeTxList(context.Background(), []*types.Transaction{
+		types.NewTransaction(
+			0,
+			common.Address{},
+			big.NewInt(0),
+			0,
+			big.NewInt(0),
+			RandomBytes(256),
+		)},
+	))
 }
 
 func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
@@ -48,17 +55,12 @@ func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 		close(sink)
 	}()
 
-	// RLP encoded empty list
-	var emptyTxs []types.Transaction
-	encoded, err := rlp.EncodeToBytes(emptyTxs)
-	s.Nil(err)
-
-	s.Nil(proposer.ProposeTxList(context.Background(), encoded, 0))
+	s.Nil(proposer.ProposeTxList(context.Background(), nil))
 
 	s.ProposeInvalidTxListBytes(proposer)
 
 	// Random bytes txList
-	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
+	s.Nil(proposer.ProposeTxList(context.Background(), nil))
 
 	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
 

@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -137,7 +136,7 @@ func (s *ProposerTestSuite) TestProposeOpLocalsOnly() {
 }
 
 func (s *ProposerTestSuite) TestProposeEmptyBlockOp() {
-	s.Nil(s.p.ProposeEmptyBlockOp(context.Background()))
+	s.Nil(s.p.ProposeTxList(context.Background(), nil))
 }
 
 func (s *ProposerTestSuite) TestCustomProposeOpHook() {
@@ -171,16 +170,11 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.Nil(err)
 	tx := sender.GetUnconfirmedTx(txID)
 
-	encoded, err := rlp.EncodeToBytes([]types.Transaction{})
-	s.Nil(err)
 	var newTx *types.Transaction
 	if s.p.BlobAllowed {
-		newTx, err = s.p.makeProposeBlockTxWithBlobHash(context.Background(), encoded)
+		newTx, err = s.p.makeProposeBlockTxWithBlobHash(context.Background(), nil)
 	} else {
-		newTx, err = s.p.makeProposeBlockTx(
-			context.Background(),
-			encoded,
-		)
+		newTx, err = s.p.makeProposeBlockTx(context.Background(), nil)
 	}
 	s.Nil(err)
 

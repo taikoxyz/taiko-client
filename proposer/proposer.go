@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
+	"modernc.org/mathutil"
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -167,7 +168,7 @@ func (p *Proposer) eventLoop() {
 						continue
 					}
 
-					if err := p.ProposeEmptyBlockOp(p.ctx); err != nil {
+					if err := p.ProposeTxList(p.ctx, nil); err != nil {
 						log.Error("Proposing an empty block operation error", "error", err)
 					}
 
@@ -235,9 +236,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 				}
 			}
 
-			if filtered.Len() != 0 {
-				localTxsLists = append(localTxsLists, filtered)
-			}
+			localTxsLists = append(localTxsLists, filtered)
 		}
 		txLists = localTxsLists
 	}
@@ -248,27 +247,15 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return errNoNewTxs
 	}
 	g := new(errgroup.Group)
-	for i, txs := range txLists {
-		func(i int, txs types.Transactions) {
-			g.Go(func() error {
-				if i >= int(p.MaxProposedTxListsPerEpoch) {
-					return nil
-				}
-
-				txListBytes, err := rlp.EncodeToBytes(txs)
-				if err != nil {
-					return fmt.Errorf("failed to encode transactions: %w", err)
-				}
-
-				if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len())); err != nil {
-					return fmt.Errorf("failed to propose transactions: %w", err)
-				}
-
-				return nil
-			})
-		}(i, txs)
+	for _, txs := range txLists[:mathutil.Min(len(txLists), int(p.MaxProposedTxListsPerEpoch))] {
+		txs := txs
+		g.Go(func() error {
+			if err := p.ProposeTxList(ctx, txs); err != nil {
+				return fmt.Errorf("failed to propose transactions: %w", err)
+			}
+			return nil
+		})
 	}
-
 	if err := g.Wait(); err != nil {
 		return fmt.Errorf("failed to propose transactions: %w", err)
 	}
@@ -284,10 +271,17 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 func (p *Proposer) makeProposeBlockTxWithBlobHash(
 	ctx context.Context,
-	txListBytes []byte,
+	txList []*types.Transaction,
 ) (*types.Transaction, error) {
+	if txList == nil {
+		txList = []*types.Transaction{}
+	}
+	encoded, err := rlp.EncodeToBytes(txList)
+	if err != nil {
+		return nil, err
+	}
 	// Make sidecar in order to get blob hash.
-	sideCar, err := rpc.MakeSidecar(txListBytes)
+	sideCar, err := rpc.MakeSidecar(encoded)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +323,7 @@ func (p *Proposer) makeProposeBlockTxWithBlobHash(
 		AssignedProver:    assignedProver,
 		ExtraData:         rpc.StringToBytes32(p.ExtraData),
 		TxListByteOffset:  common.Big0,
-		TxListByteSize:    big.NewInt(int64(len(txListBytes))),
+		TxListByteSize:    big.NewInt(int64(len(encoded))),
 		BlobHash:          [32]byte{},
 		CacheBlobForReuse: false,
 		ParentMetaHash:    parentMetaHash,
@@ -366,12 +360,20 @@ func (p *Proposer) makeProposeBlockTxWithBlobHash(
 // makeProposeBlockTx tries to send a TaikoL1.proposeBlock transaction.
 func (p *Proposer) makeProposeBlockTx(
 	ctx context.Context,
-	txListBytes []byte,
+	txList []*types.Transaction,
 ) (*types.Transaction, error) {
+	if txList == nil {
+		txList = []*types.Transaction{}
+	}
+	encoded, err := rlp.EncodeToBytes(txList)
+	if err != nil {
+		return nil, err
+	}
+
 	assignment, assignedProver, maxFee, err := p.proverSelector.AssignProver(
 		ctx,
 		p.tierFees,
-		crypto.Keccak256Hash(txListBytes),
+		crypto.Keccak256Hash(encoded),
 	)
 	if err != nil {
 		return nil, err
@@ -429,7 +431,7 @@ func (p *Proposer) makeProposeBlockTx(
 	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(
 		opts,
 		encodedParams,
-		txListBytes,
+		encoded,
 	)
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
@@ -441,8 +443,7 @@ func (p *Proposer) makeProposeBlockTx(
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
-	txListBytes []byte,
-	txNum uint,
+	txList []*types.Transaction,
 ) error {
 	var txID string
 	if err := backoff.Retry(
@@ -458,12 +459,12 @@ func (p *Proposer) ProposeTxList(
 			if p.BlobAllowed {
 				tx, err = p.makeProposeBlockTxWithBlobHash(
 					ctx,
-					txListBytes,
+					txList,
 				)
 			} else {
 				tx, err = p.makeProposeBlockTx(
 					ctx,
-					txListBytes,
+					txList,
 				)
 			}
 			if err != nil {
@@ -494,21 +495,12 @@ func (p *Proposer) ProposeTxList(
 		return confirm.Err
 	}
 
-	log.Info("📝 Propose transactions succeeded", "txs", txNum)
+	log.Info("📝 Propose transactions succeeded", "txs", len(txList))
 
 	metrics.ProposerProposedTxListsCounter.Inc(1)
-	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))
+	metrics.ProposerProposedTxsCounter.Inc(int64(len(txList)))
 
 	return nil
-}
-
-// ProposeEmptyBlockOp performs a proposing one empty block operation.
-func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
-	emptyTxListBytes, err := rlp.EncodeToBytes(types.Transactions{})
-	if err != nil {
-		return err
-	}
-	return p.ProposeTxList(ctx, emptyTxListBytes, 0)
 }
 
 // updateProposingTicker updates the internal proposing timer.
