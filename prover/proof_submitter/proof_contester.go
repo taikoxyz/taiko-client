@@ -116,7 +116,7 @@ func (c *ProofContester) SubmitContest(
 			Proof:   []byte{},
 			Opts: &proofProducer.ProofRequestOptions{
 				EventL1Hash: l1HeaderProposedIn.Hash(),
-				StateRoot:   l1HeaderProposedIn.Root,
+				StateRoot:   header.Root,
 			},
 			Tier: tier,
 		},

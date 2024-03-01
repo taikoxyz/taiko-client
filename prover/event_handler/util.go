@@ -9,8 +9,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -74,6 +76,63 @@ func getProvingWindow(
 	}
 
 	return 0, errTierNotFound
+}
+
+func getBlockProposedEventFromBlockID(
+	ctx context.Context,
+	rpc *rpc.Client,
+	id *big.Int,
+	proposedIn *big.Int,
+) (e *bindings.TaikoL1ClientBlockProposed, err error) {
+	callback := func(
+		ctx context.Context,
+		event *bindings.TaikoL1ClientBlockProposed,
+		end eventIterator.EndBlockProposedEventIterFunc,
+	) error {
+		// Only filter for exact blockID we want.
+		if event.BlockId.Cmp(id) != 0 {
+			return nil
+		}
+
+		e = event
+
+		return nil
+	}
+
+	iter, err := eventIterator.NewBlockProposedIterator(ctx, &eventIterator.BlockProposedIteratorConfig{
+		Client:               rpc.L1,
+		TaikoL1:              rpc.TaikoL1,
+		StartHeight:          new(big.Int).Sub(proposedIn, common.Big1),
+		EndHeight:            proposedIn,
+		OnBlockProposedEvent: callback,
+	})
+	if err != nil {
+		log.Error("Failed to start event iterator", "event", "BlockProposed", "error", err)
+		return nil, err
+	}
+
+	if err := iter.Iter(); err != nil {
+		return nil, err
+	}
+
+	if e == nil {
+		return nil, fmt.Errorf("failed to find BlockProposed event for block %d", id)
+	}
+
+	return e, nil
+}
+
+func getMetadataFromBlockID(
+	ctx context.Context,
+	rpc *rpc.Client,
+	id *big.Int,
+	proposedIn *big.Int,
+) (*bindings.TaikoDataBlockMetadata, error) {
+	e, err := getBlockProposedEventFromBlockID(ctx, rpc, id, proposedIn)
+	if err != nil {
+		return nil, err
+	}
+	return &e.Meta, nil
 }
 
 // isProvingWindowExpired returns true if the assigned prover proving window of

@@ -11,6 +11,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	handler "github.com/taikoxyz/taiko-client/prover/event_handler"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 )
@@ -20,7 +21,6 @@ import (
 // if `--prover.allowance` flag is provided for allowance.
 func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address) error {
 	// Skip setting approval amount if `--prover.allowance` flag is not set.
-
 	if p.cfg.Allowance == nil || p.cfg.Allowance.Cmp(common.Big0) != 1 {
 		log.Info("Skipping setting approval, `--prover.allowance` flag not set")
 		return nil
@@ -29,7 +29,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 	// Check the existing allowance for the contract.
 	allowance, err := p.rpc.TaikoToken.Allowance(
 		&bind.CallOpts{Context: ctx},
-		p.proverAddress,
+		p.ProverAddress(),
 		contract,
 	)
 	if err != nil {
@@ -85,7 +85,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 	// Check the new allowance for the contract.
 	if allowance, err = p.rpc.TaikoToken.Allowance(
 		&bind.CallOpts{Context: ctx},
-		p.proverAddress,
+		p.ProverAddress(),
 		contract,
 	); err != nil {
 		return err
@@ -201,4 +201,46 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 	p.sharedState.SetL1Current(l1Current)
 
 	return nil
+}
+
+// initEventHandlers initialize all event handlers which will be used by the current prover.
+func (p *Prover) initEventHandlers() {
+	// ------- BlockProposed -------
+	p.blockProposedHandler = handler.NewBlockProposedEventHandler(
+		p.sharedState,
+		p.ProverAddress(),
+		p.genesisHeightL1,
+		p.rpc,
+		p.proofGenerationCh,
+		p.proofWindowExpiredCh,
+		p.proofSubmissionCh,
+		p.proposeConcurrencyGuard,
+		p.cfg.BackOffRetryInterval,
+		p.cfg.BackOffMaxRetrys,
+		p.IsGuardianProver(),
+		p.cfg.ContesterMode,
+		p.cfg.ProveUnassignedBlocks,
+	)
+	// ------- TransitionProved -------
+	p.transitionProvedHandler = handler.NewTransitionProvedEventHandler(
+		p.rpc,
+		p.proofContestCh,
+		p.cfg.ContesterMode,
+	)
+	// ------- TransitionContested -------
+	p.transitionContestedHandler = handler.NewTransitionContestedEventHandler(
+		p.rpc,
+		p.proofSubmissionCh,
+		p.cfg.ContesterMode,
+	)
+	// ------- AssignmentExpired -------
+	p.assignmentExpiredHandler = handler.NewAssignmentExpiredEventHandler(
+		p.rpc,
+		p.ProverAddress(),
+		p.proofSubmissionCh,
+		p.proofContestCh,
+		p.cfg.ContesterMode,
+	)
+	// ------- BlockVerified -------
+	p.blockVerifiedHandler = new(handler.BlockVerifiedEventHandler)
 }

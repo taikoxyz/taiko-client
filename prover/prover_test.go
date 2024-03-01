@@ -95,6 +95,7 @@ func (s *ProverTestSuite) SetupTest() {
 	}))
 
 	s.proposer = prop
+
 }
 
 func (s *ProverTestSuite) TestName() {
@@ -371,7 +372,7 @@ func (s *ProverTestSuite) TestGetBlockProofStatus() {
 	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
 
 	// No proof submitted
-	status, err := rpc.GetBlockProofStatus(context.Background(), s.p.rpc, e.BlockId, s.p.proverAddress)
+	status, err := rpc.GetBlockProofStatus(context.Background(), s.p.rpc, e.BlockId, s.p.ProverAddress())
 	s.Nil(err)
 	s.False(status.IsSubmitted)
 
@@ -388,13 +389,13 @@ func (s *ProverTestSuite) TestGetBlockProofStatus() {
 	s.Nil(s.p.proveOp())
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
-	status, err = rpc.GetBlockProofStatus(context.Background(), s.p.rpc, e.BlockId, s.p.proverAddress)
+	status, err = rpc.GetBlockProofStatus(context.Background(), s.p.rpc, e.BlockId, s.p.ProverAddress())
 	s.Nil(err)
 
 	s.True(status.IsSubmitted)
 	s.False(status.Invalid)
 	s.Equal(parent.Hash(), status.ParentHeader.Hash())
-	s.Equal(s.p.proverAddress, status.CurrentTransitionState.Prover)
+	s.Equal(s.p.ProverAddress(), status.CurrentTransitionState.Prover)
 
 	// Invalid proof submitted
 	parent, err = s.p.rpc.L2.HeaderByNumber(context.Background(), nil)
@@ -402,7 +403,7 @@ func (s *ProverTestSuite) TestGetBlockProofStatus() {
 
 	e = s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
 
-	status, err = rpc.GetBlockProofStatus(context.Background(), s.p.rpc, e.BlockId, s.p.proverAddress)
+	status, err = rpc.GetBlockProofStatus(context.Background(), s.p.rpc, e.BlockId, s.p.ProverAddress())
 	s.Nil(err)
 	s.False(status.IsSubmitted)
 
@@ -411,17 +412,17 @@ func (s *ProverTestSuite) TestGetBlockProofStatus() {
 	proofWithHeader.Opts.BlockHash = testutils.RandomHash()
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), proofWithHeader))
 
-	status, err = rpc.GetBlockProofStatus(context.Background(), s.p.rpc, e.BlockId, s.p.proverAddress)
+	status, err = rpc.GetBlockProofStatus(context.Background(), s.p.rpc, e.BlockId, s.p.ProverAddress())
 	s.Nil(err)
 	s.True(status.IsSubmitted)
 	s.True(status.Invalid)
 	s.Equal(parent.Hash(), status.ParentHeader.Hash())
-	s.Equal(s.p.proverAddress, status.CurrentTransitionState.Prover)
+	s.Equal(s.p.ProverAddress(), status.CurrentTransitionState.Prover)
 	s.Equal(proofWithHeader.Opts.BlockHash, common.BytesToHash(status.CurrentTransitionState.BlockHash[:]))
 }
 
 func (s *ProverTestSuite) TestSetApprovalAlreadySetHigher() {
-	originalAllowance, err := s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.proverAddress, s.p.cfg.TaikoL1Address)
+	originalAllowance, err := s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.ProverAddress(), s.p.cfg.TaikoL1Address)
 	s.Nil(err)
 
 	amt := common.Big1
@@ -429,7 +430,7 @@ func (s *ProverTestSuite) TestSetApprovalAlreadySetHigher() {
 
 	s.Nil(s.p.setApprovalAmount(context.Background(), s.p.cfg.TaikoL1Address))
 
-	allowance, err := s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.proverAddress, s.p.cfg.TaikoL1Address)
+	allowance, err := s.p.rpc.TaikoToken.Allowance(&bind.CallOpts{}, s.p.ProverAddress(), s.p.cfg.TaikoL1Address)
 	s.Nil(err)
 
 	s.Equal(0, allowance.Cmp(originalAllowance))
@@ -487,7 +488,7 @@ func (s *ProverTestSuite) initProver(
 		p.cfg.GuardianProverHealthCheckServerEndpoint,
 		memorydb.New(),
 		p.rpc,
-		p.proverAddress,
+		s.p.ProverAddress(),
 	)
 
 	s.p = p

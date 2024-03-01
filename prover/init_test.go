@@ -19,7 +19,7 @@ func (s *ProverTestSuite) TestSetApprovalAmount() {
 	_, err = rpc.WaitReceipt(context.Background(), s.p.rpc.L1, tx)
 	s.Nil(err)
 
-	allowance, err := s.p.rpc.TaikoToken.Allowance(nil, s.p.proverAddress, s.p.cfg.AssignmentHookAddress)
+	allowance, err := s.p.rpc.TaikoToken.Allowance(nil, s.p.ProverAddress(), s.p.cfg.AssignmentHookAddress)
 	s.Nil(err)
 
 	s.Equal(0, allowance.Cmp(common.Big0))
@@ -32,7 +32,7 @@ func (s *ProverTestSuite) TestSetApprovalAmount() {
 
 	s.Nil(s.p.setApprovalAmount(context.Background(), s.p.cfg.AssignmentHookAddress))
 
-	allowance, err = s.p.rpc.TaikoToken.Allowance(nil, s.p.proverAddress, s.p.cfg.AssignmentHookAddress)
+	allowance, err = s.p.rpc.TaikoToken.Allowance(nil, s.p.ProverAddress(), s.p.cfg.AssignmentHookAddress)
 	s.Nil(err)
 
 	s.Equal(0, amt.Cmp(allowance))

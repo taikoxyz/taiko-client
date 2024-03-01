@@ -2,7 +2,7 @@ package handler
 
 import (
 	"context"
-	"time"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -10,21 +10,21 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
-	state "github.com/taikoxyz/taiko-client/prover/shared_state"
+	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 )
 
 type TransitionProvedEventHandler struct {
-	sharedState             *state.SharedState
-	proverAddress           common.Address
-	rpc                     *rpc.Client
-	proofGenerationCh       chan *proofProducer.ProofWithHeader
-	proofWindowExpiredCh    chan *bindings.TaikoL1ClientBlockProposed
-	proposeConcurrencyGuard chan struct{}
-	BackOffRetryInterval    time.Duration
-	backOffMaxRetrys        uint64
-	contesterMode           bool
-	proveUnassignedBlocks   bool
+	rpc            *rpc.Client
+	proofContestCh chan *proofSubmitter.ContestRequestBody
+	contesterMode  bool
+}
+
+func NewTransitionProvedEventHandler(
+	rpc *rpc.Client,
+	proofContestCh chan *proofSubmitter.ContestRequestBody,
+	contesterMode bool,
+) *TransitionProvedEventHandler {
+	return &TransitionProvedEventHandler{rpc, proofContestCh, contesterMode}
 }
 
 func (h *TransitionProvedEventHandler) Handle(
@@ -39,6 +39,7 @@ func (h *TransitionProvedEventHandler) Handle(
 		return nil
 	}
 
+	// TODO: check other parents?
 	isValidProof, err := isValidProof(
 		ctx,
 		h.rpc,
@@ -61,6 +62,11 @@ func (h *TransitionProvedEventHandler) Handle(
 		return err
 	}
 
+	meta, err := getMetadataFromBlockID(ctx, h.rpc, e.BlockId, new(big.Int).SetUint64(blockInfo.Blk.ProposedIn))
+	if err != nil {
+		return err
+	}
+
 	log.Info(
 		"Contest a proven transition",
 		"blockID", e.BlockId,
@@ -71,6 +77,13 @@ func (h *TransitionProvedEventHandler) Handle(
 		"stateRoot", common.Bytes2Hex(e.Tran.StateRoot[:]),
 	)
 
+	h.proofContestCh <- &proofSubmitter.ContestRequestBody{
+		BlockID:    e.BlockId,
+		ProposedIn: new(big.Int).SetUint64(blockInfo.Blk.ProposedIn),
+		ParentHash: e.Tran.ParentHash,
+		Meta:       meta,
+		Tier:       e.Tier,
+	}
+
 	return nil
-	// return p.requestProofByBlockID(e.BlockId, new(big.Int).SetUint64(blockInfo.Blk.ProposedIn), e.Tier, e)
 }

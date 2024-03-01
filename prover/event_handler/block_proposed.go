@@ -33,7 +33,7 @@ type BlockProposedEventHandler struct {
 	rpc                     *rpc.Client
 	proofGenerationCh       chan *proofProducer.ProofWithHeader
 	proofWindowExpiredCh    chan *bindings.TaikoL1ClientBlockProposed
-	proofSubmissionCh       chan *proofSubmitter.GenerateProofRequest
+	proofSubmissionCh       chan *proofSubmitter.ProofRequestBody
 	proposeConcurrencyGuard chan struct{}
 	BackOffRetryInterval    time.Duration
 	backOffMaxRetrys        uint64
@@ -49,7 +49,7 @@ func NewBlockProposedEventHandler(
 	rpc *rpc.Client,
 	proofGenerationCh chan *proofProducer.ProofWithHeader,
 	proofWindowExpiredCh chan *bindings.TaikoL1ClientBlockProposed,
-	proofSubmissionCh chan *proofSubmitter.GenerateProofRequest,
+	proofSubmissionCh chan *proofSubmitter.ProofRequestBody,
 	proposeConcurrencyGuard chan struct{},
 	BackOffRetryInterval time.Duration,
 	backOffMaxRetrys uint64,
@@ -357,7 +357,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 
 	metrics.ProverProofsAssigned.Inc(1)
 
-	h.proofSubmissionCh <- &proofSubmitter.GenerateProofRequest{Tier: tier, Event: e}
+	h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{Tier: tier, Event: e}
 
 	return nil
 }

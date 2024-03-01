@@ -40,7 +40,6 @@ var (
 type Prover struct {
 	// Configurations
 	cfg              *Config
-	proverAddress    common.Address
 	proverPrivateKey *ecdsa.PrivateKey
 
 	// Clients
@@ -72,7 +71,8 @@ type Prover struct {
 	proveNotify          chan struct{}
 
 	// Proof related
-	proofSubmissionCh chan *proofSubmitter.GenerateProofRequest
+	proofSubmissionCh chan *proofSubmitter.ProofRequestBody
+	proofContestCh    chan *proofSubmitter.ContestRequestBody
 	proofGenerationCh chan *proofProducer.ProofWithHeader
 
 	// Concurrency guards
@@ -124,7 +124,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	log.Info("Protocol configs", "configs", p.protocolConfigs)
 
-	p.proverAddress = crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
+	proverAddress := crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 
 	chBufferSize := p.protocolConfigs.BlockMaxProposals
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
@@ -213,27 +213,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			p.cfg.GuardianProverHealthCheckServerEndpoint,
 			db,
 			p.rpc,
-			p.proverAddress,
+			proverAddress,
 		)
 	}
 
-	// Event handlers
-	p.blockProposedHandler = handler.NewBlockProposedEventHandler(
-		p.sharedState,
-		p.proverAddress,
-		p.genesisHeightL1,
-		p.rpc,
-		p.proofGenerationCh,
-		p.proofWindowExpiredCh,
-		p.proofSubmissionCh,
-		p.proposeConcurrencyGuard,
-		p.cfg.BackOffRetryInterval,
-		p.cfg.BackOffMaxRetrys,
-		p.IsGuardianProver(),
-		p.cfg.ContesterMode,
-		p.cfg.ProveUnassignedBlocks,
-	)
-	p.assignmentExpiredHandler = p.assignmentExpiredHandler // TODO
+	// Initialize event handlers.
+	p.initEventHandlers()
 
 	return nil
 }
@@ -327,6 +312,17 @@ func (p *Prover) eventLoop() {
 		case req := <-p.proofSubmissionCh:
 			if err := p.requestProofOp(p.ctx, req.Event, req.Tier); err != nil {
 				log.Error("Request new proof error", "blockID", req.Event.BlockId, "error", err)
+			}
+		case req := <-p.proofContestCh:
+			if err := p.proofContester.SubmitContest(
+				p.ctx,
+				req.BlockID,
+				req.ProposedIn,
+				req.ParentHash,
+				req.Meta,
+				req.Tier,
+			); err != nil {
+				log.Error("Request new proof contest error", "blockID", req.BlockID, "error", err)
 			}
 		case <-p.proveNotify:
 			if err := p.proveOp(); err != nil {
@@ -471,6 +467,11 @@ func (p *Prover) getSubmitterByTier(tier uint16) proofSubmitter.Submitter {
 // IsGuardianProver returns true if the current prover is a guardian prover.
 func (p *Prover) IsGuardianProver() bool {
 	return p.cfg.GuardianProverAddress != common.Address{}
+}
+
+// ProverAddress returns the current prover account address.
+func (p *Prover) ProverAddress() common.Address {
+	return crypto.PubkeyToAddress(p.proverPrivateKey.PublicKey)
 }
 
 // heartbeatInterval sends a heartbeat to the guardian prover health check server

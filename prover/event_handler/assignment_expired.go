@@ -2,33 +2,35 @@ package handler
 
 import (
 	"context"
-	"time"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
-	state "github.com/taikoxyz/taiko-client/prover/shared_state"
 )
 
 // AssignmentExpiredEventHandler is responsible for handling the expiration of proof assignments.
 type AssignmentExpiredEventHandler struct {
-	sharedState             *state.SharedState
-	proverAddress           common.Address
-	rpc                     *rpc.Client
-	proofGenerationCh       chan *proofProducer.ProofWithHeader
-	proofWindowExpiredCh    chan *bindings.TaikoL1ClientBlockProposed
-	proofSubmissionCh       chan *proofSubmitter.GenerateProofRequest
-	proposeConcurrencyGuard chan struct{}
-	BackOffRetryInterval    time.Duration
-	backOffMaxRetrys        uint64
-	contesterMode           bool
-	proveUnassignedBlocks   bool
+	rpc               *rpc.Client
+	proverAddress     common.Address
+	proofSubmissionCh chan *proofSubmitter.ProofRequestBody
+	proofContestCh    chan *proofSubmitter.ContestRequestBody
+	contesterMode     bool
 }
 
-func (h *BlockProposedEventHandler) OnAssignmentExpired(
+func NewAssignmentExpiredEventHandler(
+	rpc *rpc.Client,
+	proverAddress common.Address,
+	proofSubmissionCh chan *proofSubmitter.ProofRequestBody,
+	proofContestCh chan *proofSubmitter.ContestRequestBody,
+	contesterMode bool,
+) *AssignmentExpiredEventHandler {
+	return &AssignmentExpiredEventHandler{rpc, proverAddress, proofSubmissionCh, proofContestCh, contesterMode}
+}
+
+func (h *AssignmentExpiredEventHandler) Handle(
 	ctx context.Context,
 	e *bindings.TaikoL1ClientBlockProposed,
 ) error {
@@ -56,17 +58,24 @@ func (h *BlockProposedEventHandler) OnAssignmentExpired(
 
 		// If there is no contester, we submit a contest to protocol.
 		if proofStatus.CurrentTransitionState.Contester == rpc.ZeroAddress {
-			// TODO
+			h.proofContestCh <- &proofSubmitter.ContestRequestBody{
+				BlockID:    e.BlockId,
+				ProposedIn: new(big.Int).SetUint64(e.Raw.BlockNumber),
+				ParentHash: proofStatus.ParentHeader.Hash(),
+				Meta:       &e.Meta,
+				Tier:       proofStatus.CurrentTransitionState.Tier,
+			}
+
 			return nil
 		}
 
-		h.proofSubmissionCh <- &proofSubmitter.GenerateProofRequest{
+		h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{
 			Tier:  proofStatus.CurrentTransitionState.Tier + 1,
 			Event: e,
 		}
 		return nil
 	}
 
-	h.proofSubmissionCh <- &proofSubmitter.GenerateProofRequest{Tier: e.Meta.MinTier, Event: e}
+	h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{Tier: e.Meta.MinTier, Event: e}
 	return nil
 }
