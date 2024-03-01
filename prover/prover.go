@@ -251,8 +251,7 @@ func (p *Prover) Start() error {
 			log.Crit("Failed to send guardian prover startup", "error", err)
 		}
 
-		p.wg.Add(1)
-		go p.heartbeatInterval(p.ctx)
+		go p.gurdianProverHeartbeatLoop(p.ctx)
 	}
 
 	// 4. Start the main event loop of the prover.
@@ -472,47 +471,4 @@ func (p *Prover) IsGuardianProver() bool {
 // ProverAddress returns the current prover account address.
 func (p *Prover) ProverAddress() common.Address {
 	return crypto.PubkeyToAddress(p.proverPrivateKey.PublicKey)
-}
-
-// heartbeatInterval sends a heartbeat to the guardian prover health check server
-// on an interval
-func (p *Prover) heartbeatInterval(ctx context.Context) {
-	t := time.NewTicker(heartbeatInterval)
-
-	defer func() {
-		t.Stop()
-		p.wg.Done()
-	}()
-
-	// only guardianProvers should send heartbeat
-	if !p.IsGuardianProver() {
-		return
-	}
-
-	for {
-		select {
-		case <-p.ctx.Done():
-			return
-		case <-t.C:
-			latestL1Block, err := p.rpc.L1.BlockNumber(ctx)
-			if err != nil {
-				log.Error("guardian prover error getting latestL1Block", err)
-				continue
-			}
-
-			latestL2Block, err := p.rpc.L2.BlockNumber(ctx)
-			if err != nil {
-				log.Error("guardian prover error getting latestL2Block", err)
-				continue
-			}
-
-			if err := p.guardianProverSender.SendHeartbeat(
-				ctx,
-				latestL1Block,
-				latestL2Block,
-			); err != nil {
-				log.Error("Failed to send guardian prover heartbeat", "error", err)
-			}
-		}
-	}
 }
