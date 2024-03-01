@@ -192,7 +192,7 @@ func GetBlockProofStatus(
 		return nil, err
 	}
 
-	header, err := cli.L2.HeaderByNumber(ctxWithTimeout, new(big.Int).Sub(l1Origin.L1BlockHeight, common.Big1))
+	header, err := cli.L2.HeaderByHash(ctxWithTimeout, l1Origin.L2BlockHash)
 	if err != nil {
 		return nil, err
 	}
