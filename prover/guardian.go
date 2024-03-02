@@ -30,13 +30,13 @@ func (p *Prover) gurdianProverHeartbeatLoop(ctx context.Context) {
 		case <-ticker.C:
 			latestL1Block, err := p.rpc.L1.BlockNumber(ctx)
 			if err != nil {
-				log.Error("guardian prover error getting latestL1Block", err)
+				log.Error("Failed to get L1 head", err)
 				continue
 			}
 
 			latestL2Block, err := p.rpc.L2.BlockNumber(ctx)
 			if err != nil {
-				log.Error("guardian prover error getting latestL2Block", err)
+				log.Error("Failed to get L2 head", err)
 				continue
 			}
 
