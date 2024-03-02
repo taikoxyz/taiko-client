@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"math/big"
 	"net/http"
 	"net/url"
 	"os"
@@ -26,14 +25,14 @@ import (
 
 func (s *ClientTestSuite) ProposeInvalidTxListBytes(proposer Proposer) {
 	s.Nil(proposer.ProposeTxList(context.Background(), []*types.Transaction{
-		types.NewTransaction(
-			0,
-			common.Address{},
-			big.NewInt(0),
-			0,
-			big.NewInt(0),
-			RandomBytes(256),
-		)},
+		types.NewTx(&types.LegacyTx{
+			Nonce:    0,
+			GasPrice: common.Big1,
+			Gas:      100000,
+			To:       &common.Address{},
+			Value:    common.Big1,
+			Data:     RandomBytes(256),
+		})},
 	))
 }
 
