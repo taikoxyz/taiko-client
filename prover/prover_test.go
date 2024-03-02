@@ -195,7 +195,7 @@ func (s *ProverTestSuite) TestOnBlockVerified() {
 }
 
 func (s *ProverTestSuite) TestContestWrongBlocks() {
-	s.T().Skip() /
+	s.T().Skip() // TODO: fix this test
 	s.p.cfg.ContesterMode = false
 	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.transitionProvedHandler.Handle(context.Background(), &bindings.TaikoL1ClientTransitionProved{
