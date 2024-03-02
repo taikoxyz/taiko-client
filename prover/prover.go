@@ -129,6 +129,8 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	chBufferSize := p.protocolConfigs.BlockMaxProposals
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proofWindowExpiredCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
+	p.proofSubmissionCh = make(chan *proofSubmitter.ProofRequestBody, chBufferSize)
+	p.proofContestCh = make(chan *proofSubmitter.ContestRequestBody, chBufferSize)
 	p.proveNotify = make(chan struct{}, 1)
 
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
@@ -255,7 +257,6 @@ func (p *Prover) Start() error {
 	}
 
 	// 4. Start the main event loop of the prover.
-	p.wg.Add(1)
 	go p.eventLoop()
 
 	return nil
@@ -263,6 +264,7 @@ func (p *Prover) Start() error {
 
 // eventLoop starts the main loop of Taiko prover.
 func (p *Prover) eventLoop() {
+	p.wg.Add(1)
 	defer func() {
 		p.wg.Done()
 	}()

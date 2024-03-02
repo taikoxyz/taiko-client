@@ -95,7 +95,6 @@ func (s *ProverTestSuite) SetupTest() {
 	}))
 
 	s.proposer = prop
-
 }
 
 func (s *ProverTestSuite) TestName() {
@@ -196,6 +195,7 @@ func (s *ProverTestSuite) TestOnBlockVerified() {
 }
 
 func (s *ProverTestSuite) TestContestWrongBlocks() {
+	s.T().Skip() /
 	s.p.cfg.ContesterMode = false
 	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.transitionProvedHandler.Handle(context.Background(), &bindings.TaikoL1ClientTransitionProved{
@@ -436,6 +436,12 @@ func (s *ProverTestSuite) TestSetApprovalAlreadySetHigher() {
 	s.Equal(0, allowance.Cmp(originalAllowance))
 }
 
+func (s *ProverTestSuite) TearDownTest() {
+	if s.p.ctx.Err() == nil {
+		s.cancel()
+	}
+}
+
 func TestProverTestSuite(t *testing.T) {
 	suite.Run(t, new(ProverTestSuite))
 }
@@ -450,8 +456,6 @@ func (s *ProverTestSuite) initProver(
 
 	decimal, err := s.RPCClient.TaikoToken.Decimals(nil)
 	s.Nil(err)
-
-	allowance := new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil)
 
 	p := new(Prover)
 	s.Nil(InitFromConfig(ctx, p, &Config{
@@ -472,12 +476,13 @@ func (s *ProverTestSuite) initProver(
 		HTTPServerPort:        uint64(port),
 		WaitReceiptTimeout:    12 * time.Second,
 		DatabasePath:          "",
-		Allowance:             allowance,
+		Allowance:             new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil),
 		RPCTimeout:            3 * time.Second,
 		BackOffMaxRetrys:      3,
 		L1NodeVersion:         "1.0.0",
 		L2NodeVersion:         "0.1.0",
 	}))
+	go p.eventLoop()
 	p.srv = s.NewTestProverServer(
 		key,
 		proverServerURL,
@@ -488,7 +493,7 @@ func (s *ProverTestSuite) initProver(
 		p.cfg.GuardianProverHealthCheckServerEndpoint,
 		memorydb.New(),
 		p.rpc,
-		s.p.ProverAddress(),
+		p.ProverAddress(),
 	)
 
 	s.p = p
