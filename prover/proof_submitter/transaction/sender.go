@@ -78,7 +78,7 @@ func (s *Sender) Send(
 			return nil
 		}
 
-		// Assemble the taikoL1.proveBlock transaction.
+		// Assemble the TaikoL1.proveBlock transaction.
 		tx, err := buildTx(nonce)
 		if err != nil {
 			err = encoding.TryParsingCustomError(err)

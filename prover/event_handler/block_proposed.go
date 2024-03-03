@@ -28,36 +28,34 @@ var (
 
 // BlockProposedEventHandler is responsible for handling the BlockProposed event as a prover.
 type BlockProposedEventHandler struct {
-	sharedState             *state.SharedState
-	proverAddress           common.Address
-	genesisHeightL1         uint64
-	rpc                     *rpc.Client
-	proofGenerationCh       chan *proofProducer.ProofWithHeader
-	proofWindowExpiredCh    chan *bindings.TaikoL1ClientBlockProposed
-	proofSubmissionCh       chan *proofSubmitter.ProofRequestBody
-	proofContestCh          chan *proofSubmitter.ContestRequestBody
-	proposeConcurrencyGuard chan struct{}
-	backOffRetryInterval    time.Duration
-	backOffMaxRetrys        uint64
-	contesterMode           bool
-	proveUnassignedBlocks   bool
+	sharedState           *state.SharedState
+	proverAddress         common.Address
+	genesisHeightL1       uint64
+	rpc                   *rpc.Client
+	proofGenerationCh     chan *proofProducer.ProofWithHeader
+	proofWindowExpiredCh  chan *bindings.TaikoL1ClientBlockProposed
+	proofSubmissionCh     chan *proofSubmitter.ProofRequestBody
+	proofContestCh        chan *proofSubmitter.ContestRequestBody
+	backOffRetryInterval  time.Duration
+	backOffMaxRetrys      uint64
+	contesterMode         bool
+	proveUnassignedBlocks bool
 }
 
 // NewBlockProposedEventHandlerOps is the options for creating a new BlockProposedEventHandler.
 type NewBlockProposedEventHandlerOps struct {
-	SharedState             *state.SharedState
-	ProverAddress           common.Address
-	GenesisHeightL1         uint64
-	RPC                     *rpc.Client
-	ProofGenerationCh       chan *proofProducer.ProofWithHeader
-	ProofWindowExpiredCh    chan *bindings.TaikoL1ClientBlockProposed
-	ProofSubmissionCh       chan *proofSubmitter.ProofRequestBody
-	ProofContestCh          chan *proofSubmitter.ContestRequestBody
-	ProposeConcurrencyGuard chan struct{}
-	BackOffRetryInterval    time.Duration
-	BackOffMaxRetrys        uint64
-	ContesterMode           bool
-	ProveUnassignedBlocks   bool
+	SharedState           *state.SharedState
+	ProverAddress         common.Address
+	GenesisHeightL1       uint64
+	RPC                   *rpc.Client
+	ProofGenerationCh     chan *proofProducer.ProofWithHeader
+	ProofWindowExpiredCh  chan *bindings.TaikoL1ClientBlockProposed
+	ProofSubmissionCh     chan *proofSubmitter.ProofRequestBody
+	ProofContestCh        chan *proofSubmitter.ContestRequestBody
+	BackOffRetryInterval  time.Duration
+	BackOffMaxRetrys      uint64
+	ContesterMode         bool
+	ProveUnassignedBlocks bool
 }
 
 // NewBlockProposedEventHandler creates a new BlockProposedEventHandler instance.
@@ -71,7 +69,6 @@ func NewBlockProposedEventHandler(opts *NewBlockProposedEventHandlerOps) *BlockP
 		opts.ProofWindowExpiredCh,
 		opts.ProofSubmissionCh,
 		opts.ProofContestCh,
-		opts.ProposeConcurrencyGuard,
 		opts.BackOffRetryInterval,
 		opts.BackOffMaxRetrys,
 		opts.ContesterMode,
@@ -135,9 +132,6 @@ func (h *BlockProposedEventHandler) Handle(
 	go func() {
 		if err := backoff.Retry(
 			func() error {
-				h.proposeConcurrencyGuard <- struct{}{}
-				defer func() { <-h.proposeConcurrencyGuard }()
-
 				if err := h.checkExpirationAndSubmitProof(ctx, e); err != nil {
 					log.Error(
 						"Failed to check proof status and submit proof",

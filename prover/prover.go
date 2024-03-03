@@ -70,14 +70,10 @@ type Prover struct {
 	proofWindowExpiredCh chan *bindings.TaikoL1ClientBlockProposed
 	proveNotify          chan struct{}
 
-	// Proof related
+	// Proof related channels
 	proofSubmissionCh chan *proofSubmitter.ProofRequestBody
 	proofContestCh    chan *proofSubmitter.ContestRequestBody
 	proofGenerationCh chan *proofProducer.ProofWithHeader
-
-	// Concurrency guards
-	proposeConcurrencyGuard     chan struct{}
-	submitProofConcurrencyGuard chan struct{}
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -129,17 +125,13 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	chBufferSize := p.protocolConfigs.BlockMaxProposals
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.proofWindowExpiredCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
-	p.proofSubmissionCh = make(chan *proofSubmitter.ProofRequestBody, chBufferSize)
-	p.proofContestCh = make(chan *proofSubmitter.ContestRequestBody, chBufferSize)
+	p.proofSubmissionCh = make(chan *proofSubmitter.ProofRequestBody, p.cfg.Capacity)
+	p.proofContestCh = make(chan *proofSubmitter.ContestRequestBody, p.cfg.Capacity)
 	p.proveNotify = make(chan struct{}, 1)
 
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
 		return fmt.Errorf("initialize L1 current cursor error: %w", err)
 	}
-
-	// Concurrency guards
-	p.proposeConcurrencyGuard = make(chan struct{}, cfg.Capacity)
-	p.submitProofConcurrencyGuard = make(chan struct{}, cfg.Capacity)
 
 	// Protocol proof tiers
 	tiers, err := p.rpc.GetTiers(ctx)
@@ -185,19 +177,18 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	// Prover server
 	proverServerOpts := &server.NewProverServerOpts{
-		ProverPrivateKey:        p.cfg.L1ProverPrivKey,
-		MinOptimisticTierFee:    p.cfg.MinOptimisticTierFee,
-		MinSgxTierFee:           p.cfg.MinSgxTierFee,
-		MaxExpiry:               p.cfg.MaxExpiry,
-		MaxBlockSlippage:        p.cfg.MaxBlockSlippage,
-		TaikoL1Address:          p.cfg.TaikoL1Address,
-		AssignmentHookAddress:   p.cfg.AssignmentHookAddress,
-		ProposeConcurrencyGuard: p.proposeConcurrencyGuard,
-		RPC:                     p.rpc,
-		ProtocolConfigs:         &protocolConfigs,
-		LivenessBond:            protocolConfigs.LivenessBond,
-		IsGuardian:              p.IsGuardianProver(),
-		DB:                      db,
+		ProverPrivateKey:      p.cfg.L1ProverPrivKey,
+		MinOptimisticTierFee:  p.cfg.MinOptimisticTierFee,
+		MinSgxTierFee:         p.cfg.MinSgxTierFee,
+		MaxExpiry:             p.cfg.MaxExpiry,
+		MaxBlockSlippage:      p.cfg.MaxBlockSlippage,
+		TaikoL1Address:        p.cfg.TaikoL1Address,
+		AssignmentHookAddress: p.cfg.AssignmentHookAddress,
+		RPC:                   p.rpc,
+		ProtocolConfigs:       &protocolConfigs,
+		LivenessBond:          protocolConfigs.LivenessBond,
+		IsGuardian:            p.IsGuardianProver(),
+		DB:                    db,
 	}
 	if p.srv, err = server.New(proverServerOpts); err != nil {
 		return err
@@ -311,13 +302,9 @@ func (p *Prover) eventLoop() {
 		case proofWithHeader := <-p.proofGenerationCh:
 			p.submitProofOp(p.ctx, proofWithHeader)
 		case req := <-p.proofSubmissionCh:
-			if err := p.requestProofOp(p.ctx, req.Event, req.Tier); err != nil {
-				log.Error("Request new proof error", "blockID", req.Event.BlockId, "error", err)
-			}
+			p.requestProofOp(p.ctx, req.Event, req.Tier)
 		case req := <-p.proofContestCh:
-			if err := p.contestProofOp(p.ctx, req); err != nil {
-				log.Error("Request new proof contest error", "blockID", req.BlockID, "error", err)
-			}
+			p.contestProofOp(p.ctx, req)
 		case <-p.proveNotify:
 			if err := p.proveOp(); err != nil {
 				log.Error("Prove new blocks error", "error", err)
@@ -325,17 +312,23 @@ func (p *Prover) eventLoop() {
 		case e := <-blockVerifiedCh:
 			p.blockVerifiedHandler.Handle(e)
 		case e := <-transitionProvedCh:
-			if err := p.withRetry(func() error { return p.transitionProvedHandler.Handle(p.ctx, e) }); err != nil {
-				log.Error("Handle TaikoL1.TransitionProved event error", "error", err)
-			}
+			go func() {
+				if err := p.withRetry(func() error { return p.transitionProvedHandler.Handle(p.ctx, e) }); err != nil {
+					log.Error("Handle TaikoL1.TransitionProved event error", "error", err)
+				}
+			}()
 		case e := <-transitionContestedCh:
-			if err := p.withRetry(func() error { return p.transitionContestedHandler.Handle(p.ctx, e) }); err != nil {
-				log.Error("Handle TaikoL1.TransitionContested event error", "error", err)
-			}
+			go func() {
+				if err := p.withRetry(func() error { return p.transitionContestedHandler.Handle(p.ctx, e) }); err != nil {
+					log.Error("Handle TaikoL1.TransitionContested event error", "error", err)
+				}
+			}()
 		case e := <-p.proofWindowExpiredCh:
-			if err := p.withRetry(func() error { return p.assignmentExpiredHandler.Handle(p.ctx, e) }); err != nil {
-				log.Error("Handle proof window expired event error", "error", err)
-			}
+			go func() {
+				if err := p.withRetry(func() error { return p.assignmentExpiredHandler.Handle(p.ctx, e) }); err != nil {
+					log.Error("Handle proof window expired event error", "error", err)
+				}
+			}()
 		case <-blockProposedCh:
 			reqProving()
 		case <-forceProvingTicker.C:
@@ -385,58 +378,68 @@ func (p *Prover) proveOp() error {
 	return nil
 }
 
-func (p *Prover) contestProofOp(ctx context.Context, req *proofSubmitter.ContestRequestBody) error {
-	return backoff.Retry(func() error {
-		if err := p.proofContester.SubmitContest(
-			p.ctx,
-			req.BlockID,
-			req.ProposedIn,
-			req.ParentHash,
-			req.Meta,
-			req.Tier,
-		); err != nil {
-			log.Error("Request new proof contest error", "blockID", req.BlockID, "error", err)
-			return err
-		}
-
-		return nil
-	}, backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys))
-}
-
-func (p *Prover) requestProofOp(ctx context.Context, e *bindings.TaikoL1ClientBlockProposed, minTier uint16) error {
-	if p.IsGuardianProver() {
-		minTier = encoding.TierGuardianID
-	}
-
-	return backoff.Retry(func() error {
-		if ctx.Err() != nil {
-			log.Error("Context is done, aborting requestProofOp", "blockID", e.BlockId, "error", ctx.Err())
-			return nil
-		}
-
-		if proofSubmitter := p.selectSubmitter(minTier); proofSubmitter != nil {
-			if err := proofSubmitter.RequestProof(ctx, e); err != nil {
-				log.Error("Request new proof error", "blockID", e.BlockId, "error", err)
+// contestProofOp performs a proof contest operation.
+func (p *Prover) contestProofOp(ctx context.Context, req *proofSubmitter.ContestRequestBody) {
+	go func() {
+		if err := backoff.Retry(func() error {
+			if err := p.proofContester.SubmitContest(
+				p.ctx,
+				req.BlockID,
+				req.ProposedIn,
+				req.ParentHash,
+				req.Meta,
+				req.Tier,
+			); err != nil {
+				log.Error("Request new proof contest error", "blockID", req.BlockID, "error", err)
 				return err
 			}
 
 			return nil
+		}, backoff.WithMaxRetries(
+			backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval),
+			p.cfg.BackOffMaxRetrys,
+		)); err != nil {
+			log.Error("Request new proof contest error", "blockID", req.BlockID, "error", err)
+		}
+	}()
+}
+
+// requestProofOp requests a new proof generation operation.
+func (p *Prover) requestProofOp(ctx context.Context, e *bindings.TaikoL1ClientBlockProposed, minTier uint16) {
+	go func() {
+		if p.IsGuardianProver() {
+			minTier = encoding.TierGuardianID
 		}
 
-		log.Error("Failed to find proof submitter", "blockID", e.BlockId, "minTier", minTier)
-		return nil
-	}, backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys))
+		if err := backoff.Retry(func() error {
+			if ctx.Err() != nil {
+				log.Error("Context is done, aborting requestProofOp", "blockID", e.BlockId, "error", ctx.Err())
+				return nil
+			}
+
+			if proofSubmitter := p.selectSubmitter(minTier); proofSubmitter != nil {
+				if err := proofSubmitter.RequestProof(ctx, e); err != nil {
+					log.Error("Request new proof error", "blockID", e.BlockId, "error", err)
+					return err
+				}
+
+				return nil
+			}
+
+			log.Error("Failed to find proof submitter", "blockID", e.BlockId, "minTier", minTier)
+			return nil
+		}, backoff.WithMaxRetries(
+			backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval),
+			p.cfg.BackOffMaxRetrys,
+		)); err != nil {
+			log.Error("Request new proof error", "blockID", e.BlockId, "error", err)
+		}
+	}()
 }
 
 // submitProofOp performs a proof submission operation.
 func (p *Prover) submitProofOp(ctx context.Context, proofWithHeader *proofProducer.ProofWithHeader) {
 	go func() {
-		p.submitProofConcurrencyGuard <- struct{}{}
-
-		defer func() {
-			<-p.submitProofConcurrencyGuard
-		}()
-
 		if err := backoff.Retry(
 			func() error {
 				proofSubmitter := p.getSubmitterByTier(proofWithHeader.Tier)

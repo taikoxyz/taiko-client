@@ -207,19 +207,18 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 func (p *Prover) initEventHandlers() {
 	// ------- BlockProposed -------
 	opts := &handler.NewBlockProposedEventHandlerOps{
-		SharedState:             p.sharedState,
-		ProverAddress:           p.ProverAddress(),
-		GenesisHeightL1:         p.genesisHeightL1,
-		RPC:                     p.rpc,
-		ProofGenerationCh:       p.proofGenerationCh,
-		ProofWindowExpiredCh:    p.proofWindowExpiredCh,
-		ProofSubmissionCh:       p.proofSubmissionCh,
-		ProofContestCh:          p.proofContestCh,
-		ProposeConcurrencyGuard: p.proposeConcurrencyGuard,
-		BackOffRetryInterval:    p.cfg.BackOffRetryInterval,
-		BackOffMaxRetrys:        p.cfg.BackOffMaxRetrys,
-		ContesterMode:           p.cfg.ContesterMode,
-		ProveUnassignedBlocks:   p.cfg.ProveUnassignedBlocks,
+		SharedState:           p.sharedState,
+		ProverAddress:         p.ProverAddress(),
+		GenesisHeightL1:       p.genesisHeightL1,
+		RPC:                   p.rpc,
+		ProofGenerationCh:     p.proofGenerationCh,
+		ProofWindowExpiredCh:  p.proofWindowExpiredCh,
+		ProofSubmissionCh:     p.proofSubmissionCh,
+		ProofContestCh:        p.proofContestCh,
+		BackOffRetryInterval:  p.cfg.BackOffRetryInterval,
+		BackOffMaxRetrys:      p.cfg.BackOffMaxRetrys,
+		ContesterMode:         p.cfg.ContesterMode,
+		ProveUnassignedBlocks: p.cfg.ProveUnassignedBlocks,
 	}
 	if p.IsGuardianProver() {
 		p.blockProposedHandler = handler.NewBlockProposedEventGuardianHandler(
