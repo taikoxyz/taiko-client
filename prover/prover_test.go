@@ -123,7 +123,8 @@ func (s *ProverTestSuite) TestInitError() {
 		ProveUnassignedBlocks:             true,
 		ProveBlockTxReplacementMultiplier: 2,
 		RPCTimeout:                        10 * time.Minute,
-		BackOffMaxRetrys:                  3,
+		BackOffRetryInterval:              3 * time.Second,
+		BackOffMaxRetrys:                  12,
 	}), "dial tcp:")
 }
 
@@ -219,6 +220,8 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.Nil(s.p.proveOp())
 	proofWithHeader := <-s.p.proofGenerationCh
 	proofWithHeader.Opts.BlockHash = testutils.RandomHash()
+	req := <-s.p.proofSubmissionCh
+	s.Nil(s.p.requestProofOp(s.p.ctx, req.Event, req.Tier))
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), proofWithHeader))
 
 	event := <-sink
@@ -268,7 +271,8 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 		approvedSub.Unsubscribe()
 		close(approvedSink)
 	}()
-
+	req = <-s.p.proofSubmissionCh
+	s.Nil(s.p.requestProofOp(s.p.ctx, req.Event, req.Tier))
 	s.Nil(s.p.selectSubmitter(encoding.TierGuardianID).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 	approvedEvent := <-approvedSink
 
@@ -292,6 +296,8 @@ func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
 	e.AssignedProver = common.BytesToAddress(testutils.RandomHash().Bytes())
 	s.p.cfg.GuardianProverAddress = common.Address{}
 	s.Nil(s.p.assignmentExpiredHandler.Handle(context.Background(), e))
+	req := <-s.p.proofSubmissionCh
+	s.Nil(s.p.requestProofOp(s.p.ctx, req.Event, req.Tier))
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	event := <-sink
@@ -357,6 +363,8 @@ func (s *ProverTestSuite) TestProveOp() {
 	}()
 
 	s.Nil(s.p.proveOp())
+	req := <-s.p.proofSubmissionCh
+	s.Nil(s.p.requestProofOp(s.p.ctx, req.Event, req.Tier))
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	event := <-sink
@@ -387,6 +395,8 @@ func (s *ProverTestSuite) TestGetBlockProofStatus() {
 	}()
 
 	s.Nil(s.p.proveOp())
+	req := <-s.p.proofSubmissionCh
+	s.Nil(s.p.requestProofOp(s.p.ctx, req.Event, req.Tier))
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	status, err = rpc.GetBlockProofStatus(context.Background(), s.p.rpc, e.BlockId, s.p.ProverAddress())
@@ -408,6 +418,9 @@ func (s *ProverTestSuite) TestGetBlockProofStatus() {
 	s.False(status.IsSubmitted)
 
 	s.Nil(s.p.proveOp())
+	req = <-s.p.proofSubmissionCh
+	s.Nil(s.p.requestProofOp(s.p.ctx, req.Event, req.Tier))
+
 	proofWithHeader := <-s.p.proofGenerationCh
 	proofWithHeader.Opts.BlockHash = testutils.RandomHash()
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), proofWithHeader))
@@ -478,11 +491,11 @@ func (s *ProverTestSuite) initProver(
 		DatabasePath:          "",
 		Allowance:             new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil),
 		RPCTimeout:            3 * time.Second,
-		BackOffMaxRetrys:      3,
+		BackOffRetryInterval:  3 * time.Second,
+		BackOffMaxRetrys:      12,
 		L1NodeVersion:         "1.0.0",
 		L2NodeVersion:         "0.1.0",
 	}))
-	go p.eventLoop()
 	p.srv = s.NewTestProverServer(
 		key,
 		proverServerURL,

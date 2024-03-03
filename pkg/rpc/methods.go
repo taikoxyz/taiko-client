@@ -502,7 +502,7 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 	blockID *big.Int,
 	l1Height uint64,
 ) (bool, error) {
-	log.Info("Check synced L1 snippet from anchor", "blockID", blockID)
+	log.Info("Check synced L1 snippet from anchor", "blockID", blockID, "l1Height", l1Height)
 	block, err := c.L2.BlockByNumber(ctx, blockID)
 	if err != nil {
 		return false, err

@@ -315,14 +315,7 @@ func (p *Prover) eventLoop() {
 				log.Error("Request new proof error", "blockID", req.Event.BlockId, "error", err)
 			}
 		case req := <-p.proofContestCh:
-			if err := p.proofContester.SubmitContest(
-				p.ctx,
-				req.BlockID,
-				req.ProposedIn,
-				req.ParentHash,
-				req.Meta,
-				req.Tier,
-			); err != nil {
+			if err := p.contestProofOp(p.ctx, req); err != nil {
 				log.Error("Request new proof contest error", "blockID", req.BlockID, "error", err)
 			}
 		case <-p.proveNotify:
@@ -332,16 +325,16 @@ func (p *Prover) eventLoop() {
 		case e := <-blockVerifiedCh:
 			p.blockVerifiedHandler.Handle(e)
 		case e := <-transitionProvedCh:
-			if err := p.transitionProvedHandler.Handle(p.ctx, e); err != nil {
-				log.Error("Handle TransitionProved event error", "error", err)
+			if err := p.withRetry(func() error { return p.transitionProvedHandler.Handle(p.ctx, e) }); err != nil {
+				log.Error("Handle TaikoL1.TransitionProved event error", "error", err)
 			}
 		case e := <-transitionContestedCh:
-			if err := p.transitionContestedHandler.Handle(p.ctx, e); err != nil {
-				log.Error("Handle TransitionContested event error", "error", err)
+			if err := p.withRetry(func() error { return p.transitionContestedHandler.Handle(p.ctx, e) }); err != nil {
+				log.Error("Handle TaikoL1.TransitionContested event error", "error", err)
 			}
 		case e := <-p.proofWindowExpiredCh:
-			if err := p.assignmentExpiredHandler.Handle(p.ctx, e); err != nil {
-				log.Error("Handle provingWindow expired event error", "error", err)
+			if err := p.withRetry(func() error { return p.assignmentExpiredHandler.Handle(p.ctx, e) }); err != nil {
+				log.Error("Handle proof window expired event error", "error", err)
 			}
 		case <-blockProposedCh:
 			reqProving()
@@ -392,15 +385,47 @@ func (p *Prover) proveOp() error {
 	return nil
 }
 
+func (p *Prover) contestProofOp(ctx context.Context, req *proofSubmitter.ContestRequestBody) error {
+	return backoff.Retry(func() error {
+		if err := p.proofContester.SubmitContest(
+			p.ctx,
+			req.BlockID,
+			req.ProposedIn,
+			req.ParentHash,
+			req.Meta,
+			req.Tier,
+		); err != nil {
+			log.Error("Request new proof contest error", "blockID", req.BlockID, "error", err)
+			return err
+		}
+
+		return nil
+	}, backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys))
+}
+
 func (p *Prover) requestProofOp(ctx context.Context, e *bindings.TaikoL1ClientBlockProposed, minTier uint16) error {
 	if p.IsGuardianProver() {
 		minTier = encoding.TierGuardianID
 	}
-	if proofSubmitter := p.selectSubmitter(minTier); proofSubmitter != nil {
-		return proofSubmitter.RequestProof(ctx, e)
-	}
 
-	return fmt.Errorf("failed to find proof submitter for minTier: %v", minTier)
+	return backoff.Retry(func() error {
+		if ctx.Err() != nil {
+			log.Error("Context is done, aborting requestProofOp", "blockID", e.BlockId, "error", ctx.Err())
+			return nil
+		}
+
+		if proofSubmitter := p.selectSubmitter(minTier); proofSubmitter != nil {
+			if err := proofSubmitter.RequestProof(ctx, e); err != nil {
+				log.Error("Request new proof error", "blockID", e.BlockId, "error", err)
+				return err
+			}
+
+			return nil
+		}
+
+		log.Error("Failed to find proof submitter", "blockID", e.BlockId, "minTier", minTier)
+		return nil
+	}, backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys))
 }
 
 // submitProofOp performs a proof submission operation.
@@ -473,4 +498,18 @@ func (p *Prover) IsGuardianProver() bool {
 // ProverAddress returns the current prover account address.
 func (p *Prover) ProverAddress() common.Address {
 	return crypto.PubkeyToAddress(p.proverPrivateKey.PublicKey)
+}
+
+// withRetry retries the given function with prover backoff policy.
+func (p *Prover) withRetry(f func() error) error {
+	return backoff.Retry(
+		func() error {
+			if p.ctx.Err() != nil {
+				log.Error("Context is done, aborting", "error", p.ctx.Err())
+				return nil
+			}
+			return f()
+		},
+		backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
+	)
 }

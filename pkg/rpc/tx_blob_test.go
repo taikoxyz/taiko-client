@@ -15,7 +15,7 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
-func TestBlockTx(t *testing.T) {
+func TestSendingBlobTx(t *testing.T) {
 	t.SkipNow()
 	// Load environment variables.
 	utils.LoadEnv()
