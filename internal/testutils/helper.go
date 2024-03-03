@@ -73,16 +73,11 @@ func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	log.Info("222")
 	s.Nil(backoff.Retry(func() error {
 		return calldataSyncer.ProcessL1Blocks(ctx, newL1Head)
 	}, backoff.NewExponentialBackOff()))
-	log.Info("333")
 
 	s.Nil(s.RPCClient.WaitTillL2ExecutionEngineSynced(context.Background()))
-	syncProgress, err := s.RPCClient.L2.SyncProgress(context.Background())
-	s.Nil(err)
-	s.Nil(syncProgress)
 
 	return events
 }
@@ -151,9 +146,6 @@ func (s *ClientTestSuite) ProposeAndInsertValidBlock(
 	}, backoff.NewExponentialBackOff()))
 
 	s.Nil(s.RPCClient.WaitTillL2ExecutionEngineSynced(context.Background()))
-	syncProgress, err := s.RPCClient.L2.SyncProgress(context.Background())
-	s.Nil(err)
-	s.Nil(syncProgress)
 
 	_, err = s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)

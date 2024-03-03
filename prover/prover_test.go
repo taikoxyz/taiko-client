@@ -196,14 +196,15 @@ func (s *ProverTestSuite) TestOnBlockVerified() {
 }
 
 func (s *ProverTestSuite) TestContestWrongBlocks() {
-	s.T().Skip() // TODO: fix this test
 	s.p.cfg.ContesterMode = false
+	s.p.initEventHandlers()
 	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.transitionProvedHandler.Handle(context.Background(), &bindings.TaikoL1ClientTransitionProved{
 		BlockId: e.BlockId,
 		Tier:    e.Meta.MinTier,
 	}))
 	s.p.cfg.ContesterMode = true
+	s.p.initEventHandlers()
 
 	// Submit a wrong proof at first.
 	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
@@ -218,10 +219,10 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	}()
 
 	s.Nil(s.p.proveOp())
-	proofWithHeader := <-s.p.proofGenerationCh
-	proofWithHeader.Opts.BlockHash = testutils.RandomHash()
 	req := <-s.p.proofSubmissionCh
 	s.Nil(s.p.requestProofOp(s.p.ctx, req.Event, req.Tier))
+	proofWithHeader := <-s.p.proofGenerationCh
+	proofWithHeader.Opts.BlockHash = testutils.RandomHash()
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), proofWithHeader))
 
 	event := <-sink
@@ -241,15 +242,17 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 
 	contesterKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
 	s.Nil(err)
-
 	s.NotNil(s.initProver(
 		context.Background(),
 		contesterKey,
 	))
 	s.p.cfg.ContesterMode = true
+	s.p.initEventHandlers()
 
 	s.Greater(header.Number.Uint64(), uint64(0))
 	s.Nil(s.p.transitionProvedHandler.Handle(context.Background(), event))
+	contestReq := <-s.p.proofContestCh
+	s.Nil(s.p.contestProofOp(s.p.ctx, contestReq))
 
 	contestedEvent := <-contestedSink
 	s.Equal(header.Number.Uint64(), contestedEvent.BlockId.Uint64())
