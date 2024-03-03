@@ -95,10 +95,12 @@ func (h *TransitionContestedEventHandler) Handle(
 		return err
 	}
 
-	h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{
-		Tier:  e.Tier + 1,
-		Event: blockProposedEvent,
-	}
+	go func() {
+		h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{
+			Tier:  e.Tier + 1,
+			Event: blockProposedEvent,
+		}
+	}()
 
 	return nil
 }

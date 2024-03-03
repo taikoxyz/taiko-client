@@ -69,13 +69,18 @@ func (h *AssignmentExpiredEventHandler) Handle(
 			return nil
 		}
 
-		h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{
-			Tier:  proofStatus.CurrentTransitionState.Tier + 1,
-			Event: e,
-		}
+		go func() {
+			h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{
+				Tier:  proofStatus.CurrentTransitionState.Tier + 1,
+				Event: e,
+			}
+		}()
+
 		return nil
 	}
 
-	h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{Tier: e.Meta.MinTier, Event: e}
+	go func() {
+		h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{Tier: e.Meta.MinTier, Event: e}
+	}()
 	return nil
 }

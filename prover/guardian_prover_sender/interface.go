@@ -5,6 +5,7 @@ import (
 	"math/big"
 )
 
+// BlockSigner defines an interface that communicates with a central Guardian Prover server, sending signed blocks.
 type BlockSigner interface {
 	SignAndSendBlock(ctx context.Context, blockID *big.Int) error
 	SendStartup(
@@ -16,6 +17,7 @@ type BlockSigner interface {
 	) error
 }
 
+// Heartbeater defines an interface that communicates with a central Guardian Prover server, sending heartbeats.
 type Heartbeater interface {
 	SendHeartbeat(ctx context.Context, latestL1Block uint64, latestL2Block uint64) error
 }

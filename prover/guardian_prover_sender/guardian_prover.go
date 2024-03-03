@@ -122,6 +122,7 @@ func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockI
 	)
 }
 
+// SendStartup sends the startup message to the health check server.
 func (s *GuardianProverBlockSender) SendStartup(
 	ctx context.Context,
 	revision string,
@@ -196,7 +197,7 @@ func (s *GuardianProverBlockSender) sendSignedBlockReq(
 	return nil
 }
 
-// sign signs the given block and returns the signature and header.
+// signBlock signs the given block and returns the signature and header.
 func (s *GuardianProverBlockSender) signBlock(ctx context.Context, blockID *big.Int) ([]byte, *types.Header, error) {
 	log.Info("Guardian prover signing block", "blockID", blockID.Uint64())
 

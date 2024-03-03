@@ -76,13 +76,14 @@ func (h *TransitionProvedEventHandler) Handle(
 		"stateRoot", common.Bytes2Hex(e.Tran.StateRoot[:]),
 	)
 
-	h.proofContestCh <- &proofSubmitter.ContestRequestBody{
-		BlockID:    e.BlockId,
-		ProposedIn: new(big.Int).SetUint64(blockInfo.Blk.ProposedIn),
-		ParentHash: e.Tran.ParentHash,
-		Meta:       meta,
-		Tier:       e.Tier,
-	}
-
+	go func() {
+		h.proofContestCh <- &proofSubmitter.ContestRequestBody{
+			BlockID:    e.BlockId,
+			ProposedIn: new(big.Int).SetUint64(blockInfo.Blk.ProposedIn),
+			ParentHash: e.Tran.ParentHash,
+			Meta:       meta,
+			Tier:       e.Tier,
+		}
+	}()
 	return nil
 }
