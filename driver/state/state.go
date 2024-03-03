@@ -130,9 +130,9 @@ func (s *State) subscriptions(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			break
+			return
 		case <-s.stopCh:
-			break
+			return
 		case e := <-blockProposedCh:
 			s.setHeadBlockID(e.BlockId)
 		case e := <-transitionProvedCh:
