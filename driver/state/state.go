@@ -55,7 +55,7 @@ func New(ctx context.Context, rpc *rpc.Client) (*State, error) {
 	}
 
 	s.wg.Add(1)
-	s.subscriptions(ctx)
+	go s.subscriptions(ctx)
 
 	return s, nil
 }
