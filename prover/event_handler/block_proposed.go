@@ -15,6 +15,7 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	guardianproversender "github.com/taikoxyz/taiko-client/prover/guardian_prover_sender"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	state "github.com/taikoxyz/taiko-client/prover/shared_state"
@@ -34,49 +35,48 @@ type BlockProposedEventHandler struct {
 	proofGenerationCh       chan *proofProducer.ProofWithHeader
 	proofWindowExpiredCh    chan *bindings.TaikoL1ClientBlockProposed
 	proofSubmissionCh       chan *proofSubmitter.ProofRequestBody
+	proofContestCh          chan *proofSubmitter.ContestRequestBody
 	proposeConcurrencyGuard chan struct{}
-	BackOffRetryInterval    time.Duration
+	backOffRetryInterval    time.Duration
 	backOffMaxRetrys        uint64
 	contesterMode           bool
 	proveUnassignedBlocks   bool
 }
 
+// NewBlockProposedEventHandlerOps is the options for creating a new BlockProposedEventHandler.
+type NewBlockProposedEventHandlerOps struct {
+	SharedState             *state.SharedState
+	ProverAddress           common.Address
+	GenesisHeightL1         uint64
+	RPC                     *rpc.Client
+	ProofGenerationCh       chan *proofProducer.ProofWithHeader
+	ProofWindowExpiredCh    chan *bindings.TaikoL1ClientBlockProposed
+	ProofSubmissionCh       chan *proofSubmitter.ProofRequestBody
+	ProofContestCh          chan *proofSubmitter.ContestRequestBody
+	ProposeConcurrencyGuard chan struct{}
+	BackOffRetryInterval    time.Duration
+	BackOffMaxRetrys        uint64
+	ContesterMode           bool
+	ProveUnassignedBlocks   bool
+}
+
 // NewBlockProposedEventHandler creates a new BlockProposedEventHandler instance.
-func NewBlockProposedEventHandler(
-	sharedState *state.SharedState,
-	proverAddress common.Address,
-	genesisHeightL1 uint64,
-	rpc *rpc.Client,
-	proofGenerationCh chan *proofProducer.ProofWithHeader,
-	proofWindowExpiredCh chan *bindings.TaikoL1ClientBlockProposed,
-	proofSubmissionCh chan *proofSubmitter.ProofRequestBody,
-	proposeConcurrencyGuard chan struct{},
-	BackOffRetryInterval time.Duration,
-	backOffMaxRetrys uint64,
-	isGuardian bool,
-	contesterMode bool,
-	proveUnassignedBlocks bool,
-) BlockProposedHandler {
-	handler := &BlockProposedEventHandler{
-		sharedState,
-		proverAddress,
-		genesisHeightL1,
-		rpc,
-		proofGenerationCh,
-		proofWindowExpiredCh,
-		proofSubmissionCh,
-		proposeConcurrencyGuard,
-		BackOffRetryInterval,
-		backOffMaxRetrys,
-		contesterMode,
-		proveUnassignedBlocks,
+func NewBlockProposedEventHandler(opts *NewBlockProposedEventHandlerOps) *BlockProposedEventHandler {
+	return &BlockProposedEventHandler{
+		opts.SharedState,
+		opts.ProverAddress,
+		opts.GenesisHeightL1,
+		opts.RPC,
+		opts.ProofGenerationCh,
+		opts.ProofWindowExpiredCh,
+		opts.ProofSubmissionCh,
+		opts.ProofContestCh,
+		opts.ProposeConcurrencyGuard,
+		opts.BackOffRetryInterval,
+		opts.BackOffMaxRetrys,
+		opts.ContesterMode,
+		opts.ProveUnassignedBlocks,
 	}
-
-	if !isGuardian {
-		return handler
-	}
-
-	return &BlockProposedGuaridanEventHandler{*handler}
 }
 
 func (h *BlockProposedEventHandler) Handle(
@@ -150,7 +150,7 @@ func (h *BlockProposedEventHandler) Handle(
 				}
 				return nil
 			},
-			backoff.WithMaxRetries(backoff.NewConstantBackOff(h.BackOffRetryInterval), h.backOffMaxRetrys),
+			backoff.WithMaxRetries(backoff.NewConstantBackOff(h.backOffRetryInterval), h.backOffMaxRetrys),
 		); err != nil {
 			log.Error("Handle new BlockProposed event error", "error", err)
 		}
@@ -279,7 +279,13 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 		}
 
 		// The proof submitted to protocol is invalid.
-		// TODO: Add contesting logic here.
+		h.proofContestCh <- &proofSubmitter.ContestRequestBody{
+			BlockID:    e.BlockId,
+			ProposedIn: new(big.Int).SetUint64(e.Raw.BlockNumber),
+			ParentHash: proofStatus.ParentHeader.Hash(),
+			Meta:       &e.Meta,
+			Tier:       e.Meta.MinTier,
+		}
 		return nil
 	}
 
@@ -362,8 +368,27 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 	return nil
 }
 
+// ========================= Guardian Prover =========================
+
+// NewBlockProposedEventHandlerOps is the options for creating a new BlockProposedEventHandler.
+type NewBlockProposedGuardianEventHandlerOps struct {
+	*NewBlockProposedEventHandlerOps
+	GuardianProverSender guardianproversender.BlockSenderHeartbeater
+}
+
 type BlockProposedGuaridanEventHandler struct {
-	BlockProposedEventHandler
+	*BlockProposedEventHandler
+	guardianProverSender guardianproversender.BlockSenderHeartbeater
+}
+
+// NewBlockProposedEventHandler creates a new BlockProposedEventHandler instance.
+func NewBlockProposedEventGuardianHandler(
+	opts *NewBlockProposedGuardianEventHandlerOps,
+) *BlockProposedGuaridanEventHandler {
+	return &BlockProposedGuaridanEventHandler{
+		BlockProposedEventHandler: NewBlockProposedEventHandler(opts.NewBlockProposedEventHandlerOps),
+		guardianProverSender:      opts.GuardianProverSender,
+	}
 }
 
 func (h *BlockProposedGuaridanEventHandler) Handle(
@@ -373,10 +398,10 @@ func (h *BlockProposedGuaridanEventHandler) Handle(
 ) error {
 	// If we are operating as a guardian prover,
 	// we should sign all seen proposed blocks as soon as possible.
-	// go func() {
-	// 	if err := p.guardianProverSender.SignAndSendBlock(ctx, event.BlockId); err != nil {
-	// 		log.Error("Guardian prover unable to sign block", "blockID", event.BlockId, "error", err)
-	// 	}
-	// }()
+	go func() {
+		if err := h.guardianProverSender.SignAndSendBlock(ctx, event.BlockId); err != nil {
+			log.Error("Guardian prover unable to sign block", "blockID", event.BlockId, "error", err)
+		}
+	}()
 	return h.BlockProposedEventHandler.Handle(ctx, event, end)
 }

@@ -39,7 +39,6 @@ func (h *TransitionProvedEventHandler) Handle(
 		return nil
 	}
 
-	// TODO: check other parents?
 	isValidProof, err := isValidProof(
 		ctx,
 		h.rpc,
