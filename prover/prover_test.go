@@ -128,27 +128,29 @@ func (s *ProverTestSuite) TestInitError() {
 	}), "dial tcp:")
 }
 
-// TODO: fix this test
-// func (s *ProverTestSuite) TestOnBlockProposed() {
-// 	// Init prover
-// 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-// 	s.Nil(err)
-// 	s.p.cfg.L1ProverPrivKey = l1ProverPrivKey
-// 	// Valid block
-// 	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
-// 	s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
-// 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+func (s *ProverTestSuite) TestOnBlockProposed() {
+	// Init prover
+	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	s.Nil(err)
+	s.p.cfg.L1ProverPrivKey = l1ProverPrivKey
+	// Valid block
+	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	s.Nil(s.p.blockProposedHandler.Handle(context.Background(), e, func() {}))
+	req := <-s.p.proofSubmissionCh
+	s.Nil(s.p.requestProofOp(s.p.ctx, req.Event, req.Tier))
+	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
-// 	// Empty blocks
-// 	for _, e = range s.ProposeAndInsertEmptyBlocks(
-// 		s.proposer,
-// 		s.d.ChainSyncer().CalldataSyncer(),
-// 	) {
-// 		s.Nil(s.p.onBlockProposed(context.Background(), e, func() {}))
-
-// 		s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
-// 	}
-// }
+	// Empty blocks
+	for _, e = range s.ProposeAndInsertEmptyBlocks(
+		s.proposer,
+		s.d.ChainSyncer().CalldataSyncer(),
+	) {
+		s.Nil(s.p.blockProposedHandler.Handle(context.Background(), e, func() {}))
+		req := <-s.p.proofSubmissionCh
+		s.Nil(s.p.requestProofOp(s.p.ctx, req.Event, req.Tier))
+		s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+	}
+}
 
 func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 	s.NotPanics(func() {
@@ -326,30 +328,6 @@ func (s *ProverTestSuite) TestGetSubmitterByTier() {
 	s.Equal(encoding.TierGuardianID, submitter.Tier())
 	s.Nil(s.p.getSubmitterByTier(encoding.TierGuardianID + 1))
 }
-
-// TODO
-// func (s *ProverTestSuite) TestGetProvingWindowNotFound() {
-// 	_, err := s.p.getProvingWindow(&bindings.TaikoL1ClientBlockProposed{
-// 		Meta: bindings.TaikoDataBlockMetadata{
-// 			MinTier: encoding.TierGuardianID + 1,
-// 		},
-// 	})
-// 	s.ErrorIs(err, errTierNotFound)
-// }
-
-// TODO
-// func (s *ProverTestSuite) TestIsBlockVerified() {
-// 	vars, err := s.p.rpc.TaikoL1.GetStateVariables(nil)
-// 	s.Nil(err)
-
-// 	verified, err := s.p.isBlockVerified(new(big.Int).SetUint64(vars.B.LastVerifiedBlockId))
-// 	s.Nil(err)
-// 	s.True(verified)
-
-// 	verified, err = s.p.isBlockVerified(new(big.Int).SetUint64(vars.B.LastVerifiedBlockId + 1))
-// 	s.Nil(err)
-// 	s.False(verified)
-// }
 
 func (s *ProverTestSuite) TestProveOp() {
 	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
