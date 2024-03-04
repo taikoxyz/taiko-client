@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/joho/godotenv"
 	"github.com/modern-go/reflect2"
+	"golang.org/x/exp/constraints"
 )
 
 func LoadEnv() {
@@ -51,4 +52,20 @@ func RandUint32(max *big.Int) uint32 {
 // IsNil checks if the interface is empty.
 func IsNil(i interface{}) bool {
 	return reflect2.IsNil(i)
+}
+
+// Min return the minimum value of two integers.
+func Min[T constraints.Integer](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// Max return the maximum value of two integers.
+func Max[T constraints.Integer](a, b T) T {
+	if a > b {
+		return a
+	}
+	return b
 }
