@@ -142,12 +142,11 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 	p.sharedState.SetTiers(tiers)
 
-	// TODO: more configs
 	senderCfg := &sender.Config{
 		ConfirmationDepth: 0,
 		MaxRetrys:         p.cfg.ProofSubmissionMaxRetry,
 		MaxWaitingTime:    10 * p.cfg.WaitReceiptTimeout,
-		GasGrowthRate:     p.cfg.ProveBlockTxReplacementMultiplier,
+		GasGrowthRate:     p.cfg.ProveBlockTxReplacementGasGrowthRate,
 	}
 	if p.cfg.ProveBlockGasLimit != nil {
 		senderCfg.GasLimit = *p.cfg.ProveBlockGasLimit
@@ -182,7 +181,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.rpc,
 		p.cfg.L1ProverPrivKey,
 		p.cfg.ProveBlockGasLimit,
-		p.cfg.ProveBlockTxReplacementMultiplier,
+		p.cfg.ProveBlockTxReplacementGasGrowthRate,
 		p.cfg.ProveBlockMaxTxGasFeeCap,
 		p.cfg.ProofSubmissionMaxRetry,
 		p.cfg.BackOffRetryInterval,

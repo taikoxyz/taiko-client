@@ -110,21 +110,21 @@ func (s *ProverTestSuite) TestInitError() {
 	p := new(Prover)
 	// Error should be "context canceled", instead is "Dial ethclient error:"
 	s.ErrorContains(InitFromConfig(ctx, p, &Config{
-		L1WsEndpoint:                      os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L1HttpEndpoint:                    os.Getenv("L1_NODE_HTTP_ENDPOINT"),
-		L2WsEndpoint:                      os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2HttpEndpoint:                    os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:                    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:                 common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		AssignmentHookAddress:             common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_CONTRACT_ADDRESS")),
-		L1ProverPrivKey:                   l1ProverPrivKey,
-		Dummy:                             true,
-		ProveUnassignedBlocks:             true,
-		ProveBlockTxReplacementMultiplier: 2,
-		RPCTimeout:                        10 * time.Minute,
-		BackOffRetryInterval:              3 * time.Second,
-		BackOffMaxRetrys:                  12,
+		L1WsEndpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:                       os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:                       os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:                       common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                       common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:                    common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		AssignmentHookAddress:                common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_CONTRACT_ADDRESS")),
+		L1ProverPrivKey:                      l1ProverPrivKey,
+		Dummy:                                true,
+		ProveUnassignedBlocks:                true,
+		ProveBlockTxReplacementGasGrowthRate: 2,
+		RPCTimeout:                           10 * time.Minute,
+		BackOffRetryInterval:                 3 * time.Second,
+		BackOffMaxRetrys:                     12,
 	}), "dial tcp:")
 }
 

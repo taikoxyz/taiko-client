@@ -41,7 +41,7 @@ type Config struct {
 	RPCTimeout                              time.Duration
 	WaitReceiptTimeout                      time.Duration
 	ProveBlockGasLimit                      *uint64
-	ProveBlockTxReplacementMultiplier       uint64
+	ProveBlockTxReplacementGasGrowthRate    uint64
 	ProveBlockMaxTxGasFeeCap                *big.Int
 	HTTPServerPort                          uint64
 	Capacity                                uint64
@@ -81,7 +81,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proveBlockTxGasLimit = &gasLimit
 	}
 
-	proveBlockTxReplacementMultiplier := c.Uint64(flags.ProveBlockTxReplacementMultiplier.Name)
+	proveBlockTxReplacementMultiplier := c.Uint64(flags.ProveBlockTxReplacementProveBlockTxReplacementGasGrowthRate.Name)
 	if proveBlockTxReplacementMultiplier == 0 {
 		return nil, fmt.Errorf(
 			"invalid --proveBlockTxReplacementMultiplier value: %d",
@@ -165,7 +165,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		WaitReceiptTimeout:                      c.Duration(flags.WaitReceiptTimeout.Name),
 		ProveBlockGasLimit:                      proveBlockTxGasLimit,
 		Capacity:                                c.Uint64(flags.ProverCapacity.Name),
-		ProveBlockTxReplacementMultiplier:       proveBlockTxReplacementMultiplier,
+		ProveBlockTxReplacementGasGrowthRate:    proveBlockTxReplacementMultiplier,
 		ProveBlockMaxTxGasFeeCap:                proveBlockMaxTxGasTipCap,
 		HTTPServerPort:                          c.Uint64(flags.ProverHTTPServerPort.Name),
 		MinOptimisticTierFee:                    new(big.Int).SetUint64(c.Uint64(flags.MinOptimisticTierFee.Name)),

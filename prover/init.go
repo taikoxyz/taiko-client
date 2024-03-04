@@ -137,7 +137,7 @@ func (p *Prover) initProofSubmitters(txBuilder *transaction.ProveBlockTxBuilder)
 			p.cfg.BackOffRetryInterval,
 			p.cfg.WaitReceiptTimeout,
 			p.cfg.ProveBlockGasLimit,
-			p.cfg.ProveBlockTxReplacementMultiplier,
+			p.cfg.ProveBlockTxReplacementGasGrowthRate,
 			p.cfg.ProveBlockMaxTxGasFeeCap,
 			txBuilder,
 		); err != nil {
