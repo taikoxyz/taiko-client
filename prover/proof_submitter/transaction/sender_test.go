@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -36,15 +35,13 @@ func (s *TransactionTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	s.sender = NewSender(s.RPCClient, 5*time.Second, nil, 1*time.Minute)
-	txSender, err := sender.NewSender(
-		context.Background(),
-		&sender.Config{ConfirmationDepth: 0, MaxRetrys: 3},
-		s.RPCClient.L1,
-		l1ProverPrivKey,
-	)
+	txSender, err := sender.NewSender(context.Background(), &sender.Config{}, s.RPCClient.L1, l1ProverPrivKey)
 	s.Nil(err)
-	s.builder = NewProveBlockTxBuilder(s.RPCClient, l1ProverPrivKey, txSender)
+
+	s.sender, err = NewSender(context.Background(), s.RPCClient, l1ProverPrivKey, txSender)
+	s.Nil(err)
+
+	s.builder = NewProveBlockTxBuilder(s.RPCClient, l1ProverPrivKey)
 }
 
 func (s *TransactionTestSuite) TestIsSubmitProofTxErrorRetryable() {
@@ -68,7 +65,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 			Header:  &types.Header{},
 			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
-		func(nonce *big.Int) (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
+		func() (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
 	))
 
 	s.Nil(s.sender.Send(
@@ -79,7 +76,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 			Header:  &types.Header{},
 			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
-		func(nonce *big.Int) (*types.Transaction, error) {
+		func() (*types.Transaction, error) {
 			height, err := s.RPCClient.L1.BlockNumber(context.Background())
 			s.Nil(err)
 

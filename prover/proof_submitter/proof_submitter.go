@@ -5,8 +5,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -16,6 +14,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	validator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
@@ -40,18 +39,14 @@ type ProofSubmitter struct {
 
 // New creates a new ProofSubmitter instance.
 func New(
+	ctx context.Context,
 	rpcClient *rpc.Client,
 	proofProducer proofProducer.ProofProducer,
 	resultCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
 	proverPrivKey *ecdsa.PrivateKey,
 	graffiti string,
-	submissionMaxRetry uint64,
-	retryInterval time.Duration,
-	waitReceiptTimeout time.Duration,
-	proveBlockTxGasLimit *uint64,
-	txReplacementTipMultiplier uint64,
-	proveBlockMaxTxGasTipCap *big.Int,
+	txSender *sender.Sender,
 	builder *transaction.ProveBlockTxBuilder,
 ) (*ProofSubmitter, error) {
 	anchorValidator, err := validator.New(taikoL2Address, rpcClient.L2.ChainID, rpcClient)
@@ -59,11 +54,14 @@ func New(
 		return nil, err
 	}
 
-	var (
-		maxRetry = &submissionMaxRetry
+	proofSender, err := transaction.NewSender(
+		ctx,
+		rpcClient,
+		proverPrivKey,
+		txSender,
 	)
-	if proofProducer.Tier() == encoding.TierGuardianID {
-		maxRetry = nil
+	if err != nil {
+		return nil, err
 	}
 
 	return &ProofSubmitter{
@@ -72,7 +70,7 @@ func New(
 		resultCh:        resultCh,
 		anchorValidator: anchorValidator,
 		txBuilder:       builder,
-		txSender:        transaction.NewSender(rpcClient, retryInterval, maxRetry, waitReceiptTimeout),
+		txSender:        proofSender,
 		proverAddress:   crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		taikoL2Address:  taikoL2Address,
 		graffiti:        rpc.StringToBytes32(graffiti),
@@ -191,6 +189,7 @@ func (s *ProofSubmitter) SubmitProof(
 			Tier: proofWithHeader.Tier,
 			Data: proofWithHeader.Proof,
 		},
+		s.txSender.GetOpts(),
 		proofWithHeader.Tier == encoding.TierGuardianID,
 	)
 

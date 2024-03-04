@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	handler "github.com/taikoxyz/taiko-client/prover/event_handler"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
@@ -98,7 +99,11 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 }
 
 // initProofSubmitters initializes the proof submitters from the given tiers in protocol.
-func (p *Prover) initProofSubmitters(txBuilder *transaction.ProveBlockTxBuilder) error {
+func (p *Prover) initProofSubmitters(
+	ctx context.Context,
+	sender *sender.Sender,
+	txBuilder *transaction.ProveBlockTxBuilder,
+) error {
 	for _, tier := range p.sharedState.GetTiers() {
 		var (
 			producer  proofProducer.ProofProducer
@@ -127,18 +132,14 @@ func (p *Prover) initProofSubmitters(txBuilder *transaction.ProveBlockTxBuilder)
 		}
 
 		if submitter, err = proofSubmitter.New(
+			ctx,
 			p.rpc,
 			producer,
 			p.proofGenerationCh,
 			p.cfg.TaikoL2Address,
 			p.cfg.L1ProverPrivKey,
 			p.cfg.Graffiti,
-			p.cfg.ProofSubmissionMaxRetry,
-			p.cfg.BackOffRetryInterval,
-			p.cfg.WaitReceiptTimeout,
-			p.cfg.ProveBlockGasLimit,
-			p.cfg.ProveBlockTxReplacementGasGrowthRate,
-			p.cfg.ProveBlockMaxTxGasFeeCap,
+			sender,
 			txBuilder,
 		); err != nil {
 			return err

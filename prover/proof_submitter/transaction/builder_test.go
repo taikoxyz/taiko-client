@@ -8,16 +8,6 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
-func (s *TransactionTestSuite) TestGetProveBlocksTxOpts() {
-	optsL1, err := getProveBlocksTxOpts(context.Background(), s.RPCClient.L1, s.RPCClient.L1.ChainID, s.TestAddrPrivKey)
-	s.Nil(err)
-	s.Greater(optsL1.GasTipCap.Uint64(), uint64(0))
-
-	optsL2, err := getProveBlocksTxOpts(context.Background(), s.RPCClient.L2, s.RPCClient.L2.ChainID, s.TestAddrPrivKey)
-	s.Nil(err)
-	s.Greater(optsL2.GasTipCap.Uint64(), uint64(0))
-}
-
 func (s *TransactionTestSuite) TestBuildTxs() {
 	_, err := s.builder.Build(
 		context.Background(),
@@ -25,8 +15,9 @@ func (s *TransactionTestSuite) TestBuildTxs() {
 		&bindings.TaikoDataBlockMetadata{},
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
+		s.sender.innerSender.Opts,
 		false,
-	)(common.Big256)
+	)()
 	s.NotNil(err)
 
 	_, err = s.builder.Build(
@@ -35,7 +26,8 @@ func (s *TransactionTestSuite) TestBuildTxs() {
 		&bindings.TaikoDataBlockMetadata{},
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
+		s.sender.innerSender.Opts,
 		true,
-	)(common.Big256)
+	)()
 	s.NotNil(err)
 }

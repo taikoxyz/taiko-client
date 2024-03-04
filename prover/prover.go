@@ -145,7 +145,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	senderCfg := &sender.Config{
 		ConfirmationDepth: 0,
 		MaxRetrys:         p.cfg.ProofSubmissionMaxRetry,
-		MaxWaitingTime:    10 * p.cfg.WaitReceiptTimeout,
 		GasGrowthRate:     p.cfg.ProveBlockTxReplacementGasGrowthRate,
 	}
 	if p.cfg.ProveBlockGasLimit != nil {
@@ -154,13 +153,11 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if p.cfg.ProveBlockMaxTxGasFeeCap != nil {
 		senderCfg.MaxGasFee = p.cfg.ProveBlockMaxTxGasFeeCap.Uint64()
 	}
+	if p.IsGuardianProver() && senderCfg.MaxRetrys != 0 {
+		senderCfg.MaxRetrys = 0
+	}
 
-	txSender, err := sender.NewSender(
-		p.ctx,
-		senderCfg,
-		p.rpc.L1,
-		p.proverPrivateKey,
-	)
+	txSender, err := sender.NewSender(p.ctx, senderCfg, p.rpc.L1, p.proverPrivateKey)
 	if err != nil {
 		return err
 	}
@@ -168,24 +165,19 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	txBuilder := transaction.NewProveBlockTxBuilder(
 		p.rpc,
 		p.proverPrivateKey,
-		txSender,
 	)
 
 	// Proof submitters
-	if err := p.initProofSubmitters(txBuilder); err != nil {
+	if err := p.initProofSubmitters(p.ctx, txSender, txBuilder); err != nil {
 		return err
 	}
 
 	// Proof contester
 	p.proofContester, err = proofSubmitter.NewProofContester(
+		p.ctx,
 		p.rpc,
 		p.cfg.L1ProverPrivKey,
-		p.cfg.ProveBlockGasLimit,
-		p.cfg.ProveBlockTxReplacementGasGrowthRate,
-		p.cfg.ProveBlockMaxTxGasFeeCap,
-		p.cfg.ProofSubmissionMaxRetry,
-		p.cfg.BackOffRetryInterval,
-		p.cfg.WaitReceiptTimeout,
+		txSender,
 		p.cfg.Graffiti,
 		txBuilder,
 	)

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"math/big"
 	"strings"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
@@ -25,27 +25,33 @@ var _ Contester = (*ProofContester)(nil)
 type ProofContester struct {
 	rpc       *rpc.Client
 	txBuilder *transaction.ProveBlockTxBuilder
-	txSender  *transaction.Sender
+	sender    *transaction.Sender
 	graffiti  [32]byte
 }
 
 // NewProofContester creates a new ProofContester instance.
 func NewProofContester(
+	ctx context.Context,
 	rpcClient *rpc.Client,
 	proverPrivKey *ecdsa.PrivateKey,
-	proveBlockTxGasLimit *uint64,
-	txReplacementTipMultiplier uint64,
-	proveBlockMaxTxGasTipCap *big.Int,
-	submissionMaxRetry uint64,
-	retryInterval time.Duration,
-	waitReceiptTimeout time.Duration,
+	txSender *sender.Sender,
 	graffiti string,
 	builder *transaction.ProveBlockTxBuilder,
 ) (*ProofContester, error) {
+	sender, err := transaction.NewSender(
+		ctx,
+		rpcClient,
+		proverPrivKey,
+		txSender,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &ProofContester{
 		rpc:       rpcClient,
 		txBuilder: builder,
-		txSender:  transaction.NewSender(rpcClient, retryInterval, &submissionMaxRetry, waitReceiptTimeout),
+		sender:    sender,
 		graffiti:  rpc.StringToBytes32(graffiti),
 	}, nil
 }
@@ -97,7 +103,7 @@ func (c *ProofContester) SubmitContest(
 		return err
 	}
 
-	if err := c.txSender.Send(
+	if err := c.sender.Send(
 		ctx,
 		&proofProducer.ProofWithHeader{
 			BlockID: blockID,
@@ -124,6 +130,7 @@ func (c *ProofContester) SubmitContest(
 				Tier: transition.Tier,
 				Data: []byte{},
 			},
+			c.sender.GetOpts(),
 			false,
 		),
 	); err != nil {

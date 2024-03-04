@@ -14,19 +14,17 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // TxBuilder will build a transaction with the given nonce.
-type TxBuilder func(nonce *big.Int) (*types.Transaction, error)
+type TxBuilder func() (*types.Transaction, error)
 
 // ProveBlockTxBuilder is responsible for building ProveBlock transactions.
 type ProveBlockTxBuilder struct {
 	rpc              *rpc.Client
 	proverPrivateKey *ecdsa.PrivateKey
 	proverAddress    common.Address
-	txSender         *sender.Sender
 	mutex            *sync.Mutex
 }
 
@@ -34,13 +32,11 @@ type ProveBlockTxBuilder struct {
 func NewProveBlockTxBuilder(
 	rpc *rpc.Client,
 	proverPrivateKey *ecdsa.PrivateKey,
-	sender *sender.Sender,
 ) *ProveBlockTxBuilder {
 	return &ProveBlockTxBuilder{
 		rpc:              rpc,
 		proverPrivateKey: proverPrivateKey,
 		proverAddress:    crypto.PubkeyToAddress(proverPrivateKey.PublicKey),
-		txSender:         sender,
 		mutex:            new(sync.Mutex),
 	}
 }
@@ -52,16 +48,16 @@ func (a *ProveBlockTxBuilder) Build(
 	meta *bindings.TaikoDataBlockMetadata,
 	transition *bindings.TaikoDataTransition,
 	tierProof *bindings.TaikoDataTierProof,
+	txOpts *bind.TransactOpts,
 	guardian bool,
 ) TxBuilder {
-	return func(nonce *big.Int) (*types.Transaction, error) {
+	return func() (*types.Transaction, error) {
 		a.mutex.Lock()
 		defer a.mutex.Unlock()
 
 		var (
-			txOpts = a.txSender.Opts
-			tx     *types.Transaction
-			err    error
+			tx  *types.Transaction
+			err error
 		)
 
 		log.Info(
@@ -88,36 +84,6 @@ func (a *ProveBlockTxBuilder) Build(
 			}
 		}
 
-		if _, err = a.txSender.SendTransaction(tx); err != nil {
-			return nil, err
-		}
-
 		return tx, nil
 	}
-}
-
-// getProveBlocksTxOpts creates a bind.TransactOpts instance using the given private key.
-// Used for creating TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
-func getProveBlocksTxOpts(
-	ctx context.Context,
-	cli *rpc.EthClient,
-	chainID *big.Int,
-	proverPrivKey *ecdsa.PrivateKey,
-) (*bind.TransactOpts, error) {
-	opts, err := bind.NewKeyedTransactorWithChainID(proverPrivKey, chainID)
-	if err != nil {
-		return nil, err
-	}
-	gasTipCap, err := cli.SuggestGasTipCap(ctx)
-	if err != nil {
-		if rpc.IsMaxPriorityFeePerGasNotFoundError(err) {
-			gasTipCap = rpc.FallbackGasTipCap
-		} else {
-			return nil, err
-		}
-	}
-
-	opts.GasTipCap = gasTipCap
-
-	return opts, nil
 }

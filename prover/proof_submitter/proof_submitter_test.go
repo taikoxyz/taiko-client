@@ -48,34 +48,25 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	builder := transaction.NewProveBlockTxBuilder(
 		s.RPCClient,
 		l1ProverPrivKey,
-		sender,
 	)
 
 	s.submitter, err = New(
+		context.Background(),
 		s.RPCClient,
 		&producer.OptimisticProofProducer{},
 		s.proofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		l1ProverPrivKey,
 		"test",
-		1,
-		12*time.Second,
-		10*time.Second,
-		nil,
-		2,
-		nil,
+		sender,
 		builder,
 	)
 	s.Nil(err)
 	s.contester, err = NewProofContester(
+		context.Background(),
 		s.RPCClient,
 		l1ProverPrivKey,
-		nil,
-		2,
-		common.Big256,
-		1,
-		3*time.Second,
-		36*time.Second,
+		sender,
 		"test",
 		builder,
 	)
