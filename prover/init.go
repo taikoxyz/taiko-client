@@ -138,7 +138,7 @@ func (p *Prover) initProofSubmitters(txBuilder *transaction.ProveBlockTxBuilder)
 			p.cfg.WaitReceiptTimeout,
 			p.cfg.ProveBlockGasLimit,
 			p.cfg.ProveBlockTxReplacementMultiplier,
-			p.cfg.ProveBlockMaxTxGasTipCap,
+			p.cfg.ProveBlockMaxTxGasFeeCap,
 			txBuilder,
 		); err != nil {
 			return err

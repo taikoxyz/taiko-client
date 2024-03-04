@@ -34,9 +34,6 @@ type ProveBlockTxBuilder struct {
 func NewProveBlockTxBuilder(
 	rpc *rpc.Client,
 	proverPrivateKey *ecdsa.PrivateKey,
-	gasLimit *big.Int,
-	gasTipCap *big.Int,
-	gasTipMultiplier *big.Int,
 	sender *sender.Sender,
 ) *ProveBlockTxBuilder {
 	return &ProveBlockTxBuilder{

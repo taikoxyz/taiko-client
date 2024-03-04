@@ -42,7 +42,7 @@ type Config struct {
 	WaitReceiptTimeout                      time.Duration
 	ProveBlockGasLimit                      *uint64
 	ProveBlockTxReplacementMultiplier       uint64
-	ProveBlockMaxTxGasTipCap                *big.Int
+	ProveBlockMaxTxGasFeeCap                *big.Int
 	HTTPServerPort                          uint64
 	Capacity                                uint64
 	MinOptimisticTierFee                    *big.Int
@@ -90,8 +90,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	var proveBlockMaxTxGasTipCap *big.Int
-	if c.IsSet(flags.ProveBlockMaxTxGasTipCap.Name) {
-		proveBlockMaxTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProveBlockMaxTxGasTipCap.Name))
+	if c.IsSet(flags.ProveBlockMaxTxGasFeeCap.Name) {
+		proveBlockMaxTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProveBlockMaxTxGasFeeCap.Name))
 	}
 
 	var allowance = common.Big0
@@ -166,7 +166,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProveBlockGasLimit:                      proveBlockTxGasLimit,
 		Capacity:                                c.Uint64(flags.ProverCapacity.Name),
 		ProveBlockTxReplacementMultiplier:       proveBlockTxReplacementMultiplier,
-		ProveBlockMaxTxGasTipCap:                proveBlockMaxTxGasTipCap,
+		ProveBlockMaxTxGasFeeCap:                proveBlockMaxTxGasTipCap,
 		HTTPServerPort:                          c.Uint64(flags.ProverHTTPServerPort.Name),
 		MinOptimisticTierFee:                    new(big.Int).SetUint64(c.Uint64(flags.MinOptimisticTierFee.Name)),
 		MinSgxTierFee:                           new(big.Int).SetUint64(c.Uint64(flags.MinSgxTierFee.Name)),

@@ -145,14 +145,15 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	// TODO: more configs
 	senderCfg := &sender.Config{
 		ConfirmationDepth: 0,
-		MaxRetrys:         p.cfg.BackOffMaxRetrys,
+		MaxRetrys:         p.cfg.ProofSubmissionMaxRetry,
 		MaxWaitingTime:    10 * p.cfg.WaitReceiptTimeout,
+		GasGrowthRate:     p.cfg.ProveBlockTxReplacementMultiplier,
 	}
 	if p.cfg.ProveBlockGasLimit != nil {
 		senderCfg.GasLimit = *p.cfg.ProveBlockGasLimit
 	}
-	if p.cfg.ProveBlockMaxTxGasTipCap != nil {
-		senderCfg.MaxGasFee = p.cfg.ProveBlockMaxTxGasTipCap.Uint64()
+	if p.cfg.ProveBlockMaxTxGasFeeCap != nil {
+		senderCfg.MaxGasFee = p.cfg.ProveBlockMaxTxGasFeeCap.Uint64()
 	}
 
 	txSender, err := sender.NewSender(
@@ -168,9 +169,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	txBuilder := transaction.NewProveBlockTxBuilder(
 		p.rpc,
 		p.proverPrivateKey,
-		nil, // TODO
-		p.cfg.ProveBlockMaxTxGasTipCap,
-		nil,
 		txSender,
 	)
 
@@ -185,7 +183,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.L1ProverPrivKey,
 		p.cfg.ProveBlockGasLimit,
 		p.cfg.ProveBlockTxReplacementMultiplier,
-		p.cfg.ProveBlockMaxTxGasTipCap,
+		p.cfg.ProveBlockMaxTxGasFeeCap,
 		p.cfg.ProofSubmissionMaxRetry,
 		p.cfg.BackOffRetryInterval,
 		p.cfg.WaitReceiptTimeout,

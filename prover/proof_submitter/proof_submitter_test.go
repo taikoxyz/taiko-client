@@ -48,9 +48,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	builder := transaction.NewProveBlockTxBuilder(
 		s.RPCClient,
 		l1ProverPrivKey,
-		nil,
-		nil,
-		common.Big2,
 		sender,
 	)
 

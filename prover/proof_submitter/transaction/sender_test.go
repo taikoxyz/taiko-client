@@ -44,7 +44,7 @@ func (s *TransactionTestSuite) SetupTest() {
 		l1ProverPrivKey,
 	)
 	s.Nil(err)
-	s.builder = NewProveBlockTxBuilder(s.RPCClient, l1ProverPrivKey, nil, common.Big256, common.Big2, txSender)
+	s.builder = NewProveBlockTxBuilder(s.RPCClient, l1ProverPrivKey, txSender)
 }
 
 func (s *TransactionTestSuite) TestIsSubmitProofTxErrorRetryable() {
