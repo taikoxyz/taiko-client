@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	cmap "github.com/orcaman/concurrent-map/v2"
@@ -33,8 +34,8 @@ var (
 		MaxRetrys:         0,
 		MaxWaitingTime:    5 * time.Minute,
 		GasGrowthRate:     50,
-		MaxGasFee:         20_000_000_000,
-		MaxBlobFee:        1_000_000_000,
+		MaxGasFee:         math.MaxUint64,
+		MaxBlobFee:        math.MaxUint64,
 	}
 )
 
