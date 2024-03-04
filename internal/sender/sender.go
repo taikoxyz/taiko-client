@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/math"
 	"math/big"
 	"os"
 	"strings"
@@ -33,8 +34,8 @@ var (
 		MaxRetrys:         0,
 		MaxWaitingTime:    5 * time.Minute,
 		GasGrowthRate:     50,
-		MaxGasFee:         20_000_000_000,
-		MaxBlobFee:        1_000_000_000,
+		MaxGasFee:         math.MaxUint64,
+		MaxBlobFee:        math.MaxUint64,
 	}
 )
 
