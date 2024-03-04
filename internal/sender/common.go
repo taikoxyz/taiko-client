@@ -9,7 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/holiman/uint256"
-	"modernc.org/mathutil"
+
+	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 // adjustGas adjusts the gas fee cap and gas tip cap of the given transaction with the configured
@@ -20,27 +21,27 @@ func (s *Sender) adjustGas(txData types.TxData) {
 	case *types.DynamicFeeTx:
 		gasFeeCap := baseTx.GasFeeCap.Int64()
 		gasFeeCap = gasFeeCap / 100 * int64(rate)
-		gasFeeCap = mathutil.MinInt64(gasFeeCap, int64(s.MaxGasFee))
+		gasFeeCap = utils.Min(gasFeeCap, int64(s.MaxGasFee))
 		baseTx.GasFeeCap = big.NewInt(gasFeeCap)
 
 		gasTipCap := baseTx.GasTipCap.Int64()
 		gasTipCap = gasTipCap / 100 * int64(rate)
-		gasTipCap = mathutil.MinInt64(gasFeeCap, mathutil.MinInt64(gasTipCap, int64(s.MaxGasFee)))
+		gasTipCap = utils.Min(gasFeeCap, utils.Min(gasTipCap, int64(s.MaxGasFee)))
 		baseTx.GasTipCap = big.NewInt(gasTipCap)
 	case *types.BlobTx:
 		gasFeeCap := baseTx.GasFeeCap.Uint64()
 		gasFeeCap = gasFeeCap / 100 * rate
-		gasFeeCap = mathutil.MinUint64(gasFeeCap, s.MaxGasFee)
+		gasFeeCap = utils.Min(gasFeeCap, s.MaxGasFee)
 		baseTx.GasFeeCap = uint256.NewInt(gasFeeCap)
 
 		gasTipCap := baseTx.GasTipCap.Uint64()
 		gasTipCap = gasTipCap / 100 * rate
-		gasTipCap = mathutil.MinUint64(gasFeeCap, mathutil.MinUint64(gasTipCap, s.MaxGasFee))
+		gasTipCap = utils.Min(gasFeeCap, utils.Min(gasTipCap, s.MaxGasFee))
 		baseTx.GasTipCap = uint256.NewInt(gasTipCap)
 
 		blobFeeCap := baseTx.BlobFeeCap.Uint64()
 		blobFeeCap = blobFeeCap / 100 * rate
-		blobFeeCap = mathutil.MinUint64(blobFeeCap, s.MaxBlobFee)
+		blobFeeCap = utils.Min(blobFeeCap, s.MaxBlobFee)
 		baseTx.BlobFeeCap = uint256.NewInt(blobFeeCap)
 	default:
 		log.Warn("Unsupported transaction type when adjust gas fee", "from", s.Opts.From)
