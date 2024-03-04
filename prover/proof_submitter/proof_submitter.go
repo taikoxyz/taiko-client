@@ -31,7 +31,7 @@ type ProofSubmitter struct {
 	resultCh        chan *proofProducer.ProofWithHeader
 	anchorValidator *validator.AnchorTxValidator
 	txBuilder       *transaction.ProveBlockTxBuilder
-	txSender        *transaction.Sender
+	sender          *transaction.Sender
 	proverAddress   common.Address
 	taikoL2Address  common.Address
 	graffiti        [32]byte
@@ -70,7 +70,7 @@ func New(
 		resultCh:        resultCh,
 		anchorValidator: anchorValidator,
 		txBuilder:       builder,
-		txSender:        proofSender,
+		sender:          proofSender,
 		proverAddress:   crypto.PubkeyToAddress(proverPrivKey.PublicKey),
 		taikoL2Address:  taikoL2Address,
 		graffiti:        rpc.StringToBytes32(graffiti),
@@ -189,15 +189,11 @@ func (s *ProofSubmitter) SubmitProof(
 			Tier: proofWithHeader.Tier,
 			Data: proofWithHeader.Proof,
 		},
-		s.txSender.GetOpts(),
+		s.sender.GetOpts(),
 		proofWithHeader.Tier == encoding.TierGuardianID,
 	)
 
-	if err := s.txSender.Send(ctx, proofWithHeader, txBuilder); err != nil {
-		if errors.Is(err, transaction.ErrUnretryable) {
-			return nil
-		}
-
+	if err := s.sender.Send(ctx, proofWithHeader, txBuilder); err != nil {
 		metrics.ProverSubmissionErrorCounter.Inc(1)
 		return err
 	}

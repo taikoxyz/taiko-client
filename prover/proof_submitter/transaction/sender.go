@@ -69,15 +69,14 @@ func (s *Sender) Send(
 	}
 
 	// Waiting for the transaction to be confirmed.
-	confirmCh := <-s.innerSender.TxToConfirmChannel(id)
-	if confirmCh.Err != nil {
+	if confirmationResult := <-s.innerSender.TxToConfirmChannel(id); confirmationResult.Err != nil {
 		log.Warn(
 			"Failed to send TaikoL1.proveBlock transaction",
 			"blockID", proofWithHeader.BlockID,
 			"txHash", tx.Hash(),
-			"error", confirmCh.Err,
+			"error", confirmationResult.Err,
 		)
-		return confirmCh.Err
+		return confirmationResult.Err
 	}
 
 	log.Info(

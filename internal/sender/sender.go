@@ -176,18 +176,19 @@ func (s *Sender) GetUnconfirmedTx(txID string) *types.Transaction {
 
 // SendRawTransaction sends a transaction to the given Ethereum node.
 func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value *big.Int, data []byte) (string, error) {
-	gasLimit := s.GasLimit
+	var (
+		gasLimit = s.GasLimit
+		err      error
+	)
 	if gasLimit == 0 {
-		var err error
-		gasLimit, err = s.client.EstimateGas(s.ctx, ethereum.CallMsg{
+		if gasLimit, err = s.client.EstimateGas(s.ctx, ethereum.CallMsg{
 			From:      s.Opts.From,
 			To:        target,
 			Value:     value,
 			Data:      data,
 			GasTipCap: s.Opts.GasTipCap,
 			GasFeeCap: s.Opts.GasFeeCap,
-		})
-		if err != nil {
+		}); err != nil {
 			return "", err
 		}
 	}

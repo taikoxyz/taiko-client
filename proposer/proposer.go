@@ -484,14 +484,14 @@ func (p *Proposer) ProposeTxList(
 	); err != nil {
 		return err
 	}
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
 
-	// Waiting for the transaction to be confirmed.
-	confirm := <-p.sender.TxToConfirmChannel(txID)
-	if confirm.Err != nil {
-		return confirm.Err
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case confirmationResult := <-p.sender.TxToConfirmChannel(txID):
+		if confirmationResult.Err != nil {
+			return confirmationResult.Err
+		}
 	}
 
 	log.Info("📝 Propose transactions succeeded", "txs", txNum)
