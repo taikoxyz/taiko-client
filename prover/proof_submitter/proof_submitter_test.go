@@ -17,10 +17,12 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
 	"github.com/taikoxyz/taiko-client/driver/state"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
 )
 
 type ProofSubmitterTestSuite struct {
@@ -40,6 +42,18 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 
 	s.proofCh = make(chan *producer.ProofWithHeader, 1024)
 
+	sender, err := sender.NewSender(context.Background(), &sender.Config{}, s.RPCClient.L1, l1ProverPrivKey)
+	s.Nil(err)
+
+	builder := transaction.NewProveBlockTxBuilder(
+		s.RPCClient,
+		l1ProverPrivKey,
+		nil,
+		nil,
+		common.Big2,
+		sender,
+	)
+
 	s.submitter, err = New(
 		s.RPCClient,
 		&producer.OptimisticProofProducer{},
@@ -53,6 +67,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		nil,
 		2,
 		nil,
+		builder,
 	)
 	s.Nil(err)
 	s.contester, err = NewProofContester(
@@ -65,6 +80,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		3*time.Second,
 		36*time.Second,
 		"test",
+		builder,
 	)
 	s.Nil(err)
 

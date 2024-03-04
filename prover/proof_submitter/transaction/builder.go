@@ -14,6 +14,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -25,9 +26,7 @@ type ProveBlockTxBuilder struct {
 	rpc              *rpc.Client
 	proverPrivateKey *ecdsa.PrivateKey
 	proverAddress    common.Address
-	gasLimit         *big.Int
-	gasTipCap        *big.Int
-	gasTipMultiplier *big.Int
+	txSender         *sender.Sender
 	mutex            *sync.Mutex
 }
 
@@ -38,14 +37,13 @@ func NewProveBlockTxBuilder(
 	gasLimit *big.Int,
 	gasTipCap *big.Int,
 	gasTipMultiplier *big.Int,
+	sender *sender.Sender,
 ) *ProveBlockTxBuilder {
 	return &ProveBlockTxBuilder{
 		rpc:              rpc,
 		proverPrivateKey: proverPrivateKey,
 		proverAddress:    crypto.PubkeyToAddress(proverPrivateKey.PublicKey),
-		gasLimit:         gasLimit,
-		gasTipCap:        gasTipCap,
-		gasTipMultiplier: gasTipMultiplier,
+		txSender:         sender,
 		mutex:            new(sync.Mutex),
 	}
 }
@@ -63,29 +61,11 @@ func (a *ProveBlockTxBuilder) Build(
 		a.mutex.Lock()
 		defer a.mutex.Unlock()
 
-		txOpts, err := getProveBlocksTxOpts(ctx, a.rpc.L1, a.rpc.L1.ChainID, a.proverPrivateKey)
-		if err != nil {
-			return nil, err
-		}
-
-		if a.gasLimit != nil {
-			txOpts.GasLimit = a.gasLimit.Uint64()
-		}
-
-		if nonce != nil {
-			txOpts.Nonce = nonce
-
-			if txOpts, err = rpc.IncreaseGasTipCap(
-				ctx,
-				a.rpc,
-				txOpts,
-				a.proverAddress,
-				a.gasTipMultiplier,
-				a.gasTipCap,
-			); err != nil {
-				return nil, err
-			}
-		}
+		var (
+			txOpts = a.txSender.Opts
+			tx     *types.Transaction
+			err    error
+		)
 
 		log.Info(
 			"Build proof submission transaction",
@@ -102,10 +82,20 @@ func (a *ProveBlockTxBuilder) Build(
 			if err != nil {
 				return nil, err
 			}
-			return a.rpc.TaikoL1.ProveBlock(txOpts, blockID.Uint64(), input)
+			if tx, err = a.rpc.TaikoL1.ProveBlock(txOpts, blockID.Uint64(), input); err != nil {
+				return nil, err
+			}
+		} else {
+			if tx, err = a.rpc.GuardianProver.Approve(txOpts, *meta, *transition, *tierProof); err != nil {
+				return nil, err
+			}
 		}
 
-		return a.rpc.GuardianProver.Approve(txOpts, *meta, *transition, *tierProof)
+		if _, err = a.txSender.SendTransaction(tx); err != nil {
+			return nil, err
+		}
+
+		return tx, nil
 	}
 }
 

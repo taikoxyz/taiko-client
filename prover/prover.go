@@ -21,6 +21,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/version"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -28,6 +29,7 @@ import (
 	guardianproversender "github.com/taikoxyz/taiko-client/prover/guardian_prover_sender"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
+	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
 	"github.com/taikoxyz/taiko-client/prover/server"
 	state "github.com/taikoxyz/taiko-client/prover/shared_state"
 )
@@ -140,8 +142,40 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 	p.sharedState.SetTiers(tiers)
 
+	// TODO: more configs
+	senderCfg := &sender.Config{
+		ConfirmationDepth: 0,
+		MaxRetrys:         p.cfg.BackOffMaxRetrys,
+		MaxWaitingTime:    10 * p.cfg.WaitReceiptTimeout,
+	}
+	if p.cfg.ProveBlockGasLimit != nil {
+		senderCfg.GasLimit = *p.cfg.ProveBlockGasLimit
+	}
+	if p.cfg.ProveBlockMaxTxGasTipCap != nil {
+		senderCfg.MaxGasFee = p.cfg.ProveBlockMaxTxGasTipCap.Uint64()
+	}
+
+	txSender, err := sender.NewSender(
+		p.ctx,
+		senderCfg,
+		p.rpc.L1,
+		p.proverPrivateKey,
+	)
+	if err != nil {
+		return err
+	}
+
+	txBuilder := transaction.NewProveBlockTxBuilder(
+		p.rpc,
+		p.proverPrivateKey,
+		nil, // TODO
+		p.cfg.ProveBlockMaxTxGasTipCap,
+		nil,
+		txSender,
+	)
+
 	// Proof submitters
-	if err := p.initProofSubmitters(); err != nil {
+	if err := p.initProofSubmitters(txBuilder); err != nil {
 		return err
 	}
 
@@ -156,6 +190,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.cfg.BackOffRetryInterval,
 		p.cfg.WaitReceiptTimeout,
 		p.cfg.Graffiti,
+		txBuilder,
 	)
 	if err != nil {
 		return err

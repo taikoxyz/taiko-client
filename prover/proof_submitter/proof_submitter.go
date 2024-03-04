@@ -52,6 +52,7 @@ func New(
 	proveBlockTxGasLimit *uint64,
 	txReplacementTipMultiplier uint64,
 	proveBlockMaxTxGasTipCap *big.Int,
+	builder *transaction.ProveBlockTxBuilder,
 ) (*ProofSubmitter, error) {
 	anchorValidator, err := validator.New(taikoL2Address, rpcClient.L2.ChainID, rpcClient)
 	if err != nil {
@@ -59,14 +60,10 @@ func New(
 	}
 
 	var (
-		maxRetry   = &submissionMaxRetry
-		txGasLimit *big.Int
+		maxRetry = &submissionMaxRetry
 	)
 	if proofProducer.Tier() == encoding.TierGuardianID {
 		maxRetry = nil
-	}
-	if proveBlockTxGasLimit != nil {
-		txGasLimit = new(big.Int).SetUint64(*proveBlockTxGasLimit)
 	}
 
 	return &ProofSubmitter{
@@ -74,17 +71,11 @@ func New(
 		proofProducer:   proofProducer,
 		resultCh:        resultCh,
 		anchorValidator: anchorValidator,
-		txBuilder: transaction.NewProveBlockTxBuilder(
-			rpcClient,
-			proverPrivKey,
-			txGasLimit,
-			proveBlockMaxTxGasTipCap,
-			new(big.Int).SetUint64(txReplacementTipMultiplier),
-		),
-		txSender:       transaction.NewSender(rpcClient, retryInterval, maxRetry, waitReceiptTimeout),
-		proverAddress:  crypto.PubkeyToAddress(proverPrivKey.PublicKey),
-		taikoL2Address: taikoL2Address,
-		graffiti:       rpc.StringToBytes32(graffiti),
+		txBuilder:       builder,
+		txSender:        transaction.NewSender(rpcClient, retryInterval, maxRetry, waitReceiptTimeout),
+		proverAddress:   crypto.PubkeyToAddress(proverPrivKey.PublicKey),
+		taikoL2Address:  taikoL2Address,
+		graffiti:        rpc.StringToBytes32(graffiti),
 	}, nil
 }
 

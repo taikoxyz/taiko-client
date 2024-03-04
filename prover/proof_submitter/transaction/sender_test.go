@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
@@ -36,7 +37,14 @@ func (s *TransactionTestSuite) SetupTest() {
 	s.Nil(err)
 
 	s.sender = NewSender(s.RPCClient, 5*time.Second, nil, 1*time.Minute)
-	s.builder = NewProveBlockTxBuilder(s.RPCClient, l1ProverPrivKey, nil, common.Big256, common.Big2)
+	txSender, err := sender.NewSender(
+		context.Background(),
+		&sender.Config{ConfirmationDepth: 0, MaxRetrys: 3},
+		s.RPCClient.L1,
+		l1ProverPrivKey,
+	)
+	s.Nil(err)
+	s.builder = NewProveBlockTxBuilder(s.RPCClient, l1ProverPrivKey, nil, common.Big256, common.Big2, txSender)
 }
 
 func (s *TransactionTestSuite) TestIsSubmitProofTxErrorRetryable() {

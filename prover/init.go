@@ -14,6 +14,7 @@ import (
 	handler "github.com/taikoxyz/taiko-client/prover/event_handler"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
+	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
 )
 
 // setApprovalAmount will set the allowance on the TaikoToken contract for the
@@ -97,7 +98,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 }
 
 // initProofSubmitters initializes the proof submitters from the given tiers in protocol.
-func (p *Prover) initProofSubmitters() error {
+func (p *Prover) initProofSubmitters(txBuilder *transaction.ProveBlockTxBuilder) error {
 	for _, tier := range p.sharedState.GetTiers() {
 		var (
 			producer  proofProducer.ProofProducer
@@ -138,6 +139,7 @@ func (p *Prover) initProofSubmitters() error {
 			p.cfg.ProveBlockGasLimit,
 			p.cfg.ProveBlockTxReplacementMultiplier,
 			p.cfg.ProveBlockMaxTxGasTipCap,
+			txBuilder,
 		); err != nil {
 			return err
 		}

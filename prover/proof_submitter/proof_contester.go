@@ -40,23 +40,13 @@ func NewProofContester(
 	retryInterval time.Duration,
 	waitReceiptTimeout time.Duration,
 	graffiti string,
+	builder *transaction.ProveBlockTxBuilder,
 ) (*ProofContester, error) {
-	var txGasLimit *big.Int
-	if proveBlockTxGasLimit != nil {
-		txGasLimit = new(big.Int).SetUint64(*proveBlockTxGasLimit)
-	}
-
 	return &ProofContester{
-		rpc: rpcClient,
-		txBuilder: transaction.NewProveBlockTxBuilder(
-			rpcClient,
-			proverPrivKey,
-			txGasLimit,
-			proveBlockMaxTxGasTipCap,
-			new(big.Int).SetUint64(txReplacementTipMultiplier),
-		),
-		txSender: transaction.NewSender(rpcClient, retryInterval, &submissionMaxRetry, waitReceiptTimeout),
-		graffiti: rpc.StringToBytes32(graffiti),
+		rpc:       rpcClient,
+		txBuilder: builder,
+		txSender:  transaction.NewSender(rpcClient, retryInterval, &submissionMaxRetry, waitReceiptTimeout),
+		graffiti:  rpc.StringToBytes32(graffiti),
 	}, nil
 }
 
