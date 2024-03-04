@@ -437,6 +437,7 @@ func (c *Client) CheckL1ReorgFromL2EE(ctx context.Context, blockID *big.Int) (bo
 					return false, nil, nil, nil
 				}
 
+				// TODO(David): looks like there are some issues here.
 				log.Info("Reorg detected due to L1Origin not found", "blockID", blockID)
 				reorged = true
 				blockID = new(big.Int).Sub(blockID, common.Big1)

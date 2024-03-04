@@ -3,7 +3,6 @@ package sender
 import (
 	"context"
 	"crypto/ecdsa"
-	"errors"
 	"fmt"
 	"math/big"
 	"os"
@@ -225,7 +224,7 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 		CurrentTx:  tx,
 	}
 
-	if err := s.send(txToConfirm); err != nil && !errors.Is(err, txpool.ErrReplaceUnderpriced) {
+	if err := s.send(txToConfirm); err != nil && err.Error() != txpool.ErrReplaceUnderpriced.Error() {
 		log.Error("Failed to send transaction", "id", txID, "hash", tx.Hash(), "err", err)
 		return "", err
 	}
@@ -255,7 +254,7 @@ func (s *Sender) send(tx *TxToConfirm) error {
 		tx.Err = err
 		// Check if the error is nonce too low
 		if err != nil {
-			if errors.Is(err, core.ErrNonceTooLow) || errors.Is(err, core.ErrNonceTooHigh) {
+			if err.Error() == core.ErrNonceTooLow.Error() || err.Error() == core.ErrNonceTooHigh.Error() {
 				s.AdjustNonce(originalTx)
 				log.Warn(
 					"Nonce is incorrect, retry sending the transaction with new nonce",
@@ -264,7 +263,7 @@ func (s *Sender) send(tx *TxToConfirm) error {
 				)
 				continue
 			}
-			if errors.Is(err, txpool.ErrReplaceUnderpriced) {
+			if err.Error() == txpool.ErrReplaceUnderpriced.Error() {
 				s.adjustGas(originalTx)
 				log.Warn("Replacement transaction underpriced", "hash", rawTx.Hash(), "err", err)
 				continue
@@ -361,7 +360,7 @@ func (s *Sender) checkPendingTransactionsConfirmation() {
 			// Get the transaction receipt.
 			receipt, err := s.client.TransactionReceipt(s.ctx, pendingTx.CurrentTx.Hash())
 			if err != nil {
-				if errors.Is(err, ethereum.NotFound) {
+				if err.Error() == ethereum.NotFound.Error() {
 					pendingTx.Err = err
 					s.releaseUnconfirmedTx(id)
 				}
