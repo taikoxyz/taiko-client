@@ -56,7 +56,7 @@ func NewProofContester(
 	}, nil
 }
 
-// SubmitContest submits a taikoL1.proveBlock transaction to contest a L2 block transition.
+// SubmitContest submits a TaikoL1.proveBlock transaction to contest a L2 block transition.
 func (c *ProofContester) SubmitContest(
 	ctx context.Context,
 	blockID *big.Int,
@@ -83,6 +83,7 @@ func (c *ProofContester) SubmitContest(
 		}
 		return err
 	}
+	// If the transition has already been contested, return early.
 	if transition.Contester != (common.Address{}) {
 		log.Info(
 			"Transaction has already been contested",
@@ -93,6 +94,7 @@ func (c *ProofContester) SubmitContest(
 		return nil
 	}
 
+	// Send the contest transaction.
 	header, err := c.rpc.L2.HeaderByNumber(ctx, blockID)
 	if err != nil {
 		return err

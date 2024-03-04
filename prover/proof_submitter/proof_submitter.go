@@ -175,25 +175,28 @@ func (s *ProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
-	txBuilder := s.txBuilder.Build(
+	// Build the TaikoL1.proveBlock transaction and send it to the L1 node.
+	if err := s.sender.Send(
 		ctx,
-		proofWithHeader.BlockID,
-		proofWithHeader.Meta,
-		&bindings.TaikoDataTransition{
-			ParentHash: proofWithHeader.Header.ParentHash,
-			BlockHash:  proofWithHeader.Opts.BlockHash,
-			StateRoot:  proofWithHeader.Opts.StateRoot,
-			Graffiti:   s.graffiti,
-		},
-		&bindings.TaikoDataTierProof{
-			Tier: proofWithHeader.Tier,
-			Data: proofWithHeader.Proof,
-		},
-		s.sender.GetOpts(),
-		proofWithHeader.Tier == encoding.TierGuardianID,
-	)
-
-	if err := s.sender.Send(ctx, proofWithHeader, txBuilder); err != nil {
+		proofWithHeader,
+		s.txBuilder.Build(
+			ctx,
+			proofWithHeader.BlockID,
+			proofWithHeader.Meta,
+			&bindings.TaikoDataTransition{
+				ParentHash: proofWithHeader.Header.ParentHash,
+				BlockHash:  proofWithHeader.Opts.BlockHash,
+				StateRoot:  proofWithHeader.Opts.StateRoot,
+				Graffiti:   s.graffiti,
+			},
+			&bindings.TaikoDataTierProof{
+				Tier: proofWithHeader.Tier,
+				Data: proofWithHeader.Proof,
+			},
+			s.sender.GetOpts(),
+			proofWithHeader.Tier == encoding.TierGuardianID,
+		),
+	); err != nil {
 		metrics.ProverSubmissionErrorCounter.Inc(1)
 		return err
 	}

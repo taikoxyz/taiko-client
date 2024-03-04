@@ -3,10 +3,10 @@ package sender
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -14,6 +14,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/txpool"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	cmap "github.com/orcaman/concurrent-map/v2"
@@ -25,7 +27,7 @@ import (
 var (
 	sendersMap                  = map[uint64]map[common.Address]*Sender{}
 	unconfirmedTxsCap           = 100
-	nonceIncorrectRetrys        = 3
+	sendTxErrorRetrys           = 3
 	unconfirmedTxsCheckInternal = 2 * time.Second
 	chainHeadFetchInterval      = 3 * time.Second
 	errTimeoutInMempool         = fmt.Errorf("transaction in mempool for too long")
@@ -208,7 +210,7 @@ func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value 
 // SendTransaction sends a transaction to the given Ethereum node.
 func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 	if s.unconfirmedTxs.Count() >= unconfirmedTxsCap {
-		return "", fmt.Errorf("too many pending transactions")
+		return "", fmt.Errorf("too many pending transactions (max: %d)", unconfirmedTxsCap)
 	}
 
 	txData, err := s.buildTxData(tx)
@@ -223,7 +225,7 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 		CurrentTx:  tx,
 	}
 
-	if err := s.send(txToConfirm); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
+	if err := s.send(txToConfirm); err != nil && !errors.Is(err, txpool.ErrReplaceUnderpriced) {
 		log.Error("Failed to send transaction", "id", txID, "hash", tx.Hash(), "err", err)
 		return "", err
 	}
@@ -242,7 +244,7 @@ func (s *Sender) send(tx *TxToConfirm) error {
 
 	originalTx := tx.originalTx
 
-	for i := 0; i < nonceIncorrectRetrys; i++ {
+	for i := 0; i < sendTxErrorRetrys; i++ {
 		// Retry when nonce is incorrect
 		rawTx, err := s.Opts.Signer(s.Opts.From, types.NewTx(originalTx))
 		if err != nil {
@@ -253,12 +255,16 @@ func (s *Sender) send(tx *TxToConfirm) error {
 		tx.Err = err
 		// Check if the error is nonce too low
 		if err != nil {
-			if strings.Contains(err.Error(), "nonce too low") {
+			if errors.Is(err, core.ErrNonceTooLow) || errors.Is(err, core.ErrNonceTooHigh) {
 				s.AdjustNonce(originalTx)
-				log.Warn("Nonce is incorrect, retry sending the transaction with new nonce", "hash", rawTx.Hash(), "err", err)
+				log.Warn(
+					"Nonce is incorrect, retry sending the transaction with new nonce",
+					"hash", rawTx.Hash(),
+					"err", err,
+				)
 				continue
 			}
-			if err.Error() == "replacement transaction underpriced" {
+			if errors.Is(err, txpool.ErrReplaceUnderpriced) {
 				s.adjustGas(originalTx)
 				log.Warn("Replacement transaction underpriced", "hash", rawTx.Hash(), "err", err)
 				continue
@@ -355,7 +361,7 @@ func (s *Sender) checkPendingTransactionsConfirmation() {
 			// Get the transaction receipt.
 			receipt, err := s.client.TransactionReceipt(s.ctx, pendingTx.CurrentTx.Hash())
 			if err != nil {
-				if err.Error() == "not found" {
+				if errors.Is(err, ethereum.NotFound) {
 					pendingTx.Err = err
 					s.releaseUnconfirmedTx(id)
 				}
