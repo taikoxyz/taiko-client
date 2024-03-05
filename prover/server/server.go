@@ -45,7 +45,6 @@ type ProverServer struct {
 	rpc                     *rpc.Client
 	protocolConfigs         *bindings.TaikoDataConfig
 	livenessBond            *big.Int
-	isGuardian              bool
 	db                      ethdb.KeyValueStore
 }
 
@@ -63,7 +62,6 @@ type NewProverServerOpts struct {
 	RPC                     *rpc.Client
 	ProtocolConfigs         *bindings.TaikoDataConfig
 	LivenessBond            *big.Int
-	IsGuardian              bool
 	DB                      ethdb.KeyValueStore
 }
 
@@ -84,7 +82,6 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		rpc:                     opts.RPC,
 		protocolConfigs:         opts.ProtocolConfigs,
 		livenessBond:            opts.LivenessBond,
-		isGuardian:              opts.IsGuardian,
 		db:                      opts.DB,
 	}
 

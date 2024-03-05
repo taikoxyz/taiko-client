@@ -370,6 +370,7 @@ type NewBlockProposedGuardianEventHandlerOps struct {
 	GuardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater
 }
 
+// BlockProposedGuaridanEventHandler is responsible for handling the BlockProposed event as a guardian prover.
 type BlockProposedGuaridanEventHandler struct {
 	*BlockProposedEventHandler
 	GuardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater

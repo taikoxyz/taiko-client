@@ -58,7 +58,6 @@ func (s *ProverServerTestSuite) SetupTest() {
 		RPC:                     rpcClient,
 		ProtocolConfigs:         &configs,
 		LivenessBond:            common.Big0,
-		IsGuardian:              false,
 		DB:                      memorydb.New(),
 	})
 	s.Nil(err)
