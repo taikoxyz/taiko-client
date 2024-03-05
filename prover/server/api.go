@@ -105,25 +105,23 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "only receive ETH")
 	}
 
-	if !srv.isGuardian {
-		ok, err := rpc.CheckProverBalance(
-			c.Request().Context(),
-			srv.rpc,
-			srv.proverAddress,
-			srv.assignmentHookAddress,
-			srv.livenessBond,
-		)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
+	ok, err := rpc.CheckProverBalance(
+		c.Request().Context(),
+		srv.rpc,
+		srv.proverAddress,
+		srv.assignmentHookAddress,
+		srv.livenessBond,
+	)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 
-		if !ok {
-			log.Warn(
-				"Insufficient prover balance, please get more tokens or wait for verification of the blocks you proved",
-				"prover", srv.proverAddress,
-			)
-			return echo.NewHTTPError(http.StatusUnprocessableEntity, "insufficient prover balance")
-		}
+	if !ok {
+		log.Warn(
+			"Insufficient prover balance, please get more tokens or wait for verification of the blocks you proved",
+			"prover", srv.proverAddress,
+		)
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, "insufficient prover balance")
 	}
 
 	for _, tier := range req.TierFees {
