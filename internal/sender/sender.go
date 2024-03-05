@@ -245,7 +245,7 @@ func (s *Sender) send(tx *TxToConfirm) error {
 
 	originalTx := tx.originalTx
 	// Set the nonce of the transaction.
-	if _, err := s.adjustNonce(originalTx, false); err != nil {
+	if err := s.adjustNonce(originalTx, false); err != nil {
 		return err
 	}
 
@@ -261,7 +261,7 @@ func (s *Sender) send(tx *TxToConfirm) error {
 		// Check if the error is nonce too low
 		if err != nil {
 			if strings.Contains(err.Error(), "nonce too low") {
-				if _, err := s.adjustNonce(originalTx, true); err != nil {
+				if err := s.adjustNonce(originalTx, true); err != nil {
 					log.Error("Failed to set nonce when appear nonce too low",
 						"tx_id", tx.ID,
 						"nonce", tx.CurrentTx.Nonce(),

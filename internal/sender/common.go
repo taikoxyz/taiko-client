@@ -49,16 +49,17 @@ func (s *Sender) adjustGas(txData types.TxData) {
 }
 
 // adjustNonce adjusts the nonce of the given transaction with the current nonce of the sender.
-func (s *Sender) adjustNonce(txData types.TxData, replace bool) (nonce uint64, err error) {
+func (s *Sender) adjustNonce(txData types.TxData, replace bool) (err error) {
 	if utils.IsNil(txData) {
-		return 0, fmt.Errorf("nil transaction data")
+		return fmt.Errorf("nil transaction data")
 	}
 
+	var nonce uint64
 	if replace {
 		nonce, err = s.client.NonceAt(s.ctx, s.Opts.From, nil)
 		if err != nil {
 			log.Warn("Failed to get the nonce", "from", s.Opts.From, "err", err)
-			return 0, err
+			return err
 		}
 		s.nonce = nonce
 	} else {
@@ -75,7 +76,7 @@ func (s *Sender) adjustNonce(txData types.TxData, replace bool) (nonce uint64, e
 	case *types.AccessListTx:
 		tx.Nonce = nonce
 	default:
-		return 0, fmt.Errorf("unsupported transaction type: %v", txData)
+		return fmt.Errorf("unsupported transaction type: %v", txData)
 	}
 	return
 }
