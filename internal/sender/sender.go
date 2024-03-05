@@ -270,13 +270,13 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 }
 
 // send is the internal method to send the given transaction.
-func (s *Sender) send(tx *TxToConfirm, setNonce bool) error {
+func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	originalTx := tx.originalTx
 
-	if setNonce {
+	if resetNonce {
 		// Set the nonce of the transaction.
 		if err := s.SetNonce(originalTx, false); err != nil {
 			return err
