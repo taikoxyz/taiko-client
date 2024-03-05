@@ -78,7 +78,8 @@ type Sender struct {
 	head   *types.Header
 	client *rpc.EthClient
 
-	Opts *bind.TransactOpts
+	nonce uint64
+	Opts  *bind.TransactOpts
 
 	unconfirmedTxs cmap.ConcurrentMap[string, *TxToConfirm]
 	txToConfirmCh  cmap.ConcurrentMap[string, chan *TxToConfirm]
@@ -244,7 +245,7 @@ func (s *Sender) send(tx *TxToConfirm) error {
 
 	originalTx := tx.originalTx
 	// Set the nonce of the transaction.
-	if err := s.setNonce(originalTx); err != nil {
+	if _, err := s.adjustNonce(originalTx, false); err != nil {
 		return err
 	}
 
@@ -260,7 +261,7 @@ func (s *Sender) send(tx *TxToConfirm) error {
 		// Check if the error is nonce too low
 		if err != nil {
 			if strings.Contains(err.Error(), "nonce too low") {
-				if err := s.setNonce(originalTx); err != nil {
+				if _, err := s.adjustNonce(originalTx, true); err != nil {
 					log.Error("Failed to set nonce when appear nonce too low",
 						"tx_id", tx.ID,
 						"nonce", tx.CurrentTx.Nonce(),
@@ -297,6 +298,7 @@ func (s *Sender) send(tx *TxToConfirm) error {
 		}
 		break
 	}
+	s.nonce++
 	return nil
 }
 
