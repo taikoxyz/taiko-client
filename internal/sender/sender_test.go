@@ -24,13 +24,16 @@ type SenderTestSuite struct {
 }
 
 func (s *SenderTestSuite) TestNormalSender() {
+	nonce, err := s.RPCClient.L1.NonceAt(context.Background(), s.sender.Opts.From, nil)
+	s.Nil(err)
+
 	var eg errgroup.Group
 	eg.SetLimit(runtime.NumCPU())
 	for i := 0; i < 5; i++ {
 		i := i
 		eg.Go(func() error {
 			addr := common.BigToAddress(big.NewInt(int64(i)))
-			_, err := s.sender.SendRawTransaction(s.sender.Opts.Nonce.Uint64(), &addr, big.NewInt(1), nil)
+			_, err := s.sender.SendRawTransaction(nonce+uint64(i), &addr, big.NewInt(1), nil)
 			return err
 		})
 	}

@@ -126,8 +126,6 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 		txToConfirmCh:  cmap.New[chan *TxToConfirm](),
 		stopCh:         make(chan struct{}),
 	}
-	// Initialize the nonce
-	sender.AdjustNonce(nil)
 
 	// Initialize the gas fee related fields
 	if err = sender.updateGasTipGasFee(head); err != nil {
@@ -245,6 +243,10 @@ func (s *Sender) send(tx *TxToConfirm) error {
 	defer s.mu.Unlock()
 
 	originalTx := tx.originalTx
+	// Set the nonce of the transaction.
+	if err := s.setNonce(originalTx); err != nil {
+		return err
+	}
 
 	for i := 0; i < nonceIncorrectRetrys; i++ {
 		// Retry when nonce is incorrect
@@ -258,13 +260,21 @@ func (s *Sender) send(tx *TxToConfirm) error {
 		// Check if the error is nonce too low
 		if err != nil {
 			if strings.Contains(err.Error(), "nonce too low") {
-				s.AdjustNonce(originalTx)
-				log.Warn("Nonce is incorrect, retry sending the transaction with new nonce",
-					"tx_id", tx.ID,
-					"nonce", tx.CurrentTx.Nonce(),
-					"hash", rawTx.Hash(),
-					"err", err,
-				)
+				if err := s.setNonce(originalTx); err != nil {
+					log.Error("Failed to set nonce when appear nonce too low",
+						"tx_id", tx.ID,
+						"nonce", tx.CurrentTx.Nonce(),
+						"hash", rawTx.Hash(),
+						"err", err,
+					)
+				} else {
+					log.Warn("Nonce is incorrect, retry sending the transaction with new nonce",
+						"tx_id", tx.ID,
+						"nonce", tx.CurrentTx.Nonce(),
+						"hash", rawTx.Hash(),
+						"err", err,
+					)
+				}
 				continue
 			}
 			if strings.Contains(err.Error(), "replacement transaction underpriced") {
@@ -287,7 +297,6 @@ func (s *Sender) send(tx *TxToConfirm) error {
 		}
 		break
 	}
-	s.Opts.Nonce = new(big.Int).Add(s.Opts.Nonce, common.Big1)
 	return nil
 }
 
