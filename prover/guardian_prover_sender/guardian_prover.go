@@ -1,13 +1,10 @@
 package guardianproversender
 
 import (
-	"bytes"
 	"context"
 	"crypto/ecdsa"
-	"encoding/json"
 	"fmt"
 	"math/big"
-	"net/http"
 	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -15,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/go-resty/resty/v2"
 
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/prover/db"
@@ -74,22 +72,17 @@ func New(
 
 // post sends the given POST request to the health check server.
 func (s *GuardianProverBlockSender) post(ctx context.Context, route string, req interface{}) error {
-	body, err := json.Marshal(req)
+	resp, err := resty.New().R().
+		SetContext(ctx).
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Accept", "application/json").
+		SetBody(req).
+		Post(fmt.Sprintf("%v/%v", s.healthCheckServerEndpoint.String(), route))
 	if err != nil {
 		return err
 	}
 
-	resp, err := http.Post(
-		fmt.Sprintf("%v/%v", s.healthCheckServerEndpoint.String(), route),
-		"application/json",
-		bytes.NewBuffer(body),
-	)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
+	if !resp.IsSuccess() {
 		return fmt.Errorf(
 			"unable to contact health check server endpoint, status code: %v", resp.StatusCode,
 		)

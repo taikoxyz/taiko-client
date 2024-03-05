@@ -153,6 +153,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if p.cfg.ProveBlockMaxTxGasFeeCap != nil {
 		senderCfg.MaxGasFee = p.cfg.ProveBlockMaxTxGasFeeCap.Uint64()
 	}
+	// For guaridan provers we always simply keep retrying for each its proof submission.
 	if p.IsGuardianProver() && senderCfg.MaxRetrys != 0 {
 		senderCfg.MaxRetrys = 0
 	}
