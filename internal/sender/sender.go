@@ -257,7 +257,7 @@ func (s *Sender) send(tx *TxToConfirm) error {
 				log.Warn("Nonce is incorrect, retry sending the transaction with new nonce", "hash", rawTx.Hash(), "err", err)
 				continue
 			}
-			if err.Error() == "replacement transaction underpriced" {
+			if strings.Contains(err.Error(), "replacement transaction underpriced") {
 				s.adjustGas(originalTx)
 				log.Warn("Replacement transaction underpriced", "hash", rawTx.Hash(), "err", err)
 				continue
