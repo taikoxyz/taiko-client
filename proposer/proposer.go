@@ -19,12 +19,12 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
-	"modernc.org/mathutil"
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/internal/sender"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
 )
@@ -247,7 +247,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return errNoNewTxs
 	}
 	g := new(errgroup.Group)
-	for _, txs := range txLists[:mathutil.Min(len(txLists), int(p.MaxProposedTxListsPerEpoch))] {
+	for _, txs := range txLists[:utils.Min(len(txLists), int(p.MaxProposedTxListsPerEpoch))] {
 		txs := txs
 		g.Go(func() error {
 			if err := p.ProposeTxList(ctx, txs); err != nil {
