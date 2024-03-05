@@ -218,7 +218,7 @@ func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value 
 		},
 	}
 
-	if err := s.send(txToConfirm); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
+	if err := s.send(txToConfirm, false); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
 		log.Error("Failed to send transaction",
 			"tx_id", txID,
 			"nonce", txToConfirm.CurrentTx.Nonce(),
@@ -252,7 +252,7 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 		CurrentTx:  tx,
 	}
 
-	if err := s.send(txToConfirm); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
+	if err := s.send(txToConfirm, true); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
 		log.Error("Failed to send transaction",
 			"tx_id", txID,
 			"nonce", txToConfirm.CurrentTx.Nonce(),
@@ -270,14 +270,17 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 }
 
 // send is the internal method to send the given transaction.
-func (s *Sender) send(tx *TxToConfirm) error {
+func (s *Sender) send(tx *TxToConfirm, setNonce bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	originalTx := tx.originalTx
-	// Set the nonce of the transaction.
-	if err := s.SetNonce(originalTx, false); err != nil {
-		return err
+
+	if setNonce {
+		// Set the nonce of the transaction.
+		if err := s.SetNonce(originalTx, false); err != nil {
+			return err
+		}
 	}
 
 	for i := 0; i < nonceIncorrectRetrys; i++ {
@@ -382,7 +385,7 @@ func (s *Sender) resendUnconfirmedTxs() {
 			s.releaseUnconfirmedTx(id)
 			continue
 		}
-		if err := s.send(unconfirmedTx); err != nil {
+		if err := s.send(unconfirmedTx, true); err != nil {
 			log.Warn(
 				"Failed to resend the transaction",
 				"tx_id", id,
