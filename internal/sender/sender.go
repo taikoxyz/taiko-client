@@ -183,6 +183,10 @@ func (s *Sender) GetUnconfirmedTx(txID string) *types.Transaction {
 
 // SendRawTransaction sends a transaction to the given Ethereum node.
 func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value *big.Int, data []byte) (string, error) {
+	if s.unconfirmedTxs.Count() >= unconfirmedTxsCap {
+		return "", fmt.Errorf("too many pending transactions")
+	}
+
 	gasLimit := s.GasLimit
 	if gasLimit == 0 {
 		var err error
@@ -198,16 +202,36 @@ func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value 
 			return "", err
 		}
 	}
-	return s.SendTransaction(types.NewTx(&types.DynamicFeeTx{
-		ChainID:   s.client.ChainID,
-		To:        target,
-		Nonce:     nonce,
-		GasFeeCap: s.Opts.GasFeeCap,
-		GasTipCap: s.Opts.GasTipCap,
-		Gas:       gasLimit,
-		Value:     value,
-		Data:      data,
-	}))
+
+	txID := uuid.New()
+	txToConfirm := &TxToConfirm{
+		ID: txID,
+		originalTx: &types.DynamicFeeTx{
+			ChainID:   s.client.ChainID,
+			To:        target,
+			Nonce:     nonce,
+			GasFeeCap: s.Opts.GasFeeCap,
+			GasTipCap: s.Opts.GasTipCap,
+			Gas:       gasLimit,
+			Value:     value,
+			Data:      data,
+		},
+	}
+
+	if err := s.send(txToConfirm); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
+		log.Error("Failed to send transaction",
+			"tx_id", txID,
+			"nonce", txToConfirm.CurrentTx.Nonce(),
+			"err", err,
+		)
+		return "", err
+	}
+
+	// Add the transaction to the unconfirmed transactions
+	s.unconfirmedTxs.Set(txID, txToConfirm)
+	s.txToConfirmCh.Set(txID, make(chan *TxToConfirm, 1))
+
+	return txID, nil
 }
 
 // SendTransaction sends a transaction to the given Ethereum node.
