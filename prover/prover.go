@@ -204,7 +204,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		RPC:                   p.rpc,
 		ProtocolConfigs:       &protocolConfigs,
 		LivenessBond:          protocolConfigs.LivenessBond,
-		IsGuardian:            p.IsGuardianProver(),
 		DB:                    db,
 	}); err != nil {
 		return err
