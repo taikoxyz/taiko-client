@@ -79,6 +79,9 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/out/MainnetTierProvider.sol/MainnetTierP
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TierProvider --pkg bindings --out $DIR/../bindings/gen_tier_provider.go
 
+solc --combined-json abi,bin $DIR/../internal/testutils/basefee/contracts/AuxBaseFee.sol --pretty-json |
+  abigen --combined-json - --type AuxBaseFee --pkg basefee --out $DIR/../internal/testutils/basefee/gen_aux_base_fee.go
+
 git -C ${TAIKO_MONO_DIR} log --format="%H" -n 1 >./bindings/.githead
 
 echo "🍻 Go contract bindings generated!"
