@@ -61,3 +61,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		RPCTimeout:            timeout,
 	}, nil
 }
+
+func NewConfigFromConfigFile() (*Config, error) {
+
+	return &Config{}, nil
+}

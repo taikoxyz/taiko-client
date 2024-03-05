@@ -180,3 +180,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L2NodeVersion:                           c.String(flags.L2NodeVersion.Name),
 	}, nil
 }
+
+func NewConfigFromConfigFile() (*Config, error) {
+
+	return &Config{}, nil
+}

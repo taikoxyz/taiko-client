@@ -120,6 +120,12 @@ var (
 		Category: commonCategory,
 		Value:    1 * time.Minute,
 	}
+	UseConfigFile = &cli.BoolFlag{
+		Name:     "useConfig",
+		Usage:    "Whether to use a config file for flags",
+		Category: commonCategory,
+		Value:    false,
+	}
 )
 
 // CommonFlags All common flags.
@@ -138,6 +144,7 @@ var CommonFlags = []cli.Flag{
 	BackOffRetryInterval,
 	RPCTimeout,
 	WaitReceiptTimeout,
+	UseConfigFile,
 }
 
 // MergeFlags merges the given flag slices.

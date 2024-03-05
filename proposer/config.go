@@ -135,3 +135,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L1BlockBuilderTip:                   new(big.Int).SetUint64(c.Uint64(flags.L1BlockBuilderTip.Name)),
 	}, nil
 }
+
+func NewConfigFromConfigFile() (*Config, error) {
+
+	return &Config{}, nil
+}

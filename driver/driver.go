@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 
+	"github.com/taikoxyz/taiko-client/cmd/flags"
 	chainSyncer "github.com/taikoxyz/taiko-client/driver/chain_syncer"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -43,11 +44,20 @@ type Driver struct {
 
 // InitFromCli initializes the given driver instance based on the command line flags.
 func (d *Driver) InitFromCli(ctx context.Context, c *cli.Context) error {
-	cfg, err := NewConfigFromCliContext(c)
-	if err != nil {
-		return err
-	}
+	var cfg *Config
+	var err error
 
+	if c.Bool(flags.UseConfigFile.Name) {
+		cfg, err = NewConfigFromConfigFile()
+		if err != nil {
+			return err
+		}
+	} else {
+		cfg, err = NewConfigFromCliContext(c)
+		if err != nil {
+			return err
+		}
+	}
 	return d.InitFromConfig(ctx, cfg)
 }
 
