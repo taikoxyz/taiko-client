@@ -48,12 +48,8 @@ func (s *Sender) adjustGas(txData types.TxData) {
 	}
 }
 
-// setNonce adjusts the nonce of the given transaction with the current nonce of the sender.
-func (s *Sender) setNonce(txData types.TxData, adjust bool) (err error) {
-	if utils.IsNil(txData) {
-		return fmt.Errorf("nil transaction data")
-	}
-
+// SetNonce adjusts the nonce of the given transaction with the current nonce of the sender.
+func (s *Sender) SetNonce(txData types.TxData, adjust bool) (err error) {
 	var nonce uint64
 	if adjust {
 		s.nonce, err = s.client.NonceAt(s.ctx, s.Opts.From, nil)
@@ -64,17 +60,19 @@ func (s *Sender) setNonce(txData types.TxData, adjust bool) (err error) {
 	}
 	nonce = s.nonce
 
-	switch tx := txData.(type) {
-	case *types.DynamicFeeTx:
-		tx.Nonce = nonce
-	case *types.BlobTx:
-		tx.Nonce = nonce
-	case *types.LegacyTx:
-		tx.Nonce = nonce
-	case *types.AccessListTx:
-		tx.Nonce = nonce
-	default:
-		return fmt.Errorf("unsupported transaction type: %v", txData)
+	if !utils.IsNil(txData) {
+		switch tx := txData.(type) {
+		case *types.DynamicFeeTx:
+			tx.Nonce = nonce
+		case *types.BlobTx:
+			tx.Nonce = nonce
+		case *types.LegacyTx:
+			tx.Nonce = nonce
+		case *types.AccessListTx:
+			tx.Nonce = nonce
+		default:
+			return fmt.Errorf("unsupported transaction type: %v", txData)
+		}
 	}
 	return
 }

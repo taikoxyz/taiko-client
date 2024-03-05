@@ -111,6 +111,12 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 		}
 	}
 
+	// Get the nonce
+	nonce, err := client.NonceAt(ctx, opts.From, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	// Get the chain ID
 	head, err := client.HeaderByNumber(ctx, nil)
 	if err != nil {
@@ -122,6 +128,7 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 		Config:         cfg,
 		head:           head,
 		client:         client,
+		nonce:          nonce,
 		Opts:           opts,
 		unconfirmedTxs: cmap.New[*TxToConfirm](),
 		txToConfirmCh:  cmap.New[chan *TxToConfirm](),
@@ -245,7 +252,7 @@ func (s *Sender) send(tx *TxToConfirm) error {
 
 	originalTx := tx.originalTx
 	// Set the nonce of the transaction.
-	if err := s.setNonce(originalTx, false); err != nil {
+	if err := s.SetNonce(originalTx, false); err != nil {
 		return err
 	}
 
@@ -261,7 +268,7 @@ func (s *Sender) send(tx *TxToConfirm) error {
 		// Check if the error is nonce too low
 		if err != nil {
 			if strings.Contains(err.Error(), "nonce too low") {
-				if err := s.setNonce(originalTx, true); err != nil {
+				if err := s.SetNonce(originalTx, true); err != nil {
 					log.Error("Failed to set nonce when appear nonce too low",
 						"tx_id", tx.ID,
 						"nonce", tx.CurrentTx.Nonce(),
