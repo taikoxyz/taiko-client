@@ -148,12 +148,12 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
 
-	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(
+	res, err := s.RPCClient.CheckL1Reorg(
 		context.Background(),
 		l2Head2.Number,
 	)
 	s.Nil(err)
-	s.False(reorged)
+	s.False(res.IsReorged)
 
 	// Reorg back to l2Head1
 	s.RevertL1Snapshot(testnetL1SnapshotID)
@@ -210,12 +210,12 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
 
-	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(
+	res, err := s.RPCClient.CheckL1Reorg(
 		context.Background(),
 		l2Head2.Number,
 	)
 	s.Nil(err)
-	s.False(reorged)
+	s.False(res.IsReorged)
 
 	// Reorg back to l2Head1
 	s.RevertL1Snapshot(testnetL1SnapshotID)
@@ -268,12 +268,12 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 	s.Greater(l1Head2.Number.Uint64(), l1Head1.Number.Uint64())
 
-	reorged, _, _, err := s.RPCClient.CheckL1ReorgFromL2EE(
+	res, err := s.RPCClient.CheckL1Reorg(
 		context.Background(),
 		l2Head2.Number,
 	)
 	s.Nil(err)
-	s.False(reorged)
+	s.False(res.IsReorged)
 
 	// Reorg back to l2Head1
 	s.RevertL1Snapshot(testnetL1SnapshotID)

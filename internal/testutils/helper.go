@@ -173,7 +173,6 @@ func (s *ClientTestSuite) NewTestProverServer(
 		RPC:                     s.RPCClient,
 		ProtocolConfigs:         &protocolConfig,
 		LivenessBond:            protocolConfig.LivenessBond,
-		IsGuardian:              true,
 	})
 	s.Nil(err)
 
