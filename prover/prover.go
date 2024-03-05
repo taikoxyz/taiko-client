@@ -34,10 +34,6 @@ import (
 	state "github.com/taikoxyz/taiko-client/prover/shared_state"
 )
 
-var (
-	heartbeatInterval = 12 * time.Second
-)
-
 // Prover keeps trying to prove newly proposed blocks.
 type Prover struct {
 	// Configurations
@@ -162,11 +158,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if err != nil {
 		return err
 	}
-
-	txBuilder := transaction.NewProveBlockTxBuilder(
-		p.rpc,
-		p.proverPrivateKey,
-	)
+	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc, p.proverPrivateKey)
 
 	// Proof submitters
 	if err := p.initProofSubmitters(p.ctx, txSender, txBuilder); err != nil {
@@ -201,7 +193,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// Prover server
-	proverServerOpts := &server.NewProverServerOpts{
+	if p.server, err = server.New(&server.NewProverServerOpts{
 		ProverPrivateKey:      p.cfg.L1ProverPrivKey,
 		MinOptimisticTierFee:  p.cfg.MinOptimisticTierFee,
 		MinSgxTierFee:         p.cfg.MinSgxTierFee,
@@ -214,8 +206,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		LivenessBond:          protocolConfigs.LivenessBond,
 		IsGuardian:            p.IsGuardianProver(),
 		DB:                    db,
-	}
-	if p.server, err = server.New(proverServerOpts); err != nil {
+	}); err != nil {
 		return err
 	}
 
@@ -266,7 +257,7 @@ func (p *Prover) Start() error {
 			p.cfg.L1NodeVersion,
 			p.cfg.L2NodeVersion,
 		); err != nil {
-			log.Crit("Failed to send guardian prover startup", "error", err)
+			log.Error("Failed to send guardian prover startup", "error", err)
 		}
 
 		go p.gurdianProverHeartbeatLoop(p.ctx)

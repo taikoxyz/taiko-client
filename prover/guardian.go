@@ -5,6 +5,11 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/log"
+	"golang.org/x/sync/errgroup"
+)
+
+var (
+	heartbeatInterval = 12 * time.Second
 )
 
 // gurdianProverHeartbeatLoop keeps sending heartbeats to the guardian prover health check server
@@ -28,15 +33,23 @@ func (p *Prover) gurdianProverHeartbeatLoop(ctx context.Context) {
 		case <-p.ctx.Done():
 			return
 		case <-ticker.C:
-			latestL1Block, err := p.rpc.L1.BlockNumber(ctx)
-			if err != nil {
-				log.Error("Failed to get L1 head", err)
-				continue
-			}
+			var (
+				latestL1Block uint64
+				latestL2Block uint64
+				err           error
+				g             = new(errgroup.Group)
+			)
 
-			latestL2Block, err := p.rpc.L2.BlockNumber(ctx)
-			if err != nil {
-				log.Error("Failed to get L2 head", err)
+			g.Go(func() error {
+				latestL1Block, err = p.rpc.L1.BlockNumber(ctx)
+				return err
+			})
+			g.Go(func() error {
+				latestL2Block, err = p.rpc.L2.BlockNumber(ctx)
+				return err
+			})
+			if err := g.Wait(); err != nil {
+				log.Error("Failed to get latest L1/L2 block number", "error", err)
 				continue
 			}
 

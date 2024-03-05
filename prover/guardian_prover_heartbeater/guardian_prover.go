@@ -154,7 +154,8 @@ func (s *GuardianProverHeartBeater) SendStartup(
 		return err
 	}
 
-	log.Info("Guardian prover successfully sent startup",
+	log.Info(
+		"Guardian prover successfully sent startup",
 		"revision", revision,
 		"version", version,
 	)
