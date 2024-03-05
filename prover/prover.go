@@ -69,8 +69,8 @@ type Prover struct {
 	proofSubmitters []proofSubmitter.Submitter
 	proofContester  proofSubmitter.Contester
 
-	proofWindowExpiredCh chan *bindings.TaikoL1ClientBlockProposed
-	proveNotify          chan struct{}
+	assignmentExpiredCh chan *bindings.TaikoL1ClientBlockProposed
+	proveNotify         chan struct{}
 
 	// Proof related channels
 	proofSubmissionCh chan *proofSubmitter.ProofRequestBody
@@ -126,7 +126,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	chBufferSize := p.protocolConfigs.BlockMaxProposals
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
-	p.proofWindowExpiredCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
+	p.assignmentExpiredCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.proofSubmissionCh = make(chan *proofSubmitter.ProofRequestBody, p.cfg.Capacity)
 	p.proofContestCh = make(chan *proofSubmitter.ContestRequestBody, p.cfg.Capacity)
 	p.proveNotify = make(chan struct{}, 1)
@@ -347,7 +347,7 @@ func (p *Prover) eventLoop() {
 					log.Error("Handle TaikoL1.TransitionContested event error", "error", err)
 				}
 			}()
-		case e := <-p.proofWindowExpiredCh:
+		case e := <-p.assignmentExpiredCh:
 			go func() {
 				if err := p.withRetry(func() error { return p.assignmentExpiredHandler.Handle(p.ctx, e) }); err != nil {
 					log.Error("Handle proof window expired event error", "error", err)

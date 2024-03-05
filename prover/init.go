@@ -215,7 +215,7 @@ func (p *Prover) initEventHandlers() {
 		GenesisHeightL1:       p.genesisHeightL1,
 		RPC:                   p.rpc,
 		ProofGenerationCh:     p.proofGenerationCh,
-		ProofWindowExpiredCh:  p.proofWindowExpiredCh,
+		ProofWindowExpiredCh:  p.assignmentExpiredCh,
 		ProofSubmissionCh:     p.proofSubmissionCh,
 		ProofContestCh:        p.proofContestCh,
 		BackOffRetryInterval:  p.cfg.BackOffRetryInterval,
