@@ -24,16 +24,16 @@ type BaseFeeSuite struct {
 	config          bindings.TaikoL2Config
 }
 
-func (s *BaseFeeSuite) calc1559BaseFee(_l1BlockId, _parentGasUsed uint64) uint64 {
+func (s *BaseFeeSuite) calc1559BaseFee(_l1BlockID, _parentGasUsed uint64) uint64 {
 	var (
-		basefee_ *big.Int
-		err      error
+		baseFee *big.Int
+		err     error
 	)
 	if s.gasExcess > 0 {
 		excess := s.gasExcess + _parentGasUsed
 		var numL1Blocks uint64
-		if s.lastSyncedBlock > 0 && _l1BlockId > s.lastSyncedBlock {
-			numL1Blocks = _l1BlockId - s.lastSyncedBlock
+		if s.lastSyncedBlock > 0 && _l1BlockID > s.lastSyncedBlock {
+			numL1Blocks = _l1BlockID - s.lastSyncedBlock
 		}
 		if numL1Blocks > 0 {
 			issuance := numL1Blocks * uint64(s.config.GasTargetPerL1Block)
@@ -43,35 +43,38 @@ func (s *BaseFeeSuite) calc1559BaseFee(_l1BlockId, _parentGasUsed uint64) uint64
 				excess = 1
 			}
 		}
-		gasExcess_ := utils.Min(excess, math.MaxUint64)
-		basefee_, err = s.baseFee.BaseFee(nil, new(big.Int).SetUint64(gasExcess_), s.config.BasefeeAdjustmentQuotient, s.config.GasTargetPerL1Block)
+		gasExcess := utils.Min(excess, math.MaxUint64)
+		baseFee, err = s.baseFee.BaseFee(nil,
+			new(big.Int).SetUint64(gasExcess),
+			s.config.BasefeeAdjustmentQuotient,
+			s.config.GasTargetPerL1Block,
+		)
 		s.Nil(err)
 	}
 
-	if basefee_ == nil || basefee_.Uint64() == 0 {
+	if baseFee == nil || baseFee.Uint64() == 0 {
 		return 1
 	}
-	return basefee_.Uint64()
+	return baseFee.Uint64()
 }
 
 func (s *BaseFeeSuite) TestVerifyCalc1559BaseFee() {
 	l1CLi := s.RPCClient.L1
 	l2CLi := s.RPCClient.L2
-	taikoL2 := s.RPCClient.TaikoL2
 
 	l1Header, err := l1CLi.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	_l1BlockId := l1Header.Number.Uint64()
+	l1BlockID := l1Header.Number.Uint64()
 
 	l2Header, err := l2CLi.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	l2BaseFee_, err := taikoL2.GetBasefee(nil, _l1BlockId, uint32(l2Header.GasUsed))
+	l2BaseFee, err := s.RPCClient.TaikoL2.GetBasefee(nil, l1BlockID, uint32(l2Header.GasUsed))
 	s.Nil(err)
 
-	mockBaseFee := s.calc1559BaseFee(_l1BlockId, l2Header.GasUsed)
+	mockBaseFee := s.calc1559BaseFee(l1BlockID, l2Header.GasUsed)
 
-	s.Equal(l2BaseFee_.Uint64(), mockBaseFee)
+	s.Equal(l2BaseFee.Uint64(), mockBaseFee)
 }
 
 func (s *BaseFeeSuite) TestBaseFee() {}
