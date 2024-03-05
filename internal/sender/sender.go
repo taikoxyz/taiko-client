@@ -265,9 +265,9 @@ func (s *Sender) send(tx *TxToConfirm) error {
 			log.Error("Failed to send transaction", "hash", rawTx.Hash(), "err", err)
 			return err
 		}
-		s.Opts.Nonce = new(big.Int).Add(s.Opts.Nonce, common.Big1)
 		break
 	}
+	s.Opts.Nonce = new(big.Int).Add(s.Opts.Nonce, common.Big1)
 	return nil
 }
 
