@@ -144,7 +144,7 @@ func (s *Syncer) onBlockProposed(
 	if !s.progressTracker.Triggered() {
 		// Check whether we need to reorg the L2 chain at first.
 		var (
-			reorgCheckResult *rpc.ReorgCheckResult
+			reorgCheckResult *rpc.ReorgCheckResult = new(rpc.ReorgCheckResult)
 			err              error
 		)
 		// 1. The latest verified block
