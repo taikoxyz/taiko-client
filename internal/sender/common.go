@@ -48,23 +48,21 @@ func (s *Sender) adjustGas(txData types.TxData) {
 	}
 }
 
-// adjustNonce adjusts the nonce of the given transaction with the current nonce of the sender.
-func (s *Sender) adjustNonce(txData types.TxData, replace bool) (err error) {
+// setNonce adjusts the nonce of the given transaction with the current nonce of the sender.
+func (s *Sender) setNonce(txData types.TxData, adjust bool) (err error) {
 	if utils.IsNil(txData) {
 		return fmt.Errorf("nil transaction data")
 	}
 
 	var nonce uint64
-	if replace {
-		nonce, err = s.client.NonceAt(s.ctx, s.Opts.From, nil)
+	if adjust {
+		s.nonce, err = s.client.NonceAt(s.ctx, s.Opts.From, nil)
 		if err != nil {
 			log.Warn("Failed to get the nonce", "from", s.Opts.From, "err", err)
 			return err
 		}
-		s.nonce = nonce
-	} else {
-		nonce = s.nonce
 	}
+	nonce = s.nonce
 
 	switch tx := txData.(type) {
 	case *types.DynamicFeeTx:
