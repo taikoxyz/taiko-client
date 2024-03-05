@@ -24,7 +24,7 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
-	guardianproversender "github.com/taikoxyz/taiko-client/prover/guardian_prover_sender"
+	guardianProverHeartbeater "github.com/taikoxyz/taiko-client/prover/guardian_prover_heartbeater"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
@@ -477,19 +477,18 @@ func (s *ProverTestSuite) initProver(
 		L1NodeVersion:         "1.0.0",
 		L2NodeVersion:         "0.1.0",
 	}))
-	p.srv = s.NewTestProverServer(
+	p.server = s.NewTestProverServer(
 		key,
 		proverServerURL,
 	)
 
-	p.guardianProverSender = guardianproversender.New(
+	p.guardianProverHeartbeater = guardianProverHeartbeater.New(
 		key,
 		p.cfg.GuardianProverHealthCheckServerEndpoint,
 		memorydb.New(),
 		p.rpc,
 		p.ProverAddress(),
 	)
-
 	s.p = p
 
 	return proverServerURL

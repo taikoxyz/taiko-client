@@ -15,7 +15,7 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	guardianproversender "github.com/taikoxyz/taiko-client/prover/guardian_prover_sender"
+	guardianProverHeartbeater "github.com/taikoxyz/taiko-client/prover/guardian_prover_heartbeater"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	state "github.com/taikoxyz/taiko-client/prover/shared_state"
@@ -367,12 +367,12 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 // NewBlockProposedEventHandlerOps is the options for creating a new BlockProposedEventHandler.
 type NewBlockProposedGuardianEventHandlerOps struct {
 	*NewBlockProposedEventHandlerOps
-	GuardianProverSender guardianproversender.BlockSenderHeartbeater
+	GuardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater
 }
 
 type BlockProposedGuaridanEventHandler struct {
 	*BlockProposedEventHandler
-	guardianProverSender guardianproversender.BlockSenderHeartbeater
+	GuardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater
 }
 
 // NewBlockProposedEventHandler creates a new BlockProposedEventHandler instance.
@@ -381,7 +381,7 @@ func NewBlockProposedEventGuardianHandler(
 ) *BlockProposedGuaridanEventHandler {
 	return &BlockProposedGuaridanEventHandler{
 		BlockProposedEventHandler: NewBlockProposedEventHandler(opts.NewBlockProposedEventHandlerOps),
-		guardianProverSender:      opts.GuardianProverSender,
+		GuardianProverHeartbeater: opts.GuardianProverHeartbeater,
 	}
 }
 
@@ -393,7 +393,7 @@ func (h *BlockProposedGuaridanEventHandler) Handle(
 	// If we are operating as a guardian prover,
 	// we should sign all seen proposed blocks as soon as possible.
 	go func() {
-		if err := h.guardianProverSender.SignAndSendBlock(ctx, event.BlockId); err != nil {
+		if err := h.GuardianProverHeartbeater.SignAndSendBlock(ctx, event.BlockId); err != nil {
 			log.Error("Guardian prover unable to sign block", "blockID", event.BlockId, "error", err)
 		}
 	}()

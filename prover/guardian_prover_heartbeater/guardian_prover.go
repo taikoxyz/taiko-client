@@ -1,4 +1,4 @@
-package guardianproversender
+package guardianproverheartbeater
 
 import (
 	"context"
@@ -44,8 +44,8 @@ type startupReq struct {
 	Signature       []byte `json:"signature"`
 }
 
-// GuardianProverBlockSender is responsible for signing and sending known blocks to the health check server.
-type GuardianProverBlockSender struct {
+// GuardianProverHeartBeater is responsible for signing and sending known blocks to the health check server.
+type GuardianProverHeartBeater struct {
 	privateKey                *ecdsa.PrivateKey
 	healthCheckServerEndpoint *url.URL
 	db                        ethdb.KeyValueStore
@@ -60,8 +60,8 @@ func New(
 	db ethdb.KeyValueStore,
 	rpc *rpc.Client,
 	proverAddress common.Address,
-) *GuardianProverBlockSender {
-	return &GuardianProverBlockSender{
+) *GuardianProverHeartBeater {
+	return &GuardianProverHeartBeater{
 		privateKey:                privateKey,
 		healthCheckServerEndpoint: healthCheckServerEndpoint,
 		db:                        db,
@@ -71,7 +71,7 @@ func New(
 }
 
 // post sends the given POST request to the health check server.
-func (s *GuardianProverBlockSender) post(ctx context.Context, route string, req interface{}) error {
+func (s *GuardianProverHeartBeater) post(ctx context.Context, route string, req interface{}) error {
 	resp, err := resty.New().R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -92,7 +92,7 @@ func (s *GuardianProverBlockSender) post(ctx context.Context, route string, req 
 }
 
 // SignAndSendBlock signs the given block and sends it to the health check server.
-func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockID *big.Int) error {
+func (s *GuardianProverHeartBeater) SignAndSendBlock(ctx context.Context, blockID *big.Int) error {
 	signed, header, err := s.signBlock(ctx, blockID)
 	if err != nil {
 		return nil
@@ -116,7 +116,7 @@ func (s *GuardianProverBlockSender) SignAndSendBlock(ctx context.Context, blockI
 }
 
 // SendStartup sends the startup message to the health check server.
-func (s *GuardianProverBlockSender) SendStartup(
+func (s *GuardianProverHeartBeater) SendStartup(
 	ctx context.Context,
 	revision string,
 	version string,
@@ -163,7 +163,7 @@ func (s *GuardianProverBlockSender) SendStartup(
 }
 
 // sendSignedBlockReq is the actual method that sends the signed block to the health check server.
-func (s *GuardianProverBlockSender) sendSignedBlockReq(
+func (s *GuardianProverHeartBeater) sendSignedBlockReq(
 	ctx context.Context,
 	signed []byte,
 	hash common.Hash,
@@ -191,7 +191,7 @@ func (s *GuardianProverBlockSender) sendSignedBlockReq(
 }
 
 // signBlock signs the given block and returns the signature and header.
-func (s *GuardianProverBlockSender) signBlock(ctx context.Context, blockID *big.Int) ([]byte, *types.Header, error) {
+func (s *GuardianProverHeartBeater) signBlock(ctx context.Context, blockID *big.Int) ([]byte, *types.Header, error) {
 	log.Info("Guardian prover signing block", "blockID", blockID.Uint64())
 
 	head, err := s.rpc.L2.BlockNumber(ctx)
@@ -246,12 +246,12 @@ func (s *GuardianProverBlockSender) signBlock(ctx context.Context, blockID *big.
 }
 
 // Close closes the underlying database.
-func (s *GuardianProverBlockSender) Close() error {
+func (s *GuardianProverHeartBeater) Close() error {
 	return s.db.Close()
 }
 
 // SendHeartbeat sends a heartbeat to the health check server.
-func (s *GuardianProverBlockSender) SendHeartbeat(
+func (s *GuardianProverHeartBeater) SendHeartbeat(
 	ctx context.Context,
 	latestL1Block uint64,
 	latestL2Block uint64,

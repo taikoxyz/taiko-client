@@ -26,7 +26,7 @@ import (
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	handler "github.com/taikoxyz/taiko-client/prover/event_handler"
-	guardianproversender "github.com/taikoxyz/taiko-client/prover/guardian_prover_sender"
+	guardianProverHeartbeater "github.com/taikoxyz/taiko-client/prover/guardian_prover_heartbeater"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
@@ -48,8 +48,8 @@ type Prover struct {
 	rpc *rpc.Client
 
 	// Guardian prover related
-	srv                  *server.ProverServer
-	guardianProverSender guardianproversender.BlockSenderHeartbeater
+	server                    *server.ProverServer
+	guardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater
 
 	// Contract configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -215,7 +215,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		IsGuardian:            p.IsGuardianProver(),
 		DB:                    db,
 	}
-	if p.srv, err = server.New(proverServerOpts); err != nil {
+	if p.server, err = server.New(proverServerOpts); err != nil {
 		return err
 	}
 
@@ -226,7 +226,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			return fmt.Errorf("failed to get MinGuardians from guardian prover contract: %w", err)
 		}
 
-		p.guardianProverSender = guardianproversender.New(
+		p.guardianProverHeartbeater = guardianProverHeartbeater.New(
 			p.cfg.L1ProverPrivKey,
 			p.cfg.GuardianProverHealthCheckServerEndpoint,
 			db,
@@ -252,14 +252,14 @@ func (p *Prover) Start() error {
 
 	// 2. Start the prover server.
 	go func() {
-		if err := p.srv.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
+		if err := p.server.Start(fmt.Sprintf(":%v", p.cfg.HTTPServerPort)); !errors.Is(err, http.ErrServerClosed) {
 			log.Crit("Failed to start http server", "error", err)
 		}
 	}()
 
 	// 3. Start the guardian prover heartbeat sender if the current prover is a guardian prover.
 	if p.IsGuardianProver() {
-		if err := p.guardianProverSender.SendStartup(
+		if err := p.guardianProverHeartbeater.SendStartup(
 			p.ctx,
 			version.CommitVersion(),
 			version.CommitVersion(),
@@ -364,13 +364,13 @@ func (p *Prover) eventLoop() {
 
 // Close closes the prover instance.
 func (p *Prover) Close(ctx context.Context) {
-	if p.guardianProverSender != nil {
-		if err := p.guardianProverSender.Close(); err != nil {
+	if p.guardianProverHeartbeater != nil {
+		if err := p.guardianProverHeartbeater.Close(); err != nil {
 			log.Error("failed to close database connection", "error", err)
 		}
 	}
 
-	if err := p.srv.Shutdown(ctx); err != nil {
+	if err := p.server.Shutdown(ctx); err != nil {
 		log.Error("Failed to shut down prover server", "error", err)
 	}
 	p.wg.Wait()

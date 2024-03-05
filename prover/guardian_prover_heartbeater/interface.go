@@ -1,4 +1,4 @@
-package guardianproversender
+package guardianproverheartbeater
 
 import (
 	"context"

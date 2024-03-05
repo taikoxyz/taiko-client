@@ -40,7 +40,7 @@ func (p *Prover) gurdianProverHeartbeatLoop(ctx context.Context) {
 				continue
 			}
 
-			if err := p.guardianProverSender.SendHeartbeat(
+			if err := p.guardianProverHeartbeater.SendHeartbeat(
 				ctx,
 				latestL1Block,
 				latestL2Block,

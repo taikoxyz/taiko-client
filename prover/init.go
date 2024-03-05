@@ -227,7 +227,7 @@ func (p *Prover) initEventHandlers() {
 		p.blockProposedHandler = handler.NewBlockProposedEventGuardianHandler(
 			&handler.NewBlockProposedGuardianEventHandlerOps{
 				NewBlockProposedEventHandlerOps: opts,
-				GuardianProverSender:            p.guardianProverSender,
+				GuardianProverHeartbeater:       p.guardianProverHeartbeater,
 			},
 		)
 	} else {
