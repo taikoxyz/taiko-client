@@ -28,8 +28,8 @@ import (
 )
 
 var (
-	// Brecht recommends to hardcore 79, may be unrequired as proof system changes
-	defaultMaxTxPerBlock = uint64(79)
+	// Brecht recommends to hardcore 149, may be unrequired as proof system changes
+	defaultMaxTxPerBlock = uint64(149)
 )
 
 // Syncer responsible for letting the L2 execution engine catching up with protocol's latest
