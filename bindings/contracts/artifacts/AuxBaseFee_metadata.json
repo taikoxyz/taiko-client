@@ -1,0 +1,101 @@
+{
+	"compiler": {
+		"version": "0.8.24+commit.e11b9ed9"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "EIP1559_INVALID_PARAMS",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "Overflow",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "gasExcess_",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "basefeeAdjustmentQuotient",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint32",
+						"name": "gasTargetPerL1Block",
+						"type": "uint32"
+					}
+				],
+				"name": "baseFee",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "basefee_",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"AuxBaseFee.sol": "AuxBaseFee"
+		},
+		"evmVersion": "shanghai",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"AuxBaseFee.sol": {
+			"keccak256": "0x0415dc51e11fc4e1749b70fa5a3fcc9dac17f7a65e69edf955f50e7cb99200f3",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://af89f69289b9ac77772bcfaec720994154d2dc32236236bc9248e6e160cef43e",
+				"dweb:/ipfs/QmTLLGg7cPESm81W83yt2t17C8TBek1gjnMkzTPLR2pC8R"
+			]
+		},
+		"Lib1559Math.sol": {
+			"keccak256": "0xe7610a797820a7659e6f2ed551af65b9fd1d2857520c73fc7ca23c26b1b2677b",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://c8bffddca5116f127bb80b7ee4e799d695657f7038093ae2e8e258a54d3c4600",
+				"dweb:/ipfs/QmREsjCPPod4nLPjewXq5UZQBPurpBAz27fgyeN1Nc6ZjK"
+			]
+		},
+		"LibFixedPointMath.sol": {
+			"keccak256": "0xf0ac9da5dcff6da8c4765e535bc776d25c1f94111e3dea4b9fcb9da4191cce3a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://4fede4ddb63c8a4bd0dbb1e8af0b2b0457f8859395cf64503a091437b60721c4",
+				"dweb:/ipfs/QmZ2d7g6sSCpGYNQ2hZStv7auA5pd5Wr8EXpsS2Ro1zLRG"
+			]
+		}
+	},
+	"version": 1
+}

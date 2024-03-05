@@ -1,0 +1,63 @@
+{
+	"compiler": {
+		"version": "0.8.24+commit.e11b9ed9"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "EIP1559_INVALID_PARAMS",
+				"type": "error"
+			}
+		],
+		"devdoc": {
+			"custom:security-contact": "security@taiko.xyz",
+			"details": "See https://ethresear.ch/t/make-eip-1559-more-like-an-amm-curve/9082",
+			"kind": "dev",
+			"methods": {},
+			"title": "Lib1559Math",
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"notice": "Implements e^(x) based bonding curve for EIP-1559",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"Lib1559Math.sol": "Lib1559Math"
+		},
+		"evmVersion": "shanghai",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"Lib1559Math.sol": {
+			"keccak256": "0xe7610a797820a7659e6f2ed551af65b9fd1d2857520c73fc7ca23c26b1b2677b",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://c8bffddca5116f127bb80b7ee4e799d695657f7038093ae2e8e258a54d3c4600",
+				"dweb:/ipfs/QmREsjCPPod4nLPjewXq5UZQBPurpBAz27fgyeN1Nc6ZjK"
+			]
+		},
+		"LibFixedPointMath.sol": {
+			"keccak256": "0xf0ac9da5dcff6da8c4765e535bc776d25c1f94111e3dea4b9fcb9da4191cce3a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://4fede4ddb63c8a4bd0dbb1e8af0b2b0457f8859395cf64503a091437b60721c4",
+				"dweb:/ipfs/QmZ2d7g6sSCpGYNQ2hZStv7auA5pd5Wr8EXpsS2Ro1zLRG"
+			]
+		}
+	},
+	"version": 1
+}

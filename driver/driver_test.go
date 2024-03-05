@@ -2,6 +2,8 @@ package driver
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"math/big"
 	"os"
 	"testing"
@@ -305,6 +307,33 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Equal(l2Head3.Number.Uint64(), l2Head2.Number.Uint64())
 	s.NotEqual(l2Head3.Hash(), l2Head2.Hash())
 	s.Equal(parent.ParentHash, l2Head1.Hash())
+}
+
+func (s *DriverTestSuite) TestL2Calc1559BaseFee() {
+	taikoL2 := s.RPCClient.TaikoL2
+
+	gasExcess, err := taikoL2.GasExcess(nil)
+	s.Nil(err)
+
+	config, err := taikoL2.GetConfig(nil)
+	s.Nil(err)
+
+	_calc1559BaseFee := func(numL1Blocks, _parentGasUsed uint64) uint64 {
+		excess := gasExcess + _parentGasUsed
+		issuance := numL1Blocks * uint64(config.GasTargetPerL1Block)
+		if excess > issuance {
+			excess = excess - issuance
+		} else {
+			excess = 1
+		}
+		gasExcess_ := utils.Min(excess, math.MaxUint64)
+
+		basefee_, err := taikoL2.GetBasefee(nil, 0, uint32(gasExcess_))
+
+		return 1
+	}
+
+	taikoL2.GetBasefee(nil, 0, uint32(gasExcess.Uint64()))
 }
 
 func (s *DriverTestSuite) TestDoSyncNoNewL2Blocks() {

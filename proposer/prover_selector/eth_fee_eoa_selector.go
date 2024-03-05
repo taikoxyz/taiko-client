@@ -266,7 +266,7 @@ func assignProver(
 		"expiry", expiry,
 	)
 
-	// Convert signature to one solidity can recover by adding 27 to 65th byte
+	// Convert signature to one contracts can recover by adding 27 to 65th byte
 	result.SignedPayload[64] = uint8(uint(result.SignedPayload[64])) + 27
 
 	return &encoding.ProverAssignment{

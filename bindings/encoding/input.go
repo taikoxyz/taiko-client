@@ -323,7 +323,7 @@ func init() {
 	}
 }
 
-// EncodeBlockParams performs the solidity `abi.encode` for the given blockParams.
+// EncodeBlockParams performs the contracts `abi.encode` for the given blockParams.
 func EncodeBlockParams(params *BlockParams) ([]byte, error) {
 	b, err := blockParamsComponentsArgs.Pack(params)
 	if err != nil {
@@ -332,7 +332,7 @@ func EncodeBlockParams(params *BlockParams) ([]byte, error) {
 	return b, nil
 }
 
-// EncodeAssignmentHookInput performs the solidity `abi.encode` for the given input
+// EncodeAssignmentHookInput performs the contracts `abi.encode` for the given input
 func EncodeAssignmentHookInput(input *AssignmentHookInput) ([]byte, error) {
 	b, err := assignmentHookInputArgs.Pack(input)
 	if err != nil {
@@ -341,7 +341,7 @@ func EncodeAssignmentHookInput(input *AssignmentHookInput) ([]byte, error) {
 	return b, nil
 }
 
-// EncodeProverAssignmentPayload performs the solidity `abi.encode` for the given proverAssignment payload.
+// EncodeProverAssignmentPayload performs the contracts `abi.encode` for the given proverAssignment payload.
 func EncodeProverAssignmentPayload(
 	chainID uint64,
 	taikoAddress common.Address,
@@ -373,7 +373,7 @@ func EncodeProverAssignmentPayload(
 	return b, nil
 }
 
-// EncodeProveBlockInput performs the solidity `abi.encode` for the given TaikoL1.proveBlock input.
+// EncodeProveBlockInput performs the contracts `abi.encode` for the given TaikoL1.proveBlock input.
 func EncodeProveBlockInput(
 	meta *bindings.TaikoDataBlockMetadata,
 	transition *bindings.TaikoDataTransition,
