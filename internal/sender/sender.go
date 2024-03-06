@@ -78,7 +78,8 @@ type Sender struct {
 	head   *types.Header
 	client *rpc.EthClient
 
-	Opts *bind.TransactOpts
+	nonce uint64
+	Opts  *bind.TransactOpts
 
 	unconfirmedTxs cmap.ConcurrentMap[string, *TxToConfirm]
 	txToConfirmCh  cmap.ConcurrentMap[string, chan *TxToConfirm]
@@ -110,6 +111,12 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 		}
 	}
 
+	// Get the nonce
+	nonce, err := client.NonceAt(ctx, opts.From, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	// Get the chain ID
 	head, err := client.HeaderByNumber(ctx, nil)
 	if err != nil {
@@ -121,13 +128,12 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 		Config:         cfg,
 		head:           head,
 		client:         client,
+		nonce:          nonce,
 		Opts:           opts,
 		unconfirmedTxs: cmap.New[*TxToConfirm](),
 		txToConfirmCh:  cmap.New[chan *TxToConfirm](),
 		stopCh:         make(chan struct{}),
 	}
-	// Initialize the nonce
-	sender.AdjustNonce(nil)
 
 	// Initialize the gas fee related fields
 	if err = sender.updateGasTipGasFee(head); err != nil {
@@ -177,6 +183,10 @@ func (s *Sender) GetUnconfirmedTx(txID string) *types.Transaction {
 
 // SendRawTransaction sends a transaction to the given Ethereum node.
 func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value *big.Int, data []byte) (string, error) {
+	if s.unconfirmedTxs.Count() >= unconfirmedTxsCap {
+		return "", fmt.Errorf("too many pending transactions")
+	}
+
 	gasLimit := s.GasLimit
 	if gasLimit == 0 {
 		var err error
@@ -192,16 +202,36 @@ func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value 
 			return "", err
 		}
 	}
-	return s.SendTransaction(types.NewTx(&types.DynamicFeeTx{
-		ChainID:   s.client.ChainID,
-		To:        target,
-		Nonce:     nonce,
-		GasFeeCap: s.Opts.GasFeeCap,
-		GasTipCap: s.Opts.GasTipCap,
-		Gas:       gasLimit,
-		Value:     value,
-		Data:      data,
-	}))
+
+	txID := uuid.New()
+	txToConfirm := &TxToConfirm{
+		ID: txID,
+		originalTx: &types.DynamicFeeTx{
+			ChainID:   s.client.ChainID,
+			To:        target,
+			Nonce:     nonce,
+			GasFeeCap: s.Opts.GasFeeCap,
+			GasTipCap: s.Opts.GasTipCap,
+			Gas:       gasLimit,
+			Value:     value,
+			Data:      data,
+		},
+	}
+
+	if err := s.send(txToConfirm, false); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
+		log.Error("Failed to send transaction",
+			"tx_id", txID,
+			"nonce", txToConfirm.CurrentTx.Nonce(),
+			"err", err,
+		)
+		return "", err
+	}
+
+	// Add the transaction to the unconfirmed transactions
+	s.unconfirmedTxs.Set(txID, txToConfirm)
+	s.txToConfirmCh.Set(txID, make(chan *TxToConfirm, 1))
+
+	return txID, nil
 }
 
 // SendTransaction sends a transaction to the given Ethereum node.
@@ -222,7 +252,7 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 		CurrentTx:  tx,
 	}
 
-	if err := s.send(txToConfirm); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
+	if err := s.send(txToConfirm, true); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
 		log.Error("Failed to send transaction",
 			"tx_id", txID,
 			"nonce", txToConfirm.CurrentTx.Nonce(),
@@ -240,11 +270,18 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 }
 
 // send is the internal method to send the given transaction.
-func (s *Sender) send(tx *TxToConfirm) error {
+func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	originalTx := tx.originalTx
+
+	if resetNonce {
+		// Set the nonce of the transaction.
+		if err := s.SetNonce(originalTx, false); err != nil {
+			return err
+		}
+	}
 
 	for i := 0; i < nonceIncorrectRetrys; i++ {
 		// Retry when nonce is incorrect
@@ -258,13 +295,21 @@ func (s *Sender) send(tx *TxToConfirm) error {
 		// Check if the error is nonce too low
 		if err != nil {
 			if strings.Contains(err.Error(), "nonce too low") {
-				s.AdjustNonce(originalTx)
-				log.Warn("Nonce is incorrect, retry sending the transaction with new nonce",
-					"tx_id", tx.ID,
-					"nonce", tx.CurrentTx.Nonce(),
-					"hash", rawTx.Hash(),
-					"err", err,
-				)
+				if err := s.SetNonce(originalTx, true); err != nil {
+					log.Error("Failed to set nonce when appear nonce too low",
+						"tx_id", tx.ID,
+						"nonce", tx.CurrentTx.Nonce(),
+						"hash", rawTx.Hash(),
+						"err", err,
+					)
+				} else {
+					log.Warn("Nonce is incorrect, retry sending the transaction with new nonce",
+						"tx_id", tx.ID,
+						"nonce", tx.CurrentTx.Nonce(),
+						"hash", rawTx.Hash(),
+						"err", err,
+					)
+				}
 				continue
 			}
 			if strings.Contains(err.Error(), "replacement transaction underpriced") {
@@ -287,7 +332,7 @@ func (s *Sender) send(tx *TxToConfirm) error {
 		}
 		break
 	}
-	s.Opts.Nonce = new(big.Int).Add(s.Opts.Nonce, common.Big1)
+	s.nonce++
 	return nil
 }
 
@@ -340,7 +385,7 @@ func (s *Sender) resendUnconfirmedTxs() {
 			s.releaseUnconfirmedTx(id)
 			continue
 		}
-		if err := s.send(unconfirmedTx); err != nil {
+		if err := s.send(unconfirmedTx, true); err != nil {
 			log.Warn(
 				"Failed to resend the transaction",
 				"tx_id", id,
@@ -390,7 +435,7 @@ func (s *Sender) checkPendingTransactionsConfirmation() {
 			}
 			pendingTx.Receipt = receipt
 			if receipt.Status != types.ReceiptStatusSuccessful {
-				pendingTx.Err = fmt.Errorf("transaction reverted, hash: %s", receipt.TxHash)
+				pendingTx.Err = fmt.Errorf("transaction status is failed, hash: %s", receipt.TxHash)
 				s.releaseUnconfirmedTx(id)
 				continue
 			}

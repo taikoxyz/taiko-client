@@ -157,7 +157,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
 
-	sender.AdjustNonce(nil)
+	s.Nil(sender.SetNonce(nil, true))
 
 	fee := big.NewInt(10000)
 	opts := sender.Opts
