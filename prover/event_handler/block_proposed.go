@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -40,6 +41,7 @@ type BlockProposedEventHandler struct {
 	backOffMaxRetrys      uint64
 	contesterMode         bool
 	proveUnassignedBlocks bool
+	tierToOverride        uint16
 }
 
 // NewBlockProposedEventHandlerOps is the options for creating a new BlockProposedEventHandler.
@@ -73,6 +75,7 @@ func NewBlockProposedEventHandler(opts *NewBlockProposedEventHandlerOps) *BlockP
 		opts.BackOffMaxRetrys,
 		opts.ContesterMode,
 		opts.ProveUnassignedBlocks,
+		0,
 	}
 }
 
@@ -334,16 +337,22 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 		}
 	}
 
+	tier := e.Meta.MinTier
+	if h.tierToOverride != 0 {
+		tier = h.tierToOverride
+	}
+
 	log.Info(
 		"Proposed block is provable",
 		"blockID", e.BlockId,
 		"prover", e.AssignedProver,
 		"minTier", e.Meta.MinTier,
+		"tier", tier,
 	)
 
 	metrics.ProverProofsAssigned.Inc(1)
 
-	h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{Tier: e.Meta.MinTier, Event: e}
+	h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{Tier: tier, Event: e}
 
 	return nil
 }
@@ -366,8 +375,12 @@ type BlockProposedGuaridanEventHandler struct {
 func NewBlockProposedEventGuardianHandler(
 	opts *NewBlockProposedGuardianEventHandlerOps,
 ) *BlockProposedGuaridanEventHandler {
+	blockProposedEventHandler := NewBlockProposedEventHandler(opts.NewBlockProposedEventHandlerOps)
+	// For guardian provers, we only send top tier proofs.
+	blockProposedEventHandler.tierToOverride = encoding.TierGuardianID
+
 	return &BlockProposedGuaridanEventHandler{
-		BlockProposedEventHandler: NewBlockProposedEventHandler(opts.NewBlockProposedEventHandlerOps),
+		BlockProposedEventHandler: blockProposedEventHandler,
 		GuardianProverHeartbeater: opts.GuardianProverHeartbeater,
 	}
 }
@@ -384,5 +397,6 @@ func (h *BlockProposedGuaridanEventHandler) Handle(
 			log.Error("Guardian prover unable to sign block", "blockID", event.BlockId, "error", err)
 		}
 	}()
+
 	return h.BlockProposedEventHandler.Handle(ctx, event, end)
 }
