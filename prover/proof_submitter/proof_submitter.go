@@ -197,6 +197,9 @@ func (s *ProofSubmitter) SubmitProof(
 			proofWithHeader.Tier == encoding.TierGuardianID,
 		),
 	); err != nil {
+		if err.Error() == transaction.ErrUnretryableSubmission.Error() {
+			return nil
+		}
 		metrics.ProverSubmissionErrorCounter.Inc(1)
 		return err
 	}
