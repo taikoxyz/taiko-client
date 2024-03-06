@@ -10,6 +10,7 @@ import (
 // BlockVerifiedEventHandler is responsible for handling the BlockVerified event.
 type BlockVerifiedEventHandler struct{}
 
+// Handle handles the BlockVerified event.
 func (h *BlockVerifiedEventHandler) Handle(e *bindings.TaikoL1ClientBlockVerified) {
 	metrics.ProverLatestVerifiedIDGauge.Update(e.BlockId.Int64())
 

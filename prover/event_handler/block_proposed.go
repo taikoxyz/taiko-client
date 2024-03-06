@@ -76,12 +76,14 @@ func NewBlockProposedEventHandler(opts *NewBlockProposedEventHandlerOps) *BlockP
 	}
 }
 
+// Handle implements the BlockProposedHandler interface.
 func (h *BlockProposedEventHandler) Handle(
 	ctx context.Context,
 	e *bindings.TaikoL1ClientBlockProposed,
 	end eventIterator.EndBlockProposedEventIterFunc,
 ) error {
-	// If there are newly generated proofs, we need to submit them as soon as possible.
+	// If there are newly generated proofs, we need to submit them as soon as possible,
+	// to aviod proof submission timeout.
 	if len(h.proofGenerationCh) > 0 {
 		log.Info("onBlockProposed callback early return", "proofGenerationChannelLength", len(h.proofGenerationCh))
 		end()
@@ -95,7 +97,7 @@ func (h *BlockProposedEventHandler) Handle(
 
 	// Check if the L1 chain has reorged at first.
 	if err := h.checkL1Reorg(ctx, e); err != nil {
-		if errors.Is(err, errL1Reorged) {
+		if err.Error() == errL1Reorged.Error() {
 			end()
 			return nil
 		}
@@ -115,8 +117,10 @@ func (h *BlockProposedEventHandler) Handle(
 		"blockID", e.BlockId,
 		"removed", e.Raw.Removed,
 		"assignedProver", e.AssignedProver,
+		"blobHash", e.Meta.BlobHash,
 		"livenessBond", e.LivenessBond,
 		"minTier", e.Meta.MinTier,
+		"blobUsed", e.Meta.BlobUsed,
 	)
 	metrics.ProverReceivedProposedBlockGauge.Update(e.BlockId.Int64())
 
@@ -320,7 +324,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 					"timeToExpire", timeToExpire,
 				)
 				time.AfterFunc(
-					// Add another 60 seconds, to ensure one more L1 block will be mined before the proof submission
+					// Add another delay, to ensure one more L1 block will be mined before the proof submission
 					proofExpirationDelay,
 					func() { h.proofWindowExpiredCh <- e },
 				)
@@ -330,19 +334,16 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 		}
 	}
 
-	tier := e.Meta.MinTier
-
 	log.Info(
 		"Proposed block is provable",
 		"blockID", e.BlockId,
 		"prover", e.AssignedProver,
 		"minTier", e.Meta.MinTier,
-		"currentTier", tier,
 	)
 
 	metrics.ProverProofsAssigned.Inc(1)
 
-	h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{Tier: tier, Event: e}
+	h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{Tier: e.Meta.MinTier, Event: e}
 
 	return nil
 }
