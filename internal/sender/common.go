@@ -48,27 +48,33 @@ func (s *Sender) adjustGas(txData types.TxData) {
 	}
 }
 
-// AdjustNonce adjusts the nonce of the given transaction with the current nonce of the sender.
-func (s *Sender) AdjustNonce(txData types.TxData) {
-	nonce, err := s.client.NonceAt(s.ctx, s.Opts.From, nil)
-	if err != nil {
-		log.Warn("Failed to get the nonce", "from", s.Opts.From, "err", err)
-		return
+// SetNonce adjusts the nonce of the given transaction with the current nonce of the sender.
+func (s *Sender) SetNonce(txData types.TxData, adjust bool) (err error) {
+	var nonce uint64
+	if adjust {
+		s.nonce, err = s.client.NonceAt(s.ctx, s.Opts.From, nil)
+		if err != nil {
+			log.Warn("Failed to get the nonce", "from", s.Opts.From, "err", err)
+			return err
+		}
 	}
-	s.Opts.Nonce = new(big.Int).SetUint64(nonce)
+	nonce = s.nonce
 
-	switch tx := txData.(type) {
-	case *types.DynamicFeeTx:
-		tx.Nonce = nonce
-	case *types.BlobTx:
-		tx.Nonce = nonce
-	case *types.LegacyTx:
-		tx.Nonce = nonce
-	case *types.AccessListTx:
-		tx.Nonce = nonce
-	default:
-		log.Debug("Unsupported transaction type when adjust nonce", "from", s.Opts.From)
+	if !utils.IsNil(txData) {
+		switch tx := txData.(type) {
+		case *types.DynamicFeeTx:
+			tx.Nonce = nonce
+		case *types.BlobTx:
+			tx.Nonce = nonce
+		case *types.LegacyTx:
+			tx.Nonce = nonce
+		case *types.AccessListTx:
+			tx.Nonce = nonce
+		default:
+			return fmt.Errorf("unsupported transaction type: %v", txData)
+		}
 	}
+	return
 }
 
 // updateGasTipGasFee updates the gas tip cap and gas fee cap of the sender with the given chain head info.

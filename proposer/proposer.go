@@ -17,15 +17,13 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/urfave/cli/v2"
-	"golang.org/x/sync/errgroup"
-
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
+	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -247,30 +245,29 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	if len(txLists) == 0 {
 		return errNoNewTxs
 	}
-	g := new(errgroup.Group)
+
 	for i, txs := range txLists {
-		func(i int, txs types.Transactions) {
-			g.Go(func() error {
-				if i >= int(p.MaxProposedTxListsPerEpoch) {
-					return nil
-				}
+		if i >= int(p.MaxProposedTxListsPerEpoch) {
+			return nil
+		}
 
-				txListBytes, err := rlp.EncodeToBytes(txs)
-				if err != nil {
-					return fmt.Errorf("failed to encode transactions: %w", err)
-				}
+		txListBytes, err := rlp.EncodeToBytes(txs)
+		if err != nil {
+			return fmt.Errorf("failed to encode transactions: %w", err)
+		}
 
-				if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len())); err != nil {
-					return fmt.Errorf("failed to propose transactions: %w", err)
-				}
-
-				return nil
-			})
-		}(i, txs)
+		if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len())); err != nil {
+			return fmt.Errorf("failed to propose transactions: %w", err)
+		}
 	}
 
-	if err := g.Wait(); err != nil {
-		return fmt.Errorf("failed to propose transactions: %w", err)
+	// Wait for all transactions to be confirmed.
+	for _, confirmCh := range p.sender.TxToConfirmChannels() {
+		confirm := <-confirmCh
+		if confirm.Err != nil {
+			log.Error("ProposeTxList error", "tx_id", confirm.ID, "error", confirm.Err)
+			return confirm.Err
+		}
 	}
 
 	if p.AfterCommitHook != nil {
@@ -444,7 +441,6 @@ func (p *Proposer) ProposeTxList(
 	txListBytes []byte,
 	txNum uint,
 ) error {
-	var txID string
 	if err := backoff.Retry(
 		func() error {
 			if ctx.Err() != nil {
@@ -470,7 +466,7 @@ func (p *Proposer) ProposeTxList(
 				log.Warn("Failed to make taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				return err
 			}
-			txID, err = p.sender.SendTransaction(tx)
+			_, err = p.sender.SendTransaction(tx)
 			if err != nil {
 				log.Warn("Failed to send taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				return err
@@ -488,12 +484,6 @@ func (p *Proposer) ProposeTxList(
 		return ctx.Err()
 	}
 
-	// Waiting for the transaction to be confirmed.
-	confirm := <-p.sender.TxToConfirmChannel(txID)
-	if confirm.Err != nil {
-		return confirm.Err
-	}
-
 	log.Info("📝 Propose transactions succeeded", "txs", txNum)
 
 	metrics.ProposerProposedTxListsCounter.Inc(1)
@@ -508,7 +498,17 @@ func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return p.ProposeTxList(ctx, emptyTxListBytes, 0)
+	if err = p.ProposeTxList(ctx, emptyTxListBytes, 0); err != nil {
+		return err
+	}
+	for _, confirmCh := range p.sender.TxToConfirmChannels() {
+		confirm := <-confirmCh
+		if confirm.Err != nil {
+			log.Error("ProposeEmptyBlockOp error", "td_id", confirm.ID, "error", confirm.Err)
+			return confirm.Err
+		}
+	}
+	return nil
 }
 
 // updateProposingTicker updates the internal proposing timer.
