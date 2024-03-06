@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,8 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/txpool"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	cmap "github.com/orcaman/concurrent-map/v2"
@@ -26,7 +25,7 @@ import (
 var (
 	sendersMap                  = map[uint64]map[common.Address]*Sender{}
 	unconfirmedTxsCap           = 100
-	sendTxErrorRetrys           = 3
+	nonceIncorrectRetrys        = 3
 	unconfirmedTxsCheckInternal = 2 * time.Second
 	chainHeadFetchInterval      = 3 * time.Second
 	errTimeoutInMempool         = fmt.Errorf("transaction in mempool for too long")
@@ -189,16 +188,17 @@ func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value 
 	}
 
 	gasLimit := s.GasLimit
-
 	if gasLimit == 0 {
-		if gasLimit, err = s.client.EstimateGas(s.ctx, ethereum.CallMsg{
+		var err error
+		gasLimit, err = s.client.EstimateGas(s.ctx, ethereum.CallMsg{
 			From:      s.Opts.From,
 			To:        target,
 			Value:     value,
 			Data:      data,
 			GasTipCap: s.Opts.GasTipCap,
 			GasFeeCap: s.Opts.GasFeeCap,
-		}); err != nil {
+		})
+		if err != nil {
 			return "", err
 		}
 	}
@@ -237,7 +237,7 @@ func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value 
 // SendTransaction sends a transaction to the given Ethereum node.
 func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 	if s.unconfirmedTxs.Count() >= unconfirmedTxsCap {
-		return "", fmt.Errorf("too many pending transactions (max: %d)", unconfirmedTxsCap)
+		return "", fmt.Errorf("too many pending transactions")
 	}
 
 	txData, err := s.buildTxData(tx)
@@ -259,7 +259,6 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 			"hash", tx.Hash(),
 			"err", err,
 		)
-
 		return "", err
 	}
 
@@ -427,7 +426,7 @@ func (s *Sender) checkPendingTransactionsConfirmation() {
 			// Get the transaction receipt.
 			receipt, err := s.client.TransactionReceipt(s.ctx, pendingTx.CurrentTx.Hash())
 			if err != nil {
-				if err.Error() == ethereum.NotFound.Error() {
+				if err.Error() == "not found" {
 					pendingTx.Err = err
 					s.releaseUnconfirmedTx(id)
 				}
