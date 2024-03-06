@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -61,7 +60,6 @@ func (s *ClientTestSuite) SetupTest() {
 		GuardianProverAddress: common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
 		L2EngineEndpoint:      os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		JwtSecret:             string(jwtSecret),
-		RetryInterval:         backoff.DefaultMaxInterval,
 	})
 	s.Nil(err)
 	s.RPCClient = rpcCli

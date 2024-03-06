@@ -104,9 +104,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		TaikoL2Address:        cfg.TaikoL2Address,
 		TaikoTokenAddress:     cfg.TaikoTokenAddress,
 		GuardianProverAddress: cfg.GuardianProverAddress,
-		RetryInterval:         cfg.BackOffRetryInterval,
 		Timeout:               cfg.RPCTimeout,
-		BackOffMaxRetries:     cfg.BackOffMaxRetrys,
 	}); err != nil {
 		return err
 	}
