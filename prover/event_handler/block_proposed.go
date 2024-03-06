@@ -114,7 +114,7 @@ func (h *BlockProposedEventHandler) Handle(
 	}
 
 	log.Info(
-		"Proposed block",
+		"New BlockProposed event",
 		"l1Height", e.Raw.BlockNumber,
 		"l1Hash", e.Raw.BlockHash,
 		"blockID", e.BlockId,

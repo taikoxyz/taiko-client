@@ -229,20 +229,16 @@ func (s *Syncer) onBlockProposed(
 
 	log.Debug("Parent block", "height", parent.Number, "hash", parent.Hash())
 
-	tx, err := s.rpc.L1.TransactionInBlock(
-		ctx,
-		event.Raw.BlockHash,
-		event.Raw.TxIndex,
-	)
+	tx, err := s.rpc.L1.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
 	if err != nil {
-		return fmt.Errorf("failed to fetch original TaikoL1.ProposeBlock transaction: %w", err)
+		return fmt.Errorf("failed to fetch original TaikoL1.proposeBlock transaction: %w", err)
 	}
 
 	var txListDecoder txlistfetcher.TxListFetcher
 	if event.Meta.BlobUsed {
 		txListDecoder = txlistfetcher.NewBlobTxListFetcher(s.rpc)
 	} else {
-		txListDecoder = &txlistfetcher.CalldataFetcher{}
+		txListDecoder = new(txlistfetcher.CalldataFetcher)
 	}
 	txListBytes, err := txListDecoder.Fetch(ctx, tx, &event.Meta)
 	if err != nil {
