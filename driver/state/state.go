@@ -54,8 +54,7 @@ func New(ctx context.Context, rpc *rpc.Client) (*State, error) {
 		return nil, err
 	}
 
-	s.wg.Add(1)
-	go s.subscriptions(ctx)
+	go s.eventLoop(ctx)
 
 	return s, nil
 }
@@ -104,8 +103,9 @@ func (s *State) init(ctx context.Context) error {
 	return nil
 }
 
-// subscriptions initializes all subscriptions in the given state instance.
-func (s *State) subscriptions(ctx context.Context) {
+// eventLoop initializes and starts all subscriptions and callbacks in the given state instance.
+func (s *State) eventLoop(ctx context.Context) {
+	s.wg.Add(1)
 	defer s.wg.Done()
 
 	l1HeadCh := make(chan *types.Header, 10)
