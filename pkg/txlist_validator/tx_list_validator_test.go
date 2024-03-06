@@ -53,7 +53,7 @@ func TestIsTxListValid(t *testing.T) {
 		{
 			"txListBytes not decodable to rlp",
 			chainID,
-			randBytes(0),
+			randBytes(0x1),
 			false,
 		},
 		{
@@ -79,7 +79,7 @@ func TestIsTxListValid(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			isValid := v.ValidateTxList(tt.blockID, tt.txListBytes, false)
-			require.True(t, tt.isValid, isValid)
+			require.Equal(t, tt.isValid, isValid)
 		})
 	}
 }
