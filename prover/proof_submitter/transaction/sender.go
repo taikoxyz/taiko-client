@@ -3,7 +3,6 @@ package transaction
 import (
 	"context"
 	"crypto/ecdsa"
-	"errors"
 	"math/big"
 	"strings"
 
@@ -16,12 +15,7 @@ import (
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
-var (
-	ErrUnretryable = errors.New("unretryable")
-)
-
-// Sender is responsible for sending proof submission transactions with a backoff policy, if
-// the transaction should not be retried anymore, it will return an `ErrUnretryable` error.
+// Sender is responsible for sending proof submission transactions with a backoff policy.
 type Sender struct {
 	rpc         *rpc.Client
 	innerSender *sender.Sender
@@ -40,8 +34,7 @@ func NewSender(
 	}, nil
 }
 
-// Send sends the given proof to the TaikoL1 smart contract with a backoff policy, if
-// the transaction should not be retried anymore, it will return an `ErrUnretryable` error.
+// Send sends the given proof to the TaikoL1 smart contract with a backoff policy.
 func (s *Sender) Send(
 	ctx context.Context,
 	proofWithHeader *producer.ProofWithHeader,
