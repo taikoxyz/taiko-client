@@ -435,7 +435,7 @@ func (s *Sender) checkPendingTransactionsConfirmation() {
 			}
 			pendingTx.Receipt = receipt
 			if receipt.Status != types.ReceiptStatusSuccessful {
-				pendingTx.Err = fmt.Errorf("transaction reverted, hash: %s", receipt.TxHash)
+				pendingTx.Err = fmt.Errorf("transaction status is failed, hash: %s", receipt.TxHash)
 				s.releaseUnconfirmedTx(id)
 				continue
 			}
