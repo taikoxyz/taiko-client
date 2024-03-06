@@ -74,6 +74,10 @@ var (
 			Name: "parentMetaHash",
 			Type: "bytes32",
 		},
+		{
+			Name: "sender",
+			Type: "address",
+		},
 	}
 	transitionComponents = []abi.ArgumentMarshaling{
 		{
