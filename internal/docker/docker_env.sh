@@ -4,7 +4,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # check until L1 chain is ready
 L1_PROBE_URL=http://localhost:$(docker port l1_node | grep '0.0.0.0' | awk -F ':' '{print $2}')
-until cast chain-id --rpc-url "$L1_PROBE_URL" 2>/dev/null; do
+until cast chain-id --rpc-url "$L1_PROBE_URL" &>/dev/null 2>&1; do
   sleep 1
 done
 L1_NODE_PORT=$(docker port l1_node | grep '0.0.0.0' | awk -F ':' '{print $2}')
@@ -13,7 +13,7 @@ export L1_NODE_WS_ENDPOINT=ws://localhost:$L1_NODE_PORT
 
 # check until L2 chain is ready
 L2_PROBE_URL=http://localhost:$(docker port l2_node | grep "0.0.0.0" | awk -F ':' 'NR==1 {print $2}')
-until cast chain-id --rpc-url "$L2_PROBE_URL" 2>/dev/null; do
+until cast chain-id --rpc-url "$L2_PROBE_URL" &>/dev/null 2>&1; do
   sleep 1
 done
 export L2_EXECUTION_ENGINE_HTTP_ENDPOINT=http://localhost:$(docker port l2_node | grep "0.0.0.0" | awk -F ':' 'NR==1 {print $2}')
@@ -22,8 +22,8 @@ export L2_EXECUTION_ENGINE_AUTH_ENDPOINT=http://localhost:$(docker port l2_node 
 export JWT_SECRET=$DIR/nodes/jwt.hex
 
 # check until BLOB node is ready
-BLOB_NODE_URL=http://localhost:$(docker port blob_node | grep '0.0.0.0' | awk -F ':' '{print $2}')
-until cast block-number --rpc-url "ws://localhost:$BLOB_NODE_URL" &>/dev/null 2>&1; do
+BLOB_NODE_URL=ws://localhost:$(docker port blob_node | grep '0.0.0.0' | awk -F ':' '{print $2}')
+until cast block-number --rpc-url "$BLOB_NODE_URL" &>/dev/null 2>&1; do
   sleep 1
 done
 export BLOB_NODE_ENDPOINT=ws://localhost:$BLOB_NODE_URL

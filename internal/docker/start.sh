@@ -2,15 +2,13 @@
 
 source scripts/common.sh
 
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # start docker compose service list
-DOCKER_SERVICE_LIST=("l1_node" "l2_execution_engine")
-echo "start docker compose service: ${DOCKER_SERVICE_LIST[*]}"
-compose_up "${DOCKER_SERVICE_LIST[@]}"
+docker compose -f "$DIR"/nodes/docker-compose.yml up -d
 
 # start blob devnet service list
-DOCKER_BLOB_DEVNET_LIST=("create-beacon-chain-genesis" "geth-remove-db" "geth-genesis" "beacon-chain" "geth" "validator")
-echo "start blob devnet service: ${DOCKER_BLOB_DEVNET_LIST[*]}"
-compose_up "${DOCKER_BLOB_DEVNET_LIST[@]}"
+docker compose -f "$DIR"/blob_devnet/docker-compose.yml up -d
 
 # show all the running containers
 echo
