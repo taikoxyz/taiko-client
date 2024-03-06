@@ -4,6 +4,7 @@ services:
   # a deterministic set of 64 validators.
   create-beacon-chain-genesis:
     image: "gcr.io/prysmaticlabs/prysm/cmd/prysmctl:latest"
+    container_name: create-beacon-chain-genesis
     command:
       - testnet
       - generate-genesis
@@ -66,11 +67,7 @@ services:
       create-beacon-chain-genesis:
         condition: service_completed_successfully
     ports:
-      - 4000:4000
-      - 3500:3500
-      - 8080:8080
-      - 6060:6060
-      - 9090:9090
+      - "3500"
     volumes:
       - ./consensus:/consensus
       - ./execution:/execution
@@ -98,9 +95,7 @@ services:
       - --nodiscover
       - --syncmode=full
     ports:
-      - 8551:8551
-      - 8545:8545
-      - 8546:8546
+      - "8546"
     depends_on:
       geth-genesis:
         condition: service_completed_successfully

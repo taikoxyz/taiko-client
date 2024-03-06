@@ -3,7 +3,7 @@
 RED='\033[1;31m'
 NC='\033[0m' # No Color
 
-COMPOSE="docker compose -f internal/docker/nodes/docker-compose.yml"
+COMPOSE="docker compose -f internal/docker/nodes/docker-compose.yml -f internal/docker/blob_devnet/docker-compose.yml"
 
 print_error() {
   local msg="$1"
@@ -39,6 +39,6 @@ compose_up() {
   local services=("$@")
   echo
   echo "launching services..."
-  $COMPOSE up --quiet-pull "${services[@]}" -d --wait
+  $COMPOSE up "${services[@]}" -d
   echo "done"
 }
