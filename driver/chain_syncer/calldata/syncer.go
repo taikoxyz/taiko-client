@@ -24,7 +24,7 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	txListValidator "github.com/taikoxyz/taiko-client/pkg/txlistvalidator"
+	txListValidator "github.com/taikoxyz/taiko-client/pkg/txlist_validator"
 )
 
 var (
@@ -245,20 +245,6 @@ func (s *Syncer) onBlockProposed(
 		return fmt.Errorf("failed to decode tx list: %w", err)
 	}
 
-	// Check whether the transactions list is valid.
-	hint, invalidTxIndex, err := s.txListValidator.ValidateTxList(event.BlockId, txListBytes, event.Meta.BlobUsed)
-	if err != nil {
-		return fmt.Errorf("failed to validate transactions list: %w", err)
-	}
-
-	log.Info(
-		"Validate transactions list",
-		"blockID", event.BlockId,
-		"hint", hint,
-		"invalidTxIndex", invalidTxIndex,
-		"bytes", len(txListBytes),
-	)
-
 	l1Origin := &rawdb.L1Origin{
 		BlockID:       event.BlockId,
 		L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
@@ -272,7 +258,7 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	// If the transactions list is invalid, we simply insert an empty L2 block.
-	if hint != txListValidator.HintOK {
+	if !s.txListValidator.ValidateTxList(event.BlockId, txListBytes, event.Meta.BlobUsed) {
 		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", event.BlockId)
 		txListBytes = []byte{}
 	}
