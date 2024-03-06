@@ -20,6 +20,7 @@ type AssignmentExpiredEventHandler struct {
 	contesterMode     bool
 }
 
+// NewAssignmentExpiredEventHandler creates a new AssignmentExpiredEventHandler instance.
 func NewAssignmentExpiredEventHandler(
 	rpc *rpc.Client,
 	proverAddress common.Address,
@@ -30,6 +31,7 @@ func NewAssignmentExpiredEventHandler(
 	return &AssignmentExpiredEventHandler{rpc, proverAddress, proofSubmissionCh, proofContestCh, contesterMode}
 }
 
+// Handle implements the AssignmentExpiredHandler interface.
 func (h *AssignmentExpiredEventHandler) Handle(
 	ctx context.Context,
 	e *bindings.TaikoL1ClientBlockProposed,

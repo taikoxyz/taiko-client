@@ -144,7 +144,12 @@ func (s *Sender) GetOpts() *bind.TransactOpts {
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
-	if !strings.HasPrefix(err.Error(), "L1_") && !strings.HasPrefix(err.Error(), "PROVING_FAILED") {
+	if !strings.HasPrefix(err.Error(), "L1_") {
+		return true
+	}
+
+	if strings.HasPrefix(err.Error(), "L1_NOT_ASSIGNED_PROVER") ||
+		strings.HasPrefix(err.Error(), "L1_INVALID_PAUSE_STATUS") {
 		return true
 	}
 
