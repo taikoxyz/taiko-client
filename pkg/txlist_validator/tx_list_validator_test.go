@@ -42,51 +42,44 @@ func TestIsTxListValid(t *testing.T) {
 		name        string
 		blockID     *big.Int
 		txListBytes []byte
-		wantReason  InvalidTxListReason
-		wantTxIdx   int
+		isValid     bool
 	}{
 		{
 			"txListBytes binary too large",
 			chainID,
 			randBytes(maxTxlistBytes + 1),
-			HintNone,
-			0,
+			false,
 		},
 		{
 			"txListBytes not decodable to rlp",
 			chainID,
 			randBytes(0),
-			HintNone,
-			0,
+			false,
 		},
 		{
 			"txListBytes too many transactions",
 			chainID,
 			rlpEncodedTransactionBytes(int(maxBlockNumTxs)+1, true),
-			HintNone,
-			0,
+			false,
 		},
 		{
 			"success empty tx list",
 			chainID,
 			rlpEncodedTransactionBytes(0, true),
-			HintOK,
-			0,
+			true,
 		},
 		{
 			"success non-empty tx list",
 			chainID,
 			rlpEncodedTransactionBytes(1, true),
-			HintOK,
-			0,
+			true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reason, txIdx := v.isTxListValid(tt.blockID, tt.txListBytes, false)
-			require.Equal(t, tt.wantReason, reason)
-			require.Equal(t, tt.wantTxIdx, txIdx)
+			isValid := v.ValidateTxList(tt.blockID, tt.txListBytes, false)
+			require.True(t, tt.isValid, isValid)
 		})
 	}
 }
