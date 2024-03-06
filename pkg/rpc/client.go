@@ -48,9 +48,7 @@ type ClientConfig struct {
 	GuardianProverAddress common.Address
 	L2EngineEndpoint      string
 	JwtSecret             string
-	RetryInterval         time.Duration
 	Timeout               time.Duration
-	BackOffMaxRetries     uint64
 }
 
 // NewClient initializes all RPC clients used by Taiko client software.
