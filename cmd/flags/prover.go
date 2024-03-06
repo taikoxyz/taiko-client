@@ -93,7 +93,7 @@ var (
 		Usage:    "Gas fee cap (in wei) for a TaikoL1.proveBlock transaction when doing the transaction replacement",
 		Category: proverCategory,
 	}
-	ProveBlockTxReplacementProveBlockTxReplacementGasGrowthRate = &cli.Uint64Flag{
+	TxReplacementGasGrowthRate = &cli.Uint64Flag{
 		Name:     "tx.replacementProveBlockGasGrowthRate",
 		Value:    50,
 		Usage:    "Gas tip growth rate when replacing a TaikoL1.proveBlock transaction with same nonce",
@@ -198,7 +198,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	GuardianProofSubmissionDelay,
 	GuardianProverHealthCheckServerEndpoint,
 	ProofSubmissionMaxRetry,
-	ProveBlockTxReplacementProveBlockTxReplacementGasGrowthRate,
+	TxReplacementGasGrowthRate,
 	ProveBlockMaxTxGasFeeCap,
 	Graffiti,
 	ProveUnassignedBlocks,
