@@ -100,7 +100,7 @@ func (h *TransitionContestedEventHandler) Handle(
 
 	go func() {
 		h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{
-			Tier:  e.Tier + 1,
+			Tier:  e.Tier + 1, // We need to send a higher tier proof to reslove the current contest.
 			Event: blockProposedEvent,
 		}
 	}()

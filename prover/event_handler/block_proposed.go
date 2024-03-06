@@ -385,6 +385,7 @@ func NewBlockProposedEventGuardianHandler(
 	}
 }
 
+// Handle implements the BlockProposedHandler interface.
 func (h *BlockProposedGuaridanEventHandler) Handle(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
