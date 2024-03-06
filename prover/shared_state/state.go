@@ -9,10 +9,15 @@ import (
 
 // SharedState represents the internal state of a prover.
 type SharedState struct {
-	lastHandledBlockID atomic.Uint64
+	lastHandledBlockID *atomic.Uint64
 	l1Current          *types.Header
 	reorgDetectedFlag  bool
 	tiers              []*rpc.TierProviderTierWithID
+}
+
+// New creates a new prover shared state instance.
+func New() *SharedState {
+	return &SharedState{lastHandledBlockID: new(atomic.Uint64)}
 }
 
 // GetLastHandledBlockID returns the last handled block ID.

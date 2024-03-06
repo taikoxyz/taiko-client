@@ -84,7 +84,8 @@ func (s *GuardianProverHeartBeater) post(ctx context.Context, route string, req 
 
 	if !resp.IsSuccess() {
 		return fmt.Errorf(
-			"unable to contact health check server endpoint, status code: %v", resp.StatusCode,
+			"unable to contact health check server endpoint, status code: %v",
+			resp.StatusCode(),
 		)
 	}
 
