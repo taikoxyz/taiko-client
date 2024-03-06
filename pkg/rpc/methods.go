@@ -34,7 +34,7 @@ var (
 	defaultWaitL1OriginTimeout     = 3 * time.Minute
 	defaultMaxTransactionsPerBlock = uint64(149)
 
-	// Requset urls.
+	// Request urls.
 	sidecarsRequestURL = "eth/v1/beacon/blob_sidecars/%d"
 )
 
