@@ -85,12 +85,11 @@ func (s *BlockBatchIteratorTestSuite) TestIterCtxCancel() {
 	headHeight, err := s.RPCClient.L1.BlockNumber(context.Background())
 	s.Nil(err)
 	ctx, cancel := context.WithCancel(context.Background())
-	retry := 5 * time.Second
 
 	itr, err := NewBlockBatchIterator(ctx, &BlockBatchIteratorConfig{
 		Client:                s.RPCClient.L1,
 		MaxBlocksReadPerEpoch: nil,
-		RetryInterval:         &retry,
+		RetryInterval:         5 * time.Second,
 		StartHeight:           common.Big0,
 		EndHeight:             new(big.Int).SetUint64(headHeight),
 		OnBlocks: func(

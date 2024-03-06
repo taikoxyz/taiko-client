@@ -33,7 +33,6 @@ func (s *ProposerTestSuite) SetupTest() {
 	p := new(Proposer)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	proposeInterval := 1024 * time.Hour // No need to periodically propose transactions list in unit tests
 
 	s.Nil(p.InitFromConfig(ctx, &Config{
 		ClientConfig: &rpc.ClientConfig{
@@ -46,7 +45,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:             common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:                     &proposeInterval,
+		ProposeInterval:                     1024 * time.Hour,
 		MaxProposedTxListsPerEpoch:          1,
 		ProposeBlockTxReplacementMultiplier: 2,
 		WaitReceiptTimeout:                  12 * time.Second,
@@ -202,11 +201,10 @@ func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
 }
 
 func (s *ProposerTestSuite) TestUpdateProposingTicker() {
-	oneHour := 1 * time.Hour
-	s.p.ProposeInterval = &oneHour
+	s.p.ProposeInterval = 1 * time.Hour
 	s.NotPanics(s.p.updateProposingTicker)
 
-	s.p.ProposeInterval = nil
+	s.p.ProposeInterval = 0
 	s.NotPanics(s.p.updateProposingTicker)
 }
 
