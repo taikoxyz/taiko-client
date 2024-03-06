@@ -33,7 +33,7 @@ type BlockProposedEventHandler struct {
 	genesisHeightL1       uint64
 	rpc                   *rpc.Client
 	proofGenerationCh     chan *proofProducer.ProofWithHeader
-	proofWindowExpiredCh  chan *bindings.TaikoL1ClientBlockProposed
+	assignmentExpiredCh   chan *bindings.TaikoL1ClientBlockProposed
 	proofSubmissionCh     chan *proofSubmitter.ProofRequestBody
 	proofContestCh        chan *proofSubmitter.ContestRequestBody
 	backOffRetryInterval  time.Duration
@@ -49,7 +49,7 @@ type NewBlockProposedEventHandlerOps struct {
 	GenesisHeightL1       uint64
 	RPC                   *rpc.Client
 	ProofGenerationCh     chan *proofProducer.ProofWithHeader
-	ProofWindowExpiredCh  chan *bindings.TaikoL1ClientBlockProposed
+	AssignmentExpiredCh   chan *bindings.TaikoL1ClientBlockProposed
 	ProofSubmissionCh     chan *proofSubmitter.ProofRequestBody
 	ProofContestCh        chan *proofSubmitter.ContestRequestBody
 	BackOffRetryInterval  time.Duration
@@ -66,7 +66,7 @@ func NewBlockProposedEventHandler(opts *NewBlockProposedEventHandlerOps) *BlockP
 		opts.GenesisHeightL1,
 		opts.RPC,
 		opts.ProofGenerationCh,
-		opts.ProofWindowExpiredCh,
+		opts.AssignmentExpiredCh,
 		opts.ProofSubmissionCh,
 		opts.ProofContestCh,
 		opts.BackOffRetryInterval,
