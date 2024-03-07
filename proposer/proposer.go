@@ -127,7 +127,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	); err != nil {
 		return err
 	}
-	
+
 	if cfg.BlobAllowed {
 		p.txBuilder = builder.NewBlobTransactionBuilder(
 			p.rpc,
@@ -148,7 +148,6 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 			cfg.ExtraData,
 		)
 	}
-
 
 	return nil
 }
