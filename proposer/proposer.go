@@ -278,7 +278,8 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	return nil
 }
 
-func (p *Proposer) makeProposeBlockTxWithBlobHash(
+// makeBlobProposeBlockTx tries to send a TaikoL1.proposeBlock transaction with txList bytes saved in blob.
+func (p *Proposer) makeBlobProposeBlockTx(
 	ctx context.Context,
 	txListBytes []byte,
 ) (*types.Transaction, error) {
@@ -452,7 +453,7 @@ func (p *Proposer) ProposeTxList(
 			)
 			// Send tx list by blob tx.
 			if p.BlobAllowed {
-				tx, err = p.makeProposeBlockTxWithBlobHash(
+				tx, err = p.makeBlobProposeBlockTx(
 					ctx,
 					txListBytes,
 				)
