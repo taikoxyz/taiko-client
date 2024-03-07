@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
@@ -22,6 +23,25 @@ type CalldataTransactionBuilder struct {
 	l2SuggestedFeeRecipient common.Address
 	assignmentHookAddress   common.Address
 	extraData               string
+}
+
+// NewCalldataTransactionBuilder creates a new CalldataTransactionBuilder instance based on giving configurations.
+func NewCalldataTransactionBuilder(
+	rpc *rpc.Client,
+	proverSelector selector.ProverSelector,
+	l1BlockBuilderTip *big.Int,
+	l2SuggestedFeeRecipient common.Address,
+	assignmentHookAddress common.Address,
+	extraData string,
+) *CalldataTransactionBuilder {
+	return &CalldataTransactionBuilder{
+		rpc,
+		proverSelector,
+		l1BlockBuilderTip,
+		l2SuggestedFeeRecipient,
+		assignmentHookAddress,
+		extraData,
+	}
 }
 
 // Build implements the ProposeBlockTransactionBuilder interface.

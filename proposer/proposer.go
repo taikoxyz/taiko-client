@@ -113,12 +113,6 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 		return err
 	}
 
-	if cfg.BlobAllowed {
-		p.txBuilder = &builder.BlobTransactionBuilder{}
-	} else {
-		p.txBuilder = &builder.CalldataTransactionBuilder{}
-	}
-
 	if p.proverSelector, err = selector.NewETHFeeEOASelector(
 		&protocolConfigs,
 		p.rpc,
@@ -133,6 +127,28 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	); err != nil {
 		return err
 	}
+	
+	if cfg.BlobAllowed {
+		p.txBuilder = builder.NewBlobTransactionBuilder(
+			p.rpc,
+			p.proverSelector,
+			p.Config.L1BlockBuilderTip,
+			cfg.TaikoL1Address,
+			cfg.L2SuggestedFeeRecipient,
+			cfg.AssignmentHookAddress,
+			cfg.ExtraData,
+		)
+	} else {
+		p.txBuilder = builder.NewCalldataTransactionBuilder(
+			p.rpc,
+			p.proverSelector,
+			p.Config.L1BlockBuilderTip,
+			cfg.L2SuggestedFeeRecipient,
+			cfg.AssignmentHookAddress,
+			cfg.ExtraData,
+		)
+	}
+
 
 	return nil
 }
@@ -306,7 +322,6 @@ func (p *Proposer) ProposeTxList(
 				p.IncludeParentMetaHash,
 				txListBytes,
 			)
-
 			if err != nil {
 				log.Warn("Failed to make taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				return err

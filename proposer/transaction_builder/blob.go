@@ -27,6 +27,25 @@ type BlobTransactionBuilder struct {
 }
 
 // NewBlobTransactionBuilder creates a new BlobTransactionBuilder instance based on giving configurations.
+func NewBlobTransactionBuilder(
+	rpc *rpc.Client,
+	proverSelector selector.ProverSelector,
+	l1BlockBuilderTip *big.Int,
+	taikoL1Address common.Address,
+	l2SuggestedFeeRecipient common.Address,
+	assignmentHookAddress common.Address,
+	extraData string,
+) *BlobTransactionBuilder {
+	return &BlobTransactionBuilder{
+		rpc,
+		proverSelector,
+		l1BlockBuilderTip,
+		taikoL1Address,
+		l2SuggestedFeeRecipient,
+		assignmentHookAddress,
+		extraData,
+	}
+}
 
 // Build implements the ProposeBlockTransactionBuilder interface.
 func (b *BlobTransactionBuilder) Build(
