@@ -27,10 +27,9 @@ var (
 	errEmptyTiersList = errors.New("empty proof tiers list in protocol")
 	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
 	// if the previous check failed.
-	syncProgressRecheckDelay       = 12 * time.Second
-	waitL1OriginPollingInterval    = 3 * time.Second
-	defaultWaitL1OriginTimeout     = 3 * time.Minute
-	defaultMaxTransactionsPerBlock = uint64(149)
+	syncProgressRecheckDelay    = 12 * time.Second
+	waitL1OriginPollingInterval = 3 * time.Second
+	defaultWaitL1OriginTimeout  = 3 * time.Minute
 )
 
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
@@ -269,7 +268,6 @@ func (c *Client) GetPoolContent(
 		"taiko_txPoolContent",
 		beneficiary,
 		baseFee,
-		defaultMaxTransactionsPerBlock,
 		blockMaxGasLimit,
 		maxBytesPerTxList,
 		localsArg,

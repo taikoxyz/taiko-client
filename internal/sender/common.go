@@ -44,7 +44,7 @@ func (s *Sender) adjustGas(txData types.TxData) {
 		blobFeeCap = utils.Min(blobFeeCap, s.MaxBlobFee)
 		baseTx.BlobFeeCap = uint256.NewInt(blobFeeCap)
 	default:
-		log.Warn("Unsupported transaction type when adjust gas fee", "from", s.Opts.From)
+		log.Warn("Unsupported transaction type when adjust gas fee", "from", s.opts.From)
 	}
 }
 
@@ -52,9 +52,9 @@ func (s *Sender) adjustGas(txData types.TxData) {
 func (s *Sender) SetNonce(txData types.TxData, adjust bool) (err error) {
 	var nonce uint64
 	if adjust {
-		s.nonce, err = s.client.NonceAt(s.ctx, s.Opts.From, nil)
+		s.nonce, err = s.client.NonceAt(s.ctx, s.opts.From, nil)
 		if err != nil {
-			log.Warn("Failed to get the nonce", "from", s.Opts.From, "err", err)
+			log.Warn("Failed to get the nonce", "from", s.opts.From, "err", err)
 			return err
 		}
 	}
@@ -97,8 +97,8 @@ func (s *Sender) updateGasTipGasFee(head *types.Header) error {
 		gasTipCap = new(big.Int).Set(maxGasFee)
 	}
 
-	s.Opts.GasTipCap = gasTipCap
-	s.Opts.GasFeeCap = gasFeeCap
+	s.opts.GasTipCap = gasTipCap
+	s.opts.GasFeeCap = gasFeeCap
 
 	return nil
 }
@@ -111,8 +111,8 @@ func (s *Sender) buildTxData(tx *types.Transaction) (types.TxData, error) {
 			ChainID:    s.client.ChainID,
 			To:         tx.To(),
 			Nonce:      tx.Nonce(),
-			GasFeeCap:  s.Opts.GasFeeCap,
-			GasTipCap:  s.Opts.GasTipCap,
+			GasFeeCap:  s.opts.GasFeeCap,
+			GasTipCap:  s.opts.GasTipCap,
 			Gas:        tx.Gas(),
 			Value:      tx.Value(),
 			Data:       tx.Data(),
@@ -127,8 +127,8 @@ func (s *Sender) buildTxData(tx *types.Transaction) (types.TxData, error) {
 			ChainID:    uint256.MustFromBig(s.client.ChainID),
 			To:         to,
 			Nonce:      tx.Nonce(),
-			GasFeeCap:  uint256.MustFromBig(s.Opts.GasFeeCap),
-			GasTipCap:  uint256.MustFromBig(s.Opts.GasTipCap),
+			GasFeeCap:  uint256.MustFromBig(s.opts.GasFeeCap),
+			GasTipCap:  uint256.MustFromBig(s.opts.GasTipCap),
 			Gas:        tx.Gas(),
 			Value:      uint256.MustFromBig(tx.Value()),
 			Data:       tx.Data(),

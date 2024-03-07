@@ -17,7 +17,6 @@ import (
 
 var (
 	maxBlocksGasLimit = uint64(50)
-	maxBlockNumTxs    = uint64(11)
 	maxTxlistBytes    = uint64(10000)
 	chainID           = genesis.Config.ChainID
 	testKey, _        = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -34,7 +33,6 @@ var (
 func TestIsTxListValid(t *testing.T) {
 	v := NewTxListValidator(
 		maxBlocksGasLimit,
-		maxBlockNumTxs,
 		maxTxlistBytes,
 		chainID,
 	)
@@ -42,51 +40,38 @@ func TestIsTxListValid(t *testing.T) {
 		name        string
 		blockID     *big.Int
 		txListBytes []byte
-		wantReason  InvalidTxListReason
-		wantTxIdx   int
+		isValid     bool
 	}{
 		{
 			"txListBytes binary too large",
 			chainID,
 			randBytes(maxTxlistBytes + 1),
-			HintNone,
-			0,
+			false,
 		},
 		{
 			"txListBytes not decodable to rlp",
 			chainID,
-			randBytes(0),
-			HintNone,
-			0,
-		},
-		{
-			"txListBytes too many transactions",
-			chainID,
-			rlpEncodedTransactionBytes(int(maxBlockNumTxs)+1, true),
-			HintNone,
-			0,
+			randBytes(0x1),
+			false,
 		},
 		{
 			"success empty tx list",
 			chainID,
 			rlpEncodedTransactionBytes(0, true),
-			HintOK,
-			0,
+			true,
 		},
 		{
 			"success non-empty tx list",
 			chainID,
 			rlpEncodedTransactionBytes(1, true),
-			HintOK,
-			0,
+			true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reason, txIdx := v.isTxListValid(tt.blockID, tt.txListBytes, false)
-			require.Equal(t, tt.wantReason, reason)
-			require.Equal(t, tt.wantTxIdx, txIdx)
+			isValid := v.ValidateTxList(tt.blockID, tt.txListBytes, false)
+			require.Equal(t, tt.isValid, isValid)
 		})
 	}
 }

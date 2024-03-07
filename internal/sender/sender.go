@@ -79,7 +79,7 @@ type Sender struct {
 	client *rpc.EthClient
 
 	nonce uint64
-	Opts  *bind.TransactOpts
+	opts  *bind.TransactOpts
 
 	unconfirmedTxs cmap.ConcurrentMap[string, *TxToConfirm]
 	txToConfirmCh  cmap.ConcurrentMap[string, chan *TxToConfirm]
@@ -129,7 +129,7 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 		head:           head,
 		client:         client,
 		nonce:          nonce,
-		Opts:           opts,
+		opts:           opts,
 		unconfirmedTxs: cmap.New[*TxToConfirm](),
 		txToConfirmCh:  cmap.New[chan *TxToConfirm](),
 		stopCh:         make(chan struct{}),
@@ -152,6 +152,22 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 func (s *Sender) Close() {
 	close(s.stopCh)
 	s.wg.Wait()
+}
+
+// GetOpts returns the transaction options of the sender.
+func (s *Sender) GetOpts() *bind.TransactOpts {
+	return &bind.TransactOpts{
+		From:      s.opts.From,
+		Nonce:     s.opts.Nonce,
+		Signer:    s.opts.Signer,
+		Value:     s.opts.Value,
+		GasPrice:  s.opts.GasPrice,
+		GasFeeCap: s.opts.GasFeeCap,
+		GasTipCap: s.opts.GasTipCap,
+		GasLimit:  s.opts.GasLimit,
+		Context:   s.opts.Context,
+		NoSend:    s.opts.NoSend,
+	}
 }
 
 // TxToConfirmChannel returns a channel to wait the given transaction's confirmation.
@@ -191,12 +207,12 @@ func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value 
 	if gasLimit == 0 {
 		var err error
 		gasLimit, err = s.client.EstimateGas(s.ctx, ethereum.CallMsg{
-			From:      s.Opts.From,
+			From:      s.opts.From,
 			To:        target,
 			Value:     value,
 			Data:      data,
-			GasTipCap: s.Opts.GasTipCap,
-			GasFeeCap: s.Opts.GasFeeCap,
+			GasTipCap: s.opts.GasTipCap,
+			GasFeeCap: s.opts.GasFeeCap,
 		})
 		if err != nil {
 			return "", err
@@ -210,8 +226,8 @@ func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value 
 			ChainID:   s.client.ChainID,
 			To:        target,
 			Nonce:     getDefault(nonce, s.nonce),
-			GasFeeCap: s.Opts.GasFeeCap,
-			GasTipCap: s.Opts.GasTipCap,
+			GasFeeCap: s.opts.GasFeeCap,
+			GasTipCap: s.opts.GasTipCap,
 			Gas:       gasLimit,
 			Value:     value,
 			Data:      data,
@@ -285,7 +301,7 @@ func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 
 	for i := 0; i < nonceIncorrectRetrys; i++ {
 		// Retry when nonce is incorrect
-		rawTx, err := s.Opts.Signer(s.Opts.From, types.NewTx(originalTx))
+		rawTx, err := s.opts.Signer(s.opts.From, types.NewTx(originalTx))
 		if err != nil {
 			return err
 		}

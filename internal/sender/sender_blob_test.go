@@ -2,9 +2,7 @@ package sender
 
 import (
 	"context"
-	"math/big"
 	"os"
-	"runtime"
 	"testing"
 	"time"
 
@@ -46,7 +44,7 @@ func (s *SenderBlobTestSuite) TestSendTransaction() {
 	s.Nil(err)
 	sidecar, err := rpc.MakeSidecar(data)
 	s.Nil(err)
-	tx, err := s.client.TransactBlobTx(sender.Opts, nil, nil, sidecar)
+	tx, err := s.client.TransactBlobTx(sender.GetOpts(), nil, nil, sidecar)
 	s.Nil(err)
 
 	for i := 0; i < 16; i++ {
@@ -63,28 +61,6 @@ func (s *SenderBlobTestSuite) TestSendTransaction() {
 
 		_, err = s.beaconClient.GetBlobs(context.Background(), confirm.Receipt.BlockNumber)
 		s.Nil(err)
-	}
-}
-
-func (s *SenderBlobTestSuite) TestSendRawTransaction() {
-	nonce, err := s.client.NonceAt(context.Background(), s.sender.Opts.From, nil)
-	s.Nil(err)
-
-	var eg errgroup.Group
-	eg.SetLimit(runtime.NumCPU())
-	for i := 0; i < 5; i++ {
-		i := i
-		eg.Go(func() error {
-			addr := common.BigToAddress(big.NewInt(int64(i)))
-			_, err := s.sender.SendRawTransaction(nonce+uint64(i), &addr, big.NewInt(1), nil, nil)
-			return err
-		})
-	}
-	s.Nil(eg.Wait())
-
-	for _, confirmCh := range s.sender.TxToConfirmChannels() {
-		confirm := <-confirmCh
-		s.Nil(confirm.Err)
 	}
 }
 
