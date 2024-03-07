@@ -156,10 +156,6 @@ func (s *Sender) Close() {
 
 // GetOpts returns the transaction options of the sender.
 func (s *Sender) GetOpts() *bind.TransactOpts {
-	if s.opts == nil {
-		return nil
-	}
-
 	return &bind.TransactOpts{
 		From:      s.opts.From,
 		Nonce:     s.opts.Nonce,
