@@ -2,7 +2,6 @@ package prover
 
 import (
 	"context"
-	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -182,7 +181,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 
 	latestVerifiedHeaderL1Origin, err := p.rpc.L2.L1OriginByID(p.ctx, startingBlockID)
 	if err != nil {
-		if errors.Is(err, ethereum.NotFound) {
+		if err.Error() == ethereum.NotFound.Error() {
 			log.Warn(
 				"Failed to find L1Origin for blockID, use latest L1 head instead",
 				"blockID", startingBlockID,
