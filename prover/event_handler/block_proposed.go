@@ -281,7 +281,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 			"Proposed block's proving window has expired",
 			"blockID", e.BlockId,
 			"prover", e.AssignedProver,
-			"expiresAt", timeToExpire,
+			"timeToExpire", timeToExpire,
 			"minTier", e.Meta.MinTier,
 		)
 		if e.AssignedProver == h.proverAddress {
@@ -321,8 +321,8 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 				)
 				time.AfterFunc(
 					// Add another 60 seconds, to ensure one more L1 block will be mined before the proof submission
-					proofExpirationDelay,
-					func() { h.proofWindowExpiredCh <- e },
+					timeToExpire+proofExpirationDelay,
+					func() { h.assignmentExpiredCh <- e },
 				)
 			}
 
