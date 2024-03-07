@@ -1,4 +1,4 @@
-package transaction_builder
+package builder
 
 import (
 	"context"
