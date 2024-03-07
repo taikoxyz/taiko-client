@@ -18,7 +18,7 @@ var (
 // TransactBlobTx creates, signs and then sends blob transactions.
 func (c *EthClient) TransactBlobTx(
 	opts *bind.TransactOpts,
-	contract *common.Address,
+	contract common.Address,
 	input []byte,
 	sidecar *types.BlobTxSidecar,
 ) (*types.Transaction, error) {
@@ -47,7 +47,7 @@ func (c *EthClient) TransactBlobTx(
 // createBlobTx creates a blob transaction by given parameters.
 func (c *EthClient) createBlobTx(
 	opts *bind.TransactOpts,
-	contract *common.Address,
+	contract common.Address,
 	input []byte,
 	sidecar *types.BlobTxSidecar,
 ) (*types.Transaction, error) {
@@ -65,10 +65,6 @@ func (c *EthClient) createBlobTx(
 		input = []byte{}
 	}
 
-	if contract == nil {
-		contract = &common.Address{}
-	}
-
 	if opts.GasLimit != 0 {
 		gasVal := hexutil.Uint64(opts.GasLimit)
 		gas = &gasVal
@@ -76,7 +72,7 @@ func (c *EthClient) createBlobTx(
 
 	rawTx, err := c.FillTransaction(opts.Context, &TransactionArgs{
 		From:                 &opts.From,
-		To:                   contract,
+		To:                   &contract,
 		Gas:                  gas,
 		GasPrice:             (*hexutil.Big)(opts.GasPrice),
 		MaxFeePerGas:         (*hexutil.Big)(opts.GasFeeCap),

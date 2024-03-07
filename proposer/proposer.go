@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/big"
 	"math/rand"
 	"sync"
 	"time"
@@ -23,6 +22,7 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
+	builder "github.com/taikoxyz/taiko-client/proposer/transaction_builder"
 	"github.com/urfave/cli/v2"
 )
 
@@ -50,6 +50,9 @@ type Proposer struct {
 
 	// Prover selector
 	proverSelector selector.ProverSelector
+
+	// Transaction builder
+	txBuilder builder.ProposeBlockTransactionBuilder
 
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
@@ -108,6 +111,12 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 		MaxWaitingTime: time.Second * 30,
 	}, p.rpc.L1, cfg.L1ProposerPrivKey); err != nil {
 		return err
+	}
+
+	if cfg.BlobAllowed {
+		p.txBuilder = &builder.BlobTransactionBuilder{}
+	} else {
+		p.txBuilder = &builder.CalldataTransactionBuilder{}
 	}
 
 	if p.proverSelector, err = selector.NewETHFeeEOASelector(
@@ -278,164 +287,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	return nil
 }
 
-// makeBlobProposeBlockTx tries to send a TaikoL1.proposeBlock transaction with txList bytes saved in blob.
-func (p *Proposer) makeBlobProposeBlockTx(
-	ctx context.Context,
-	txListBytes []byte,
-) (*types.Transaction, error) {
-	// Make sidecar in order to get blob hash.
-	sideCar, err := rpc.MakeSidecar(txListBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	assignment, assignedProver, maxFee, err := p.proverSelector.AssignProver(
-		ctx,
-		p.tierFees,
-		sideCar.BlobHashes()[0],
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	var parentMetaHash = [32]byte{}
-	if p.IncludeParentMetaHash {
-		state, err := p.rpc.TaikoL1.State(&bind.CallOpts{Context: ctx})
-		if err != nil {
-			return nil, err
-		}
-
-		parent, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, state.SlotB.NumBlocks-1)
-		if err != nil {
-			return nil, err
-		}
-
-		parentMetaHash = parent.Blk.MetaHash
-	}
-
-	// Initially just use the AssignmentHook default.
-	hookInputData, err := encoding.EncodeAssignmentHookInput(&encoding.AssignmentHookInput{
-		Assignment: assignment,
-		Tip:        p.L1BlockBuilderTip,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
-		AssignedProver:    assignedProver,
-		ExtraData:         rpc.StringToBytes32(p.ExtraData),
-		TxListByteOffset:  common.Big0,
-		TxListByteSize:    big.NewInt(int64(len(txListBytes))),
-		BlobHash:          [32]byte{},
-		CacheBlobForReuse: false,
-		ParentMetaHash:    parentMetaHash,
-		HookCalls: []encoding.HookCall{{
-			Hook: p.AssignmentHookAddress,
-			Data: hookInputData,
-		}},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	opts := p.sender.Opts
-	opts.Value = maxFee
-	rawTx, err := p.rpc.TaikoL1.ProposeBlock(
-		opts,
-		encodedParams,
-		nil,
-	)
-	if err != nil {
-		return nil, encoding.TryParsingCustomError(err)
-	}
-
-	proposeTx, err := p.rpc.L1.TransactBlobTx(opts, &p.TaikoL1Address, rawTx.Data(), sideCar)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Debug("Transaction", " nonce", proposeTx.Nonce(), "type", proposeTx.Type())
-
-	return proposeTx, nil
-}
-
-// makeCalldataProposeBlockTx tries to send a TaikoL1.proposeBlock transaction
-// with txList bytes saved in calldata.
-func (p *Proposer) makeCalldataProposeBlockTx(
-	ctx context.Context,
-	txListBytes []byte,
-) (*types.Transaction, error) {
-	assignment, assignedProver, maxFee, err := p.proverSelector.AssignProver(
-		ctx,
-		p.tierFees,
-		crypto.Keccak256Hash(txListBytes),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	opts := p.sender.Opts
-	opts.Value = maxFee
-
-	var parentMetaHash = [32]byte{}
-	if p.IncludeParentMetaHash {
-		state, err := p.rpc.TaikoL1.State(&bind.CallOpts{Context: ctx})
-		if err != nil {
-			return nil, err
-		}
-
-		parent, err := p.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, state.SlotB.NumBlocks-1)
-		if err != nil {
-			return nil, err
-		}
-
-		parentMetaHash = parent.Blk.MetaHash
-	}
-
-	hookCalls := make([]encoding.HookCall, 0)
-
-	// Initially just use the AssignmentHook default.
-	hookInputData, err := encoding.EncodeAssignmentHookInput(&encoding.AssignmentHookInput{
-		Assignment: assignment,
-		Tip:        p.L1BlockBuilderTip,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	hookCalls = append(hookCalls, encoding.HookCall{
-		Hook: p.AssignmentHookAddress,
-		Data: hookInputData,
-	})
-
-	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
-		AssignedProver:    assignedProver,
-		Coinbase:          p.L2SuggestedFeeRecipient,
-		ExtraData:         rpc.StringToBytes32(p.ExtraData),
-		TxListByteOffset:  common.Big0,
-		TxListByteSize:    common.Big0,
-		BlobHash:          [32]byte{},
-		CacheBlobForReuse: false,
-		ParentMetaHash:    parentMetaHash,
-		HookCalls:         hookCalls,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	proposeTx, err := p.rpc.TaikoL1.ProposeBlock(
-		opts,
-		encodedParams,
-		txListBytes,
-	)
-	if err != nil {
-		return nil, encoding.TryParsingCustomError(err)
-	}
-
-	return proposeTx, nil
-}
-
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
@@ -447,26 +298,19 @@ func (p *Proposer) ProposeTxList(
 			if ctx.Err() != nil {
 				return nil
 			}
-			var (
-				tx  *types.Transaction
-				err error
+
+			tx, err := p.txBuilder.Build(
+				ctx,
+				p.tierFees,
+				p.sender.Opts,
+				p.IncludeParentMetaHash,
+				txListBytes,
 			)
-			// Send tx list by blob tx.
-			if p.BlobAllowed {
-				tx, err = p.makeBlobProposeBlockTx(
-					ctx,
-					txListBytes,
-				)
-			} else {
-				tx, err = p.makeCalldataProposeBlockTx(
-					ctx,
-					txListBytes,
-				)
-			}
 			if err != nil {
 				log.Warn("Failed to make taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				return err
 			}
+
 			_, err = p.sender.SendTransaction(tx)
 			if err != nil {
 				log.Warn("Failed to send taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
