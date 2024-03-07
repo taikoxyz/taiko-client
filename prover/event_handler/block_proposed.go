@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -40,6 +41,7 @@ type BlockProposedEventHandler struct {
 	backOffMaxRetrys      uint64
 	contesterMode         bool
 	proveUnassignedBlocks bool
+	tierToOverride        uint16
 }
 
 // NewBlockProposedEventHandlerOps is the options for creating a new BlockProposedEventHandler.
@@ -73,15 +75,18 @@ func NewBlockProposedEventHandler(opts *NewBlockProposedEventHandlerOps) *BlockP
 		opts.BackOffMaxRetrys,
 		opts.ContesterMode,
 		opts.ProveUnassignedBlocks,
+		0,
 	}
 }
 
+// Handle implements the BlockProposedHandler interface.
 func (h *BlockProposedEventHandler) Handle(
 	ctx context.Context,
 	e *bindings.TaikoL1ClientBlockProposed,
 	end eventIterator.EndBlockProposedEventIterFunc,
 ) error {
-	// If there are newly generated proofs, we need to submit them as soon as possible.
+	// If there are newly generated proofs, we need to submit them as soon as possible,
+	// to aviod proof submission timeout.
 	if len(h.proofGenerationCh) > 0 {
 		log.Info("onBlockProposed callback early return", "proofGenerationChannelLength", len(h.proofGenerationCh))
 		end()
@@ -95,7 +100,7 @@ func (h *BlockProposedEventHandler) Handle(
 
 	// Check if the L1 chain has reorged at first.
 	if err := h.checkL1Reorg(ctx, e); err != nil {
-		if errors.Is(err, errL1Reorged) {
+		if err.Error() == errL1Reorged.Error() {
 			end()
 			return nil
 		}
@@ -109,14 +114,16 @@ func (h *BlockProposedEventHandler) Handle(
 	}
 
 	log.Info(
-		"Proposed block",
+		"New BlockProposed event",
 		"l1Height", e.Raw.BlockNumber,
 		"l1Hash", e.Raw.BlockHash,
 		"blockID", e.BlockId,
 		"removed", e.Raw.Removed,
 		"assignedProver", e.AssignedProver,
+		"blobHash", e.Meta.BlobHash,
 		"livenessBond", e.LivenessBond,
 		"minTier", e.Meta.MinTier,
+		"blobUsed", e.Meta.BlobUsed,
 	)
 	metrics.ProverReceivedProposedBlockGauge.Update(e.BlockId.Int64())
 
@@ -331,13 +338,16 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 	}
 
 	tier := e.Meta.MinTier
+	if h.tierToOverride != 0 {
+		tier = h.tierToOverride
+	}
 
 	log.Info(
 		"Proposed block is provable",
 		"blockID", e.BlockId,
 		"prover", e.AssignedProver,
 		"minTier", e.Meta.MinTier,
-		"currentTier", tier,
+		"tier", tier,
 	)
 
 	metrics.ProverProofsAssigned.Inc(1)
@@ -365,12 +375,17 @@ type BlockProposedGuaridanEventHandler struct {
 func NewBlockProposedEventGuardianHandler(
 	opts *NewBlockProposedGuardianEventHandlerOps,
 ) *BlockProposedGuaridanEventHandler {
+	blockProposedEventHandler := NewBlockProposedEventHandler(opts.NewBlockProposedEventHandlerOps)
+	// For guardian provers, we only send top tier proofs.
+	blockProposedEventHandler.tierToOverride = encoding.TierGuardianID
+
 	return &BlockProposedGuaridanEventHandler{
-		BlockProposedEventHandler: NewBlockProposedEventHandler(opts.NewBlockProposedEventHandlerOps),
+		BlockProposedEventHandler: blockProposedEventHandler,
 		GuardianProverHeartbeater: opts.GuardianProverHeartbeater,
 	}
 }
 
+// Handle implements the BlockProposedHandler interface.
 func (h *BlockProposedGuaridanEventHandler) Handle(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
@@ -383,5 +398,6 @@ func (h *BlockProposedGuaridanEventHandler) Handle(
 			log.Error("Guardian prover unable to sign block", "blockID", event.BlockId, "error", err)
 		}
 	}()
+
 	return h.BlockProposedEventHandler.Handle(ctx, event, end)
 }

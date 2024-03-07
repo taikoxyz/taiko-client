@@ -81,7 +81,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proveBlockTxGasLimit = &gasLimit
 	}
 
-	proveBlockTxReplacementMultiplier := c.Uint64(flags.ProveBlockTxReplacementProveBlockTxReplacementGasGrowthRate.Name)
+	proveBlockTxReplacementMultiplier := c.Uint64(flags.TxReplacementGasGrowthRate.Name)
 	if proveBlockTxReplacementMultiplier == 0 {
 		return nil, fmt.Errorf(
 			"invalid --proveBlockTxReplacementMultiplier value: %d",

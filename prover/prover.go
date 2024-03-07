@@ -90,7 +90,9 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
 	p.proverPrivateKey = cfg.L1ProverPrivKey
-	p.sharedState = new(state.SharedState)
+
+	// Initialize state which will be shared by event handlers.
+	p.sharedState = state.New()
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -100,9 +102,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		TaikoL2Address:        cfg.TaikoL2Address,
 		TaikoTokenAddress:     cfg.TaikoTokenAddress,
 		GuardianProverAddress: cfg.GuardianProverAddress,
-		RetryInterval:         cfg.BackOffRetryInterval,
 		Timeout:               cfg.RPCTimeout,
-		BackOffMaxRetries:     cfg.BackOffMaxRetrys,
 	}); err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if p.cfg.ProveBlockMaxTxGasFeeCap != nil {
 		senderCfg.MaxGasFee = p.cfg.ProveBlockMaxTxGasFeeCap.Uint64()
 	}
-	// For guaridan provers we always simply keep retrying for each its proof submission.
+	// For guardian provers we always simply keep retrying for each its proof submission.
 	if p.IsGuardianProver() && senderCfg.MaxRetrys != 0 {
 		senderCfg.MaxRetrys = 0
 	}

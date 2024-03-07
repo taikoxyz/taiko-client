@@ -13,12 +13,14 @@ import (
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 )
 
+// TransitionProvedEventHandler is responsible for handling the TransitionProved event.
 type TransitionProvedEventHandler struct {
 	rpc            *rpc.Client
 	proofContestCh chan *proofSubmitter.ContestRequestBody
 	contesterMode  bool
 }
 
+// NewTransitionProvedEventHandler creates a new TransitionProvedEventHandler instance.
 func NewTransitionProvedEventHandler(
 	rpc *rpc.Client,
 	proofContestCh chan *proofSubmitter.ContestRequestBody,
@@ -27,6 +29,7 @@ func NewTransitionProvedEventHandler(
 	return &TransitionProvedEventHandler{rpc, proofContestCh, contesterMode}
 }
 
+// Handle implements the TransitionProvedHandler interface.
 func (h *TransitionProvedEventHandler) Handle(
 	ctx context.Context,
 	e *bindings.TaikoL1ClientTransitionProved,

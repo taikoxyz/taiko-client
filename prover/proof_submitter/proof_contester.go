@@ -3,7 +3,6 @@ package submitter
 import (
 	"context"
 	"crypto/ecdsa"
-	"errors"
 	"math/big"
 	"strings"
 
@@ -105,7 +104,7 @@ func (c *ProofContester) SubmitContest(
 		return err
 	}
 
-	if err := c.sender.Send(
+	return c.sender.Send(
 		ctx,
 		&proofProducer.ProofWithHeader{
 			BlockID: blockID,
@@ -135,12 +134,5 @@ func (c *ProofContester) SubmitContest(
 			c.sender.GetOpts(),
 			false,
 		),
-	); err != nil {
-		if errors.Is(err, transaction.ErrUnretryable) {
-			return nil
-		}
-
-		return err
-	}
-	return nil
+	)
 }

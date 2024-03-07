@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"math/big"
 	"sync"
 
@@ -15,6 +16,10 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+)
+
+var (
+	ErrUnretryableSubmission = errors.New("unretryable submission error")
 )
 
 // TxBuilder will build a transaction with the given nonce.
@@ -76,11 +81,17 @@ func (a *ProveBlockTxBuilder) Build(
 				return nil, err
 			}
 			if tx, err = a.rpc.TaikoL1.ProveBlock(txOpts, blockID.Uint64(), input); err != nil {
-				return nil, err
+				if isSubmitProofTxErrorRetryable(err, blockID) {
+					return nil, err
+				}
+				return nil, ErrUnretryableSubmission
 			}
 		} else {
 			if tx, err = a.rpc.GuardianProver.Approve(txOpts, *meta, *transition, *tierProof); err != nil {
-				return nil, err
+				if isSubmitProofTxErrorRetryable(err, blockID) {
+					return nil, err
+				}
+				return nil, ErrUnretryableSubmission
 			}
 		}
 

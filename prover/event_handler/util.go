@@ -122,6 +122,7 @@ func getBlockProposedEventFromBlockID(
 	return e, nil
 }
 
+// getMetadataFromBlockID fetches the block meta from the onchain event by the given block id.
 func getMetadataFromBlockID(
 	ctx context.Context,
 	rpc *rpc.Client,

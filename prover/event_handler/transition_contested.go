@@ -12,12 +12,14 @@ import (
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 )
 
+// TransitionContestedEventHandler is responsible for handling the TransitionContested event.
 type TransitionContestedEventHandler struct {
 	rpc               *rpc.Client
 	proofSubmissionCh chan *proofSubmitter.ProofRequestBody
 	contesterMode     bool
 }
 
+// NewTransitionContestedEventHandler creates a new TransitionContestedEventHandler instance.
 func NewTransitionContestedEventHandler(
 	rpc *rpc.Client,
 	proofSubmissionCh chan *proofSubmitter.ProofRequestBody,
@@ -26,6 +28,7 @@ func NewTransitionContestedEventHandler(
 	return &TransitionContestedEventHandler{rpc, proofSubmissionCh, contesterMode}
 }
 
+// Handle implements the TransitionContestedHandler interface.
 func (h *TransitionContestedEventHandler) Handle(
 	ctx context.Context,
 	e *bindings.TaikoL1ClientTransitionContested,
@@ -97,7 +100,7 @@ func (h *TransitionContestedEventHandler) Handle(
 
 	go func() {
 		h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{
-			Tier:  e.Tier + 1,
+			Tier:  e.Tier + 1, // We need to send a higher tier proof to resolve the current contest.
 			Event: blockProposedEvent,
 		}
 	}()

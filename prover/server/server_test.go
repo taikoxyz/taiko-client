@@ -39,7 +39,6 @@ func (s *ProverServerTestSuite) SetupTest() {
 		TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		L2EngineEndpoint:  os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 		JwtSecret:         os.Getenv("JWT_SECRET"),
-		RetryInterval:     backoff.DefaultMaxInterval,
 		Timeout:           5 * time.Second,
 	})
 	s.Nil(err)
