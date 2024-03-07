@@ -22,7 +22,7 @@ export L2_EXECUTION_ENGINE_AUTH_ENDPOINT=http://localhost:$(docker port l2_node 
 export JWT_SECRET=$DIR/nodes/jwt.hex
 
 # check until BLOB node is ready
-BLOB_GETH_NODE_ENDPOINT=ws://localhost:$(docker port blob_node | grep '0.0.0.0' | awk -F ':' '{print $2}')
+export BLOB_GETH_NODE_ENDPOINT=ws://localhost:$(docker port blob_node | grep '0.0.0.0' | awk -F ':' '{print $2}')
 until cast block-number --rpc-url "$BLOB_GETH_NODE_ENDPOINT" &>/dev/null 2>&1; do
   sleep 1
 done

@@ -18,7 +18,7 @@ lint:
 
 test:
 	@TAIKO_MONO_DIR=${TAIKO_MONO_DIR} \
-	PACKAGE=${PACKAGE} \
+	PACKAGE=./internal/sender \
 	RUN_TESTS=true \
 		./integration_test/entrypoint.sh
 

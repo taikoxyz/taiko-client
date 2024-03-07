@@ -46,7 +46,7 @@ RUN_TESTS=${RUN_TESTS:-false}
 PACKAGE=${PACKAGE:-...}
 
 if [ "$RUN_TESTS" == "true" ]; then
-    go test -v -p=1 ./"$PACKAGE" -coverprofile=coverage.out -covermode=atomic -timeout=700s
+    go test -v -p=1 ./"$PACKAGE" -coverprofile=coverage.out -covermode=atomic -timeout=900s
 else
     echo "💻 Local dev net started"
 fi

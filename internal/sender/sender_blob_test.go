@@ -30,6 +30,7 @@ func (s *SenderBlobTestSuite) SetupTest() {
 	utils.LoadEnv()
 	var err error
 	s.client, err = rpc.NewEthClient(context.Background(), os.Getenv("BLOB_GETH_NODE_ENDPOINT"), time.Second*30)
+	fmt.Println("BLOB_GETH_NODE_ENDPOINT: ", os.Getenv("BLOB_GETH_NODE_ENDPOINT"))
 	if err != nil {
 		fmt.Println("BLOB_GETH_NODE_ENDPOINT: ", os.Getenv("BLOB_GETH_NODE_ENDPOINT"), "err: ", err.Error())
 	}
