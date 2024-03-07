@@ -34,7 +34,7 @@ type BlockProposedEventHandler struct {
 	genesisHeightL1       uint64
 	rpc                   *rpc.Client
 	proofGenerationCh     chan *proofProducer.ProofWithHeader
-	proofWindowExpiredCh  chan *bindings.TaikoL1ClientBlockProposed
+	assignmentExpiredCh   chan *bindings.TaikoL1ClientBlockProposed
 	proofSubmissionCh     chan *proofSubmitter.ProofRequestBody
 	proofContestCh        chan *proofSubmitter.ContestRequestBody
 	backOffRetryInterval  time.Duration
@@ -51,7 +51,7 @@ type NewBlockProposedEventHandlerOps struct {
 	GenesisHeightL1       uint64
 	RPC                   *rpc.Client
 	ProofGenerationCh     chan *proofProducer.ProofWithHeader
-	ProofWindowExpiredCh  chan *bindings.TaikoL1ClientBlockProposed
+	AssignmentExpiredCh   chan *bindings.TaikoL1ClientBlockProposed
 	ProofSubmissionCh     chan *proofSubmitter.ProofRequestBody
 	ProofContestCh        chan *proofSubmitter.ContestRequestBody
 	BackOffRetryInterval  time.Duration
@@ -68,7 +68,7 @@ func NewBlockProposedEventHandler(opts *NewBlockProposedEventHandlerOps) *BlockP
 		opts.GenesisHeightL1,
 		opts.RPC,
 		opts.ProofGenerationCh,
-		opts.ProofWindowExpiredCh,
+		opts.AssignmentExpiredCh,
 		opts.ProofSubmissionCh,
 		opts.ProofContestCh,
 		opts.BackOffRetryInterval,
@@ -288,7 +288,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 			"Proposed block's proving window has expired",
 			"blockID", e.BlockId,
 			"prover", e.AssignedProver,
-			"expiresAt", timeToExpire,
+			"timeToExpire", timeToExpire,
 			"minTier", e.Meta.MinTier,
 		)
 		if e.AssignedProver == h.proverAddress {
@@ -327,9 +327,9 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 					"timeToExpire", timeToExpire,
 				)
 				time.AfterFunc(
-					// Add another delay, to ensure one more L1 block will be mined before the proof submission
-					proofExpirationDelay,
-					func() { h.proofWindowExpiredCh <- e },
+					// Add another 60 seconds, to ensure one more L1 block will be mined before the proof submission
+					timeToExpire+proofExpirationDelay,
+					func() { h.assignmentExpiredCh <- e },
 				)
 			}
 

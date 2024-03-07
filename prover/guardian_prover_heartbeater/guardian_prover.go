@@ -10,12 +10,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-resty/resty/v2"
 
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/prover/db"
 )
 
 // healthCheckReq is the request body sent to the health check server when a heartbeat is sent.
@@ -48,7 +46,6 @@ type startupReq struct {
 type GuardianProverHeartBeater struct {
 	privateKey                *ecdsa.PrivateKey
 	healthCheckServerEndpoint *url.URL
-	db                        ethdb.KeyValueStore
 	rpc                       *rpc.Client
 	proverAddress             common.Address
 }
@@ -57,14 +54,12 @@ type GuardianProverHeartBeater struct {
 func New(
 	privateKey *ecdsa.PrivateKey,
 	healthCheckServerEndpoint *url.URL,
-	db ethdb.KeyValueStore,
 	rpc *rpc.Client,
 	proverAddress common.Address,
 ) *GuardianProverHeartBeater {
 	return &GuardianProverHeartBeater{
 		privateKey:                privateKey,
 		healthCheckServerEndpoint: healthCheckServerEndpoint,
-		db:                        db,
 		rpc:                       rpc,
 		proverAddress:             proverAddress,
 	}
@@ -107,13 +102,7 @@ func (s *GuardianProverHeartBeater) SignAndSendBlock(ctx context.Context, blockI
 		return err
 	}
 
-	return s.db.Put(
-		db.BuildBlockKey(header.Time, header.Number.Uint64()),
-		db.BuildBlockValue(header.Hash().Bytes(),
-			signed,
-			blockID,
-		),
-	)
+	return nil
 }
 
 // SendStartup sends the startup message to the health check server.
@@ -223,16 +212,6 @@ func (s *GuardianProverHeartBeater) signBlock(ctx context.Context, blockID *big.
 		return nil, nil, err
 	}
 
-	exists, err := s.db.Has(db.BuildBlockKey(header.Time, header.Number.Uint64()))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if exists {
-		log.Info("Guardian prover already signed block", "blockID", blockID.Uint64())
-		return nil, nil, nil
-	}
-
 	log.Info(
 		"Guardian prover block signing caught up",
 		"latestBlock", head,
@@ -249,7 +228,7 @@ func (s *GuardianProverHeartBeater) signBlock(ctx context.Context, blockID *big.
 
 // Close closes the underlying database.
 func (s *GuardianProverHeartBeater) Close() error {
-	return s.db.Close()
+	return nil
 }
 
 // SendHeartbeat sends a heartbeat to the health check server.
