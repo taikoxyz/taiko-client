@@ -64,7 +64,6 @@ func (d *Driver) InitFromCli(ctx context.Context, c *cli.Context) error {
 // InitFromConfig initializes the driver instance based on the given configurations.
 func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 	d.l1HeadCh = make(chan *types.Header, 1024)
-	d.wg = sync.WaitGroup{}
 	d.syncNotify = make(chan struct{}, 1)
 	d.ctx = ctx
 	d.Config = cfg

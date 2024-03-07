@@ -23,14 +23,50 @@ type SenderTestSuite struct {
 	sender *sender.Sender
 }
 
-func (s *SenderTestSuite) TestNormalSender() {
+func (s *SenderTestSuite) TestSendTransaction() {
+	var (
+		opts   = s.sender.Opts
+		client = s.RPCClient.L1
+		eg     errgroup.Group
+	)
+	eg.SetLimit(runtime.NumCPU())
+	for i := 0; i < 8; i++ {
+		i := i
+		eg.Go(func() error {
+			to := common.BigToAddress(big.NewInt(int64(i)))
+			tx := types.NewTx(&types.DynamicFeeTx{
+				ChainID:   client.ChainID,
+				To:        &to,
+				GasFeeCap: opts.GasFeeCap,
+				GasTipCap: opts.GasTipCap,
+				Gas:       21000000,
+				Value:     big.NewInt(1),
+				Data:      nil,
+			})
+
+			_, err := s.sender.SendTransaction(tx)
+			return err
+		})
+	}
+	s.Nil(eg.Wait())
+
+	for _, confirmCh := range s.sender.TxToConfirmChannels() {
+		confirm := <-confirmCh
+		s.Nil(confirm.Err)
+	}
+}
+
+func (s *SenderTestSuite) TestSendRawTransaction() {
+	nonce, err := s.RPCClient.L1.NonceAt(context.Background(), s.sender.Opts.From, nil)
+	s.Nil(err)
+
 	var eg errgroup.Group
 	eg.SetLimit(runtime.NumCPU())
 	for i := 0; i < 5; i++ {
 		i := i
 		eg.Go(func() error {
 			addr := common.BigToAddress(big.NewInt(int64(i)))
-			_, err := s.sender.SendRawTransaction(s.sender.Opts.Nonce.Uint64(), &addr, big.NewInt(1), nil)
+			_, err := s.sender.SendRawTransaction(nonce+uint64(i), &addr, big.NewInt(1), nil)
 			return err
 		})
 	}
@@ -121,6 +157,7 @@ func (s *SenderTestSuite) TestNonceTooLow() {
 
 func (s *SenderTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
+	s.SetL1Automine(true)
 
 	ctx := context.Background()
 	priv, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
@@ -137,6 +174,7 @@ func (s *SenderTestSuite) SetupTest() {
 }
 
 func (s *SenderTestSuite) TearDownTest() {
+	s.SetL1Automine(false)
 	s.sender.Close()
 	s.ClientTestSuite.TearDownTest()
 }

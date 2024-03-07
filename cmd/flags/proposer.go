@@ -64,11 +64,13 @@ var (
 		Name:     "epoch.interval",
 		Usage:    "Time interval to propose L2 pending transactions",
 		Category: proposerCategory,
+		Value:    0,
 	}
 	ProposeEmptyBlocksInterval = &cli.DurationFlag{
 		Name:     "epoch.emptyBlockInterval",
 		Usage:    "Time interval to propose empty blocks",
 		Category: proposerCategory,
+		Value:    0,
 	}
 	// Proposing metadata related.
 	ExtraData = &cli.StringFlag{

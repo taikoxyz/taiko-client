@@ -120,12 +120,10 @@ func SubscribeChainHead(
 
 // waitSubErr keeps waiting until the given subscription failed.
 func waitSubErr(ctx context.Context, sub event.Subscription) (event.Subscription, error) {
-	for {
-		select {
-		case err := <-sub.Err():
-			return sub, err
-		case <-ctx.Done():
-			return sub, nil
-		}
+	select {
+	case err := <-sub.Err():
+		return sub, err
+	case <-ctx.Done():
+		return sub, nil
 	}
 }

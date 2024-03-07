@@ -19,6 +19,7 @@ type Config struct {
 	P2PSyncVerifiedBlocks bool
 	P2PSyncTimeout        time.Duration
 	RPCTimeout            time.Duration
+	RetryInterval         time.Duration
 }
 
 // NewConfigFromCliContext creates a new config instance from
@@ -53,9 +54,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			TaikoL2Address:   common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 			L2EngineEndpoint: c.String(flags.L2AuthEndpoint.Name),
 			JwtSecret:        string(jwtSecret),
-			RetryInterval:    c.Duration(flags.BackOffRetryInterval.Name),
 			Timeout:          timeout,
 		},
+		RetryInterval:         c.Duration(flags.BackOffRetryInterval.Name),
 		P2PSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
 		P2PSyncTimeout:        c.Duration(flags.P2PSyncTimeout.Name),
 		RPCTimeout:            timeout,
