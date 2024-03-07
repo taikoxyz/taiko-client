@@ -14,8 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/ethdb/leveldb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/urfave/cli/v2"
 
@@ -178,20 +176,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		return err
 	}
 
-	// levelDB
-	var db ethdb.KeyValueStore
-	if cfg.DatabasePath != "" {
-		if db, err = leveldb.New(
-			cfg.DatabasePath,
-			int(cfg.DatabaseCacheSize),
-			16, // Minimum number of files handles is 16 in leveldb.
-			"taiko",
-			false,
-		); err != nil {
-			return err
-		}
-	}
-
 	// Prover server
 	if p.server, err = server.New(&server.NewProverServerOpts{
 		ProverPrivateKey:      p.cfg.L1ProverPrivKey,
@@ -204,7 +188,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		RPC:                   p.rpc,
 		ProtocolConfigs:       &protocolConfigs,
 		LivenessBond:          protocolConfigs.LivenessBond,
-		DB:                    db,
 	}); err != nil {
 		return err
 	}
@@ -219,7 +202,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		p.guardianProverHeartbeater = guardianProverHeartbeater.New(
 			p.cfg.L1ProverPrivKey,
 			p.cfg.GuardianProverHealthCheckServerEndpoint,
-			db,
 			p.rpc,
 			proverAddress,
 		)

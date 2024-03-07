@@ -10,7 +10,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
@@ -45,7 +44,6 @@ type ProverServer struct {
 	rpc                     *rpc.Client
 	protocolConfigs         *bindings.TaikoDataConfig
 	livenessBond            *big.Int
-	db                      ethdb.KeyValueStore
 }
 
 // NewProverServerOpts contains all configurations for creating a prover server instance.
@@ -62,7 +60,6 @@ type NewProverServerOpts struct {
 	RPC                     *rpc.Client
 	ProtocolConfigs         *bindings.TaikoDataConfig
 	LivenessBond            *big.Int
-	DB                      ethdb.KeyValueStore
 }
 
 // New creates a new prover server instance.
@@ -82,7 +79,6 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		rpc:                     opts.RPC,
 		protocolConfigs:         opts.ProtocolConfigs,
 		livenessBond:            opts.LivenessBond,
-		db:                      opts.DB,
 	}
 
 	srv.echo.HideBanner = true
