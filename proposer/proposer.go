@@ -287,6 +287,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	return nil
 }
 
+
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
