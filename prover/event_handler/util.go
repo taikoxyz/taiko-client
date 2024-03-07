@@ -136,8 +136,8 @@ func getMetadataFromBlockID(
 	return &e.Meta, nil
 }
 
-// isProvingWindowExpired returns true as the first return paramter if the assigned prover
-// proving window of the given proposed block is expired, and the second return paramter is the time
+// isProvingWindowExpired returns true as the first return parameter if the assigned prover
+// proving window of the given proposed block is expired, and the second return parameter is the time
 // remaining til proving window is expired.
 func isProvingWindowExpired(
 	e *bindings.TaikoL1ClientBlockProposed,
