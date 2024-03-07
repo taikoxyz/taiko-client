@@ -2,6 +2,7 @@ package sender
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -29,6 +30,9 @@ func (s *SenderBlobTestSuite) SetupTest() {
 	utils.LoadEnv()
 	var err error
 	s.client, err = rpc.NewEthClient(context.Background(), os.Getenv("BLOB_GETH_NODE_ENDPOINT"), time.Second*30)
+	if err != nil {
+		fmt.Println(os.Getenv("BLOB_GETH_NODE_ENDPOINT"), err.Error())
+	}
 	s.Nil(err)
 	priv, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
