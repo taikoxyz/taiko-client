@@ -174,9 +174,9 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.Nil(err)
 	var newTx *types.Transaction
 	if s.p.BlobAllowed {
-		newTx, err = s.p.makeProposeBlockTxWithBlobHash(context.Background(), encoded)
+		newTx, err = s.p.makeBlobProposeBlockTx(context.Background(), encoded)
 	} else {
-		newTx, err = s.p.makeProposeBlockTx(
+		newTx, err = s.p.makeCalldataProposeBlockTx(
 			context.Background(),
 			encoded,
 		)
