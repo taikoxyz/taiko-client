@@ -83,13 +83,21 @@ func (s *SenderBlobTestSuite) TestNonce() {
 	nonce, err := client.NonceAt(context.Background(), opts.From, nil)
 	s.Nil(err)
 
+	// send a normal tx.
+	if nonce == 0 {
+		txID, err := send.SendRawTransaction(nonce, &common.Address{}, nil, nil, nil)
+		s.Nil(err)
+		nonce++
+		<-send.TxToConfirmChannel(txID)
+	}
+
 	blobTx := s.makeBlobTx(opts)
 
 	_, err = send.SendRawTransaction(nonce+1, &common.Address{}, nil, nil, blobTx.Sidecar)
 	s.Equal(true, strings.Contains(err.Error(), "nonce too high"))
 
-	txID, err := send.SendRawTransaction(nonce-1, &common.Address{}, nil, nil, blobTx.Sidecar)
-	s.Nil(err)
+	txID, rErr := send.SendRawTransaction(nonce-1, &common.Address{}, nil, nil, blobTx.Sidecar)
+	s.Nil(rErr)
 	confirm := <-send.TxToConfirmChannel(txID)
 	s.Nil(confirm.Err)
 	s.Equal(nonce, confirm.CurrentTx.Nonce())
