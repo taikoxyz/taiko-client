@@ -31,7 +31,7 @@ func (d *BlobFetcher) Fetch(
 		return nil, errBlobUnused
 	}
 
-	sidecars, err := d.rpc.GetBlobs(ctx, new(big.Int).SetUint64(meta.L1Height+1))
+	sidecars, err := d.rpc.L1Beacon.GetBlobs(ctx, new(big.Int).SetUint64(meta.L1Height+1))
 	if err != nil {
 		return nil, err
 	}

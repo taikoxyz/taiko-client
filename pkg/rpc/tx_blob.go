@@ -27,11 +27,11 @@ func (c *EthClient) TransactBlobTx(
 		return nil, errors.New("no signer to authorize the transaction with")
 	}
 	// Create blob tx
-	rawTx, err := c.createBlobTx(opts, contract, input, sidecar)
+	blobTx, err := c.CreateBlobTx(opts, contract, input, sidecar)
 	if err != nil {
 		return nil, err
 	}
-	signedTx, err := opts.Signer(opts.From, rawTx)
+	signedTx, err := opts.Signer(opts.From, types.NewTx(blobTx))
 	if err != nil {
 		return nil, err
 	}
@@ -44,13 +44,13 @@ func (c *EthClient) TransactBlobTx(
 	return signedTx, nil
 }
 
-// createBlobTx creates a blob transaction by given parameters.
-func (c *EthClient) createBlobTx(
+// CreateBlobTx creates a blob transaction by given parameters.
+func (c *EthClient) CreateBlobTx(
 	opts *bind.TransactOpts,
 	contract *common.Address,
 	input []byte,
 	sidecar *types.BlobTxSidecar,
-) (*types.Transaction, error) {
+) (*types.BlobTx, error) {
 	// Fetch the nonce for the account
 	var (
 		nonce *hexutil.Uint64
@@ -93,7 +93,7 @@ func (c *EthClient) createBlobTx(
 		return nil, err
 	}
 
-	blobTx := &types.BlobTx{
+	return &types.BlobTx{
 		ChainID:    uint256.MustFromBig(rawTx.ChainId()),
 		Nonce:      rawTx.Nonce(),
 		GasTipCap:  uint256.MustFromBig(rawTx.GasTipCap()),
@@ -106,9 +106,7 @@ func (c *EthClient) createBlobTx(
 		BlobFeeCap: uint256.MustFromBig(rawTx.BlobGasFeeCap()),
 		BlobHashes: sidecar.BlobHashes(),
 		Sidecar:    sidecar,
-	}
-
-	return types.NewTx(blobTx), nil
+	}, nil
 }
 
 // MakeSidecar makes a sidecar which only includes one blob with the given data.

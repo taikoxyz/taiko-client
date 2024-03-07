@@ -209,7 +209,7 @@ func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value 
 		originalTx: &types.DynamicFeeTx{
 			ChainID:   s.client.ChainID,
 			To:        target,
-			Nonce:     nonce,
+			Nonce:     getDefault(nonce, s.nonce),
 			GasFeeCap: s.Opts.GasFeeCap,
 			GasTipCap: s.Opts.GasTipCap,
 			Gas:       gasLimit,

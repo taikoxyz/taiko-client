@@ -142,8 +142,8 @@ func (s *Sender) buildTxData(tx *types.Transaction) (types.TxData, error) {
 	}
 }
 
-// setDefault sets the default value if the given value is 0.
-func setDefault[T uint64 | time.Duration](src, dest T) T {
+// getDefault sets the default value if the given value is 0.
+func getDefault[T uint64 | time.Duration](src, dest T) T {
 	if src == 0 {
 		return dest
 	}
@@ -156,12 +156,12 @@ func setConfigWithDefaultValues(config *Config) *Config {
 		return DefaultConfig
 	}
 	return &Config{
-		ConfirmationDepth: setDefault(config.ConfirmationDepth, DefaultConfig.ConfirmationDepth),
-		MaxRetrys:         setDefault(config.MaxRetrys, DefaultConfig.MaxRetrys),
-		MaxWaitingTime:    setDefault(config.MaxWaitingTime, DefaultConfig.MaxWaitingTime),
-		GasLimit:          setDefault(config.GasLimit, DefaultConfig.GasLimit),
-		GasGrowthRate:     setDefault(config.GasGrowthRate, DefaultConfig.GasGrowthRate),
-		MaxGasFee:         setDefault(config.MaxGasFee, DefaultConfig.MaxGasFee),
-		MaxBlobFee:        setDefault(config.MaxBlobFee, DefaultConfig.MaxBlobFee),
+		ConfirmationDepth: getDefault(config.ConfirmationDepth, DefaultConfig.ConfirmationDepth),
+		MaxRetrys:         getDefault(config.MaxRetrys, DefaultConfig.MaxRetrys),
+		MaxWaitingTime:    getDefault(config.MaxWaitingTime, DefaultConfig.MaxWaitingTime),
+		GasLimit:          getDefault(config.GasLimit, DefaultConfig.GasLimit),
+		GasGrowthRate:     getDefault(config.GasGrowthRate, DefaultConfig.GasGrowthRate),
+		MaxGasFee:         getDefault(config.MaxGasFee, DefaultConfig.MaxGasFee),
+		MaxBlobFee:        getDefault(config.MaxBlobFee, DefaultConfig.MaxBlobFee),
 	}
 }
