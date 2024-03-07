@@ -31,7 +31,7 @@ func (s *SenderBlobTestSuite) SetupTest() {
 	var err error
 	s.client, err = rpc.NewEthClient(context.Background(), os.Getenv("BLOB_GETH_NODE_ENDPOINT"), time.Second*30)
 	if err != nil {
-		fmt.Println(os.Getenv("BLOB_GETH_NODE_ENDPOINT"), err.Error())
+		fmt.Println("BLOB_GETH_NODE_ENDPOINT: ", os.Getenv("BLOB_GETH_NODE_ENDPOINT"), "err: ", err.Error())
 	}
 	s.Nil(err)
 	priv, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
