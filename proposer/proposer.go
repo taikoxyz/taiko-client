@@ -306,6 +306,7 @@ func (p *Proposer) ProposeTxList(
 				p.IncludeParentMetaHash,
 				txListBytes,
 			)
+
 			if err != nil {
 				log.Warn("Failed to make taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				return err

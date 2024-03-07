@@ -167,6 +167,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 
 	encoded, err := rlp.EncodeToBytes([]types.Transaction{})
 	s.Nil(err)
+
 	newTx, err := s.p.txBuilder.Build(
 		context.Background(),
 		s.p.tierFees,
@@ -174,6 +175,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 		false,
 		encoded,
 	)
+
 	s.Nil(err)
 
 	txID, err = sender.SendRawTransaction(nonce, newTx.To(), newTx.Value(), newTx.Data())
