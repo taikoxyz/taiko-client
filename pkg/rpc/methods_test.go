@@ -138,7 +138,7 @@ func TestGetPoolContentValid(t *testing.T) {
 		gasLimit,
 		maxBytes.Uint64(),
 		txPools,
-		defaultMaxTransactionsPerBlock,
+		4,
 	)
 	require.Nil(t, err2)
 }
