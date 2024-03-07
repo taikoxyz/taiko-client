@@ -15,7 +15,7 @@ import (
 // TransitionContestedEventHandler is responsible for handling the TransitionContested event.
 type TransitionContestedEventHandler struct {
 	rpc               *rpc.Client
-	proofSubmissionCh chan *proofSubmitter.ProofRequestBody
+	proofSubmissionCh chan<- *proofSubmitter.ProofRequestBody
 	contesterMode     bool
 }
 

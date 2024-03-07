@@ -16,7 +16,7 @@ import (
 // TransitionProvedEventHandler is responsible for handling the TransitionProved event.
 type TransitionProvedEventHandler struct {
 	rpc            *rpc.Client
-	proofContestCh chan *proofSubmitter.ContestRequestBody
+	proofContestCh chan<- *proofSubmitter.ContestRequestBody
 	contesterMode  bool
 }
 
@@ -42,7 +42,7 @@ func (h *TransitionProvedEventHandler) Handle(
 		return nil
 	}
 
-	isValidProof, err := isValidProof(
+	isValid, err := isValidProof(
 		ctx,
 		h.rpc,
 		e.BlockId,
@@ -54,7 +54,7 @@ func (h *TransitionProvedEventHandler) Handle(
 		return err
 	}
 	// If the proof is valid, we simply return.
-	if isValidProof {
+	if isValid {
 		return nil
 	}
 
@@ -70,7 +70,7 @@ func (h *TransitionProvedEventHandler) Handle(
 	}
 
 	log.Info(
-		"Contest a proven transition",
+		"Attempting to contest a proven transition",
 		"blockID", e.BlockId,
 		"l1Height", blockInfo.Blk.ProposedIn,
 		"tier", e.Tier,
