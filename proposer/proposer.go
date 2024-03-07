@@ -339,7 +339,7 @@ func (p *Proposer) makeBlobProposeBlockTx(
 		return nil, err
 	}
 
-	opts := p.sender.Opts
+	opts := p.sender.GetOpts()
 	opts.Value = maxFee
 	rawTx, err := p.rpc.TaikoL1.ProposeBlock(
 		opts,
@@ -375,7 +375,7 @@ func (p *Proposer) makeCalldataProposeBlockTx(
 		return nil, err
 	}
 
-	opts := p.sender.Opts
+	opts := p.sender.GetOpts()
 	opts.Value = maxFee
 
 	var parentMetaHash = [32]byte{}

@@ -159,7 +159,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	s.Nil(sender.SetNonce(nil, true))
 
 	fee := big.NewInt(10000)
-	opts := sender.Opts
+	opts := sender.GetOpts()
 	opts.Value = fee
 	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
 
