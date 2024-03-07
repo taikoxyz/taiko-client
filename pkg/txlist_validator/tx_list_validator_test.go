@@ -34,7 +34,6 @@ var (
 func TestIsTxListValid(t *testing.T) {
 	v := NewTxListValidator(
 		maxBlocksGasLimit,
-		maxBlockNumTxs,
 		maxTxlistBytes,
 		chainID,
 	)
@@ -54,12 +53,6 @@ func TestIsTxListValid(t *testing.T) {
 			"txListBytes not decodable to rlp",
 			chainID,
 			randBytes(0x1),
-			false,
-		},
-		{
-			"txListBytes too many transactions",
-			chainID,
-			rlpEncodedTransactionBytes(int(maxBlockNumTxs)+1, true),
 			false,
 		},
 		{

@@ -354,13 +354,14 @@ func (p *Proposer) makeProposeBlockTxWithBlobHash(
 		return nil, err
 	}
 
-	log.Info("Tx", "proposeBlockTx", proposeTx, "type", proposeTx.Type())
+	log.Debug("Transaction", " nonce", proposeTx.Nonce(), "type", proposeTx.Type())
 
 	return proposeTx, nil
 }
 
-// makeProposeBlockTx tries to send a TaikoL1.proposeBlock transaction.
-func (p *Proposer) makeProposeBlockTx(
+// makeCalldataProposeBlockTx tries to send a TaikoL1.proposeBlock transaction
+// with txList bytes saved in calldata.
+func (p *Proposer) makeCalldataProposeBlockTx(
 	ctx context.Context,
 	txListBytes []byte,
 ) (*types.Transaction, error) {
@@ -456,7 +457,7 @@ func (p *Proposer) ProposeTxList(
 					txListBytes,
 				)
 			} else {
-				tx, err = p.makeProposeBlockTx(
+				tx, err = p.makeCalldataProposeBlockTx(
 					ctx,
 					txListBytes,
 				)

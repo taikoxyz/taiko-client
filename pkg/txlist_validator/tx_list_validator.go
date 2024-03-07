@@ -10,24 +10,21 @@ import (
 
 // TxListValidator is responsible for validating the transactions list in a TaikoL1.proposeBlock transaction.
 type TxListValidator struct {
-	blockMaxGasLimit        uint64
-	maxTransactionsPerBlock uint64
-	maxBytesPerTxList       uint64
-	chainID                 *big.Int
+	blockMaxGasLimit  uint64
+	maxBytesPerTxList uint64
+	chainID           *big.Int
 }
 
 // NewTxListValidator creates a new TxListValidator instance based on giving configurations.
 func NewTxListValidator(
 	blockMaxGasLimit uint64,
-	maxTransactionsPerBlock uint64,
 	maxBytesPerTxList uint64,
 	chainID *big.Int,
 ) *TxListValidator {
 	return &TxListValidator{
-		maxTransactionsPerBlock: maxTransactionsPerBlock,
-		blockMaxGasLimit:        blockMaxGasLimit,
-		maxBytesPerTxList:       maxBytesPerTxList,
-		chainID:                 chainID,
+		blockMaxGasLimit:  blockMaxGasLimit,
+		maxBytesPerTxList: maxBytesPerTxList,
+		chainID:           chainID,
 	}
 }
 
@@ -51,13 +48,6 @@ func (v *TxListValidator) ValidateTxList(
 	var txs types.Transactions
 	if err := rlp.DecodeBytes(txListBytes, &txs); err != nil {
 		log.Info("Failed to decode transactions list bytes", "blockID", blockID, "error", err)
-		return false
-	}
-
-	log.Debug("Transactions list decoded", "blockID", blockID, "length", len(txs))
-
-	if txs.Len() > int(v.maxTransactionsPerBlock) {
-		log.Info("Too many transactions", "blockID", blockID, "count", txs.Len())
 		return false
 	}
 

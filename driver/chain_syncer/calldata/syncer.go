@@ -27,11 +27,6 @@ import (
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/txlist_validator"
 )
 
-var (
-	// Brecht recommends to hardcore 149, may be unrequired as proof system changes
-	defaultMaxTxPerBlock = uint64(149)
-)
-
 // Syncer responsible for letting the L2 execution engine catching up with protocol's latest
 // pending block through deriving L1 calldata.
 type Syncer struct {
@@ -71,7 +66,6 @@ func NewSyncer(
 		anchorConstructor: constructor,
 		txListValidator: txListValidator.NewTxListValidator(
 			uint64(configs.BlockMaxGasLimit),
-			defaultMaxTxPerBlock,
 			configs.BlockMaxTxListBytes.Uint64(),
 			rpc.L2.ChainID,
 		),
