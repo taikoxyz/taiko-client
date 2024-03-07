@@ -16,8 +16,8 @@ services:
       - --geth-genesis-json-in=/execution/genesis.json
       - --geth-genesis-json-out=/execution/genesis.json
     volumes:
-      - ./consensus:/consensus
-      - ./execution:/execution
+      - /tmp/consensus:/consensus
+      - /tmp/execution:/execution
 
   # Removes the database of the go-ethereum execution client to ensure we start from a clean state.
   # (geth has a `removedb` option, but it asks for a keyboard confirmation, so we use this instead)
@@ -25,14 +25,14 @@ services:
     image: "alpine:latest"
     command: rm -rf /execution/geth
     volumes:
-      - ./execution:/execution
+      - /tmp/execution:/execution
 
   geth-genesis:
     image: "ethereum/client-go:v1.13.14"
     command: --datadir=/execution init /execution/genesis.json
     volumes:
-      - ./execution:/execution
-      - ./execution/genesis.json:/execution/genesis.json
+      - /tmp/execution:/execution
+      - /tmp/execution/genesis.json:/execution/genesis.json
     depends_on:
       create-beacon-chain-genesis:
         condition: service_completed_successfully
@@ -69,9 +69,9 @@ services:
     ports:
       - "3500"
     volumes:
-      - ./consensus:/consensus
-      - ./execution:/execution
-      - ./execution/jwtsecret:/execution/jwtsecret
+      - /tmp/consensus:/consensus
+      - /tmp/execution:/execution
+      - /tmp/execution/jwtsecret:/execution/jwtsecret
 
   geth:
     image: "ethereum/client-go:v1.13.14"
@@ -102,9 +102,9 @@ services:
       beacon-chain:
         condition: service_started
     volumes:
-      - ./execution:/execution
-      - ./execution/jwtsecret:/execution/jwtsecret
-      - ./execution/geth_password.txt:/execution/geth_password.txt
+      - /tmp/execution:/execution
+      - /tmp/execution/jwtsecret:/execution/jwtsecret
+      - /tmp/execution/geth_password.txt:/execution/geth_password.txt
 
   validator:
     image: "gcr.io/prysmaticlabs/prysm/validator:v5.0.0"
@@ -121,4 +121,4 @@ services:
       beacon-chain:
         condition: service_started
     volumes:
-      - ./consensus:/consensus
+      - /tmp/consensus:/consensus

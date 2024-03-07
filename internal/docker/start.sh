@@ -8,6 +8,9 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 docker compose -f "$DIR"/nodes/docker-compose.yml up -d
 
 # start blob devnet service list
+rm -rf /tmp/consensus /tmp/execution
+cp -R "$DIR"/blob_devnet/consensus /tmp
+cp -R "$DIR"/blob_devnet/execution /tmp
 docker compose -f "$DIR"/blob_devnet/docker-compose.yml up -d
 
 # show all the running containers
