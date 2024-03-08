@@ -269,7 +269,8 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 	}
 
 	if err := s.send(txToConfirm, true); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
-		log.Error("Failed to send transaction",
+		log.Error(
+			"Failed to send transaction",
 			"tx_id", txID,
 			"nonce", txToConfirm.CurrentTx.Nonce(),
 			"hash", tx.Hash(),
@@ -285,7 +286,7 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 	return txID, nil
 }
 
-// send is the internal method to send the given transaction.
+// send is the internal method to send the real transaction.
 func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -312,14 +313,16 @@ func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 		if err != nil {
 			if strings.Contains(err.Error(), "nonce too low") {
 				if err := s.SetNonce(originalTx, true); err != nil {
-					log.Error("Failed to set nonce when appear nonce too low",
+					log.Error(
+						"Failed to set nonce when appear nonce too low",
 						"tx_id", tx.ID,
 						"nonce", tx.CurrentTx.Nonce(),
 						"hash", rawTx.Hash(),
 						"err", err,
 					)
 				} else {
-					log.Warn("Nonce is incorrect, retry sending the transaction with new nonce",
+					log.Warn(
+						"Nonce is incorrect, retry sending the transaction with new nonce",
 						"tx_id", tx.ID,
 						"nonce", tx.CurrentTx.Nonce(),
 						"hash", rawTx.Hash(),
@@ -330,7 +333,8 @@ func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 			}
 			if strings.Contains(err.Error(), "replacement transaction underpriced") {
 				s.adjustGas(originalTx)
-				log.Warn("Replacement transaction underpriced",
+				log.Warn(
+					"Replacement transaction underpriced",
 					"tx_id", tx.ID,
 					"nonce", tx.CurrentTx.Nonce(),
 					"hash", rawTx.Hash(),
@@ -338,7 +342,8 @@ func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 				)
 				continue
 			}
-			log.Error("Failed to send transaction",
+			log.Error(
+				"Failed to send transaction",
 				"tx_id", tx.ID,
 				"nonce", tx.CurrentTx.Nonce(),
 				"hash", rawTx.Hash(),

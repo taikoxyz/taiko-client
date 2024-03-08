@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -14,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
@@ -35,8 +35,13 @@ func (s *TransactionTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	s.sender = NewSender(s.RPCClient, 5*time.Second, nil, 1*time.Minute)
-	s.builder = NewProveBlockTxBuilder(s.RPCClient, l1ProverPrivKey, nil, common.Big256, common.Big2)
+	txSender, err := sender.NewSender(context.Background(), &sender.Config{}, s.RPCClient.L1, l1ProverPrivKey)
+	s.Nil(err)
+
+	s.sender, err = NewSender(context.Background(), s.RPCClient, l1ProverPrivKey, txSender)
+	s.Nil(err)
+
+	s.builder = NewProveBlockTxBuilder(s.RPCClient, l1ProverPrivKey)
 }
 
 func (s *TransactionTestSuite) TestIsSubmitProofTxErrorRetryable() {
@@ -60,7 +65,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 			Header:  &types.Header{},
 			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
-		func(nonce *big.Int) (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
+		func() (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
 	))
 
 	s.Nil(s.sender.Send(
@@ -71,7 +76,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 			Header:  &types.Header{},
 			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
-		func(nonce *big.Int) (*types.Transaction, error) {
+		func() (*types.Transaction, error) {
 			height, err := s.RPCClient.L1.BlockNumber(context.Background())
 			s.Nil(err)
 

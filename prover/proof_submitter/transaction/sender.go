@@ -2,138 +2,88 @@ package transaction
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"crypto/ecdsa"
 	"math/big"
 	"strings"
-	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
-var (
-	ErrUnretryable = errors.New("unretryable")
-)
-
-// Sender is responsible for sending proof submission transactions with a backoff policy, if
-// the transaction should not be retried anymore, it will return an `ErrUnretryable` error.
+// Sender is responsible for sending proof submission transactions with a backoff policy.
 type Sender struct {
-	rpc                *rpc.Client
-	backOffPolicy      backoff.BackOff
-	maxRetry           *uint64
-	waitReceiptTimeout time.Duration
+	rpc         *rpc.Client
+	innerSender *sender.Sender
 }
 
 // NewSender creates a new Sener instance.
 func NewSender(
+	ctx context.Context,
 	cli *rpc.Client,
-	retryInterval time.Duration,
-	maxRetry *uint64,
-	waitReceiptTimeout time.Duration,
-) *Sender {
-	var backOffPolicy backoff.BackOff = backoff.NewConstantBackOff(retryInterval)
-	if maxRetry != nil {
-		backOffPolicy = backoff.WithMaxRetries(backOffPolicy, *maxRetry)
-	}
-
+	proverPrivateKey *ecdsa.PrivateKey,
+	txSender *sender.Sender,
+) (*Sender, error) {
 	return &Sender{
-		rpc:                cli,
-		backOffPolicy:      backOffPolicy,
-		maxRetry:           maxRetry,
-		waitReceiptTimeout: waitReceiptTimeout,
-	}
+		rpc:         cli,
+		innerSender: txSender,
+	}, nil
 }
 
-// Send sends the given proof to the TaikoL1 smart contract with a backoff policy, if
-// the transaction should not be retried anymore, it will return an `ErrUnretryable` error.
+// Send sends the given proof to the TaikoL1 smart contract with a backoff policy.
 func (s *Sender) Send(
 	ctx context.Context,
 	proofWithHeader *producer.ProofWithHeader,
 	buildTx TxBuilder,
 ) error {
-	var (
-		isUnretryableError bool
-		nonce              *big.Int
+	// Check if this proof is still needed to be submitted.
+	ok, err := s.validateProof(ctx, proofWithHeader)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	// Assemble the TaikoL1.proveBlock transaction.
+	tx, err := buildTx()
+	if err != nil {
+		return err
+	}
+
+	// Send the transaction.
+	id, err := s.innerSender.SendTransaction(tx)
+	if err != nil {
+		return err
+	}
+
+	// Waiting for the transaction to be confirmed.
+	if confirmationResult := <-s.innerSender.TxToConfirmChannel(id); confirmationResult.Err != nil {
+		log.Warn(
+			"Failed to send TaikoL1.proveBlock transaction",
+			"blockID", proofWithHeader.BlockID,
+			"txHash", tx.Hash(),
+			"error", confirmationResult.Err,
+		)
+		return confirmationResult.Err
+	}
+
+	log.Info(
+		"💰 Your block proof was accepted",
+		"blockID", proofWithHeader.BlockID,
+		"parentHash", proofWithHeader.Header.ParentHash,
+		"hash", proofWithHeader.Header.Hash(),
+		"stateRoot", proofWithHeader.Opts.StateRoot,
+		"txHash", tx.Hash(),
+		"tier", proofWithHeader.Tier,
+		"isContest", len(proofWithHeader.Proof) == 0,
 	)
 
-	if err := backoff.Retry(func() error {
-		if ctx.Err() != nil {
-			return nil
-		}
-
-		// Check if this proof is still needed to be submitted.
-		ok, err := s.validateProof(ctx, proofWithHeader)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return nil
-		}
-
-		// Assemble the taikoL1.proveBlock transaction.
-		tx, err := buildTx(nonce)
-		if err != nil {
-			err = encoding.TryParsingCustomError(err)
-			if isSubmitProofTxErrorRetryable(err, proofWithHeader.BlockID) {
-				log.Warn("Retry sending TaikoL1.proveBlock transaction", "blockID", proofWithHeader.BlockID, "reason", err)
-				if errors.Is(err, core.ErrNonceTooLow) {
-					nonce = nil
-				}
-
-				return err
-			}
-
-			isUnretryableError = true
-			return nil
-		}
-
-		// Wait for the transaction receipt.
-		ctxWithTimeout, cancel := context.WithTimeout(ctx, s.waitReceiptTimeout)
-		defer cancel()
-
-		if _, err := rpc.WaitReceipt(ctxWithTimeout, s.rpc.L1, tx); err != nil {
-			log.Warn(
-				"Failed to wait till transaction executed",
-				"blockID", proofWithHeader.BlockID,
-				"txHash", tx.Hash(),
-				"error", err,
-			)
-			return err
-		}
-
-		log.Info(
-			"💰 Your block proof was accepted",
-			"blockID", proofWithHeader.BlockID,
-			"parentHash", proofWithHeader.Header.ParentHash,
-			"hash", proofWithHeader.Header.Hash(),
-			"stateRoot", proofWithHeader.Opts.StateRoot,
-			"txHash", tx.Hash(),
-			"tier", proofWithHeader.Tier,
-			"isContest", len(proofWithHeader.Proof) == 0,
-		)
-
-		metrics.ProverSubmissionAcceptedCounter.Inc(1)
-
-		return nil
-	}, s.backOffPolicy); err != nil {
-		if s.maxRetry != nil {
-			log.Error("Failed to send TaikoL1.proveBlock transaction", "error", err, "maxRetry", *s.maxRetry)
-			return ErrUnretryable
-		}
-		return fmt.Errorf("failed to send TaikoL1.proveBlock transaction: %w", err)
-	}
-
-	if isUnretryableError {
-		return ErrUnretryable
-	}
+	metrics.ProverSubmissionAcceptedCounter.Inc(1)
 
 	return nil
 }
@@ -186,10 +136,20 @@ func (s *Sender) validateProof(ctx context.Context, proofWithHeader *producer.Pr
 	return true, nil
 }
 
+// GetOpts returns the next transaction options.
+func (s *Sender) GetOpts() *bind.TransactOpts {
+	return s.innerSender.GetOpts()
+}
+
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction
 // is retryable.
 func isSubmitProofTxErrorRetryable(err error, blockID *big.Int) bool {
-	if !strings.HasPrefix(err.Error(), "L1_") && !strings.HasPrefix(err.Error(), "PROVING_FAILED") {
+	if !strings.HasPrefix(err.Error(), "L1_") {
+		return true
+	}
+
+	if strings.HasPrefix(err.Error(), "L1_NOT_ASSIGNED_PROVER") ||
+		strings.HasPrefix(err.Error(), "L1_INVALID_PAUSE_STATUS") {
 		return true
 	}
 
