@@ -275,6 +275,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		}
 	}()
 
+	// Propose all L2 transactions lists.
 	for i, txs := range txLists {
 		if i >= int(p.MaxProposedTxListsPerEpoch) {
 			return nil
@@ -309,6 +310,8 @@ func (p *Proposer) waitConfimations() error {
 			log.Error("Run AfterCommitHook error", "error", err)
 		}
 	}
+
+	return nil
 }
 
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
