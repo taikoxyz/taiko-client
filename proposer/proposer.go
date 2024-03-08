@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -269,6 +268,12 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return errNoNewTxs
 	}
 
+	defer func() {
+		if err := p.waitConfimations(); err != nil {
+			log.Error("Failed to wait proposer transactions confirmations", "error", err)
+		}
+	}()
+
 	for i, txs := range txLists {
 		if i >= int(p.MaxProposedTxListsPerEpoch) {
 			return nil
@@ -280,15 +285,20 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		}
 
 		if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len())); err != nil {
-			return fmt.Errorf("failed to propose transactions: %w", err)
+			return fmt.Errorf("failed to send TaikoL2.proposeBlock transactions: %w", err)
 		}
 	}
 
+	return nil
+}
+
+// waitConfimations waits for all current proposer transactions to be confirmed.
+func (p *Proposer) waitConfimations() error {
 	// Wait for all transactions to be confirmed.
 	for _, confirmCh := range p.sender.TxToConfirmChannels() {
 		confirm := <-confirmCh
 		if confirm.Err != nil {
-			log.Error("ProposeTxList error", "tx_id", confirm.ID, "error", confirm.Err)
+			log.Error("ProposeTxList error", "txId", confirm.ID, "error", confirm.Err)
 			return confirm.Err
 		}
 	}
@@ -298,8 +308,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			log.Error("Run AfterCommitHook error", "error", err)
 		}
 	}
-
-	return nil
 }
 
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
@@ -308,40 +316,21 @@ func (p *Proposer) ProposeTxList(
 	txListBytes []byte,
 	txNum uint,
 ) error {
-	if err := backoff.Retry(
-		func() error {
-			if ctx.Err() != nil {
-				return nil
-			}
-
-			tx, err := p.txBuilder.Build(
-				ctx,
-				p.tierFees,
-				p.sender.GetOpts(),
-				p.IncludeParentMetaHash,
-				txListBytes,
-			)
-			if err != nil {
-				log.Warn("Failed to make taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
-				return err
-			}
-
-			_, err = p.sender.SendTransaction(tx)
-			if err != nil {
-				log.Warn("Failed to send taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
-				return err
-			}
-			return err
-		},
-		backoff.WithMaxRetries(
-			backoff.NewConstantBackOff(retryInterval),
-			uint64(maxSendProposeBlockTxRetry),
-		),
-	); err != nil {
+	tx, err := p.txBuilder.Build(
+		ctx,
+		p.tierFees,
+		p.sender.GetOpts(),
+		p.IncludeParentMetaHash,
+		txListBytes,
+	)
+	if err != nil {
+		log.Warn("Failed to build TaikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 		return err
 	}
-	if ctx.Err() != nil {
-		return ctx.Err()
+
+	if _, err = p.sender.SendTransaction(tx); err != nil {
+		log.Warn("Failed to send TaikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
+		return err
 	}
 
 	log.Info("📝 Propose transactions succeeded", "txs", txNum)
