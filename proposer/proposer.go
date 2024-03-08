@@ -268,6 +268,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return errNoNewTxs
 	}
 
+	// Wait for all transactions to be confirmed, if there is any.
 	defer func() {
 		if err := p.waitConfimations(); err != nil {
 			log.Error("Failed to wait proposer transactions confirmations", "error", err)
