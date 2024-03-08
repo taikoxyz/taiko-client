@@ -241,10 +241,12 @@ func (p *Prover) Start() error {
 			log.Error("Failed to send guardian prover startup", "error", err)
 		}
 
+		p.wg.Add(1)
 		go p.gurdianProverHeartbeatLoop(p.ctx)
 	}
 
 	// 4. Start the main event loop of the prover.
+	p.wg.Add(1)
 	go p.eventLoop()
 
 	return nil
@@ -252,10 +254,7 @@ func (p *Prover) Start() error {
 
 // eventLoop starts the main loop of Taiko prover.
 func (p *Prover) eventLoop() {
-	p.wg.Add(1)
-	defer func() {
-		p.wg.Done()
-	}()
+	defer p.wg.Done()
 
 	// reqProving requests performing a proving operation, won't block
 	// if we are already proving.
