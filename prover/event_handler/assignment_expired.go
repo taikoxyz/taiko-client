@@ -15,8 +15,8 @@ import (
 type AssignmentExpiredEventHandler struct {
 	rpc               *rpc.Client
 	proverAddress     common.Address
-	proofSubmissionCh chan *proofSubmitter.ProofRequestBody
-	proofContestCh    chan *proofSubmitter.ContestRequestBody
+	proofSubmissionCh chan<- *proofSubmitter.ProofRequestBody
+	proofContestCh    chan<- *proofSubmitter.ContestRequestBody
 	contesterMode     bool
 }
 

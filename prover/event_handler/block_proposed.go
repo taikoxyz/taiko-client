@@ -33,10 +33,10 @@ type BlockProposedEventHandler struct {
 	proverAddress         common.Address
 	genesisHeightL1       uint64
 	rpc                   *rpc.Client
-	proofGenerationCh     chan *proofProducer.ProofWithHeader
-	assignmentExpiredCh   chan *bindings.TaikoL1ClientBlockProposed
-	proofSubmissionCh     chan *proofSubmitter.ProofRequestBody
-	proofContestCh        chan *proofSubmitter.ContestRequestBody
+	proofGenerationCh     chan<- *proofProducer.ProofWithHeader
+	assignmentExpiredCh   chan<- *bindings.TaikoL1ClientBlockProposed
+	proofSubmissionCh     chan<- *proofSubmitter.ProofRequestBody
+	proofContestCh        chan<- *proofSubmitter.ContestRequestBody
 	backOffRetryInterval  time.Duration
 	backOffMaxRetrys      uint64
 	contesterMode         bool
