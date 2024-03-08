@@ -443,7 +443,7 @@ func (p *Prover) getSubmitterByTier(tier uint16) proofSubmitter.Submitter {
 
 // IsGuardianProver returns true if the current prover is a guardian prover.
 func (p *Prover) IsGuardianProver() bool {
-	return p.cfg.GuardianProverAddress != common.Address{} && p.cfg.GuardianProverHealthCheckServerEndpoint != nil
+	return p.cfg.GuardianProverAddress != common.Address{}
 }
 
 // ProverAddress returns the current prover account address.
