@@ -64,6 +64,8 @@ func (s *ClientTestSuite) SetupTest() {
 	s.Nil(err)
 	s.RPCClient = rpcCli
 
+	s.Nil(s.RPCClient.WaitTillL2ExecutionEngineSynced(context.Background()))
+
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 

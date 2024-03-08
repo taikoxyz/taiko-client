@@ -79,6 +79,14 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/out/MainnetTierProvider.sol/MainnetTierP
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TierProvider --pkg bindings --out $DIR/../bindings/gen_tier_provider.go
 
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/SgxVerifier.sol/SgxVerifier.json |
+	jq .abi |
+	${ABIGEN_BIN} --abi - --type SgxVerifier --pkg bindings --out $DIR/../bindings/gen_sgx_verifier.go
+
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/GuardianVerifier.sol/GuardianVerifier.json |
+	jq .abi |
+	${ABIGEN_BIN} --abi - --type GuardianVerifier --pkg bindings --out $DIR/../bindings/gen_guardian_verifier.go
+
 git -C ${TAIKO_MONO_DIR} log --format="%H" -n 1 >./bindings/.githead
 
 echo "🍻 Go contract bindings generated!"

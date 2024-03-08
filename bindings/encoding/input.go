@@ -262,15 +262,17 @@ var (
 
 // Contract ABIs.
 var (
-	TaikoL1ABI        *abi.ABI
-	TaikoL2ABI        *abi.ABI
-	GuardianProverABI *abi.ABI
-	LibDepositingABI  *abi.ABI
-	LibProposingABI   *abi.ABI
-	LibProvingABI     *abi.ABI
-	LibUtilsABI       *abi.ABI
-	LibVerifyingABI   *abi.ABI
-	AssignmentHookABI *abi.ABI
+	TaikoL1ABI          *abi.ABI
+	TaikoL2ABI          *abi.ABI
+	GuardianProverABI   *abi.ABI
+	LibDepositingABI    *abi.ABI
+	LibProposingABI     *abi.ABI
+	LibProvingABI       *abi.ABI
+	LibUtilsABI         *abi.ABI
+	LibVerifyingABI     *abi.ABI
+	AssignmentHookABI   *abi.ABI
+	SGXVerifierABI      *abi.ABI
+	GuardianVerifierABI *abi.ABI
 
 	customErrorMaps []map[string]abi.Error
 )
@@ -314,6 +316,14 @@ func init() {
 		log.Crit("Get AssignmentHook ABI error", "error", err)
 	}
 
+	if SGXVerifierABI, err = bindings.SgxVerifierMetaData.GetAbi(); err != nil {
+		log.Crit("Get SGXVerifier ABI error", err)
+	}
+
+	if GuardianVerifierABI, err = bindings.GuardianVerifierMetaData.GetAbi(); err != nil {
+		log.Crit("Get GuardianVerifier ABI error", "error", err)
+	}
+
 	customErrorMaps = []map[string]abi.Error{
 		TaikoL1ABI.Errors,
 		TaikoL2ABI.Errors,
@@ -324,6 +334,8 @@ func init() {
 		LibUtilsABI.Errors,
 		LibVerifyingABI.Errors,
 		AssignmentHookABI.Errors,
+		SGXVerifierABI.Errors,
+		GuardianVerifierABI.Errors,
 	}
 }
 
