@@ -230,7 +230,7 @@ func (p *Prover) Start() error {
 	}()
 
 	// 3. Start the guardian prover heartbeat sender if the current prover is a guardian prover.
-	if p.IsGuardianProver() {
+	if p.IsGuardianProver() && p.cfg.GuardianProverHealthCheckServerEndpoint != nil {
 		if err := p.guardianProverHeartbeater.SendStartup(
 			p.ctx,
 			version.CommitVersion(),

@@ -120,7 +120,7 @@ func (h *BlockProposedEventHandler) Handle(
 		"blockID", e.BlockId,
 		"removed", e.Raw.Removed,
 		"assignedProver", e.AssignedProver,
-		"blobHash", e.Meta.BlobHash,
+		"blobHash", common.Bytes2Hex(e.Meta.BlobHash[:]),
 		"livenessBond", e.LivenessBond,
 		"minTier", e.Meta.MinTier,
 		"blobUsed", e.Meta.BlobUsed,
