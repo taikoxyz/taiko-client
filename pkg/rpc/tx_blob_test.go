@@ -46,7 +46,7 @@ func TestSendingBlobTx(t *testing.T) {
 	sideCar, sErr := MakeSidecar(data)
 	assert.NoError(t, sErr)
 
-	tx, err := l1Client.TransactBlobTx(opts, nil, nil, sideCar)
+	tx, err := l1Client.TransactBlobTx(opts, common.Address{}, nil, sideCar)
 	assert.NoError(t, err)
 
 	receipt, err := bind.WaitMined(ctx, l1Client, tx)
