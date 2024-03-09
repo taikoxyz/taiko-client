@@ -52,6 +52,7 @@ func (b *CalldataTransactionBuilder) Build(
 	includeParentMetaHash bool,
 	txListBytes []byte,
 ) (*types.Transaction, error) {
+	// Try to assign a prover.
 	assignment, assignedProver, maxFee, err := b.proverSelector.AssignProver(
 		ctx,
 		tierFees,
@@ -64,19 +65,10 @@ func (b *CalldataTransactionBuilder) Build(
 
 	var parentMetaHash = [32]byte{}
 	if includeParentMetaHash {
-		state, err := b.rpc.TaikoL1.State(&bind.CallOpts{Context: ctx})
-		if err != nil {
+		if parentMetaHash, err = getParentMetaHash(ctx, b.rpc); err != nil {
 			return nil, err
 		}
-
-		parent, err := b.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, state.SlotB.NumBlocks-1)
-		if err != nil {
-			return nil, err
-		}
-
-		parentMetaHash = parent.Blk.MetaHash
 	}
-	hookCalls := make([]encoding.HookCall, 0)
 
 	// Initially just use the AssignmentHook default.
 	hookInputData, err := encoding.EncodeAssignmentHookInput(&encoding.AssignmentHookInput{
@@ -87,11 +79,7 @@ func (b *CalldataTransactionBuilder) Build(
 		return nil, err
 	}
 
-	hookCalls = append(hookCalls, encoding.HookCall{
-		Hook: b.assignmentHookAddress,
-		Data: hookInputData,
-	})
-
+	// ABI encode the TaikoL1.ProposeBlock parameters.
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		AssignedProver:    assignedProver,
 		Coinbase:          b.l2SuggestedFeeRecipient,
@@ -101,17 +89,14 @@ func (b *CalldataTransactionBuilder) Build(
 		BlobHash:          [32]byte{},
 		CacheBlobForReuse: false,
 		ParentMetaHash:    parentMetaHash,
-		HookCalls:         hookCalls,
+		HookCalls:         []encoding.HookCall{{Hook: b.assignmentHookAddress, Data: hookInputData}},
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	proposeTx, err := b.rpc.TaikoL1.ProposeBlock(
-		opts,
-		encodedParams,
-		txListBytes,
-	)
+	// Send the transaction to the L1 node.
+	proposeTx, err := b.rpc.TaikoL1.ProposeBlock(opts, encodedParams, txListBytes)
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
 	}

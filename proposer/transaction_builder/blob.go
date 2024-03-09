@@ -55,12 +55,13 @@ func (b *BlobTransactionBuilder) Build(
 	includeParentMetaHash bool,
 	txListBytes []byte,
 ) (*types.Transaction, error) {
-	// Make sidecar in order to get blob hash.
+	// Make a sidecar then calculate the blob hash.
 	sideCar, err := rpc.MakeSidecar(txListBytes)
 	if err != nil {
 		return nil, err
 	}
 
+	// Try to assign a prover.
 	assignment, assignedProver, maxFee, err := b.proverSelector.AssignProver(
 		ctx,
 		tierFees,
@@ -70,19 +71,15 @@ func (b *BlobTransactionBuilder) Build(
 		return nil, err
 	}
 
+	// Set the ETHs that the current proposer needs to pay to the prover.
+	opts.Value = maxFee
+
+	// If the current proposer wants to include the parent meta hash, then fetch it from the protocol.
 	var parentMetaHash = [32]byte{}
 	if includeParentMetaHash {
-		state, err := b.rpc.TaikoL1.State(&bind.CallOpts{Context: ctx})
-		if err != nil {
+		if parentMetaHash, err = getParentMetaHash(ctx, b.rpc); err != nil {
 			return nil, err
 		}
-
-		parent, err := b.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, state.SlotB.NumBlocks-1)
-		if err != nil {
-			return nil, err
-		}
-
-		parentMetaHash = parent.Blk.MetaHash
 	}
 
 	// Initially just use the AssignmentHook default.
@@ -94,6 +91,7 @@ func (b *BlobTransactionBuilder) Build(
 		return nil, err
 	}
 
+	// ABI encode the TaikoL1.ProposeBlock parameters.
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		AssignedProver:    assignedProver,
 		ExtraData:         rpc.StringToBytes32(b.extraData),
@@ -103,16 +101,13 @@ func (b *BlobTransactionBuilder) Build(
 		CacheBlobForReuse: false,
 		Coinbase:          b.l2SuggestedFeeRecipient,
 		ParentMetaHash:    parentMetaHash,
-		HookCalls: []encoding.HookCall{{
-			Hook: b.assignmentHookAddress,
-			Data: hookInputData,
-		}},
+		HookCalls:         []encoding.HookCall{{Hook: b.assignmentHookAddress, Data: hookInputData}},
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	opts.Value = maxFee
+	// Send the transaction to the L1 node.
 	rawTx, err := b.rpc.TaikoL1.ProposeBlock(
 		opts,
 		encodedParams,
@@ -127,7 +122,7 @@ func (b *BlobTransactionBuilder) Build(
 		return nil, err
 	}
 
-	log.Debug("Transaction", " nonce", proposeTx.Nonce(), "type", proposeTx.Type())
+	log.Debug("ProposeBlock transaction", " nonce", proposeTx.Nonce(), "type", proposeTx.Type())
 
 	return proposeTx, nil
 }

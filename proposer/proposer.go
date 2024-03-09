@@ -27,8 +27,6 @@ import (
 
 var (
 	errNoNewTxs                = errors.New("no new transactions")
-	maxSendProposeBlockTxRetry = 10
-	retryInterval              = 12 * time.Second
 	proverAssignmentTimeout    = 30 * time.Minute
 	requestProverServerTimeout = 12 * time.Second
 )
