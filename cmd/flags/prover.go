@@ -64,6 +64,11 @@ var (
 		Usage:    "Minimum accepted fee for generating a SGX proof",
 		Category: proverCategory,
 	}
+	MinSgxAndZkVMTierFee = &cli.Uint64Flag{
+		Name:     "minTierFee.sgxAndZkvm",
+		Usage:    "Minimum accepted fee for generating a SGX + zkVM proof",
+		Category: proverCategory,
+	}
 	// Guardian prover related.
 	GuardianProver = &cli.StringFlag{
 		Name:     "guardianProver",
@@ -192,6 +197,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L1ProverPrivKey,
 	MinOptimisticTierFee,
 	MinSgxTierFee,
+	MinSgxAndZkVMTierFee,
 	StartingBlockID,
 	Dummy,
 	GuardianProver,
