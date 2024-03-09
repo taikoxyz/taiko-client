@@ -2,7 +2,6 @@ package submitter
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"math/big"
 	"strings"
 
@@ -32,7 +31,6 @@ type ProofContester struct {
 func NewProofContester(
 	ctx context.Context,
 	rpcClient *rpc.Client,
-	proverPrivKey *ecdsa.PrivateKey,
 	txSender *sender.Sender,
 	graffiti string,
 	builder *transaction.ProveBlockTxBuilder,
@@ -40,7 +38,6 @@ func NewProofContester(
 	sender, err := transaction.NewSender(
 		ctx,
 		rpcClient,
-		proverPrivKey,
 		txSender,
 	)
 	if err != nil {
