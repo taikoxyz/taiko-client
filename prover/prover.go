@@ -2,7 +2,6 @@ package prover
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"math/big"
@@ -35,8 +34,7 @@ import (
 // Prover keeps trying to prove newly proposed blocks.
 type Prover struct {
 	// Configurations
-	cfg              *Config
-	proverPrivateKey *ecdsa.PrivateKey
+	cfg *Config
 
 	// Clients
 	rpc *rpc.Client
@@ -89,7 +87,6 @@ func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
 func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
-	p.proverPrivateKey = cfg.L1ProverPrivKey
 
 	// Initialize state which will be shared by event handlers.
 	p.sharedState = state.New()
@@ -152,11 +149,11 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		senderCfg.MaxRetrys = 0
 	}
 
-	txSender, err := sender.NewSender(p.ctx, senderCfg, p.rpc.L1, p.proverPrivateKey)
+	txSender, err := sender.NewSender(p.ctx, senderCfg, p.rpc.L1, p.cfg.L1ProverPrivKey)
 	if err != nil {
 		return err
 	}
-	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc, p.proverPrivateKey)
+	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc, p.cfg.L1ProverPrivKey)
 
 	// Proof submitters
 	if err := p.initProofSubmitters(p.ctx, txSender, txBuilder); err != nil {
@@ -167,7 +164,6 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.proofContester, err = proofSubmitter.NewProofContester(
 		p.ctx,
 		p.rpc,
-		p.cfg.L1ProverPrivKey,
 		txSender,
 		p.cfg.Graffiti,
 		txBuilder,
@@ -448,7 +444,7 @@ func (p *Prover) IsGuardianProver() bool {
 
 // ProverAddress returns the current prover account address.
 func (p *Prover) ProverAddress() common.Address {
-	return crypto.PubkeyToAddress(p.proverPrivateKey.PublicKey)
+	return crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
 }
 
 // withRetry retries the given function with prover backoff policy.

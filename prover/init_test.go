@@ -10,7 +10,7 @@ import (
 )
 
 func (s *ProverTestSuite) TestSetApprovalAmount() {
-	opts, err := bind.NewKeyedTransactorWithChainID(s.p.proverPrivateKey, s.p.rpc.L1.ChainID)
+	opts, err := bind.NewKeyedTransactorWithChainID(s.p.cfg.L1ProverPrivKey, s.p.rpc.L1.ChainID)
 	s.Nil(err)
 
 	tx, err := s.p.rpc.TaikoToken.Approve(opts, s.p.cfg.AssignmentHookAddress, common.Big0)

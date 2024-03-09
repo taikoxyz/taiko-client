@@ -2,13 +2,11 @@ package submitter
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -44,7 +42,6 @@ func New(
 	proofProducer proofProducer.ProofProducer,
 	resultCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
-	proverPrivKey *ecdsa.PrivateKey,
 	graffiti string,
 	txSender *sender.Sender,
 	builder *transaction.ProveBlockTxBuilder,
@@ -57,7 +54,6 @@ func New(
 	proofSender, err := transaction.NewSender(
 		ctx,
 		rpcClient,
-		proverPrivKey,
 		txSender,
 	)
 	if err != nil {
@@ -71,7 +67,7 @@ func New(
 		anchorValidator: anchorValidator,
 		txBuilder:       builder,
 		sender:          proofSender,
-		proverAddress:   crypto.PubkeyToAddress(proverPrivKey.PublicKey),
+		proverAddress:   txSender.GetOpts().From,
 		taikoL2Address:  taikoL2Address,
 		graffiti:        rpc.StringToBytes32(graffiti),
 	}, nil
