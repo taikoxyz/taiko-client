@@ -300,7 +300,7 @@ func (p *Prover) eventLoop() {
 		case req := <-p.proofContestCh:
 			p.withRetry(func() error { return p.contestProofOp(req) })
 		case <-p.proveNotify:
-			p.withRetry(func() error { return p.proveOp() })
+			p.proveOp()
 		case e := <-blockVerifiedCh:
 			p.blockVerifiedHandler.Handle(e)
 		case e := <-transitionProvedCh:
