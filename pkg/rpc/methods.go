@@ -25,11 +25,8 @@ import (
 
 var (
 	// errSyncing is returned when the L2 execution engine is syncing.
-	errSyncing        = errors.New("syncing")
-	errEmptyTiersList = errors.New("empty proof tiers list in protocol")
-	// syncProgressRecheckDelay is the time delay of rechecking the L2 execution engine's sync progress again,
-	// if the previous check failed.
-	syncProgressRecheckDelay    = 12 * time.Second
+	errSyncing                  = errors.New("syncing")
+	errEmptyTiersList           = errors.New("empty proof tiers list in protocol")
 	waitL1OriginPollingInterval = 3 * time.Second
 	defaultWaitL1OriginTimeout  = 3 * time.Minute
 
@@ -115,7 +112,7 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewConstantBackOff(syncProgressRecheckDelay), 10),
+		backoff.NewExponentialBackOff(),
 	)
 }
 
@@ -384,74 +381,81 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*struct {
 	return GetProtocolStateVariables(c.TaikoL1, opts)
 }
 
-// CheckL1ReorgFromL2EE checks whether the L1 chain has been reorged from the L1Origin records in L2 EE,
-// if so, returns the l1Current cursor and L2 blockID that need to reset to.
-func (c *Client) CheckL1ReorgFromL2EE(ctx context.Context, blockID *big.Int) (bool, *types.Header, *big.Int, error) {
-	var (
-		reorged          bool
-		l1CurrentToReset *types.Header
-		blockIDToReset   *big.Int
-	)
-	for {
-		ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
-		defer cancel()
+// ReorgCheckResult represents the information about whether the L1 block has been reorged
+// and how to reset the L1 cursor.
+type ReorgCheckResult struct {
+	IsReorged                 bool
+	L1CurrentToReset          *types.Header
+	LastHandledBlockIDToReset *big.Int
+}
 
+// CheckL1Reorg checks whether the L2 block's corresponding L1 block has been reorged or not.
+// We will skip the reorg check if:
+//  1. When the L2 chain has just finished a P2P sync, so there is no L1Origin information recorded in
+//     its local database, and we assume the last verified L2 block is old enough, so its coreesponding
+//     L1 block should has also been finalized.
+//
+// Then we will check:
+// 1. If the L2 block's coreesponding L1 block which in L1Origin has been reorged
+// 2. If the L1 information which in the given L2 block's anchor transaction has been reorged
+//
+// And if a reorg is detected, we return a new L1 block cursor which need to reset to.
+func (c *Client) CheckL1Reorg(ctx context.Context, blockID *big.Int) (*ReorgCheckResult, error) {
+	var (
+		result                 = new(ReorgCheckResult)
+		ctxWithTimeout, cancel = ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	)
+	defer cancel()
+
+	for {
+		// If we rollback to the genesis block, then there is no L1Origin information recorded in the L2 execution
+		// engine for that block, so we will query the protocol to use `GenesisHeight` value to reset the L1 cursor.
 		if blockID.Cmp(common.Big0) == 0 {
 			stateVars, err := c.TaikoL1.GetStateVariables(&bind.CallOpts{Context: ctxWithTimeout})
 			if err != nil {
-				return false, nil, nil, err
+				return result, err
 			}
 
-			if l1CurrentToReset, err = c.L1.HeaderByNumber(
+			if result.L1CurrentToReset, err = c.L1.HeaderByNumber(
 				ctxWithTimeout,
 				new(big.Int).SetUint64(stateVars.A.GenesisHeight),
 			); err != nil {
-				return false, nil, nil, err
+				return nil, err
 			}
 
-			blockIDToReset = blockID
-			break
+			return result, nil
 		}
 
+		// 1. Check whether the L2 block's coreesponding L1 block which in L1Origin has been reorged.
 		l1Origin, err := c.L2.L1OriginByID(ctxWithTimeout, blockID)
 		if err != nil {
+			// If the L2 EE is just synced through P2P, so there is no L1Origin information recorded in
+			// its local database, we skip this check.
 			if err.Error() == ethereum.NotFound.Error() {
-				log.Info("L1Origin not found", "blockID", blockID)
-
-				// If the L2 EE is just synced through P2P, there is a chance that the EE do not have
-				// the chain head L1Origin information recorded.
-				justSyncedByP2P, err := c.IsJustSyncedByP2P(ctxWithTimeout)
+				log.Info("L1Origin not found, the L2 execution engine has just synced from P2P network", "blockID", blockID)
+				l1Header, err := c.L1.HeaderByNumber(ctxWithTimeout, l1Origin.L1BlockHeight)
 				if err != nil {
-					return false,
-						nil,
-						nil,
-						fmt.Errorf("failed to check whether the L2 execution engine has just finished a P2P sync: %w", err)
+					return nil, err
 				}
+				// If we rollback to that just P2P synced block, we reset the L1 cursor to the L1 block which in that L1Origin.
+				result.L1CurrentToReset = l1Header
+				result.LastHandledBlockIDToReset = l1Origin.BlockID
+				return result, nil
+			}
 
-				log.Info(
-					"Check whether the L2 execution engine has just finished a P2P sync",
-					"justSyncedByP2P",
-					justSyncedByP2P,
-				)
+			return nil, err
+		}
 
-				if justSyncedByP2P {
-					return false, nil, nil, nil
-				}
-
-				log.Info("Reorg detected due to L1Origin not found", "blockID", blockID)
-				reorged = true
+		// Compare the L1 header hash in the L1Origin with the current L1 header hash in the L1 chain.
+		l1Header, err := c.L1.HeaderByNumber(ctxWithTimeout, l1Origin.L1BlockHeight)
+		if err != nil {
+			// We can not find the L1 header which in the L1Origin, which means that L1 block has been reorged.
+			if err.Error() == ethereum.NotFound.Error() {
+				result.IsReorged = true
 				blockID = new(big.Int).Sub(blockID, common.Big1)
 				continue
 			}
-			return false, nil, nil, err
-		}
-
-		l1Header, err := c.L1.HeaderByNumber(ctxWithTimeout, l1Origin.L1BlockHeight)
-		if err != nil {
-			if err.Error() == ethereum.NotFound.Error() {
-				continue
-			}
-			return false, nil, nil, fmt.Errorf("failed to fetch L1 header (%d): %w", l1Origin.L1BlockHeight, err)
+			return nil, fmt.Errorf("failed to fetch L1 header (%d): %w", l1Origin.L1BlockHeight, err)
 		}
 
 		if l1Header.Hash() != l1Origin.L1BlockHash {
@@ -462,39 +466,40 @@ func (c *Client) CheckL1ReorgFromL2EE(ctx context.Context, blockID *big.Int) (bo
 				"l1HashOld", l1Origin.L1BlockHash,
 				"l1HashNew", l1Header.Hash(),
 			)
-			reorged = true
 			blockID = new(big.Int).Sub(blockID, common.Big1)
+			result.IsReorged = true
 			continue
 		}
 
+		// 2. Check whether the L1 information which in the given L2 block's anchor transaction has been reorged.
 		isSyncedL1SnippetInvalid, err := c.checkSyncedL1SnippetFromAnchor(
-			ctx, blockID, l1Origin.L1BlockHeight.Uint64(),
+			ctxWithTimeout,
+			blockID,
+			l1Origin.L1BlockHeight.Uint64(),
 		)
 		if err != nil {
-			return false, nil, nil, fmt.Errorf("failed to check L1 reorg from anchor transaction: %w", err)
+			return nil, fmt.Errorf("failed to check L1 reorg from anchor transaction: %w", err)
 		}
-
 		if isSyncedL1SnippetInvalid {
-			log.Info("Reorg detected due to invalid L1 snippet", "blockID", blockID)
-			reorged = true
 			blockID = new(big.Int).Sub(blockID, common.Big1)
+			result.IsReorged = true
 			continue
 		}
 
-		l1CurrentToReset = l1Header
-		blockIDToReset = l1Origin.BlockID
+		result.L1CurrentToReset = l1Header
+		result.LastHandledBlockIDToReset = l1Origin.BlockID
 		break
 	}
 
 	log.Debug(
-		"Check L1 reorg from L2 EE",
-		"reorged", reorged,
-		"l1CurrentToResetNumber", l1CurrentToReset.Number,
-		"l1CurrentToResetHash", l1CurrentToReset.Hash(),
-		"blockIDToReset", blockIDToReset,
+		"Check L1 reorg",
+		"isReorged", result.IsReorged,
+		"l1CurrentToResetNumber", result.L1CurrentToReset.Number,
+		"l1CurrentToResetHash", result.L1CurrentToReset.Hash(),
+		"blockIDToReset", result.LastHandledBlockIDToReset,
 	)
 
-	return reorged, l1CurrentToReset, blockIDToReset, nil
+	return result, nil
 }
 
 // checkSyncedL1SnippetFromAnchor checks whether the L1 snippet synced from the anchor transaction is valid.
@@ -503,7 +508,7 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 	blockID *big.Int,
 	l1Height uint64,
 ) (bool, error) {
-	log.Info("Check synced L1 snippet from anchor", "blockID", blockID)
+	log.Info("Check synced L1 snippet from anchor", "blockID", blockID, "l1Height", l1Height)
 	block, err := c.L2.BlockByNumber(ctx, blockID)
 	if err != nil {
 		return false, err
@@ -629,68 +634,6 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 	}
 
 	return l1BlockHash, l1StateRoot, l1Height, parentGasUsed, nil
-}
-
-// CheckL1ReorgFromL1Cursor checks whether the L1 chain has been reorged from the given l1Current cursor,
-// if so, returns the l1Current cursor that need to reset to.
-func (c *Client) CheckL1ReorgFromL1Cursor(
-	ctx context.Context,
-	l1Current *types.Header,
-	genesisHeightL1 uint64,
-) (bool, *types.Header, *big.Int, error) {
-	var (
-		reorged          bool
-		l1CurrentToReset *types.Header
-	)
-	for {
-		ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
-		defer cancel()
-
-		if l1Current.Number.Uint64() <= genesisHeightL1 {
-			newL1Current, err := c.L1.HeaderByNumber(ctxWithTimeout, new(big.Int).SetUint64(genesisHeightL1))
-			if err != nil {
-				return false, nil, nil, err
-			}
-
-			l1CurrentToReset = newL1Current
-			break
-		}
-
-		l1Header, err := c.L1.BlockByNumber(ctxWithTimeout, l1Current.Number)
-		if err != nil {
-			if err.Error() == ethereum.NotFound.Error() {
-				continue
-			}
-
-			return false, nil, nil, err
-		}
-
-		if l1Header.Hash() != l1Current.Hash() {
-			log.Info(
-				"Reorg detected",
-				"l1Height", l1Current.Number,
-				"l1HashOld", l1Current.Hash(),
-				"l1HashNew", l1Header.Hash(),
-			)
-			reorged = true
-			if l1Current, err = c.L1.HeaderByHash(ctxWithTimeout, l1Current.ParentHash); err != nil {
-				return false, nil, nil, err
-			}
-			continue
-		}
-
-		l1CurrentToReset = l1Current
-		break
-	}
-
-	log.Debug(
-		"Check L1 reorg from l1Current cursor",
-		"reorged", reorged,
-		"l1CurrentToResetNumber", l1CurrentToReset.Number,
-		"l1CurrentToResetHash", l1CurrentToReset.Hash(),
-	)
-
-	return reorged, l1CurrentToReset, nil, nil
 }
 
 // IsJustSyncedByP2P checks whether the given L2 execution engine has just finished a P2P

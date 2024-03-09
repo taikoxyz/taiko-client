@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"math/big"
 	"sync"
 
@@ -17,17 +18,18 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+var (
+	ErrUnretryableSubmission = errors.New("unretryable submission error")
+)
+
 // TxBuilder will build a transaction with the given nonce.
-type TxBuilder func(nonce *big.Int) (*types.Transaction, error)
+type TxBuilder func() (*types.Transaction, error)
 
 // ProveBlockTxBuilder is responsible for building ProveBlock transactions.
 type ProveBlockTxBuilder struct {
 	rpc              *rpc.Client
 	proverPrivateKey *ecdsa.PrivateKey
 	proverAddress    common.Address
-	gasLimit         *big.Int
-	gasTipCap        *big.Int
-	gasTipMultiplier *big.Int
 	mutex            *sync.Mutex
 }
 
@@ -35,17 +37,11 @@ type ProveBlockTxBuilder struct {
 func NewProveBlockTxBuilder(
 	rpc *rpc.Client,
 	proverPrivateKey *ecdsa.PrivateKey,
-	gasLimit *big.Int,
-	gasTipCap *big.Int,
-	gasTipMultiplier *big.Int,
 ) *ProveBlockTxBuilder {
 	return &ProveBlockTxBuilder{
 		rpc:              rpc,
 		proverPrivateKey: proverPrivateKey,
 		proverAddress:    crypto.PubkeyToAddress(proverPrivateKey.PublicKey),
-		gasLimit:         gasLimit,
-		gasTipCap:        gasTipCap,
-		gasTipMultiplier: gasTipMultiplier,
 		mutex:            new(sync.Mutex),
 	}
 }
@@ -57,35 +53,17 @@ func (a *ProveBlockTxBuilder) Build(
 	meta *bindings.TaikoDataBlockMetadata,
 	transition *bindings.TaikoDataTransition,
 	tierProof *bindings.TaikoDataTierProof,
+	txOpts *bind.TransactOpts,
 	guardian bool,
 ) TxBuilder {
-	return func(nonce *big.Int) (*types.Transaction, error) {
+	return func() (*types.Transaction, error) {
 		a.mutex.Lock()
 		defer a.mutex.Unlock()
 
-		txOpts, err := getProveBlocksTxOpts(ctx, a.rpc.L1, a.rpc.L1.ChainID, a.proverPrivateKey)
-		if err != nil {
-			return nil, err
-		}
-
-		if a.gasLimit != nil {
-			txOpts.GasLimit = a.gasLimit.Uint64()
-		}
-
-		if nonce != nil {
-			txOpts.Nonce = nonce
-
-			if txOpts, err = rpc.IncreaseGasTipCap(
-				ctx,
-				a.rpc,
-				txOpts,
-				a.proverAddress,
-				a.gasTipMultiplier,
-				a.gasTipCap,
-			); err != nil {
-				return nil, err
-			}
-		}
+		var (
+			tx  *types.Transaction
+			err error
+		)
 
 		log.Info(
 			"Build proof submission transaction",
@@ -102,35 +80,21 @@ func (a *ProveBlockTxBuilder) Build(
 			if err != nil {
 				return nil, err
 			}
-			return a.rpc.TaikoL1.ProveBlock(txOpts, blockID.Uint64(), input)
-		}
-
-		return a.rpc.GuardianProver.Approve(txOpts, *meta, *transition, *tierProof)
-	}
-}
-
-// getProveBlocksTxOpts creates a bind.TransactOpts instance using the given private key.
-// Used for creating TaikoL1.proveBlock and TaikoL1.proveBlockInvalid transactions.
-func getProveBlocksTxOpts(
-	ctx context.Context,
-	cli *rpc.EthClient,
-	chainID *big.Int,
-	proverPrivKey *ecdsa.PrivateKey,
-) (*bind.TransactOpts, error) {
-	opts, err := bind.NewKeyedTransactorWithChainID(proverPrivKey, chainID)
-	if err != nil {
-		return nil, err
-	}
-	gasTipCap, err := cli.SuggestGasTipCap(ctx)
-	if err != nil {
-		if rpc.IsMaxPriorityFeePerGasNotFoundError(err) {
-			gasTipCap = rpc.FallbackGasTipCap
+			if tx, err = a.rpc.TaikoL1.ProveBlock(txOpts, blockID.Uint64(), input); err != nil {
+				if isSubmitProofTxErrorRetryable(err, blockID) {
+					return nil, err
+				}
+				return nil, ErrUnretryableSubmission
+			}
 		} else {
-			return nil, err
+			if tx, err = a.rpc.GuardianProver.Approve(txOpts, *meta, *transition, *tierProof); err != nil {
+				if isSubmitProofTxErrorRetryable(err, blockID) {
+					return nil, err
+				}
+				return nil, ErrUnretryableSubmission
+			}
 		}
+
+		return tx, nil
 	}
-
-	opts.GasTipCap = gasTipCap
-
-	return opts, nil
 }

@@ -88,15 +88,15 @@ var (
 		Usage:    "Gas limit will be used for TaikoL1.proveBlock transactions",
 		Category: proverCategory,
 	}
-	ProveBlockMaxTxGasTipCap = &cli.Uint64Flag{
-		Name:     "tx.maxGasTipCap",
-		Usage:    "Gas tip cap (in wei) for a TaikoL1.proveBlock transaction when doing the transaction replacement",
+	ProveBlockMaxTxGasFeeCap = &cli.Uint64Flag{
+		Name:     "tx.maxGasFeeCap",
+		Usage:    "Gas fee cap (in wei) for a TaikoL1.proveBlock transaction when doing the transaction replacement",
 		Category: proverCategory,
 	}
-	ProveBlockTxReplacementMultiplier = &cli.Uint64Flag{
-		Name:     "tx.replacementMultiplier",
-		Value:    2,
-		Usage:    "Gas tip multiplier when replacing a TaikoL1.proveBlock transaction with same nonce",
+	TxReplacementGasGrowthRate = &cli.Uint64Flag{
+		Name:     "tx.replacementProveBlockGasGrowthRate",
+		Value:    50,
+		Usage:    "Gas tip growth rate when replacing a TaikoL1.proveBlock transaction with same nonce",
 		Category: proverCategory,
 	}
 	// Running mode
@@ -198,8 +198,8 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	GuardianProofSubmissionDelay,
 	GuardianProverHealthCheckServerEndpoint,
 	ProofSubmissionMaxRetry,
-	ProveBlockTxReplacementMultiplier,
-	ProveBlockMaxTxGasTipCap,
+	TxReplacementGasGrowthRate,
+	ProveBlockMaxTxGasFeeCap,
 	Graffiti,
 	ProveUnassignedBlocks,
 	ContesterMode,

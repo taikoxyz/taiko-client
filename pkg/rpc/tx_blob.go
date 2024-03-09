@@ -51,7 +51,6 @@ func (c *EthClient) createBlobTx(
 	input []byte,
 	sidecar *types.BlobTxSidecar,
 ) (*types.Transaction, error) {
-	// Fetch the nonce for the account
 	var (
 		nonce *hexutil.Uint64
 		gas   *hexutil.Uint64
@@ -65,6 +64,9 @@ func (c *EthClient) createBlobTx(
 		input = []byte{}
 	}
 
+	if contract == nil {
+		contract = &common.Address{}
+	}
 	if opts.GasLimit != 0 {
 		gasVal := hexutil.Uint64(opts.GasLimit)
 		gas = &gasVal
