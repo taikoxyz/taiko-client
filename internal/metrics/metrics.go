@@ -17,34 +17,31 @@ import (
 
 // Metrics
 var (
-	// taiko metrics registry.
-	taikoMetrics = metrics.NewRegistry()
-
 	// Driver
-	DriverL1HeadHeightGauge     = metrics.NewRegisteredGauge("driver/l1Head/height", taikoMetrics)
-	DriverL2HeadHeightGauge     = metrics.NewRegisteredGauge("driver/l2Head/height", taikoMetrics)
-	DriverL1CurrentHeightGauge  = metrics.NewRegisteredGauge("driver/l1Current/height", taikoMetrics)
-	DriverL2HeadIDGauge         = metrics.NewRegisteredGauge("driver/l2Head/id", taikoMetrics)
-	DriverL2VerifiedHeightGauge = metrics.NewRegisteredGauge("driver/l2Verified/id", taikoMetrics)
+	DriverL1HeadHeightGauge     = metrics.NewRegisteredGauge("driver/l1Head/height", nil)
+	DriverL2HeadHeightGauge     = metrics.NewRegisteredGauge("driver/l2Head/height", nil)
+	DriverL1CurrentHeightGauge  = metrics.NewRegisteredGauge("driver/l1Current/height", nil)
+	DriverL2HeadIDGauge         = metrics.NewRegisteredGauge("driver/l2Head/id", nil)
+	DriverL2VerifiedHeightGauge = metrics.NewRegisteredGauge("driver/l2Verified/id", nil)
 
 	// Proposer
-	ProposerProposeEpochCounter    = metrics.NewRegisteredCounter("proposer/epoch", taikoMetrics)
-	ProposerProposedTxListsCounter = metrics.NewRegisteredCounter("proposer/proposed/txLists", taikoMetrics)
-	ProposerProposedTxsCounter     = metrics.NewRegisteredCounter("proposer/proposed/txs", taikoMetrics)
+	ProposerProposeEpochCounter    = metrics.NewRegisteredCounter("proposer/epoch", nil)
+	ProposerProposedTxListsCounter = metrics.NewRegisteredCounter("proposer/proposed/txLists", nil)
+	ProposerProposedTxsCounter     = metrics.NewRegisteredCounter("proposer/proposed/txs", nil)
 
 	// Prover
-	ProverLatestVerifiedIDGauge      = metrics.NewRegisteredGauge("prover/latestVerified/id", taikoMetrics)
-	ProverLatestProvenBlockIDGauge   = metrics.NewRegisteredGauge("prover/latestProven/id", taikoMetrics)
-	ProverQueuedProofCounter         = metrics.NewRegisteredCounter("prover/proof/all/queued", taikoMetrics)
-	ProverReceivedProofCounter       = metrics.NewRegisteredCounter("prover/proof/all/received", taikoMetrics)
-	ProverSentProofCounter           = metrics.NewRegisteredCounter("prover/proof/all/sent", taikoMetrics)
-	ProverProofsAssigned             = metrics.NewRegisteredCounter("prover/proof/assigned", taikoMetrics)
-	ProverReceivedProposedBlockGauge = metrics.NewRegisteredGauge("prover/proposed/received", taikoMetrics)
-	ProverReceivedProvenBlockGauge   = metrics.NewRegisteredGauge("prover/proven/received", taikoMetrics)
-	ProverSubmissionAcceptedCounter  = metrics.NewRegisteredCounter("prover/proof/submission/accepted", taikoMetrics)
-	ProverSubmissionErrorCounter     = metrics.NewRegisteredCounter("prover/proof/submission/error", taikoMetrics)
-	ProverSgxProofGeneratedCounter   = metrics.NewRegisteredCounter("prover/proof/sgx/generated", taikoMetrics)
-	ProverPseProofGeneratedCounter   = metrics.NewRegisteredCounter("prover/proof/pse/generated", taikoMetrics)
+	ProverLatestVerifiedIDGauge      = metrics.NewRegisteredGauge("prover/latestVerified/id", nil)
+	ProverLatestProvenBlockIDGauge   = metrics.NewRegisteredGauge("prover/latestProven/id", nil)
+	ProverQueuedProofCounter         = metrics.NewRegisteredCounter("prover/proof/all/queued", nil)
+	ProverReceivedProofCounter       = metrics.NewRegisteredCounter("prover/proof/all/received", nil)
+	ProverSentProofCounter           = metrics.NewRegisteredCounter("prover/proof/all/sent", nil)
+	ProverProofsAssigned             = metrics.NewRegisteredCounter("prover/proof/assigned", nil)
+	ProverReceivedProposedBlockGauge = metrics.NewRegisteredGauge("prover/proposed/received", nil)
+	ProverReceivedProvenBlockGauge   = metrics.NewRegisteredGauge("prover/proven/received", nil)
+	ProverSubmissionAcceptedCounter  = metrics.NewRegisteredCounter("prover/proof/submission/accepted", nil)
+	ProverSubmissionErrorCounter     = metrics.NewRegisteredCounter("prover/proof/submission/error", nil)
+	ProverSgxProofGeneratedCounter   = metrics.NewRegisteredCounter("prover/proof/sgx/generated", nil)
+	ProverPseProofGeneratedCounter   = metrics.NewRegisteredCounter("prover/proof/pse/generated", nil)
 )
 
 // Serve starts the metrics server on the given address, will be closed when the given
