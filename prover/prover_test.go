@@ -135,7 +135,7 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
 	s.Nil(s.p.blockProposedHandler.Handle(context.Background(), e, func() {}))
 	req := <-s.p.proofSubmissionCh
-	s.p.requestProofOp(s.p.ctx, req.Event, req.Tier)
+	s.Nil(s.p.requestProofOp(req.Event, req.Tier))
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	// Empty blocks
@@ -145,7 +145,7 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	) {
 		s.Nil(s.p.blockProposedHandler.Handle(context.Background(), e, func() {}))
 		req := <-s.p.proofSubmissionCh
-		s.p.requestProofOp(s.p.ctx, req.Event, req.Tier)
+		s.Nil(s.p.requestProofOp(req.Event, req.Tier))
 		s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 	}
 }
@@ -161,23 +161,27 @@ func (s *ProverTestSuite) TestOnBlockVerifiedEmptyBlockHash() {
 
 func (s *ProverTestSuite) TestSubmitProofOp() {
 	s.NotPanics(func() {
-		s.p.submitProofOp(context.Background(), &producer.ProofWithHeader{
-			BlockID: common.Big1,
-			Meta:    &bindings.TaikoDataBlockMetadata{},
-			Header:  &types.Header{},
-			Proof:   []byte{},
-			Tier:    encoding.TierOptimisticID,
-			Opts:    &producer.ProofRequestOptions{},
+		s.p.withRetry(func() error {
+			return s.p.submitProofOp(&producer.ProofWithHeader{
+				BlockID: common.Big1,
+				Meta:    &bindings.TaikoDataBlockMetadata{},
+				Header:  &types.Header{},
+				Proof:   []byte{},
+				Tier:    encoding.TierOptimisticID,
+				Opts:    &producer.ProofRequestOptions{},
+			})
 		})
 	})
 	s.NotPanics(func() {
-		s.p.submitProofOp(context.Background(), &producer.ProofWithHeader{
-			BlockID: common.Big1,
-			Meta:    &bindings.TaikoDataBlockMetadata{},
-			Header:  &types.Header{},
-			Proof:   []byte{},
-			Tier:    encoding.TierOptimisticID,
-			Opts:    &producer.ProofRequestOptions{},
+		s.p.withRetry(func() error {
+			return s.p.submitProofOp(&producer.ProofWithHeader{
+				BlockID: common.Big1,
+				Meta:    &bindings.TaikoDataBlockMetadata{},
+				Header:  &types.Header{},
+				Proof:   []byte{},
+				Tier:    encoding.TierOptimisticID,
+				Opts:    &producer.ProofRequestOptions{},
+			})
 		})
 	})
 }
@@ -220,7 +224,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 
 	s.Nil(s.p.proveOp())
 	req := <-s.p.proofSubmissionCh
-	s.p.requestProofOp(s.p.ctx, req.Event, req.Tier)
+	s.Nil(s.p.requestProofOp(req.Event, req.Tier))
 	proofWithHeader := <-s.p.proofGenerationCh
 	proofWithHeader.Opts.BlockHash = testutils.RandomHash()
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), proofWithHeader))
@@ -252,7 +256,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.Greater(header.Number.Uint64(), uint64(0))
 	s.Nil(s.p.transitionProvedHandler.Handle(context.Background(), event))
 	contestReq := <-s.p.proofContestCh
-	s.p.contestProofOp(s.p.ctx, contestReq)
+	s.Nil(s.p.contestProofOp(contestReq))
 
 	contestedEvent := <-contestedSink
 	s.Equal(header.Number.Uint64(), contestedEvent.BlockId.Uint64())
@@ -275,7 +279,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 		close(approvedSink)
 	}()
 	req = <-s.p.proofSubmissionCh
-	s.p.requestProofOp(s.p.ctx, req.Event, req.Tier)
+	s.Nil(s.p.requestProofOp(req.Event, req.Tier))
 	s.Nil(s.p.selectSubmitter(encoding.TierGuardianID).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 	approvedEvent := <-approvedSink
 
@@ -300,7 +304,7 @@ func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
 	s.p.cfg.GuardianProverAddress = common.Address{}
 	s.Nil(s.p.assignmentExpiredHandler.Handle(context.Background(), e))
 	req := <-s.p.proofSubmissionCh
-	s.p.requestProofOp(s.p.ctx, req.Event, req.Tier)
+	s.Nil(s.p.requestProofOp(req.Event, req.Tier))
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	event := <-sink
@@ -343,7 +347,7 @@ func (s *ProverTestSuite) TestProveOp() {
 
 	s.Nil(s.p.proveOp())
 	req := <-s.p.proofSubmissionCh
-	s.p.requestProofOp(s.p.ctx, req.Event, req.Tier)
+	s.Nil(s.p.requestProofOp(req.Event, req.Tier))
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	event := <-sink
@@ -375,7 +379,7 @@ func (s *ProverTestSuite) TestGetBlockProofStatus() {
 
 	s.Nil(s.p.proveOp())
 	req := <-s.p.proofSubmissionCh
-	s.p.requestProofOp(s.p.ctx, req.Event, req.Tier)
+	s.Nil(s.p.requestProofOp(req.Event, req.Tier))
 	s.Nil(s.p.selectSubmitter(e.Meta.MinTier).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 
 	status, err = rpc.GetBlockProofStatus(context.Background(), s.p.rpc, e.BlockId, s.p.ProverAddress())
@@ -398,7 +402,7 @@ func (s *ProverTestSuite) TestGetBlockProofStatus() {
 
 	s.Nil(s.p.proveOp())
 	req = <-s.p.proofSubmissionCh
-	s.p.requestProofOp(s.p.ctx, req.Event, req.Tier)
+	s.Nil(s.p.requestProofOp(req.Event, req.Tier))
 
 	proofWithHeader := <-s.p.proofGenerationCh
 	proofWithHeader.Opts.BlockHash = testutils.RandomHash()

@@ -137,7 +137,6 @@ func (p *Prover) initProofSubmitters(
 			producer,
 			p.proofGenerationCh,
 			p.cfg.TaikoL2Address,
-			p.cfg.L1ProverPrivKey,
 			p.cfg.Graffiti,
 			sender,
 			txBuilder,
