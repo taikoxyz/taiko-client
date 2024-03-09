@@ -56,7 +56,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		&producer.OptimisticProofProducer{},
 		s.proofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		l1ProverPrivKey,
 		"test",
 		sender,
 		builder,
@@ -65,7 +64,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.contester, err = NewProofContester(
 		context.Background(),
 		s.RPCClient,
-		l1ProverPrivKey,
 		sender,
 		"test",
 		builder,

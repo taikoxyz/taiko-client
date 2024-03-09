@@ -2,7 +2,6 @@ package transaction
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"math/big"
 	"strings"
 
@@ -25,7 +24,6 @@ type Sender struct {
 func NewSender(
 	ctx context.Context,
 	cli *rpc.Client,
-	proverPrivateKey *ecdsa.PrivateKey,
 	txSender *sender.Sender,
 ) (*Sender, error) {
 	return &Sender{
