@@ -464,9 +464,10 @@ func (p *Proposer) ProposeTxList(
 				)
 			}
 			if err != nil {
-				log.Warn("Failed to make taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
+				log.Warn("Failed to make TaikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 				return err
 			}
+
 			_, err = p.sender.SendTransaction(tx)
 			if err != nil {
 				log.Warn("Failed to send taikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
@@ -480,9 +481,6 @@ func (p *Proposer) ProposeTxList(
 		),
 	); err != nil {
 		return err
-	}
-	if ctx.Err() != nil {
-		return ctx.Err()
 	}
 
 	log.Info("📝 Propose transactions succeeded", "txs", txNum)

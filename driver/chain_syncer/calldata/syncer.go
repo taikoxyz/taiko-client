@@ -137,29 +137,30 @@ func (s *Syncer) onBlockProposed(
 
 	if !s.progressTracker.Triggered() {
 		// Check whether we need to reorg the L2 chain at first.
-		// 1. Last verified block
 		var (
-			reorged                    bool
-			l1CurrentToReset           *types.Header
-			lastInsertedBlockIDToReset *big.Int
-			err                        error
+			reorgCheckResult = new(rpc.ReorgCheckResult)
+			err              error
 		)
-		reorged, err = s.checkLastVerifiedBlockMismatch(ctx)
+		// 1. The latest verified block
+		reorgCheckResult.IsReorged, err = s.checkLastVerifiedBlockMismatch(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to check if last verified block in L2 EE has been reorged: %w", err)
 		}
 
-		// 2. Parent block
-		if reorged {
+		// If the latest verified block in chain is mismatched, we reset the L2 chain to genesis, and restart
+		// the calldata sync process.
+		// TODO(David): improve this approach.
+		if reorgCheckResult.IsReorged {
 			genesisL1Header, err := s.rpc.GetGenesisL1Header(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to fetch genesis L1 header: %w", err)
 			}
 
-			l1CurrentToReset = genesisL1Header
-			lastInsertedBlockIDToReset = common.Big0
+			reorgCheckResult.L1CurrentToReset = genesisL1Header
+			reorgCheckResult.LastHandledBlockIDToReset = common.Big0
 		} else {
-			reorged, l1CurrentToReset, lastInsertedBlockIDToReset, err = s.rpc.CheckL1ReorgFromL2EE(
+			// 2. Parent block
+			reorgCheckResult, err = s.rpc.CheckL1Reorg(
 				ctx,
 				new(big.Int).Sub(event.BlockId, common.Big1),
 			)
@@ -168,18 +169,18 @@ func (s *Syncer) onBlockProposed(
 			}
 		}
 
-		if reorged {
+		if reorgCheckResult.IsReorged {
 			log.Info(
 				"Reset L1Current cursor due to L1 reorg",
 				"l1CurrentHeightOld", s.state.GetL1Current().Number,
 				"l1CurrentHashOld", s.state.GetL1Current().Hash(),
-				"l1CurrentHeightNew", l1CurrentToReset.Number,
-				"l1CurrentHashNew", l1CurrentToReset.Hash(),
+				"l1CurrentHeightNew", reorgCheckResult.L1CurrentToReset.Number,
+				"l1CurrentHashNew", reorgCheckResult.L1CurrentToReset.Hash(),
 				"lastInsertedBlockIDOld", s.lastInsertedBlockID,
-				"lastInsertedBlockIDNew", lastInsertedBlockIDToReset,
+				"lastInsertedBlockIDNew", reorgCheckResult.LastHandledBlockIDToReset,
 			)
-			s.state.SetL1Current(l1CurrentToReset)
-			s.lastInsertedBlockID = lastInsertedBlockIDToReset
+			s.state.SetL1Current(reorgCheckResult.L1CurrentToReset)
+			s.lastInsertedBlockID = reorgCheckResult.LastHandledBlockIDToReset
 			s.reorgDetectedFlag = true
 			endIter()
 
@@ -222,20 +223,16 @@ func (s *Syncer) onBlockProposed(
 
 	log.Debug("Parent block", "height", parent.Number, "hash", parent.Hash())
 
-	tx, err := s.rpc.L1.TransactionInBlock(
-		ctx,
-		event.Raw.BlockHash,
-		event.Raw.TxIndex,
-	)
+	tx, err := s.rpc.L1.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
 	if err != nil {
-		return fmt.Errorf("failed to fetch original TaikoL1.ProposeBlock transaction: %w", err)
+		return fmt.Errorf("failed to fetch original TaikoL1.proposeBlock transaction: %w", err)
 	}
 
 	var txListDecoder txlistfetcher.TxListFetcher
 	if event.Meta.BlobUsed {
 		txListDecoder = txlistfetcher.NewBlobTxListFetcher(s.rpc)
 	} else {
-		txListDecoder = &txlistfetcher.CalldataFetcher{}
+		txListDecoder = new(txlistfetcher.CalldataFetcher)
 	}
 	txListBytes, err := txListDecoder.Fetch(ctx, tx, &event.Meta)
 	if err != nil {

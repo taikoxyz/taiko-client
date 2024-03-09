@@ -146,6 +146,11 @@ type BlockProofStatus struct {
 }
 
 // GetBlockProofStatus checks whether the L2 block still needs a new proof or a new contest.
+// Here are the possible status:
+// 1. No proof on chain at all.
+// 2. A valid proof has been submitted.
+// 3. An invalid proof has been submitted, and there is no valid contest.
+// 4. An invalid proof has been submitted, and there is a valid contest.
 func GetBlockProofStatus(
 	ctx context.Context,
 	cli *Client,
@@ -155,6 +160,7 @@ func GetBlockProofStatus(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
+	// Get the local L2 parent header.
 	var parent *types.Header
 	if id.Cmp(common.Big1) == 0 {
 		header, err := cli.L2.HeaderByNumber(ctxWithTimeout, common.Big0)
@@ -174,6 +180,7 @@ func GetBlockProofStatus(
 		}
 	}
 
+	// Get the transition state from TaikoL1 contract.
 	transition, err := cli.TaikoL1.GetTransition(
 		&bind.CallOpts{Context: ctxWithTimeout},
 		id.Uint64(),
@@ -184,6 +191,7 @@ func GetBlockProofStatus(
 			return nil, encoding.TryParsingCustomError(err)
 		}
 
+		// Status 1, no proof on chain at all.
 		return &BlockProofStatus{IsSubmitted: false, ParentHeader: parent}, nil
 	}
 
