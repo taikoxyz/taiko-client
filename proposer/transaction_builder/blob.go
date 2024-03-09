@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -91,7 +90,7 @@ func (b *BlobTransactionBuilder) Build(
 		return nil, err
 	}
 
-	// ABI encode the TaikoL1.ProposeBlock parameters.
+	// ABI encode the TaikoL1.proposeBlock parameters.
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		AssignedProver:    assignedProver,
 		ExtraData:         rpc.StringToBytes32(b.extraData),
@@ -117,12 +116,10 @@ func (b *BlobTransactionBuilder) Build(
 		return nil, encoding.TryParsingCustomError(err)
 	}
 
-	proposeTx, err := b.rpc.L1.TransactBlobTx(opts, b.taikoL1Address, rawTx.Data(), sideCar)
+	tx, err := b.rpc.L1.TransactBlobTx(opts, b.taikoL1Address, rawTx.Data(), sideCar)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debug("ProposeBlock transaction", " nonce", proposeTx.Nonce(), "type", proposeTx.Type())
-
-	return proposeTx, nil
+	return tx, nil
 }

@@ -80,8 +80,6 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	nonce, err := s.p.rpc.L2.PendingNonceAt(context.Background(), s.TestAddr)
 	s.Nil(err)
 
-	gaslimit := 21000
-
 	parent, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
 
@@ -94,7 +92,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 		Nonce:     nonce,
 		GasTipCap: common.Big0,
 		GasFeeCap: new(big.Int).SetUint64(baseFee.Uint64() * 2),
-		Gas:       uint64(gaslimit),
+		Gas:       21000,
 		To:        &to,
 		Value:     common.Big1,
 	})

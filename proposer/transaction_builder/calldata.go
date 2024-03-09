@@ -61,8 +61,11 @@ func (b *CalldataTransactionBuilder) Build(
 	if err != nil {
 		return nil, err
 	}
+
+	// Set the ETHs that the current proposer needs to pay to the prover.
 	opts.Value = maxFee
 
+	// If the current proposer wants to include the parent meta hash, then fetch it from the protocol.
 	var parentMetaHash = [32]byte{}
 	if includeParentMetaHash {
 		if parentMetaHash, err = getParentMetaHash(ctx, b.rpc); err != nil {
@@ -79,7 +82,7 @@ func (b *CalldataTransactionBuilder) Build(
 		return nil, err
 	}
 
-	// ABI encode the TaikoL1.ProposeBlock parameters.
+	// ABI encode the TaikoL1.proposeBlock parameters.
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		AssignedProver:    assignedProver,
 		Coinbase:          b.l2SuggestedFeeRecipient,
@@ -96,10 +99,10 @@ func (b *CalldataTransactionBuilder) Build(
 	}
 
 	// Send the transaction to the L1 node.
-	proposeTx, err := b.rpc.TaikoL1.ProposeBlock(opts, encodedParams, txListBytes)
+	tx, err := b.rpc.TaikoL1.ProposeBlock(opts, encodedParams, txListBytes)
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
 	}
 
-	return proposeTx, nil
+	return tx, nil
 }

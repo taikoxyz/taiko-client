@@ -35,6 +35,7 @@ type ProverServer struct {
 	proverAddress           common.Address
 	minOptimisticTierFee    *big.Int
 	minSgxTierFee           *big.Int
+	minSgxAndZkVmTierFee    *big.Int
 	maxExpiry               time.Duration
 	maxSlippage             uint64
 	maxProposedIn           uint64
@@ -51,6 +52,7 @@ type NewProverServerOpts struct {
 	ProverPrivateKey        *ecdsa.PrivateKey
 	MinOptimisticTierFee    *big.Int
 	MinSgxTierFee           *big.Int
+	MinSgxAndZkVMTierFee    *big.Int
 	MaxExpiry               time.Duration
 	MaxBlockSlippage        uint64
 	MaxProposedIn           uint64
@@ -70,6 +72,7 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		echo:                    echo.New(),
 		minOptimisticTierFee:    opts.MinOptimisticTierFee,
 		minSgxTierFee:           opts.MinSgxTierFee,
+		minSgxAndZkVmTierFee:    opts.MinSgxAndZkVMTierFee,
 		maxExpiry:               opts.MaxExpiry,
 		maxProposedIn:           opts.MaxProposedIn,
 		maxSlippage:             opts.MaxBlockSlippage,
