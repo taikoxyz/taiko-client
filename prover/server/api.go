@@ -98,6 +98,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	)
 
 	if req.TxListHash == (common.Hash{}) {
+		log.Info("Invalid txList hash")
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "invalid txList hash")
 	}
 
@@ -135,6 +136,8 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 			minTierFee = srv.minOptimisticTierFee
 		case encoding.TierSgxID:
 			minTierFee = srv.minSgxTierFee
+		case encoding.TierSgxAndZkVMID:
+			minTierFee = srv.minSgxAndZkVMTierFee
 		default:
 			log.Warn("Unknown tier", "tier", tier.Tier, "fee", tier.Fee, "proposerIP", c.RealIP())
 		}
@@ -163,6 +166,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 
 	// Check if the prover has any capacity now.
 	if len(srv.proposeConcurrencyGuard) == cap(srv.proposeConcurrencyGuard) {
+		log.Warn("Prover does not have capacity")
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
 
