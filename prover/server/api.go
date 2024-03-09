@@ -136,7 +136,7 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		case encoding.TierSgxID:
 			minTierFee = srv.minSgxTierFee
 		case encoding.TierSgxAndZkVMID:
-			minTierFee = srv.minSgxAndZkVmTierFee
+			minTierFee = srv.minSgxAndZkVMTierFee
 		default:
 			log.Warn("Unknown tier", "tier", tier.Tier, "fee", tier.Fee, "proposerIP", c.RealIP())
 		}
