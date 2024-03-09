@@ -165,10 +165,10 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 	}
 
 	// Check if the prover has any capacity now.
-	if len(srv.proposeConcurrencyGuard) == cap(srv.proposeConcurrencyGuard) {
-		log.Warn("Prover does not have capacity")
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
-	}
+	// if len(srv.proposeConcurrencyGuard) == cap(srv.proposeConcurrencyGuard) {
+	// 	log.Warn("Prover does not have capacity")
+	// 	return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
+	// }
 
 	l1Head, err := srv.rpc.L1.BlockNumber(c.Request().Context())
 	if err != nil {
