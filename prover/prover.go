@@ -91,6 +91,9 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	// Initialize state which will be shared by event handlers.
 	p.sharedState = state.New()
 
+	// Initialize state which will be shared by event handlers.
+	p.sharedState = state.New()
+
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
 		L1Endpoint:            cfg.L1WsEndpoint,

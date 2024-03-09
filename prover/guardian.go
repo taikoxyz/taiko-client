@@ -18,7 +18,6 @@ func (p *Prover) gurdianProverHeartbeatLoop(ctx context.Context) {
 	p.wg.Add(1)
 	defer p.wg.Done()
 
-	// Only guardian provers need to send heartbeat.
 	if !p.IsGuardianProver() {
 		return
 	}
