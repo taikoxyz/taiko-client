@@ -64,9 +64,6 @@ func (c *EthClient) createBlobTx(
 		input = []byte{}
 	}
 
-	if contract == nil {
-		contract = &common.Address{}
-	}
 	if opts.GasLimit != 0 {
 		gasVal := hexutil.Uint64(opts.GasLimit)
 		gas = &gasVal

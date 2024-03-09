@@ -285,7 +285,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		}
 
 		if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len())); err != nil {
-			return fmt.Errorf("failed to send TaikoL2.proposeBlock transactions: %w", err)
+			return fmt.Errorf("failed to send TaikoL1.proposeBlock transactions: %w", err)
 		}
 	}
 
