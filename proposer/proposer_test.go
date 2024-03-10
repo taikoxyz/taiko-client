@@ -80,8 +80,6 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	nonce, err := s.p.rpc.L2.PendingNonceAt(context.Background(), s.TestAddr)
 	s.Nil(err)
 
-	gaslimit := 21000
-
 	parent, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
 
@@ -94,7 +92,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 		Nonce:     nonce,
 		GasTipCap: common.Big0,
 		GasFeeCap: new(big.Int).SetUint64(baseFee.Uint64() * 2),
-		Gas:       uint64(gaslimit),
+		Gas:       21000,
 		To:        &to,
 		Value:     common.Big1,
 	})
@@ -158,11 +156,6 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 
 	s.Nil(sender.SetNonce(nil, true))
 
-	fee := big.NewInt(10000)
-	opts := sender.GetOpts()
-	opts.Value = fee
-	s.Greater(opts.GasTipCap.Uint64(), uint64(0))
-
 	nonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
 	s.Nil(err)
 
@@ -172,15 +165,15 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 
 	encoded, err := rlp.EncodeToBytes([]types.Transaction{})
 	s.Nil(err)
-	var newTx *types.Transaction
-	if s.p.BlobAllowed {
-		newTx, err = s.p.makeBlobProposeBlockTx(context.Background(), encoded)
-	} else {
-		newTx, err = s.p.makeCalldataProposeBlockTx(
-			context.Background(),
-			encoded,
-		)
-	}
+
+	newTx, err := s.p.txBuilder.Build(
+		context.Background(),
+		s.p.tierFees,
+		sender.GetOpts(),
+		false,
+		encoded,
+	)
+
 	s.Nil(err)
 
 	txID, err = sender.SendRawTransaction(nonce, newTx.To(), newTx.Value(), newTx.Data())

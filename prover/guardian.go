@@ -15,7 +15,9 @@ var (
 // gurdianProverHeartbeatLoop keeps sending heartbeats to the guardian prover health check server
 // on an interval.
 func (p *Prover) gurdianProverHeartbeatLoop(ctx context.Context) {
-	// Only guardian provers need to send heartbeat.
+	p.wg.Add(1)
+	defer p.wg.Done()
+
 	if !p.IsGuardianProver() {
 		return
 	}
