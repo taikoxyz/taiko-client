@@ -8,15 +8,15 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 // AssignmentExpiredEventHandler is responsible for handling the expiration of proof assignments.
 type AssignmentExpiredEventHandler struct {
 	rpc               *rpc.Client
 	proverAddress     common.Address
-	proofSubmissionCh chan<- *proofSubmitter.ProofRequestBody
-	proofContestCh    chan<- *proofSubmitter.ContestRequestBody
+	proofSubmissionCh chan<- *proofProducer.ProofRequestBody
+	proofContestCh    chan<- *proofProducer.ContestRequestBody
 	contesterMode     bool
 }
 
@@ -24,8 +24,8 @@ type AssignmentExpiredEventHandler struct {
 func NewAssignmentExpiredEventHandler(
 	rpc *rpc.Client,
 	proverAddress common.Address,
-	proofSubmissionCh chan *proofSubmitter.ProofRequestBody,
-	proofContestCh chan *proofSubmitter.ContestRequestBody,
+	proofSubmissionCh chan *proofProducer.ProofRequestBody,
+	proofContestCh chan *proofProducer.ContestRequestBody,
 	contesterMode bool,
 ) *AssignmentExpiredEventHandler {
 	return &AssignmentExpiredEventHandler{rpc, proverAddress, proofSubmissionCh, proofContestCh, contesterMode}
@@ -60,7 +60,7 @@ func (h *AssignmentExpiredEventHandler) Handle(
 
 		// If there is no contester, we submit a contest to protocol.
 		if proofStatus.CurrentTransitionState.Contester == rpc.ZeroAddress {
-			h.proofContestCh <- &proofSubmitter.ContestRequestBody{
+			h.proofContestCh <- &proofProducer.ContestRequestBody{
 				BlockID:    e.BlockId,
 				ProposedIn: new(big.Int).SetUint64(e.Raw.BlockNumber),
 				ParentHash: proofStatus.ParentHeader.Hash(),
@@ -72,7 +72,7 @@ func (h *AssignmentExpiredEventHandler) Handle(
 		}
 
 		go func() {
-			h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{
+			h.proofSubmissionCh <- &proofProducer.ProofRequestBody{
 				Tier:  proofStatus.CurrentTransitionState.Tier + 1,
 				Event: e,
 			}
@@ -82,7 +82,7 @@ func (h *AssignmentExpiredEventHandler) Handle(
 	}
 
 	go func() {
-		h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{Tier: e.Meta.MinTier, Event: e}
+		h.proofSubmissionCh <- &proofProducer.ProofRequestBody{Tier: e.Meta.MinTier, Event: e}
 	}()
 	return nil
 }

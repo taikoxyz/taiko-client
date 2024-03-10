@@ -18,6 +18,7 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 type ProverServerTestSuite struct {
@@ -46,16 +47,16 @@ func (s *ProverServerTestSuite) SetupTest() {
 	s.Nil(err)
 
 	p, err := New(&NewProverServerOpts{
-		ProverPrivateKey:        l1ProverPrivKey,
-		MinOptimisticTierFee:    common.Big1,
-		MinSgxTierFee:           common.Big1,
-		MaxExpiry:               time.Hour,
-		ProposeConcurrencyGuard: make(chan struct{}, 1024),
-		TaikoL1Address:          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		AssignmentHookAddress:   common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-		RPC:                     rpcClient,
-		ProtocolConfigs:         &configs,
-		LivenessBond:            common.Big0,
+		ProverPrivateKey:      l1ProverPrivKey,
+		MinOptimisticTierFee:  common.Big1,
+		MinSgxTierFee:         common.Big1,
+		MaxExpiry:             time.Hour,
+		ProofSubmissionCh:     make(chan<- proofProducer.ProofRequestBody, 1024),
+		TaikoL1Address:        common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		AssignmentHookAddress: common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
+		RPC:                   rpcClient,
+		ProtocolConfigs:       &configs,
+		LivenessBond:          common.Big0,
 	})
 	s.Nil(err)
 
