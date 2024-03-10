@@ -171,16 +171,16 @@ func (s *ClientTestSuite) NewTestProverServer(
 	s.Nil(err)
 
 	srv, err := server.New(&server.NewProverServerOpts{
-		ProverPrivateKey:        proverPrivKey,
-		MinOptimisticTierFee:    common.Big1,
-		MinSgxTierFee:           common.Big1,
-		MinSgxAndZkVMTierFee:    common.Big1,
-		MaxExpiry:               24 * time.Hour,
-		TaikoL1Address:          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		AssignmentHookAddress:   common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-		RPC:                     s.RPCClient,
-		ProtocolConfigs:         &protocolConfig,
-		LivenessBond:            protocolConfig.LivenessBond,
+		ProverPrivateKey:      proverPrivKey,
+		MinOptimisticTierFee:  common.Big1,
+		MinSgxTierFee:         common.Big1,
+		MinSgxAndZkVMTierFee:  common.Big1,
+		MaxExpiry:             24 * time.Hour,
+		TaikoL1Address:        common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		AssignmentHookAddress: common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
+		RPC:                   s.RPCClient,
+		ProtocolConfigs:       &protocolConfig,
+		LivenessBond:          protocolConfig.LivenessBond,
 	})
 	s.Nil(err)
 
