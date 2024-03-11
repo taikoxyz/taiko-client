@@ -159,13 +159,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc, p.cfg.L1ProverPrivKey)
 
 	// Proof submitters
-	if err := p.initProofSubmitters(p.ctx, txSender, txBuilder); err != nil {
+	if err := p.initProofSubmitters(txSender, txBuilder); err != nil {
 		return err
 	}
 
 	// Proof contester
 	p.proofContester, err = proofSubmitter.NewProofContester(
-		p.ctx,
 		p.rpc,
 		txSender,
 		p.cfg.Graffiti,
