@@ -152,7 +152,7 @@ func encode(origin []byte) []byte {
 func decode(data []byte) ([]byte, error) {
 	blobLen := new(big.Int).SetBytes(data[:preLenBlob])
 	var lenBytes = blobLen.Uint64()
-	if int(lenBytes) > BlobBytes {
+	if int(lenBytes) > len(data) {
 		return nil, errBlobTooLong
 	}
 	return data[preLenBlob:lenBytes], nil
