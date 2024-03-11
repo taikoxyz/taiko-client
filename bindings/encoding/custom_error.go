@@ -6,9 +6,13 @@ import (
 )
 
 // TryParsingCustomError tries to checks whether the given error is one of the
-// custom errors defined the TaikoL1 / TaikoL2's ABI, if so, it will return
+// custom errors defined the protocol ABIs, if so, it will return
 // the matched custom error, otherwise, it simply returns the original error.
 func TryParsingCustomError(originalError error) error {
+	if originalError == nil {
+		return nil
+	}
+
 	errData := getErrorData(originalError)
 
 	// if errData is unparsable and returns 0x, we should not match any errors.
