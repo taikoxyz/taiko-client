@@ -16,7 +16,7 @@ type OptimisticProofProducer struct{ *DummyProofProducer }
 
 // RequestProof implements the ProofProducer interface.
 func (o *OptimisticProofProducer) RequestProof(
-	ctx context.Context,
+	_ context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,
@@ -30,7 +30,7 @@ func (o *OptimisticProofProducer) RequestProof(
 		"hash", header.Hash(),
 	)
 
-	return o.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, o.Tier())
+	return o.DummyProofProducer.RequestProof(opts, blockID, meta, header, o.Tier())
 }
 
 // Tier implements the ProofProducer interface.
@@ -41,9 +41,4 @@ func (o *OptimisticProofProducer) Tier() uint16 {
 // Cancellable implements the ProofProducer interface.
 func (o *OptimisticProofProducer) Cancellable() bool {
 	return false
-}
-
-// Cancel cancels an existing proof generation.
-func (o *OptimisticProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
-	return nil
 }

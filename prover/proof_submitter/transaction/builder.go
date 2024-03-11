@@ -75,6 +75,7 @@ func (a *ProveBlockTxBuilder) Build(
 			"guardian", guardian,
 		)
 
+		txOpts.Context = ctx
 		if !guardian {
 			input, err := encoding.EncodeProveBlockInput(meta, transition, tierProof)
 			if err != nil {

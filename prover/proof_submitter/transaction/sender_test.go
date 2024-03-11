@@ -38,7 +38,7 @@ func (s *TransactionTestSuite) SetupTest() {
 	txSender, err := sender.NewSender(context.Background(), &sender.Config{}, s.RPCClient.L1, l1ProverPrivKey)
 	s.Nil(err)
 
-	s.sender, err = NewSender(context.Background(), s.RPCClient, txSender)
+	s.sender, err = NewSender(s.RPCClient, txSender)
 	s.Nil(err)
 
 	s.builder = NewProveBlockTxBuilder(s.RPCClient, l1ProverPrivKey)

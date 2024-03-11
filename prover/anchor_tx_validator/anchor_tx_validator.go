@@ -31,8 +31,8 @@ func New(taikoL2Address common.Address, chainID *big.Int, rpc *rpc.Client) (*Anc
 	return &AnchorTxValidator{taikoL2Address, goldenTouchAddress, chainID, rpc}, nil
 }
 
-// validateAnchorTx checks whether the given transaction is a valid `TaikoL2.anchor` transaction.
-func (v *AnchorTxValidator) ValidateAnchorTx(ctx context.Context, tx *types.Transaction) error {
+// ValidateAnchorTx checks whether the given transaction is a valid `TaikoL2.anchor` transaction.
+func (v *AnchorTxValidator) ValidateAnchorTx(tx *types.Transaction) error {
 	if tx.To() == nil || *tx.To() != v.taikoL2Address {
 		return fmt.Errorf("invalid TaikoL2.anchor transaction to: %s, want: %s", tx.To(), v.taikoL2Address)
 	}

@@ -2,7 +2,6 @@ package producer
 
 import (
 	"bytes"
-	"context"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -15,7 +14,6 @@ type DummyProofProducer struct{}
 
 // RequestProof returns a dummy proof to the result channel.
 func (o *DummyProofProducer) RequestProof(
-	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,

@@ -82,9 +82,6 @@ func TestProofCancel(t *testing.T) {
 		header,
 	)
 	require.Nil(t, err)
-
-	// Cancel the proof request, should return nil
-	require.Nil(t, optimisticProofProducer.Cancel(context.Background(), blockID))
 }
 
 func randHash() common.Hash {
