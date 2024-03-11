@@ -18,6 +18,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-client/internal/version"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -75,16 +76,25 @@ type Prover struct {
 
 // InitFromCli initializes the given prover instance based on the command line flags.
 func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
-	cfg, err := NewConfigFromCliContext(c)
-	if err != nil {
-		return err
-	}
+	var cfg *Config
+	var err error
 
-	return InitFromConfig(ctx, p, cfg)
+	if c.Bool(flags.UseConfigFile.Name) {
+		cfg, err = NewConfigFromConfigFile()
+		if err != nil {
+			return err
+		}
+	} else {
+		cfg, err = NewConfigFromCliContext(c)
+		if err != nil {
+			return err
+		}
+	}
+	return p.InitFromConfig(ctx, cfg)
 }
 
 // InitFromConfig initializes the prover instance based on the given configurations.
-func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
+func (p *Prover) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
 
