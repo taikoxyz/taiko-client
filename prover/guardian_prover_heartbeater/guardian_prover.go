@@ -226,11 +226,6 @@ func (s *GuardianProverHeartBeater) signBlock(ctx context.Context, blockID *big.
 	return signed, header, nil
 }
 
-// Close closes the underlying database.
-func (s *GuardianProverHeartBeater) Close() error {
-	return nil
-}
-
 // SendHeartbeat sends a heartbeat to the health check server.
 func (s *GuardianProverHeartBeater) SendHeartbeat(
 	ctx context.Context,

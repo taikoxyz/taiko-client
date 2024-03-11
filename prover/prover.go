@@ -320,12 +320,6 @@ func (p *Prover) eventLoop() {
 
 // Close closes the prover instance.
 func (p *Prover) Close(ctx context.Context) {
-	if p.guardianProverHeartbeater != nil {
-		if err := p.guardianProverHeartbeater.Close(); err != nil {
-			log.Error("failed to close database connection", "error", err)
-		}
-	}
-
 	if err := p.server.Shutdown(ctx); err != nil {
 		log.Error("Failed to shut down prover server", "error", err)
 	}
