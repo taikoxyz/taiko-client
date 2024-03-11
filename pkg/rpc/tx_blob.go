@@ -18,6 +18,7 @@ var (
 
 var (
 	errBlobInvalid = errors.New("invalid blob encoding")
+	errBlobTooLong = errors.New("invalid blob length")
 )
 
 // TransactBlobTx creates, signs and then sends blob transactions.
@@ -148,10 +149,13 @@ func encode(origin []byte) []byte {
 	return res
 }
 
-func decode(data []byte) []byte {
+func decode(data []byte) ([]byte, error) {
 	blobLen := new(big.Int).SetBytes(data[:preLenBlob])
 	var lenBytes = blobLen.Uint64()
-	return data[preLenBlob:lenBytes]
+	if int(lenBytes) > BlobBytes {
+		return nil, errBlobTooLong
+	}
+	return data[preLenBlob:lenBytes], nil
 }
 
 // EncodeBlobs encodes bytes into a EIP-4844 blob.
@@ -172,13 +176,15 @@ func EncodeBlobs(origin []byte) []kzg4844.Blob {
 }
 
 // DecodeBlob decodes the given blob data.
-func DecodeBlob(blob []byte) ([]byte, error) {
+func DecodeBlob(blob []byte) (res []byte, err error) {
 	if len(blob) != BlobBytes {
 		return nil, errBlobInvalid
 	}
-	blob = decode(blob)
+	blob, err = decode(blob)
+	if err != nil {
+		return nil, err
+	}
 
-	var res []byte
 	for ; len(blob) >= 32; blob = blob[32:] {
 		data := [31]byte{}
 		copy(data[:], blob[1:])
