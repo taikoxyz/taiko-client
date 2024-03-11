@@ -22,7 +22,6 @@ type Sender struct {
 
 // NewSender creates a new Sener instance.
 func NewSender(
-	ctx context.Context,
 	cli *rpc.Client,
 	txSender *sender.Sender,
 ) (*Sender, error) {

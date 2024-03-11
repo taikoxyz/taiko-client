@@ -40,7 +40,7 @@ func (s *AnchorTxValidatorTestSuite) TestValidateAnchorTx() {
 		0,
 		common.BytesToAddress(testutils.RandomBytes(1024)), common.Big0, 0, common.Big0, []byte{},
 	)
-	s.ErrorContains(s.v.ValidateAnchorTx(context.Background(), tx), "invalid TaikoL2.anchor transaction to")
+	s.ErrorContains(s.v.ValidateAnchorTx(tx), "invalid TaikoL2.anchor transaction to")
 
 	// invalid sender
 	dynamicFeeTxTx := &types.DynamicFeeTx{
@@ -59,12 +59,12 @@ func (s *AnchorTxValidatorTestSuite) TestValidateAnchorTx() {
 	tx = types.MustSignNewTx(wrongPrivKey, signer, dynamicFeeTxTx)
 
 	s.ErrorContains(
-		s.v.ValidateAnchorTx(context.Background(), tx), "invalid TaikoL2.anchor transaction sender",
+		s.v.ValidateAnchorTx(tx), "invalid TaikoL2.anchor transaction sender",
 	)
 
 	// invalid method selector
 	tx = types.MustSignNewTx(goldenTouchPriKey, signer, dynamicFeeTxTx)
-	s.ErrorContains(s.v.ValidateAnchorTx(context.Background(), tx), "invalid TaikoL2.anchor transaction selector")
+	s.ErrorContains(s.v.ValidateAnchorTx(tx), "invalid TaikoL2.anchor transaction selector")
 }
 
 func (s *AnchorTxValidatorTestSuite) TestGetAndValidateAnchorTxReceipt() {

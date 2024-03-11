@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -89,15 +88,6 @@ func (s *ETHFeeEOASelector) AssignProver(
 	tierFees []encoding.TierFee,
 	txListHash common.Hash,
 ) (*encoding.ProverAssignment, common.Address, *big.Int, error) {
-	guardianProverAddress, err := s.rpc.TaikoL1.Resolve0(
-		&bind.CallOpts{Context: ctx},
-		rpc.StringToBytes32("guardian"),
-		true,
-	)
-	if err != nil {
-		return nil, common.Address{}, nil, err
-	}
-
 	var (
 		expiry       = uint64(time.Now().Add(s.proposalExpiry).Unix())
 		fees         = make([]encoding.TierFee, len(tierFees))
@@ -133,7 +123,6 @@ func (s *ETHFeeEOASelector) AssignProver(
 				s.assignmentHookAddress,
 				txListHash,
 				s.requestTimeout,
-				guardianProverAddress,
 			)
 			if err != nil {
 				log.Warn("Failed to assign prover", "endpoint", endpoint, "error", err)
@@ -185,7 +174,6 @@ func assignProver(
 	assignmentHookAddress common.Address,
 	txListHash common.Hash,
 	timeout time.Duration,
-	guardianProverAddress common.Address,
 ) (*encoding.ProverAssignment, common.Address, error) {
 	log.Info(
 		"Attempting to assign prover",

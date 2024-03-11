@@ -11,8 +11,8 @@ import (
 )
 
 func TestSubscribeEvent(t *testing.T) {
-	require.NotNil(t, SubscribeEvent("test", func(ctx context.Context) (event.Subscription, error) {
-		return event.NewSubscription(func(c <-chan struct{}) error { return nil }), nil
+	require.NotNil(t, SubscribeEvent("test", func(_ context.Context) (event.Subscription, error) {
+		return event.NewSubscription(func(_ <-chan struct{}) error { return nil }), nil
 	}))
 }
 
