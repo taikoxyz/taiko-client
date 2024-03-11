@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"errors"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -9,6 +10,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/holiman/uint256"
+)
+
+var (
+	preLenBlob = 32
 )
 
 var (
@@ -124,7 +129,7 @@ func MakeSidecar(data []byte) (*types.BlobTxSidecar, error) {
 }
 
 func encode(origin []byte) []byte {
-	var res []byte
+	var res = make([]byte, preLenBlob, len(origin)/31*32+32)
 	for ; len(origin) >= 31; origin = origin[31:] {
 		data := [32]byte{}
 		copy(data[1:], origin[:31])
@@ -135,7 +140,18 @@ func encode(origin []byte) []byte {
 		copy(data[1:], origin)
 		res = append(res, data...)
 	}
+
+	// Add length prefix
+	blobLen := big.NewInt(int64(len(res))).Bytes()
+	copy(res[preLenBlob-len(blobLen):preLenBlob], blobLen)
+
 	return res
+}
+
+func decode(data []byte) []byte {
+	blobLen := new(big.Int).SetBytes(data[:preLenBlob])
+	var lenBytes = blobLen.Uint64()
+	return data[preLenBlob:lenBytes]
 }
 
 // EncodeBlobs encodes bytes into a EIP-4844 blob.
@@ -160,13 +176,7 @@ func DecodeBlob(blob []byte) ([]byte, error) {
 	if len(blob) != BlobBytes {
 		return nil, errBlobInvalid
 	}
-	var i = len(blob) - 1
-	for ; i >= 0; i-- {
-		if blob[i] != 0 {
-			break
-		}
-	}
-	blob = blob[:i+1]
+	blob = decode(blob)
 
 	var res []byte
 	for ; len(blob) >= 32; blob = blob[32:] {
