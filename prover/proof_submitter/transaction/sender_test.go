@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
@@ -38,7 +38,7 @@ func (s *TransactionTestSuite) SetupTest() {
 	txSender, err := sender.NewSender(context.Background(), &sender.Config{}, s.RPCClient.L1, l1ProverPrivKey)
 	s.Nil(err)
 
-	s.sender, err = NewSender(context.Background(), s.RPCClient, txSender)
+	s.sender, err = NewSender(s.RPCClient, txSender)
 	s.Nil(err)
 
 	s.builder = NewProveBlockTxBuilder(s.RPCClient, l1ProverPrivKey)

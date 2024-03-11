@@ -10,8 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 	handler "github.com/taikoxyz/taiko-client/prover/event_handler"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
@@ -100,7 +100,6 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 
 // initProofSubmitters initializes the proof submitters from the given tiers in protocol.
 func (p *Prover) initProofSubmitters(
-	ctx context.Context,
 	sender *sender.Sender,
 	txBuilder *transaction.ProveBlockTxBuilder,
 ) error {
@@ -132,7 +131,6 @@ func (p *Prover) initProofSubmitters(
 		}
 
 		if submitter, err = proofSubmitter.New(
-			ctx,
 			p.rpc,
 			producer,
 			p.proofGenerationCh,

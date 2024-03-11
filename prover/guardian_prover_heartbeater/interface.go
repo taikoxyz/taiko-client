@@ -27,5 +27,4 @@ type Heartbeater interface {
 type BlockSenderHeartbeater interface {
 	BlockSigner
 	Heartbeater
-	Close() error
 }

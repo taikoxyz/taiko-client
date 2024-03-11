@@ -24,6 +24,7 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/version"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 	handler "github.com/taikoxyz/taiko-client/prover/event_handler"
 	guardianProverHeartbeater "github.com/taikoxyz/taiko-client/prover/guardian_prover_heartbeater"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
@@ -170,13 +171,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc, p.cfg.L1ProverPrivKey)
 
 	// Proof submitters
-	if err := p.initProofSubmitters(p.ctx, txSender, txBuilder); err != nil {
+	if err := p.initProofSubmitters(txSender, txBuilder); err != nil {
 		return err
 	}
 
 	// Proof contester
 	p.proofContester, err = proofSubmitter.NewProofContester(
-		p.ctx,
 		p.rpc,
 		txSender,
 		p.cfg.Graffiti,
@@ -332,12 +332,6 @@ func (p *Prover) eventLoop() {
 
 // Close closes the prover instance.
 func (p *Prover) Close(ctx context.Context) {
-	if p.guardianProverHeartbeater != nil {
-		if err := p.guardianProverHeartbeater.Close(); err != nil {
-			log.Error("failed to close database connection", "error", err)
-		}
-	}
-
 	if err := p.server.Shutdown(ctx); err != nil {
 		log.Error("Failed to shut down prover server", "error", err)
 	}
@@ -357,6 +351,7 @@ func (p *Prover) proveOp() error {
 			TaikoL1:              p.rpc.TaikoL1,
 			StartHeight:          new(big.Int).SetUint64(p.sharedState.GetL1Current().Number.Uint64()),
 			OnBlockProposedEvent: p.blockProposedHandler.Handle,
+			BlockConfirmations:   &p.cfg.BlockConfirmations,
 		})
 		if err != nil {
 			log.Error("Failed to start event iterator", "event", "BlockProposed", "error", err)

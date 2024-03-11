@@ -17,9 +17,9 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 	"github.com/taikoxyz/taiko-client/proposer"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
@@ -51,7 +51,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	)
 
 	s.submitter, err = New(
-		context.Background(),
 		s.RPCClient,
 		&producer.OptimisticProofProducer{},
 		s.proofCh,
@@ -62,7 +61,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	)
 	s.Nil(err)
 	s.contester, err = NewProofContester(
-		context.Background(),
 		s.RPCClient,
 		sender,
 		"test",

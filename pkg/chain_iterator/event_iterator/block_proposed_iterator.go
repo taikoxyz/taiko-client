@@ -43,6 +43,7 @@ type BlockProposedIteratorConfig struct {
 	EndHeight             *big.Int
 	FilterQuery           []*big.Int
 	OnBlockProposedEvent  OnBlockProposedEvent
+	BlockConfirmations    *uint64
 }
 
 // NewBlockProposedIterator creates a new instance of BlockProposed event iterator.
@@ -63,6 +64,7 @@ func NewBlockProposedIterator(ctx context.Context, cfg *BlockProposedIteratorCon
 		MaxBlocksReadPerEpoch: cfg.MaxBlocksReadPerEpoch,
 		StartHeight:           cfg.StartHeight,
 		EndHeight:             cfg.EndHeight,
+		BlockConfirmations:    cfg.BlockConfirmations,
 		OnBlocks: assembleBlockProposedIteratorCallback(
 			cfg.Client,
 			cfg.TaikoL1,

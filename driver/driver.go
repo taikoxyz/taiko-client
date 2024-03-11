@@ -111,7 +111,7 @@ func (d *Driver) Start() error {
 }
 
 // Close closes the driver instance.
-func (d *Driver) Close(ctx context.Context) {
+func (d *Driver) Close(_ context.Context) {
 	d.l1HeadSub.Unsubscribe()
 	d.state.Close()
 	d.wg.Wait()

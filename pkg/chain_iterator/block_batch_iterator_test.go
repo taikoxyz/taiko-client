@@ -2,6 +2,7 @@ package chainiterator
 
 import (
 	"context"
+	"io"
 	"math/big"
 	"testing"
 	"time"
@@ -32,10 +33,10 @@ func (s *BlockBatchIteratorTestSuite) TestIter() {
 		StartHeight:           common.Big0,
 		EndHeight:             new(big.Int).SetUint64(headHeight),
 		OnBlocks: func(
-			ctx context.Context,
+			_ context.Context,
 			start, end *types.Header,
-			updateCurrentFunc UpdateCurrentFunc,
-			endIterFunc EndIterFunc,
+			_ UpdateCurrentFunc,
+			_ EndIterFunc,
 		) error {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
 			lastEnd = end.Number
@@ -46,6 +47,71 @@ func (s *BlockBatchIteratorTestSuite) TestIter() {
 	s.Nil(err)
 	s.Nil(iter.Iter())
 	s.Equal(headHeight, lastEnd.Uint64())
+}
+
+func (s *BlockBatchIteratorTestSuite) TestIterWithoutSpecifiedEndHeight() {
+	var maxBlocksReadPerEpoch uint64 = 2
+	var blockConfirmations uint64 = 6
+
+	headHeight, err := s.RPCClient.L1.BlockNumber(context.Background())
+	s.Nil(err)
+	s.Greater(headHeight, uint64(0))
+
+	lastEnd := common.Big0
+
+	iter, err := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
+		Client:                s.RPCClient.L1,
+		MaxBlocksReadPerEpoch: &maxBlocksReadPerEpoch,
+		StartHeight:           common.Big0,
+		BlockConfirmations:    &blockConfirmations,
+		OnBlocks: func(
+			_ context.Context,
+			start, end *types.Header,
+			_ UpdateCurrentFunc,
+			_ EndIterFunc,
+		) error {
+			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
+			lastEnd = end.Number
+			return nil
+		},
+	})
+
+	s.Nil(err)
+	s.Nil(iter.Iter())
+	s.Equal(headHeight-blockConfirmations, lastEnd.Uint64())
+}
+
+func (s *BlockBatchIteratorTestSuite) TestIterWithLessThanConfirmations() {
+	var maxBlocksReadPerEpoch uint64 = 2
+
+	headHeight, err := s.RPCClient.L1.BlockNumber(context.Background())
+	s.Nil(err)
+	s.Greater(headHeight, uint64(0))
+
+	lastEnd := headHeight
+
+	var blockConfirmations = headHeight + 3
+
+	iter, err := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
+		Client:                s.RPCClient.L1,
+		MaxBlocksReadPerEpoch: &maxBlocksReadPerEpoch,
+		StartHeight:           new(big.Int).SetUint64(headHeight),
+		BlockConfirmations:    &blockConfirmations,
+		OnBlocks: func(
+			_ context.Context,
+			start, end *types.Header,
+			_ UpdateCurrentFunc,
+			_ EndIterFunc,
+		) error {
+			s.Equal(lastEnd, start.Number.Uint64())
+			lastEnd = end.Number.Uint64()
+			return nil
+		},
+	})
+
+	s.Nil(err)
+	s.Equal(io.EOF, iter.iter())
+	s.Equal(headHeight, lastEnd)
 }
 
 func (s *BlockBatchIteratorTestSuite) TestIterEndFunc() {
@@ -63,9 +129,9 @@ func (s *BlockBatchIteratorTestSuite) TestIterEndFunc() {
 		StartHeight:           common.Big0,
 		EndHeight:             new(big.Int).SetUint64(headHeight),
 		OnBlocks: func(
-			ctx context.Context,
+			_ context.Context,
 			start, end *types.Header,
-			updateCurrentFunc UpdateCurrentFunc,
+			_ UpdateCurrentFunc,
 			endIterFunc EndIterFunc,
 		) error {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
@@ -93,9 +159,9 @@ func (s *BlockBatchIteratorTestSuite) TestIterCtxCancel() {
 		StartHeight:           common.Big0,
 		EndHeight:             new(big.Int).SetUint64(headHeight),
 		OnBlocks: func(
-			ctx context.Context,
+			_ context.Context,
 			start, end *types.Header,
-			updateCurrentFunc UpdateCurrentFunc,
+			_ UpdateCurrentFunc,
 			endIterFunc EndIterFunc,
 		) error {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
@@ -128,9 +194,9 @@ func (s *BlockBatchIteratorTestSuite) TestBlockBatchIteratorConfig() {
 	_, err3 := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
 		Client: s.RPCClient.L1,
 		OnBlocks: func(
-			ctx context.Context,
+			_ context.Context,
 			start, end *types.Header,
-			updateCurrentFunc UpdateCurrentFunc,
+			_ UpdateCurrentFunc,
 			endIterFunc EndIterFunc,
 		) error {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
@@ -145,9 +211,9 @@ func (s *BlockBatchIteratorTestSuite) TestBlockBatchIteratorConfig() {
 	_, err4 := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
 		Client: s.RPCClient.L1,
 		OnBlocks: func(
-			ctx context.Context,
+			_ context.Context,
 			start, end *types.Header,
-			updateCurrentFunc UpdateCurrentFunc,
+			_ UpdateCurrentFunc,
 			endIterFunc EndIterFunc,
 		) error {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
@@ -163,9 +229,9 @@ func (s *BlockBatchIteratorTestSuite) TestBlockBatchIteratorConfig() {
 	_, err6 := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
 		Client: s.RPCClient.L1,
 		OnBlocks: func(
-			ctx context.Context,
+			_ context.Context,
 			start, end *types.Header,
-			updateCurrentFunc UpdateCurrentFunc,
+			_ UpdateCurrentFunc,
 			endIterFunc EndIterFunc,
 		) error {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
@@ -181,9 +247,9 @@ func (s *BlockBatchIteratorTestSuite) TestBlockBatchIteratorConfig() {
 	_, err7 := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
 		Client: s.RPCClient.L1,
 		OnBlocks: func(
-			ctx context.Context,
+			_ context.Context,
 			start, end *types.Header,
-			updateCurrentFunc UpdateCurrentFunc,
+			_ UpdateCurrentFunc,
 			endIterFunc EndIterFunc,
 		) error {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())

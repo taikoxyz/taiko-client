@@ -145,19 +145,6 @@ var (
 		Value:    0,
 		Category: proverCategory,
 	}
-	// DB file location
-	// Required for guardian prover only
-	DatabasePath = &cli.StringFlag{
-		Name:     "db.path",
-		Usage:    "Database file location",
-		Category: proverCategory,
-	}
-	DatabaseCacheSize = &cli.Uint64Flag{
-		Name:     "db.cacheSize",
-		Usage:    "Database cache size in megabytes",
-		Value:    16,
-		Category: proverCategory,
-	}
 	Allowance = &cli.StringFlag{
 		Name:     "prover.allowance",
 		Usage:    "Amount to approve AssignmentHook contract for TaikoToken usage",
@@ -183,6 +170,13 @@ var (
 	L2NodeVersion = &cli.StringFlag{
 		Name:     "prover.l2NodeVersion",
 		Usage:    "Version or tag or the L2 Node Version used as an L2 RPC Url by this guardian prover",
+		Category: proverCategory,
+	}
+	// Confirmations specific flag
+	BlockConfirmations = &cli.Uint64Flag{
+		Name:     "prover.blockConfirmations",
+		Usage:    "Confirmations to the latest l1 block before submitting a proof for a l2 block",
+		Value:    6,
 		Category: proverCategory,
 	}
 )
@@ -216,10 +210,9 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxProposedIn,
 	TaikoTokenAddress,
 	MaxAcceptableBlockSlippage,
-	DatabasePath,
-	DatabaseCacheSize,
 	ProverAssignmentHookAddress,
 	Allowance,
 	L1NodeVersion,
 	L2NodeVersion,
+	BlockConfirmations,
 })

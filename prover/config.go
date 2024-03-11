@@ -51,13 +51,12 @@ type Config struct {
 	MaxExpiry                               time.Duration
 	MaxProposedIn                           uint64
 	MaxBlockSlippage                        uint64
-	DatabasePath                            string
-	DatabaseCacheSize                       uint64
 	Allowance                               *big.Int
 	GuardianProverHealthCheckServerEndpoint *url.URL
 	RaikoHostEndpoint                       string
 	L1NodeVersion                           string
 	L2NodeVersion                           string
+	BlockConfirmations                      uint64
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -175,11 +174,10 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		MaxExpiry:                               c.Duration(flags.MaxExpiry.Name),
 		MaxBlockSlippage:                        c.Uint64(flags.MaxAcceptableBlockSlippage.Name),
 		MaxProposedIn:                           c.Uint64(flags.MaxProposedIn.Name),
-		DatabasePath:                            c.String(flags.DatabasePath.Name),
-		DatabaseCacheSize:                       c.Uint64(flags.DatabaseCacheSize.Name),
 		Allowance:                               allowance,
 		L1NodeVersion:                           c.String(flags.L1NodeVersion.Name),
 		L2NodeVersion:                           c.String(flags.L2NodeVersion.Name),
+		BlockConfirmations:                      c.Uint64(flags.BlockConfirmations.Name),
 	}, nil
 }
 

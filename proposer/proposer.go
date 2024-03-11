@@ -15,12 +15,13 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
+
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
-	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
 	builder "github.com/taikoxyz/taiko-client/proposer/transaction_builder"
 	"github.com/urfave/cli/v2"
@@ -211,7 +212,7 @@ func (p *Proposer) eventLoop() {
 }
 
 // Close closes the proposer instance.
-func (p *Proposer) Close(ctx context.Context) {
+func (p *Proposer) Close(_ context.Context) {
 	p.sender.Close()
 	p.wg.Wait()
 }

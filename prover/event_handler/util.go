@@ -85,9 +85,9 @@ func getBlockProposedEventFromBlockID(
 	proposedIn *big.Int,
 ) (e *bindings.TaikoL1ClientBlockProposed, err error) {
 	callback := func(
-		ctx context.Context,
+		_ context.Context,
 		event *bindings.TaikoL1ClientBlockProposed,
-		end eventIterator.EndBlockProposedEventIterFunc,
+		_ eventIterator.EndBlockProposedEventIterFunc,
 	) error {
 		// Only filter for exact blockID we want.
 		if event.BlockId.Cmp(id) != 0 {

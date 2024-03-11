@@ -236,7 +236,12 @@ func (s *Syncer) onBlockProposed(
 	}
 	txListBytes, err := txListDecoder.Fetch(ctx, tx, &event.Meta)
 	if err != nil {
-		return fmt.Errorf("failed to decode tx list: %w", err)
+		if errors.Is(err, rpc.ErrBlobInvalid) {
+			log.Info("Invalid blob detected", "blockID", event.BlockId)
+			txListBytes = []byte{}
+		} else {
+			return fmt.Errorf("failed to decode tx list: %w", err)
+		}
 	}
 
 	l1Origin := &rawdb.L1Origin{
