@@ -198,38 +198,62 @@ func (s *Sender) GetUnconfirmedTx(txID string) *types.Transaction {
 }
 
 // SendRawTransaction sends a transaction to the given Ethereum node.
-func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value *big.Int, data []byte) (string, error) {
+func (s *Sender) SendRawTransaction(
+	nonce uint64,
+	target *common.Address,
+	value *big.Int,
+	data []byte,
+	sidecar *types.BlobTxSidecar,
+) (string, error) {
 	if s.unconfirmedTxs.Count() >= unconfirmedTxsCap {
 		return "", fmt.Errorf("too many pending transactions")
 	}
 
-	gasLimit := s.GasLimit
-	if gasLimit == 0 {
-		var err error
-		gasLimit, err = s.client.EstimateGas(s.ctx, ethereum.CallMsg{
-			From:      s.opts.From,
-			To:        target,
-			Value:     value,
-			Data:      data,
-			GasTipCap: s.opts.GasTipCap,
-			GasFeeCap: s.opts.GasFeeCap,
-		})
+	var (
+		originalTx types.TxData
+		opts       = s.GetOpts()
+	)
+	if sidecar != nil {
+		opts.Value = value
+		if target == nil {
+			target = &common.Address{}
+		}
+		blobTx, err := s.client.CreateBlobTx(opts, *target, data, sidecar)
 		if err != nil {
 			return "", err
+		}
+		blobTx.Nonce = setDefault(nonce, s.nonce)
+		originalTx = blobTx
+	} else {
+		gasLimit := s.GasLimit
+		if gasLimit == 0 {
+			var err error
+			gasLimit, err = s.client.EstimateGas(s.ctx, ethereum.CallMsg{
+				From:      opts.From,
+				To:        target,
+				Value:     value,
+				Data:      data,
+				GasTipCap: opts.GasTipCap,
+				GasFeeCap: opts.GasFeeCap,
+			})
+			if err != nil {
+				return "", err
+			}
+		}
+		originalTx = &types.DynamicFeeTx{
+			ChainID:   s.client.ChainID,
+			To:        target,
+			Nonce:     setDefault(nonce, s.nonce),
+			GasFeeCap: opts.GasFeeCap,
+			GasTipCap: opts.GasTipCap,
+			Gas:       gasLimit,
+			Value:     value,
+			Data:      data,
 		}
 	}
 
 	txToConfirm := &TxToConfirm{
-		originalTx: &types.DynamicFeeTx{
-			ChainID:   s.client.ChainID,
-			To:        target,
-			Nonce:     nonce,
-			GasFeeCap: s.opts.GasFeeCap,
-			GasTipCap: s.opts.GasTipCap,
-			Gas:       gasLimit,
-			Value:     value,
-			Data:      data,
-		},
+		originalTx: originalTx,
 	}
 
 	if err := s.send(txToConfirm, false); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
