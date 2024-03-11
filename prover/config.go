@@ -51,8 +51,6 @@ type Config struct {
 	MaxExpiry                               time.Duration
 	MaxProposedIn                           uint64
 	MaxBlockSlippage                        uint64
-	DatabasePath                            string
-	DatabaseCacheSize                       uint64
 	Allowance                               *big.Int
 	GuardianProverHealthCheckServerEndpoint *url.URL
 	RaikoHostEndpoint                       string

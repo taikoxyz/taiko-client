@@ -57,8 +57,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal(c.L2NodeVersion, l2NodeVersion)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 		s.True(c.ProveUnassignedBlocks)
-		s.Equal("dbPath", c.DatabasePath)
-		s.Equal(uint64(128), c.DatabaseCacheSize)
 		s.Equal(uint64(100), c.MaxProposedIn)
 		s.Equal(os.Getenv("ASSIGNMENT_HOOK_ADDRESS"), c.AssignmentHookAddress.String())
 		s.Equal(allowance, c.Allowance.String())

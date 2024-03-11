@@ -471,7 +471,6 @@ func (s *ProverTestSuite) initProver(
 		MinSgxTierFee:         common.Big1,
 		HTTPServerPort:        uint64(port),
 		WaitReceiptTimeout:    12 * time.Second,
-		DatabasePath:          "",
 		Allowance:             new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil),
 		RPCTimeout:            3 * time.Second,
 		BackOffRetryInterval:  3 * time.Second,
