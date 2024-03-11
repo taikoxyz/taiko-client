@@ -145,7 +145,7 @@ func (s *Sender) buildTxData(tx *types.Transaction) (types.TxData, error) {
 // setConfigWithDefaultValues sets the config with default values if the given config is nil.
 func setConfigWithDefaultValues(config *Config) *Config {
 	if config == nil {
-		config = &Config{}
+		config = new(Config)
 	}
 	_ = defaults.Set(config)
 	return config
