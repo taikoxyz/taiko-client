@@ -219,9 +219,7 @@ func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value 
 		}
 	}
 
-	txID := uuid.New()
 	txToConfirm := &TxToConfirm{
-		ID: txID,
 		originalTx: &types.DynamicFeeTx{
 			ChainID:   s.client.ChainID,
 			To:        target,
@@ -236,13 +234,14 @@ func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value 
 
 	if err := s.send(txToConfirm, false); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
 		log.Error("Failed to send transaction",
-			"txId", txID,
-			"nonce", txToConfirm.CurrentTx.Nonce(),
+			"txId", txToConfirm.ID,
+			"nonce", nonce,
 			"err", err,
 		)
 		return "", err
 	}
 
+	txID := txToConfirm.ID
 	// Add the transaction to the unconfirmed transactions
 	s.unconfirmedTxs.Set(txID, txToConfirm)
 	s.txToConfirmCh.Set(txID, make(chan *TxToConfirm, 1))
@@ -261,24 +260,22 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 		return "", err
 	}
 
-	txID := uuid.New()
 	txToConfirm := &TxToConfirm{
-		ID:         txID,
 		originalTx: txData,
 		CurrentTx:  tx,
 	}
 
-	if err := s.send(txToConfirm, true); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
+	if err = s.send(txToConfirm, true); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
 		log.Error(
 			"Failed to send transaction",
-			"txId", txID,
-			"nonce", txToConfirm.CurrentTx.Nonce(),
+			"txId", txToConfirm.ID,
 			"hash", tx.Hash(),
 			"err", err,
 		)
 		return "", err
 	}
 
+	txID := txToConfirm.ID
 	// Add the transaction to the unconfirmed transactions
 	s.unconfirmedTxs.Set(txID, txToConfirm)
 	s.txToConfirmCh.Set(txID, make(chan *TxToConfirm, 1))
@@ -290,6 +287,11 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	// Set the transaction ID
+	if tx.ID == "" {
+		tx.ID = uuid.New()
+	}
 
 	originalTx := tx.originalTx
 
