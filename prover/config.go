@@ -175,8 +175,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		MaxExpiry:                               c.Duration(flags.MaxExpiry.Name),
 		MaxBlockSlippage:                        c.Uint64(flags.MaxAcceptableBlockSlippage.Name),
 		MaxProposedIn:                           c.Uint64(flags.MaxProposedIn.Name),
-		DatabasePath:                            c.String(flags.DatabasePath.Name),
-		DatabaseCacheSize:                       c.Uint64(flags.DatabaseCacheSize.Name),
 		Allowance:                               allowance,
 		L1NodeVersion:                           c.String(flags.L1NodeVersion.Name),
 		L2NodeVersion:                           c.String(flags.L2NodeVersion.Name),
