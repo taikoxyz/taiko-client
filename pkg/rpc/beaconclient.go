@@ -23,6 +23,8 @@ var (
 
 type BeaconClient struct {
 	*beacon.Client
+
+	timeout time.Duration
 }
 
 // NewBeaconClient returns a new beacon client.
@@ -31,13 +33,16 @@ func NewBeaconClient(endpoint string, timeout time.Duration) (*BeaconClient, err
 	if err != nil {
 		return nil, err
 	}
-	return &BeaconClient{cli}, nil
+	return &BeaconClient{cli, timeout}, nil
 }
 
 // GetBlobs returns the sidecars for a given slot.
 func (c *BeaconClient) GetBlobs(ctx context.Context, slot *big.Int) ([]*blob.Sidecar, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
+	defer cancel()
+
 	var sidecars *blob.SidecarsResponse
-	resBytes, err := c.Get(ctx, fmt.Sprintf(sidecarsRequestURL, slot))
+	resBytes, err := c.Get(ctxWithTimeout, fmt.Sprintf(sidecarsRequestURL, slot))
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +52,10 @@ func (c *BeaconClient) GetBlobs(ctx context.Context, slot *big.Int) ([]*blob.Sid
 
 // GetBlobByHash returns the sidecars for a given slot.
 func (c *BeaconClient) GetBlobByHash(ctx context.Context, slot *big.Int, blobHash common.Hash) ([]byte, error) {
-	sidecars, err := c.GetBlobs(ctx, slot)
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
+	defer cancel()
+
+	sidecars, err := c.GetBlobs(ctxWithTimeout, slot)
 	if err != nil {
 		return nil, err
 	}
