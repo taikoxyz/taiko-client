@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	preLenBlob = 8
+	preLenBlob = 32
 )
 
 var (
