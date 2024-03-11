@@ -9,20 +9,20 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 // TransitionContestedEventHandler is responsible for handling the TransitionContested event.
 type TransitionContestedEventHandler struct {
 	rpc               *rpc.Client
-	proofSubmissionCh chan<- *proofSubmitter.ProofRequestBody
+	proofSubmissionCh chan<- *proofProducer.ProofRequestBody
 	contesterMode     bool
 }
 
 // NewTransitionContestedEventHandler creates a new TransitionContestedEventHandler instance.
 func NewTransitionContestedEventHandler(
 	rpc *rpc.Client,
-	proofSubmissionCh chan *proofSubmitter.ProofRequestBody,
+	proofSubmissionCh chan *proofProducer.ProofRequestBody,
 	contesterMode bool,
 ) *TransitionContestedEventHandler {
 	return &TransitionContestedEventHandler{rpc, proofSubmissionCh, contesterMode}
@@ -99,7 +99,7 @@ func (h *TransitionContestedEventHandler) Handle(
 	}
 
 	go func() {
-		h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{
+		h.proofSubmissionCh <- &proofProducer.ProofRequestBody{
 			Tier:  e.Tier + 1, // We need to send a higher tier proof to resolve the current contest.
 			Event: blockProposedEvent,
 		}

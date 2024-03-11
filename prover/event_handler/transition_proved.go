@@ -10,20 +10,20 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 // TransitionProvedEventHandler is responsible for handling the TransitionProved event.
 type TransitionProvedEventHandler struct {
 	rpc            *rpc.Client
-	proofContestCh chan<- *proofSubmitter.ContestRequestBody
+	proofContestCh chan<- *proofProducer.ContestRequestBody
 	contesterMode  bool
 }
 
 // NewTransitionProvedEventHandler creates a new TransitionProvedEventHandler instance.
 func NewTransitionProvedEventHandler(
 	rpc *rpc.Client,
-	proofContestCh chan *proofSubmitter.ContestRequestBody,
+	proofContestCh chan *proofProducer.ContestRequestBody,
 	contesterMode bool,
 ) *TransitionProvedEventHandler {
 	return &TransitionProvedEventHandler{rpc, proofContestCh, contesterMode}
@@ -80,7 +80,7 @@ func (h *TransitionProvedEventHandler) Handle(
 	)
 
 	go func() {
-		h.proofContestCh <- &proofSubmitter.ContestRequestBody{
+		h.proofContestCh <- &proofProducer.ContestRequestBody{
 			BlockID:    e.BlockId,
 			ProposedIn: new(big.Int).SetUint64(blockInfo.Blk.ProposedIn),
 			ParentHash: e.Tran.ParentHash,
