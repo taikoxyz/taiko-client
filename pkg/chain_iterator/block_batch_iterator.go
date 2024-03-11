@@ -19,7 +19,7 @@ import (
 const (
 	DefaultBlocksReadPerEpoch = 1000
 	DefaultRetryInterval      = 12 * time.Second
-	DefaultBlockConfirmations = 6
+	DefaultBlockConfirmations = 0
 )
 
 var (
@@ -179,7 +179,12 @@ func (i *BlockBatchIterator) iter() (err error) {
 		if err != nil {
 			return err
 		}
-		destHeight -= DefaultBlockConfirmations
+		if destHeight > DefaultBlockConfirmations {
+			destHeight -= DefaultBlockConfirmations
+		} else {
+			destHeight = DefaultBlockConfirmations
+		}
+
 	}
 
 	if i.current.Number.Uint64() >= destHeight {
