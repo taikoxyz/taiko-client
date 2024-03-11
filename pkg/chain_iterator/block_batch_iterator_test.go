@@ -62,11 +62,12 @@ func (s *BlockBatchIteratorTestSuite) TestIterWithoutSpecifiedEndHeight() {
 		Client:                s.RPCClient.L1,
 		MaxBlocksReadPerEpoch: &maxBlocksReadPerEpoch,
 		StartHeight:           common.Big0,
+		BlockConfirmations:    &blockConfirmations,
 		OnBlocks: func(
-			ctx context.Context,
+			_ context.Context,
 			start, end *types.Header,
-			updateCurrentFunc UpdateCurrentFunc,
-			endIterFunc EndIterFunc,
+			_ UpdateCurrentFunc,
+			_ EndIterFunc,
 		) error {
 			s.Equal(lastEnd.Uint64(), start.Number.Uint64())
 			lastEnd = end.Number

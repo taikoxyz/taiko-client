@@ -55,6 +55,7 @@ type BlockBatchIterator struct {
 	isEnd              bool
 	reorgRewindDepth   uint64
 	retryInterval      time.Duration
+	blockConfirmations *uint64
 }
 
 // BlockBatchIteratorConfig represents the configs of a block batch iterator.
@@ -66,6 +67,7 @@ type BlockBatchIteratorConfig struct {
 	OnBlocks              OnBlocksFunc
 	ReorgRewindDepth      *uint64
 	RetryInterval         time.Duration
+	BlockConfirmations    *uint64
 }
 
 // NewBlockBatchIterator creates a new block batch iterator instance.
@@ -96,12 +98,13 @@ func NewBlockBatchIterator(ctx context.Context, cfg *BlockBatchIteratorConfig) (
 	}
 
 	iterator := &BlockBatchIterator{
-		ctx:         ctx,
-		client:      cfg.Client,
-		chainID:     cfg.Client.ChainID,
-		startHeight: cfg.StartHeight.Uint64(),
-		onBlocks:    cfg.OnBlocks,
-		current:     startHeader,
+		ctx:                ctx,
+		client:             cfg.Client,
+		chainID:            cfg.Client.ChainID,
+		startHeight:        cfg.StartHeight.Uint64(),
+		onBlocks:           cfg.OnBlocks,
+		current:            startHeader,
+		blockConfirmations: cfg.BlockConfirmations,
 	}
 
 	if cfg.MaxBlocksReadPerEpoch != nil {
@@ -166,11 +169,18 @@ func (i *BlockBatchIterator) iter() (err error) {
 	}
 
 	var (
-		endHeight   uint64
-		endHeader   *types.Header
-		destHeight  uint64
-		isLastEpoch bool
+		endHeight          uint64
+		endHeader          *types.Header
+		destHeight         uint64
+		isLastEpoch        bool
+		blockConfirmations uint64
 	)
+
+	if i.blockConfirmations == nil {
+		blockConfirmations = DefaultBlockConfirmations
+	} else {
+		blockConfirmations = *i.blockConfirmations
+	}
 
 	if i.endHeight != nil {
 		destHeight = *i.endHeight
@@ -179,10 +189,9 @@ func (i *BlockBatchIterator) iter() (err error) {
 		if err != nil {
 			return err
 		}
-		if destHeight > DefaultBlockConfirmations {
-			destHeight -= DefaultBlockConfirmations
+		if destHeight > blockConfirmations {
+			destHeight -= blockConfirmations
 		}
-
 	}
 
 	if i.current.Number.Uint64() >= destHeight {

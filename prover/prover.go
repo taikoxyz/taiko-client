@@ -339,6 +339,7 @@ func (p *Prover) proveOp() error {
 			TaikoL1:              p.rpc.TaikoL1,
 			StartHeight:          new(big.Int).SetUint64(p.sharedState.GetL1Current().Number.Uint64()),
 			OnBlockProposedEvent: p.blockProposedHandler.Handle,
+			BlockConfirmations:   &p.cfg.BlockConfirmations,
 		})
 		if err != nil {
 			log.Error("Failed to start event iterator", "event", "BlockProposed", "error", err)

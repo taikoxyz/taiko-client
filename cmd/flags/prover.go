@@ -172,6 +172,13 @@ var (
 		Usage:    "Version or tag or the L2 Node Version used as an L2 RPC Url by this guardian prover",
 		Category: proverCategory,
 	}
+	// Confirmations specific flag
+	BlockConfirmations = &cli.Uint64Flag{
+		Name:     "prover.blockConfirmations",
+		Usage:    "Confirmations to the latest l1 block before submitting a proof for a l2 block",
+		Value:    6,
+		Category: proverCategory,
+	}
 )
 
 // ProverFlags All prover flags.
@@ -207,4 +214,5 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	Allowance,
 	L1NodeVersion,
 	L2NodeVersion,
+	BlockConfirmations,
 })
