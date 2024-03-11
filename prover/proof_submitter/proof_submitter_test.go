@@ -17,10 +17,12 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
 	"github.com/taikoxyz/taiko-client/driver/state"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
 )
 
 type ProofSubmitterTestSuite struct {
@@ -40,37 +42,38 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 
 	s.proofCh = make(chan *producer.ProofWithHeader, 1024)
 
+	sender, err := sender.NewSender(context.Background(), &sender.Config{}, s.RPCClient.L1, l1ProverPrivKey)
+	s.Nil(err)
+
+	builder := transaction.NewProveBlockTxBuilder(
+		s.RPCClient,
+		l1ProverPrivKey,
+	)
+
 	s.submitter, err = New(
+		context.Background(),
 		s.RPCClient,
 		&producer.OptimisticProofProducer{},
 		s.proofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		l1ProverPrivKey,
 		"test",
-		1,
-		12*time.Second,
-		10*time.Second,
-		nil,
-		2,
-		nil,
+		sender,
+		builder,
 	)
 	s.Nil(err)
 	s.contester, err = NewProofContester(
+		context.Background(),
 		s.RPCClient,
-		l1ProverPrivKey,
-		nil,
-		2,
-		common.Big256,
-		1,
-		3*time.Second,
-		36*time.Second,
+		sender,
 		"test",
+		builder,
 	)
 	s.Nil(err)
 
 	// Init calldata syncer
 	testState, err := state.New(context.Background(), s.RPCClient)
 	s.Nil(err)
+	s.Nil(testState.ResetL1Current(context.Background(), common.Big0))
 
 	tracker := beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 30*time.Second)
 
@@ -95,8 +98,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		},
-		AssignmentHookAddress: common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-
+		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:            1024 * time.Hour,

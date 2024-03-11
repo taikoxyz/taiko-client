@@ -78,14 +78,14 @@ func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 	s.Nil(err)
 	s.Greater(newL1Head.Number.Uint64(), l1Head.Number.Uint64())
 
-	syncProgress, err := s.RPCClient.L2.SyncProgress(context.Background())
-	s.Nil(err)
-	s.Nil(syncProgress)
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	s.Nil(calldataSyncer.ProcessL1Blocks(ctx, newL1Head))
+	s.Nil(backoff.Retry(func() error {
+		return calldataSyncer.ProcessL1Blocks(ctx, newL1Head)
+	}, backoff.NewExponentialBackOff()))
+
+	s.Nil(s.RPCClient.WaitTillL2ExecutionEngineSynced(context.Background()))
 
 	return events
 }
@@ -146,13 +146,14 @@ func (s *ClientTestSuite) ProposeAndInsertValidBlock(
 	s.Nil(err)
 	s.Greater(newL1Head.Number.Uint64(), l1Head.Number.Uint64())
 
-	_, err = s.RPCClient.L2.SyncProgress(context.Background())
-	s.Nil(err)
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	s.Nil(calldataSyncer.ProcessL1Blocks(ctx, newL1Head))
+	s.Nil(backoff.Retry(func() error {
+		return calldataSyncer.ProcessL1Blocks(ctx, newL1Head)
+	}, backoff.NewExponentialBackOff()))
+
+	s.Nil(s.RPCClient.WaitTillL2ExecutionEngineSynced(context.Background()))
 
 	_, err = s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -170,17 +171,16 @@ func (s *ClientTestSuite) NewTestProverServer(
 	s.Nil(err)
 
 	srv, err := server.New(&server.NewProverServerOpts{
-		ProverPrivateKey:        proverPrivKey,
-		MinOptimisticTierFee:    common.Big1,
-		MinSgxTierFee:           common.Big1,
-		MaxExpiry:               24 * time.Hour,
-		TaikoL1Address:          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		AssignmentHookAddress:   common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-		ProposeConcurrencyGuard: make(chan struct{}, 1024),
-		RPC:                     s.RPCClient,
-		ProtocolConfigs:         &protocolConfig,
-		LivenessBond:            protocolConfig.LivenessBond,
-		IsGuardian:              true,
+		ProverPrivateKey:      proverPrivKey,
+		MinOptimisticTierFee:  common.Big1,
+		MinSgxTierFee:         common.Big1,
+		MinSgxAndZkVMTierFee:  common.Big1,
+		MaxExpiry:             24 * time.Hour,
+		TaikoL1Address:        common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		AssignmentHookAddress: common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
+		RPC:                   s.RPCClient,
+		ProtocolConfigs:       &protocolConfig,
+		LivenessBond:          protocolConfig.LivenessBond,
 	})
 	s.Nil(err)
 

@@ -37,6 +37,7 @@ type CreateAssignmentRequestBody struct {
 type Status struct {
 	MinOptimisticTierFee uint64 `json:"minOptimisticTierFee"`
 	MinSgxTierFee        uint64 `json:"minSgxTierFee"`
+	MinSgxAndZkVMTierFee uint64 `json:"minSgxAndZkVMTierFee"`
 	MaxExpiry            uint64 `json:"maxExpiry"`
 	Prover               string `json:"prover"`
 }
@@ -49,12 +50,13 @@ type Status struct {
 //	@Produce		json
 //	@Success		200	{object} Status
 //	@Router			/status [get]
-func (srv *ProverServer) GetStatus(c echo.Context) error {
+func (s *ProverServer) GetStatus(c echo.Context) error {
 	return c.JSON(http.StatusOK, &Status{
-		MinOptimisticTierFee: srv.minOptimisticTierFee.Uint64(),
-		MinSgxTierFee:        srv.minSgxTierFee.Uint64(),
-		MaxExpiry:            uint64(srv.maxExpiry.Seconds()),
-		Prover:               srv.proverAddress.Hex(),
+		MinOptimisticTierFee: s.minOptimisticTierFee.Uint64(),
+		MinSgxTierFee:        s.minSgxTierFee.Uint64(),
+		MinSgxAndZkVMTierFee: s.minSgxAndZkVMTierFee.Uint64(),
+		MaxExpiry:            uint64(s.maxExpiry.Seconds()),
+		Prover:               s.proverAddress.Hex(),
 	})
 }
 
@@ -83,7 +85,7 @@ type ProposeBlockResponse struct {
 //	@Failure		422		{string} string "expiry too long"
 //	@Failure		422		{string} string "prover does not have capacity"
 //	@Router			/assignment [post]
-func (srv *ProverServer) CreateAssignment(c echo.Context) error {
+func (s *ProverServer) CreateAssignment(c echo.Context) error {
 	req := new(CreateAssignmentRequestBody)
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
@@ -95,9 +97,11 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		"expiry", req.Expiry,
 		"tierFees", req.TierFees,
 		"txListHash", req.TxListHash,
+		"currentUsedCapacity", len(s.proofSubmissionCh),
 	)
 
 	if req.TxListHash == (common.Hash{}) {
+		log.Info("Invalid txList hash")
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "invalid txList hash")
 	}
 
@@ -105,25 +109,23 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "only receive ETH")
 	}
 
-	if !srv.isGuardian {
-		ok, err := rpc.CheckProverBalance(
-			c.Request().Context(),
-			srv.rpc,
-			srv.proverAddress,
-			srv.assignmentHookAddress,
-			srv.livenessBond,
-		)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
+	ok, err := rpc.CheckProverBalance(
+		c.Request().Context(),
+		s.rpc,
+		s.proverAddress,
+		s.assignmentHookAddress,
+		s.livenessBond,
+	)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 
-		if !ok {
-			log.Warn(
-				"Insufficient prover balance, please get more tokens or wait for verification of the blocks you proved",
-				"prover", srv.proverAddress,
-			)
-			return echo.NewHTTPError(http.StatusUnprocessableEntity, "insufficient prover balance")
-		}
+	if !ok {
+		log.Warn(
+			"Insufficient prover balance, please get more tokens or wait for verification of the blocks you proved",
+			"prover", s.proverAddress,
+		)
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, "insufficient prover balance")
 	}
 
 	for _, tier := range req.TierFees {
@@ -134,9 +136,11 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		var minTierFee *big.Int
 		switch tier.Tier {
 		case encoding.TierOptimisticID:
-			minTierFee = srv.minOptimisticTierFee
+			minTierFee = s.minOptimisticTierFee
 		case encoding.TierSgxID:
-			minTierFee = srv.minSgxTierFee
+			minTierFee = s.minSgxTierFee
+		case encoding.TierSgxAndZkVMID:
+			minTierFee = s.minSgxAndZkVMTierFee
 		default:
 			log.Warn("Unknown tier", "tier", tier.Tier, "fee", tier.Fee, "proposerIP", c.RealIP())
 		}
@@ -153,36 +157,37 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		}
 	}
 
-	if req.Expiry > uint64(time.Now().Add(srv.maxExpiry).Unix()) {
+	if req.Expiry > uint64(time.Now().Add(s.maxExpiry).Unix()) {
 		log.Warn(
 			"Expiry too long",
 			"requestExpiry", req.Expiry,
-			"srvMaxExpiry", srv.maxExpiry,
+			"srvMaxExpiry", s.maxExpiry,
 			"proposerIP", c.RealIP(),
 		)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "expiry too long")
 	}
 
 	// Check if the prover has any capacity now.
-	if len(srv.proposeConcurrencyGuard) == cap(srv.proposeConcurrencyGuard) {
+	if s.proofSubmissionCh != nil && len(s.proofSubmissionCh) == cap(s.proofSubmissionCh) {
+		log.Warn("Prover does not have capacity", "capacity", cap(s.proofSubmissionCh))
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
 
-	l1Head, err := srv.rpc.L1.BlockNumber(c.Request().Context())
+	l1Head, err := s.rpc.L1.BlockNumber(c.Request().Context())
 	if err != nil {
 		log.Error("Failed to get L1 block head", "error", err)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
 	}
 
 	encoded, err := encoding.EncodeProverAssignmentPayload(
-		srv.protocolConfigs.ChainId,
-		srv.taikoL1Address,
-		srv.assignmentHookAddress,
+		s.protocolConfigs.ChainId,
+		s.taikoL1Address,
+		s.assignmentHookAddress,
 		req.TxListHash,
 		req.FeeToken,
 		req.Expiry,
-		l1Head+srv.maxSlippage,
-		srv.maxProposedIn,
+		l1Head+s.maxSlippage,
+		s.maxProposedIn,
 		req.TierFees,
 	)
 	if err != nil {
@@ -190,15 +195,15 @@ func (srv *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
 	}
 
-	signed, err := crypto.Sign(crypto.Keccak256Hash(encoded).Bytes(), srv.proverPrivateKey)
+	signed, err := crypto.Sign(crypto.Keccak256Hash(encoded).Bytes(), s.proverPrivateKey)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusOK, &ProposeBlockResponse{
 		SignedPayload: signed,
-		Prover:        srv.proverAddress,
-		MaxBlockID:    l1Head + srv.maxSlippage,
-		MaxProposedIn: srv.maxProposedIn,
+		Prover:        s.proverAddress,
+		MaxBlockID:    l1Head + s.maxSlippage,
+		MaxProposedIn: s.maxProposedIn,
 	})
 }

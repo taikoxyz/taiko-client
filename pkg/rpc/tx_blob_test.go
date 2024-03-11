@@ -15,7 +15,7 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
-func TestBlockTx(t *testing.T) {
+func TestSendingBlobTx(t *testing.T) {
 	t.SkipNow()
 	// Load environment variables.
 	utils.LoadEnv()
@@ -46,7 +46,7 @@ func TestBlockTx(t *testing.T) {
 	sideCar, sErr := MakeSidecar(data)
 	assert.NoError(t, sErr)
 
-	tx, err := l1Client.TransactBlobTx(opts, nil, nil, sideCar)
+	tx, err := l1Client.TransactBlobTx(opts, common.Address{}, nil, sideCar)
 	assert.NoError(t, err)
 
 	receipt, err := bind.WaitMined(ctx, l1Client, tx)

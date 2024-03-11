@@ -41,12 +41,13 @@ type Config struct {
 	RPCTimeout                              time.Duration
 	WaitReceiptTimeout                      time.Duration
 	ProveBlockGasLimit                      *uint64
-	ProveBlockTxReplacementMultiplier       uint64
-	ProveBlockMaxTxGasTipCap                *big.Int
+	ProveBlockTxReplacementGasGrowthRate    uint64
+	ProveBlockMaxTxGasFeeCap                *big.Int
 	HTTPServerPort                          uint64
 	Capacity                                uint64
 	MinOptimisticTierFee                    *big.Int
 	MinSgxTierFee                           *big.Int
+	MinSgxAndZkVMTierFee                    *big.Int
 	MaxExpiry                               time.Duration
 	MaxProposedIn                           uint64
 	MaxBlockSlippage                        uint64
@@ -81,7 +82,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proveBlockTxGasLimit = &gasLimit
 	}
 
-	proveBlockTxReplacementMultiplier := c.Uint64(flags.ProveBlockTxReplacementMultiplier.Name)
+	proveBlockTxReplacementMultiplier := c.Uint64(flags.TxReplacementGasGrowthRate.Name)
 	if proveBlockTxReplacementMultiplier == 0 {
 		return nil, fmt.Errorf(
 			"invalid --proveBlockTxReplacementMultiplier value: %d",
@@ -90,8 +91,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	var proveBlockMaxTxGasTipCap *big.Int
-	if c.IsSet(flags.ProveBlockMaxTxGasTipCap.Name) {
-		proveBlockMaxTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProveBlockMaxTxGasTipCap.Name))
+	if c.IsSet(flags.ProveBlockMaxTxGasFeeCap.Name) {
+		proveBlockMaxTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProveBlockMaxTxGasFeeCap.Name))
 	}
 
 	var allowance = common.Big0
@@ -165,11 +166,12 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		WaitReceiptTimeout:                      c.Duration(flags.WaitReceiptTimeout.Name),
 		ProveBlockGasLimit:                      proveBlockTxGasLimit,
 		Capacity:                                c.Uint64(flags.ProverCapacity.Name),
-		ProveBlockTxReplacementMultiplier:       proveBlockTxReplacementMultiplier,
-		ProveBlockMaxTxGasTipCap:                proveBlockMaxTxGasTipCap,
+		ProveBlockTxReplacementGasGrowthRate:    proveBlockTxReplacementMultiplier,
+		ProveBlockMaxTxGasFeeCap:                proveBlockMaxTxGasTipCap,
 		HTTPServerPort:                          c.Uint64(flags.ProverHTTPServerPort.Name),
 		MinOptimisticTierFee:                    new(big.Int).SetUint64(c.Uint64(flags.MinOptimisticTierFee.Name)),
 		MinSgxTierFee:                           new(big.Int).SetUint64(c.Uint64(flags.MinSgxTierFee.Name)),
+		MinSgxAndZkVMTierFee:                    new(big.Int).SetUint64(c.Uint64(flags.MinSgxAndZkVMTierFee.Name)),
 		MaxExpiry:                               c.Duration(flags.MaxExpiry.Name),
 		MaxBlockSlippage:                        c.Uint64(flags.MaxAcceptableBlockSlippage.Name),
 		MaxProposedIn:                           c.Uint64(flags.MaxProposedIn.Name),

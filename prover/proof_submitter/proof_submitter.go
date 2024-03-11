@@ -2,20 +2,17 @@ package submitter
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	validator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
@@ -32,7 +29,7 @@ type ProofSubmitter struct {
 	resultCh        chan *proofProducer.ProofWithHeader
 	anchorValidator *validator.AnchorTxValidator
 	txBuilder       *transaction.ProveBlockTxBuilder
-	txSender        *transaction.Sender
+	sender          *transaction.Sender
 	proverAddress   common.Address
 	taikoL2Address  common.Address
 	graffiti        [32]byte
@@ -40,33 +37,27 @@ type ProofSubmitter struct {
 
 // New creates a new ProofSubmitter instance.
 func New(
+	ctx context.Context,
 	rpcClient *rpc.Client,
 	proofProducer proofProducer.ProofProducer,
 	resultCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
-	proverPrivKey *ecdsa.PrivateKey,
 	graffiti string,
-	submissionMaxRetry uint64,
-	retryInterval time.Duration,
-	waitReceiptTimeout time.Duration,
-	proveBlockTxGasLimit *uint64,
-	txReplacementTipMultiplier uint64,
-	proveBlockMaxTxGasTipCap *big.Int,
+	txSender *sender.Sender,
+	builder *transaction.ProveBlockTxBuilder,
 ) (*ProofSubmitter, error) {
 	anchorValidator, err := validator.New(taikoL2Address, rpcClient.L2.ChainID, rpcClient)
 	if err != nil {
 		return nil, err
 	}
 
-	var (
-		maxRetry   = &submissionMaxRetry
-		txGasLimit *big.Int
+	proofSender, err := transaction.NewSender(
+		ctx,
+		rpcClient,
+		txSender,
 	)
-	if proofProducer.Tier() == encoding.TierGuardianID {
-		maxRetry = nil
-	}
-	if proveBlockTxGasLimit != nil {
-		txGasLimit = new(big.Int).SetUint64(*proveBlockTxGasLimit)
+	if err != nil {
+		return nil, err
 	}
 
 	return &ProofSubmitter{
@@ -74,17 +65,11 @@ func New(
 		proofProducer:   proofProducer,
 		resultCh:        resultCh,
 		anchorValidator: anchorValidator,
-		txBuilder: transaction.NewProveBlockTxBuilder(
-			rpcClient,
-			proverPrivKey,
-			txGasLimit,
-			proveBlockMaxTxGasTipCap,
-			new(big.Int).SetUint64(txReplacementTipMultiplier),
-		),
-		txSender:       transaction.NewSender(rpcClient, retryInterval, maxRetry, waitReceiptTimeout),
-		proverAddress:  crypto.PubkeyToAddress(proverPrivKey.PublicKey),
-		taikoL2Address: taikoL2Address,
-		graffiti:       rpc.StringToBytes32(graffiti),
+		txBuilder:       builder,
+		sender:          proofSender,
+		proverAddress:   txSender.GetOpts().From,
+		taikoL2Address:  taikoL2Address,
+		graffiti:        rpc.StringToBytes32(graffiti),
 	}, nil
 }
 
@@ -186,28 +171,31 @@ func (s *ProofSubmitter) SubmitProof(
 		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
 	}
 
-	txBuilder := s.txBuilder.Build(
+	// Build the TaikoL1.proveBlock transaction and send it to the L1 node.
+	if err := s.sender.Send(
 		ctx,
-		proofWithHeader.BlockID,
-		proofWithHeader.Meta,
-		&bindings.TaikoDataTransition{
-			ParentHash: proofWithHeader.Header.ParentHash,
-			BlockHash:  proofWithHeader.Opts.BlockHash,
-			StateRoot:  proofWithHeader.Opts.StateRoot,
-			Graffiti:   s.graffiti,
-		},
-		&bindings.TaikoDataTierProof{
-			Tier: proofWithHeader.Tier,
-			Data: proofWithHeader.Proof,
-		},
-		proofWithHeader.Tier == encoding.TierGuardianID,
-	)
-
-	if err := s.txSender.Send(ctx, proofWithHeader, txBuilder); err != nil {
-		if errors.Is(err, transaction.ErrUnretryable) {
+		proofWithHeader,
+		s.txBuilder.Build(
+			ctx,
+			proofWithHeader.BlockID,
+			proofWithHeader.Meta,
+			&bindings.TaikoDataTransition{
+				ParentHash: proofWithHeader.Header.ParentHash,
+				BlockHash:  proofWithHeader.Opts.BlockHash,
+				StateRoot:  proofWithHeader.Opts.StateRoot,
+				Graffiti:   s.graffiti,
+			},
+			&bindings.TaikoDataTierProof{
+				Tier: proofWithHeader.Tier,
+				Data: proofWithHeader.Proof,
+			},
+			s.sender.GetOpts(),
+			proofWithHeader.Tier == encoding.TierGuardianID,
+		),
+	); err != nil {
+		if err.Error() == transaction.ErrUnretryableSubmission.Error() {
 			return nil
 		}
-
 		metrics.ProverSubmissionErrorCounter.Inc(1)
 		return err
 	}

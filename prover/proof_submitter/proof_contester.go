@@ -2,11 +2,8 @@ package submitter
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"errors"
 	"math/big"
 	"strings"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -14,6 +11,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
@@ -25,42 +23,36 @@ var _ Contester = (*ProofContester)(nil)
 type ProofContester struct {
 	rpc       *rpc.Client
 	txBuilder *transaction.ProveBlockTxBuilder
-	txSender  *transaction.Sender
+	sender    *transaction.Sender
 	graffiti  [32]byte
 }
 
 // NewProofContester creates a new ProofContester instance.
 func NewProofContester(
+	ctx context.Context,
 	rpcClient *rpc.Client,
-	proverPrivKey *ecdsa.PrivateKey,
-	proveBlockTxGasLimit *uint64,
-	txReplacementTipMultiplier uint64,
-	proveBlockMaxTxGasTipCap *big.Int,
-	submissionMaxRetry uint64,
-	retryInterval time.Duration,
-	waitReceiptTimeout time.Duration,
+	txSender *sender.Sender,
 	graffiti string,
+	builder *transaction.ProveBlockTxBuilder,
 ) (*ProofContester, error) {
-	var txGasLimit *big.Int
-	if proveBlockTxGasLimit != nil {
-		txGasLimit = new(big.Int).SetUint64(*proveBlockTxGasLimit)
+	sender, err := transaction.NewSender(
+		ctx,
+		rpcClient,
+		txSender,
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	return &ProofContester{
-		rpc: rpcClient,
-		txBuilder: transaction.NewProveBlockTxBuilder(
-			rpcClient,
-			proverPrivKey,
-			txGasLimit,
-			proveBlockMaxTxGasTipCap,
-			new(big.Int).SetUint64(txReplacementTipMultiplier),
-		),
-		txSender: transaction.NewSender(rpcClient, retryInterval, &submissionMaxRetry, waitReceiptTimeout),
-		graffiti: rpc.StringToBytes32(graffiti),
+		rpc:       rpcClient,
+		txBuilder: builder,
+		sender:    sender,
+		graffiti:  rpc.StringToBytes32(graffiti),
 	}, nil
 }
 
-// SubmitContest submits a taikoL1.proveBlock transaction to contest a L2 block transition.
+// SubmitContest submits a TaikoL1.proveBlock transaction to contest a L2 block transition.
 func (c *ProofContester) SubmitContest(
 	ctx context.Context,
 	blockID *big.Int,
@@ -87,6 +79,7 @@ func (c *ProofContester) SubmitContest(
 		}
 		return err
 	}
+	// If the transition has already been contested, return early.
 	if transition.Contester != (common.Address{}) {
 		log.Info(
 			"Transaction has already been contested",
@@ -97,6 +90,7 @@ func (c *ProofContester) SubmitContest(
 		return nil
 	}
 
+	// Send the contest transaction.
 	header, err := c.rpc.L2.HeaderByNumber(ctx, blockID)
 	if err != nil {
 		return err
@@ -107,7 +101,7 @@ func (c *ProofContester) SubmitContest(
 		return err
 	}
 
-	if err := c.txSender.Send(
+	return c.sender.Send(
 		ctx,
 		&proofProducer.ProofWithHeader{
 			BlockID: blockID,
@@ -116,7 +110,7 @@ func (c *ProofContester) SubmitContest(
 			Proof:   []byte{},
 			Opts: &proofProducer.ProofRequestOptions{
 				EventL1Hash: l1HeaderProposedIn.Hash(),
-				StateRoot:   l1HeaderProposedIn.Root,
+				StateRoot:   header.Root,
 			},
 			Tier: tier,
 		},
@@ -134,14 +128,8 @@ func (c *ProofContester) SubmitContest(
 				Tier: transition.Tier,
 				Data: []byte{},
 			},
+			c.sender.GetOpts(),
 			false,
 		),
-	); err != nil {
-		if errors.Is(err, transaction.ErrUnretryable) {
-			return nil
-		}
-
-		return err
-	}
-	return nil
+	)
 }
