@@ -181,8 +181,6 @@ func (i *BlockBatchIterator) iter() (err error) {
 		}
 		if destHeight > DefaultBlockConfirmations {
 			destHeight -= DefaultBlockConfirmations
-		} else {
-			destHeight = DefaultBlockConfirmations
 		}
 
 	}
