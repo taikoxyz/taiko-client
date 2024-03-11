@@ -24,7 +24,7 @@ func NewBlobTxListFetcher(rpc *rpc.Client) *BlobFetcher {
 
 func (d *BlobFetcher) Fetch(
 	ctx context.Context,
-	tx *types.Transaction,
+	_ *types.Transaction,
 	meta *bindings.TaikoDataBlockMetadata,
 ) ([]byte, error) {
 	if !meta.BlobUsed {

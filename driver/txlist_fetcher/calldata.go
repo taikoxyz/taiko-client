@@ -11,7 +11,7 @@ import (
 type CalldataFetcher struct{}
 
 func (d *CalldataFetcher) Fetch(
-	ctx context.Context,
+	_ context.Context,
 	tx *types.Transaction,
 	meta *bindings.TaikoDataBlockMetadata,
 ) ([]byte, error) {
