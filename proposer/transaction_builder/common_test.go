@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
 )
 

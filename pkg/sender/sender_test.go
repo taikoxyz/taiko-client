@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 )
 
 type SenderTestSuite struct {
@@ -66,7 +66,7 @@ func (s *SenderTestSuite) TestSendRawTransaction() {
 		i := i
 		eg.Go(func() error {
 			addr := common.BigToAddress(big.NewInt(int64(i)))
-			_, err := s.sender.SendRawTransaction(nonce+uint64(i), &addr, big.NewInt(1), nil)
+			_, err := s.sender.SendRawTransaction(nonce+uint64(i), &addr, big.NewInt(1), nil, nil)
 			return err
 		})
 	}
@@ -114,12 +114,12 @@ func (s *SenderTestSuite) TestReplacement() {
 	s.Nil(err)
 
 	// Replace the transaction with a higher nonce.
-	_, err = send.SendRawTransaction(nonce, &common.Address{}, big.NewInt(1), nil)
+	_, err = send.SendRawTransaction(nonce, &common.Address{}, big.NewInt(1), nil, nil)
 	s.Nil(err)
 
 	time.Sleep(time.Second * 6)
 	// Send a transaction with a next nonce and let all the transactions be confirmed.
-	_, err = send.SendRawTransaction(nonce-1, &common.Address{}, big.NewInt(1), nil)
+	_, err = send.SendRawTransaction(nonce-1, &common.Address{}, big.NewInt(1), nil, nil)
 	s.Nil(err)
 
 	for _, confirmCh := range send.TxToConfirmChannels() {
@@ -150,7 +150,7 @@ func (s *SenderTestSuite) TestNonceTooLow() {
 		return
 	}
 
-	txID, err := send.SendRawTransaction(nonce-3, &common.Address{}, big.NewInt(1), nil)
+	txID, err := send.SendRawTransaction(nonce-3, &common.Address{}, big.NewInt(1), nil, nil)
 	s.Nil(err)
 	confirm := <-send.TxToConfirmChannel(txID)
 	s.Nil(confirm.Err)
