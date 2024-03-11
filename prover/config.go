@@ -56,6 +56,7 @@ type Config struct {
 	RaikoHostEndpoint                       string
 	L1NodeVersion                           string
 	L2NodeVersion                           string
+	BlockConfirmations                      uint64
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -176,5 +177,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		Allowance:                               allowance,
 		L1NodeVersion:                           c.String(flags.L1NodeVersion.Name),
 		L2NodeVersion:                           c.String(flags.L2NodeVersion.Name),
+		BlockConfirmations:                      c.Uint64(flags.BlockConfirmations.Name),
 	}, nil
 }
