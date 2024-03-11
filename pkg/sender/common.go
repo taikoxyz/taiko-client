@@ -147,6 +147,6 @@ func setConfigWithDefaultValues(config *Config) *Config {
 	if config == nil {
 		config = &Config{}
 	}
-	defaults.Set(config)
+	_ = defaults.Set(config)
 	return config
 }
