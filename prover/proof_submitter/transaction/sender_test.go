@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 

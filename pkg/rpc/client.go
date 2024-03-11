@@ -7,9 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/prysmaticlabs/prysm/v4/api/client"
-	"github.com/prysmaticlabs/prysm/v4/api/client/beacon"
-
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
@@ -26,7 +23,7 @@ type Client struct {
 	// Geth Engine API clients
 	L2Engine *EngineClient
 	// Beacon clients
-	L1Beacon *beacon.Client
+	L1Beacon *BeaconClient
 	// Protocol contracts clients
 	TaikoL1        *bindings.TaikoL1Client
 	TaikoL2        *bindings.TaikoL2Client
@@ -113,9 +110,9 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		}
 	}
 
-	var l1BeaconClient *beacon.Client
+	var l1BeaconClient *BeaconClient
 	if cfg.L1BeaconEndpoint != "" {
-		if l1BeaconClient, err = beacon.NewClient(cfg.L1BeaconEndpoint, client.WithTimeout(defaultTimeout)); err != nil {
+		if l1BeaconClient, err = NewBeaconClient(cfg.L1BeaconEndpoint, defaultTimeout); err != nil {
 			return nil, err
 		}
 	}
