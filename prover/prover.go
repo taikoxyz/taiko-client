@@ -65,8 +65,8 @@ type Prover struct {
 	proveNotify         chan struct{}
 
 	// Proof related channels
-	proofSubmissionCh chan *proofSubmitter.ProofRequestBody
-	proofContestCh    chan *proofSubmitter.ContestRequestBody
+	proofSubmissionCh chan *proofProducer.ProofRequestBody
+	proofContestCh    chan *proofProducer.ContestRequestBody
 	proofGenerationCh chan *proofProducer.ProofWithHeader
 
 	ctx context.Context
@@ -121,8 +121,8 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	chBufferSize := p.protocolConfigs.BlockMaxProposals
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.assignmentExpiredCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
-	p.proofSubmissionCh = make(chan *proofSubmitter.ProofRequestBody, p.cfg.Capacity)
-	p.proofContestCh = make(chan *proofSubmitter.ContestRequestBody, p.cfg.Capacity)
+	p.proofSubmissionCh = make(chan *proofProducer.ProofRequestBody, p.cfg.Capacity)
+	p.proofContestCh = make(chan *proofProducer.ContestRequestBody, p.cfg.Capacity)
 	p.proveNotify = make(chan struct{}, 1)
 
 	if err := p.initL1Current(cfg.StartingBlockID); err != nil {
@@ -361,7 +361,7 @@ func (p *Prover) proveOp() error {
 }
 
 // contestProofOp performs a proof contest operation.
-func (p *Prover) contestProofOp(req *proofSubmitter.ContestRequestBody) error {
+func (p *Prover) contestProofOp(req *proofProducer.ContestRequestBody) error {
 	if err := p.proofContester.SubmitContest(
 		p.ctx,
 		req.BlockID,

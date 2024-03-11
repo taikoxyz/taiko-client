@@ -17,6 +17,21 @@ var (
 	errProofGenerating   = errors.New("proof is generating")
 )
 
+// ProofRequestBody represents a request body to generate a proof.
+type ProofRequestBody struct {
+	Tier  uint16
+	Event *bindings.TaikoL1ClientBlockProposed
+}
+
+// ContestRequestBody represents a request body to generate a proof for contesting.
+type ContestRequestBody struct {
+	BlockID    *big.Int
+	ProposedIn *big.Int
+	ParentHash common.Hash
+	Meta       *bindings.TaikoDataBlockMetadata
+	Tier       uint16
+}
+
 // ProofRequestOptions contains all options that need to be passed to a backend proof producer service.
 type ProofRequestOptions struct {
 	BlockID            *big.Int

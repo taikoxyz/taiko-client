@@ -18,7 +18,6 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	guardianProverHeartbeater "github.com/taikoxyz/taiko-client/prover/guardian_prover_heartbeater"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
-	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
 	state "github.com/taikoxyz/taiko-client/prover/shared_state"
 )
 
@@ -35,8 +34,8 @@ type BlockProposedEventHandler struct {
 	rpc                   *rpc.Client
 	proofGenerationCh     chan<- *proofProducer.ProofWithHeader
 	assignmentExpiredCh   chan<- *bindings.TaikoL1ClientBlockProposed
-	proofSubmissionCh     chan<- *proofSubmitter.ProofRequestBody
-	proofContestCh        chan<- *proofSubmitter.ContestRequestBody
+	proofSubmissionCh     chan<- *proofProducer.ProofRequestBody
+	proofContestCh        chan<- *proofProducer.ContestRequestBody
 	backOffRetryInterval  time.Duration
 	backOffMaxRetrys      uint64
 	contesterMode         bool
@@ -52,8 +51,8 @@ type NewBlockProposedEventHandlerOps struct {
 	RPC                   *rpc.Client
 	ProofGenerationCh     chan *proofProducer.ProofWithHeader
 	AssignmentExpiredCh   chan *bindings.TaikoL1ClientBlockProposed
-	ProofSubmissionCh     chan *proofSubmitter.ProofRequestBody
-	ProofContestCh        chan *proofSubmitter.ContestRequestBody
+	ProofSubmissionCh     chan *proofProducer.ProofRequestBody
+	ProofContestCh        chan *proofProducer.ContestRequestBody
 	BackOffRetryInterval  time.Duration
 	BackOffMaxRetrys      uint64
 	ContesterMode         bool
@@ -265,7 +264,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 		}
 
 		// The proof submitted to protocol is invalid.
-		h.proofContestCh <- &proofSubmitter.ContestRequestBody{
+		h.proofContestCh <- &proofProducer.ContestRequestBody{
 			BlockID:    e.BlockId,
 			ProposedIn: new(big.Int).SetUint64(e.Raw.BlockNumber),
 			ParentHash: proofStatus.ParentHeader.Hash(),
@@ -352,7 +351,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 
 	metrics.ProverProofsAssigned.Inc(1)
 
-	h.proofSubmissionCh <- &proofSubmitter.ProofRequestBody{Tier: tier, Event: e}
+	h.proofSubmissionCh <- &proofProducer.ProofRequestBody{Tier: tier, Event: e}
 
 	return nil
 }
