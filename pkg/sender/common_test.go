@@ -1,30 +1,19 @@
-package sender_test
+package sender
 
 import (
-	"context"
 	"math"
-	"os"
+	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
+	"github.com/stretchr/testify/assert"
 )
 
-func (s *SenderTestSuite) TestSetConfigWithDefaultValues() {
-	priv, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	s.Nil(err)
+func TestSetConfigWithDefaultValues(t *testing.T) {
+	cfg := setConfigWithDefaultValues(&Config{MaxRetrys: 1, MaxBlobFee: 1024})
 
-	sender, err := sender.NewSender(
-		context.Background(),
-		&sender.Config{MaxRetrys: 1, MaxBlobFee: 1024},
-		s.RPCClient.L1,
-		priv,
-	)
-	s.Nil(err)
-	s.Equal(uint64(50), sender.Config.GasGrowthRate)
-	s.Equal(uint64(1), sender.Config.MaxRetrys)
-	s.Equal(5*time.Minute, sender.Config.MaxWaitingTime)
-	s.Equal(uint64(math.MaxUint64), sender.Config.MaxGasFee)
-	s.Equal(uint64(1024), sender.Config.MaxBlobFee)
+	assert.Equal(t, uint64(50), cfg.GasGrowthRate)
+	assert.Equal(t, uint64(1), cfg.MaxRetrys)
+	assert.Equal(t, 5*time.Minute, cfg.MaxWaitingTime)
+	assert.Equal(t, uint64(math.MaxUint64), cfg.MaxGasFee)
+	assert.Equal(t, uint64(1024), cfg.MaxBlobFee)
 }
