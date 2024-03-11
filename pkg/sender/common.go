@@ -3,8 +3,8 @@ package sender
 import (
 	"fmt"
 	"math/big"
-	"time"
 
+	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
@@ -142,26 +142,8 @@ func (s *Sender) buildTxData(tx *types.Transaction) (types.TxData, error) {
 	}
 }
 
-// setDefault sets the default value if the given value is 0.
-func setDefault[T uint64 | time.Duration](src, dest T) T {
-	if src == 0 {
-		return dest
-	}
-	return src
-}
-
 // setConfigWithDefaultValues sets the config with default values if the given config is nil.
 func setConfigWithDefaultValues(config *Config) *Config {
-	if config == nil {
-		return DefaultConfig
-	}
-	return &Config{
-		ConfirmationDepth: setDefault(config.ConfirmationDepth, DefaultConfig.ConfirmationDepth),
-		MaxRetrys:         setDefault(config.MaxRetrys, DefaultConfig.MaxRetrys),
-		MaxWaitingTime:    setDefault(config.MaxWaitingTime, DefaultConfig.MaxWaitingTime),
-		GasLimit:          setDefault(config.GasLimit, DefaultConfig.GasLimit),
-		GasGrowthRate:     setDefault(config.GasGrowthRate, DefaultConfig.GasGrowthRate),
-		MaxGasFee:         setDefault(config.MaxGasFee, DefaultConfig.MaxGasFee),
-		MaxBlobFee:        setDefault(config.MaxBlobFee, DefaultConfig.MaxBlobFee),
-	}
+	defaults.Set(config)
+	return config
 }
