@@ -2,6 +2,7 @@ package chainiterator
 
 import (
 	"context"
+	"io"
 	"math/big"
 	"testing"
 	"time"
@@ -78,6 +79,39 @@ func (s *BlockBatchIteratorTestSuite) TestIterWithoutSpecifiedEndHeight() {
 	s.Nil(err)
 	s.Nil(iter.Iter())
 	s.Equal(headHeight-blockConfirmations, lastEnd.Uint64())
+}
+
+func (s *BlockBatchIteratorTestSuite) TestIterWithLessThanConfirmations() {
+	var maxBlocksReadPerEpoch uint64 = 2
+
+	headHeight, err := s.RPCClient.L1.BlockNumber(context.Background())
+	s.Nil(err)
+	s.Greater(headHeight, uint64(0))
+
+	lastEnd := headHeight
+
+	var blockConfirmations = headHeight + 3
+
+	iter, err := NewBlockBatchIterator(context.Background(), &BlockBatchIteratorConfig{
+		Client:                s.RPCClient.L1,
+		MaxBlocksReadPerEpoch: &maxBlocksReadPerEpoch,
+		StartHeight:           new(big.Int).SetUint64(headHeight),
+		BlockConfirmations:    &blockConfirmations,
+		OnBlocks: func(
+			_ context.Context,
+			start, end *types.Header,
+			_ UpdateCurrentFunc,
+			_ EndIterFunc,
+		) error {
+			s.Equal(lastEnd, start.Number.Uint64())
+			lastEnd = end.Number.Uint64()
+			return nil
+		},
+	})
+
+	s.Nil(err)
+	s.Equal(io.EOF, iter.iter())
+	s.Equal(headHeight, lastEnd)
 }
 
 func (s *BlockBatchIteratorTestSuite) TestIterEndFunc() {

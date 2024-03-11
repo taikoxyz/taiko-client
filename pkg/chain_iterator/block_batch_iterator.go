@@ -191,6 +191,8 @@ func (i *BlockBatchIterator) iter() (err error) {
 		}
 		if destHeight > blockConfirmations {
 			destHeight -= blockConfirmations
+		} else {
+			destHeight = 0
 		}
 	}
 
