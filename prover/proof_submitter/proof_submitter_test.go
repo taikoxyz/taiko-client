@@ -51,7 +51,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	)
 
 	s.submitter, err = New(
-		context.Background(),
 		s.RPCClient,
 		&producer.OptimisticProofProducer{},
 		s.proofCh,
@@ -62,7 +61,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	)
 	s.Nil(err)
 	s.contester, err = NewProofContester(
-		context.Background(),
 		s.RPCClient,
 		sender,
 		"test",

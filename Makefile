@@ -13,7 +13,7 @@ clean:
 	@rm -rf bin/*
 
 lint:
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.1 \
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.56.2 \
 	&& golangci-lint run
 
 test:

@@ -29,14 +29,12 @@ type ProofContester struct {
 
 // NewProofContester creates a new ProofContester instance.
 func NewProofContester(
-	ctx context.Context,
 	rpcClient *rpc.Client,
 	txSender *sender.Sender,
 	graffiti string,
 	builder *transaction.ProveBlockTxBuilder,
 ) (*ProofContester, error) {
 	sender, err := transaction.NewSender(
-		ctx,
 		rpcClient,
 		txSender,
 	)

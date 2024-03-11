@@ -159,13 +159,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc, p.cfg.L1ProverPrivKey)
 
 	// Proof submitters
-	if err := p.initProofSubmitters(p.ctx, txSender, txBuilder); err != nil {
+	if err := p.initProofSubmitters(txSender, txBuilder); err != nil {
 		return err
 	}
 
 	// Proof contester
 	p.proofContester, err = proofSubmitter.NewProofContester(
-		p.ctx,
 		p.rpc,
 		txSender,
 		p.cfg.Graffiti,
@@ -321,12 +320,6 @@ func (p *Prover) eventLoop() {
 
 // Close closes the prover instance.
 func (p *Prover) Close(ctx context.Context) {
-	if p.guardianProverHeartbeater != nil {
-		if err := p.guardianProverHeartbeater.Close(); err != nil {
-			log.Error("failed to close database connection", "error", err)
-		}
-	}
-
 	if err := p.server.Shutdown(ctx); err != nil {
 		log.Error("Failed to shut down prover server", "error", err)
 	}

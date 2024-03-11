@@ -98,7 +98,7 @@ func (s *SGXProofProducer) RequestProof(
 	)
 
 	if s.DummyProofProducer != nil {
-		return s.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, s.Tier())
+		return s.DummyProofProducer.RequestProof(opts, blockID, meta, header, s.Tier())
 	}
 
 	proof, err := s.callProverDaemon(ctx, opts)
@@ -218,11 +218,4 @@ func (s *SGXProofProducer) Tier() uint16 {
 // Cancellable implements the ProofProducer interface.
 func (s *SGXProofProducer) Cancellable() bool {
 	return false
-}
-
-// Cancel cancels an existing proof generation.
-//
-//nolint:golint
-func (s *SGXProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
-	return nil
 }
