@@ -55,7 +55,7 @@ type BlockBatchIterator struct {
 	isEnd              bool
 	reorgRewindDepth   uint64
 	retryInterval      time.Duration
-	blockConfirmations uint64
+	blockConfirmations *uint64
 }
 
 // BlockBatchIteratorConfig represents the configs of a block batch iterator.

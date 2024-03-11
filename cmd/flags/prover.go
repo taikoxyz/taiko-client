@@ -176,7 +176,7 @@ var (
 	BlockConfirmations = &cli.Uint64Flag{
 		Name:     "prover.blockConfirmations",
 		Usage:    "Confirmations to the latest l1 block before submitting a proof for a l2 block",
-		Value:    0,
+		Value:    6,
 		Category: proverCategory,
 	}
 )
