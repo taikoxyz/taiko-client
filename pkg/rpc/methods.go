@@ -514,7 +514,6 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 	}
 
 	l1BlockHash, l1StateRoot, l1HeightInAnchor, parentGasUsed, err := c.getSyncedL1SnippetFromAnchor(
-		ctx,
 		block.Transactions()[0],
 	)
 	if err != nil {
@@ -571,7 +570,6 @@ func (c *Client) checkSyncedL1SnippetFromAnchor(
 
 // getSyncedL1SnippetFromAnchor parses the anchor transaction calldata, and returns the synced L1 snippet,
 func (c *Client) getSyncedL1SnippetFromAnchor(
-	ctx context.Context,
 	tx *types.Transaction,
 ) (
 	l1BlockHash common.Hash,

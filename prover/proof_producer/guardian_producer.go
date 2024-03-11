@@ -32,7 +32,7 @@ func NewGuardianProofProducer(returnLivenessBond bool) *GuardianProofProducer {
 
 // RequestProof implements the ProofProducer interface.
 func (g *GuardianProofProducer) RequestProof(
-	ctx context.Context,
+	_ context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,
@@ -57,7 +57,7 @@ func (g *GuardianProofProducer) RequestProof(
 		}, nil
 	}
 
-	return g.DummyProofProducer.RequestProof(ctx, opts, blockID, meta, header, g.Tier())
+	return g.DummyProofProducer.RequestProof(opts, blockID, meta, header, g.Tier())
 }
 
 // Tier implements the ProofProducer interface.
@@ -68,9 +68,4 @@ func (g *GuardianProofProducer) Tier() uint16 {
 // Cancellable implements the ProofProducer interface.
 func (g *GuardianProofProducer) Cancellable() bool {
 	return false
-}
-
-// Cancel cancels an existing proof generation.
-func (g *GuardianProofProducer) Cancel(ctx context.Context, blockID *big.Int) error {
-	return nil
 }

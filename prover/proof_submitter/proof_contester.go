@@ -29,14 +29,12 @@ type ProofContester struct {
 
 // NewProofContester creates a new ProofContester instance.
 func NewProofContester(
-	ctx context.Context,
 	rpcClient *rpc.Client,
 	txSender *sender.Sender,
 	graffiti string,
 	builder *transaction.ProveBlockTxBuilder,
 ) (*ProofContester, error) {
 	sender, err := transaction.NewSender(
-		ctx,
 		rpcClient,
 		txSender,
 	)
@@ -101,35 +99,37 @@ func (c *ProofContester) SubmitContest(
 		return err
 	}
 
-	return c.sender.Send(
-		ctx,
-		&proofProducer.ProofWithHeader{
-			BlockID: blockID,
-			Meta:    meta,
-			Header:  header,
-			Proof:   []byte{},
-			Opts: &proofProducer.ProofRequestOptions{
-				EventL1Hash: l1HeaderProposedIn.Hash(),
-				StateRoot:   header.Root,
-			},
-			Tier: tier,
-		},
-		c.txBuilder.Build(
+	return encoding.TryParsingCustomError(
+		c.sender.Send(
 			ctx,
-			blockID,
-			meta,
-			&bindings.TaikoDataTransition{
-				ParentHash: header.ParentHash,
-				BlockHash:  header.Hash(),
-				StateRoot:  header.Root,
-				Graffiti:   c.graffiti,
+			&proofProducer.ProofWithHeader{
+				BlockID: blockID,
+				Meta:    meta,
+				Header:  header,
+				Proof:   []byte{},
+				Opts: &proofProducer.ProofRequestOptions{
+					EventL1Hash: l1HeaderProposedIn.Hash(),
+					StateRoot:   header.Root,
+				},
+				Tier: tier,
 			},
-			&bindings.TaikoDataTierProof{
-				Tier: transition.Tier,
-				Data: []byte{},
-			},
-			c.sender.GetOpts(),
-			false,
+			c.txBuilder.Build(
+				ctx,
+				blockID,
+				meta,
+				&bindings.TaikoDataTransition{
+					ParentHash: header.ParentHash,
+					BlockHash:  header.Hash(),
+					StateRoot:  header.Root,
+					Graffiti:   c.graffiti,
+				},
+				&bindings.TaikoDataTierProof{
+					Tier: transition.Tier,
+					Data: []byte{},
+				},
+				c.sender.GetOpts(),
+				false,
+			),
 		),
 	)
 }

@@ -104,7 +104,7 @@ func TestGetSyncedL1SnippetFromAnchor(t *testing.T) {
 		syncedL1StateRoot,
 		syncedL1Height,
 		syncedParentGasUsed,
-		err := client.getSyncedL1SnippetFromAnchor(context.Background(), tx)
+		err := client.getSyncedL1SnippetFromAnchor(tx)
 	require.Nil(t, err)
 	require.Equal(t, l1BlockHash, syncedL1BlockHash)
 	require.Equal(t, l1StateRoot, syncedL1StateRoot)

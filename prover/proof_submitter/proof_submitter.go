@@ -37,7 +37,6 @@ type ProofSubmitter struct {
 
 // New creates a new ProofSubmitter instance.
 func New(
-	ctx context.Context,
 	rpcClient *rpc.Client,
 	proofProducer proofProducer.ProofProducer,
 	resultCh chan *proofProducer.ProofWithHeader,
@@ -52,7 +51,6 @@ func New(
 	}
 
 	proofSender, err := transaction.NewSender(
-		ctx,
 		rpcClient,
 		txSender,
 	)
@@ -162,7 +160,7 @@ func (s *ProofSubmitter) SubmitProof(
 
 	// Validate TaikoL2.anchor transaction inside the L2 block.
 	anchorTx := block.Transactions()[0]
-	if err := s.anchorValidator.ValidateAnchorTx(ctx, anchorTx); err != nil {
+	if err = s.anchorValidator.ValidateAnchorTx(anchorTx); err != nil {
 		return fmt.Errorf("invalid anchor transaction: %w", err)
 	}
 
@@ -172,7 +170,7 @@ func (s *ProofSubmitter) SubmitProof(
 	}
 
 	// Build the TaikoL1.proveBlock transaction and send it to the L1 node.
-	if err := s.sender.Send(
+	if err := encoding.TryParsingCustomError(s.sender.Send(
 		ctx,
 		proofWithHeader,
 		s.txBuilder.Build(
@@ -192,7 +190,7 @@ func (s *ProofSubmitter) SubmitProof(
 			s.sender.GetOpts(),
 			proofWithHeader.Tier == encoding.TierGuardianID,
 		),
-	); err != nil {
+	)); err != nil {
 		if err.Error() == transaction.ErrUnretryableSubmission.Error() {
 			return nil
 		}
