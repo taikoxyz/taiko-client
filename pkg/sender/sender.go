@@ -19,6 +19,7 @@ import (
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/pborman/uuid"
 
+	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -59,6 +60,7 @@ type TxToConfirm struct {
 	Retrys    uint64
 	CurrentTx *types.Transaction
 	Receipt   *types.Receipt
+	CreatedAt time.Time
 
 	Err error
 }
@@ -306,9 +308,10 @@ func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Set the transaction ID
+	// Set the transaction ID and its creation time
 	if tx.ID == "" {
 		tx.ID = uuid.New()
+		tx.CreatedAt = time.Now()
 	}
 
 	originalTx := tx.originalTx
@@ -371,6 +374,8 @@ func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 			)
 			return err
 		}
+
+		metrics.TxSenderSentCounter.Inc(1)
 		break
 	}
 	s.nonce++
@@ -427,6 +432,7 @@ func (s *Sender) resendUnconfirmedTxs() {
 			continue
 		}
 		if err := s.send(unconfirmedTx, true); err != nil {
+			metrics.TxSenderUnconfirmedCounter.Inc(1)
 			log.Warn(
 				"Failed to resend the transaction",
 				"txId", id,
@@ -449,7 +455,8 @@ func (s *Sender) checkPendingTransactionsConfirmation() {
 			// Ignore the transaction if it is pending.
 			tx, isPending, err := s.client.TransactionByHash(s.ctx, pendingTx.CurrentTx.Hash())
 			if err != nil {
-				log.Warn("Failed to fetch transaction",
+				log.Warn(
+					"Failed to fetch transaction",
 					"txId", pendingTx.ID,
 					"nonce", pendingTx.CurrentTx.Nonce(),
 					"hash", pendingTx.CurrentTx.Hash(),
@@ -474,15 +481,27 @@ func (s *Sender) checkPendingTransactionsConfirmation() {
 				log.Warn("Failed to get the transaction receipt", "hash", pendingTx.CurrentTx.Hash(), "err", err)
 				continue
 			}
+
+			// Record the gas fee metrics.
+			if receipt.BlobGasUsed == 0 {
+				metrics.TxSenderGasPriceGauge.Update(receipt.EffectiveGasPrice.Int64())
+			} else {
+				metrics.TxSenderBlobGasPriceGauge.Update(receipt.BlobGasPrice.Int64())
+			}
+
+			metrics.TxSenderTxIncludedTimeGauge.Update(int64(time.Since(pendingTx.CreatedAt).Seconds()))
+
 			pendingTx.Receipt = receipt
 			if receipt.Status != types.ReceiptStatusSuccessful {
 				pendingTx.Err = fmt.Errorf("transaction status is failed, hash: %s", receipt.TxHash)
+				metrics.TxSenderConfirmedFailedCounter.Inc(1)
 				s.releaseUnconfirmedTx(id)
 				continue
 			}
 		}
 		pendingTx.confirmations = s.head.Number.Uint64() - pendingTx.Receipt.BlockNumber.Uint64()
 		if pendingTx.confirmations >= s.ConfirmationDepth {
+			metrics.TxSenderConfirmedSuccessfulCounter.Inc(1)
 			s.releaseUnconfirmedTx(id)
 		}
 	}
