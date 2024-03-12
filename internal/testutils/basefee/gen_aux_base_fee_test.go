@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/internal/utils"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 )
 
 type BaseFeeSuite struct {
@@ -85,7 +85,8 @@ func (s *BaseFeeSuite) SetupTest() {
 	send, err := sender.NewSender(context.Background(), nil, s.RPCClient.L1, s.TestAddrPrivKey)
 	s.Nil(err)
 
-	_, tx, baseFee, err := DeployAuxBaseFee(send.Opts, s.RPCClient.L1)
+	opts := send.GetOpts()
+	_, tx, baseFee, err := DeployAuxBaseFee(opts, s.RPCClient.L1)
 	s.Nil(err)
 	s.baseFee = baseFee
 	id, err := send.SendTransaction(tx)
