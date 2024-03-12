@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 )
 
 type SenderTestSuite struct {
@@ -117,6 +117,7 @@ func (s *SenderTestSuite) TestReplacement() {
 	_, err = send.SendRawTransaction(nonce, &common.Address{}, big.NewInt(1), nil, nil)
 	s.Nil(err)
 
+	time.Sleep(time.Second * 6)
 	// Send a transaction with a next nonce and let all the transactions be confirmed.
 	_, err = send.SendRawTransaction(nonce-1, &common.Address{}, big.NewInt(1), nil, nil)
 	s.Nil(err)
