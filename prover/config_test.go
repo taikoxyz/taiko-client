@@ -16,9 +16,9 @@ var (
 	l1WsEndpoint     = os.Getenv("L1_NODE_WS_ENDPOINT")
 	l1HttpEndpoint   = os.Getenv("L1_NODE_HTTP_ENDPOINT")
 	l1BeaconEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
-	l1NodeVersion    = "1.0.0"
 	l2WsEndpoint     = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
 	l2HttpEndpoint   = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
+	l1NodeVersion    = "1.0.0"
 	l2NodeVersion    = "0.1.0"
 	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
@@ -57,8 +57,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal(c.L2NodeVersion, l2NodeVersion)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 		s.True(c.ProveUnassignedBlocks)
-		s.Equal("dbPath", c.DatabasePath)
-		s.Equal(uint64(128), c.DatabaseCacheSize)
 		s.Equal(uint64(100), c.MaxProposedIn)
 		s.Equal(os.Getenv("ASSIGNMENT_HOOK_ADDRESS"), c.AssignmentHookAddress.String())
 		s.Equal(allowance, c.Allowance.String())
@@ -89,8 +87,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.ProveBlockMaxTxGasFeeCap.Name, "256",
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.ProveUnassignedBlocks.Name,
-		"--" + flags.DatabasePath.Name, "dbPath",
-		"--" + flags.DatabaseCacheSize.Name, "128",
 		"--" + flags.MaxProposedIn.Name, "100",
 		"--" + flags.Allowance.Name, allowance,
 		"--" + flags.L1NodeVersion.Name, l1NodeVersion,
@@ -130,8 +126,6 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.MinOptimisticTierFee.Name},
 		&cli.Uint64Flag{Name: flags.MinSgxTierFee.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxGasLimit.Name},
-		&cli.StringFlag{Name: flags.DatabasePath.Name},
-		&cli.Uint64Flag{Name: flags.DatabaseCacheSize.Name},
 		&cli.Uint64Flag{Name: flags.MaxProposedIn.Name},
 		&cli.StringFlag{Name: flags.ProverAssignmentHookAddress.Name},
 		&cli.StringFlag{Name: flags.Allowance.Name},

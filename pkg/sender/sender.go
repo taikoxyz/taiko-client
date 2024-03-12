@@ -3,6 +3,7 @@ package sender
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 	"os"
@@ -13,12 +14,12 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/pborman/uuid"
 
+	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -28,33 +29,26 @@ var (
 	nonceIncorrectRetrys        = 3
 	unconfirmedTxsCheckInternal = 2 * time.Second
 	chainHeadFetchInterval      = 3 * time.Second
-	errTimeoutInMempool         = fmt.Errorf("transaction in mempool for too long")
-	DefaultConfig               = &Config{
-		ConfirmationDepth: 0,
-		MaxRetrys:         0,
-		MaxWaitingTime:    5 * time.Minute,
-		GasGrowthRate:     50,
-		MaxGasFee:         math.MaxUint64,
-		MaxBlobFee:        math.MaxUint64,
-	}
+	errTimeoutInMempool         = errors.New("transaction in mempool for too long")
+	errToManyPendings           = errors.New("too many pending transactions")
 )
 
 // Config represents the configuration of the transaction sender.
 type Config struct {
 	// The minimum block confirmations to wait to confirm a transaction.
-	ConfirmationDepth uint64
+	ConfirmationDepth uint64 `default:"0"`
 	// The maximum retry times when sending transactions.
-	MaxRetrys uint64
+	MaxRetrys uint64 `default:"0"`
 	// The maximum waiting time for the inclusion of transactions.
-	MaxWaitingTime time.Duration
-
+	MaxWaitingTime time.Duration `default:"5m"`
 	// The gas limit for transactions.
-	GasLimit uint64
+	GasLimit uint64 `default:"0"`
 	// The gas rate to increase the gas price, 20 means 20% gas growth rate.
-	GasGrowthRate uint64
+	GasGrowthRate uint64 `default:"50"`
 	// The maximum gas fee can be used when sending transactions.
-	MaxGasFee  uint64
-	MaxBlobFee uint64
+	MaxGasFee uint64 `default:"0xffffffffffffffff"` // Use `math.MaxUint64` as default value
+	// The maximum blob gas fee can be used when sending transactions.
+	MaxBlobFee uint64 `default:"0xffffffffffffffff"` // Use `math.MaxUint64` as default value
 }
 
 // TxToConfirm represents a transaction which is waiting for its confirmation.
@@ -66,6 +60,7 @@ type TxToConfirm struct {
 	Retrys    uint64
 	CurrentTx *types.Transaction
 	Receipt   *types.Receipt
+	CreatedAt time.Time
 
 	Err error
 }
@@ -149,6 +144,7 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	return sender, nil
 }
 
+// CLose closes the sender.
 func (s *Sender) Close() {
 	close(s.stopCh)
 	s.wg.Wait()
@@ -198,51 +194,77 @@ func (s *Sender) GetUnconfirmedTx(txID string) *types.Transaction {
 }
 
 // SendRawTransaction sends a transaction to the given Ethereum node.
-func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value *big.Int, data []byte) (string, error) {
+func (s *Sender) SendRawTransaction(
+	nonce uint64,
+	target *common.Address,
+	value *big.Int,
+	data []byte,
+	sidecar *types.BlobTxSidecar,
+) (string, error) {
+	// If there are too many pending transactions to be confirmed, return an error here.
 	if s.unconfirmedTxs.Count() >= unconfirmedTxsCap {
-		return "", fmt.Errorf("too many pending transactions")
+		return "", errToManyPendings
+	}
+	if nonce == 0 {
+		nonce = s.nonce
 	}
 
-	gasLimit := s.GasLimit
-	if gasLimit == 0 {
-		var err error
-		gasLimit, err = s.client.EstimateGas(s.ctx, ethereum.CallMsg{
-			From:      s.opts.From,
-			To:        target,
-			Value:     value,
-			Data:      data,
-			GasTipCap: s.opts.GasTipCap,
-			GasFeeCap: s.opts.GasFeeCap,
-		})
+	var (
+		originalTx types.TxData
+		opts       = s.GetOpts()
+		gasLimit   = s.GasLimit
+		err        error
+	)
+	if sidecar != nil {
+		opts.Value = value
+		if target == nil {
+			target = &common.Address{}
+		}
+		blobTx, err := s.client.CreateBlobTx(opts, *target, data, sidecar)
 		if err != nil {
 			return "", err
 		}
-	}
+		blobTx.Nonce = nonce
+		originalTx = blobTx
+	} else {
+		if gasLimit == 0 {
+			if gasLimit, err = s.client.EstimateGas(s.ctx, ethereum.CallMsg{
+				From:      opts.From,
+				To:        target,
+				Value:     value,
+				Data:      data,
+				GasTipCap: opts.GasTipCap,
+				GasFeeCap: opts.GasFeeCap,
+			}); err != nil {
+				return "", err
+			}
+		}
 
-	txID := uuid.New()
-	txToConfirm := &TxToConfirm{
-		ID: txID,
-		originalTx: &types.DynamicFeeTx{
+		originalTx = &types.DynamicFeeTx{
 			ChainID:   s.client.ChainID,
 			To:        target,
 			Nonce:     nonce,
-			GasFeeCap: s.opts.GasFeeCap,
-			GasTipCap: s.opts.GasTipCap,
+			GasFeeCap: opts.GasFeeCap,
+			GasTipCap: opts.GasTipCap,
 			Gas:       gasLimit,
 			Value:     value,
 			Data:      data,
-		},
+		}
 	}
 
+	txToConfirm := &TxToConfirm{originalTx: originalTx}
+
 	if err := s.send(txToConfirm, false); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
-		log.Error("Failed to send transaction",
-			"txId", txID,
-			"nonce", txToConfirm.CurrentTx.Nonce(),
+		log.Error(
+			"Failed to send transaction",
+			"txId", txToConfirm.ID,
+			"nonce", nonce,
 			"err", err,
 		)
 		return "", err
 	}
 
+	txID := txToConfirm.ID
 	// Add the transaction to the unconfirmed transactions
 	s.unconfirmedTxs.Set(txID, txToConfirm)
 	s.txToConfirmCh.Set(txID, make(chan *TxToConfirm, 1))
@@ -253,7 +275,7 @@ func (s *Sender) SendRawTransaction(nonce uint64, target *common.Address, value 
 // SendTransaction sends a transaction to the given Ethereum node.
 func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 	if s.unconfirmedTxs.Count() >= unconfirmedTxsCap {
-		return "", fmt.Errorf("too many pending transactions")
+		return "", errToManyPendings
 	}
 
 	txData, err := s.buildTxData(tx)
@@ -261,24 +283,19 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 		return "", err
 	}
 
-	txID := uuid.New()
-	txToConfirm := &TxToConfirm{
-		ID:         txID,
-		originalTx: txData,
-		CurrentTx:  tx,
-	}
+	txToConfirm := &TxToConfirm{originalTx: txData, CurrentTx: tx}
 
-	if err := s.send(txToConfirm, true); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
+	if err = s.send(txToConfirm, true); err != nil && !strings.Contains(err.Error(), "replacement transaction") {
 		log.Error(
 			"Failed to send transaction",
-			"txId", txID,
-			"nonce", txToConfirm.CurrentTx.Nonce(),
+			"txId", txToConfirm.ID,
 			"hash", tx.Hash(),
 			"err", err,
 		)
 		return "", err
 	}
 
+	txID := txToConfirm.ID
 	// Add the transaction to the unconfirmed transactions
 	s.unconfirmedTxs.Set(txID, txToConfirm)
 	s.txToConfirmCh.Set(txID, make(chan *TxToConfirm, 1))
@@ -290,6 +307,12 @@ func (s *Sender) SendTransaction(tx *types.Transaction) (string, error) {
 func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	// Set the transaction ID and its creation time
+	if tx.ID == "" {
+		tx.ID = uuid.New()
+		tx.CreatedAt = time.Now()
+	}
 
 	originalTx := tx.originalTx
 
@@ -351,6 +374,8 @@ func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 			)
 			return err
 		}
+
+		metrics.TxSenderSentCounter.Inc(1)
 		break
 	}
 	s.nonce++
@@ -407,6 +432,7 @@ func (s *Sender) resendUnconfirmedTxs() {
 			continue
 		}
 		if err := s.send(unconfirmedTx, true); err != nil {
+			metrics.TxSenderUnconfirmedCounter.Inc(1)
 			log.Warn(
 				"Failed to resend the transaction",
 				"txId", id,
@@ -429,7 +455,8 @@ func (s *Sender) checkPendingTransactionsConfirmation() {
 			// Ignore the transaction if it is pending.
 			tx, isPending, err := s.client.TransactionByHash(s.ctx, pendingTx.CurrentTx.Hash())
 			if err != nil {
-				log.Warn("Failed to fetch transaction",
+				log.Warn(
+					"Failed to fetch transaction",
 					"txId", pendingTx.ID,
 					"nonce", pendingTx.CurrentTx.Nonce(),
 					"hash", pendingTx.CurrentTx.Hash(),
@@ -454,15 +481,27 @@ func (s *Sender) checkPendingTransactionsConfirmation() {
 				log.Warn("Failed to get the transaction receipt", "hash", pendingTx.CurrentTx.Hash(), "err", err)
 				continue
 			}
+
+			// Record the gas fee metrics.
+			if receipt.BlobGasUsed == 0 {
+				metrics.TxSenderGasPriceGauge.Update(receipt.EffectiveGasPrice.Int64())
+			} else {
+				metrics.TxSenderBlobGasPriceGauge.Update(receipt.BlobGasPrice.Int64())
+			}
+
+			metrics.TxSenderTxIncludedTimeGauge.Update(int64(time.Since(pendingTx.CreatedAt).Seconds()))
+
 			pendingTx.Receipt = receipt
 			if receipt.Status != types.ReceiptStatusSuccessful {
 				pendingTx.Err = fmt.Errorf("transaction status is failed, hash: %s", receipt.TxHash)
+				metrics.TxSenderConfirmedFailedCounter.Inc(1)
 				s.releaseUnconfirmedTx(id)
 				continue
 			}
 		}
 		pendingTx.confirmations = s.head.Number.Uint64() - pendingTx.Receipt.BlockNumber.Uint64()
 		if pendingTx.confirmations >= s.ConfirmationDepth {
+			metrics.TxSenderConfirmedSuccessfulCounter.Inc(1)
 			s.releaseUnconfirmedTx(id)
 		}
 	}

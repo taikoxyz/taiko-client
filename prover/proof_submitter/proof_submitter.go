@@ -12,8 +12,8 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
-	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 	validator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
@@ -170,7 +170,7 @@ func (s *ProofSubmitter) SubmitProof(
 	}
 
 	// Build the TaikoL1.proveBlock transaction and send it to the L1 node.
-	if err := s.sender.Send(
+	if err := encoding.TryParsingCustomError(s.sender.Send(
 		ctx,
 		proofWithHeader,
 		s.txBuilder.Build(
@@ -190,7 +190,7 @@ func (s *ProofSubmitter) SubmitProof(
 			s.sender.GetOpts(),
 			proofWithHeader.Tier == encoding.TierGuardianID,
 		),
-	); err != nil {
+	)); err != nil {
 		if err.Error() == transaction.ErrUnretryableSubmission.Error() {
 			return nil
 		}

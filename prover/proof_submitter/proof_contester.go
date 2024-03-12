@@ -11,8 +11,8 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/internal/sender"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
 )
@@ -99,35 +99,37 @@ func (c *ProofContester) SubmitContest(
 		return err
 	}
 
-	return c.sender.Send(
-		ctx,
-		&proofProducer.ProofWithHeader{
-			BlockID: blockID,
-			Meta:    meta,
-			Header:  header,
-			Proof:   []byte{},
-			Opts: &proofProducer.ProofRequestOptions{
-				EventL1Hash: l1HeaderProposedIn.Hash(),
-				StateRoot:   header.Root,
-			},
-			Tier: tier,
-		},
-		c.txBuilder.Build(
+	return encoding.TryParsingCustomError(
+		c.sender.Send(
 			ctx,
-			blockID,
-			meta,
-			&bindings.TaikoDataTransition{
-				ParentHash: header.ParentHash,
-				BlockHash:  header.Hash(),
-				StateRoot:  header.Root,
-				Graffiti:   c.graffiti,
+			&proofProducer.ProofWithHeader{
+				BlockID: blockID,
+				Meta:    meta,
+				Header:  header,
+				Proof:   []byte{},
+				Opts: &proofProducer.ProofRequestOptions{
+					EventL1Hash: l1HeaderProposedIn.Hash(),
+					StateRoot:   header.Root,
+				},
+				Tier: tier,
 			},
-			&bindings.TaikoDataTierProof{
-				Tier: transition.Tier,
-				Data: []byte{},
-			},
-			c.sender.GetOpts(),
-			false,
+			c.txBuilder.Build(
+				ctx,
+				blockID,
+				meta,
+				&bindings.TaikoDataTransition{
+					ParentHash: header.ParentHash,
+					BlockHash:  header.Hash(),
+					StateRoot:  header.Root,
+					Graffiti:   c.graffiti,
+				},
+				&bindings.TaikoDataTierProof{
+					Tier: transition.Tier,
+					Data: []byte{},
+				},
+				c.sender.GetOpts(),
+				false,
+			),
 		),
 	)
 }

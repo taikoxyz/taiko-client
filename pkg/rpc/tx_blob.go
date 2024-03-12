@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"errors"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -12,7 +13,11 @@ import (
 )
 
 var (
-	errBlobInvalid = errors.New("invalid blob encoding")
+	preLenBlob = 32
+)
+
+var (
+	ErrBlobInvalid = errors.New("invalid blob encoding")
 )
 
 // TransactBlobTx creates, signs and then sends blob transactions.
@@ -27,11 +32,11 @@ func (c *EthClient) TransactBlobTx(
 		return nil, errors.New("no signer to authorize the transaction with")
 	}
 	// Create blob tx
-	rawTx, err := c.createBlobTx(opts, contract, input, sidecar)
+	blobTx, err := c.CreateBlobTx(opts, contract, input, sidecar)
 	if err != nil {
 		return nil, err
 	}
-	signedTx, err := opts.Signer(opts.From, rawTx)
+	signedTx, err := opts.Signer(opts.From, types.NewTx(blobTx))
 	if err != nil {
 		return nil, err
 	}
@@ -44,13 +49,14 @@ func (c *EthClient) TransactBlobTx(
 	return signedTx, nil
 }
 
-// createBlobTx creates a blob transaction by given parameters.
-func (c *EthClient) createBlobTx(
+// CreateBlobTx creates a blob transaction by given parameters.
+func (c *EthClient) CreateBlobTx(
 	opts *bind.TransactOpts,
 	contract common.Address,
 	input []byte,
 	sidecar *types.BlobTxSidecar,
-) (*types.Transaction, error) {
+) (*types.BlobTx, error) {
+	// Fetch the nonce for the account
 	var (
 		nonce *hexutil.Uint64
 		gas   *hexutil.Uint64
@@ -88,7 +94,7 @@ func (c *EthClient) createBlobTx(
 		return nil, err
 	}
 
-	blobTx := &types.BlobTx{
+	return &types.BlobTx{
 		ChainID:    uint256.MustFromBig(rawTx.ChainId()),
 		Nonce:      rawTx.Nonce(),
 		GasTipCap:  uint256.MustFromBig(rawTx.GasTipCap()),
@@ -101,9 +107,7 @@ func (c *EthClient) createBlobTx(
 		BlobFeeCap: uint256.MustFromBig(rawTx.BlobGasFeeCap()),
 		BlobHashes: sidecar.BlobHashes(),
 		Sidecar:    sidecar,
-	}
-
-	return types.NewTx(blobTx), nil
+	}, nil
 }
 
 // MakeSidecar makes a sidecar which only includes one blob with the given data.
@@ -125,7 +129,7 @@ func MakeSidecar(data []byte) (*types.BlobTxSidecar, error) {
 }
 
 func encode(origin []byte) []byte {
-	var res []byte
+	var res = make([]byte, preLenBlob, len(origin)/31*32+32)
 	for ; len(origin) >= 31; origin = origin[31:] {
 		data := [32]byte{}
 		copy(data[1:], origin[:31])
@@ -136,7 +140,21 @@ func encode(origin []byte) []byte {
 		copy(data[1:], origin)
 		res = append(res, data...)
 	}
+
+	// Add length prefix
+	blobLen := big.NewInt(int64(len(res))).Bytes()
+	copy(res[preLenBlob-len(blobLen):preLenBlob], blobLen)
+
 	return res
+}
+
+func decode(data []byte) ([]byte, error) {
+	blobLen := new(big.Int).SetBytes(data[:preLenBlob])
+	var lenBytes = blobLen.Uint64()
+	if int(lenBytes) > len(data) {
+		return nil, ErrBlobInvalid
+	}
+	return data[preLenBlob:lenBytes], nil
 }
 
 // EncodeBlobs encodes bytes into a EIP-4844 blob.
@@ -157,19 +175,15 @@ func EncodeBlobs(origin []byte) []kzg4844.Blob {
 }
 
 // DecodeBlob decodes the given blob data.
-func DecodeBlob(blob []byte) ([]byte, error) {
+func DecodeBlob(blob []byte) (res []byte, err error) {
 	if len(blob) != BlobBytes {
-		return nil, errBlobInvalid
+		return nil, ErrBlobInvalid
 	}
-	var i = len(blob) - 1
-	for ; i >= 0; i-- {
-		if blob[i] != 0 {
-			break
-		}
+	blob, err = decode(blob)
+	if err != nil {
+		return nil, err
 	}
-	blob = blob[:i+1]
 
-	var res []byte
 	for ; len(blob) >= 32; blob = blob[32:] {
 		data := [31]byte{}
 		copy(data[:], blob[1:])
