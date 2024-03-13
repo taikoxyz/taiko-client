@@ -25,7 +25,7 @@ type SenderTestSuite struct {
 
 func (s *SenderTestSuite) TestSendTransaction() {
 	var (
-		opts   = s.sender.GetOpts()
+		opts   = s.sender.GetOpts(context.TODO())
 		client = s.RPCClient.L1
 		eg     errgroup.Group
 	)
@@ -57,7 +57,7 @@ func (s *SenderTestSuite) TestSendTransaction() {
 }
 
 func (s *SenderTestSuite) TestSendRawTransaction() {
-	nonce, err := s.RPCClient.L1.NonceAt(context.Background(), s.sender.GetOpts().From, nil)
+	nonce, err := s.RPCClient.L1.NonceAt(context.Background(), s.sender.Address(), nil)
 	s.Nil(err)
 
 	var eg errgroup.Group
@@ -82,7 +82,7 @@ func (s *SenderTestSuite) TestSendRawTransaction() {
 func (s *SenderTestSuite) TestReplacement() {
 	send := s.sender
 	client := s.RPCClient.L1
-	opts := send.GetOpts()
+	opts := send.GetOpts(context.TODO())
 
 	// Let max gas price be 2 times of the gas fee cap.
 	send.MaxGasFee = opts.GasFeeCap.Uint64() * 2
@@ -108,7 +108,7 @@ func (s *SenderTestSuite) TestReplacement() {
 		Value:     big.NewInt(1),
 		Data:      nil,
 	}
-	rawTx, err := send.GetOpts().Signer(send.GetOpts().From, types.NewTx(baseTx))
+	rawTx, err := opts.Signer(opts.From, types.NewTx(baseTx))
 	s.Nil(err)
 	err = client.SendTransaction(context.Background(), rawTx)
 	s.Nil(err)
@@ -139,7 +139,7 @@ func (s *SenderTestSuite) TestReplacement() {
 func (s *SenderTestSuite) TestNonceTooLow() {
 	client := s.RPCClient.L1
 	send := s.sender
-	opts := s.sender.GetOpts()
+	opts := s.sender.GetOpts(context.TODO())
 
 	nonce, err := client.NonceAt(context.Background(), opts.From, nil)
 	s.Nil(err)

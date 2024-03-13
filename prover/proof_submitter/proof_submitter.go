@@ -65,7 +65,7 @@ func New(
 		anchorValidator: anchorValidator,
 		txBuilder:       builder,
 		sender:          proofSender,
-		proverAddress:   txSender.GetOpts().From,
+		proverAddress:   txSender.Address(),
 		taikoL2Address:  taikoL2Address,
 		graffiti:        rpc.StringToBytes32(graffiti),
 	}, nil

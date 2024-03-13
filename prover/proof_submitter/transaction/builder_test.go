@@ -9,13 +9,14 @@ import (
 )
 
 func (s *TransactionTestSuite) TestBuildTxs() {
+	opts := s.sender.GetOpts()
 	_, err := s.builder.Build(
 		context.Background(),
 		common.Big256,
 		&bindings.TaikoDataBlockMetadata{TxListByteOffset: common.Big1, TxListByteSize: common.Big256},
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
-		s.sender.innerSender.GetOpts(),
+		opts,
 		false,
 	)()
 	s.NotNil(err)
@@ -26,7 +27,7 @@ func (s *TransactionTestSuite) TestBuildTxs() {
 		&bindings.TaikoDataBlockMetadata{TxListByteOffset: common.Big1, TxListByteSize: common.Big256},
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
-		s.sender.innerSender.GetOpts(),
+		opts,
 		true,
 	)()
 	s.NotNil(err)

@@ -12,7 +12,7 @@ import (
 )
 
 // OptimisticProofProducer always returns an optimistic (dummy) proof.
-type OptimisticProofProducer struct{ *DummyProofProducer }
+type OptimisticProofProducer struct{ DummyProofProducer }
 
 // RequestProof implements the ProofProducer interface.
 func (o *OptimisticProofProducer) RequestProof(
@@ -36,9 +36,4 @@ func (o *OptimisticProofProducer) RequestProof(
 // Tier implements the ProofProducer interface.
 func (o *OptimisticProofProducer) Tier() uint16 {
 	return encoding.TierOptimisticID
-}
-
-// Cancellable implements the ProofProducer interface.
-func (o *OptimisticProofProducer) Cancellable() bool {
-	return false
 }
