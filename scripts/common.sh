@@ -31,6 +31,7 @@ compose_down() {
   local services=("$@")
   echo
   echo "stopping services..."
+  rm .env.proposer.test
   $COMPOSE down "${services[@]}" #--remove-orphans
   echo "done"
 }
