@@ -151,7 +151,7 @@ func (s *Sender) Close() {
 }
 
 // GetOpts returns the transaction options of the sender.
-func (s *Sender) GetOpts() *bind.TransactOpts {
+func (s *Sender) GetOpts(ctx context.Context) *bind.TransactOpts {
 	return &bind.TransactOpts{
 		From:      s.opts.From,
 		Nonce:     s.opts.Nonce,
@@ -161,7 +161,7 @@ func (s *Sender) GetOpts() *bind.TransactOpts {
 		GasFeeCap: s.opts.GasFeeCap,
 		GasTipCap: s.opts.GasTipCap,
 		GasLimit:  s.opts.GasLimit,
-		Context:   s.opts.Context,
+		Context:   ctx,
 		NoSend:    s.opts.NoSend,
 	}
 }
@@ -216,7 +216,7 @@ func (s *Sender) SendRawTransaction(
 
 	var (
 		originalTx types.TxData
-		opts       = s.GetOpts()
+		opts       = s.GetOpts(context.TODO())
 		gasLimit   = s.GasLimit
 		err        error
 	)

@@ -135,7 +135,7 @@ func (s *Sender) validateProof(ctx context.Context, proofWithHeader *producer.Pr
 
 // GetOpts returns the next transaction options.
 func (s *Sender) GetOpts() *bind.TransactOpts {
-	return s.innerSender.GetOpts()
+	return s.innerSender.GetOpts(context.TODO())
 }
 
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction

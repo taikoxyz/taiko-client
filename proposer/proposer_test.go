@@ -169,7 +169,7 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	newTx, err := s.p.txBuilder.Build(
 		context.Background(),
 		s.p.tierFees,
-		sender.GetOpts(),
+		sender.GetOpts(context.TODO()),
 		false,
 		encoded,
 	)

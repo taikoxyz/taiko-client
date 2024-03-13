@@ -51,8 +51,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return nil
 	}
 
-	opts := p.txSender.GetOpts()
-	opts.Context = ctx
+	opts := p.txSender.GetOpts(ctx)
 
 	log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance.String(), "contract", contract)
 
