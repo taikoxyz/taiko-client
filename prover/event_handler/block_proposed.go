@@ -187,7 +187,6 @@ func (h *BlockProposedEventHandler) checkL1Reorg(
 		} else {
 			h.sharedState.SetLastHandledBlockID(reorgCheckResult.LastHandledBlockIDToReset.Uint64())
 		}
-		h.sharedState.SetReorgDetectedFlag(true)
 		return errL1Reorged
 	}
 
@@ -370,7 +369,7 @@ type BlockProposedGuaridanEventHandler struct {
 	GuardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater
 }
 
-// NewBlockProposedEventHandler creates a new BlockProposedEventHandler instance.
+// NewBlockProposedEventGuardianHandler creates a new BlockProposedEventHandler instance.
 func NewBlockProposedEventGuardianHandler(
 	opts *NewBlockProposedGuardianEventHandlerOps,
 ) *BlockProposedGuaridanEventHandler {

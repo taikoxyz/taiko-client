@@ -144,7 +144,7 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	return sender, nil
 }
 
-// CLose closes the sender.
+// Close closes the sender.
 func (s *Sender) Close() {
 	close(s.stopCh)
 	s.wg.Wait()
@@ -164,6 +164,11 @@ func (s *Sender) GetOpts() *bind.TransactOpts {
 		Context:   s.opts.Context,
 		NoSend:    s.opts.NoSend,
 	}
+}
+
+// Address returns the sender's address.
+func (s *Sender) Address() common.Address {
+	return s.opts.From
 }
 
 // TxToConfirmChannel returns a channel to wait the given transaction's confirmation.

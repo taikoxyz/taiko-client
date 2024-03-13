@@ -2,15 +2,12 @@ package transaction
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -27,23 +24,15 @@ type TxBuilder func() (*types.Transaction, error)
 
 // ProveBlockTxBuilder is responsible for building ProveBlock transactions.
 type ProveBlockTxBuilder struct {
-	rpc              *rpc.Client
-	proverPrivateKey *ecdsa.PrivateKey
-	proverAddress    common.Address
-	mutex            *sync.Mutex
+	rpc   *rpc.Client
+	mutex sync.Mutex
 }
 
 // NewProveBlockTxBuilder creates a new ProveBlockTxBuilder instance.
 func NewProveBlockTxBuilder(
 	rpc *rpc.Client,
-	proverPrivateKey *ecdsa.PrivateKey,
 ) *ProveBlockTxBuilder {
-	return &ProveBlockTxBuilder{
-		rpc:              rpc,
-		proverPrivateKey: proverPrivateKey,
-		proverAddress:    crypto.PubkeyToAddress(proverPrivateKey.PublicKey),
-		mutex:            new(sync.Mutex),
-	}
+	return &ProveBlockTxBuilder{rpc: rpc}
 }
 
 // Build creates a new TaikoL1.ProveBlock transaction with the given nonce.
