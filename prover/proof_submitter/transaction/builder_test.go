@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"context"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/taikoxyz/taiko-client/bindings"
