@@ -364,7 +364,12 @@ func (p *Prover) contestProofOp(req *proofProducer.ContestRequestBody) error {
 		req.Meta,
 		req.Tier,
 	); err != nil {
-		log.Error("Request new proof contest error", "blockID", req.BlockID, "error", err)
+		log.Error(
+			"Request new proof contest error",
+			"blockID", req.BlockID,
+			"minTier", req.Meta.MinTier,
+			"error", err,
+		)
 		return err
 	}
 
@@ -378,7 +383,7 @@ func (p *Prover) requestProofOp(e *bindings.TaikoL1ClientBlockProposed, minTier 
 	}
 	if submitter := p.selectSubmitter(minTier); submitter != nil {
 		if err := submitter.RequestProof(p.ctx, e); err != nil {
-			log.Error("Request new proof error", "blockID", e.BlockId, "error", err)
+			log.Error("Request new proof error", "blockID", e.BlockId, "minTier", e.Meta.MinTier, "error", err)
 			return err
 		}
 
@@ -397,7 +402,12 @@ func (p *Prover) submitProofOp(proofWithHeader *proofProducer.ProofWithHeader) e
 	}
 
 	if err := submitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
-		log.Error("Submit proof error", "error", err)
+		log.Error(
+			"Submit proof error",
+			"blockID", proofWithHeader.BlockID,
+			"minTier", proofWithHeader.Meta.MinTier,
+			"error", err,
+		)
 		return err
 	}
 

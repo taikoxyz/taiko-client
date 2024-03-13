@@ -141,7 +141,9 @@ func (s *ProofSubmitter) SubmitProof(
 		"New block proof",
 		"blockID", proofWithHeader.BlockID,
 		"proposer", proofWithHeader.Meta.Coinbase,
-		"hash", proofWithHeader.Header.Hash(),
+		"parentHash", proofWithHeader.Header.ParentHash,
+		"hash", proofWithHeader.Opts.BlockHash,
+		"stateRoot", proofWithHeader.Opts.StateRoot,
 		"proof", common.Bytes2Hex(proofWithHeader.Proof),
 		"tier", proofWithHeader.Tier,
 	)
