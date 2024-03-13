@@ -187,7 +187,6 @@ func (h *BlockProposedEventHandler) checkL1Reorg(
 		} else {
 			h.sharedState.SetLastHandledBlockID(reorgCheckResult.LastHandledBlockIDToReset.Uint64())
 		}
-		h.sharedState.SetReorgDetectedFlag(true)
 		return errL1Reorged
 	}
 

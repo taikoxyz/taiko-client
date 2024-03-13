@@ -32,12 +32,6 @@ func (s *ProverSharedStateTestSuite) TestL1Current() {
 	s.Equal(newL1Current.Hash(), s.state.GetL1Current().Hash())
 }
 
-func (s *ProverSharedStateTestSuite) TestReorgDetectedFlag() {
-	s.NotEqual(true, s.state.GetReorgDetectedFlag())
-	s.state.SetReorgDetectedFlag(true)
-	s.Equal(true, s.state.GetReorgDetectedFlag())
-}
-
 func (s *ProverSharedStateTestSuite) TestTiers() {
 	s.Empty(s.state.GetTiers())
 	s.state.SetTiers([]*rpc.TierProviderTierWithID{{ID: 1}})

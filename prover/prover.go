@@ -331,8 +331,6 @@ func (p *Prover) Close(ctx context.Context) {
 
 // proveOp iterates through BlockProposed events
 func (p *Prover) proveOp() error {
-	p.sharedState.SetReorgDetectedFlag(false)
-
 	iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
 		Client:               p.rpc.L1,
 		TaikoL1:              p.rpc.TaikoL1,
