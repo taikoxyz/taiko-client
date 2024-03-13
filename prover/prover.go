@@ -12,7 +12,6 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/urfave/cli/v2"
 
@@ -37,6 +36,8 @@ type Prover struct {
 	cfg     *Config
 	backoff backoff.BackOffContext
 
+	txSender *sender.Sender
+
 	// Clients
 	rpc *rpc.Client
 
@@ -45,7 +46,7 @@ type Prover struct {
 	guardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater
 
 	// Contract configurations
-	protocolConfigs *bindings.TaikoDataConfig
+	protocolConfig *bindings.TaikoDataConfig
 
 	// States
 	sharedState     *state.SharedState
@@ -116,13 +117,11 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to get protocol configs: %w", err)
 	}
-	p.protocolConfigs = &protocolConfigs
+	p.protocolConfig = &protocolConfigs
 
-	log.Info("Protocol configs", "configs", p.protocolConfigs)
+	log.Info("Protocol configs", "configs", p.protocolConfig)
 
-	proverAddress := crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
-
-	chBufferSize := p.protocolConfigs.BlockMaxProposals
+	chBufferSize := p.protocolConfig.BlockMaxProposals
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.assignmentExpiredCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.proofSubmissionCh = make(chan *proofProducer.ProofRequestBody, p.cfg.Capacity)
@@ -156,21 +155,21 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		senderCfg.MaxRetrys = 0
 	}
 
-	txSender, err := sender.NewSender(p.ctx, senderCfg, p.rpc.L1, p.cfg.L1ProverPrivKey)
+	p.txSender, err = sender.NewSender(p.ctx, senderCfg, p.rpc.L1, p.cfg.L1ProverPrivKey)
 	if err != nil {
 		return err
 	}
 	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc)
 
 	// Proof submitters
-	if err := p.initProofSubmitters(txSender, txBuilder); err != nil {
+	if err := p.initProofSubmitters(p.txSender, txBuilder); err != nil {
 		return err
 	}
 
 	// Proof contester
 	p.proofContester, err = proofSubmitter.NewProofContester(
 		p.rpc,
-		txSender,
+		p.txSender,
 		p.cfg.Graffiti,
 		txBuilder,
 	)
@@ -205,7 +204,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			p.cfg.L1ProverPrivKey,
 			p.cfg.GuardianProverHealthCheckServerEndpoint,
 			p.rpc,
-			proverAddress,
+			p.ProverAddress(),
 		)
 	}
 
@@ -275,7 +274,7 @@ func (p *Prover) eventLoop() {
 	defer forceProvingTicker.Stop()
 
 	// Channels
-	chBufferSize := p.protocolConfigs.BlockMaxProposals
+	chBufferSize := p.protocolConfig.BlockMaxProposals
 	blockProposedCh := make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	blockVerifiedCh := make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	transitionProvedCh := make(chan *bindings.TaikoL1ClientTransitionProved, chBufferSize)
@@ -448,7 +447,7 @@ func (p *Prover) IsGuardianProver() bool {
 
 // ProverAddress returns the current prover account address.
 func (p *Prover) ProverAddress() common.Address {
-	return crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
+	return p.txSender.Address()
 }
 
 // withRetry retries the given function with prover backoff policy.

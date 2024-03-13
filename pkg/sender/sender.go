@@ -166,6 +166,11 @@ func (s *Sender) GetOpts() *bind.TransactOpts {
 	}
 }
 
+// Address returns the sender's address.
+func (s *Sender) Address() common.Address {
+	return s.opts.From
+}
+
 // TxToConfirmChannel returns a channel to wait the given transaction's confirmation.
 func (s *Sender) TxToConfirmChannel(txID string) <-chan *TxToConfirm {
 	ch, ok := s.txToConfirmCh.Get(txID)

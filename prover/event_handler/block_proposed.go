@@ -370,7 +370,7 @@ type BlockProposedGuaridanEventHandler struct {
 	GuardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater
 }
 
-// NewBlockProposedEventHandler creates a new BlockProposedEventHandler instance.
+// NewBlockProposedEventGuardianHandler creates a new BlockProposedEventHandler instance.
 func NewBlockProposedEventGuardianHandler(
 	opts *NewBlockProposedGuardianEventHandlerOps,
 ) *BlockProposedGuaridanEventHandler {

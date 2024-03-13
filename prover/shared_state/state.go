@@ -10,7 +10,7 @@ import (
 // SharedState represents the internal state of a prover.
 type SharedState struct {
 	lastHandledBlockID atomic.Uint64
-	l1Current          *types.Header
+	l1Current          atomic.Value //  *types.Header
 	reorgDetectedFlag  atomic.Bool
 	tiers              []*rpc.TierProviderTierWithID
 }
@@ -32,12 +32,12 @@ func (s *SharedState) SetLastHandledBlockID(blockID uint64) {
 
 // GetL1Current returns the current L1 header cursor.
 func (s *SharedState) GetL1Current() *types.Header {
-	return s.l1Current
+	return s.l1Current.Load().(*types.Header)
 }
 
 // SetL1Current sets the current L1 header cursor.
 func (s *SharedState) SetL1Current(header *types.Header) {
-	s.l1Current = header
+	s.l1Current.Store(header)
 }
 
 // GetReorgDetectedFlag returns the reorg detected flag.
