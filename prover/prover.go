@@ -34,7 +34,8 @@ import (
 // Prover keeps trying to prove newly proposed blocks.
 type Prover struct {
 	// Configurations
-	cfg *Config
+	cfg     *Config
+	backoff backoff.BackOffContext
 
 	// Clients
 	rpc *rpc.Client
@@ -87,12 +88,15 @@ func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
 func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
-
 	// Initialize state which will be shared by event handlers.
 	p.sharedState = state.New()
-
-	// Initialize state which will be shared by event handlers.
-	p.sharedState = state.New()
+	p.backoff = backoff.WithContext(
+		backoff.WithMaxRetries(
+			backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval),
+			p.cfg.BackOffMaxRetrys,
+		),
+		p.ctx,
+	)
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -156,7 +160,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if err != nil {
 		return err
 	}
-	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc, p.cfg.L1ProverPrivKey)
+	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc)
 
 	// Proof submitters
 	if err := p.initProofSubmitters(txSender, txBuilder); err != nil {
@@ -191,7 +195,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// Guardian prover heartbeat sender
-	if p.IsGuardianProver() {
+	if p.IsGuardianProver() && p.cfg.GuardianProverHealthCheckServerEndpoint != nil {
 		// Check guardian prover contract address is correct.
 		if _, err := p.rpc.GuardianProver.MinGuardians(&bind.CallOpts{Context: ctx}); err != nil {
 			return fmt.Errorf("failed to get MinGuardians from guardian prover contract: %w", err)
@@ -328,30 +332,21 @@ func (p *Prover) Close(ctx context.Context) {
 
 // proveOp iterates through BlockProposed events
 func (p *Prover) proveOp() error {
-	firstTry := true
+	p.sharedState.SetReorgDetectedFlag(false)
 
-	for firstTry || p.sharedState.GetReorgDetectedFlag() {
-		p.sharedState.SetReorgDetectedFlag(false)
-		firstTry = false
-
-		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
-			Client:               p.rpc.L1,
-			TaikoL1:              p.rpc.TaikoL1,
-			StartHeight:          new(big.Int).SetUint64(p.sharedState.GetL1Current().Number.Uint64()),
-			OnBlockProposedEvent: p.blockProposedHandler.Handle,
-			BlockConfirmations:   &p.cfg.BlockConfirmations,
-		})
-		if err != nil {
-			log.Error("Failed to start event iterator", "event", "BlockProposed", "error", err)
-			return err
-		}
-
-		if err := iter.Iter(); err != nil {
-			return err
-		}
+	iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
+		Client:               p.rpc.L1,
+		TaikoL1:              p.rpc.TaikoL1,
+		StartHeight:          new(big.Int).SetUint64(p.sharedState.GetL1Current().Number.Uint64()),
+		OnBlockProposedEvent: p.blockProposedHandler.Handle,
+		BlockConfirmations:   &p.cfg.BlockConfirmations,
+	})
+	if err != nil {
+		log.Error("Failed to start event iterator", "event", "BlockProposed", "error", err)
+		return err
 	}
 
-	return nil
+	return iter.Iter()
 }
 
 // contestProofOp performs a proof contest operation.
@@ -461,16 +456,7 @@ func (p *Prover) withRetry(f func() error) {
 	p.wg.Add(1)
 	go func() {
 		defer p.wg.Done()
-		err := backoff.Retry(
-			func() error {
-				if p.ctx.Err() != nil {
-					log.Error("Context is done, aborting", "error", p.ctx.Err())
-					return nil
-				}
-				return f()
-			},
-			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
-		)
+		err := backoff.Retry(f, p.backoff)
 		if err != nil {
 			log.Error("Operation failed", "error", err)
 		}

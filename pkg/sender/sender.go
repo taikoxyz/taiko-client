@@ -144,7 +144,7 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	return sender, nil
 }
 
-// CLose closes the sender.
+// Close closes the sender.
 func (s *Sender) Close() {
 	close(s.stopCh)
 	s.wg.Wait()
