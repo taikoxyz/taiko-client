@@ -18,17 +18,8 @@ func (p *Prover) gurdianProverHeartbeatLoop(ctx context.Context) {
 	p.wg.Add(1)
 	defer p.wg.Done()
 
-	if !p.IsGuardianProver() {
-		return
-	}
-
 	ticker := time.NewTicker(heartbeatInterval)
-	p.wg.Add(1)
-
-	defer func() {
-		ticker.Stop()
-		p.wg.Done()
-	}()
+	defer ticker.Stop()
 
 	for {
 		select {
