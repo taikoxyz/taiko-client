@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"context"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -13,7 +14,7 @@ func (s *TransactionTestSuite) TestBuildTxs() {
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
 		false,
-	)(nil)
+	)(s.sender.innerSender.GetOpts(context.TODO()))
 	s.NotNil(err)
 
 	_, err = s.builder.Build(
@@ -22,6 +23,6 @@ func (s *TransactionTestSuite) TestBuildTxs() {
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
 		true,
-	)(nil)
+	)(s.sender.innerSender.GetOpts(context.TODO()))
 	s.NotNil(err)
 }
