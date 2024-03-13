@@ -24,11 +24,11 @@ type Sender struct {
 func NewSender(
 	cli *rpc.Client,
 	txSender *sender.Sender,
-) (*Sender, error) {
+) *Sender {
 	return &Sender{
 		rpc:         cli,
 		innerSender: txSender,
-	}, nil
+	}
 }
 
 // Send sends the given proof to the TaikoL1 smart contract with a backoff policy.
@@ -39,15 +39,12 @@ func (s *Sender) Send(
 ) error {
 	// Check if this proof is still needed to be submitted.
 	ok, err := s.validateProof(ctx, proofWithHeader)
-	if err != nil {
+	if err != nil || !ok {
 		return err
-	}
-	if !ok {
-		return nil
 	}
 
 	// Assemble the TaikoL1.proveBlock transaction.
-	tx, err := buildTx()
+	tx, err := buildTx(s.innerSender.GetOpts(ctx))
 	if err != nil {
 		return err
 	}
@@ -59,11 +56,11 @@ func (s *Sender) Send(
 	}
 
 	// Waiting for the transaction to be confirmed.
-	if confirmationResult := <-s.innerSender.TxToConfirmChannel(id); confirmationResult.Err != nil {
+	confirmationResult := <-s.innerSender.TxToConfirmChannel(id)
+	if confirmationResult.Err != nil {
 		log.Warn(
 			"Failed to send TaikoL1.proveBlock transaction",
 			"blockID", proofWithHeader.BlockID,
-			"txHash", tx.Hash(),
 			"error", confirmationResult.Err,
 		)
 		return confirmationResult.Err
@@ -75,7 +72,7 @@ func (s *Sender) Send(
 		"parentHash", proofWithHeader.Header.ParentHash,
 		"hash", proofWithHeader.Header.Hash(),
 		"stateRoot", proofWithHeader.Opts.StateRoot,
-		"txHash", tx.Hash(),
+		"txHash", confirmationResult.CurrentTx.Hash(),
 		"tier", proofWithHeader.Tier,
 		"isContest", len(proofWithHeader.Proof) == 0,
 	)
@@ -131,11 +128,6 @@ func (s *Sender) validateProof(ctx context.Context, proofWithHeader *producer.Pr
 	}
 
 	return true, nil
-}
-
-// GetOpts returns the next transaction options.
-func (s *Sender) GetOpts() *bind.TransactOpts {
-	return s.innerSender.GetOpts(context.TODO())
 }
 
 // isSubmitProofTxErrorRetryable checks whether the error returned by a proof submission transaction

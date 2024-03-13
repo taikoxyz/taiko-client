@@ -140,7 +140,7 @@ func (s *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 			"producer", "SGXProofProducer",
 		)
 		return nil
-	}, backoff.NewConstantBackOff(proofPollingInterval)); err != nil {
+	}, backoff.WithContext(backoff.NewConstantBackOff(proofPollingInterval), ctx)); err != nil {
 		return nil, err
 	}
 

@@ -33,21 +33,13 @@ func NewProofContester(
 	txSender *sender.Sender,
 	graffiti string,
 	builder *transaction.ProveBlockTxBuilder,
-) (*ProofContester, error) {
-	sender, err := transaction.NewSender(
-		rpcClient,
-		txSender,
-	)
-	if err != nil {
-		return nil, err
-	}
-
+) *ProofContester {
 	return &ProofContester{
 		rpc:       rpcClient,
 		txBuilder: builder,
-		sender:    sender,
+		sender:    transaction.NewSender(rpcClient, txSender),
 		graffiti:  rpc.StringToBytes32(graffiti),
-	}, nil
+	}
 }
 
 // SubmitContest submits a TaikoL1.proveBlock transaction to contest a L2 block transition.
@@ -114,7 +106,6 @@ func (c *ProofContester) SubmitContest(
 				Tier: tier,
 			},
 			c.txBuilder.Build(
-				ctx,
 				blockID,
 				meta,
 				&bindings.TaikoDataTransition{
@@ -127,7 +118,6 @@ func (c *ProofContester) SubmitContest(
 					Tier: transition.Tier,
 					Data: []byte{},
 				},
-				c.sender.GetOpts(),
 				false,
 			),
 		),

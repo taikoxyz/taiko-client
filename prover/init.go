@@ -88,7 +88,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return err
 	}
 
-	log.Info("New allowance for the contract", "allowance", allowance.String(), "contract", contract)
+	log.Info("NewProofSubmitter allowance for the contract", "allowance", allowance.String(), "contract", contract)
 
 	return nil
 }
@@ -121,7 +121,7 @@ func (p *Prover) initProofSubmitters(
 			return fmt.Errorf("unsupported tier: %d", tier.ID)
 		}
 
-		if submitter, err = proofSubmitter.New(
+		if submitter, err = proofSubmitter.NewProofSubmitter(
 			p.rpc,
 			producer,
 			p.proofGenerationCh,

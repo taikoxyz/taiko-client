@@ -47,7 +47,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 
 	builder := transaction.NewProveBlockTxBuilder(s.RPCClient)
 
-	s.submitter, err = New(
+	s.submitter, err = NewProofSubmitter(
 		s.RPCClient,
 		&producer.OptimisticProofProducer{},
 		s.proofCh,
@@ -57,13 +57,12 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		builder,
 	)
 	s.Nil(err)
-	s.contester, err = NewProofContester(
+	s.contester = NewProofContester(
 		s.RPCClient,
 		sender,
 		"test",
 		builder,
 	)
-	s.Nil(err)
 
 	// Init calldata syncer
 	testState, err := state.New(context.Background(), s.RPCClient)
