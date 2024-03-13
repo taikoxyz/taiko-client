@@ -2,6 +2,8 @@ package basefee
 
 import (
 	"context"
+	"fmt"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 	"math/big"
 	"testing"
 
@@ -11,7 +13,6 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/internal/utils"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
 )
 
 type BaseFeeSuite struct {
@@ -58,6 +59,40 @@ func (s *BaseFeeSuite) calc1559BaseFee(_l1BlockID, _parentGasUsed uint64) uint64
 	return baseFee.Uint64()
 }
 
+func (s *BaseFeeSuite) testCalc1559BaseFee(numL1Blocks uint64, startGasUsed uint64, times int) {
+	s.lastSyncedBlock = 1
+	for ; times > 0; times-- {
+		fmt.Println("GasUsed: ", startGasUsed)
+		startGasUsed = s.calc1559BaseFee(s.lastSyncedBlock+numL1Blocks, startGasUsed)
+	}
+}
+
+func (s *BaseFeeSuite) TestCalc1559BaseFee() {
+	var numL1Blocks uint64 = 1
+	times := 10
+	for i := 7740000000; times > 0; i += 400000000 {
+		times--
+		s.testCalc1559BaseFee(numL1Blocks, numL1Blocks*uint64(s.config.GasTargetPerL1Block)+uint64(i), 3)
+	}
+}
+
+func (s *BaseFeeSuite) TestBaseFee() {
+	times := 1000
+	for i := 9550000000; times > 0; i += 50000000 {
+		times--
+		gasExcess := new(big.Int).SetUint64(uint64(i))
+		baseFee, err := s.baseFee.BaseFee(nil,
+			gasExcess,
+			s.config.BasefeeAdjustmentQuotient,
+			s.config.GasTargetPerL1Block,
+		)
+		s.Nil(err)
+		//if baseFee.Cmp(gasExcess) >= 0 {
+		fmt.Println(i, ", baseFee: ", baseFee)
+		//}
+	}
+}
+
 func (s *BaseFeeSuite) TestVerifyCalc1559BaseFee() {
 	l1CLi := s.RPCClient.L1
 	l2CLi := s.RPCClient.L2
@@ -77,8 +112,6 @@ func (s *BaseFeeSuite) TestVerifyCalc1559BaseFee() {
 	s.Equal(l2BaseFee.Uint64(), mockBaseFee)
 }
 
-func (s *BaseFeeSuite) TestBaseFee() {}
-
 func (s *BaseFeeSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
@@ -97,12 +130,16 @@ func (s *BaseFeeSuite) SetupTest() {
 	taikoL2 := s.RPCClient.TaikoL2
 	s.gasExcess, err = taikoL2.GasExcess(nil)
 	s.Nil(err)
+	fmt.Println("gasExcess: ", s.gasExcess)
 
 	s.config, err = taikoL2.GetConfig(nil)
 	s.Nil(err)
+	fmt.Println("config: ", s.config.BasefeeAdjustmentQuotient, s.config.GasTargetPerL1Block)
 
 	s.lastSyncedBlock, err = taikoL2.LastSyncedBlock(nil)
 	s.Nil(err)
+
+	fmt.Println("lastSyncedBlock: ", s.lastSyncedBlock)
 }
 
 func TestDriverTestSuite(t *testing.T) {
