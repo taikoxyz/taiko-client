@@ -142,6 +142,49 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
 	}), "invalid --proposeBlockTxReplacementMultiplier value")
 }
 
+func (s *ProposerTestSuite) TestNewConfigFromConfig() {
+	goldenTouchAddress, err := s.RPCClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	s.Nil(err)
+
+	app := s.SetupApp()
+
+	app.Action = func(ctx *cli.Context) error {
+		c, err := NewConfigFromConfigFile(ctx, "../.env.proposer.test")
+		s.Nil(err)
+		s.Equal(l1Endpoint, c.L1Endpoint)
+		s.Equal(l2Endpoint, c.L2Endpoint)
+		s.Equal(taikoL1, c.TaikoL1Address.String())
+		s.Equal(taikoL2, c.TaikoL2Address.String())
+		s.Equal(taikoToken, c.TaikoTokenAddress.String())
+		s.Equal(goldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
+		s.Equal(goldenTouchAddress, c.L2SuggestedFeeRecipient)
+		s.Equal(float64(10), c.ProposeInterval.Seconds())
+		s.Equal(1, len(c.LocalAddresses))
+		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
+		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
+		s.Equal(5*time.Second, c.Timeout)
+		s.Equal(10*time.Second, c.WaitReceiptTimeout)
+		s.Equal(uint64(tierFee), c.OptimisticTierFee.Uint64())
+		s.Equal(uint64(tierFee), c.SgxTierFee.Uint64())
+		s.Equal(uint64(15), c.TierFeePriceBump.Uint64())
+		s.Equal(uint64(5), c.MaxTierFeePriceBumps)
+		s.Equal(true, c.IncludeParentMetaHash)
+
+		for i, e := range strings.Split(proverEndpoints, ",") {
+			s.Equal(c.ProverEndpoints[i].String(), e)
+		}
+
+		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
+		return nil
+	}
+
+	s.Nil(app.Run([]string{
+		"TestNewConfigFromCliContext",
+		"--" + flags.UseConfigFile.Name, "../.env.proposer.test",
+	}))
+
+}
+
 func (s *ProposerTestSuite) SetupApp() *cli.App {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
@@ -150,6 +193,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
 		&cli.StringFlag{Name: flags.TaikoTokenAddress.Name},
+		&cli.StringFlag{Name: flags.UseConfigFile.Name},
 		&cli.StringFlag{Name: flags.L1ProposerPrivKey.Name},
 		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
 		&cli.DurationFlag{Name: flags.ProposeEmptyBlocksInterval.Name},

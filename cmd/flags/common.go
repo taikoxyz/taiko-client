@@ -120,11 +120,11 @@ var (
 		Category: commonCategory,
 		Value:    1 * time.Minute,
 	}
-	UseConfigFile = &cli.BoolFlag{
+	UseConfigFile = &cli.StringFlag{
 		Name:     "useConfig",
 		Usage:    "Whether to use a config file for flags",
 		Category: commonCategory,
-		Value:    false,
+		Value:    "",
 	}
 )
 
@@ -134,6 +134,7 @@ var CommonFlags = []cli.Flag{
 	L1WSEndpoint,
 	TaikoL1Address,
 	TaikoL2Address,
+	UseConfigFile,
 	// Optional
 	Verbosity,
 	LogJSON,
@@ -144,7 +145,6 @@ var CommonFlags = []cli.Flag{
 	BackOffRetryInterval,
 	RPCTimeout,
 	WaitReceiptTimeout,
-	UseConfigFile,
 }
 
 // MergeFlags merges the given flag slices.

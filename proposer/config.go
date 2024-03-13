@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"math/big"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
@@ -122,7 +125,172 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}, nil
 }
 
-func NewConfigFromConfigFile() (*Config, error) {
+func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
+	err := godotenv.Load(path)
+	if err != nil {
+		return nil, fmt.Errorf("error loading .env config: %w", err)
+	}
 
-	return &Config{}, nil
+	timeout, err := time.ParseDuration(os.Getenv("RPC_TIMEOUT"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing RPC_TIMEOUT: %w", err)
+	}
+
+	l1ProposerPrivKey, err := crypto.ToECDSA(
+		common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("config invalid L1 proposer private key: %w, %s", err, os.Getenv("L1_PROPOSER_PRIVATE_KEY"))
+	}
+
+	l2SuggestedFeeRecipient := os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")
+	if !common.IsHexAddress(l2SuggestedFeeRecipient) {
+		return nil, fmt.Errorf("invalid L2 suggested fee recipient address: %s", l2SuggestedFeeRecipient)
+	}
+
+	proposeInterval, err := time.ParseDuration(os.Getenv("PROPOSE_INTERVAL"))
+	if err != nil {
+		return nil, fmt.Errorf("error setting propose interval: %w", err)
+	}
+
+	var localAddresses []common.Address
+	localsOnly, err := strconv.ParseBool(os.Getenv("LOCAL_ADDRESSES_ONLY"))
+	if err != nil {
+		return nil, fmt.Errorf("error loading local_addresses_only: %w", err)
+	}
+	if localsOnly {
+		for _, account := range strings.Split(os.Getenv("TXPOOL_LOCALS"), ",") {
+			if trimmed := strings.TrimSpace(account); !common.IsHexAddress(trimmed) {
+				return nil, fmt.Errorf("invalid account in --txpool.locals: %s", trimmed)
+			}
+			localAddresses = append(localAddresses, common.HexToAddress(account))
+		}
+	}
+
+	proposeEmptyBlocksInteval, err := time.ParseDuration(os.Getenv("PROPOSE_EMPTY_BLOCKS_INTERVAL"))
+	if err != nil {
+		return nil, fmt.Errorf("error setting propose empty blocks interval: %w", err)
+	}
+
+	maxProposedTxListsPerEpoch, err := strconv.ParseUint(os.Getenv("MAX_PROPOSED_TX_LISTS_PER_EPOCH"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error setting max proposed tx lists per epoch: %w", err)
+	}
+
+	var proposeBlockTxGasLimit uint64
+	gasLimit := os.Getenv("PROPOSE_BLOCK_TX_GAS_LIMIT")
+	if gasLimit != "-1" {
+		proposeBlockTxGasLimit, _ = strconv.ParseUint(gasLimit, 0, 64)
+	} else {
+		proposeBlockTxGasLimit = 0
+	}
+
+	proposeBlockTxReplacementMultiplier, err := strconv.ParseUint(os.Getenv("PROPOSE_BLOCK_TX_REPLACEMENT_MULTIPLIER"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error converting proposeBlockTxReplacementMultiplier: %w", err)
+	}
+	if proposeBlockTxReplacementMultiplier == 0 {
+		return nil, fmt.Errorf(
+			"invalid --proposeBlockTxReplacementMultiplier value: %d",
+			proposeBlockTxReplacementMultiplier,
+		)
+	}
+
+	waitReceiptTimeout, err := time.ParseDuration(os.Getenv("WAIT_RECEIPT_TIMEOUT"))
+	if err != nil {
+		return nil, err
+	}
+
+	var proposeBlockTxGasTipCap *big.Int
+	isSet := os.Getenv("PROPOSE_BLOCK_TX_GAS_TIP_CAP")
+	if isSet != "" {
+		tmp, _ := strconv.ParseUint(os.Getenv("PROPOSE_BLOCK_TX_GAS_TIP_CAP"), 0, 64)
+		proposeBlockTxGasTipCap = new(big.Int).SetUint64(tmp)
+	}
+
+	var proverEndpoints []*url.URL
+	for _, e := range strings.Split(os.Getenv("PROVER_ENDPOINTS"), ",") {
+		endpoint, err := url.Parse(e)
+		if err != nil {
+			return nil, err
+		}
+		proverEndpoints = append(proverEndpoints, endpoint)
+	}
+
+	var optimisticTierFee *big.Int
+	optimistic := os.Getenv("OPTIMISTIC_TIER_FEE")
+	if optimistic != "" {
+		tmp, _ := strconv.ParseUint(optimistic, 0, 64)
+		optimisticTierFee = new(big.Int).SetUint64(tmp)
+	} else {
+		optimisticTierFee = common.Big0
+	}
+
+	var sgxTierFee *big.Int
+	sgx := os.Getenv("SGX_TIER_FEE")
+	if sgx != "" {
+		tmp, _ := strconv.ParseUint(sgx, 0, 64)
+		sgxTierFee = new(big.Int).SetUint64(tmp)
+	} else {
+		sgxTierFee = common.Big0
+	}
+
+	tierFee, err := strconv.ParseUint(os.Getenv("TIER_FEE_PRICE_BUMP"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error converting tierFeePriceBump: %w", err)
+	}
+	tierFeePriceBump := new(big.Int).SetUint64(tierFee)
+
+	maxTierFeePriceBumps, err := strconv.ParseUint(os.Getenv("MAX_TIER_FEE_PRICE_BUMPS"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error converting maxTierFeePriceBumps: %w", err)
+	}
+
+	includeMetaHash, err := strconv.ParseBool(os.Getenv("INCLUDE_PARENT_METAHASH"))
+	if err != nil {
+		return nil, fmt.Errorf("error converting includeParentMetahash: %w", err)
+	}
+
+	blobAllowed, err := strconv.ParseBool(os.Getenv("BLOB_ALLOWED"))
+	if err != nil {
+		return nil, fmt.Errorf("error converting blobAllowed: %w", err)
+	}
+
+	tip, err := strconv.ParseUint(os.Getenv("L1_BLOCK_BUILDER_TIP"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error converting l1BlockBuilderTip: %w", err)
+	}
+	l1BlockBuilderTip := new(big.Int).SetUint64(tip)
+
+	return &Config{
+		ClientConfig: &rpc.ClientConfig{
+			L1Endpoint:        os.Getenv("L1_ENDPOINT_WS"),
+			L2Endpoint:        os.Getenv("L2_ENDPOINT_HTTP"),
+			TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_L1_ADDRESS")),
+			Timeout:           timeout,
+		},
+		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_L1_ADRESS")),
+		L1ProposerPrivKey:                   l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:             common.HexToAddress(l2SuggestedFeeRecipient),
+		ExtraData:                           c.String(flags.ExtraData.Name),
+		ProposeInterval:                     proposeInterval,
+		LocalAddresses:                      localAddresses,
+		LocalAddressesOnly:                  localsOnly,
+		ProposeEmptyBlocksInterval:          proposeEmptyBlocksInteval,
+		MaxProposedTxListsPerEpoch:          maxProposedTxListsPerEpoch,
+		ProposeBlockTxGasLimit:              proposeBlockTxGasLimit,
+		ProposeBlockTxReplacementMultiplier: proposeBlockTxReplacementMultiplier,
+		WaitReceiptTimeout:                  waitReceiptTimeout,
+		ProposeBlockTxGasTipCap:             proposeBlockTxGasTipCap,
+		ProverEndpoints:                     proverEndpoints,
+		OptimisticTierFee:                   optimisticTierFee,
+		SgxTierFee:                          sgxTierFee,
+		TierFeePriceBump:                    tierFeePriceBump,
+		MaxTierFeePriceBumps:                maxTierFeePriceBumps,
+		IncludeParentMetaHash:               includeMetaHash,
+		BlobAllowed:                         blobAllowed,
+		L1BlockBuilderTip:                   l1BlockBuilderTip,
+	}, nil
 }
