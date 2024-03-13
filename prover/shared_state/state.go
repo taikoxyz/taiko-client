@@ -11,7 +11,6 @@ import (
 type SharedState struct {
 	lastHandledBlockID atomic.Uint64
 	l1Current          atomic.Value
-	reorgDetectedFlag  atomic.Bool
 	tiers              []*rpc.TierProviderTierWithID
 }
 
@@ -41,16 +40,6 @@ func (s *SharedState) GetL1Current() *types.Header {
 // SetL1Current sets the current L1 header cursor.
 func (s *SharedState) SetL1Current(header *types.Header) {
 	s.l1Current.Store(header)
-}
-
-// GetReorgDetectedFlag returns the reorg detected flag.
-func (s *SharedState) GetReorgDetectedFlag() bool {
-	return s.reorgDetectedFlag.Load()
-}
-
-// SetReorgDetectedFlag sets the reorg detected flag.
-func (s *SharedState) SetReorgDetectedFlag(flag bool) {
-	s.reorgDetectedFlag.Store(flag)
 }
 
 // GetTiers returns the current proof tiers.
