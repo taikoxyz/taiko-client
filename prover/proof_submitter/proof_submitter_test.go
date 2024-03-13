@@ -45,10 +45,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	sender, err := sender.NewSender(context.Background(), &sender.Config{}, s.RPCClient.L1, l1ProverPrivKey)
 	s.Nil(err)
 
-	builder := transaction.NewProveBlockTxBuilder(
-		s.RPCClient,
-		l1ProverPrivKey,
-	)
+	builder := transaction.NewProveBlockTxBuilder(s.RPCClient)
 
 	s.submitter, err = New(
 		s.RPCClient,

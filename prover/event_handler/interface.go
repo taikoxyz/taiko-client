@@ -20,7 +20,7 @@ type TransitionContestedHandler interface {
 	Handle(ctx context.Context, event *bindings.TaikoL1ClientTransitionContested) error
 }
 
-// TransitionContestedHandler is the interface for handling `TaikoL1.TransitionProved` events.
+// TransitionProvedHandler is the interface for handling `TaikoL1.TransitionProved` events.
 type TransitionProvedHandler interface {
 	Handle(ctx context.Context, event *bindings.TaikoL1ClientTransitionProved) error
 }
