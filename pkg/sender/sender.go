@@ -363,7 +363,8 @@ func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 			// handle the list:
 			// ErrUnderpriced
 			// ErrReplaceUnderpriced
-			// blob tx err at https://github.com/ethereum/go-ethereum/blob/20d3e0ac06ef2ad2f5f6500402edc5b6f0bf5b7c/core/txpool/blobpool/blobpool.go#L1157`
+			// blob tx err at https://github.com/ethereum/go-ethereum/blob/
+			// 20d3e0ac06ef2ad2f5f6500402edc5b6f0bf5b7c/core/txpool/blobpool/blobpool.go#L1157`
 			if strings.Contains(err.Error(), "transaction underpriced") {
 				if strings.Contains(err.Error(), "new tx blob gas fee cap") {
 					s.AdjustBlobGasFee(originalTx)
