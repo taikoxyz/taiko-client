@@ -196,6 +196,7 @@ func (s *SenderTestSuite) TestAdjustGas() {
 		s.Equal(expectGasFeeCap, blobTx.GasFeeCap.Uint64(), "val: %d", val)
 		s.Equal(expectGasTipCap, blobTx.GasTipCap.Uint64(), "val: %d", val)
 
+		expectGasTipCap = utils.Max(val*(send.GasGrowthRate+100)/100, val+1)
 		blobTx.BlobFeeCap = uint256.NewInt(val)
 		send.AdjustBlobGasFee(blobTx)
 		s.Equal(expectGasTipCap, blobTx.BlobFeeCap.Uint64(), "val: %d", val)
