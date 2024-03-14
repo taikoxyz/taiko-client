@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
 )
 
@@ -94,6 +95,11 @@ func (c *EthClient) CreateBlobTx(
 		return nil, err
 	}
 
+	blobFeeCap := rawTx.BlobGasFeeCap()
+	if blobFeeCap == nil || blobFeeCap.Uint64() < params.BlobTxMinBlobGasprice {
+		blobFeeCap = new(big.Int).SetUint64(uint64(params.BlobTxMinBlobGasprice))
+	}
+
 	return &types.BlobTx{
 		ChainID:    uint256.MustFromBig(rawTx.ChainId()),
 		Nonce:      rawTx.Nonce(),
@@ -104,7 +110,7 @@ func (c *EthClient) CreateBlobTx(
 		Value:      uint256.MustFromBig(rawTx.Value()),
 		Data:       rawTx.Data(),
 		AccessList: rawTx.AccessList(),
-		BlobFeeCap: uint256.MustFromBig(rawTx.BlobGasFeeCap()),
+		BlobFeeCap: uint256.MustFromBig(blobFeeCap),
 		BlobHashes: sidecar.BlobHashes(),
 		Sidecar:    sidecar,
 	}, nil
