@@ -226,7 +226,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		ctx,
 		p.proposerAddress,
 		p.protocolConfigs.BlockMaxGasLimit,
-		p.protocolConfigs.BlockMaxTxListBytes.Uint64(),
+		rpc.BlockMaxTxListBytes,
 		p.LocalAddresses,
 		p.MaxProposedTxListsPerEpoch,
 	)

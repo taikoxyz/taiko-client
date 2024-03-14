@@ -11,7 +11,7 @@ import (
 func (s *TransactionTestSuite) TestBuildTxs() {
 	_, err := s.builder.Build(
 		common.Big256,
-		&bindings.TaikoDataBlockMetadata{TxListByteOffset: common.Big1, TxListByteSize: common.Big256},
+		&bindings.TaikoDataBlockMetadata{},
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
 		false,
@@ -20,7 +20,7 @@ func (s *TransactionTestSuite) TestBuildTxs() {
 
 	_, err = s.builder.Build(
 		common.Big256,
-		&bindings.TaikoDataBlockMetadata{TxListByteOffset: common.Big1, TxListByteSize: common.Big256},
+		&bindings.TaikoDataBlockMetadata{},
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
 		true,

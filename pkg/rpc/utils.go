@@ -23,9 +23,10 @@ import (
 
 var (
 	ZeroAddress                common.Address
-	waitReceiptPollingInterval = 3 * time.Second
-	defaultWaitReceiptTimeout  = 1 * time.Minute
-	BlobBytes                  = params.BlobTxBytesPerFieldElement * params.BlobTxFieldElementsPerBlob
+	waitReceiptPollingInterval        = 3 * time.Second
+	defaultWaitReceiptTimeout         = 1 * time.Minute
+	BlobBytes                         = params.BlobTxBytesPerFieldElement * params.BlobTxFieldElementsPerBlob
+	BlockMaxTxListBytes        uint64 = (params.BlobTxBytesPerFieldElement - 1) * params.BlobTxFieldElementsPerBlob
 )
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.

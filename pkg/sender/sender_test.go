@@ -11,10 +11,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/taikoxyz/taiko-client/internal/testutils"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/sender"
 )
 
@@ -170,6 +172,35 @@ func (s *SenderTestSuite) TestNonceTooLow() {
 	confirm := <-send.TxToConfirmChannel(txID)
 	s.Nil(confirm.Err)
 	s.Equal(nonce, confirm.CurrentTx.Nonce())
+}
+
+func (s *SenderTestSuite) TestAdjustGas() {
+	send := s.sender
+	dynamicTx := &types.DynamicFeeTx{}
+	blobTx := &types.BlobTx{}
+
+	for _, val := range []uint64{1, 20, 50, 100, 200, 1000, 10000, 20000} {
+		expectGasFeeCap := val + val*(send.GasGrowthRate)/100
+		expectGasTipCap := val + val*(send.GasGrowthRate)/100
+		expectGasTipCap = utils.Min(expectGasFeeCap, utils.Min(expectGasTipCap, send.MaxGasFee))
+
+		dynamicTx.GasFeeCap = new(big.Int).SetUint64(val)
+		dynamicTx.GasTipCap = new(big.Int).SetUint64(val)
+		send.AdjustGasFee(dynamicTx)
+		s.Equal(expectGasFeeCap, dynamicTx.GasFeeCap.Uint64(), "val: %d", val)
+		s.Equal(expectGasTipCap, dynamicTx.GasTipCap.Uint64(), "val: %d", val)
+
+		blobTx.GasFeeCap = uint256.NewInt(val)
+		blobTx.GasTipCap = uint256.NewInt(val)
+		send.AdjustGasFee(blobTx)
+		s.Equal(expectGasFeeCap, blobTx.GasFeeCap.Uint64(), "val: %d", val)
+		s.Equal(expectGasTipCap, blobTx.GasTipCap.Uint64(), "val: %d", val)
+
+		expectGasTipCap = utils.Max(val*(send.GasGrowthRate+100)/100, val+1)
+		blobTx.BlobFeeCap = uint256.NewInt(val)
+		send.AdjustBlobGasFee(blobTx)
+		s.Equal(expectGasTipCap, blobTx.BlobFeeCap.Uint64(), "val: %d", val)
+	}
 }
 
 func (s *SenderTestSuite) SetupTest() {
