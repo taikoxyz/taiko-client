@@ -361,8 +361,8 @@ func (s *Sender) send(tx *TxToConfirm, resetNonce bool) error {
 				continue
 			}
 			// handle the list:
-			// ErrUnderpriced
-			// ErrReplaceUnderpriced
+			// ErrUnderpriced: "transaction underpriced"
+			// ErrReplaceUnderpriced: "replacement transaction underpriced"
 			// blob tx err at https://github.com/ethereum/go-ethereum/blob/
 			// 20d3e0ac06ef2ad2f5f6500402edc5b6f0bf5b7c/core/txpool/blobpool/blobpool.go#L1157`
 			if strings.Contains(err.Error(), "transaction underpriced") {
