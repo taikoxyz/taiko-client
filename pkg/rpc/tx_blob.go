@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/params"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -95,8 +96,8 @@ func (c *EthClient) CreateBlobTx(
 	}
 
 	blobFeeCap := rawTx.BlobGasFeeCap()
-	if blobFeeCap == nil || blobFeeCap.Cmp(MinBlobFeeCap) < 0 {
-		blobFeeCap = new(big.Int).Set(MinBlobFeeCap)
+	if blobFeeCap == nil || blobFeeCap.Uint64() < params.BlobTxMinBlobGasprice {
+		blobFeeCap = new(big.Int).SetUint64(uint64(params.BlobTxMinBlobGasprice))
 	}
 
 	return &types.BlobTx{
