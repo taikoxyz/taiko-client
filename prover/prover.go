@@ -12,7 +12,6 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/urfave/cli/v2"
 
@@ -34,7 +33,10 @@ import (
 // Prover keeps trying to prove newly proposed blocks.
 type Prover struct {
 	// Configurations
-	cfg *Config
+	cfg     *Config
+	backoff backoff.BackOffContext
+
+	txSender *sender.Sender
 
 	// Clients
 	rpc *rpc.Client
@@ -44,7 +46,7 @@ type Prover struct {
 	guardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater
 
 	// Contract configurations
-	protocolConfigs *bindings.TaikoDataConfig
+	protocolConfig *bindings.TaikoDataConfig
 
 	// States
 	sharedState     *state.SharedState
@@ -87,12 +89,15 @@ func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
 func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.cfg = cfg
 	p.ctx = ctx
-
 	// Initialize state which will be shared by event handlers.
 	p.sharedState = state.New()
-
-	// Initialize state which will be shared by event handlers.
-	p.sharedState = state.New()
+	p.backoff = backoff.WithContext(
+		backoff.WithMaxRetries(
+			backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval),
+			p.cfg.BackOffMaxRetrys,
+		),
+		p.ctx,
+	)
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
@@ -112,13 +117,11 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to get protocol configs: %w", err)
 	}
-	p.protocolConfigs = &protocolConfigs
+	p.protocolConfig = &protocolConfigs
 
-	log.Info("Protocol configs", "configs", p.protocolConfigs)
+	log.Info("Protocol configs", "configs", p.protocolConfig)
 
-	proverAddress := crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
-
-	chBufferSize := p.protocolConfigs.BlockMaxProposals
+	chBufferSize := p.protocolConfig.BlockMaxProposals
 	p.proofGenerationCh = make(chan *proofProducer.ProofWithHeader, chBufferSize)
 	p.assignmentExpiredCh = make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	p.proofSubmissionCh = make(chan *proofProducer.ProofRequestBody, p.cfg.Capacity)
@@ -152,27 +155,24 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		senderCfg.MaxRetrys = 0
 	}
 
-	txSender, err := sender.NewSender(p.ctx, senderCfg, p.rpc.L1, p.cfg.L1ProverPrivKey)
+	p.txSender, err = sender.NewSender(p.ctx, senderCfg, p.rpc.L1, p.cfg.L1ProverPrivKey)
 	if err != nil {
 		return err
 	}
-	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc, p.cfg.L1ProverPrivKey)
+	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc)
 
 	// Proof submitters
-	if err := p.initProofSubmitters(txSender, txBuilder); err != nil {
+	if err := p.initProofSubmitters(p.txSender, txBuilder); err != nil {
 		return err
 	}
 
 	// Proof contester
-	p.proofContester, err = proofSubmitter.NewProofContester(
+	p.proofContester = proofSubmitter.NewProofContester(
 		p.rpc,
-		txSender,
+		p.txSender,
 		p.cfg.Graffiti,
 		txBuilder,
 	)
-	if err != nil {
-		return err
-	}
 
 	// Prover server
 	if p.server, err = server.New(&server.NewProverServerOpts{
@@ -191,7 +191,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// Guardian prover heartbeat sender
-	if p.IsGuardianProver() {
+	if p.IsGuardianProver() && p.cfg.GuardianProverHealthCheckServerEndpoint != nil {
 		// Check guardian prover contract address is correct.
 		if _, err := p.rpc.GuardianProver.MinGuardians(&bind.CallOpts{Context: ctx}); err != nil {
 			return fmt.Errorf("failed to get MinGuardians from guardian prover contract: %w", err)
@@ -201,7 +201,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			p.cfg.L1ProverPrivKey,
 			p.cfg.GuardianProverHealthCheckServerEndpoint,
 			p.rpc,
-			proverAddress,
+			p.ProverAddress(),
 		)
 	}
 
@@ -271,7 +271,7 @@ func (p *Prover) eventLoop() {
 	defer forceProvingTicker.Stop()
 
 	// Channels
-	chBufferSize := p.protocolConfigs.BlockMaxProposals
+	chBufferSize := p.protocolConfig.BlockMaxProposals
 	blockProposedCh := make(chan *bindings.TaikoL1ClientBlockProposed, chBufferSize)
 	blockVerifiedCh := make(chan *bindings.TaikoL1ClientBlockVerified, chBufferSize)
 	transitionProvedCh := make(chan *bindings.TaikoL1ClientTransitionProved, chBufferSize)
@@ -328,30 +328,19 @@ func (p *Prover) Close(ctx context.Context) {
 
 // proveOp iterates through BlockProposed events
 func (p *Prover) proveOp() error {
-	firstTry := true
-
-	for firstTry || p.sharedState.GetReorgDetectedFlag() {
-		p.sharedState.SetReorgDetectedFlag(false)
-		firstTry = false
-
-		iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
-			Client:               p.rpc.L1,
-			TaikoL1:              p.rpc.TaikoL1,
-			StartHeight:          new(big.Int).SetUint64(p.sharedState.GetL1Current().Number.Uint64()),
-			OnBlockProposedEvent: p.blockProposedHandler.Handle,
-			BlockConfirmations:   &p.cfg.BlockConfirmations,
-		})
-		if err != nil {
-			log.Error("Failed to start event iterator", "event", "BlockProposed", "error", err)
-			return err
-		}
-
-		if err := iter.Iter(); err != nil {
-			return err
-		}
+	iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
+		Client:               p.rpc.L1,
+		TaikoL1:              p.rpc.TaikoL1,
+		StartHeight:          new(big.Int).SetUint64(p.sharedState.GetL1Current().Number.Uint64()),
+		OnBlockProposedEvent: p.blockProposedHandler.Handle,
+		BlockConfirmations:   &p.cfg.BlockConfirmations,
+	})
+	if err != nil {
+		log.Error("Failed to start event iterator", "event", "BlockProposed", "error", err)
+		return err
 	}
 
-	return nil
+	return iter.Iter()
 }
 
 // contestProofOp performs a proof contest operation.
@@ -364,7 +353,12 @@ func (p *Prover) contestProofOp(req *proofProducer.ContestRequestBody) error {
 		req.Meta,
 		req.Tier,
 	); err != nil {
-		log.Error("Request new proof contest error", "blockID", req.BlockID, "error", err)
+		log.Error(
+			"Request new proof contest error",
+			"blockID", req.BlockID,
+			"minTier", req.Meta.MinTier,
+			"error", err,
+		)
 		return err
 	}
 
@@ -378,7 +372,7 @@ func (p *Prover) requestProofOp(e *bindings.TaikoL1ClientBlockProposed, minTier 
 	}
 	if submitter := p.selectSubmitter(minTier); submitter != nil {
 		if err := submitter.RequestProof(p.ctx, e); err != nil {
-			log.Error("Request new proof error", "blockID", e.BlockId, "error", err)
+			log.Error("Request new proof error", "blockID", e.BlockId, "minTier", e.Meta.MinTier, "error", err)
 			return err
 		}
 
@@ -397,7 +391,12 @@ func (p *Prover) submitProofOp(proofWithHeader *proofProducer.ProofWithHeader) e
 	}
 
 	if err := submitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
-		log.Error("Submit proof error", "error", err)
+		log.Error(
+			"Submit proof error",
+			"blockID", proofWithHeader.BlockID,
+			"minTier", proofWithHeader.Meta.MinTier,
+			"error", err,
+		)
 		return err
 	}
 
@@ -443,7 +442,7 @@ func (p *Prover) IsGuardianProver() bool {
 
 // ProverAddress returns the current prover account address.
 func (p *Prover) ProverAddress() common.Address {
-	return crypto.PubkeyToAddress(p.cfg.L1ProverPrivKey.PublicKey)
+	return p.txSender.Address()
 }
 
 // withRetry retries the given function with prover backoff policy.
@@ -451,16 +450,7 @@ func (p *Prover) withRetry(f func() error) {
 	p.wg.Add(1)
 	go func() {
 		defer p.wg.Done()
-		err := backoff.Retry(
-			func() error {
-				if p.ctx.Err() != nil {
-					log.Error("Context is done, aborting", "error", p.ctx.Err())
-					return nil
-				}
-				return f()
-			},
-			backoff.WithMaxRetries(backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval), p.cfg.BackOffMaxRetrys),
-		)
+		err := backoff.Retry(f, p.backoff)
 		if err != nil {
 			log.Error("Operation failed", "error", err)
 		}

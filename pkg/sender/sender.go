@@ -144,14 +144,14 @@ func NewSender(ctx context.Context, cfg *Config, client *rpc.EthClient, priv *ec
 	return sender, nil
 }
 
-// CLose closes the sender.
+// Close closes the sender.
 func (s *Sender) Close() {
 	close(s.stopCh)
 	s.wg.Wait()
 }
 
 // GetOpts returns the transaction options of the sender.
-func (s *Sender) GetOpts() *bind.TransactOpts {
+func (s *Sender) GetOpts(ctx context.Context) *bind.TransactOpts {
 	return &bind.TransactOpts{
 		From:      s.opts.From,
 		Nonce:     s.opts.Nonce,
@@ -161,9 +161,14 @@ func (s *Sender) GetOpts() *bind.TransactOpts {
 		GasFeeCap: s.opts.GasFeeCap,
 		GasTipCap: s.opts.GasTipCap,
 		GasLimit:  s.opts.GasLimit,
-		Context:   s.opts.Context,
+		Context:   ctx,
 		NoSend:    s.opts.NoSend,
 	}
+}
+
+// Address returns the sender's address.
+func (s *Sender) Address() common.Address {
+	return s.opts.From
 }
 
 // TxToConfirmChannel returns a channel to wait the given transaction's confirmation.
@@ -195,6 +200,7 @@ func (s *Sender) GetUnconfirmedTx(txID string) *types.Transaction {
 
 // SendRawTransaction sends a transaction to the given Ethereum node.
 func (s *Sender) SendRawTransaction(
+	ctx context.Context,
 	nonce uint64,
 	target *common.Address,
 	value *big.Int,
@@ -211,7 +217,7 @@ func (s *Sender) SendRawTransaction(
 
 	var (
 		originalTx types.TxData
-		opts       = s.GetOpts()
+		opts       = s.GetOpts(ctx)
 		gasLimit   = s.GasLimit
 		err        error
 	)

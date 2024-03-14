@@ -2,6 +2,7 @@ package prover
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -10,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/pkg/sender"
 	handler "github.com/taikoxyz/taiko-client/prover/event_handler"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
@@ -51,15 +51,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return nil
 	}
 
-	// Start setting the allowance amount.
-	opts, err := bind.NewKeyedTransactorWithChainID(
-		p.cfg.L1ProverPrivKey,
-		p.rpc.L1.ChainID,
-	)
-	if err != nil {
-		return err
-	}
-	opts.Context = ctx
+	opts := p.txSender.GetOpts(ctx)
 
 	log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance.String(), "contract", contract)
 
@@ -72,15 +64,18 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return err
 	}
 
-	// Wait for the transaction receipt.
-	receipt, err := rpc.WaitReceipt(ctx, p.rpc.L1, tx)
+	id, err := p.txSender.SendTransaction(tx)
 	if err != nil {
 		return err
+	}
+	confirm := <-p.txSender.TxToConfirmChannel(id)
+	if confirm.Err != nil {
+		return confirm.Err
 	}
 
 	log.Info(
 		"Approved the contract for taiko token",
-		"txHash", receipt.TxHash.Hex(),
+		"txHash", confirm.Receipt.TxHash.Hex(),
 		"contract", contract,
 	)
 
@@ -111,26 +106,22 @@ func (p *Prover) initProofSubmitters(
 		)
 		switch tier.ID {
 		case encoding.TierOptimisticID:
-			producer = &proofProducer.OptimisticProofProducer{DummyProofProducer: new(proofProducer.DummyProofProducer)}
+			producer = &proofProducer.OptimisticProofProducer{}
 		case encoding.TierSgxID:
-			sgxProducer, err := proofProducer.NewSGXProducer(
-				p.cfg.RaikoHostEndpoint,
-				p.cfg.L1HttpEndpoint,
-				p.cfg.L1BeaconEndpoint,
-				p.cfg.L2HttpEndpoint,
-			)
-			if err != nil {
-				return err
+			producer = &proofProducer.SGXProofProducer{
+				RaikoHostEndpoint: p.cfg.RaikoHostEndpoint,
+				L1Endpoint:        p.cfg.L1HttpEndpoint,
+				L1BeaconEndpoint:  p.cfg.L1BeaconEndpoint,
+				L2Endpoint:        p.cfg.L2HttpEndpoint,
+				Dummy:             p.cfg.Dummy,
 			}
-			if p.cfg.Dummy {
-				sgxProducer.DummyProofProducer = new(proofProducer.DummyProofProducer)
-			}
-			producer = sgxProducer
 		case encoding.TierGuardianID:
 			producer = proofProducer.NewGuardianProofProducer(p.cfg.EnableLivenessBondProof)
+		default:
+			return fmt.Errorf("unsupported tier: %d", tier.ID)
 		}
 
-		if submitter, err = proofSubmitter.New(
+		if submitter, err = proofSubmitter.NewProofSubmitter(
 			p.rpc,
 			producer,
 			p.proofGenerationCh,

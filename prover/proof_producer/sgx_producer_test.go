@@ -32,10 +32,8 @@ func TestSGXProducerRequestProof(t *testing.T) {
 	}
 
 	var (
-		producer = &SGXProofProducer{
-			DummyProofProducer: &DummyProofProducer{},
-		}
-		blockID = common.Big32
+		producer = &SGXProofProducer{Dummy: true}
+		blockID  = common.Big32
 	)
 	res, err := producer.RequestProof(
 		context.Background(),

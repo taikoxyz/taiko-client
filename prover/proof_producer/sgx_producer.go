@@ -27,7 +27,8 @@ type SGXProofProducer struct {
 	L1Endpoint        string // a L1 node RPC endpoint
 	L1BeaconEndpoint  string // a L1 beacon node RPC endpoint
 	L2Endpoint        string // a L2 execution engine's RPC endpoint
-	*DummyProofProducer
+	Dummy             bool
+	DummyProofProducer
 }
 
 // SGXRequestProofBody represents the JSON body for requesting the proof.
@@ -66,21 +67,6 @@ type RaikoHostOutput struct {
 	Proof string `json:"proof"`
 }
 
-// NewSGXProducer creates a new `SGXProofProducer` instance.
-func NewSGXProducer(
-	raikoHostEndpoint string,
-	l1Endpoint string,
-	l1BeaconEndpoint string,
-	l2Endpoint string,
-) (*SGXProofProducer, error) {
-	return &SGXProofProducer{
-		RaikoHostEndpoint: raikoHostEndpoint,
-		L1Endpoint:        l1Endpoint,
-		L1BeaconEndpoint:  l1BeaconEndpoint,
-		L2Endpoint:        l2Endpoint,
-	}, nil
-}
-
 // RequestProof implements the ProofProducer interface.
 func (s *SGXProofProducer) RequestProof(
 	ctx context.Context,
@@ -97,7 +83,7 @@ func (s *SGXProofProducer) RequestProof(
 		"hash", header.Hash(),
 	)
 
-	if s.DummyProofProducer != nil {
+	if s.Dummy {
 		return s.DummyProofProducer.RequestProof(opts, blockID, meta, header, s.Tier())
 	}
 
@@ -154,7 +140,7 @@ func (s *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 			"producer", "SGXProofProducer",
 		)
 		return nil
-	}, backoff.NewConstantBackOff(proofPollingInterval)); err != nil {
+	}, backoff.WithContext(backoff.NewConstantBackOff(proofPollingInterval), ctx)); err != nil {
 		return nil, err
 	}
 
@@ -213,9 +199,4 @@ func (s *SGXProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOu
 // Tier implements the ProofProducer interface.
 func (s *SGXProofProducer) Tier() uint16 {
 	return encoding.TierSgxID
-}
-
-// Cancellable implements the ProofProducer interface.
-func (s *SGXProofProducer) Cancellable() bool {
-	return false
 }

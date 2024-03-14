@@ -150,7 +150,10 @@ func (h *BlockProposedEventHandler) Handle(
 				}
 				return nil
 			},
-			backoff.WithMaxRetries(backoff.NewConstantBackOff(h.backOffRetryInterval), h.backOffMaxRetrys),
+			backoff.WithContext(
+				backoff.WithMaxRetries(backoff.NewConstantBackOff(h.backOffRetryInterval), h.backOffMaxRetrys),
+				ctx,
+			),
 		); err != nil {
 			log.Error("Handle new BlockProposed event error", "error", err)
 		}
@@ -187,7 +190,6 @@ func (h *BlockProposedEventHandler) checkL1Reorg(
 		} else {
 			h.sharedState.SetLastHandledBlockID(reorgCheckResult.LastHandledBlockIDToReset.Uint64())
 		}
-		h.sharedState.SetReorgDetectedFlag(true)
 		return errL1Reorged
 	}
 
@@ -358,7 +360,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 
 // ========================= Guardian Prover =========================
 
-// NewBlockProposedEventHandlerOps is the options for creating a new BlockProposedEventHandler.
+// NewBlockProposedGuardianEventHandlerOps is the options for creating a new BlockProposedEventHandler.
 type NewBlockProposedGuardianEventHandlerOps struct {
 	*NewBlockProposedEventHandlerOps
 	GuardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater
@@ -370,7 +372,7 @@ type BlockProposedGuaridanEventHandler struct {
 	GuardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater
 }
 
-// NewBlockProposedEventHandler creates a new BlockProposedEventHandler instance.
+// NewBlockProposedEventGuardianHandler creates a new BlockProposedEventHandler instance.
 func NewBlockProposedEventGuardianHandler(
 	opts *NewBlockProposedGuardianEventHandlerOps,
 ) *BlockProposedGuaridanEventHandler {
