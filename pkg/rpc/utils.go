@@ -26,6 +26,7 @@ var (
 	waitReceiptPollingInterval = 3 * time.Second
 	defaultWaitReceiptTimeout  = 1 * time.Minute
 	BlobBytes                  = params.BlobTxBytesPerFieldElement * params.BlobTxFieldElementsPerBlob
+	MinBlobFeeCap              = big.NewInt(1)
 )
 
 // GetProtocolStateVariables gets the protocol states from TaikoL1 contract.

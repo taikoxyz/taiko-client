@@ -95,8 +95,8 @@ func (c *EthClient) CreateBlobTx(
 	}
 
 	blobFeeCap := rawTx.BlobGasFeeCap()
-	if blobFeeCap == nil || blobFeeCap.Cmp(big.NewInt(1)) < 0 {
-		blobFeeCap = big.NewInt(1)
+	if blobFeeCap == nil || blobFeeCap.Cmp(MinBlobFeeCap) < 0 {
+		blobFeeCap = new(big.Int).Set(MinBlobFeeCap)
 	}
 
 	return &types.BlobTx{
