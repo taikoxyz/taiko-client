@@ -94,6 +94,11 @@ func (c *EthClient) CreateBlobTx(
 		return nil, err
 	}
 
+	blobFeeCap := rawTx.BlobGasFeeCap()
+	if blobFeeCap == nil || blobFeeCap.Cmp(big.NewInt(1)) < 0 {
+		blobFeeCap = big.NewInt(1)
+	}
+
 	return &types.BlobTx{
 		ChainID:    uint256.MustFromBig(rawTx.ChainId()),
 		Nonce:      rawTx.Nonce(),
@@ -104,7 +109,7 @@ func (c *EthClient) CreateBlobTx(
 		Value:      uint256.MustFromBig(rawTx.Value()),
 		Data:       rawTx.Data(),
 		AccessList: rawTx.AccessList(),
-		BlobFeeCap: uint256.MustFromBig(rawTx.BlobGasFeeCap()),
+		BlobFeeCap: uint256.MustFromBig(blobFeeCap),
 		BlobHashes: sidecar.BlobHashes(),
 		Sidecar:    sidecar,
 	}, nil
