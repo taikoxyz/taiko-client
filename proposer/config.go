@@ -271,7 +271,7 @@ func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
 			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 			Timeout:           timeout,
 		},
-		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADRESS")),
+		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:             common.HexToAddress(l2SuggestedFeeRecipient),
 		ExtraData:                           c.String(flags.ExtraData.Name),
