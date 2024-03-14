@@ -88,7 +88,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return err
 	}
 
-	log.Info("NewProofSubmitter allowance for the contract", "allowance", allowance.String(), "contract", contract)
+	log.Info("New allowance for the contract", "allowance", allowance.String(), "contract", contract)
 
 	return nil
 }
