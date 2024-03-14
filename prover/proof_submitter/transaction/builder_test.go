@@ -15,7 +15,7 @@ func (s *TransactionTestSuite) TestBuildTxs() {
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
 		false,
-	)(s.sender.innerSender.GetOpts(context.TODO()))
+	)(s.sender.innerSender.GetOpts(context.Background()))
 	s.NotNil(err)
 
 	_, err = s.builder.Build(
@@ -24,6 +24,6 @@ func (s *TransactionTestSuite) TestBuildTxs() {
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
 		true,
-	)(s.sender.innerSender.GetOpts(context.TODO()))
+	)(s.sender.innerSender.GetOpts(context.Background()))
 	s.NotNil(err)
 }

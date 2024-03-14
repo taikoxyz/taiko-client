@@ -25,7 +25,7 @@ type SenderTestSuite struct {
 
 func (s *SenderTestSuite) TestSendTransaction() {
 	var (
-		opts   = s.sender.GetOpts(context.TODO())
+		opts   = s.sender.GetOpts(context.Background())
 		client = s.RPCClient.L1
 		eg     errgroup.Group
 	)
@@ -66,7 +66,14 @@ func (s *SenderTestSuite) TestSendRawTransaction() {
 		i := i
 		eg.Go(func() error {
 			addr := common.BigToAddress(big.NewInt(int64(i)))
-			_, err := s.sender.SendRawTransaction(nonce+uint64(i), &addr, big.NewInt(1), nil, nil)
+			_, err := s.sender.SendRawTransaction(
+				context.Background(),
+				nonce+uint64(i),
+				&addr,
+				big.NewInt(1),
+				nil,
+				nil,
+			)
 			return err
 		})
 	}
@@ -82,7 +89,7 @@ func (s *SenderTestSuite) TestSendRawTransaction() {
 func (s *SenderTestSuite) TestReplacement() {
 	send := s.sender
 	client := s.RPCClient.L1
-	opts := send.GetOpts(context.TODO())
+	opts := send.GetOpts(context.Background())
 
 	// Let max gas price be 2 times of the gas fee cap.
 	send.MaxGasFee = opts.GasFeeCap.Uint64() * 2
@@ -113,13 +120,14 @@ func (s *SenderTestSuite) TestReplacement() {
 	err = client.SendTransaction(context.Background(), rawTx)
 	s.Nil(err)
 
+	ctx := context.Background()
 	// Replace the transaction with a higher nonce.
-	_, err = send.SendRawTransaction(nonce, &common.Address{}, big.NewInt(1), nil, nil)
+	_, err = send.SendRawTransaction(ctx, nonce, &common.Address{}, big.NewInt(1), nil, nil)
 	s.Nil(err)
 
 	time.Sleep(time.Second * 6)
 	// Send a transaction with a next nonce and let all the transactions be confirmed.
-	_, err = send.SendRawTransaction(nonce-1, &common.Address{}, big.NewInt(1), nil, nil)
+	_, err = send.SendRawTransaction(ctx, nonce-1, &common.Address{}, big.NewInt(1), nil, nil)
 	s.Nil(err)
 
 	for _, confirmCh := range send.TxToConfirmChannels() {
@@ -139,7 +147,7 @@ func (s *SenderTestSuite) TestReplacement() {
 func (s *SenderTestSuite) TestNonceTooLow() {
 	client := s.RPCClient.L1
 	send := s.sender
-	opts := s.sender.GetOpts(context.TODO())
+	opts := s.sender.GetOpts(context.Background())
 
 	nonce, err := client.NonceAt(context.Background(), opts.From, nil)
 	s.Nil(err)
@@ -150,7 +158,14 @@ func (s *SenderTestSuite) TestNonceTooLow() {
 		return
 	}
 
-	txID, err := send.SendRawTransaction(nonce-3, &common.Address{}, big.NewInt(1), nil, nil)
+	txID, err := send.SendRawTransaction(
+		context.Background(),
+		nonce-3,
+		&common.Address{},
+		big.NewInt(1),
+		nil,
+		nil,
+	)
 	s.Nil(err)
 	confirm := <-send.TxToConfirmChannel(txID)
 	s.Nil(confirm.Err)
