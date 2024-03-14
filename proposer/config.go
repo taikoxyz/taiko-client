@@ -137,7 +137,7 @@ func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
 	}
 
 	l1ProposerPrivKey, err := crypto.ToECDSA(
-		common.Hex2Bytes(os.Getenv("L1_PROPOSER_PRIVATE_KEY")),
+		common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("config invalid L1 proposer private key: %w, %s", err, os.Getenv("L1_PROPOSER_PRIVATE_KEY"))
@@ -264,14 +264,14 @@ func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
 
 	return &Config{
 		ClientConfig: &rpc.ClientConfig{
-			L1Endpoint:        os.Getenv("L1_ENDPOINT_WS"),
-			L2Endpoint:        os.Getenv("L2_ENDPOINT_HTTP"),
+			L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+			L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
 			TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_L1_ADDRESS")),
+			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 			Timeout:           timeout,
 		},
-		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_L1_ADRESS")),
+		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADRESS")),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:             common.HexToAddress(l2SuggestedFeeRecipient),
 		ExtraData:                           c.String(flags.ExtraData.Name),

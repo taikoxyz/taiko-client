@@ -143,7 +143,9 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
 }
 
 func (s *ProposerTestSuite) TestNewConfigFromConfig() {
-	goldenTouchAddress, err := s.RPCClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
+	l1Proposer, err := crypto.ToECDSA(
+		common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")),
+	)
 	s.Nil(err)
 
 	app := s.SetupApp()
@@ -156,11 +158,11 @@ func (s *ProposerTestSuite) TestNewConfigFromConfig() {
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
 		s.Equal(taikoToken, c.TaikoTokenAddress.String())
-		s.Equal(goldenTouchAddress, crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
-		s.Equal(goldenTouchAddress, c.L2SuggestedFeeRecipient)
+		s.Equal(crypto.PubkeyToAddress(l1Proposer.PublicKey), crypto.PubkeyToAddress(c.L1ProposerPrivKey.PublicKey))
+		s.Equal(common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")), c.L2SuggestedFeeRecipient)
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
 		s.Equal(1, len(c.LocalAddresses))
-		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
+		s.Equal(common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")), c.LocalAddresses[0])
 		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
 		s.Equal(5*time.Second, c.Timeout)
 		s.Equal(10*time.Second, c.WaitReceiptTimeout)
