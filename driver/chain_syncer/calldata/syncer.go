@@ -38,6 +38,7 @@ type Syncer struct {
 	txListValidator   *txListValidator.TxListValidator         // Transactions list validator
 	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
+	reorgDetectedFlag   bool
 }
 
 // NewSyncer creates a new syncer instance.
@@ -74,6 +75,25 @@ func NewSyncer(
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
 // L1 block heights, and then tries inserting them into L2 execution engine's blockchain.
 func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
+	for {
+		if err := s.processL1Blocks(ctx, l1End); err != nil {
+			return err
+		}
+
+		// If the L1 chain has been reorged, we process the new L1 blocks again with
+		// the new L1Current cursor.
+		if s.reorgDetectedFlag {
+			s.reorgDetectedFlag = false
+			continue
+		}
+
+		return nil
+	}
+}
+
+// processL1Blocks is the inner method which responsible for processing
+// all new L1 blocks.
+func (s *Syncer) processL1Blocks(ctx context.Context, l1End *types.Header) error {
 	startL1Current := s.state.GetL1Current()
 	// If there is a L1 reorg, sometimes this will happen.
 	if startL1Current.Number.Uint64() >= l1End.Number.Uint64() && startL1Current.Hash() != l1End.Hash() {
@@ -111,8 +131,11 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 		return err
 	}
 
-	s.state.SetL1Current(l1End)
-	metrics.DriverL1CurrentHeightGauge.Update(s.state.GetL1Current().Number.Int64())
+	// If there is a L1 reorg, we don't update the L1Current cursor.
+	if !s.reorgDetectedFlag {
+		s.state.SetL1Current(l1End)
+		metrics.DriverL1CurrentHeightGauge.Update(s.state.GetL1Current().Number.Int64())
+	}
 
 	return nil
 }
@@ -149,6 +172,7 @@ func (s *Syncer) onBlockProposed(
 			)
 			s.state.SetL1Current(reorgCheckResult.L1CurrentToReset)
 			s.lastInsertedBlockID = reorgCheckResult.LastHandledBlockIDToReset
+			s.reorgDetectedFlag = true
 			endIter()
 
 			return nil
