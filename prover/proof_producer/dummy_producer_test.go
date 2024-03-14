@@ -30,7 +30,7 @@ func TestDummyProducerRequestProof(t *testing.T) {
 	}
 
 	var (
-		producer        = &DummyProofProducer{}
+		producer        = DummyProofProducer{}
 		tier     uint16 = 1024
 		blockID         = common.Big32
 	)

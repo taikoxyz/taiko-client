@@ -150,7 +150,10 @@ func (h *BlockProposedEventHandler) Handle(
 				}
 				return nil
 			},
-			backoff.WithMaxRetries(backoff.NewConstantBackOff(h.backOffRetryInterval), h.backOffMaxRetrys),
+			backoff.WithContext(
+				backoff.WithMaxRetries(backoff.NewConstantBackOff(h.backOffRetryInterval), h.backOffMaxRetrys),
+				ctx,
+			),
 		); err != nil {
 			log.Error("Handle new BlockProposed event error", "error", err)
 		}
@@ -357,7 +360,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 
 // ========================= Guardian Prover =========================
 
-// NewBlockProposedEventHandlerOps is the options for creating a new BlockProposedEventHandler.
+// NewBlockProposedGuardianEventHandlerOps is the options for creating a new BlockProposedEventHandler.
 type NewBlockProposedGuardianEventHandlerOps struct {
 	*NewBlockProposedEventHandlerOps
 	GuardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater

@@ -322,7 +322,7 @@ func (p *Proposer) ProposeTxList(
 	tx, err := p.txBuilder.Build(
 		ctx,
 		p.tierFees,
-		p.sender.GetOpts(),
+		p.sender.GetOpts(p.ctx),
 		p.IncludeParentMetaHash,
 		txListBytes,
 	)

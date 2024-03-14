@@ -1,10 +1,8 @@
 package transaction
 
 import (
-	"context"
 	"errors"
 	"math/big"
-	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -20,12 +18,11 @@ var (
 )
 
 // TxBuilder will build a transaction with the given nonce.
-type TxBuilder func() (*types.Transaction, error)
+type TxBuilder func(txOpts *bind.TransactOpts) (*types.Transaction, error)
 
 // ProveBlockTxBuilder is responsible for building ProveBlock transactions.
 type ProveBlockTxBuilder struct {
-	rpc   *rpc.Client
-	mutex sync.Mutex
+	rpc *rpc.Client
 }
 
 // NewProveBlockTxBuilder creates a new ProveBlockTxBuilder instance.
@@ -37,18 +34,13 @@ func NewProveBlockTxBuilder(
 
 // Build creates a new TaikoL1.ProveBlock transaction with the given nonce.
 func (a *ProveBlockTxBuilder) Build(
-	ctx context.Context,
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,
 	transition *bindings.TaikoDataTransition,
 	tierProof *bindings.TaikoDataTierProof,
-	txOpts *bind.TransactOpts,
 	guardian bool,
 ) TxBuilder {
-	return func() (*types.Transaction, error) {
-		a.mutex.Lock()
-		defer a.mutex.Unlock()
-
+	return func(txOpts *bind.TransactOpts) (*types.Transaction, error) {
 		var (
 			tx  *types.Transaction
 			err error
@@ -64,7 +56,6 @@ func (a *ProveBlockTxBuilder) Build(
 			"guardian", guardian,
 		)
 
-		txOpts.Context = ctx
 		if !guardian {
 			input, err := encoding.EncodeProveBlockInput(meta, transition, tierProof)
 			if err != nil {
