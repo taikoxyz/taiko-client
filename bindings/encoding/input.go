@@ -55,14 +55,6 @@ var (
 			Type: "uint64",
 		},
 		{
-			Name: "txListByteOffset",
-			Type: "uint24",
-		},
-		{
-			Name: "txListByteSize",
-			Type: "uint24",
-		},
-		{
 			Name: "minTier",
 			Type: "uint16",
 		},
