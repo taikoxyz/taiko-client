@@ -43,11 +43,12 @@ func (s *Sender) AdjustGasFee(txData types.TxData) {
 
 // AdjustBlobGasFee adjusts the gas fee cap and gas tip cap of the given transaction with the configured.
 func (s *Sender) AdjustBlobGasFee(txData types.TxData) {
-	rate := s.GasGrowthRate
+	rate := s.GasGrowthRate + 100
 	switch baseTx := txData.(type) {
 	case *types.BlobTx:
 		blobFeeCap := baseTx.BlobFeeCap.Uint64()
-		blobFeeCap += blobFeeCap * rate / 100
+		// Use Max check is to catch is situation: +1 is necessary, if blobFeeCap can't increase.
+		blobFeeCap = utils.Max(blobFeeCap*rate/100, blobFeeCap+1)
 		blobFeeCap = utils.Min(blobFeeCap, s.MaxBlobFee)
 		baseTx.BlobFeeCap = uint256.NewInt(blobFeeCap)
 	default:
