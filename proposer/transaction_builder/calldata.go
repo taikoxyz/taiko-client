@@ -84,15 +84,11 @@ func (b *CalldataTransactionBuilder) Build(
 
 	// ABI encode the TaikoL1.proposeBlock parameters.
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
-		AssignedProver:    assignedProver,
-		Coinbase:          b.l2SuggestedFeeRecipient,
-		ExtraData:         rpc.StringToBytes32(b.extraData),
-		TxListByteOffset:  common.Big0,
-		TxListByteSize:    common.Big0,
-		BlobHash:          [32]byte{},
-		CacheBlobForReuse: false,
-		ParentMetaHash:    parentMetaHash,
-		HookCalls:         []encoding.HookCall{{Hook: b.assignmentHookAddress, Data: hookInputData}},
+		AssignedProver: assignedProver,
+		Coinbase:       b.l2SuggestedFeeRecipient,
+		ExtraData:      rpc.StringToBytes32(b.extraData),
+		ParentMetaHash: parentMetaHash,
+		HookCalls:      []encoding.HookCall{{Hook: b.assignmentHookAddress, Data: hookInputData}},
 	})
 	if err != nil {
 		return nil, err

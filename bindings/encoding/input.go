@@ -121,22 +121,6 @@ var (
 			Type: "bytes32",
 		},
 		{
-			Name: "blobHash",
-			Type: "bytes32",
-		},
-		{
-			Name: "txListByteOffset",
-			Type: "uint24",
-		},
-		{
-			Name: "txListByteSize",
-			Type: "uint24",
-		},
-		{
-			Name: "cacheBlobForReuse",
-			Type: "bool",
-		},
-		{
 			Name: "parentMetaHash",
 			Type: "bytes32",
 		},

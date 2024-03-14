@@ -44,30 +44,30 @@ type Syncer struct {
 // NewSyncer creates a new syncer instance.
 func NewSyncer(
 	ctx context.Context,
-	rpc *rpc.Client,
+	client *rpc.Client,
 	state *state.State,
 	progressTracker *beaconsync.SyncProgressTracker,
 ) (*Syncer, error) {
-	configs, err := rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
+	configs, err := client.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
 	}
 
-	constructor, err := anchorTxConstructor.New(rpc)
+	constructor, err := anchorTxConstructor.New(client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize anchor constructor: %w", err)
 	}
 
 	return &Syncer{
 		ctx:               ctx,
-		rpc:               rpc,
+		rpc:               client,
 		state:             state,
 		progressTracker:   progressTracker,
 		anchorConstructor: constructor,
 		txListValidator: txListValidator.NewTxListValidator(
 			uint64(configs.BlockMaxGasLimit),
-			configs.BlockMaxTxListBytes.Uint64(),
-			rpc.L2.ChainID,
+			rpc.BlockMaxTxListBytes,
+			client.L2.ChainID,
 		),
 	}, nil
 }
