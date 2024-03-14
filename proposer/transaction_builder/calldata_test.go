@@ -13,7 +13,7 @@ func (s *TransactionBuilderTestSuite) TestBuildCalldata() {
 		{Tier: encoding.TierOptimisticID, Fee: common.Big256},
 		{Tier: encoding.TierSgxID, Fee: common.Big256},
 		{Tier: encoding.TierSgxAndZkVMID, Fee: common.Big257},
-	}, s.sender.GetOpts(), false, []byte{1})
+	}, s.sender.GetOpts(context.Background()), false, []byte{1})
 	s.Nil(err)
 	s.Equal(types.DynamicFeeTxType, int(tx.Type()))
 }

@@ -133,7 +133,8 @@ func (i *BlockBatchIterator) Iter() error {
 	iterOp := func() error {
 		for {
 			if i.ctx.Err() != nil {
-				log.Warn("Block batch iterator closed",
+				log.Warn(
+					"Block batch iterator closed",
 					"error", i.ctx.Err(),
 					"start", i.startHeight,
 					"end", i.endHeight,

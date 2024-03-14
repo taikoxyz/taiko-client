@@ -15,19 +15,13 @@ import (
 // GuardianProofProducer always returns an optimistic (dummy) proof.
 type GuardianProofProducer struct {
 	returnLivenessBond bool
-	*DummyProofProducer
+	DummyProofProducer
 }
 
 func NewGuardianProofProducer(returnLivenessBond bool) *GuardianProofProducer {
-	gp := &GuardianProofProducer{
+	return &GuardianProofProducer{
 		returnLivenessBond: returnLivenessBond,
 	}
-
-	if !returnLivenessBond {
-		gp.DummyProofProducer = new(DummyProofProducer)
-	}
-
-	return gp
 }
 
 // RequestProof implements the ProofProducer interface.
@@ -63,9 +57,4 @@ func (g *GuardianProofProducer) RequestProof(
 // Tier implements the ProofProducer interface.
 func (g *GuardianProofProducer) Tier() uint16 {
 	return encoding.TierGuardianID
-}
-
-// Cancellable implements the ProofProducer interface.
-func (g *GuardianProofProducer) Cancellable() bool {
-	return false
 }

@@ -10,24 +10,20 @@ import (
 
 func (s *TransactionTestSuite) TestBuildTxs() {
 	_, err := s.builder.Build(
-		context.Background(),
 		common.Big256,
-		&bindings.TaikoDataBlockMetadata{TxListByteOffset: common.Big1, TxListByteSize: common.Big256},
+		&bindings.TaikoDataBlockMetadata{},
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
-		s.sender.innerSender.GetOpts(),
 		false,
-	)()
+	)(s.sender.innerSender.GetOpts(context.Background()))
 	s.NotNil(err)
 
 	_, err = s.builder.Build(
-		context.Background(),
 		common.Big256,
-		&bindings.TaikoDataBlockMetadata{TxListByteOffset: common.Big1, TxListByteSize: common.Big256},
+		&bindings.TaikoDataBlockMetadata{},
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
-		s.sender.innerSender.GetOpts(),
 		true,
-	)()
+	)(s.sender.innerSender.GetOpts(context.Background()))
 	s.NotNil(err)
 }

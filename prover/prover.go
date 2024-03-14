@@ -177,15 +177,12 @@ func (p *Prover) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 	}
 
 	// Proof contester
-	p.proofContester, err = proofSubmitter.NewProofContester(
+	p.proofContester = proofSubmitter.NewProofContester(
 		p.rpc,
 		p.txSender,
 		p.cfg.Graffiti,
 		txBuilder,
 	)
-	if err != nil {
-		return err
-	}
 
 	// Prover server
 	if p.server, err = server.New(&server.NewProverServerOpts{

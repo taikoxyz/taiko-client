@@ -65,6 +65,5 @@ type ProofProducer interface {
 		meta *bindings.TaikoDataBlockMetadata,
 		header *types.Header,
 	) (*ProofWithHeader, error)
-	Cancellable() bool
 	Tier() uint16
 }

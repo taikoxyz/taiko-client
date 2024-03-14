@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -38,8 +39,7 @@ func (s *TransactionTestSuite) SetupTest() {
 	txSender, err := sender.NewSender(context.Background(), &sender.Config{}, s.RPCClient.L1, l1ProverPrivKey)
 	s.Nil(err)
 
-	s.sender, err = NewSender(s.RPCClient, txSender)
-	s.Nil(err)
+	s.sender = NewSender(s.RPCClient, txSender)
 
 	s.builder = NewProveBlockTxBuilder(s.RPCClient)
 }
@@ -65,7 +65,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 			Header:  &types.Header{},
 			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
-		func() (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
+		func(*bind.TransactOpts) (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
 	))
 
 	s.Nil(s.sender.Send(
@@ -76,7 +76,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 			Header:  &types.Header{},
 			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
-		func() (*types.Transaction, error) {
+		func(*bind.TransactOpts) (*types.Transaction, error) {
 			height, err := s.RPCClient.L1.BlockNumber(context.Background())
 			s.Nil(err)
 

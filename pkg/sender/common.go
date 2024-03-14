@@ -13,38 +13,46 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
-// adjustGas adjusts the gas fee cap and gas tip cap of the given transaction with the configured
+// AdjustGasFee adjusts the gas fee cap and gas tip cap of the given transaction with the configured
 // growth rate.
-func (s *Sender) adjustGas(txData types.TxData) {
-	rate := s.GasGrowthRate + 100
+func (s *Sender) AdjustGasFee(txData types.TxData) {
+	rate := s.GasGrowthRate
 	switch baseTx := txData.(type) {
 	case *types.DynamicFeeTx:
 		gasFeeCap := baseTx.GasFeeCap.Int64()
-		gasFeeCap = gasFeeCap / 100 * int64(rate)
-		gasFeeCap = utils.Min(gasFeeCap, int64(s.MaxGasFee))
-		baseTx.GasFeeCap = big.NewInt(gasFeeCap)
+		gasFeeCap += gasFeeCap * int64(rate) / 100
+		baseTx.GasFeeCap = big.NewInt(utils.Min(gasFeeCap, int64(s.MaxGasFee)))
 
 		gasTipCap := baseTx.GasTipCap.Int64()
-		gasTipCap = gasTipCap / 100 * int64(rate)
+		gasTipCap += gasTipCap * int64(rate) / 100
 		gasTipCap = utils.Min(gasFeeCap, utils.Min(gasTipCap, int64(s.MaxGasFee)))
 		baseTx.GasTipCap = big.NewInt(gasTipCap)
 	case *types.BlobTx:
 		gasFeeCap := baseTx.GasFeeCap.Uint64()
-		gasFeeCap = gasFeeCap / 100 * rate
-		gasFeeCap = utils.Min(gasFeeCap, s.MaxGasFee)
-		baseTx.GasFeeCap = uint256.NewInt(gasFeeCap)
+		gasFeeCap += gasFeeCap * rate / 100
+		baseTx.GasFeeCap = uint256.NewInt(utils.Min(gasFeeCap, s.MaxGasFee))
 
 		gasTipCap := baseTx.GasTipCap.Uint64()
-		gasTipCap = gasTipCap / 100 * rate
+		gasTipCap += gasTipCap * rate / 100
 		gasTipCap = utils.Min(gasFeeCap, utils.Min(gasTipCap, s.MaxGasFee))
 		baseTx.GasTipCap = uint256.NewInt(gasTipCap)
+	default:
+		log.Warn("Unsupported transaction type when adjust gasFeeCap and gasTipCap", "from", s.opts.From)
+	}
+}
 
+// AdjustBlobGasFee adjusts the gas fee cap and gas tip cap of the given transaction with the configured.
+func (s *Sender) AdjustBlobGasFee(txData types.TxData) {
+	rate := s.GasGrowthRate + 100
+	switch baseTx := txData.(type) {
+	case *types.BlobTx:
 		blobFeeCap := baseTx.BlobFeeCap.Uint64()
-		blobFeeCap = blobFeeCap / 100 * rate
+		// Use Max check is to catch is situation: +1 is necessary, if blobFeeCap can't increase.
+		blobFeeCap = utils.Max(blobFeeCap*rate/100, blobFeeCap+1)
 		blobFeeCap = utils.Min(blobFeeCap, s.MaxBlobFee)
 		baseTx.BlobFeeCap = uint256.NewInt(blobFeeCap)
 	default:
-		log.Warn("Unsupported transaction type when adjust gas fee", "from", s.opts.From)
+		log.Warn("Unsupported transaction type when adjust blobGasFeeCap", "from", s.opts.From)
 	}
 }
 
