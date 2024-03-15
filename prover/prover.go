@@ -155,7 +155,7 @@ func (p *Prover) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 		GasGrowthRate:     p.cfg.ProveBlockTxReplacementGasGrowthRate,
 	}
 	if p.cfg.ProveBlockGasLimit != nil {
-		senderCfg.GasLimit = *p.cfg.ProveBlockGasLimit
+		senderCfg.GasLimit = p.cfg.ProveBlockGasLimit.Uint64()
 	}
 	if p.cfg.ProveBlockMaxTxGasFeeCap != nil {
 		senderCfg.MaxGasFee = p.cfg.ProveBlockMaxTxGasFeeCap.Uint64()

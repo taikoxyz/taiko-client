@@ -16,7 +16,7 @@ import (
 var (
 	l1WsEndpoint     = os.Getenv("L1_NODE_WS_ENDPOINT")
 	l1HttpEndpoint   = os.Getenv("L1_NODE_HTTP_ENDPOINT")
-	l1BeaconEndpoint = os.Getenv("L1_BEACON_ENDPOINT")
+	l1BeaconEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
 	l2WsEndpoint     = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
 	l2HttpEndpoint   = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 	l1NodeVersion    = "1.0.0"
@@ -134,8 +134,8 @@ func (s *ProverTestSuite) TestNewConfigFromConfig() {
 		s.Equal(uint64(8), c.Capacity)
 		s.Equal(uint64(minTierFee), c.MinOptimisticTierFee.Uint64())
 		s.Equal(uint64(minTierFee), c.MinSgxTierFee.Uint64())
-		s.Equal(uint64(100000), c.ProveBlockGasLimit)
-		s.Equal(uint64(3), c.ProveBlockTxReplacementGasGrowthRate)
+		s.Equal(uint64(100000), c.ProveBlockGasLimit.Uint64())
+		s.Equal(uint64(50), c.ProveBlockTxReplacementGasGrowthRate)
 		s.Equal(uint64(256), c.ProveBlockMaxTxGasFeeCap.Uint64())
 		s.Equal(c.L1NodeVersion, l1NodeVersion)
 		s.Equal(c.L2NodeVersion, l2NodeVersion)

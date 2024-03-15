@@ -43,7 +43,7 @@ type Config struct {
 	EnableLivenessBondProof                 bool
 	RPCTimeout                              time.Duration
 	WaitReceiptTimeout                      time.Duration
-	ProveBlockGasLimit                      *uint64
+	ProveBlockGasLimit                      *big.Int
 	ProveBlockTxReplacementGasGrowthRate    uint64
 	ProveBlockMaxTxGasFeeCap                *big.Int
 	HTTPServerPort                          uint64
@@ -78,10 +78,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		startingBlockID = new(big.Int).SetUint64(c.Uint64(flags.StartingBlockID.Name))
 	}
 
-	var proveBlockTxGasLimit *uint64
+	var proveBlockTxGasLimit *big.Int
 	if c.IsSet(flags.ProveBlockTxGasLimit.Name) {
-		gasLimit := c.Uint64(flags.ProveBlockTxGasLimit.Name)
-		proveBlockTxGasLimit = &gasLimit
+		proveBlockTxGasLimit = new(big.Int).SetUint64(c.Uint64(flags.ProveBlockTxGasLimit.Name))
 	}
 
 	proveBlockTxReplacementMultiplier := c.Uint64(flags.TxReplacementGasGrowthRate.Name)
@@ -251,14 +250,13 @@ func NewConfigFromConfigFile(path string) (*Config, error) {
 		return nil, fmt.Errorf("error parsing WAIT_RECEIPT_TIMEOUT: %w", err)
 	}
 
-	var proveBlockTxGasLimit *uint64
+	var proveBlockTxGasLimit *big.Int
 	if os.Getenv("PROVE_BLOCK_TX_GAS_LIMIT") != "" {
 		limit, err := strconv.ParseUint(os.Getenv("PROVE_BLOCK_TX_GAS_LIMIT"), 0, 64)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing PROVE_BLOCK_TX_GAS_LIMIT %w", err)
 		}
-		gasLimit := limit
-		proveBlockTxGasLimit = &gasLimit
+		proveBlockTxGasLimit = new(big.Int).SetUint64(limit)
 	}
 
 	capacity, err := strconv.ParseUint(os.Getenv("PROVER_CAPACITY"), 0, 64)
@@ -375,7 +373,7 @@ func NewConfigFromConfigFile(path string) (*Config, error) {
 	return &Config{
 		L1WsEndpoint:                            os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L1HttpEndpoint:                          os.Getenv("L1_NODE_HTTP_ENDPOINT"),
-		L1BeaconEndpoint:                        os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L1BeaconEndpoint:                        os.Getenv("L1_BEACON_ENDPOINT"),
 		L2WsEndpoint:                            os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		L2HttpEndpoint:                          os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
 		TaikoL1Address:                          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
