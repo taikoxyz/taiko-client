@@ -83,7 +83,7 @@ func (h *TransitionContestedEventHandler) Handle(
 	}
 
 	// If the proof is invalid, we contest it.
-	blockInfo, err := h.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, e.BlockId.Uint64())
+	blockInfo, err := h.rpc.GetL2BlockInfo(ctx, e.BlockId)
 	if err != nil {
 		return err
 	}

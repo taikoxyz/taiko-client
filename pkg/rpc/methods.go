@@ -379,6 +379,17 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*struct {
 	return GetProtocolStateVariables(c.TaikoL1, opts)
 }
 
+// GetL2BlockInfo fetches the L2 block and its corresponding transition state from the protocol.
+func (c *Client) GetL2BlockInfo(ctx context.Context, blockID *big.Int) (struct {
+	Blk bindings.TaikoDataBlock
+	Ts  bindings.TaikoDataTransitionState
+}, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	return c.TaikoL1.GetBlock(&bind.CallOpts{Context: ctxWithTimeout}, blockID.Uint64())
+}
+
 // ReorgCheckResult represents the information about whether the L1 block has been reorged
 // and how to reset the L1 cursor.
 type ReorgCheckResult struct {

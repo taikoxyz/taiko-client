@@ -103,7 +103,7 @@ func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *engine
 		return nil, nil, err
 	}
 
-	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, stateVars.B.LastVerifiedBlockId)
+	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
 	if err != nil {
 		return nil, nil, err
 	}

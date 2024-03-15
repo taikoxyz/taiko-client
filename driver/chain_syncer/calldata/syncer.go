@@ -487,7 +487,7 @@ func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, erro
 		return false, nil
 	}
 
-	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, stateVars.B.LastVerifiedBlockId)
+	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
 	if err != nil {
 		return false, err
 	}

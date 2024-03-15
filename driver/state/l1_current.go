@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
@@ -46,7 +45,7 @@ func (s *State) ResetL1Current(ctx context.Context, blockID *big.Int) error {
 	}
 
 	// Fetch the block info from TaikoL1 contract, and set the L1 height.
-	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, blockID.Uint64())
+	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, blockID)
 	if err != nil {
 		return err
 	}

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 
@@ -85,7 +84,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		return fmt.Errorf("failed to get the L2 parent block by hash (%s): %w", block.ParentHash(), err)
 	}
 
-	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId.Uint64())
+	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, event.BlockId)
 	if err != nil {
 		return err
 	}

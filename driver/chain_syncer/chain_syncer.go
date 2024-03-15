@@ -30,7 +30,7 @@ type L2ChainSyncer struct {
 	progressTracker *beaconsync.SyncProgressTracker
 
 	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
-	// latest verified block head
+	// the latest verified block head
 	p2pSyncVerifiedBlocks bool
 }
 
@@ -126,10 +126,12 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead(verifiedHeightToCompare uint
 		// If latest verified head height is equal to L2 execution engine's synced head height minus one,
 		// we also mark the triggered P2P sync progress as finished to prevent a potential `InsertBlockWithoutSetHead` in
 		// execution engine, which may cause errors since we do not pass all transactions in ExecutePayload when calling
-		// NewPayloadV1.
+		// `NewPayloadV1`.
 		verifiedHeightToCompare--
 	}
 
+	// If the L2 execution engine's chain is behind of the protocol's latest verified block head,
+	// we should keep the beacon sync.
 	if s.state.GetL2Head().Number.Uint64() < verifiedHeightToCompare {
 		return false
 	}
@@ -142,16 +144,28 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead(verifiedHeightToCompare uint
 }
 
 // needNewBeaconSyncTriggered checks whether the current L2 execution engine needs to trigger
-// another new beacon sync.
+// another new beacon sync, the following conditions should be met:
+// 1. The `P2PSyncVerifiedBlocks` flag is set.
+// 2. The protocol's latest verified block head is not zero.
+// 3. The L2 execution engine's chain is behind of the protocol's latest verified block head.
+// 4. The L2 execution engine's chain have met a sync timeout issue.
 func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (bool, error) {
+	// If the flag is not set, we simply return false.
+	if !s.p2pSyncVerifiedBlocks {
+		return false, nil
+	}
+
 	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: s.ctx})
 	if err != nil {
 		return false, err
 	}
 
-	return s.p2pSyncVerifiedBlocks &&
-		stateVars.B.LastVerifiedBlockId > 0 &&
-		!s.AheadOfProtocolVerifiedHead(stateVars.B.LastVerifiedBlockId) &&
+	// If the protocol's latest verified block head is zero, we simply return false.
+	if stateVars.B.LastVerifiedBlockId == 0 {
+		return false, nil
+	}
+
+	return !s.AheadOfProtocolVerifiedHead(stateVars.B.LastVerifiedBlockId) &&
 		!s.progressTracker.OutOfSync(), nil
 }
 
