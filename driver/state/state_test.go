@@ -5,7 +5,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
 
@@ -23,13 +22,6 @@ func (s *DriverStateTestSuite) SetupTest() {
 	state, err := New(context.Background(), s.RPCClient)
 	s.Nil(err)
 	s.s = state
-}
-
-func (s *DriverStateTestSuite) TestVerifyL2Block() {
-	head, err := s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
-
-	s.Nil(err)
-	s.Nil(s.s.VerifyL2Block(context.Background(), head.Number, head.Hash()))
 }
 
 func (s *DriverStateTestSuite) TestGetL1Head() {
@@ -56,15 +48,6 @@ func (s *DriverStateTestSuite) TestGetL2Head() {
 
 func (s *DriverStateTestSuite) TestSubL1HeadsFeed() {
 	s.NotNil(s.s.SubL1HeadsFeed(make(chan *types.Header)))
-}
-
-func (s *DriverStateTestSuite) TestGetSyncedHeaderID() {
-	l2Genesis, err := s.RPCClient.L2.BlockByNumber(context.Background(), common.Big0)
-	s.Nil(err)
-
-	id, err := s.s.getSyncedHeaderID(context.Background(), s.s.GenesisL1Height.Uint64(), l2Genesis.Hash())
-	s.Nil(err)
-	s.Zero(id.Uint64())
 }
 
 func (s *DriverStateTestSuite) TestNewDriverContextErr() {

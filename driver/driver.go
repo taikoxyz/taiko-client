@@ -92,7 +92,6 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 
 // Start starts the driver instance.
 func (d *Driver) Start() error {
-	d.wg.Add(3)
 	go d.eventLoop()
 	go d.reportProtocolStatus()
 	go d.exchangeTransitionConfigLoop()
@@ -109,6 +108,7 @@ func (d *Driver) Close(_ context.Context) {
 
 // eventLoop starts the main loop of a L2 execution engine's driver.
 func (d *Driver) eventLoop() {
+	d.wg.Add(1)
 	defer d.wg.Done()
 
 	// reqSync requests performing a synchronising operation, won't block
@@ -172,6 +172,7 @@ func (d *Driver) reportProtocolStatus() {
 		ticker       = time.NewTicker(protocolStatusReportInterval)
 		maxNumBlocks uint64
 	)
+	d.wg.Add(1)
 
 	defer func() {
 		ticker.Stop()
@@ -222,6 +223,8 @@ func (d *Driver) reportProtocolStatus() {
 // L2 execution engine.
 func (d *Driver) exchangeTransitionConfigLoop() {
 	ticker := time.NewTicker(exchangeTransitionConfigInterval)
+	d.wg.Add(1)
+
 	defer func() {
 		ticker.Stop()
 		d.wg.Done()

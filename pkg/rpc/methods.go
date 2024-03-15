@@ -111,11 +111,13 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 	)
 }
 
-// LatestL2KnownL1Header fetches the L2 execution engine's latest known L1 header.
+// LatestL2KnownL1Header fetches the L2 execution engine's latest known L1 header,
+// if we can't find the L1Origin data, we will use the L1 genesis header instead.
 func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
+	// Try to fetch the latest known L1 header from the L2 execution engine.
 	headL1Origin, err := c.L2.HeadL1Origin(ctxWithTimeout)
 	if err != nil {
 		switch err.Error() {
@@ -130,6 +132,7 @@ func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, erro
 		return c.GetGenesisL1Header(ctxWithTimeout)
 	}
 
+	// Fetch the L1 header from the L1 chain.
 	header, err := c.L1.HeaderByHash(ctxWithTimeout, headL1Origin.L1BlockHash)
 	if err != nil {
 		switch err.Error() {
