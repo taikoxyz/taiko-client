@@ -382,7 +382,7 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*struct {
 // GetL2BlockInfo fetches the L2 block and its corresponding transition state from the protocol.
 func (c *Client) GetL2BlockInfo(ctx context.Context, blockID *big.Int) (struct {
 	Blk bindings.TaikoDataBlock
-	Ts  bindings.TaikoDataTransitionState
+	Ts  bindings.TaikoDataTransitionState // nolint: stylecheck
 }, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
