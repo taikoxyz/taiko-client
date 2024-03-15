@@ -19,7 +19,7 @@ integration_test/deploy_l1_contract.sh
 
 # load environment variables for integration test
 source integration_test/test_env.sh
-source integration_test/test_proposer_config.sh
+source integration_test/test_config.sh
 
 # make sure environment variables are set
 check_env "TAIKO_MONO_DIR"
