@@ -47,8 +47,8 @@ func (d *Driver) InitFromCli(ctx context.Context, c *cli.Context) error {
 	var cfg *Config
 	var err error
 
-	if c.Bool(flags.UseConfigFile.Name) {
-		cfg, err = NewConfigFromConfigFile()
+	if c.String(flags.UseConfigFile.Name) != "" {
+		cfg, err = NewConfigFromConfigFile(c, c.String(flags.UseConfigFile.Name))
 		if err != nil {
 			return err
 		}

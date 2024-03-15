@@ -151,7 +151,7 @@ func (s *ProposerTestSuite) TestNewConfigFromConfig() {
 	app := s.SetupApp()
 
 	app.Action = func(ctx *cli.Context) error {
-		c, err := NewConfigFromConfigFile(ctx, "../.env.proposer.test")
+		c, err := NewConfigFromConfigFile(ctx, ctx.String("useConfig"))
 		s.Nil(err)
 		s.Equal(l1Endpoint, c.L1Endpoint)
 		s.Equal(l2Endpoint, c.L2Endpoint)
@@ -182,9 +182,8 @@ func (s *ProposerTestSuite) TestNewConfigFromConfig() {
 
 	s.Nil(app.Run([]string{
 		"TestNewConfigFromCliContext",
-		"--" + flags.UseConfigFile.Name, "../.env.proposer.test",
+		"--" + flags.UseConfigFile.Name, "../.env.test",
 	}))
-
 }
 
 func (s *ProposerTestSuite) SetupApp() *cli.App {

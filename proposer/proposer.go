@@ -72,13 +72,11 @@ func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
 	var err error
 
 	if c.String(flags.UseConfigFile.Name) != "" {
-		log.Info("useConfig set")
 		cfg, err = NewConfigFromConfigFile(c, c.String(flags.UseConfigFile.Name))
 		if err != nil {
 			return err
 		}
 	} else {
-		log.Info("useConfig not set")
 		cfg, err = NewConfigFromCliContext(c)
 		if err != nil {
 			return err
