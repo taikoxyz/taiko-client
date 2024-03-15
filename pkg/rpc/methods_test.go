@@ -68,12 +68,6 @@ func TestGetProtocolStateVariables(t *testing.T) {
 	require.Nil(t, err)
 }
 
-func TestIsJustSyncedByP2P(t *testing.T) {
-	client := newTestClient(t)
-	_, err := client.IsJustSyncedByP2P(context.Background())
-	require.Nil(t, err)
-}
-
 func TestWaitTillL2ExecutionEngineSyncedNewClient(t *testing.T) {
 	client := newTestClient(t)
 	err := client.WaitTillL2ExecutionEngineSynced(context.Background())

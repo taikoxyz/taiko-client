@@ -14,14 +14,17 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+// BlobFetcher is responsible for fetching the txList blob from the L1 block sidecar.
 type BlobFetcher struct {
 	rpc *rpc.Client
 }
 
+// NewBlobTxListFetcher creates a new BlobFetcher instance based on the given rpc client.
 func NewBlobTxListFetcher(rpc *rpc.Client) *BlobFetcher {
 	return &BlobFetcher{rpc}
 }
 
+// Fetch implements the TxListFetcher interface.
 func (d *BlobFetcher) Fetch(
 	ctx context.Context,
 	_ *types.Transaction,
@@ -31,6 +34,7 @@ func (d *BlobFetcher) Fetch(
 		return nil, errBlobUnused
 	}
 
+	// Fetch the L1 block sidecars.
 	sidecars, err := d.rpc.L1Beacon.GetBlobs(ctx, new(big.Int).SetUint64(meta.L1Height+1))
 	if err != nil {
 		return nil, err
@@ -38,6 +42,7 @@ func (d *BlobFetcher) Fetch(
 
 	log.Info("Fetch sidecars", "slot", meta.L1Height+1, "sidecars", len(sidecars))
 
+	// Compare the blob hash with the sidecar's kzg commitment.
 	for i, sidecar := range sidecars {
 		log.Info(
 			"Block sidecar",

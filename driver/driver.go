@@ -102,7 +102,6 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 
 // Start starts the driver instance.
 func (d *Driver) Start() error {
-	d.wg.Add(3)
 	go d.eventLoop()
 	go d.reportProtocolStatus()
 	go d.exchangeTransitionConfigLoop()
@@ -119,6 +118,7 @@ func (d *Driver) Close(_ context.Context) {
 
 // eventLoop starts the main loop of a L2 execution engine's driver.
 func (d *Driver) eventLoop() {
+	d.wg.Add(1)
 	defer d.wg.Done()
 
 	// reqSync requests performing a synchronising operation, won't block
@@ -162,9 +162,7 @@ func (d *Driver) doSync() error {
 		return nil
 	}
 
-	l1Head := d.state.GetL1Head()
-
-	if err := d.l2ChainSyncer.Sync(l1Head); err != nil {
+	if err := d.l2ChainSyncer.Sync(d.state.GetL1Head()); err != nil {
 		log.Error("Process new L1 blocks error", "error", err)
 		return err
 	}
@@ -172,20 +170,25 @@ func (d *Driver) doSync() error {
 	return nil
 }
 
-// ChainSyncer returns the driver's chain syncer.
+// ChainSyncer returns the driver's chain syncer, this method
+// should only be used for testing.
 func (d *Driver) ChainSyncer() *chainSyncer.L2ChainSyncer {
 	return d.l2ChainSyncer
 }
 
 // reportProtocolStatus reports some protocol status intervally.
 func (d *Driver) reportProtocolStatus() {
-	ticker := time.NewTicker(protocolStatusReportInterval)
+	var (
+		ticker       = time.NewTicker(protocolStatusReportInterval)
+		maxNumBlocks uint64
+	)
+	d.wg.Add(1)
+
 	defer func() {
 		ticker.Stop()
 		d.wg.Done()
 	}()
 
-	var maxNumBlocks uint64
 	if err := backoff.Retry(
 		func() error {
 			if d.ctx.Err() != nil {
@@ -230,6 +233,8 @@ func (d *Driver) reportProtocolStatus() {
 // L2 execution engine.
 func (d *Driver) exchangeTransitionConfigLoop() {
 	ticker := time.NewTicker(exchangeTransitionConfigInterval)
+	d.wg.Add(1)
+
 	defer func() {
 		ticker.Stop()
 		d.wg.Done()
@@ -248,13 +253,9 @@ func (d *Driver) exchangeTransitionConfigLoop() {
 				})
 				if err != nil {
 					log.Error("Failed to exchange Transition Configuration", "error", err)
-					return
+				} else {
+					log.Debug("Exchanged transition config", "transitionConfig", tc)
 				}
-
-				log.Debug(
-					"Exchanged transition config",
-					"transitionConfig", tc,
-				)
 			}()
 		}
 	}

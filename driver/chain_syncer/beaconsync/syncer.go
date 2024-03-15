@@ -34,7 +34,8 @@ func NewSyncer(
 	return &Syncer{ctx, rpc, state, progressTracker}
 }
 
-// TriggerBeaconSync triggers the L2 execution engine to start performing a beacon sync.
+// TriggerBeaconSync triggers the L2 execution engine to start performing a beacon sync, if the
+// latest verified block has changed.
 func (s *Syncer) TriggerBeaconSync() error {
 	blockID, latestVerifiedHeadPayload, err := s.getVerifiedBlockPayload(s.ctx)
 	if err != nil {
@@ -56,10 +57,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 		}
 	}
 
-	status, err := s.rpc.L2Engine.NewPayload(
-		s.ctx,
-		latestVerifiedHeadPayload,
-	)
+	status, err := s.rpc.L2Engine.NewPayload(s.ctx, latestVerifiedHeadPayload)
 	if err != nil {
 		return err
 	}
@@ -81,10 +79,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 	}
 
 	// Update sync status.
-	s.progressTracker.UpdateMeta(
-		blockID,
-		latestVerifiedHeadPayload.BlockHash,
-	)
+	s.progressTracker.UpdateMeta(blockID, latestVerifiedHeadPayload.BlockHash)
 
 	log.Info(
 		"⛓️ Beacon sync triggered",
@@ -103,7 +98,7 @@ func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *engine
 		return nil, nil, err
 	}
 
-	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, stateVars.B.LastVerifiedBlockId)
+	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
 	if err != nil {
 		return nil, nil, err
 	}
