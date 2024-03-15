@@ -185,7 +185,8 @@ func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
 		proposeBlockTxGasLimit = 0
 	}
 
-	proposeBlockTxReplacementMultiplier, err := strconv.ParseUint(os.Getenv("PROPOSE_BLOCK_TX_REPLACEMENT_MULTIPLIER"), 0, 64)
+	proposeBlockTxReplacementMultiplier, err := strconv.ParseUint(
+		os.Getenv("PROPOSE_BLOCK_TX_REPLACEMENT_MULTIPLIER"), 0, 64)
 	if err != nil {
 		return nil, fmt.Errorf("error converting proposeBlockTxReplacementMultiplier: %w", err)
 	}
