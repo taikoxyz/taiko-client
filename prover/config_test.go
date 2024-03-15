@@ -147,6 +147,10 @@ func (s *ProverTestSuite) TestNewConfigFromConfig() {
 
 		return err
 	}
+	s.Nil(app.Run([]string{
+		"TestNewConfigFromConfigFile",
+		"--" + flags.UseConfigFile.Name, "../.env.test",
+	}))
 }
 
 func (s *ProverTestSuite) SetupApp() *cli.App {
