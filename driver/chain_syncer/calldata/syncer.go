@@ -191,7 +191,15 @@ func (s *Syncer) onBlockProposed(
 		"removed", event.Raw.Removed,
 	)
 
-	// Fetch the L2 parent block.
+	// If the event's timestamp is in the future, we wait until the timestamp is reached, should
+	// only happen when testing.
+	if event.Meta.Timestamp > uint64(time.Now().Unix()) {
+		log.Warn("Future L2 block, waiting", "L2BlockTimestamp", event.Meta.Timestamp, "now", time.Now().Unix())
+		time.Sleep(time.Until(time.Unix(int64(event.Meta.Timestamp), 0)))
+	}
+
+	// Fetch the L2 parent block, if the node is just finished a P2P sync, we simply use the tracker's
+	// last synced verified block as the parent, otherwise, we fetch the parent block from L2 EE.
 	var (
 		parent *types.Header
 		err    error
@@ -206,18 +214,23 @@ func (s *Syncer) onBlockProposed(
 	} else {
 		parent, err = s.rpc.L2ParentByBlockID(ctx, event.BlockId)
 	}
-
 	if err != nil {
 		return fmt.Errorf("failed to fetch L2 parent block: %w", err)
 	}
 
-	log.Debug("Parent block", "height", parent.Number, "hash", parent.Hash())
+	log.Debug(
+		"Parent block",
+		"height", parent.Number,
+		"hash", parent.Hash(),
+		"beaconSyncTriggered", s.progressTracker.Triggered(),
+	)
 
 	tx, err := s.rpc.L1.TransactionInBlock(ctx, event.Raw.BlockHash, event.Raw.TxIndex)
 	if err != nil {
 		return fmt.Errorf("failed to fetch original TaikoL1.proposeBlock transaction: %w", err)
 	}
 
+	// Decode transactions list.
 	var txListDecoder txlistfetcher.TxListFetcher
 	if event.Meta.BlobUsed {
 		txListDecoder = txlistfetcher.NewBlobTxListFetcher(s.rpc)
@@ -234,18 +247,6 @@ func (s *Syncer) onBlockProposed(
 		}
 	}
 
-	l1Origin := &rawdb.L1Origin{
-		BlockID:       event.BlockId,
-		L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
-		L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
-		L1BlockHash:   event.Raw.BlockHash,
-	}
-
-	if event.Meta.Timestamp > uint64(time.Now().Unix()) {
-		log.Warn("Future L2 block, waiting", "L2BlockTimestamp", event.Meta.Timestamp, "now", time.Now().Unix())
-		time.Sleep(time.Until(time.Unix(int64(event.Meta.Timestamp), 0)))
-	}
-
 	// If the transactions list is invalid, we simply insert an empty L2 block.
 	if !s.txListValidator.ValidateTxList(event.BlockId, txListBytes, event.Meta.BlobUsed) {
 		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", event.BlockId)
@@ -258,7 +259,12 @@ func (s *Syncer) onBlockProposed(
 		parent,
 		s.state.GetHeadBlockID(),
 		txListBytes,
-		l1Origin,
+		&rawdb.L1Origin{
+			BlockID:       event.BlockId,
+			L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
+			L1BlockHeight: new(big.Int).SetUint64(event.Raw.BlockNumber),
+			L1BlockHash:   event.Raw.BlockHash,
+		},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to insert new head to L2 execution engine: %w", err)
@@ -350,6 +356,7 @@ func (s *Syncer) insertNewHead(
 		return nil, fmt.Errorf("failed to create TaikoL2.anchor transaction: %w", err)
 	}
 
+	// Insert the anchor transaction at the head of the transactions list
 	txList = append([]*types.Transaction{anchorTx}, txList...)
 	if txListBytes, err = rlp.EncodeToBytes(txList); err != nil {
 		log.Error("Encode txList error", "blockID", event.BlockId, "error", err)
@@ -511,7 +518,7 @@ func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, erro
 		return false, nil
 	}
 
-	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, stateVars.B.LastVerifiedBlockId)
+	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
 	if err != nil {
 		return false, err
 	}
