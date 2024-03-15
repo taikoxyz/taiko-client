@@ -152,9 +152,7 @@ func (d *Driver) doSync() error {
 		return nil
 	}
 
-	l1Head := d.state.GetL1Head()
-
-	if err := d.l2ChainSyncer.Sync(l1Head); err != nil {
+	if err := d.l2ChainSyncer.Sync(d.state.GetL1Head()); err != nil {
 		log.Error("Process new L1 blocks error", "error", err)
 		return err
 	}
@@ -162,7 +160,8 @@ func (d *Driver) doSync() error {
 	return nil
 }
 
-// ChainSyncer returns the driver's chain syncer.
+// ChainSyncer returns the driver's chain syncer, this method
+// should only be used for testing.
 func (d *Driver) ChainSyncer() *chainSyncer.L2ChainSyncer {
 	return d.l2ChainSyncer
 }
