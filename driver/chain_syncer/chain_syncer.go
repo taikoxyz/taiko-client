@@ -98,7 +98,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 			"L2 head information",
 			"number", l2Head.Number,
 			"hash", l2Head.Hash(),
-			"LastSyncedVerifiedBlockID", s.progressTracker.LastSyncedVerifiedBlockID(),
+			"lastSyncedVerifiedBlockID", s.progressTracker.LastSyncedVerifiedBlockID(),
 			"lastSyncedVerifiedBlockHash", s.progressTracker.LastSyncedVerifiedBlockHash(),
 		)
 

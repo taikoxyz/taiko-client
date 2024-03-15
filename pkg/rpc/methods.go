@@ -643,28 +643,6 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 	return l1BlockHash, l1StateRoot, l1Height, parentGasUsed, nil
 }
 
-// IsJustSyncedByP2P checks whether the given L2 execution engine has just finished a P2P
-// sync.
-func (c *Client) IsJustSyncedByP2P(ctx context.Context) (bool, error) {
-	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
-	defer cancel()
-
-	l2Head, err := c.L2.HeaderByNumber(ctxWithTimeout, nil)
-	if err != nil {
-		return false, err
-	}
-
-	if _, err = c.L2.L1OriginByID(ctxWithTimeout, l2Head.Number); err != nil {
-		if err.Error() == ethereum.NotFound.Error() {
-			return true, nil
-		}
-
-		return false, err
-	}
-
-	return false, nil
-}
-
 // TierProviderTierWithID wraps protocol ITierProviderTier struct with an ID.
 type TierProviderTierWithID struct {
 	ID uint16
