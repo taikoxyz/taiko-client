@@ -12,7 +12,7 @@ import (
 
 var (
 	l1Endpoint       = os.Getenv("L1_NODE_WS_ENDPOINT")
-	l1BeaconEndpoint = os.Getenv("L1_BECAON_ENDPOINT")
+	l1BeaconEndpoint = os.Getenv("L1_BEACON_ENDPOINT")
 	l2Endpoint       = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
 	l2CheckPoint     = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 	l2EngineEndpoint = os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
@@ -80,7 +80,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContextEmptyL2CheckPoint() {
 func (s *DriverTestSuite) TestNewConfigFromConfig() {
 	app := s.SetupApp()
 	app.Action = func(ctx *cli.Context) error {
-		c, err := NewConfigFromConfigFile(ctx, ctx.String("useConfig"))
+		c, err := NewConfigFromConfigFile(ctx.String("useConfig"))
 		s.Nil(err)
 		s.Equal(os.Getenv("L1_NODE_WS_ENDPOINT"), c.L1Endpoint)
 		s.Equal(os.Getenv("L1_NODE_HTTP_ENDPOINT"), c.L1BeaconEndpoint)

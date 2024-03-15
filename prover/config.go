@@ -184,7 +184,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}, nil
 }
 
-func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
+func NewConfigFromConfigFile(path string) (*Config, error) {
 	err := godotenv.Load(path)
 	if err != nil {
 		return nil, fmt.Errorf("error loading .env config: %w", err)
@@ -221,7 +221,7 @@ func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
 	var guardianProverHealthCheckServerEndpoint *url.URL
 	if os.Getenv("GUARDIAN_PROVER_HEALTH_PORT") != "" {
 		if guardianProverHealthCheckServerEndpoint, err = url.Parse(
-			c.String(flags.GuardianProverHealthCheckServerEndpoint.Name),
+			os.Getenv("GUARDIAN_PROVER_HEALTH_PORT"),
 		); err != nil {
 			return nil, err
 		}
@@ -330,7 +330,7 @@ func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
 	if os.Getenv("TOKEN_ALLOWANCE") != "" {
 		amt, ok := new(big.Int).SetString(os.Getenv("TOKEN_ALLOWANCE"), 10)
 		if !ok {
-			return nil, fmt.Errorf("invalid setting allowance config value: %v", c.String(flags.Allowance.Name))
+			return nil, fmt.Errorf("invalid setting allowance config value: %v", os.Getenv("TOKEN_ALLOWANCE"))
 		}
 		allowance = amt
 	}

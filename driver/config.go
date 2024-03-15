@@ -66,7 +66,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}, nil
 }
 
-func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
+func NewConfigFromConfigFile(path string) (*Config, error) {
 	err := godotenv.Load(path)
 	if err != nil {
 		return nil, fmt.Errorf("error loading .env config: %w", err)

@@ -113,7 +113,7 @@ func (s *ProverTestSuite) TestNewConfigFromConfig() {
 	app := s.SetupApp()
 
 	app.Action = func(ctx *cli.Context) error {
-		c, err := NewConfigFromConfigFile(ctx, ctx.String("useConfig"))
+		c, err := NewConfigFromConfigFile(ctx.String("useConfig"))
 		s.Nil(err)
 		s.Equal(l1WsEndpoint, c.L1WsEndpoint)
 		s.Equal(l1HttpEndpoint, c.L1HttpEndpoint)
@@ -134,6 +134,7 @@ func (s *ProverTestSuite) TestNewConfigFromConfig() {
 		s.Equal(uint64(8), c.Capacity)
 		s.Equal(uint64(minTierFee), c.MinOptimisticTierFee.Uint64())
 		s.Equal(uint64(minTierFee), c.MinSgxTierFee.Uint64())
+		s.Equal(uint64(100000), c.ProveBlockGasLimit)
 		s.Equal(uint64(3), c.ProveBlockTxReplacementGasGrowthRate)
 		s.Equal(uint64(256), c.ProveBlockMaxTxGasFeeCap.Uint64())
 		s.Equal(c.L1NodeVersion, l1NodeVersion)
