@@ -28,16 +28,14 @@ func (s *State) SetL1Current(h *types.Header) {
 
 // ResetL1Current resets the l1Current cursor to the L1 height which emitted a
 // BlockProposed event with given blockID / blockHash.
-func (s *State) ResetL1Current(
-	ctx context.Context,
-	blockID *big.Int,
-) error {
+func (s *State) ResetL1Current(ctx context.Context, blockID *big.Int) error {
 	if blockID == nil {
 		return fmt.Errorf("empty block ID")
 	}
 
 	log.Info("Reset L1 current cursor", "blockID", blockID)
 
+	// If blockID is zero, reset to genesis L1 height.
 	if blockID.Cmp(common.Big0) == 0 {
 		l1Current, err := s.rpc.L1.HeaderByNumber(ctx, s.GenesisL1Height)
 		if err != nil {
@@ -47,11 +45,11 @@ func (s *State) ResetL1Current(
 		return nil
 	}
 
+	// Fetch the block info from TaikoL1 contract, and set the L1 height.
 	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, blockID.Uint64())
 	if err != nil {
 		return err
 	}
-
 	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.Blk.ProposedIn))
 	if err != nil {
 		return err
