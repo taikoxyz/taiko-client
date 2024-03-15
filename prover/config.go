@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"math/big"
 	"net/url"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
@@ -181,7 +184,234 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}, nil
 }
 
-func NewConfigFromConfigFile() (*Config, error) {
+func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
+	err := godotenv.Load(path)
+	if err != nil {
+		return nil, fmt.Errorf("error loading .env config: %w", err)
+	}
 
-	return &Config{}, nil
+	if os.Getenv("L1_BEACON_ENDPOINT") == "" {
+		return nil, errors.New("empty L1 beacon endpoint")
+	}
+
+	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
+	if err != nil {
+		return nil, fmt.Errorf("invalid L1 prover private key: %w", err)
+	}
+
+	var startingBlockID *big.Int
+	if os.Getenv("STARTING_BLOCK_ID") != "" {
+		id, err := strconv.ParseUint(os.Getenv("STARTING_BLOCK_ID"), 0, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing STARTING_BLOCK_ID %w", err)
+		}
+		startingBlockID = new(big.Int).SetUint64(id)
+	}
+
+	dummy, err := strconv.ParseBool(os.Getenv("DUMMY"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing DUMMY %w", err)
+	}
+
+	guardianProofSubDelay, err := time.ParseDuration(os.Getenv("GUARDIAN_PROOF_SUB_DELAY"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing GUARDIAN_PROOF_SUB_DELAY: %w", err)
+	}
+
+	var guardianProverHealthCheckServerEndpoint *url.URL
+	if os.Getenv("GUARDIAN_PROVER_HEALTH_PORT") != "" {
+		if guardianProverHealthCheckServerEndpoint, err = url.Parse(
+			c.String(flags.GuardianProverHealthCheckServerEndpoint.Name),
+		); err != nil {
+			return nil, err
+		}
+	}
+	maxRetry, err := strconv.ParseUint(os.Getenv("MAX_RETRY"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing MAX_RETRY: %w", err)
+	}
+	backoffMaxRetry, err := strconv.ParseUint(os.Getenv("BACKOFF_MAX_RETRY"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing BACKOFF_MAX_RETRY: %w", err)
+	}
+	retryInterval, err := time.ParseDuration(os.Getenv("RETRY_INTERVAL"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing RETRY_INTERVAL: %w", err)
+	}
+	livenessBond, err := strconv.ParseBool(os.Getenv("ENABLE_LIVENESS_BOND_PROOF"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing ENABLE_LIVENESS_BOND_PROOF: %w", err)
+	}
+	timeout, err := time.ParseDuration(os.Getenv("RPC_TIMEOUT"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing RPC_TIMEOUT: %w", err)
+	}
+	waitReceiptTimeout, err := time.ParseDuration(os.Getenv("WAIT_RECEIPT_TIMEOUT"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing WAIT_RECEIPT_TIMEOUT: %w", err)
+	}
+
+	var proveBlockTxGasLimit *uint64
+	if os.Getenv("PROVE_BLOCK_TX_GAS_LIMIT") != "" {
+		limit, err := strconv.ParseUint(os.Getenv("PROVE_BLOCK_TX_GAS_LIMIT"), 0, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing PROVE_BLOCK_TX_GAS_LIMIT %w", err)
+		}
+		gasLimit := limit
+		proveBlockTxGasLimit = &gasLimit
+	}
+
+	capacity, err := strconv.ParseUint(os.Getenv("PROVER_CAPACITY"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing PROVER_CAPACITY: %w", err)
+	}
+
+	proveBlockTxReplacementMultiplier, err := strconv.ParseUint(os.Getenv("PROVE_BLOCK_REPLACEMENT_MULTIPLIER"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing PROVE_BLOCK_REPLACEMENT_MULTIPLIER %w", err)
+	}
+	if proveBlockTxReplacementMultiplier == 0 {
+		return nil, fmt.Errorf(
+			"invalid --proveBlockTxReplacementMultiplier value: %d",
+			proveBlockTxReplacementMultiplier,
+		)
+	}
+
+	var proveBlockMaxTxGasTipCap *big.Int
+	if os.Getenv("PROVE_BLOCK_MAX_TX_GAS_TIP_CAP") != "" {
+		tip, err := strconv.ParseUint(os.Getenv("PROVE_BLOCK_MAX_TX_GAS_TIP_CAP"), 0, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing PROVE_BLOCK_MAX_TX_GAS_TIP_CAP %w", err)
+		}
+		proveBlockMaxTxGasTipCap = new(big.Int).SetUint64(tip)
+	}
+
+	serverPort, err := strconv.ParseUint(os.Getenv("PROVER_HTTP_PORT"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing PROVER_HTTP_PORT %w", err)
+	}
+
+	var (
+		minOptimisticTierFee *big.Int
+		minSgxTierFee        *big.Int
+		minSgxAndZkVMTierFee *big.Int
+	)
+	op, err := strconv.ParseUint(os.Getenv("MIN_OPTIMISTIC_TIER_FEE"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing MIN_OPTIMISTIC_TIER_FEE %w", err)
+	}
+	minOptimisticTierFee = new(big.Int).SetUint64(op)
+	sgx, err := strconv.ParseUint(os.Getenv("MIN_SGX_TIER_FEE"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing MIN_SGX_TIER_FEE %w", err)
+	}
+	minSgxTierFee = new(big.Int).SetUint64(sgx)
+	sgxZKVM, err := strconv.ParseUint(os.Getenv("MIN_SGX_ZKVM_TIER_FEE"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing MIN_SGX_ZKVM_TIER_FEE %w", err)
+	}
+	minSgxAndZkVMTierFee = new(big.Int).SetUint64(sgxZKVM)
+
+	maxExpiry, err := time.ParseDuration(os.Getenv("MAX_EXPIRY"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing MAX_EXPIRY: %w", err)
+	}
+
+	maxSlippage, err := strconv.ParseUint(os.Getenv("MAX_BLOCK_SLIPPAGE"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing MAX_BLOCK_SLIPPAGE: %w", err)
+	}
+	maxProposedIn, err := strconv.ParseUint(os.Getenv("MAX_PROPOSED_IN"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing MAX_PROPOSED_IN: %w", err)
+	}
+
+	var allowance = common.Big0
+	if os.Getenv("TOKEN_ALLOWANCE") != "" {
+		amt, ok := new(big.Int).SetString(os.Getenv("TOKEN_ALLOWANCE"), 10)
+		if !ok {
+			return nil, fmt.Errorf("invalid setting allowance config value: %v", c.String(flags.Allowance.Name))
+		}
+		allowance = amt
+	}
+
+	blockConfirmations, err := strconv.ParseUint(os.Getenv("BLOCK_CONFIRMATIONS"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing BLOCK_CONFIRMATIONS: %w", err)
+	}
+
+	var (
+		proveUnassignedBlocks bool
+		contesterMode         bool
+	)
+	proveUnassignedBlocks, err = strconv.ParseBool(os.Getenv("PROVE_UNASSIGNED_BLOCKS"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing PROVE_UNASSIGNED_BLOCKS %w", err)
+	}
+	contesterMode, err = strconv.ParseBool(os.Getenv("CONTESTER_MODE"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing CONTESTER_MODE %w", err)
+	}
+
+	// If we are running a guardian prover, we need to prove unassigned blocks and run in contester mode by default.
+	if os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS") != "" {
+		proveUnassignedBlocks = true
+		contesterMode = true
+
+		// l1 and l2 node version flags are required only if guardian prover
+		if os.Getenv("L1_NODE_VERSION") == "" {
+			return nil, errors.New("L1NodeVersion is required if guardian prover is set")
+		}
+
+		if os.Getenv("L2_NODE_VERSION") == "" {
+			return nil, errors.New("L2NodeVersion is required if guardian prover is set")
+		}
+	}
+
+	if os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS") == "" && os.Getenv("SGX_RAIKO_HOST") == "" {
+		return nil, fmt.Errorf("raiko host not provided")
+	}
+
+	return &Config{
+		L1WsEndpoint:                            os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:                          os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L1BeaconEndpoint:                        os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:                            os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:                          os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:                          common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:                          common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:                       common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		AssignmentHookAddress:                   common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
+		L1ProverPrivKey:                         l1ProverPrivKey,
+		RaikoHostEndpoint:                       os.Getenv("SGX_RAIKO_HOST"),
+		StartingBlockID:                         startingBlockID,
+		Dummy:                                   dummy,
+		GuardianProverAddress:                   common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
+		GuardianProofSubmissionDelay:            guardianProofSubDelay,
+		GuardianProverHealthCheckServerEndpoint: guardianProverHealthCheckServerEndpoint,
+		ProofSubmissionMaxRetry:                 maxRetry,
+		Graffiti:                                os.Getenv("GRAFFITI"),
+		BackOffMaxRetrys:                        backoffMaxRetry,
+		BackOffRetryInterval:                    retryInterval,
+		ProveUnassignedBlocks:                   proveUnassignedBlocks,
+		ContesterMode:                           contesterMode,
+		EnableLivenessBondProof:                 livenessBond,
+		RPCTimeout:                              timeout,
+		WaitReceiptTimeout:                      waitReceiptTimeout,
+		ProveBlockGasLimit:                      proveBlockTxGasLimit,
+		Capacity:                                capacity,
+		ProveBlockTxReplacementGasGrowthRate:    proveBlockTxReplacementMultiplier,
+		ProveBlockMaxTxGasFeeCap:                proveBlockMaxTxGasTipCap,
+		HTTPServerPort:                          serverPort,
+		MinOptimisticTierFee:                    minOptimisticTierFee,
+		MinSgxTierFee:                           minSgxTierFee,
+		MinSgxAndZkVMTierFee:                    minSgxAndZkVMTierFee,
+		MaxExpiry:                               maxExpiry,
+		MaxBlockSlippage:                        maxSlippage,
+		MaxProposedIn:                           maxProposedIn,
+		Allowance:                               allowance,
+		L1NodeVersion:                           os.Getenv("L1_NODE_VERSION"),
+		L2NodeVersion:                           os.Getenv("L2_NODE_VERSION"),
+		BlockConfirmations:                      blockConfirmations,
+	}, nil
 }
