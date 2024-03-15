@@ -169,13 +169,16 @@ func (d *Driver) ChainSyncer() *chainSyncer.L2ChainSyncer {
 
 // reportProtocolStatus reports some protocol status intervally.
 func (d *Driver) reportProtocolStatus() {
-	ticker := time.NewTicker(protocolStatusReportInterval)
+	var (
+		ticker       = time.NewTicker(protocolStatusReportInterval)
+		maxNumBlocks uint64
+	)
+
 	defer func() {
 		ticker.Stop()
 		d.wg.Done()
 	}()
 
-	var maxNumBlocks uint64
 	if err := backoff.Retry(
 		func() error {
 			if d.ctx.Err() != nil {
@@ -238,13 +241,9 @@ func (d *Driver) exchangeTransitionConfigLoop() {
 				})
 				if err != nil {
 					log.Error("Failed to exchange Transition Configuration", "error", err)
-					return
+				} else {
+					log.Debug("Exchanged transition config", "transitionConfig", tc)
 				}
-
-				log.Debug(
-					"Exchanged transition config",
-					"transitionConfig", tc,
-				)
 			}()
 		}
 	}
