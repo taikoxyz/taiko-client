@@ -111,11 +111,13 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 	)
 }
 
-// LatestL2KnownL1Header fetches the L2 execution engine's latest known L1 header.
+// LatestL2KnownL1Header fetches the L2 execution engine's latest known L1 header,
+// if we can't find the L1Origin data, we will use the L1 genesis header instead.
 func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
+	// Try to fetch the latest known L1 header from the L2 execution engine.
 	headL1Origin, err := c.L2.HeadL1Origin(ctxWithTimeout)
 	if err != nil {
 		switch err.Error() {
@@ -130,6 +132,7 @@ func (c *Client) LatestL2KnownL1Header(ctx context.Context) (*types.Header, erro
 		return c.GetGenesisL1Header(ctxWithTimeout)
 	}
 
+	// Fetch the L1 header from the L1 chain.
 	header, err := c.L1.HeaderByHash(ctxWithTimeout, headL1Origin.L1BlockHash)
 	if err != nil {
 		switch err.Error() {
@@ -374,6 +377,17 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*struct {
 	opts.Context = ctxWithTimeout
 
 	return GetProtocolStateVariables(c.TaikoL1, opts)
+}
+
+// GetL2BlockInfo fetches the L2 block and its corresponding transition state from the protocol.
+func (c *Client) GetL2BlockInfo(ctx context.Context, blockID *big.Int) (struct {
+	Blk bindings.TaikoDataBlock
+	Ts  bindings.TaikoDataTransitionState // nolint: stylecheck
+}, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	return c.TaikoL1.GetBlock(&bind.CallOpts{Context: ctxWithTimeout}, blockID.Uint64())
 }
 
 // ReorgCheckResult represents the information about whether the L1 block has been reorged
@@ -627,28 +641,6 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 	}
 
 	return l1BlockHash, l1StateRoot, l1Height, parentGasUsed, nil
-}
-
-// IsJustSyncedByP2P checks whether the given L2 execution engine has just finished a P2P
-// sync.
-func (c *Client) IsJustSyncedByP2P(ctx context.Context) (bool, error) {
-	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
-	defer cancel()
-
-	l2Head, err := c.L2.HeaderByNumber(ctxWithTimeout, nil)
-	if err != nil {
-		return false, err
-	}
-
-	if _, err = c.L2.L1OriginByID(ctxWithTimeout, l2Head.Number); err != nil {
-		if err.Error() == ethereum.NotFound.Error() {
-			return true, nil
-		}
-
-		return false, err
-	}
-
-	return false, nil
 }
 
 // TierProviderTierWithID wraps protocol ITierProviderTier struct with an ID.

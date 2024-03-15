@@ -2,6 +2,7 @@ package builder
 
 import (
 	"context"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -15,7 +16,7 @@ func getParentMetaHash(ctx context.Context, rpc *rpc.Client) (common.Hash, error
 		return common.Hash{}, err
 	}
 
-	parent, err := rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, state.SlotB.NumBlocks-1)
+	parent, err := rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(state.SlotB.NumBlocks-1))
 	if err != nil {
 		return common.Hash{}, err
 	}

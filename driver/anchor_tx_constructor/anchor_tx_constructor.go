@@ -20,7 +20,7 @@ import (
 const AnchorGasLimit = 250_000
 
 // AnchorTxConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
-// each L2 block, which is always the first transaction.
+// each L2 block, which must be the first transaction, and its sender must be the golden touch account.
 type AnchorTxConstructor struct {
 	rpc                *rpc.Client
 	goldenTouchAddress common.Address
@@ -39,11 +39,7 @@ func New(rpc *rpc.Client) (*AnchorTxConstructor, error) {
 		return nil, fmt.Errorf("invalid golden touch private key %s", encoding.GoldenTouchPrivKey)
 	}
 
-	return &AnchorTxConstructor{
-		rpc:                rpc,
-		goldenTouchAddress: goldenTouchAddress,
-		signer:             signer,
-	}, nil
+	return &AnchorTxConstructor{rpc, goldenTouchAddress, signer}, nil
 }
 
 // AssembleAnchorTx assembles a signed TaikoL2.anchor transaction.
@@ -69,9 +65,11 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 
 	log.Info(
 		"Anchor arguments",
+		"l2Height", l2Height,
+		"l1Height", l1Height,
 		"l1Hash", l1Hash,
 		"stateRoot", l1Header.Root,
-		"l1Height", l1Height,
+		"baseFee", baseFee,
 		"gasUsed", parentGasUsed,
 	)
 

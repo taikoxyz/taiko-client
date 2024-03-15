@@ -18,7 +18,7 @@ var (
 )
 
 // SyncProgressTracker is responsible for tracking the L2 execution engine's sync progress, after
-// a beacon sync is triggered in it, and check whether the L2 execution is not able to sync through P2P (due to no
+// a beacon sync is triggered, and check whether the L2 execution is not able to sync through P2P (due to no
 // connected peer or some other reasons).
 type SyncProgressTracker struct {
 	// RPC client
@@ -96,18 +96,16 @@ func (t *SyncProgressTracker) track(ctx context.Context) {
 
 		if new(big.Int).SetUint64(headHeight).Cmp(t.lastSyncedVerifiedBlockID) >= 0 {
 			t.lastProgressedTime = time.Now()
-			log.Info("L2 execution engine has finished the P2P sync work, all verified blocks synced, "+
-				"will switch to insert pending blocks one by one",
+			log.Info(
+				"L2 execution engine has finished the P2P sync work, all verified blocks synced, "+
+					"will switch to insert pending blocks one by one",
 				"lastSyncedVerifiedBlockID", t.lastSyncedVerifiedBlockID,
 				"lastSyncedVerifiedBlockHash", t.lastSyncedVerifiedBlockHash,
 			)
 			return
 		}
 
-		log.Debug(
-			"L2 execution engine has not started P2P syncing yet",
-			"timeout", t.timeout,
-		)
+		log.Info("L2 execution engine has not started P2P syncing yet", "timeout", t.timeout)
 	}
 
 	defer func() { t.lastSyncProgress = progress }()
