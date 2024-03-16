@@ -378,7 +378,7 @@ func (s *Syncer) insertNewHead(
 	}
 
 	fc := &engine.ForkchoiceStateV1{HeadBlockHash: payload.BlockHash}
-	if err = s.fillForkchoiceStateV1(ctx, event, fc); err != nil {
+	if err = s.fillForkchoiceState(ctx, event, fc); err != nil {
 		return nil, err
 	}
 
@@ -394,13 +394,20 @@ func (s *Syncer) insertNewHead(
 	return payload, nil
 }
 
-func (s *Syncer) fillForkchoiceStateV1(
+// fillForkchoiceState fills the forkchoice state with the finalized block hash and the safe block hash.
+func (s *Syncer) fillForkchoiceState(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	fc *engine.ForkchoiceStateV1,
 ) error {
-	//event.Raw.BlockNumber
-	variables, err := s.rpc.TaikoL1.GetStateVariables(
+	// If the event is emitted from the genesis block, we don't need to fill the forkchoice state,
+	// should only happen when testing.
+	if event.Raw.BlockNumber == 0 {
+		return nil
+	}
+
+	// Fetch the latest verified block's header from protocol.
+	variables, err := s.rpc.GetProtocolStateVariables(
 		&bind.CallOpts{Context: ctx, BlockNumber: new(big.Int).SetUint64(event.Raw.BlockNumber - 1)},
 	)
 	if err != nil {
@@ -410,6 +417,8 @@ func (s *Syncer) fillForkchoiceStateV1(
 	if err != nil {
 		return err
 	}
+
+	// Fill the forkchoice state.
 	fc.FinalizedBlockHash = finalizeHeader.Hash()
 	fc.SafeBlockHash = finalizeHeader.ParentHash
 
