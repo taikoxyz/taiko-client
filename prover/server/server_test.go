@@ -51,6 +51,8 @@ func (s *ProverServerTestSuite) SetupTest() {
 		MinOptimisticTierFee:  common.Big1,
 		MinSgxTierFee:         common.Big1,
 		MinSgxAndZkVMTierFee:  common.Big1,
+		MinEthBalance:         common.Big1,
+		MinTaikoTokenBalance:  common.Big1,
 		MaxExpiry:             time.Hour,
 		ProofSubmissionCh:     make(chan<- proofProducer.ProofRequestBody, 1024),
 		TaikoL1Address:        common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),

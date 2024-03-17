@@ -37,6 +37,8 @@ type ProverServer struct {
 	minOptimisticTierFee  *big.Int
 	minSgxTierFee         *big.Int
 	minSgxAndZkVMTierFee  *big.Int
+	minEthBalance         *big.Int
+	minTaikoTokenBalance  *big.Int
 	maxExpiry             time.Duration
 	maxSlippage           uint64
 	maxProposedIn         uint64
@@ -54,6 +56,8 @@ type NewProverServerOpts struct {
 	MinOptimisticTierFee  *big.Int
 	MinSgxTierFee         *big.Int
 	MinSgxAndZkVMTierFee  *big.Int
+	MinEthBalance         *big.Int
+	MinTaikoTokenBalance  *big.Int
 	MaxExpiry             time.Duration
 	MaxBlockSlippage      uint64
 	MaxProposedIn         uint64
@@ -74,6 +78,8 @@ func New(opts *NewProverServerOpts) (*ProverServer, error) {
 		minOptimisticTierFee:  opts.MinOptimisticTierFee,
 		minSgxTierFee:         opts.MinSgxTierFee,
 		minSgxAndZkVMTierFee:  opts.MinSgxAndZkVMTierFee,
+		minEthBalance:         opts.MinEthBalance,
+		minTaikoTokenBalance:  opts.MinTaikoTokenBalance,
 		maxExpiry:             opts.MaxExpiry,
 		maxProposedIn:         opts.MaxProposedIn,
 		maxSlippage:           opts.MaxBlockSlippage,
