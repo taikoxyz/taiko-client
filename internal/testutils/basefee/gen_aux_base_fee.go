@@ -31,8 +31,8 @@ var (
 
 // AuxBaseFeeMetaData contains all meta data concerning the AuxBaseFee contract.
 var AuxBaseFeeMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"EIP1559_INVALID_PARAMS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"Overflow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"gasExcess_\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"basefeeAdjustmentQuotient\",\"type\":\"uint8\"},{\"internalType\":\"uint32\",\"name\":\"gasTargetPerL1Block\",\"type\":\"uint32\"}],\"name\":\"baseFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"basefee_\",\"type\":\"uint256\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}]",
-	Bin: "0x608060405234801561000f575f80fd5b5061059b8061001d5f395ff3fe608060405234801561000f575f80fd5b5060043610610029575f3560e01c8063c82f638d1461002d575b5f80fd5b61004760048036038101906100429190610422565b61005d565b6040516100549190610481565b60405180910390f35b5f61007c848363ffffffff168560ff1661007791906104c7565b610085565b90509392505050565b5f8082036100bf576040517fc52de37200000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b81670de0b6b3a76400006100d385856100ef565b6100dd9190610535565b6100e79190610535565b905092915050565b5f8082670de0b6b3a76400008561010691906104c7565b6101109190610535565b9050680755bf798b4a1bf1e46fffffffffffffffffffffffffffffffff1681111561015457680755bf798b4a1bf1e46fffffffffffffffffffffffffffffffff1690505b61015d81610166565b91505092915050565b5f7ffffffffffffffffffffffffffffffffffffffffffffffffdb731c958f34d94c18213610196575f9050610377565b680755bf798b4a1bf1e582126101d8576040517f35278d1200000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b6503782dace9d9604e83901b816101f2576101f1610508565b5b0591505f60606b8000000000000000000000006bb17217f7d1cf79abc9e3b398606086901b8161022557610224610508565b5b0501901d90506bb17217f7d1cf79abc9e3b3988102830392505f6c10fe68e7fd37d0007b713f7650840190506d02d16720577bd19bf614176fe9ea6060858302901d0190505f6d04a4fd9f2a8b96949216d2255a6c8583010390506e0587f503bb6ea29d25fcb7401964506060838302901d01905079d835ebba824c98fb31b83b2ca45c0000000000000000000000008582020190505f6c240c330e9fb2d9cbaf0fd5aafc860390506d0277594991cfc85f6e2461837cd96060878302901d0190506d1a521255e34f6a5061b25ef1c9c46060878302901d0390506db1bbb201f443cf962f1a1d3db4a56060878302901d0190506e02c72388d9f74f51a9331fed693f156060878302901d0390506e05180bb14799ab47a8a8cb2a527d576060878302901d01905080820594508360c30374029d9dc38563c32e5c2f6dc192ee70ef65f9978af38602901c9450505050505b919050565b5f80fd5b5f819050919050565b61039281610380565b811461039c575f80fd5b50565b5f813590506103ad81610389565b92915050565b5f60ff82169050919050565b6103c8816103b3565b81146103d2575f80fd5b50565b5f813590506103e3816103bf565b92915050565b5f63ffffffff82169050919050565b610401816103e9565b811461040b575f80fd5b50565b5f8135905061041c816103f8565b92915050565b5f805f606084860312156104395761043861037c565b5b5f6104468682870161039f565b9350506020610457868287016103d5565b92505060406104688682870161040e565b9150509250925092565b61047b81610380565b82525050565b5f6020820190506104945f830184610472565b92915050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f6104d182610380565b91506104dc83610380565b92508282026104ea81610380565b915082820484148315176105015761050061049a565b5b5092915050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601260045260245ffd5b5f61053f82610380565b915061054a83610380565b92508261055a57610559610508565b5b82820490509291505056fea2646970667358221220c9160a503fc937b1e6a83e2240c90e042cb64342a24c07f4222b2ddd6ae8f87564736f6c63430008180033",
+	ABI: "[{\"inputs\":[],\"name\":\"EIP1559_INVALID_PARAMS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"Overflow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"_gasTargetPerL1Block\",\"type\":\"uint32\"},{\"internalType\":\"uint8\",\"name\":\"_adjustmentQuotient\",\"type\":\"uint8\"},{\"internalType\":\"uint64\",\"name\":\"_gasExcess\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"_gasIssuance\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"_parentGasUsed\",\"type\":\"uint32\"}],\"name\":\"calc1559BaseFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"basefee_\",\"type\":\"uint256\"},{\"internalType\":\"uint64\",\"name\":\"gasExcess_\",\"type\":\"uint64\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}]",
+	Bin: "0x608060405234801561000f575f80fd5b506106fb8061001d5f395ff3fe608060405234801561000f575f80fd5b5060043610610029575f3560e01c80635d958a851461002d575b5f80fd5b610047600480360381019061004291906104cf565b61005e565b60405161005592919061056d565b60405180910390f35b5f805f8363ffffffff168667ffffffffffffffff1661007d91906105c1565b90508467ffffffffffffffff1681116100975760016100ae565b8467ffffffffffffffff16816100ad91906105f4565b5b90506100cd67ffffffffffffffff80168261011090919063ffffffff16565b91506100f78267ffffffffffffffff168963ffffffff168960ff166100f29190610627565b610128565b92505f830361010557600192505b509550959350505050565b5f81831161011e5782610120565b815b905092915050565b5f808203610162576040517fc52de37200000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b81670de0b6b3a76400006101768585610192565b6101809190610695565b61018a9190610695565b905092915050565b5f8082670de0b6b3a7640000856101a99190610627565b6101b39190610695565b9050680755bf798b4a1bf1e46fffffffffffffffffffffffffffffffff168111156101f757680755bf798b4a1bf1e46fffffffffffffffffffffffffffffffff1690505b61020081610209565b91505092915050565b5f7ffffffffffffffffffffffffffffffffffffffffffffffffdb731c958f34d94c18213610239575f905061041a565b680755bf798b4a1bf1e5821261027b576040517f35278d1200000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b6503782dace9d9604e83901b8161029557610294610668565b5b0591505f60606b8000000000000000000000006bb17217f7d1cf79abc9e3b398606086901b816102c8576102c7610668565b5b0501901d90506bb17217f7d1cf79abc9e3b3988102830392505f6c10fe68e7fd37d0007b713f7650840190506d02d16720577bd19bf614176fe9ea6060858302901d0190505f6d04a4fd9f2a8b96949216d2255a6c8583010390506e0587f503bb6ea29d25fcb7401964506060838302901d01905079d835ebba824c98fb31b83b2ca45c0000000000000000000000008582020190505f6c240c330e9fb2d9cbaf0fd5aafc860390506d0277594991cfc85f6e2461837cd96060878302901d0190506d1a521255e34f6a5061b25ef1c9c46060878302901d0390506db1bbb201f443cf962f1a1d3db4a56060878302901d0190506e02c72388d9f74f51a9331fed693f156060878302901d0390506e05180bb14799ab47a8a8cb2a527d576060878302901d01905080820594508360c30374029d9dc38563c32e5c2f6dc192ee70ef65f9978af38602901c9450505050505b919050565b5f80fd5b5f63ffffffff82169050919050565b61043b81610423565b8114610445575f80fd5b50565b5f8135905061045681610432565b92915050565b5f60ff82169050919050565b6104718161045c565b811461047b575f80fd5b50565b5f8135905061048c81610468565b92915050565b5f67ffffffffffffffff82169050919050565b6104ae81610492565b81146104b8575f80fd5b50565b5f813590506104c9816104a5565b92915050565b5f805f805f60a086880312156104e8576104e761041f565b5b5f6104f588828901610448565b95505060206105068882890161047e565b9450506040610517888289016104bb565b9350506060610528888289016104bb565b925050608061053988828901610448565b9150509295509295909350565b5f819050919050565b61055881610546565b82525050565b61056781610492565b82525050565b5f6040820190506105805f83018561054f565b61058d602083018461055e565b9392505050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f6105cb82610546565b91506105d683610546565b92508282019050808211156105ee576105ed610594565b5b92915050565b5f6105fe82610546565b915061060983610546565b925082820390508181111561062157610620610594565b5b92915050565b5f61063182610546565b915061063c83610546565b925082820261064a81610546565b9150828204841483151761066157610660610594565b5b5092915050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601260045260245ffd5b5f61069f82610546565b91506106aa83610546565b9250826106ba576106b9610668565b5b82820490509291505056fea26469706673582212205b99fe84c6a2e5cd8720f09e509edde79d128ed074ef72c1e98981acf78bcda764736f6c63430008180033",
 }
 
 // AuxBaseFeeABI is the input ABI used to generate the binding from.
@@ -202,208 +202,49 @@ func (_AuxBaseFee *AuxBaseFeeTransactorRaw) Transact(opts *bind.TransactOpts, me
 	return _AuxBaseFee.Contract.contract.Transact(opts, method, params...)
 }
 
-// BaseFee is a free data retrieval call binding the contract method 0xc82f638d.
+// Calc1559BaseFee is a free data retrieval call binding the contract method 0x5d958a85.
 //
-// Solidity: function baseFee(uint256 gasExcess_, uint8 basefeeAdjustmentQuotient, uint32 gasTargetPerL1Block) pure returns(uint256 basefee_)
-func (_AuxBaseFee *AuxBaseFeeCaller) BaseFee(opts *bind.CallOpts, gasExcess_ *big.Int, basefeeAdjustmentQuotient uint8, gasTargetPerL1Block uint32) (*big.Int, error) {
+// Solidity: function calc1559BaseFee(uint32 _gasTargetPerL1Block, uint8 _adjustmentQuotient, uint64 _gasExcess, uint64 _gasIssuance, uint32 _parentGasUsed) pure returns(uint256 basefee_, uint64 gasExcess_)
+func (_AuxBaseFee *AuxBaseFeeCaller) Calc1559BaseFee(opts *bind.CallOpts, _gasTargetPerL1Block uint32, _adjustmentQuotient uint8, _gasExcess uint64, _gasIssuance uint64, _parentGasUsed uint32) (struct {
+	Basefee   *big.Int
+	GasExcess uint64
+}, error) {
 	var out []interface{}
-	err := _AuxBaseFee.contract.Call(opts, &out, "baseFee", gasExcess_, basefeeAdjustmentQuotient, gasTargetPerL1Block)
+	err := _AuxBaseFee.contract.Call(opts, &out, "calc1559BaseFee", _gasTargetPerL1Block, _adjustmentQuotient, _gasExcess, _gasIssuance, _parentGasUsed)
 
+	outstruct := new(struct {
+		Basefee   *big.Int
+		GasExcess uint64
+	})
 	if err != nil {
-		return *new(*big.Int), err
+		return *outstruct, err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	outstruct.Basefee = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	outstruct.GasExcess = *abi.ConvertType(out[1], new(uint64)).(*uint64)
 
-	return out0, err
+	return *outstruct, err
 
 }
 
-// BaseFee is a free data retrieval call binding the contract method 0xc82f638d.
+// Calc1559BaseFee is a free data retrieval call binding the contract method 0x5d958a85.
 //
-// Solidity: function baseFee(uint256 gasExcess_, uint8 basefeeAdjustmentQuotient, uint32 gasTargetPerL1Block) pure returns(uint256 basefee_)
-func (_AuxBaseFee *AuxBaseFeeSession) BaseFee(gasExcess_ *big.Int, basefeeAdjustmentQuotient uint8, gasTargetPerL1Block uint32) (*big.Int, error) {
-	return _AuxBaseFee.Contract.BaseFee(&_AuxBaseFee.CallOpts, gasExcess_, basefeeAdjustmentQuotient, gasTargetPerL1Block)
+// Solidity: function calc1559BaseFee(uint32 _gasTargetPerL1Block, uint8 _adjustmentQuotient, uint64 _gasExcess, uint64 _gasIssuance, uint32 _parentGasUsed) pure returns(uint256 basefee_, uint64 gasExcess_)
+func (_AuxBaseFee *AuxBaseFeeSession) Calc1559BaseFee(_gasTargetPerL1Block uint32, _adjustmentQuotient uint8, _gasExcess uint64, _gasIssuance uint64, _parentGasUsed uint32) (struct {
+	Basefee   *big.Int
+	GasExcess uint64
+}, error) {
+	return _AuxBaseFee.Contract.Calc1559BaseFee(&_AuxBaseFee.CallOpts, _gasTargetPerL1Block, _adjustmentQuotient, _gasExcess, _gasIssuance, _parentGasUsed)
 }
 
-// BaseFee is a free data retrieval call binding the contract method 0xc82f638d.
+// Calc1559BaseFee is a free data retrieval call binding the contract method 0x5d958a85.
 //
-// Solidity: function baseFee(uint256 gasExcess_, uint8 basefeeAdjustmentQuotient, uint32 gasTargetPerL1Block) pure returns(uint256 basefee_)
-func (_AuxBaseFee *AuxBaseFeeCallerSession) BaseFee(gasExcess_ *big.Int, basefeeAdjustmentQuotient uint8, gasTargetPerL1Block uint32) (*big.Int, error) {
-	return _AuxBaseFee.Contract.BaseFee(&_AuxBaseFee.CallOpts, gasExcess_, basefeeAdjustmentQuotient, gasTargetPerL1Block)
-}
-
-// Lib1559MathMetaData contains all meta data concerning the Lib1559Math contract.
-var Lib1559MathMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"EIP1559_INVALID_PARAMS\",\"type\":\"error\"}]",
-	Bin: "0x6055604b600b8282823980515f1a607314603f577f4e487b71000000000000000000000000000000000000000000000000000000005f525f60045260245ffd5b305f52607381538281f3fe730000000000000000000000000000000000000000301460806040525f80fdfea2646970667358221220960da3e51a46826b2eb22395911a4f88abf5e55724f4bdf277fc83b864c731dc64736f6c63430008180033",
-}
-
-// Lib1559MathABI is the input ABI used to generate the binding from.
-// Deprecated: Use Lib1559MathMetaData.ABI instead.
-var Lib1559MathABI = Lib1559MathMetaData.ABI
-
-// Lib1559MathBin is the compiled bytecode used for deploying new contracts.
-// Deprecated: Use Lib1559MathMetaData.Bin instead.
-var Lib1559MathBin = Lib1559MathMetaData.Bin
-
-// DeployLib1559Math deploys a new Ethereum contract, binding an instance of Lib1559Math to it.
-func DeployLib1559Math(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *Lib1559Math, error) {
-	parsed, err := Lib1559MathMetaData.GetAbi()
-	if err != nil {
-		return common.Address{}, nil, nil, err
-	}
-	if parsed == nil {
-		return common.Address{}, nil, nil, errors.New("GetABI returned nil")
-	}
-
-	address, tx, contract, err := bind.DeployContract(auth, *parsed, common.FromHex(Lib1559MathBin), backend)
-	if err != nil {
-		return common.Address{}, nil, nil, err
-	}
-	return address, tx, &Lib1559Math{Lib1559MathCaller: Lib1559MathCaller{contract: contract}, Lib1559MathTransactor: Lib1559MathTransactor{contract: contract}, Lib1559MathFilterer: Lib1559MathFilterer{contract: contract}}, nil
-}
-
-// Lib1559Math is an auto generated Go binding around an Ethereum contract.
-type Lib1559Math struct {
-	Lib1559MathCaller     // Read-only binding to the contract
-	Lib1559MathTransactor // Write-only binding to the contract
-	Lib1559MathFilterer   // Log filterer for contract events
-}
-
-// Lib1559MathCaller is an auto generated read-only Go binding around an Ethereum contract.
-type Lib1559MathCaller struct {
-	contract *bind.BoundContract // Generic contract wrapper for the low level calls
-}
-
-// Lib1559MathTransactor is an auto generated write-only Go binding around an Ethereum contract.
-type Lib1559MathTransactor struct {
-	contract *bind.BoundContract // Generic contract wrapper for the low level calls
-}
-
-// Lib1559MathFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
-type Lib1559MathFilterer struct {
-	contract *bind.BoundContract // Generic contract wrapper for the low level calls
-}
-
-// Lib1559MathSession is an auto generated Go binding around an Ethereum contract,
-// with pre-set call and transact options.
-type Lib1559MathSession struct {
-	Contract     *Lib1559Math      // Generic contract binding to set the session for
-	CallOpts     bind.CallOpts     // Call options to use throughout this session
-	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
-}
-
-// Lib1559MathCallerSession is an auto generated read-only Go binding around an Ethereum contract,
-// with pre-set call options.
-type Lib1559MathCallerSession struct {
-	Contract *Lib1559MathCaller // Generic contract caller binding to set the session for
-	CallOpts bind.CallOpts      // Call options to use throughout this session
-}
-
-// Lib1559MathTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
-// with pre-set transact options.
-type Lib1559MathTransactorSession struct {
-	Contract     *Lib1559MathTransactor // Generic contract transactor binding to set the session for
-	TransactOpts bind.TransactOpts      // Transaction auth options to use throughout this session
-}
-
-// Lib1559MathRaw is an auto generated low-level Go binding around an Ethereum contract.
-type Lib1559MathRaw struct {
-	Contract *Lib1559Math // Generic contract binding to access the raw methods on
-}
-
-// Lib1559MathCallerRaw is an auto generated low-level read-only Go binding around an Ethereum contract.
-type Lib1559MathCallerRaw struct {
-	Contract *Lib1559MathCaller // Generic read-only contract binding to access the raw methods on
-}
-
-// Lib1559MathTransactorRaw is an auto generated low-level write-only Go binding around an Ethereum contract.
-type Lib1559MathTransactorRaw struct {
-	Contract *Lib1559MathTransactor // Generic write-only contract binding to access the raw methods on
-}
-
-// NewLib1559Math creates a new instance of Lib1559Math, bound to a specific deployed contract.
-func NewLib1559Math(address common.Address, backend bind.ContractBackend) (*Lib1559Math, error) {
-	contract, err := bindLib1559Math(address, backend, backend, backend)
-	if err != nil {
-		return nil, err
-	}
-	return &Lib1559Math{Lib1559MathCaller: Lib1559MathCaller{contract: contract}, Lib1559MathTransactor: Lib1559MathTransactor{contract: contract}, Lib1559MathFilterer: Lib1559MathFilterer{contract: contract}}, nil
-}
-
-// NewLib1559MathCaller creates a new read-only instance of Lib1559Math, bound to a specific deployed contract.
-func NewLib1559MathCaller(address common.Address, caller bind.ContractCaller) (*Lib1559MathCaller, error) {
-	contract, err := bindLib1559Math(address, caller, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-	return &Lib1559MathCaller{contract: contract}, nil
-}
-
-// NewLib1559MathTransactor creates a new write-only instance of Lib1559Math, bound to a specific deployed contract.
-func NewLib1559MathTransactor(address common.Address, transactor bind.ContractTransactor) (*Lib1559MathTransactor, error) {
-	contract, err := bindLib1559Math(address, nil, transactor, nil)
-	if err != nil {
-		return nil, err
-	}
-	return &Lib1559MathTransactor{contract: contract}, nil
-}
-
-// NewLib1559MathFilterer creates a new log filterer instance of Lib1559Math, bound to a specific deployed contract.
-func NewLib1559MathFilterer(address common.Address, filterer bind.ContractFilterer) (*Lib1559MathFilterer, error) {
-	contract, err := bindLib1559Math(address, nil, nil, filterer)
-	if err != nil {
-		return nil, err
-	}
-	return &Lib1559MathFilterer{contract: contract}, nil
-}
-
-// bindLib1559Math binds a generic wrapper to an already deployed contract.
-func bindLib1559Math(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) (*bind.BoundContract, error) {
-	parsed, err := Lib1559MathMetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
-	return bind.NewBoundContract(address, *parsed, caller, transactor, filterer), nil
-}
-
-// Call invokes the (constant) contract method with params as input values and
-// sets the output to result. The result type might be a single field for simple
-// returns, a slice of interfaces for anonymous returns and a struct for named
-// returns.
-func (_Lib1559Math *Lib1559MathRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
-	return _Lib1559Math.Contract.Lib1559MathCaller.contract.Call(opts, result, method, params...)
-}
-
-// Transfer initiates a plain transaction to move funds to the contract, calling
-// its default method if one is available.
-func (_Lib1559Math *Lib1559MathRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _Lib1559Math.Contract.Lib1559MathTransactor.contract.Transfer(opts)
-}
-
-// Transact invokes the (paid) contract method with params as input values.
-func (_Lib1559Math *Lib1559MathRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
-	return _Lib1559Math.Contract.Lib1559MathTransactor.contract.Transact(opts, method, params...)
-}
-
-// Call invokes the (constant) contract method with params as input values and
-// sets the output to result. The result type might be a single field for simple
-// returns, a slice of interfaces for anonymous returns and a struct for named
-// returns.
-func (_Lib1559Math *Lib1559MathCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
-	return _Lib1559Math.Contract.contract.Call(opts, result, method, params...)
-}
-
-// Transfer initiates a plain transaction to move funds to the contract, calling
-// its default method if one is available.
-func (_Lib1559Math *Lib1559MathTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _Lib1559Math.Contract.contract.Transfer(opts)
-}
-
-// Transact invokes the (paid) contract method with params as input values.
-func (_Lib1559Math *Lib1559MathTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
-	return _Lib1559Math.Contract.contract.Transact(opts, method, params...)
+// Solidity: function calc1559BaseFee(uint32 _gasTargetPerL1Block, uint8 _adjustmentQuotient, uint64 _gasExcess, uint64 _gasIssuance, uint32 _parentGasUsed) pure returns(uint256 basefee_, uint64 gasExcess_)
+func (_AuxBaseFee *AuxBaseFeeCallerSession) Calc1559BaseFee(_gasTargetPerL1Block uint32, _adjustmentQuotient uint8, _gasExcess uint64, _gasIssuance uint64, _parentGasUsed uint32) (struct {
+	Basefee   *big.Int
+	GasExcess uint64
+}, error) {
+	return _AuxBaseFee.Contract.Calc1559BaseFee(&_AuxBaseFee.CallOpts, _gasTargetPerL1Block, _adjustmentQuotient, _gasExcess, _gasIssuance, _parentGasUsed)
 }
 
 // LibFixedPointMathMetaData contains all meta data concerning the LibFixedPointMath contract.
@@ -639,4 +480,177 @@ func (_LibFixedPointMath *LibFixedPointMathSession) SCALINGFACTOR() (*big.Int, e
 // Solidity: function SCALING_FACTOR() view returns(uint256)
 func (_LibFixedPointMath *LibFixedPointMathCallerSession) SCALINGFACTOR() (*big.Int, error) {
 	return _LibFixedPointMath.Contract.SCALINGFACTOR(&_LibFixedPointMath.CallOpts)
+}
+
+// LibMathMetaData contains all meta data concerning the LibMath contract.
+var LibMathMetaData = &bind.MetaData{
+	ABI: "[]",
+	Bin: "0x6055604b600b8282823980515f1a607314603f577f4e487b71000000000000000000000000000000000000000000000000000000005f525f60045260245ffd5b305f52607381538281f3fe730000000000000000000000000000000000000000301460806040525f80fdfea26469706673582212207b2d6a4d256fd37413ff5bb2963c8b217029784aa6bc50bd5915658915fe79c864736f6c63430008180033",
+}
+
+// LibMathABI is the input ABI used to generate the binding from.
+// Deprecated: Use LibMathMetaData.ABI instead.
+var LibMathABI = LibMathMetaData.ABI
+
+// LibMathBin is the compiled bytecode used for deploying new contracts.
+// Deprecated: Use LibMathMetaData.Bin instead.
+var LibMathBin = LibMathMetaData.Bin
+
+// DeployLibMath deploys a new Ethereum contract, binding an instance of LibMath to it.
+func DeployLibMath(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *LibMath, error) {
+	parsed, err := LibMathMetaData.GetAbi()
+	if err != nil {
+		return common.Address{}, nil, nil, err
+	}
+	if parsed == nil {
+		return common.Address{}, nil, nil, errors.New("GetABI returned nil")
+	}
+
+	address, tx, contract, err := bind.DeployContract(auth, *parsed, common.FromHex(LibMathBin), backend)
+	if err != nil {
+		return common.Address{}, nil, nil, err
+	}
+	return address, tx, &LibMath{LibMathCaller: LibMathCaller{contract: contract}, LibMathTransactor: LibMathTransactor{contract: contract}, LibMathFilterer: LibMathFilterer{contract: contract}}, nil
+}
+
+// LibMath is an auto generated Go binding around an Ethereum contract.
+type LibMath struct {
+	LibMathCaller     // Read-only binding to the contract
+	LibMathTransactor // Write-only binding to the contract
+	LibMathFilterer   // Log filterer for contract events
+}
+
+// LibMathCaller is an auto generated read-only Go binding around an Ethereum contract.
+type LibMathCaller struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// LibMathTransactor is an auto generated write-only Go binding around an Ethereum contract.
+type LibMathTransactor struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// LibMathFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
+type LibMathFilterer struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// LibMathSession is an auto generated Go binding around an Ethereum contract,
+// with pre-set call and transact options.
+type LibMathSession struct {
+	Contract     *LibMath          // Generic contract binding to set the session for
+	CallOpts     bind.CallOpts     // Call options to use throughout this session
+	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
+}
+
+// LibMathCallerSession is an auto generated read-only Go binding around an Ethereum contract,
+// with pre-set call options.
+type LibMathCallerSession struct {
+	Contract *LibMathCaller // Generic contract caller binding to set the session for
+	CallOpts bind.CallOpts  // Call options to use throughout this session
+}
+
+// LibMathTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
+// with pre-set transact options.
+type LibMathTransactorSession struct {
+	Contract     *LibMathTransactor // Generic contract transactor binding to set the session for
+	TransactOpts bind.TransactOpts  // Transaction auth options to use throughout this session
+}
+
+// LibMathRaw is an auto generated low-level Go binding around an Ethereum contract.
+type LibMathRaw struct {
+	Contract *LibMath // Generic contract binding to access the raw methods on
+}
+
+// LibMathCallerRaw is an auto generated low-level read-only Go binding around an Ethereum contract.
+type LibMathCallerRaw struct {
+	Contract *LibMathCaller // Generic read-only contract binding to access the raw methods on
+}
+
+// LibMathTransactorRaw is an auto generated low-level write-only Go binding around an Ethereum contract.
+type LibMathTransactorRaw struct {
+	Contract *LibMathTransactor // Generic write-only contract binding to access the raw methods on
+}
+
+// NewLibMath creates a new instance of LibMath, bound to a specific deployed contract.
+func NewLibMath(address common.Address, backend bind.ContractBackend) (*LibMath, error) {
+	contract, err := bindLibMath(address, backend, backend, backend)
+	if err != nil {
+		return nil, err
+	}
+	return &LibMath{LibMathCaller: LibMathCaller{contract: contract}, LibMathTransactor: LibMathTransactor{contract: contract}, LibMathFilterer: LibMathFilterer{contract: contract}}, nil
+}
+
+// NewLibMathCaller creates a new read-only instance of LibMath, bound to a specific deployed contract.
+func NewLibMathCaller(address common.Address, caller bind.ContractCaller) (*LibMathCaller, error) {
+	contract, err := bindLibMath(address, caller, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &LibMathCaller{contract: contract}, nil
+}
+
+// NewLibMathTransactor creates a new write-only instance of LibMath, bound to a specific deployed contract.
+func NewLibMathTransactor(address common.Address, transactor bind.ContractTransactor) (*LibMathTransactor, error) {
+	contract, err := bindLibMath(address, nil, transactor, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &LibMathTransactor{contract: contract}, nil
+}
+
+// NewLibMathFilterer creates a new log filterer instance of LibMath, bound to a specific deployed contract.
+func NewLibMathFilterer(address common.Address, filterer bind.ContractFilterer) (*LibMathFilterer, error) {
+	contract, err := bindLibMath(address, nil, nil, filterer)
+	if err != nil {
+		return nil, err
+	}
+	return &LibMathFilterer{contract: contract}, nil
+}
+
+// bindLibMath binds a generic wrapper to an already deployed contract.
+func bindLibMath(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) (*bind.BoundContract, error) {
+	parsed, err := LibMathMetaData.GetAbi()
+	if err != nil {
+		return nil, err
+	}
+	return bind.NewBoundContract(address, *parsed, caller, transactor, filterer), nil
+}
+
+// Call invokes the (constant) contract method with params as input values and
+// sets the output to result. The result type might be a single field for simple
+// returns, a slice of interfaces for anonymous returns and a struct for named
+// returns.
+func (_LibMath *LibMathRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
+	return _LibMath.Contract.LibMathCaller.contract.Call(opts, result, method, params...)
+}
+
+// Transfer initiates a plain transaction to move funds to the contract, calling
+// its default method if one is available.
+func (_LibMath *LibMathRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _LibMath.Contract.LibMathTransactor.contract.Transfer(opts)
+}
+
+// Transact invokes the (paid) contract method with params as input values.
+func (_LibMath *LibMathRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+	return _LibMath.Contract.LibMathTransactor.contract.Transact(opts, method, params...)
+}
+
+// Call invokes the (constant) contract method with params as input values and
+// sets the output to result. The result type might be a single field for simple
+// returns, a slice of interfaces for anonymous returns and a struct for named
+// returns.
+func (_LibMath *LibMathCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
+	return _LibMath.Contract.contract.Call(opts, result, method, params...)
+}
+
+// Transfer initiates a plain transaction to move funds to the contract, calling
+// its default method if one is available.
+func (_LibMath *LibMathTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _LibMath.Contract.contract.Transfer(opts)
+}
+
+// Transact invokes the (paid) contract method with params as input values.
+func (_LibMath *LibMathTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+	return _LibMath.Contract.contract.Transact(opts, method, params...)
 }

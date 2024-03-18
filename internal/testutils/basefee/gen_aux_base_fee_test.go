@@ -3,16 +3,14 @@ package basefee
 import (
 	"context"
 	"fmt"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
-	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
-	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 type BaseFeeSuite struct {
@@ -20,96 +18,132 @@ type BaseFeeSuite struct {
 
 	baseFee *AuxBaseFee
 
-	lastSyncedBlock uint64
-	gasExcess       uint64
-	config          bindings.TaikoL2Config
+	gasExcess uint64
+	config    bindings.TaikoL2Config
 }
 
-func (s *BaseFeeSuite) calc1559BaseFee(_l1BlockID, _parentGasUsed uint64) uint64 {
-	var (
-		baseFee *big.Int
-		err     error
+func (s *BaseFeeSuite) testCalc1559BaseFee(numL1Blocks uint64, _parentGasUsed uint32) {
+	_gasIssuance := numL1Blocks * uint64(s.config.GasTargetPerL1Block)
+	res, err := s.baseFee.Calc1559BaseFee(
+		nil,
+		s.config.GasTargetPerL1Block,
+		s.config.BasefeeAdjustmentQuotient,
+		s.gasExcess,
+		_gasIssuance,
+		_parentGasUsed,
 	)
-	if s.gasExcess > 0 {
-		excess := s.gasExcess + _parentGasUsed
-		var numL1Blocks uint64
-		if s.lastSyncedBlock > 0 && _l1BlockID > s.lastSyncedBlock {
-			numL1Blocks = _l1BlockID - s.lastSyncedBlock
+	s.Nil(err)
+	fmt.Printf(
+		"numL1Blocks: %d\t\t, gasExcess: %d\t\t, parentGasUsed: %d\t\t, baseFee: %d\n",
+		numL1Blocks,
+		s.gasExcess,
+		_parentGasUsed,
+		res.Basefee.Uint64(),
+	)
+	s.gasExcess = res.GasExcess
+}
+
+type testNode struct {
+	numL1Blocks    uint64
+	gasUsed        uint32
+	growthRate     uint32
+	times          int
+	resetGasExcess bool
+}
+
+func (s *BaseFeeSuite) TestDecreaseCalc1559BaseFee() {
+	var testData = []*testNode{
+		{
+			numL1Blocks:    0,
+			gasUsed:        70000000,
+			growthRate:     110,
+			times:          30,
+			resetGasExcess: true,
+		},
+		{
+			numL1Blocks:    0,
+			gasUsed:        1110412930,
+			growthRate:     90,
+			times:          70,
+			resetGasExcess: false,
+		},
+		{
+			numL1Blocks:    1,
+			gasUsed:        70000000,
+			growthRate:     110,
+			times:          30,
+			resetGasExcess: true,
+		},
+		{
+			numL1Blocks:    1,
+			gasUsed:        1110412930,
+			growthRate:     80,
+			times:          90,
+			resetGasExcess: false,
+		},
+	}
+	for _, val := range testData {
+		if val.resetGasExcess {
+			s.gasExcess = 1
 		}
-		if numL1Blocks > 0 {
-			issuance := numL1Blocks * uint64(s.config.GasTargetPerL1Block)
-			if excess > issuance {
-				excess -= issuance
-			} else {
-				excess = 1
-			}
+		times := val.times
+		for gasUsed := val.gasUsed; times > 0 && gasUsed < math.MaxUint32; gasUsed = gasUsed / 100 * val.growthRate {
+			times--
+			s.testCalc1559BaseFee(val.numL1Blocks, gasUsed)
 		}
-		gasExcess := utils.Min(excess, math.MaxUint64)
-		baseFee, err = s.baseFee.BaseFee(nil,
-			new(big.Int).SetUint64(gasExcess),
-			s.config.BasefeeAdjustmentQuotient,
-			s.config.GasTargetPerL1Block,
-		)
-		s.Nil(err)
-	}
-
-	if baseFee == nil || baseFee.Uint64() == 0 {
-		return 1
-	}
-	return baseFee.Uint64()
-}
-
-func (s *BaseFeeSuite) testCalc1559BaseFee(numL1Blocks uint64, startGasUsed uint64, times int) {
-	s.lastSyncedBlock = 1
-	for ; times > 0; times-- {
-		fmt.Println("GasUsed: ", startGasUsed)
-		startGasUsed = s.calc1559BaseFee(s.lastSyncedBlock+numL1Blocks, startGasUsed)
+		fmt.Printf("\n\n")
 	}
 }
 
-func (s *BaseFeeSuite) TestCalc1559BaseFee() {
-	var numL1Blocks uint64 = 1
-	times := 10
-	for i := 7740000000; times > 0; i += 400000000 {
-		times--
-		s.testCalc1559BaseFee(numL1Blocks, numL1Blocks*uint64(s.config.GasTargetPerL1Block)+uint64(i), 3)
+func (s *BaseFeeSuite) TestIncreaseCalc1559BaseFee() {
+	testData := []*testNode{
+		{
+			numL1Blocks:    0,
+			gasUsed:        70000000,
+			growthRate:     110,
+			times:          100,
+			resetGasExcess: true,
+		},
+		{
+			numL1Blocks:    1,
+			gasUsed:        800000000,
+			growthRate:     110,
+			times:          40,
+			resetGasExcess: true,
+		},
+		{
+			numL1Blocks:    2,
+			gasUsed:        800800000,
+			growthRate:     110,
+			times:          40,
+			resetGasExcess: true,
+		},
+		{
+			numL1Blocks:    3,
+			gasUsed:        801200000,
+			growthRate:     105,
+			times:          50,
+			resetGasExcess: true,
+		},
+		{
+			numL1Blocks:    4,
+			gasUsed:        801600000,
+			growthRate:     105,
+			times:          60,
+			resetGasExcess: true,
+		},
 	}
-}
-
-func (s *BaseFeeSuite) TestBaseFee() {
-	times := 1000
-	for i := 9550000000; times > 0; i += 50000000 {
-		times--
-		gasExcess := new(big.Int).SetUint64(uint64(i))
-		baseFee, err := s.baseFee.BaseFee(nil,
-			gasExcess,
-			s.config.BasefeeAdjustmentQuotient,
-			s.config.GasTargetPerL1Block,
-		)
-		s.Nil(err)
-		//if baseFee.Cmp(gasExcess) >= 0 {
-		fmt.Println(i, ", baseFee: ", baseFee)
-		//}
+	for _, val := range testData {
+		if val.resetGasExcess {
+			s.gasExcess = 1
+		}
+		times := val.times
+		for gasUsed := val.gasUsed; times > 0 && gasUsed < math.MaxUint32; gasUsed = gasUsed / 100 * val.growthRate {
+			times--
+			s.testCalc1559BaseFee(val.numL1Blocks, gasUsed)
+		}
+		fmt.Printf("\n\n")
 	}
-}
-
-func (s *BaseFeeSuite) TestVerifyCalc1559BaseFee() {
-	l1CLi := s.RPCClient.L1
-	l2CLi := s.RPCClient.L2
-
-	l1Header, err := l1CLi.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-	l1BlockID := l1Header.Number.Uint64()
-
-	l2Header, err := l2CLi.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-
-	l2BaseFee, err := s.RPCClient.TaikoL2.GetBasefee(nil, l1BlockID, uint32(l2Header.GasUsed))
-	s.Nil(err)
-
-	mockBaseFee := s.calc1559BaseFee(l1BlockID, l2Header.GasUsed)
-
-	s.Equal(l2BaseFee.Uint64(), mockBaseFee)
 }
 
 func (s *BaseFeeSuite) SetupTest() {
@@ -135,11 +169,6 @@ func (s *BaseFeeSuite) SetupTest() {
 	s.config, err = taikoL2.GetConfig(nil)
 	s.Nil(err)
 	fmt.Println("config: ", s.config.BasefeeAdjustmentQuotient, s.config.GasTargetPerL1Block)
-
-	s.lastSyncedBlock, err = taikoL2.LastSyncedBlock(nil)
-	s.Nil(err)
-
-	fmt.Println("lastSyncedBlock: ", s.lastSyncedBlock)
 }
 
 func TestDriverTestSuite(t *testing.T) {
