@@ -76,6 +76,11 @@ func (c *EthClient) CreateBlobTx(
 		gas = &gasVal
 	}
 
+	var value = opts.Value
+	if value == nil {
+		value = new(big.Int)
+	}
+
 	rawTx, err := c.FillTransaction(opts.Context, &TransactionArgs{
 		From:                 &opts.From,
 		To:                   &contract,
@@ -83,7 +88,7 @@ func (c *EthClient) CreateBlobTx(
 		GasPrice:             (*hexutil.Big)(opts.GasPrice),
 		MaxFeePerGas:         (*hexutil.Big)(opts.GasFeeCap),
 		MaxPriorityFeePerGas: (*hexutil.Big)(opts.GasTipCap),
-		Value:                (*hexutil.Big)(opts.Value),
+		Value:                (*hexutil.Big)(value),
 		Nonce:                nonce,
 		Data:                 (*hexutil.Bytes)(&input),
 		AccessList:           nil,
@@ -106,8 +111,8 @@ func (c *EthClient) CreateBlobTx(
 		GasTipCap:  uint256.MustFromBig(rawTx.GasTipCap()),
 		GasFeeCap:  uint256.MustFromBig(rawTx.GasFeeCap()),
 		Gas:        rawTx.Gas(),
-		To:         *rawTx.To(),
-		Value:      uint256.MustFromBig(rawTx.Value()),
+		To:         contract,
+		Value:      uint256.MustFromBig(value),
 		Data:       rawTx.Data(),
 		AccessList: rawTx.AccessList(),
 		BlobFeeCap: uint256.MustFromBig(blobFeeCap),
