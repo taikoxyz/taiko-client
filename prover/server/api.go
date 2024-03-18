@@ -159,6 +159,7 @@ func (s *ProverServer) CreateAssignment(c echo.Context) error {
 			minTierFee = s.minSgxAndZkVMTierFee
 		default:
 			log.Warn("Unknown tier", "tier", tier.Tier, "fee", tier.Fee, "proposerIP", c.RealIP())
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, "unknown tier")
 		}
 
 		if tier.Fee.Cmp(minTierFee) < 0 {
