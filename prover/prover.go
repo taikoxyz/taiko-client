@@ -189,6 +189,8 @@ func (p *Prover) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 		ProverPrivateKey:      p.cfg.L1ProverPrivKey,
 		MinOptimisticTierFee:  p.cfg.MinOptimisticTierFee,
 		MinSgxTierFee:         p.cfg.MinSgxTierFee,
+		MinEthBalance:         p.cfg.MinEthBalance,
+		MinTaikoTokenBalance:  p.cfg.MinTaikoTokenBalance,
 		MaxExpiry:             p.cfg.MaxExpiry,
 		MaxBlockSlippage:      p.cfg.MaxBlockSlippage,
 		TaikoL1Address:        p.cfg.TaikoL1Address,

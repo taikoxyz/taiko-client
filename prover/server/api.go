@@ -1,10 +1,12 @@
 package server
 
 import (
+	"context"
 	"math/big"
 	"net/http"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -12,6 +14,10 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+)
+
+const (
+	rpcTimeout = 1 * time.Minute
 )
 
 // @title Taiko Prover Server API
@@ -100,34 +106,44 @@ func (s *ProverServer) CreateAssignment(c echo.Context) error {
 		"currentUsedCapacity", len(s.proofSubmissionCh),
 	)
 
+	// 1. Check if the request body is valid.
 	if req.TxListHash == (common.Hash{}) {
 		log.Info("Invalid txList hash")
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "invalid txList hash")
 	}
-
 	if req.FeeToken != (common.Address{}) {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "only receive ETH")
 	}
 
-	ok, err := rpc.CheckProverBalance(
-		c.Request().Context(),
-		s.rpc,
-		s.proverAddress,
-		s.assignmentHookAddress,
-		s.livenessBond,
-	)
+	// 2. Check if the prover has the required minimum on-chain ETH and Taiko token balance.
+	ok, err := s.checkMinEthAndToken(c.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	if !ok {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, "insufficient prover balance")
+	}
+
+	// 3. Check if the prover's token balance is enough to cover the bonds.
+	if ok, err = rpc.CheckProverBalance(
+		c.Request().Context(),
+		s.rpc,
+		s.proverAddress,
+		s.assignmentHookAddress,
+		s.livenessBond,
+	); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	if !ok {
 		log.Warn(
-			"Insufficient prover balance, please get more tokens or wait for verification of the blocks you proved",
+			"Insufficient prover token balance, please get more tokens or wait for verification of the blocks you proved",
 			"prover", s.proverAddress,
 		)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "insufficient prover balance")
 	}
 
+	// 4. Check if the proof fee meets prover's minimum requirement for each tier.
 	for _, tier := range req.TierFees {
 		if tier.Tier == encoding.TierGuardianID {
 			continue
@@ -143,6 +159,7 @@ func (s *ProverServer) CreateAssignment(c echo.Context) error {
 			minTierFee = s.minSgxAndZkVMTierFee
 		default:
 			log.Warn("Unknown tier", "tier", tier.Tier, "fee", tier.Fee, "proposerIP", c.RealIP())
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, "unknown tier")
 		}
 
 		if tier.Fee.Cmp(minTierFee) < 0 {
@@ -157,6 +174,7 @@ func (s *ProverServer) CreateAssignment(c echo.Context) error {
 		}
 	}
 
+	// 5. Check if the expiry is too long.
 	if req.Expiry > uint64(time.Now().Add(s.maxExpiry).Unix()) {
 		log.Warn(
 			"Expiry too long",
@@ -167,18 +185,18 @@ func (s *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "expiry too long")
 	}
 
-	// Check if the prover has any capacity now.
+	// 6. Check if the prover has any capacity now.
 	if s.proofSubmissionCh != nil && len(s.proofSubmissionCh) == cap(s.proofSubmissionCh) {
 		log.Warn("Prover does not have capacity", "capacity", cap(s.proofSubmissionCh))
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "prover does not have capacity")
 	}
 
+	// 7. Encode and sign the prover assignment payload.
 	l1Head, err := s.rpc.L1.BlockNumber(c.Request().Context())
 	if err != nil {
 		log.Error("Failed to get L1 block head", "error", err)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
 	}
-
 	encoded, err := encoding.EncodeProverAssignmentPayload(
 		s.protocolConfigs.ChainId,
 		s.taikoL1Address,
@@ -200,10 +218,63 @@ func (s *ProverServer) CreateAssignment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
+	// 8. Return the signed payload.
 	return c.JSON(http.StatusOK, &ProposeBlockResponse{
 		SignedPayload: signed,
 		Prover:        s.proverAddress,
 		MaxBlockID:    l1Head + s.maxSlippage,
 		MaxProposedIn: s.maxProposedIn,
 	})
+}
+
+// checkMinEthAndToken checks if the prover has the required minimum on-chain ETH and Taiko token balance.
+func (s *ProverServer) checkMinEthAndToken(ctx context.Context) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, rpcTimeout)
+	defer cancel()
+
+	// 1. Check prover's ETH balance.
+	ethBalance, err := s.rpc.L1.BalanceAt(ctx, s.proverAddress, nil)
+	if err != nil {
+		return false, err
+	}
+
+	log.Info(
+		"Prover's ETH balance",
+		"balance", ethBalance,
+		"address", s.proverAddress.Hex(),
+	)
+
+	if ethBalance.Cmp(s.minEthBalance) <= 0 {
+		log.Warn(
+			"Prover does not have required minimum on-chain ETH balance",
+			"providedProver", s.proverAddress.Hex(),
+			"ethBalance", ethBalance,
+			"minEthBalance", s.minEthBalance,
+		)
+		return false, nil
+	}
+
+	// 2. Check prover's Taiko token balance.
+	balance, err := s.rpc.TaikoToken.BalanceOf(&bind.CallOpts{Context: ctx}, s.proverAddress)
+	if err != nil {
+		return false, err
+	}
+
+	log.Info(
+		"Prover's Taiko token balance",
+		"balance", balance.String(),
+		"address", s.proverAddress.Hex(),
+	)
+
+	if balance.Cmp(s.minTaikoTokenBalance) <= 0 {
+		log.Warn(
+			"Prover does not have required on-chain Taiko token balance",
+			"providedProver", s.proverAddress.Hex(),
+			"taikoTokenBalance", balance,
+			"minTaikoTokenBalance", s.minTaikoTokenBalance,
+		)
+		return false, nil
+	}
+
+	return true, nil
 }

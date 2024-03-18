@@ -53,6 +53,18 @@ var (
 		Category: proverCategory,
 		Value:    false,
 	}
+	MinEthBalance = &cli.Uint64Flag{
+		Name:     "prover.minEthBalance",
+		Usage:    "Minimum ETH balance (in wei) a prover wants to keep",
+		Category: proverCategory,
+		Value:    0,
+	}
+	MinTaikoTokenBalance = &cli.Uint64Flag{
+		Name:     "prover.minTaikoTokenBalance",
+		Usage:    "Minimum Taiko token balance a prover wants to keep",
+		Category: proverCategory,
+		Value:    0,
+	}
 	// Tier fee related.
 	MinOptimisticTierFee = &cli.Uint64Flag{
 		Name:     "minTierFee.optimistic",
@@ -192,6 +204,8 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MinOptimisticTierFee,
 	MinSgxTierFee,
 	MinSgxAndZkVMTierFee,
+	MinEthBalance,
+	MinTaikoTokenBalance,
 	StartingBlockID,
 	Dummy,
 	GuardianProver,

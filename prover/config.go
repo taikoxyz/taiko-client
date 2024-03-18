@@ -51,6 +51,8 @@ type Config struct {
 	MinOptimisticTierFee                    *big.Int
 	MinSgxTierFee                           *big.Int
 	MinSgxAndZkVMTierFee                    *big.Int
+	MinEthBalance                           *big.Int
+	MinTaikoTokenBalance                    *big.Int
 	MaxExpiry                               time.Duration
 	MaxProposedIn                           uint64
 	MaxBlockSlippage                        uint64
@@ -173,6 +175,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		MinOptimisticTierFee:                    new(big.Int).SetUint64(c.Uint64(flags.MinOptimisticTierFee.Name)),
 		MinSgxTierFee:                           new(big.Int).SetUint64(c.Uint64(flags.MinSgxTierFee.Name)),
 		MinSgxAndZkVMTierFee:                    new(big.Int).SetUint64(c.Uint64(flags.MinSgxAndZkVMTierFee.Name)),
+		MinEthBalance:                           new(big.Int).SetUint64(c.Uint64(flags.MinEthBalance.Name)),
+		MinTaikoTokenBalance:                    new(big.Int).SetUint64(c.Uint64(flags.MinTaikoTokenBalance.Name)),
 		MaxExpiry:                               c.Duration(flags.MaxExpiry.Name),
 		MaxBlockSlippage:                        c.Uint64(flags.MaxAcceptableBlockSlippage.Name),
 		MaxProposedIn:                           c.Uint64(flags.MaxProposedIn.Name),
