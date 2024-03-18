@@ -66,7 +66,8 @@ func (c *BeaconClient) GetBlobByHash(ctx context.Context, slot *big.Int, blobHas
 			sha256.New(),
 			&commitment,
 		) == blobHash {
-			return DecodeBlob(common.FromHex(sidecar.Blob))
+			blob := Blob(common.FromHex(sidecar.Blob))
+			return blob.ToData()
 		}
 	}
 

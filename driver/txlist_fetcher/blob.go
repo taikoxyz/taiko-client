@@ -56,7 +56,8 @@ func (d *BlobFetcher) Fetch(
 			sha256.New(),
 			&commitment,
 		) == common.BytesToHash(meta.BlobHash[:]) {
-			return rpc.DecodeBlob(common.FromHex(sidecar.Blob))
+			blob := rpc.Blob(common.FromHex(sidecar.Blob))
+			return blob.ToData()
 		}
 	}
 
