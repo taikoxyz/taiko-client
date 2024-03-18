@@ -110,7 +110,7 @@ func (b *Blob) FromData(data Data) error {
 			return 0
 		}
 		out := data[readOffset]
-		readOffset += 1
+		readOffset++
 		return out
 	}
 
@@ -139,7 +139,7 @@ func (b *Blob) FromData(data Data) error {
 			panic(fmt.Errorf("blob encoding: invalid 6 bit value: 0b%b", v))
 		}
 		b[writeOffset] = v
-		writeOffset += 1
+		writeOffset++
 	}
 	// Write buf31 to the blob, updates the write-offset.
 	// Asserts that the write-offset matches encoding-algorithm expectations.
