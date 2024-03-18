@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
@@ -114,6 +114,7 @@ func (b *BlobTransactionBuilder) Build(
 
 	tx, err := b.rpc.L1.TransactBlobTx(opts, b.taikoL1Address, rawTx.Data(), sideCar)
 	if err != nil {
+		log.Debug("Failed to transact blob tx", "value", maxFee, "blobGasFeeCap", tx.BlobGasFeeCap(), "err", err)
 		return nil, err
 	}
 
