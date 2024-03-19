@@ -45,6 +45,7 @@ jobs:
         with:
           repository: taikoxyz/taiko-mono-private
           path: ${{ env.TAIKO_MONO_DIR }}
+          token: ${{ secrets.TK_REPO_ACCESS }}
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
