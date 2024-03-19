@@ -43,7 +43,7 @@ jobs:
 
       - uses: actions/checkout@v3
         with:
-          repository: taikoxyz/taiko-mono
+          repository: taikoxyz/taiko-mono-private
           path: ${{ env.TAIKO_MONO_DIR }}
 
       - name: Install Foundry
