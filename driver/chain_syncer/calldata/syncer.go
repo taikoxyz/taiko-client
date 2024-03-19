@@ -320,7 +320,7 @@ func (s *Syncer) insertNewHead(
 	}
 
 	// Get L2 baseFee
-	baseFee, err := s.rpc.TaikoL2.GetBasefee(
+	baseFeeInfo, err := s.rpc.TaikoL2.GetBasefee(
 		&bind.CallOpts{BlockNumber: parent.Number, Context: ctx},
 		event.Meta.L1Height,
 		uint32(parent.GasUsed),
@@ -332,7 +332,7 @@ func (s *Syncer) insertNewHead(
 	log.Info(
 		"L2 baseFee",
 		"blockID", event.BlockId,
-		"baseFee", baseFee,
+		"baseFee", baseFeeInfo.Basefee,
 		"syncedL1Height", event.Meta.L1Height,
 		"parentGasUsed", parent.GasUsed,
 	)
@@ -349,7 +349,7 @@ func (s *Syncer) insertNewHead(
 		new(big.Int).SetUint64(event.Meta.L1Height),
 		event.Meta.L1Hash,
 		new(big.Int).Add(parent.Number, common.Big1),
-		baseFee,
+		baseFeeInfo.Basefee,
 		parent.GasUsed,
 	)
 	if err != nil {
@@ -370,7 +370,7 @@ func (s *Syncer) insertNewHead(
 		l1Origin,
 		headBlockID,
 		txListBytes,
-		baseFee,
+		baseFeeInfo.Basefee,
 		withdrawals,
 	)
 	if err != nil {

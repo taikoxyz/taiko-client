@@ -83,7 +83,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	parent, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	baseFee, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
+	baseFeeInfo, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
 	s.Nil(err)
 
 	to := common.BytesToAddress(testutils.RandomBytes(32))
@@ -91,7 +91,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 		ChainID:   s.RPCClient.L2.ChainID,
 		Nonce:     nonce,
 		GasTipCap: common.Big0,
-		GasFeeCap: new(big.Int).SetUint64(baseFee.Uint64() * 2),
+		GasFeeCap: new(big.Int).SetUint64(baseFeeInfo.Basefee.Uint64() * 2),
 		Gas:       21000,
 		To:        &to,
 		Value:     common.Big1,
