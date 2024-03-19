@@ -43,6 +43,14 @@ var (
 		Usage:    "HTTP RPC endpoint of another synced L2 execution engine node",
 		Category: driverCategory,
 	}
+	// syncer specific flag
+	MaxExponent = &cli.Uint64Flag{
+		Name: "syncer.maxExponent",
+		Usage: "Maximum exponent of retrieving L1 blocks when there is a mismatch between protocol and L2 EE," +
+			"0 means that it is reset to the genesis height",
+		Value:    0,
+		Category: driverCategory,
+	}
 )
 
 // DriverFlags All driver flags.
