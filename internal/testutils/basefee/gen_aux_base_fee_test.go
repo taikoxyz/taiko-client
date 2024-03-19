@@ -3,6 +3,7 @@ package basefee
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common/math"
@@ -34,7 +35,7 @@ func (s *BaseFeeSuite) testCalc1559BaseFee(numL1Blocks uint64, _parentGasUsed ui
 	)
 	s.Nil(err)
 	fmt.Printf(
-		"numL1Blocks: %d\t\t, gasExcess: %d\t\t, parentGasUsed: %d\t\t, baseFee: %d\n",
+		"numL1Blocks: %d\t, gasExcess: %d\t\t\t, parentGasUsed: %d\t\t, baseFee: %d\n",
 		numL1Blocks,
 		s.gasExcess,
 		_parentGasUsed,
@@ -52,46 +53,10 @@ type testNode struct {
 }
 
 func (s *BaseFeeSuite) TestDecreaseCalc1559BaseFee() {
-	var testData = []*testNode{
-		{
-			numL1Blocks:    0,
-			gasUsed:        70000000,
-			growthRate:     110,
-			times:          30,
-			resetGasExcess: true,
-		},
-		{
-			numL1Blocks:    0,
-			gasUsed:        1110412930,
-			growthRate:     90,
-			times:          70,
-			resetGasExcess: false,
-		},
-		{
-			numL1Blocks:    1,
-			gasUsed:        70000000,
-			growthRate:     110,
-			times:          30,
-			resetGasExcess: true,
-		},
-		{
-			numL1Blocks:    1,
-			gasUsed:        1110412930,
-			growthRate:     80,
-			times:          90,
-			resetGasExcess: false,
-		},
-	}
-	for _, val := range testData {
-		if val.resetGasExcess {
-			s.gasExcess = 1
-		}
-		times := val.times
-		for gasUsed := val.gasUsed; times > 0 && gasUsed < math.MaxUint32; gasUsed = gasUsed / 100 * val.growthRate {
-			times--
-			s.testCalc1559BaseFee(val.numL1Blocks, gasUsed)
-		}
-		fmt.Printf("\n\n")
+	for times := 1; times < 800; times++ {
+		numL1Blocks := rand.Int31n(5)
+		gasUsed := rand.Int31n(10000000) + 161864000
+		s.testCalc1559BaseFee(uint64(numL1Blocks), uint32(gasUsed))
 	}
 }
 
