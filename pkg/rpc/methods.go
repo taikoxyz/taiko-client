@@ -240,24 +240,41 @@ func (c *Client) GetPoolContent(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
+	l2Head, err := c.L2.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	baseFeeInfo, err := c.TaikoL2.GetBasefee(
+		&bind.CallOpts{Context: ctx},
+		uint64(time.Now().Unix())-l2Head.Time,
+		uint32(l2Head.GasUsed),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info("Current base fee", "fee", baseFeeInfo.Basefee)
+
 	var localsArg []string
 	for _, local := range locals {
 		localsArg = append(localsArg, local.Hex())
 	}
 
 	var result []types.Transactions
-
-	return result, c.L2.CallContext(
+	err = c.L2.CallContext(
 		ctxWithTimeout,
 		&result,
 		"taiko_txPoolContent",
 		beneficiary,
-		1,
+		baseFeeInfo.Basefee,
 		blockMaxGasLimit,
 		maxBytesPerTxList,
 		localsArg,
 		maxTransactionsLists,
 	)
+
+	return result, err
 }
 
 // L2AccountNonce fetches the nonce of the given L2 account at a specified height.
