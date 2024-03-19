@@ -87,6 +87,7 @@ func (s *BaseFeeSuite) TestDecreaseCalc1559BaseFee2() {
 }
 
 func (s *BaseFeeSuite) TestDecreaseCalc1559BaseFee() {
+	times := 1710842000
 	for _, numL1Blocks := range []int{1, 2, 4} {
 		s.buffer.Reset()
 		s.buffer.Write([]byte("blockTime,gasExcess,gasUsed,baseFee\n"))
@@ -96,13 +97,17 @@ func (s *BaseFeeSuite) TestDecreaseCalc1559BaseFee() {
 		)
 		for gasUsed := 0; gasUsed < (30_000_000 * 8); gasUsed += 100_000 {
 			baseFee, gasExcess = s.testCalc1559BaseFee(uint64(numL1Blocks), gasExcess, uint32(gasUsed))
-			s.buffer.Write([]byte(fmt.Sprintf("%d,%d,%d,%d\n", numL1Blocks*12, gasExcess, gasUsed, baseFee)))
+
+			s.buffer.Write([]byte(fmt.Sprintf("%d,%d,%d,%d\n", times, gasExcess, gasUsed, baseFee)))
+			times += 12 * numL1Blocks
 		}
 		for gasUsed := 30_000_000 * 8; gasUsed >= 0; gasUsed -= 100_000 {
 			baseFee, gasExcess = s.testCalc1559BaseFee(uint64(numL1Blocks), gasExcess, uint32(gasUsed))
-			s.buffer.Write([]byte(fmt.Sprintf("%d,%d,%d,%d\n", numL1Blocks*12, gasExcess, gasUsed, baseFee)))
+
+			s.buffer.Write([]byte(fmt.Sprintf("%d,%d,%d,%d\n", times, gasExcess, gasUsed, baseFee)))
+			times += 12 * numL1Blocks
 		}
-		s.Nil(os.WriteFile(fmt.Sprintf("/Users/huan/Documents/taiko/%d_basefee.csv", numL1Blocks*12), s.buffer.Bytes(), 0644))
+		s.Nil(os.WriteFile(fmt.Sprintf("/Users/huan/Documents/taiko/%d_8_basefee.csv", numL1Blocks*12), s.buffer.Bytes(), 0644))
 	}
 }
 
