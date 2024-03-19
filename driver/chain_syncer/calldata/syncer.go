@@ -566,7 +566,7 @@ func (s *Syncer) retrievePastBlock(ctx context.Context, blockID uint64, retries 
 		l1HeaderToSet    *types.Header
 	)
 
-	if float64(blockID) > math.Pow(2, float64(retries)) {
+	if val := uint64(1 << retries); blockID > val {
 		currentBlockID = uint64(float64(blockID)-math.Pow(2, float64(retries))) + 1
 	} else {
 		currentBlockID = 0
