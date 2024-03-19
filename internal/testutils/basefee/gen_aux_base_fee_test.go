@@ -1,21 +1,25 @@
 package basefee
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"math/rand"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/taikoxyz/taiko-client/internal/utils"
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"os"
 	"testing"
+	"time"
 
-	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/suite"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
-
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/internal/testutils"
 )
 
 type BaseFeeSuite struct {
-	testutils.ClientTestSuite
+	suite.Suite
+	//testutils.ClientTestSuite
+
+	buffer bytes.Buffer
 
 	baseFee *AuxBaseFee
 
@@ -23,25 +27,25 @@ type BaseFeeSuite struct {
 	config    bindings.TaikoL2Config
 }
 
-func (s *BaseFeeSuite) testCalc1559BaseFee(numL1Blocks uint64, _parentGasUsed uint32) {
+func (s *BaseFeeSuite) testCalc1559BaseFee(numL1Blocks, gasExcess uint64, _parentGasUsed uint32) (uint64, uint64) {
 	_gasIssuance := numL1Blocks * uint64(s.config.GasTargetPerL1Block)
 	res, err := s.baseFee.Calc1559BaseFee(
 		nil,
 		s.config.GasTargetPerL1Block,
 		s.config.BasefeeAdjustmentQuotient,
-		s.gasExcess,
+		gasExcess,
 		_gasIssuance,
 		_parentGasUsed,
 	)
 	s.Nil(err)
-	fmt.Printf(
+	/*fmt.Printf(
 		"numL1Blocks: %d\t, gasExcess: %d\t\t\t, parentGasUsed: %d\t\t, baseFee: %d\n",
 		numL1Blocks,
 		s.gasExcess,
 		_parentGasUsed,
 		res.Basefee.Uint64(),
-	)
-	s.gasExcess = res.GasExcess
+	)*/
+	return res.Basefee.Uint64(), res.GasExcess
 }
 
 type testNode struct {
@@ -53,93 +57,60 @@ type testNode struct {
 }
 
 func (s *BaseFeeSuite) TestDecreaseCalc1559BaseFee() {
-	for times := 1; times < 400; times++ {
-		numL1Blocks := 3 + rand.Int31n(2)
-		gasUsed := rand.Int31n(1000000) + 261864000
-		s.testCalc1559BaseFee(uint64(numL1Blocks), uint32(gasUsed))
-	}
-
-	for times := 1; times < 200; times++ {
-		numL1Blocks := 3 + rand.Int31n(2)
-		gasUsed := rand.Int31n(1000000) + 1618640
-		s.testCalc1559BaseFee(uint64(numL1Blocks), uint32(gasUsed))
-	}
-}
-
-func (s *BaseFeeSuite) TestIncreaseCalc1559BaseFee() {
-	testData := []*testNode{
-		{
-			numL1Blocks:    0,
-			gasUsed:        70000000,
-			growthRate:     110,
-			times:          100,
-			resetGasExcess: true,
-		},
-		{
-			numL1Blocks:    1,
-			gasUsed:        800000000,
-			growthRate:     110,
-			times:          40,
-			resetGasExcess: true,
-		},
-		{
-			numL1Blocks:    2,
-			gasUsed:        800800000,
-			growthRate:     110,
-			times:          40,
-			resetGasExcess: true,
-		},
-		{
-			numL1Blocks:    3,
-			gasUsed:        801200000,
-			growthRate:     105,
-			times:          50,
-			resetGasExcess: true,
-		},
-		{
-			numL1Blocks:    4,
-			gasUsed:        801600000,
-			growthRate:     105,
-			times:          60,
-			resetGasExcess: true,
-		},
-	}
-	for _, val := range testData {
-		if val.resetGasExcess {
-			s.gasExcess = 1
+	for _, numL1Blocks := range []int{1, 2, 4} {
+		s.buffer.Reset()
+		s.buffer.Write([]byte("blockTime,gasExcess,gasUsed,baseFee\n"))
+		var (
+			gasExcess uint64 = 1
+			baseFee   uint64 = 1
+		)
+		for gasUsed := 0; gasUsed < (30_000_000 * 8); gasUsed += 100_000 {
+			baseFee, gasExcess = s.testCalc1559BaseFee(uint64(numL1Blocks), gasExcess, uint32(gasUsed))
+			s.buffer.Write([]byte(fmt.Sprintf("%d,%d,%d,%d\n", numL1Blocks*12, gasExcess, gasUsed, baseFee)))
 		}
-		times := val.times
-		for gasUsed := val.gasUsed; times > 0 && gasUsed < math.MaxUint32; gasUsed = gasUsed / 100 * val.growthRate {
-			times--
-			s.testCalc1559BaseFee(val.numL1Blocks, gasUsed)
+		for gasUsed := 30_000_000 * 8; gasUsed >= 0; gasUsed -= 100_000 {
+			baseFee, gasExcess = s.testCalc1559BaseFee(uint64(numL1Blocks), gasExcess, uint32(gasUsed))
+			s.buffer.Write([]byte(fmt.Sprintf("%d,%d,%d,%d\n", numL1Blocks*12, gasExcess, gasUsed, baseFee)))
 		}
-		fmt.Printf("\n\n")
+		s.Nil(os.WriteFile(fmt.Sprintf("/Users/huan/Documents/taiko/%d_basefee.csv", numL1Blocks*12), s.buffer.Bytes(), 0644))
 	}
 }
 
 func (s *BaseFeeSuite) SetupTest() {
-	s.ClientTestSuite.SetupTest()
-
-	send, err := sender.NewSender(context.Background(), nil, s.RPCClient.L1, s.TestAddrPrivKey)
+	utils.LoadEnv()
+	l1Client, err := rpc.NewEthClient(context.Background(), os.Getenv("L1_NODE_WS_ENDPOINT"), time.Second*30)
 	s.Nil(err)
 
-	opts := send.GetOpts()
-	_, tx, baseFee, err := DeployAuxBaseFee(opts, s.RPCClient.L1)
-	s.Nil(err)
-	s.baseFee = baseFee
-	id, err := send.SendTransaction(tx)
-	s.Nil(err)
-	confirm := <-send.TxToConfirmChannel(id)
-	s.Nil(confirm.Err)
+	//priv, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	//s.Nil(err)
+	//send, err := sender.NewSender(context.Background(), nil, l1Client, priv)
+	//s.Nil(err)
+	//opts := send.GetOpts()
+	//addr, tx, baseFee, err := DeployAuxBaseFee(opts, l1Client)
+	//s.Nil(err)
+	//s.baseFee = baseFee
+	//id, err := send.SendTransaction(tx)
+	//s.Nil(err)
+	//confirm := <-send.TxToConfirmChannel(id)
+	//s.Nil(confirm.Err)
+	//fmt.Println("contract address: ", addr.String())
 
-	taikoL2 := s.RPCClient.TaikoL2
-	s.gasExcess, err = taikoL2.GasExcess(nil)
-	s.Nil(err)
-	fmt.Println("gasExcess: ", s.gasExcess)
+	s.baseFee, err = NewAuxBaseFee(common.HexToAddress("0x4C2F7092C2aE51D986bEFEe378e50BD4dB99C901"), l1Client)
 
-	s.config, err = taikoL2.GetConfig(nil)
-	s.Nil(err)
-	fmt.Println("config: ", s.config.BasefeeAdjustmentQuotient, s.config.GasTargetPerL1Block)
+	s.gasExcess = 1
+	s.config = bindings.TaikoL2Config{
+		BasefeeAdjustmentQuotient: 4,
+		GasTargetPerL1Block:       60000000,
+	}
+
+	//taikoL2 := s.RPCClient.TaikoL2
+	//s.gasExcess, err = taikoL2.GasExcess(nil)
+	//s.Nil(err)
+	//fmt.Println("gasExcess: ", s.gasExcess)
+	//
+	//s.config, err = taikoL2.GetConfig(nil)
+	//s.Nil(err)
+	//fmt.Println("config: ", s.config.BasefeeAdjustmentQuotient, s.config.GasTargetPerL1Block)
 }
 
 func TestDriverTestSuite(t *testing.T) {
