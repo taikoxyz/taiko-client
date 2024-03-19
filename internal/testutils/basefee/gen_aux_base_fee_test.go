@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/pkg/sender"
 	"os"
 	"testing"
 	"time"
@@ -56,6 +58,34 @@ type testNode struct {
 	resetGasExcess bool
 }
 
+func (s *BaseFeeSuite) TestDecreaseCalc1559BaseFee2() {
+	s.buffer.Reset()
+	s.buffer.Write([]byte("12,24,48\n"))
+	baseFees := make(map[int][]uint64, 0)
+	for _, numL1Blocks := range []int{1, 2, 4} {
+		baseFees[numL1Blocks] = make([]uint64, 0)
+		var (
+			gasExcess uint64 = 1
+			baseFee   uint64 = 1
+		)
+		for gasUsed := 0; gasUsed < (30_000_000 * 8); gasUsed += 100_000 {
+			baseFee, gasExcess = s.testCalc1559BaseFee(uint64(numL1Blocks), gasExcess, uint32(gasUsed))
+			baseFees[numL1Blocks] = append(baseFees[numL1Blocks], baseFee)
+		}
+		for gasUsed := 30_000_000 * 8; gasUsed >= 0; gasUsed -= 100_000 {
+			baseFee, gasExcess = s.testCalc1559BaseFee(uint64(numL1Blocks), gasExcess, uint32(gasUsed))
+			baseFees[numL1Blocks] = append(baseFees[numL1Blocks], baseFee)
+		}
+	}
+	for len(baseFees[1]) > 0 {
+		s.buffer.Write([]byte(fmt.Sprintf("%d,%d,%d\n", baseFees[1][0], baseFees[2][0], baseFees[4][0])))
+		baseFees[1] = baseFees[1][1:]
+		baseFees[2] = baseFees[2][1:]
+		baseFees[4] = baseFees[4][1:]
+	}
+	s.Nil(os.WriteFile("/Users/huan/Documents/taiko/basefee.csv", s.buffer.Bytes(), 0644))
+}
+
 func (s *BaseFeeSuite) TestDecreaseCalc1559BaseFee() {
 	for _, numL1Blocks := range []int{1, 2, 4} {
 		s.buffer.Reset()
@@ -81,25 +111,25 @@ func (s *BaseFeeSuite) SetupTest() {
 	l1Client, err := rpc.NewEthClient(context.Background(), os.Getenv("L1_NODE_WS_ENDPOINT"), time.Second*30)
 	s.Nil(err)
 
-	//priv, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	//s.Nil(err)
-	//send, err := sender.NewSender(context.Background(), nil, l1Client, priv)
-	//s.Nil(err)
-	//opts := send.GetOpts()
-	//addr, tx, baseFee, err := DeployAuxBaseFee(opts, l1Client)
-	//s.Nil(err)
-	//s.baseFee = baseFee
-	//id, err := send.SendTransaction(tx)
-	//s.Nil(err)
-	//confirm := <-send.TxToConfirmChannel(id)
-	//s.Nil(confirm.Err)
-	//fmt.Println("contract address: ", addr.String())
+	priv, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	s.Nil(err)
+	send, err := sender.NewSender(context.Background(), nil, l1Client, priv)
+	s.Nil(err)
+	opts := send.GetOpts()
+	addr, tx, baseFee, err := DeployAuxBaseFee(opts, l1Client)
+	s.Nil(err)
+	s.baseFee = baseFee
+	id, err := send.SendTransaction(tx)
+	s.Nil(err)
+	confirm := <-send.TxToConfirmChannel(id)
+	s.Nil(confirm.Err)
+	fmt.Println("contract address: ", addr.String())
 
-	s.baseFee, err = NewAuxBaseFee(common.HexToAddress("0x4C2F7092C2aE51D986bEFEe378e50BD4dB99C901"), l1Client)
+	//s.baseFee, err = NewAuxBaseFee(common.HexToAddress("0x4C2F7092C2aE51D986bEFEe378e50BD4dB99C901"), l1Client)
 
 	s.gasExcess = 1
 	s.config = bindings.TaikoL2Config{
-		BasefeeAdjustmentQuotient: 4,
+		BasefeeAdjustmentQuotient: 8,
 		GasTargetPerL1Block:       60000000,
 	}
 
