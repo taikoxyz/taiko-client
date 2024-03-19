@@ -1,7 +1,6 @@
 package proposer
 
 import (
-	"crypto/ecdsa"
 	"fmt"
 	"math/big"
 	"net/url"
@@ -16,7 +15,7 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-// Config contains all configurations to initialize a Taiko proposer.
+// Config містить всі конфігурації для ініціалізації Taiko proposer.
 type Config struct {
 	*rpc.ClientConfig
 	AssignmentHookAddress               common.Address
@@ -42,37 +41,29 @@ type Config struct {
 	L1BlockBuilderTip                   *big.Int
 }
 
-// NewConfigFromCliContext initializes a Config instance from
-// command line flags.
+// NewConfigFromCliContext ініціалізує екземпляр Config з командних рядків.
 func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
-	l1ProposerPrivKey, err := crypto.ToECDSA(
-		common.Hex2Bytes(c.String(flags.L1ProposerPrivKey.Name)),
-	)
+	l1ProposerPrivKey, err := crypto.ToECDSA(common.Hex2Bytes(c.String(flags.L1ProposerPrivKey.Name)))
 	if err != nil {
-		return nil, fmt.Errorf("invalid L1 proposer private key: %w", err)
+		return nil, fmt.Errorf("неправильний приватний ключ L1 proposer: %w", err)
 	}
 
-	l2SuggestedFeeRecipient := c.String(flags.L2SuggestedFeeRecipient.Name)
-	if !common.IsHexAddress(l2SuggestedFeeRecipient) {
-		return nil, fmt.Errorf("invalid L2 suggested fee recipient address: %s", l2SuggestedFeeRecipient)
-	}
+	l2SuggestedFeeRecipient := common.HexToAddress(c.String(flags.L2SuggestedFeeRecipient.Name))
 
 	var localAddresses []common.Address
 	if c.IsSet(flags.TxPoolLocals.Name) {
 		for _, account := range strings.Split(c.String(flags.TxPoolLocals.Name), ",") {
-			if trimmed := strings.TrimSpace(account); !common.IsHexAddress(trimmed) {
-				return nil, fmt.Errorf("invalid account in --txpool.locals: %s", trimmed)
+			trimmed := strings.TrimSpace(account)
+			if !common.IsHexAddress(trimmed) {
+				return nil, fmt.Errorf("неправильний рахунок в --txpool.locals: %s", trimmed)
 			}
-			localAddresses = append(localAddresses, common.HexToAddress(account))
+			localAddresses = append(localAddresses, common.HexToAddress(trimmed))
 		}
 	}
 
 	proposeBlockTxReplacementMultiplier := c.Uint64(flags.ProposeBlockTxReplacementMultiplier.Name)
 	if proposeBlockTxReplacementMultiplier == 0 {
-		return nil, fmt.Errorf(
-			"invalid --proposeBlockTxReplacementMultiplier value: %d",
-			proposeBlockTxReplacementMultiplier,
-		)
+		return nil, fmt.Errorf("неправильне значення --proposeBlockTxReplacementMultiplier: %d", proposeBlockTxReplacementMultiplier)
 	}
 
 	var proposeBlockTxGasTipCap *big.Int
@@ -100,7 +91,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		},
 		AssignmentHookAddress:               common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
 		L1ProposerPrivKey:                   l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:             common.HexToAddress(l2SuggestedFeeRecipient),
+		L2SuggestedFeeRecipient:             l2SuggestedFeeRecipient,
 		ExtraData:                           c.String(flags.ExtraData.Name),
 		ProposeInterval:                     c.Duration(flags.ProposeInterval.Name),
 		LocalAddresses:                      localAddresses,
@@ -121,3 +112,4 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L1BlockBuilderTip:                   new(big.Int).SetUint64(c.Uint64(flags.L1BlockBuilderTip.Name)),
 	}, nil
 }
+
