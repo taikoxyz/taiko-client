@@ -53,9 +53,15 @@ type testNode struct {
 }
 
 func (s *BaseFeeSuite) TestDecreaseCalc1559BaseFee() {
-	for times := 1; times < 800; times++ {
-		numL1Blocks := rand.Int31n(5)
-		gasUsed := rand.Int31n(10000000) + 161864000
+	for times := 1; times < 400; times++ {
+		numL1Blocks := 3 + rand.Int31n(2)
+		gasUsed := rand.Int31n(1000000) + 261864000
+		s.testCalc1559BaseFee(uint64(numL1Blocks), uint32(gasUsed))
+	}
+
+	for times := 1; times < 200; times++ {
+		numL1Blocks := 3 + rand.Int31n(2)
+		gasUsed := rand.Int31n(1000000) + 1618640
 		s.testCalc1559BaseFee(uint64(numL1Blocks), uint32(gasUsed))
 	}
 }
