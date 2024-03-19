@@ -112,7 +112,7 @@ func (s *ClientTestSuite) ProposeAndInsertValidBlock(
 		close(sink)
 	}()
 
-	baseFeeInfo, err := s.RPCClient.TaikoL2.GetBasefee(nil, 0, uint32(l2Head.GasUsed))
+	baseFeeInfo, err := s.RPCClient.TaikoL2.GetBasefee(nil, l1Head.Number.Uint64()+1, uint32(l2Head.GasUsed))
 	s.Nil(err)
 
 	nonce, err := s.RPCClient.L2.PendingNonceAt(context.Background(), s.TestAddr)

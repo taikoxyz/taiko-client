@@ -240,6 +240,11 @@ func (c *Client) GetPoolContent(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
+	l1Head, err := c.L1.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	l2Head, err := c.L2.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -247,7 +252,7 @@ func (c *Client) GetPoolContent(
 
 	baseFeeInfo, err := c.TaikoL2.GetBasefee(
 		&bind.CallOpts{Context: ctx},
-		uint64(time.Now().Unix())-l2Head.Time,
+		l1Head.Number.Uint64(),
 		uint32(l2Head.GasUsed),
 	)
 	if err != nil {
