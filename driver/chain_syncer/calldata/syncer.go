@@ -538,7 +538,7 @@ func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (*rpc.Reorg
 
 	reorgCheckResult, err = s.retrievePastBlock(ctx, stateVars.B.LastVerifiedBlockId, 0)
 	if err != nil {
-		return reorgCheckResult, err
+		return nil, err
 	}
 
 	return reorgCheckResult, nil
