@@ -44,7 +44,6 @@ func SubcommandAction(app SubcommandApplication) cli.ActionFunc {
 		}
 
 		defer func() {
-			ctxClose()
 			app.Close(ctx)
 			log.Info("Application stopped", "name", app.Name())
 		}()
@@ -57,6 +56,8 @@ func SubcommandAction(app SubcommandApplication) cli.ActionFunc {
 			syscall.SIGQUIT,
 		}...)
 		<-quitCh
+
+		ctxClose()
 
 		return nil
 	}
