@@ -1,7 +1,6 @@
 package utils_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -18,7 +17,6 @@ func TestEncodeDecodeBytes(t *testing.T) {
 
 	decompressed, err := utils.Decompress(compressed)
 	require.Nil(t, err)
-	fmt.Println(1, decompressed)
 
 	require.Equal(t, b, decompressed)
 }
