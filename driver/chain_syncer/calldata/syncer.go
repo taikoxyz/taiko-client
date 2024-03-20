@@ -529,7 +529,7 @@ func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (*rpc.Reorg
 
 	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 	if err != nil {
-		return reorgCheckResult, err
+		return nil, err
 	}
 
 	if s.state.GetL2Head().Number.Uint64() < stateVars.B.LastVerifiedBlockId {
