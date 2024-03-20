@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
@@ -92,15 +92,11 @@ func (b *BlobTransactionBuilder) Build(
 
 	// ABI encode the TaikoL1.proposeBlock parameters.
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
-		AssignedProver:    assignedProver,
-		ExtraData:         rpc.StringToBytes32(b.extraData),
-		TxListByteOffset:  common.Big0,
-		TxListByteSize:    big.NewInt(int64(len(txListBytes))),
-		BlobHash:          [32]byte{},
-		CacheBlobForReuse: false,
-		Coinbase:          b.l2SuggestedFeeRecipient,
-		ParentMetaHash:    parentMetaHash,
-		HookCalls:         []encoding.HookCall{{Hook: b.assignmentHookAddress, Data: hookInputData}},
+		AssignedProver: assignedProver,
+		ExtraData:      rpc.StringToBytes32(b.extraData),
+		Coinbase:       b.l2SuggestedFeeRecipient,
+		ParentMetaHash: parentMetaHash,
+		HookCalls:      []encoding.HookCall{{Hook: b.assignmentHookAddress, Data: hookInputData}},
 	})
 	if err != nil {
 		return nil, err
@@ -118,6 +114,7 @@ func (b *BlobTransactionBuilder) Build(
 
 	tx, err := b.rpc.L1.TransactBlobTx(opts, b.taikoL1Address, rawTx.Data(), sideCar)
 	if err != nil {
+		log.Debug("Failed to transact blob tx", "value", maxFee, "blobGasFeeCap", tx.BlobGasFeeCap(), "err", err)
 		return nil, err
 	}
 

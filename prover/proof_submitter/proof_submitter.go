@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 
@@ -35,8 +34,8 @@ type ProofSubmitter struct {
 	graffiti        [32]byte
 }
 
-// New creates a new ProofSubmitter instance.
-func New(
+// NewProofSubmitter creates a new ProofSubmitter instance.
+func NewProofSubmitter(
 	rpcClient *rpc.Client,
 	proofProducer proofProducer.ProofProducer,
 	resultCh chan *proofProducer.ProofWithHeader,
@@ -50,22 +49,14 @@ func New(
 		return nil, err
 	}
 
-	proofSender, err := transaction.NewSender(
-		rpcClient,
-		txSender,
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	return &ProofSubmitter{
 		rpc:             rpcClient,
 		proofProducer:   proofProducer,
 		resultCh:        resultCh,
 		anchorValidator: anchorValidator,
 		txBuilder:       builder,
-		sender:          proofSender,
-		proverAddress:   txSender.GetOpts().From,
+		sender:          transaction.NewSender(rpcClient, txSender),
+		proverAddress:   txSender.Address(),
 		taikoL2Address:  taikoL2Address,
 		graffiti:        rpc.StringToBytes32(graffiti),
 	}, nil
@@ -93,7 +84,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		return fmt.Errorf("failed to get the L2 parent block by hash (%s): %w", block.ParentHash(), err)
 	}
 
-	blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, event.BlockId.Uint64())
+	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, event.BlockId)
 	if err != nil {
 		return err
 	}
@@ -138,7 +129,7 @@ func (s *ProofSubmitter) SubmitProof(
 	proofWithHeader *proofProducer.ProofWithHeader,
 ) (err error) {
 	log.Info(
-		"New block proof",
+		"NewProofSubmitter block proof",
 		"blockID", proofWithHeader.BlockID,
 		"proposer", proofWithHeader.Meta.Coinbase,
 		"parentHash", proofWithHeader.Header.ParentHash,
@@ -172,11 +163,10 @@ func (s *ProofSubmitter) SubmitProof(
 	}
 
 	// Build the TaikoL1.proveBlock transaction and send it to the L1 node.
-	if err := encoding.TryParsingCustomError(s.sender.Send(
+	if err = encoding.TryParsingCustomError(s.sender.Send(
 		ctx,
 		proofWithHeader,
 		s.txBuilder.Build(
-			ctx,
 			proofWithHeader.BlockID,
 			proofWithHeader.Meta,
 			&bindings.TaikoDataTransition{
@@ -189,7 +179,6 @@ func (s *ProofSubmitter) SubmitProof(
 				Tier: proofWithHeader.Tier,
 				Data: proofWithHeader.Proof,
 			},
-			s.sender.GetOpts(),
 			proofWithHeader.Tier == encoding.TierGuardianID,
 		),
 	)); err != nil {

@@ -58,7 +58,7 @@ func (h *TransitionContestedEventHandler) Handle(
 	}
 
 	// Compare the contested transition to the block in local L2 canonical chain.
-	isValidProof, err := isValidProof(
+	isValid, err := isValidProof(
 		ctx,
 		h.rpc,
 		e.BlockId,
@@ -69,7 +69,7 @@ func (h *TransitionContestedEventHandler) Handle(
 	if err != nil {
 		return err
 	}
-	if isValidProof {
+	if isValid {
 		log.Info(
 			"Contested transition is valid to local canonical chain, ignore the contest",
 			"blockID", e.BlockId,
@@ -83,7 +83,7 @@ func (h *TransitionContestedEventHandler) Handle(
 	}
 
 	// If the proof is invalid, we contest it.
-	blockInfo, err := h.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, e.BlockId.Uint64())
+	blockInfo, err := h.rpc.GetL2BlockInfo(ctx, e.BlockId)
 	if err != nil {
 		return err
 	}

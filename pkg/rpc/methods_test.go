@@ -68,12 +68,6 @@ func TestGetProtocolStateVariables(t *testing.T) {
 	require.Nil(t, err)
 }
 
-func TestIsJustSyncedByP2P(t *testing.T) {
-	client := newTestClient(t)
-	_, err := client.IsJustSyncedByP2P(context.Background())
-	require.Nil(t, err)
-}
-
 func TestWaitTillL2ExecutionEngineSyncedNewClient(t *testing.T) {
 	client := newTestClient(t)
 	err := client.WaitTillL2ExecutionEngineSynced(context.Background())
@@ -128,7 +122,6 @@ func TestGetPoolContentValid(t *testing.T) {
 	goldenTouchAddress, err := client.TaikoL2.GOLDENTOUCHADDRESS(nil)
 	require.Nil(t, err)
 	gasLimit := configs.BlockMaxGasLimit
-	maxBytes := configs.BlockMaxTxListBytes
 
 	txPools := []common.Address{goldenTouchAddress}
 
@@ -136,7 +129,7 @@ func TestGetPoolContentValid(t *testing.T) {
 		context.Background(),
 		goldenTouchAddress,
 		gasLimit,
-		maxBytes.Uint64(),
+		BlockMaxTxListBytes,
 		txPools,
 		4,
 	)

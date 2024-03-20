@@ -1,9 +1,7 @@
 package state
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -26,7 +24,7 @@ type State struct {
 
 	l1Head        *atomic.Value // Latest known L1 head
 	l2Head        *atomic.Value // Current L2 execution engine's local chain head
-	l2HeadBlockID *atomic.Value // Latest known L2 block ID
+	l2HeadBlockID *atomic.Value // Latest known L2 block ID in protocol
 	l1Current     *atomic.Value // Current L1 block sync cursor
 
 	// Constants
@@ -108,17 +106,22 @@ func (s *State) eventLoop(ctx context.Context) {
 	s.wg.Add(1)
 	defer s.wg.Done()
 
-	l1HeadCh := make(chan *types.Header, 10)
-	l2HeadCh := make(chan *types.Header, 10)
-	blockProposedCh := make(chan *bindings.TaikoL1ClientBlockProposed, 10)
-	transitionProvedCh := make(chan *bindings.TaikoL1ClientTransitionProved, 10)
-	blockVerifiedCh := make(chan *bindings.TaikoL1ClientBlockVerified, 10)
+	var (
+		// Channels for subscriptions.
+		l1HeadCh           = make(chan *types.Header, 10)
+		l2HeadCh           = make(chan *types.Header, 10)
+		blockProposedCh    = make(chan *bindings.TaikoL1ClientBlockProposed, 10)
+		transitionProvedCh = make(chan *bindings.TaikoL1ClientTransitionProved, 10)
+		blockVerifiedCh    = make(chan *bindings.TaikoL1ClientBlockVerified, 10)
 
-	l1HeadSub := rpc.SubscribeChainHead(s.rpc.L1, l1HeadCh)
-	l2HeadSub := rpc.SubscribeChainHead(s.rpc.L2, l2HeadCh)
-	l2BlockVerifiedSub := rpc.SubscribeBlockVerified(s.rpc.TaikoL1, blockVerifiedCh)
-	l2BlockProposedSub := rpc.SubscribeBlockProposed(s.rpc.TaikoL1, blockProposedCh)
-	l2TransitionProvedSub := rpc.SubscribeTransitionProved(s.rpc.TaikoL1, transitionProvedCh)
+		// Subscriptions.
+		l1HeadSub             = rpc.SubscribeChainHead(s.rpc.L1, l1HeadCh)
+		l2HeadSub             = rpc.SubscribeChainHead(s.rpc.L2, l2HeadCh)
+		l2BlockVerifiedSub    = rpc.SubscribeBlockVerified(s.rpc.TaikoL1, blockVerifiedCh)
+		l2BlockProposedSub    = rpc.SubscribeBlockProposed(s.rpc.TaikoL1, blockProposedCh)
+		l2TransitionProvedSub = rpc.SubscribeTransitionProved(s.rpc.TaikoL1, transitionProvedCh)
+	)
+
 	defer func() {
 		l1HeadSub.Unsubscribe()
 		l2HeadSub.Unsubscribe()
@@ -213,47 +216,4 @@ func (s *State) GetHeadBlockID() *big.Int {
 // SubL1HeadsFeed registers a subscription of new L1 heads.
 func (s *State) SubL1HeadsFeed(ch chan *types.Header) event.Subscription {
 	return s.l1HeadsFeed.Subscribe(ch)
-}
-
-// VerifyL2Block checks whether the given block is in L2 execution engine's local chain.
-func (s *State) VerifyL2Block(ctx context.Context, height *big.Int, hash common.Hash) error {
-	header, err := s.rpc.L2.HeaderByNumber(ctx, height)
-	if err != nil {
-		return err
-	}
-
-	if header.Hash() != hash {
-		// TODO(david): do not exit but re-sync from genesis?
-		log.Crit(
-			"Verified block hash mismatch",
-			"protocolBlockHash", hash,
-			"block number in L2 execution engine", header.Number,
-			"block hash in L2 execution engine", header.Hash(),
-		)
-	}
-	return nil
-}
-
-// getSyncedHeaderID fetches the block ID of the synced L2 header.
-func (s *State) getSyncedHeaderID(ctx context.Context, l1Height uint64, hash common.Hash) (*big.Int, error) {
-	iter, err := s.rpc.TaikoL1.FilterBlockVerified(&bind.FilterOpts{
-		Start:   l1Height,
-		End:     &l1Height,
-		Context: ctx,
-	}, nil, nil, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to filter BlockVerified event: %w", err)
-	}
-
-	for iter.Next() {
-		e := iter.Event
-
-		if !bytes.Equal(e.BlockHash[:], hash.Bytes()) {
-			continue
-		}
-
-		return e.BlockId, nil
-	}
-
-	return nil, fmt.Errorf("verified block %s BlockVerified event not found", hash)
 }

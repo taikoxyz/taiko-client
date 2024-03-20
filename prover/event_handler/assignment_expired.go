@@ -51,14 +51,20 @@ func (h *AssignmentExpiredEventHandler) Handle(
 	if err != nil {
 		return err
 	}
-	if proofStatus.IsSubmitted {
-		// If there is already a proof submitted and there is no need to contest
-		// it, we skip proving this block here.
-		if !proofStatus.Invalid || !h.contesterMode {
-			return nil
-		}
+	if !proofStatus.IsSubmitted {
+		go func() {
+			h.proofSubmissionCh <- &proofProducer.ProofRequestBody{Tier: e.Meta.MinTier, Event: e}
+		}()
+		return nil
+	}
+	// If there is already a proof submitted and there is no need to contest
+	// it, we skip proving this block here.
+	if !proofStatus.Invalid || !h.contesterMode {
+		return nil
+	}
 
-		// If there is no contester, we submit a contest to protocol.
+	// If there is no contester, we submit a contest to protocol.
+	go func() {
 		if proofStatus.CurrentTransitionState.Contester == rpc.ZeroAddress {
 			h.proofContestCh <- &proofProducer.ContestRequestBody{
 				BlockID:    e.BlockId,
@@ -67,22 +73,13 @@ func (h *AssignmentExpiredEventHandler) Handle(
 				Meta:       &e.Meta,
 				Tier:       proofStatus.CurrentTransitionState.Tier,
 			}
-
-			return nil
-		}
-
-		go func() {
+		} else {
 			h.proofSubmissionCh <- &proofProducer.ProofRequestBody{
 				Tier:  proofStatus.CurrentTransitionState.Tier + 1,
 				Event: e,
 			}
-		}()
-
-		return nil
-	}
-
-	go func() {
-		h.proofSubmissionCh <- &proofProducer.ProofRequestBody{Tier: e.Meta.MinTier, Event: e}
+		}
 	}()
+
 	return nil
 }

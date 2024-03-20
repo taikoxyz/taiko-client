@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -59,7 +58,7 @@ func (h *TransitionProvedEventHandler) Handle(
 	}
 
 	// If the proof is invalid, we contest it.
-	blockInfo, err := h.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, e.BlockId.Uint64())
+	blockInfo, err := h.rpc.GetL2BlockInfo(ctx, e.BlockId)
 	if err != nil {
 		return err
 	}

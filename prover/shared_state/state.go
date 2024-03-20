@@ -9,15 +9,14 @@ import (
 
 // SharedState represents the internal state of a prover.
 type SharedState struct {
-	lastHandledBlockID *atomic.Uint64
-	l1Current          *types.Header
-	reorgDetectedFlag  bool
+	lastHandledBlockID atomic.Uint64
+	l1Current          atomic.Value
 	tiers              []*rpc.TierProviderTierWithID
 }
 
 // New creates a new prover shared state instance.
 func New() *SharedState {
-	return &SharedState{lastHandledBlockID: new(atomic.Uint64)}
+	return &SharedState{}
 }
 
 // GetLastHandledBlockID returns the last handled block ID.
@@ -32,22 +31,15 @@ func (s *SharedState) SetLastHandledBlockID(blockID uint64) {
 
 // GetL1Current returns the current L1 header cursor.
 func (s *SharedState) GetL1Current() *types.Header {
-	return s.l1Current
+	if val := s.l1Current.Load(); val != nil {
+		return val.(*types.Header)
+	}
+	return nil
 }
 
 // SetL1Current sets the current L1 header cursor.
 func (s *SharedState) SetL1Current(header *types.Header) {
-	s.l1Current = header
-}
-
-// GetReorgDetectedFlag returns the reorg detected flag.
-func (s *SharedState) GetReorgDetectedFlag() bool {
-	return s.reorgDetectedFlag
-}
-
-// SetReorgDetectedFlag sets the reorg detected flag.
-func (s *SharedState) SetReorgDetectedFlag(flag bool) {
-	s.reorgDetectedFlag = flag
+	s.l1Current.Store(header)
 }
 
 // GetTiers returns the current proof tiers.

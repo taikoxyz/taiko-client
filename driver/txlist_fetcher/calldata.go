@@ -8,8 +8,10 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
+// CalldataFetcher is responsible for fetching the txList bytes from the transaction's calldata.
 type CalldataFetcher struct{}
 
+// NewCalldataTxListFetcher creates a new CalldataFetcher instance.
 func (d *CalldataFetcher) Fetch(
 	_ context.Context,
 	tx *types.Transaction,

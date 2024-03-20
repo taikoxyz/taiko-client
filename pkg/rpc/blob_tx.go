@@ -9,11 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
-)
-
-var (
-	preLenBlob = 32
 )
 
 var (
@@ -94,6 +91,11 @@ func (c *EthClient) CreateBlobTx(
 		return nil, err
 	}
 
+	blobFeeCap := rawTx.BlobGasFeeCap()
+	if blobFeeCap == nil || blobFeeCap.Uint64() < params.BlobTxMinBlobGasprice {
+		blobFeeCap = new(big.Int).SetUint64(uint64(params.BlobTxMinBlobGasprice))
+	}
+
 	return &types.BlobTx{
 		ChainID:    uint256.MustFromBig(rawTx.ChainId()),
 		Nonce:      rawTx.Nonce(),
@@ -104,7 +106,7 @@ func (c *EthClient) CreateBlobTx(
 		Value:      uint256.MustFromBig(rawTx.Value()),
 		Data:       rawTx.Data(),
 		AccessList: rawTx.AccessList(),
-		BlobFeeCap: uint256.MustFromBig(rawTx.BlobGasFeeCap()),
+		BlobFeeCap: uint256.MustFromBig(blobFeeCap),
 		BlobHashes: sidecar.BlobHashes(),
 		Sidecar:    sidecar,
 	}, nil
@@ -112,7 +114,12 @@ func (c *EthClient) CreateBlobTx(
 
 // MakeSidecar makes a sidecar which only includes one blob with the given data.
 func MakeSidecar(data []byte) (*types.BlobTxSidecar, error) {
-	sideCar := &types.BlobTxSidecar{Blobs: EncodeBlobs(data)}
+	var blob Blob
+	if err := blob.FromData(data); err != nil {
+		return nil, err
+	}
+
+	sideCar := &types.BlobTxSidecar{Blobs: []kzg4844.Blob{*blob.KZGBlob()}}
 	for _, blob := range sideCar.Blobs {
 		commitment, err := kzg4844.BlobToCommitment(blob)
 		if err != nil {
@@ -126,84 +133,4 @@ func MakeSidecar(data []byte) (*types.BlobTxSidecar, error) {
 		sideCar.Proofs = append(sideCar.Proofs, proof)
 	}
 	return sideCar, nil
-}
-
-func encode(origin []byte) []byte {
-	var res = make([]byte, preLenBlob, len(origin)/31*32+32)
-	for ; len(origin) >= 31; origin = origin[31:] {
-		data := [32]byte{}
-		copy(data[1:], origin[:31])
-		res = append(res, data[:]...)
-	}
-	if len(origin) > 0 {
-		data := make([]byte, len(origin)+1)
-		copy(data[1:], origin)
-		res = append(res, data...)
-	}
-
-	// Add length prefix
-	blobLen := big.NewInt(int64(len(res))).Bytes()
-	copy(res[preLenBlob-len(blobLen):preLenBlob], blobLen)
-
-	return res
-}
-
-func decode(data []byte) ([]byte, error) {
-	blobLen := new(big.Int).SetBytes(data[:preLenBlob])
-	var lenBytes = blobLen.Uint64()
-	if int(lenBytes) > len(data) {
-		return nil, ErrBlobInvalid
-	}
-	return data[preLenBlob:lenBytes], nil
-}
-
-// EncodeBlobs encodes bytes into a EIP-4844 blob.
-func EncodeBlobs(origin []byte) []kzg4844.Blob {
-	data := encode(origin)
-	var blobs []kzg4844.Blob
-	for ; len(data) >= BlobBytes; data = data[BlobBytes:] {
-		blob := kzg4844.Blob{}
-		copy(blob[:], data[:BlobBytes])
-		blobs = append(blobs, blob)
-	}
-	if len(data) > 0 {
-		blob := kzg4844.Blob{}
-		copy(blob[:], data)
-		blobs = append(blobs, blob)
-	}
-	return blobs
-}
-
-// DecodeBlob decodes the given blob data.
-func DecodeBlob(blob []byte) (res []byte, err error) {
-	if len(blob) != BlobBytes {
-		return nil, ErrBlobInvalid
-	}
-	blob, err = decode(blob)
-	if err != nil {
-		return nil, err
-	}
-
-	for ; len(blob) >= 32; blob = blob[32:] {
-		data := [31]byte{}
-		copy(data[:], blob[1:])
-		res = append(res, data[:]...)
-	}
-	if len(blob) > 0 {
-		res = append(res, blob[1:]...)
-	}
-	return res, nil
-}
-
-// DecodeBlobs decodes the given blobs.
-func DecodeBlobs(blobs []kzg4844.Blob) ([]byte, error) {
-	var res []byte
-	for _, blob := range blobs {
-		data, err := DecodeBlob(blob[:])
-		if err != nil {
-			return nil, err
-		}
-		res = append(res, data...)
-	}
-	return res, nil
 }

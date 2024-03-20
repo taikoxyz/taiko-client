@@ -83,7 +83,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	parent, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	baseFee, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
+	baseFeeInfo, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
 	s.Nil(err)
 
 	to := common.BytesToAddress(testutils.RandomBytes(32))
@@ -91,7 +91,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 		ChainID:   s.RPCClient.L2.ChainID,
 		Nonce:     nonce,
 		GasTipCap: common.Big0,
-		GasFeeCap: new(big.Int).SetUint64(baseFee.Uint64() * 2),
+		GasFeeCap: new(big.Int).SetUint64(baseFeeInfo.Basefee.Uint64() * 2),
 		Gas:       21000,
 		To:        &to,
 		Value:     common.Big1,
@@ -159,7 +159,14 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	nonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
 	s.Nil(err)
 
-	txID, err := sender.SendRawTransaction(nonce, &common.Address{}, common.Big1, nil, nil)
+	txID, err := sender.SendRawTransaction(
+		context.Background(),
+		nonce,
+		&common.Address{},
+		common.Big1,
+		nil,
+		nil,
+	)
 	s.Nil(err)
 	tx := sender.GetUnconfirmedTx(txID)
 
@@ -169,14 +176,21 @@ func (s *ProposerTestSuite) TestSendProposeBlockTx() {
 	newTx, err := s.p.txBuilder.Build(
 		context.Background(),
 		s.p.tierFees,
-		sender.GetOpts(),
+		sender.GetOpts(context.Background()),
 		false,
 		encoded,
 	)
 
 	s.Nil(err)
 
-	txID, err = sender.SendRawTransaction(nonce, newTx.To(), newTx.Value(), newTx.Data(), nil)
+	txID, err = sender.SendRawTransaction(
+		context.Background(),
+		nonce,
+		newTx.To(),
+		newTx.Value(),
+		newTx.Data(),
+		nil,
+	)
 	s.Nil(err)
 	newTx = sender.GetUnconfirmedTx(txID)
 

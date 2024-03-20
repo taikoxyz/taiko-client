@@ -9,7 +9,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
-// OptimisticProofProducer always returns a dummy proof.
+// DummyProofProducer always returns a dummy proof.
 type DummyProofProducer struct{}
 
 // RequestProof returns a dummy proof to the result channel.
