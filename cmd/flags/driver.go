@@ -62,4 +62,5 @@ var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	P2PSyncVerifiedBlocks,
 	P2PSyncTimeout,
 	CheckPointSyncURL,
+	MaxExponent,
 })

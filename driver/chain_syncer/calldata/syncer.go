@@ -640,9 +640,7 @@ func (s *Syncer) checkReorg(
 		return nil, fmt.Errorf("failed to check if last verified block in L2 EE has been reorged: %w", err)
 	}
 
-	// If the latest verified block in chain is mismatched, we reset the L2 chain to genesis, and restart
-	// the calldata sync process.
-	if !reorgCheckResult.IsReorged {
+	if reorgCheckResult == nil {
 		// 2. Parent block
 		reorgCheckResult, err = s.rpc.CheckL1Reorg(
 			ctx,
