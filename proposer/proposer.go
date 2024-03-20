@@ -20,6 +20,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/pkg/sender"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
@@ -329,12 +330,17 @@ func (p *Proposer) ProposeTxList(
 	txListBytes []byte,
 	txNum uint,
 ) error {
+	compressedTxListBytes, err := utils.Compress(txListBytes)
+	if err != nil {
+		return err
+	}
+
 	tx, err := p.txBuilder.Build(
 		ctx,
 		p.tierFees,
 		p.sender.GetOpts(p.ctx),
 		p.IncludeParentMetaHash,
-		txListBytes,
+		compressedTxListBytes,
 	)
 	if err != nil {
 		log.Warn("Failed to build TaikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))

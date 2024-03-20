@@ -22,6 +22,7 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	txlistfetcher "github.com/taikoxyz/taiko-client/driver/txlist_fetcher"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/txlist_validator"
@@ -245,6 +246,10 @@ func (s *Syncer) onBlockProposed(
 		} else {
 			return fmt.Errorf("failed to decode tx list: %w", err)
 		}
+	}
+
+	if txListBytes, err = utils.Decompress(txListBytes); err != nil {
+		return fmt.Errorf("failed to decompress tx list bytes: %w", err)
 	}
 
 	// If the transactions list is invalid, we simply insert an empty L2 block.

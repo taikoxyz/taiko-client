@@ -1,8 +1,12 @@
 package utils
 
 import (
+	"bytes"
+	"compress/zlib"
 	"crypto/rand"
+	"errors"
 	"fmt"
+	"io"
 	"math/big"
 	"os"
 	"strings"
@@ -14,22 +18,22 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+// LoadEnv loads all the test environment variables.
 func LoadEnv() {
-	// load test environment variables.
 	currentPath, err := os.Getwd()
 	if err != nil {
-		log.Debug("get current path failed", "err", err)
+		log.Debug("Failed to get current path", "err", err)
 	}
 	path := strings.Split(currentPath, "/taiko-client")
 	if len(path) == 0 {
-		log.Debug("not a taiko-client repo")
+		log.Debug("Not a taiko-client repo")
 	}
-	err = godotenv.Load(fmt.Sprintf("%s/taiko-client/integration_test/.env", path[0]))
-	if err != nil {
-		log.Debug("failed to load test env", "current path", currentPath, "err", err)
+	if godotenv.Load(fmt.Sprintf("%s/taiko-client/integration_test/.env", path[0])) != nil {
+		log.Debug("Failed to load test env", "current path", currentPath, "err", err)
 	}
 }
 
+// RandUint64 returns a random uint64 number.
 func RandUint64(max *big.Int) uint64 {
 	if max == nil {
 		max = new(big.Int)
@@ -40,6 +44,7 @@ func RandUint64(max *big.Int) uint64 {
 	return num.Uint64()
 }
 
+// RandUint32 returns a random uint32 number.
 func RandUint32(max *big.Int) uint32 {
 	if max == nil {
 		max = new(big.Int)
@@ -68,4 +73,39 @@ func Max[T constraints.Integer](a, b T) T {
 		return a
 	}
 	return b
+}
+
+// Compress compresses the given txList bytes using zlib.
+func Compress(txList []byte) ([]byte, error) {
+	var b bytes.Buffer
+	w := zlib.NewWriter(&b)
+	defer w.Close()
+
+	if _, err := w.Write(txList); err != nil {
+		return nil, err
+	}
+
+	if err := w.Close(); err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
+}
+
+// Decompress decompresses the given txList bytes using zlib.
+func Decompress(compressedTxList []byte) ([]byte, error) {
+	r, err := zlib.NewReader(bytes.NewBuffer(compressedTxList))
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	b, err := io.ReadAll(r)
+	if err != nil {
+		if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
+			return nil, err
+		}
+	}
+
+	return b, nil
 }
