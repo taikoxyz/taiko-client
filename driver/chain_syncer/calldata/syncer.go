@@ -22,10 +22,10 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	txlistfetcher "github.com/taikoxyz/taiko-client/driver/txlist_fetcher"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/txlist_validator"
-	"github.com/taikoxyz/taiko-client/proposer/compress"
 )
 
 // Syncer responsible for letting the L2 execution engine catching up with protocol's latest
@@ -248,7 +248,7 @@ func (s *Syncer) onBlockProposed(
 		}
 	}
 
-	if txListBytes, err = compress.DecompressTxListBytes(txListBytes); err != nil {
+	if txListBytes, err = utils.Decompress(txListBytes); err != nil {
 		return fmt.Errorf("failed to decompress tx list bytes: %w", err)
 	}
 

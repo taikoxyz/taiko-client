@@ -1,4 +1,4 @@
-package compress
+package utils_test
 
 import (
 	"fmt"
@@ -6,16 +6,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
-func TestEncodeDecodeTxListBytes(t *testing.T) {
+func TestEncodeDecodeBytes(t *testing.T) {
 	b := testutils.RandomBytes(1024)
 
-	compressed, err := CompressTxListBytes(b)
+	compressed, err := utils.Compress(b)
 	require.Nil(t, err)
 	require.NotEmpty(t, compressed)
 
-	decompressed, err := DecompressTxListBytes(compressed)
+	decompressed, err := utils.Decompress(compressed)
 	require.Nil(t, err)
 	fmt.Println(1, decompressed)
 

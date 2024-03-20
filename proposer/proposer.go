@@ -19,9 +19,9 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/pkg/sender"
-	"github.com/taikoxyz/taiko-client/proposer/compress"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
 	builder "github.com/taikoxyz/taiko-client/proposer/transaction_builder"
 	"github.com/urfave/cli/v2"
@@ -320,7 +320,7 @@ func (p *Proposer) ProposeTxList(
 	txListBytes []byte,
 	txNum uint,
 ) error {
-	compressedTxListBytes, err := compress.CompressTxListBytes(txListBytes)
+	compressedTxListBytes, err := utils.Compress(txListBytes)
 	if err != nil {
 		return err
 	}
