@@ -156,7 +156,7 @@ func (i *BlockBatchIterator) Iter() error {
 		return nil
 	}
 
-	if err := backoff.Retry(iterOp, backoff.NewConstantBackOff(i.retryInterval)); err != nil {
+	if err := backoff.Retry(iterOp, backoff.WithContext(backoff.NewConstantBackOff(i.retryInterval), i.ctx)); err != nil {
 		return err
 	}
 
