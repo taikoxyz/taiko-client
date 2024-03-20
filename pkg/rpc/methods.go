@@ -240,21 +240,26 @@ func (c *Client) GetPoolContent(
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
+	l1Head, err := c.L1.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	l2Head, err := c.L2.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	baseFee, err := c.TaikoL2.GetBasefee(
+	baseFeeInfo, err := c.TaikoL2.GetBasefee(
 		&bind.CallOpts{Context: ctx},
-		uint64(time.Now().Unix())-l2Head.Time,
+		l1Head.Number.Uint64(),
 		uint32(l2Head.GasUsed),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info("Current base fee", "fee", baseFee)
+	log.Info("Current base fee", "fee", baseFeeInfo.Basefee)
 
 	var localsArg []string
 	for _, local := range locals {
@@ -267,7 +272,7 @@ func (c *Client) GetPoolContent(
 		&result,
 		"taiko_txPoolContent",
 		beneficiary,
-		baseFee,
+		baseFeeInfo.Basefee,
 		blockMaxGasLimit,
 		maxBytesPerTxList,
 		localsArg,

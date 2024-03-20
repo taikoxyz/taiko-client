@@ -40,7 +40,7 @@ func TestL1ContentFrom(t *testing.T) {
 	l2Head, err := client.L2.HeaderByNumber(context.Background(), nil)
 	require.Nil(t, err)
 
-	baseFee, err := client.TaikoL2.GetBasefee(nil, 0, uint32(l2Head.GasUsed))
+	baseFeeInfo, err := client.TaikoL2.GetBasefee(nil, 0, uint32(l2Head.GasUsed))
 	require.Nil(t, err)
 
 	testAddrPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
@@ -56,7 +56,7 @@ func TestL1ContentFrom(t *testing.T) {
 		testAddr,
 		common.Big1,
 		100000,
-		baseFee,
+		baseFeeInfo.Basefee,
 		[]byte{},
 	)
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(client.L2.ChainID), testAddrPrivKey)
