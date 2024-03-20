@@ -11,11 +11,11 @@ import (
 func TestEncodeDecodeTxListBytes(t *testing.T) {
 	b := testutils.RandomBytes(1024)
 
-	compressed, err := EncodeTxListBytes(b)
+	compressed, err := CompressTxListBytes(b)
 	require.Nil(t, err)
 	require.NotEmpty(t, compressed)
 
-	decompressed, err := DecodeTxListBytes(compressed)
+	decompressed, err := DecompressTxListBytes(compressed)
 	require.Nil(t, err)
 	fmt.Println(1, decompressed)
 

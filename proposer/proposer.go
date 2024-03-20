@@ -21,6 +21,7 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/pkg/sender"
+	"github.com/taikoxyz/taiko-client/proposer/compress"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
 	builder "github.com/taikoxyz/taiko-client/proposer/transaction_builder"
 	"github.com/urfave/cli/v2"
@@ -319,12 +320,17 @@ func (p *Proposer) ProposeTxList(
 	txListBytes []byte,
 	txNum uint,
 ) error {
+	compressedTxListBytes, err := compress.CompressTxListBytes(txListBytes)
+	if err != nil {
+		return err
+	}
+
 	tx, err := p.txBuilder.Build(
 		ctx,
 		p.tierFees,
 		p.sender.GetOpts(p.ctx),
 		p.IncludeParentMetaHash,
-		txListBytes,
+		compressedTxListBytes,
 	)
 	if err != nil {
 		log.Warn("Failed to build TaikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))

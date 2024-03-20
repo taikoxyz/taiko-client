@@ -3,11 +3,12 @@ package compress
 import (
 	"bytes"
 	"compress/zlib"
+	"errors"
 	"io"
 )
 
-// EncodeTxListBytes compresses the given txList bytes using zlib.
-func EncodeTxListBytes(txList []byte) ([]byte, error) {
+// CompressTxListBytes compresses the given txList bytes using zlib.
+func CompressTxListBytes(txList []byte) ([]byte, error) { // nolint: revive
 	var b bytes.Buffer
 	w := zlib.NewWriter(&b)
 	defer w.Close()
@@ -23,8 +24,8 @@ func EncodeTxListBytes(txList []byte) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-// DecodeTxListBytes decompresses the given txList bytes using zlib.
-func DecodeTxListBytes(compressedTxList []byte) ([]byte, error) {
+// DecompressTxListBytes decompresses the given txList bytes using zlib.
+func DecompressTxListBytes(compressedTxList []byte) ([]byte, error) {
 	r, err := zlib.NewReader(bytes.NewBuffer(compressedTxList))
 	if err != nil {
 		return nil, err
@@ -33,7 +34,7 @@ func DecodeTxListBytes(compressedTxList []byte) ([]byte, error) {
 
 	b, err := io.ReadAll(r)
 	if err != nil {
-		if err != io.EOF && err != io.ErrUnexpectedEOF {
+		if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
 			return nil, err
 		}
 	}

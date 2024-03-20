@@ -25,6 +25,7 @@ import (
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/txlist_validator"
+	"github.com/taikoxyz/taiko-client/proposer/compress"
 )
 
 // Syncer responsible for letting the L2 execution engine catching up with protocol's latest
@@ -245,6 +246,10 @@ func (s *Syncer) onBlockProposed(
 		} else {
 			return fmt.Errorf("failed to decode tx list: %w", err)
 		}
+	}
+
+	if txListBytes, err = compress.DecompressTxListBytes(txListBytes); err != nil {
+		return fmt.Errorf("failed to decompress tx list bytes: %w", err)
 	}
 
 	// If the transactions list is invalid, we simply insert an empty L2 block.
