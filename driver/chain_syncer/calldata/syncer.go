@@ -589,7 +589,7 @@ func (s *Syncer) retrievePastBlock(ctx context.Context, blockID uint64, retries 
 		if err != nil {
 			if err.Error() == ethereum.NotFound.Error() {
 				log.Info("L1Origin not found in retrievePastBlock because the L2 EE is just synced through P2P", "blockID", blockID)
-				// cant find l1Origin in L2 EE, so we call contract to get block info
+				// Can't find l1Origin in L2 EE, so we call the contract to get block info
 				blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, currentBlockID)
 				if err != nil {
 					return reorgCheckResult, err
