@@ -573,7 +573,7 @@ func (s *Syncer) retrievePastBlock(ctx context.Context, blockID uint64, retries 
 
 	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(currentBlockID))
 	if err != nil {
-		return reorgCheckResult, err
+		return nil, err
 	}
 
 	l2Header, err := s.rpc.L2.HeaderByNumber(ctx, new(big.Int).SetUint64(currentBlockID))
