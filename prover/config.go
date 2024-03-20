@@ -297,6 +297,8 @@ func NewConfigFromConfigFile(path string) (*Config, error) {
 		minOptimisticTierFee *big.Int
 		minSgxTierFee        *big.Int
 		minSgxAndZkVMTierFee *big.Int
+		minEthBalance        *big.Int
+		minTaikoTokenBalance *big.Int
 	)
 	op, err := strconv.ParseUint(os.Getenv("MIN_OPTIMISTIC_TIER_FEE"), 0, 64)
 	if err != nil {
@@ -313,6 +315,18 @@ func NewConfigFromConfigFile(path string) (*Config, error) {
 		return nil, fmt.Errorf("error parsing MIN_SGX_ZKVM_TIER_FEE %w", err)
 	}
 	minSgxAndZkVMTierFee = new(big.Int).SetUint64(sgxZKVM)
+
+	eth, err := strconv.ParseUint(os.Getenv("MIN_ETH_BALANCE"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing MIN_ETH_BALANCE %w", err)
+	}
+	minEthBalance = new(big.Int).SetUint64(eth)
+
+	tko, err := strconv.ParseUint(os.Getenv("MIN_TAIKO_TOKEN_BALANCE"), 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing MIN_TAIKO_TOKEN_BALANCE %w", err)
+	}
+	minTaikoTokenBalance = new(big.Int).SetUint64(tko)
 
 	maxExpiry, err := time.ParseDuration(os.Getenv("MAX_EXPIRY"))
 	if err != nil {
@@ -408,6 +422,8 @@ func NewConfigFromConfigFile(path string) (*Config, error) {
 		MinOptimisticTierFee:                    minOptimisticTierFee,
 		MinSgxTierFee:                           minSgxTierFee,
 		MinSgxAndZkVMTierFee:                    minSgxAndZkVMTierFee,
+		MinEthBalance:                           minEthBalance,
+		MinTaikoTokenBalance:                    minTaikoTokenBalance,
 		MaxExpiry:                               maxExpiry,
 		MaxBlockSlippage:                        maxSlippage,
 		MaxProposedIn:                           maxProposedIn,

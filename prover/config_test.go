@@ -52,6 +52,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal(uint64(8), c.Capacity)
 		s.Equal(uint64(minTierFee), c.MinOptimisticTierFee.Uint64())
 		s.Equal(uint64(minTierFee), c.MinSgxTierFee.Uint64())
+		s.Equal(uint64(minTierFee), c.MinEthBalance.Uint64())
+		s.Equal(uint64(minTierFee), c.MinTaikoTokenBalance.Uint64())
 		s.Equal(uint64(3), c.ProveBlockTxReplacementGasGrowthRate)
 		s.Equal(uint64(256), c.ProveBlockMaxTxGasFeeCap.Uint64())
 		s.Equal(c.L1NodeVersion, l1NodeVersion)
@@ -81,6 +83,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.Dummy.Name,
 		"--" + flags.MinOptimisticTierFee.Name, fmt.Sprint(minTierFee),
 		"--" + flags.MinSgxTierFee.Name, fmt.Sprint(minTierFee),
+		"--" + flags.MinEthBalance.Name, fmt.Sprint(minTierFee),
+		"--" + flags.MinTaikoTokenBalance.Name, fmt.Sprint(minTierFee),
 		"--" + flags.ProverCapacity.Name, "8",
 		"--" + flags.GuardianProver.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
 		"--" + flags.ProverAssignmentHookAddress.Name, os.Getenv("ASSIGNMENT_HOOK_ADDRESS"),
@@ -134,6 +138,8 @@ func (s *ProverTestSuite) TestNewConfigFromConfig() {
 		s.Equal(uint64(8), c.Capacity)
 		s.Equal(uint64(minTierFee), c.MinOptimisticTierFee.Uint64())
 		s.Equal(uint64(minTierFee), c.MinSgxTierFee.Uint64())
+		s.Equal(uint64(minTierFee), c.MinEthBalance.Uint64())
+		s.Equal(uint64(minTierFee), c.MinTaikoTokenBalance.Uint64())
 		s.Equal(uint64(100000), c.ProveBlockGasLimit.Uint64())
 		s.Equal(uint64(50), c.ProveBlockTxReplacementGasGrowthRate)
 		s.Equal(uint64(256), c.ProveBlockMaxTxGasFeeCap.Uint64())
@@ -177,6 +183,8 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.ProverCapacity.Name},
 		&cli.Uint64Flag{Name: flags.MinOptimisticTierFee.Name},
 		&cli.Uint64Flag{Name: flags.MinSgxTierFee.Name},
+		&cli.Uint64Flag{Name: flags.MinEthBalance.Name},
+		&cli.Uint64Flag{Name: flags.MinTaikoTokenBalance.Name},
 		&cli.Uint64Flag{Name: flags.ProveBlockTxGasLimit.Name},
 		&cli.Uint64Flag{Name: flags.MaxProposedIn.Name},
 		&cli.StringFlag{Name: flags.ProverAssignmentHookAddress.Name},
