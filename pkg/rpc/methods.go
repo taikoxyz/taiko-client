@@ -319,21 +319,18 @@ func (p *L2SyncProgress) isSyncing() bool {
 
 // L2ExecutionEngineSyncProgress fetches the sync progress of the given L2 execution engine.
 func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProgress, error) {
-	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
-	defer cancel()
-
 	var (
 		progress = new(L2SyncProgress)
 		err      error
 	)
-	g, ctx := errgroup.WithContext(ctxWithTimeout)
+	g, groupCtx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
-		progress.SyncProgress, err = c.L2.SyncProgress(ctx)
+		progress.SyncProgress, err = c.L2.SyncProgress(groupCtx)
 		return err
 	})
 	g.Go(func() error {
-		stateVars, err := c.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
+		stateVars, err := c.GetProtocolStateVariables(&bind.CallOpts{Context: groupCtx})
 		if err != nil {
 			return err
 		}
@@ -341,7 +338,7 @@ func (c *Client) L2ExecutionEngineSyncProgress(ctx context.Context) (*L2SyncProg
 		return nil
 	})
 	g.Go(func() error {
-		headL1Origin, err := c.L2.HeadL1Origin(ctx)
+		headL1Origin, err := c.L2.HeadL1Origin(groupCtx)
 		if err != nil {
 			switch err.Error() {
 			case ethereum.NotFound.Error():
@@ -373,13 +370,9 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*struct {
 		opts = &bind.CallOpts{}
 	}
 
-	var ctx = context.Background()
-	if opts.Context != nil {
-		ctx = opts.Context
+	if opts.Context == nil {
+		opts.Context = context.Background()
 	}
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, defaultWaitReceiptTimeout)
-	defer cancel()
-	opts.Context = ctxWithTimeout
 
 	return GetProtocolStateVariables(c.TaikoL1, opts)
 }
