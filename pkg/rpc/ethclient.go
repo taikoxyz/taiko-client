@@ -168,7 +168,10 @@ func (c *EthClient) TransactionInBlock(
 // SyncProgress retrieves the current progress of the sync algorithm. If there's
 // no sync currently running, it returns nil.
 func (c *EthClient) SyncProgress(ctx context.Context) (*ethereum.SyncProgress, error) {
-	return c.ethClient.SyncProgress(ctx)
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
+	defer cancel()
+
+	return c.ethClient.SyncProgress(ctxWithTimeout)
 }
 
 // NetworkID returns the network ID for this client.
