@@ -134,7 +134,6 @@ var CommonFlags = []cli.Flag{
 	L1WSEndpoint,
 	TaikoL1Address,
 	TaikoL2Address,
-	UseConfigFile,
 	// Optional
 	Verbosity,
 	LogJSON,
@@ -145,6 +144,7 @@ var CommonFlags = []cli.Flag{
 	BackOffRetryInterval,
 	RPCTimeout,
 	WaitReceiptTimeout,
+	UseConfigFile,
 }
 
 // MergeFlags merges the given flag slices.
