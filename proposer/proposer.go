@@ -109,9 +109,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 		"proposer",
 		log.Root(),
 		nil,
-		txmgr.CLIConfig{
-			L1RPCURL: cfg.L1Endpoint,
-		},
+		txmgr.CLIConfig{L1RPCURL: cfg.L1Endpoint},
 	); err != nil {
 		return err
 	}

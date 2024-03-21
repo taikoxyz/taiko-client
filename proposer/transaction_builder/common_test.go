@@ -8,12 +8,10 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
 )
 
@@ -21,7 +19,6 @@ type TransactionBuilderTestSuite struct {
 	testutils.ClientTestSuite
 	calldataTxBuilder *CalldataTransactionBuilder
 	blobTxBuiler      *BlobTransactionBuilder
-	sender            *sender.Sender
 }
 
 func (s *TransactionBuilderTestSuite) SetupTest() {
@@ -63,18 +60,6 @@ func (s *TransactionBuilderTestSuite) SetupTest() {
 		0,
 		"test",
 	)
-
-	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	s.Nil(err)
-
-	s.sender, err = sender.NewSender(context.Background(), &sender.Config{
-		MaxGasFee:      20000000000,
-		GasGrowthRate:  50,
-		MaxRetrys:      0,
-		GasLimit:       2000000,
-		MaxWaitingTime: time.Second * 10,
-	}, s.RPCClient.L1, l1ProposerPrivKey)
-	s.Nil(err)
 }
 
 func (s *TransactionBuilderTestSuite) TestGetParentMetaHash() {

@@ -7,9 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -19,7 +21,6 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
 	"github.com/taikoxyz/taiko-client/proposer"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
@@ -37,15 +38,20 @@ type ProofSubmitterTestSuite struct {
 func (s *ProofSubmitterTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
-
 	s.proofCh = make(chan *producer.ProofWithHeader, 1024)
 
-	sender, err := sender.NewSender(context.Background(), &sender.Config{}, s.RPCClient.L1, l1ProverPrivKey)
-	s.Nil(err)
+	builder := transaction.NewProveBlockTxBuilder(
+		s.RPCClient,
+		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
+	)
 
-	builder := transaction.NewProveBlockTxBuilder(s.RPCClient)
+	txmgr, err := txmgr.NewSimpleTxManager(
+		"proofSubmitterTestSuite",
+		log.Root(),
+		nil,
+		txmgr.CLIConfig{L1RPCURL: os.Getenv("L1_NODE_WS_ENDPOINT")},
+	)
 
 	s.submitter, err = NewProofSubmitter(
 		s.RPCClient,
@@ -53,13 +59,13 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		s.proofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		"test",
-		sender,
+		txmgr,
 		builder,
 	)
 	s.Nil(err)
 	s.contester = NewProofContester(
 		s.RPCClient,
-		sender,
+		txmgr,
 		"test",
 		builder,
 	)

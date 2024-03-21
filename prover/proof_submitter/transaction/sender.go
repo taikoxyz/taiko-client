@@ -5,29 +5,32 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 // Sender is responsible for sending proof submission transactions with a backoff policy.
 type Sender struct {
-	rpc         *rpc.Client
-	innerSender *sender.Sender
+	rpc      *rpc.Client
+	txmgr    *txmgr.SimpleTxManager
+	gasLimit uint64
 }
 
 // NewSender creates a new Sener instance.
 func NewSender(
 	cli *rpc.Client,
-	txSender *sender.Sender,
+	txmgr *txmgr.SimpleTxManager,
+	gasLimit uint64,
 ) *Sender {
 	return &Sender{
-		rpc:         cli,
-		innerSender: txSender,
+		rpc:      cli,
+		txmgr:    txmgr,
+		gasLimit: gasLimit,
 	}
 }
 
@@ -44,26 +47,15 @@ func (s *Sender) Send(
 	}
 
 	// Assemble the TaikoL1.proveBlock transaction.
-	tx, err := buildTx(s.innerSender.GetOpts(ctx))
+	txCandidate, err := buildTx(&bind.TransactOpts{GasLimit: s.gasLimit})
 	if err != nil {
 		return err
 	}
 
 	// Send the transaction.
-	id, err := s.innerSender.SendTransaction(tx)
+	receipt, err := s.txmgr.Send(ctx, *txCandidate)
 	if err != nil {
 		return err
-	}
-
-	// Waiting for the transaction to be confirmed.
-	confirmationResult := <-s.innerSender.TxToConfirmChannel(id)
-	if confirmationResult.Err != nil {
-		log.Warn(
-			"Failed to send TaikoL1.proveBlock transaction",
-			"blockID", proofWithHeader.BlockID,
-			"error", confirmationResult.Err,
-		)
-		return confirmationResult.Err
 	}
 
 	log.Info(
@@ -72,7 +64,7 @@ func (s *Sender) Send(
 		"parentHash", proofWithHeader.Header.ParentHash,
 		"hash", proofWithHeader.Header.Hash(),
 		"stateRoot", proofWithHeader.Opts.StateRoot,
-		"txHash", confirmationResult.CurrentTx.Hash(),
+		"txHash", receipt.TxHash,
 		"tier", proofWithHeader.Tier,
 		"isContest", len(proofWithHeader.Proof) == 0,
 	)

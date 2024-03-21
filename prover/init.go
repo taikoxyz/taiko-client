@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
 	handler "github.com/taikoxyz/taiko-client/prover/event_handler"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
@@ -29,73 +29,67 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 	}
 
 	// Check the existing allowance for the contract.
-	allowance, err := p.rpc.TaikoToken.Allowance(
-		&bind.CallOpts{Context: ctx},
-		p.ProverAddress(),
-		contract,
-	)
-	if err != nil {
-		return err
-	}
+	// allowance, err := p.rpc.TaikoToken.Allowance(
+	// 	&bind.CallOpts{Context: ctx},
+	// 	p.ProverAddress(),
+	// 	contract,
+	// )
+	// if err != nil {
+	// 	return err
+	// }
 
-	log.Info("Existing allowance for the contract", "allowance", allowance.String(), "contract", contract)
+	// log.Info("Existing allowance for the contract", "allowance", allowance.String(), "contract", contract)
 
-	// If the existing allowance is greater or equal to the configured allowance, skip setting allowance.
-	if allowance.Cmp(p.cfg.Allowance) >= 0 {
-		log.Info(
-			"Skipping setting allowance, allowance already greater or equal",
-			"allowance", allowance.String(),
-			"approvalAmount", p.cfg.Allowance.String(),
-			"contract", contract,
-		)
-		return nil
-	}
+	// // If the existing allowance is greater or equal to the configured allowance, skip setting allowance.
+	// if allowance.Cmp(p.cfg.Allowance) >= 0 {
+	// 	log.Info(
+	// 		"Skipping setting allowance, allowance already greater or equal",
+	// 		"allowance", allowance.String(),
+	// 		"approvalAmount", p.cfg.Allowance.String(),
+	// 		"contract", contract,
+	// 	)
+	// 	return nil
+	// }
 
-	opts := p.txSender.GetOpts(ctx)
+	// log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance.String(), "contract", contract)
 
-	log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance.String(), "contract", contract)
+	// tx, err := p.rpc.TaikoToken.Approve(
+	// 	opts,
+	// 	contract,
+	// 	p.cfg.Allowance,
+	// )
+	// if err != nil {
+	// 	return err
+	// }
 
-	tx, err := p.rpc.TaikoToken.Approve(
-		opts,
-		contract,
-		p.cfg.Allowance,
-	)
-	if err != nil {
-		return err
-	}
+	// id, err := p.txSender.SendTransaction(tx)
+	// if err != nil {
+	// 	return err
+	// }
 
-	id, err := p.txSender.SendTransaction(tx)
-	if err != nil {
-		return err
-	}
-	confirm := <-p.txSender.TxToConfirmChannel(id)
-	if confirm.Err != nil {
-		return confirm.Err
-	}
+	// log.Info(
+	// 	"Approved the contract for taiko token",
+	// 	"txHash", confirm.Receipt.TxHash.Hex(),
+	// 	"contract", contract,
+	// )
 
-	log.Info(
-		"Approved the contract for taiko token",
-		"txHash", confirm.Receipt.TxHash.Hex(),
-		"contract", contract,
-	)
+	// // Check the new allowance for the contract.
+	// if allowance, err = p.rpc.TaikoToken.Allowance(
+	// 	&bind.CallOpts{Context: ctx},
+	// 	p.ProverAddress(),
+	// 	contract,
+	// ); err != nil {
+	// 	return err
+	// }
 
-	// Check the new allowance for the contract.
-	if allowance, err = p.rpc.TaikoToken.Allowance(
-		&bind.CallOpts{Context: ctx},
-		p.ProverAddress(),
-		contract,
-	); err != nil {
-		return err
-	}
-
-	log.Info("New allowance for the contract", "allowance", allowance.String(), "contract", contract)
+	// log.Info("New allowance for the contract", "allowance", allowance.String(), "contract", contract)
 
 	return nil
 }
 
 // initProofSubmitters initializes the proof submitters from the given tiers in protocol.
 func (p *Prover) initProofSubmitters(
-	sender *sender.Sender,
+	txmgr *txmgr.SimpleTxManager,
 	txBuilder *transaction.ProveBlockTxBuilder,
 ) error {
 	for _, tier := range p.sharedState.GetTiers() {
@@ -127,7 +121,7 @@ func (p *Prover) initProofSubmitters(
 			p.proofGenerationCh,
 			p.cfg.TaikoL2Address,
 			p.cfg.Graffiti,
-			sender,
+			txmgr,
 			txBuilder,
 		); err != nil {
 			return err

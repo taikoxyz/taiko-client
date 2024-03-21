@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
@@ -33,15 +33,11 @@ type TransactionTestSuite struct {
 func (s *TransactionTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
-	s.Nil(err)
-
-	txSender, err := sender.NewSender(context.Background(), &sender.Config{}, s.RPCClient.L1, l1ProverPrivKey)
-	s.Nil(err)
-
-	s.sender = NewSender(s.RPCClient, txSender)
-
-	s.builder = NewProveBlockTxBuilder(s.RPCClient)
+	s.builder = NewProveBlockTxBuilder(
+		s.RPCClient,
+		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
+	)
 }
 
 func (s *TransactionTestSuite) TestIsSubmitProofTxErrorRetryable() {
@@ -65,7 +61,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 			Header:  &types.Header{},
 			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
-		func(*bind.TransactOpts) (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
+		func(*bind.TransactOpts) (*txmgr.TxCandidate, error) { return nil, errors.New("L1_TEST") },
 	))
 
 	s.Nil(s.sender.Send(
@@ -76,7 +72,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 			Header:  &types.Header{},
 			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
-		func(*bind.TransactOpts) (*types.Transaction, error) {
+		func(*bind.TransactOpts) (*txmgr.TxCandidate, error) {
 			height, err := s.RPCClient.L1.BlockNumber(context.Background())
 			s.Nil(err)
 
@@ -90,7 +86,15 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 				height--
 			}
 
-			return block.Transactions()[0], nil
+			tx := block.Transactions()[0]
+
+			return &txmgr.TxCandidate{
+				TxData:   tx.Data(),
+				Blobs:    nil,
+				To:       tx.To(),
+				GasLimit: tx.Gas(),
+				Value:    tx.Value(),
+			}, nil
 		},
 	))
 }

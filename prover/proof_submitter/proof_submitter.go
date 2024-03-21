@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
 	validator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
@@ -41,7 +41,7 @@ func NewProofSubmitter(
 	resultCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
 	graffiti string,
-	txSender *sender.Sender,
+	txmgr *txmgr.SimpleTxManager,
 	builder *transaction.ProveBlockTxBuilder,
 ) (*ProofSubmitter, error) {
 	anchorValidator, err := validator.New(taikoL2Address, rpcClient.L2.ChainID, rpcClient)
@@ -55,8 +55,8 @@ func NewProofSubmitter(
 		resultCh:        resultCh,
 		anchorValidator: anchorValidator,
 		txBuilder:       builder,
-		sender:          transaction.NewSender(rpcClient, txSender),
-		proverAddress:   txSender.Address(),
+		sender:          transaction.NewSender(rpcClient, txmgr, 0),
+		proverAddress:   txmgr.From(),
 		taikoL2Address:  taikoL2Address,
 		graffiti:        rpc.StringToBytes32(graffiti),
 	}, nil

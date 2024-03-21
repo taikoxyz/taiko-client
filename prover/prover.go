@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
@@ -20,7 +21,6 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/version"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
 	handler "github.com/taikoxyz/taiko-client/prover/event_handler"
 	guardianProverHeartbeater "github.com/taikoxyz/taiko-client/prover/guardian_prover_heartbeater"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
@@ -35,8 +35,6 @@ type Prover struct {
 	// Configurations
 	cfg     *Config
 	backoff backoff.BackOffContext
-
-	txSender *sender.Sender
 
 	// Clients
 	rpc *rpc.Client
@@ -70,6 +68,9 @@ type Prover struct {
 	proofSubmissionCh chan *proofProducer.ProofRequestBody
 	proofContestCh    chan *proofProducer.ContestRequestBody
 	proofGenerationCh chan *proofProducer.ProofWithHeader
+
+	// Transactions manager
+	txmgr *txmgr.SimpleTxManager
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -139,37 +140,26 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 	p.sharedState.SetTiers(tiers)
 
-	senderCfg := &sender.Config{
-		ConfirmationDepth: 0,
-		MaxRetrys:         p.cfg.ProofSubmissionMaxRetry,
-		GasGrowthRate:     p.cfg.ProveBlockTxReplacementGasGrowthRate,
-	}
-	if p.cfg.ProveBlockGasLimit != nil {
-		senderCfg.GasLimit = *p.cfg.ProveBlockGasLimit
-	}
-	if p.cfg.ProveBlockMaxTxGasFeeCap != nil {
-		senderCfg.MaxGasFee = p.cfg.ProveBlockMaxTxGasFeeCap.Uint64()
-	}
-	// For guardian provers we always simply keep retrying for each its proof submission.
-	if p.IsGuardianProver() && senderCfg.MaxRetrys != 0 {
-		senderCfg.MaxRetrys = 0
-	}
+	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc, p.cfg.TaikoL1Address, p.cfg.GuardianProverAddress)
 
-	p.txSender, err = sender.NewSender(p.ctx, senderCfg, p.rpc.L1, p.cfg.L1ProverPrivKey)
-	if err != nil {
+	if p.txmgr, err = txmgr.NewSimpleTxManager(
+		"prover",
+		log.Root(),
+		nil,
+		txmgr.CLIConfig{L1RPCURL: cfg.L1HttpEndpoint},
+	); err != nil {
 		return err
 	}
-	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc)
 
 	// Proof submitters
-	if err := p.initProofSubmitters(p.txSender, txBuilder); err != nil {
+	if err := p.initProofSubmitters(p.txmgr, txBuilder); err != nil {
 		return err
 	}
 
 	// Proof contester
 	p.proofContester = proofSubmitter.NewProofContester(
 		p.rpc,
-		p.txSender,
+		p.txmgr,
 		p.cfg.Graffiti,
 		txBuilder,
 	)
@@ -444,7 +434,7 @@ func (p *Prover) IsGuardianProver() bool {
 
 // ProverAddress returns the current prover account address.
 func (p *Prover) ProverAddress() common.Address {
-	return p.txSender.Address()
+	return p.txmgr.From()
 }
 
 // withRetry retries the given function with prover backoff policy.
