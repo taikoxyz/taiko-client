@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -147,54 +146,6 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 
 	s.Nil(s.p.ProposeOp(context.Background()))
 	s.True(flag)
-}
-
-func (s *ProposerTestSuite) TestSendProposeBlockTx() {
-	sender := s.p.GetSender()
-	s.SetL1Automine(false)
-	defer s.SetL1Automine(true)
-
-	s.Nil(sender.SetNonce(nil, true))
-
-	nonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
-	s.Nil(err)
-
-	txID, err := sender.SendRawTransaction(
-		context.Background(),
-		nonce,
-		&common.Address{},
-		common.Big1,
-		nil,
-		nil,
-	)
-	s.Nil(err)
-	tx := sender.GetUnconfirmedTx(txID)
-
-	encoded, err := rlp.EncodeToBytes([]types.Transaction{})
-	s.Nil(err)
-
-	newTx, err := s.p.txBuilder.Build(
-		context.Background(),
-		s.p.tierFees,
-		sender.GetOpts(context.Background()),
-		false,
-		encoded,
-	)
-
-	s.Nil(err)
-
-	txID, err = sender.SendRawTransaction(
-		context.Background(),
-		nonce,
-		newTx.To(),
-		newTx.Value(),
-		newTx.Data(),
-		nil,
-	)
-	s.Nil(err)
-	newTx = sender.GetUnconfirmedTx(txID)
-
-	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }
 
 func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {

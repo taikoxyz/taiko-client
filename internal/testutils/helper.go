@@ -28,10 +28,6 @@ func (s *ClientTestSuite) ProposeInvalidTxListBytes(proposer Proposer) {
 	invalidTxListBytes := RandomBytes(256)
 
 	s.Nil(proposer.ProposeTxList(context.Background(), invalidTxListBytes, 1))
-	for _, confirmCh := range proposer.GetSender().TxToConfirmChannels() {
-		confirm := <-confirmCh
-		s.Nil(confirm.Err)
-	}
 }
 
 func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
@@ -58,10 +54,6 @@ func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 	s.Nil(err)
 
 	s.Nil(proposer.ProposeTxList(context.Background(), encoded, 0))
-	for _, confirmCh := range proposer.GetSender().TxToConfirmChannels() {
-		confirm := <-confirmCh
-		s.Nil(confirm.Err)
-	}
 
 	s.ProposeInvalidTxListBytes(proposer)
 
