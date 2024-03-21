@@ -85,7 +85,7 @@ func Compress(txList []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	if err := w.Flush(); err != nil {
+	if err := w.Close(); err != nil {
 		return nil, err
 	}
 

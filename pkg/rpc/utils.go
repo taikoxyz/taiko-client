@@ -381,22 +381,6 @@ func StringToBytes32(str string) [32]byte {
 	return b
 }
 
-// IsArchiveNode checks if the given node is an archive node.
-func IsArchiveNode(ctx context.Context, client *EthClient, l2GenesisHeight uint64) (bool, error) {
-	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
-	defer cancel()
-
-	if _, err := client.BalanceAt(ctxWithTimeout, ZeroAddress, new(big.Int).SetUint64(l2GenesisHeight)); err != nil {
-		if strings.Contains(err.Error(), "missing trie node") {
-			return false, nil
-		}
-
-		return false, err
-	}
-
-	return true, nil
-}
-
 // ctxWithTimeoutOrDefault sets a context timeout if the deadline has not passed or is not set,
 // and otherwise returns the context as passed in. cancel func is always set to an empty function
 // so is safe to defer the cancel.

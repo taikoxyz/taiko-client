@@ -2,10 +2,8 @@ package rpc
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
@@ -86,18 +84,6 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		if guardianProver, err = bindings.NewGuardianProver(cfg.GuardianProverAddress, l1Client); err != nil {
 			return nil, err
 		}
-	}
-
-	stateVars, err := taikoL1.GetStateVariables(&bind.CallOpts{Context: ctxWithTimeout})
-	if err != nil {
-		return nil, err
-	}
-	isArchive, err := IsArchiveNode(ctxWithTimeout, l1Client, stateVars.A.GenesisHeight)
-	if err != nil {
-		return nil, err
-	}
-	if !isArchive {
-		return nil, fmt.Errorf("error with RPC endpoint: node (%s) must be archive node", cfg.L1Endpoint)
 	}
 
 	// If not providing L2EngineEndpoint or JwtSecret, then the L2Engine client
