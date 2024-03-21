@@ -588,7 +588,7 @@ func (s *Syncer) retrievePastBlock(ctx context.Context, blockID uint64, retries 
 	if blockInfo.Ts.BlockHash == l2Header.Hash() {
 		// To reduce the number of call contracts by bringing forward the termination condition judgement
 		if retries == 0 {
-			return reorgCheckResult, nil
+			return nil, nil
 		}
 		l1Origin, err := s.rpc.L2.L1OriginByID(ctx, new(big.Int).SetUint64(currentBlockID))
 		if err != nil {
