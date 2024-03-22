@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -29,60 +30,61 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 	}
 
 	// Check the existing allowance for the contract.
-	// allowance, err := p.rpc.TaikoToken.Allowance(
-	// 	&bind.CallOpts{Context: ctx},
-	// 	p.ProverAddress(),
-	// 	contract,
-	// )
-	// if err != nil {
-	// 	return err
-	// }
+	allowance, err := p.rpc.TaikoToken.Allowance(
+		&bind.CallOpts{Context: ctx},
+		p.ProverAddress(),
+		contract,
+	)
+	if err != nil {
+		return err
+	}
 
-	// log.Info("Existing allowance for the contract", "allowance", allowance.String(), "contract", contract)
+	log.Info("Existing allowance for the contract", "allowance", allowance.String(), "contract", contract)
 
-	// // If the existing allowance is greater or equal to the configured allowance, skip setting allowance.
-	// if allowance.Cmp(p.cfg.Allowance) >= 0 {
-	// 	log.Info(
-	// 		"Skipping setting allowance, allowance already greater or equal",
-	// 		"allowance", allowance.String(),
-	// 		"approvalAmount", p.cfg.Allowance.String(),
-	// 		"contract", contract,
-	// 	)
-	// 	return nil
-	// }
+	// If the existing allowance is greater or equal to the configured allowance, skip setting allowance.
+	if allowance.Cmp(p.cfg.Allowance) >= 0 {
+		log.Info(
+			"Skipping setting allowance, allowance already greater or equal",
+			"allowance", allowance.String(),
+			"approvalAmount", p.cfg.Allowance.String(),
+			"contract", contract,
+		)
+		return nil
+	}
 
-	// log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance.String(), "contract", contract)
+	log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance.String(), "contract", contract)
+	data, err := encoding.TaikoTokenABI.Pack("approve", contract, p.cfg.Allowance)
+	if err != nil {
+		return err
+	}
 
-	// tx, err := p.rpc.TaikoToken.Approve(
-	// 	opts,
-	// 	contract,
-	// 	p.cfg.Allowance,
-	// )
-	// if err != nil {
-	// 	return err
-	// }
+	receipt, err := p.txmgr.Send(ctx, txmgr.TxCandidate{
+		TxData: data,
+		To:     &p.cfg.TaikoTokenAddress,
+	})
+	if err != nil {
+		return err
+	}
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return fmt.Errorf("failed to approve allowance for contract (%s): %s", contract, receipt.TxHash.Hex())
+	}
 
-	// id, err := p.txSender.SendTransaction(tx)
-	// if err != nil {
-	// 	return err
-	// }
+	log.Info(
+		"Approved the contract for taiko token",
+		"txHash", receipt.TxHash.Hex(),
+		"contract", contract,
+	)
 
-	// log.Info(
-	// 	"Approved the contract for taiko token",
-	// 	"txHash", confirm.Receipt.TxHash.Hex(),
-	// 	"contract", contract,
-	// )
+	// Check the new allowance for the contract.
+	if allowance, err = p.rpc.TaikoToken.Allowance(
+		&bind.CallOpts{Context: ctx},
+		p.ProverAddress(),
+		contract,
+	); err != nil {
+		return err
+	}
 
-	// // Check the new allowance for the contract.
-	// if allowance, err = p.rpc.TaikoToken.Allowance(
-	// 	&bind.CallOpts{Context: ctx},
-	// 	p.ProverAddress(),
-	// 	contract,
-	// ); err != nil {
-	// 	return err
-	// }
-
-	// log.Info("New allowance for the contract", "allowance", allowance.String(), "contract", contract)
+	log.Info("New allowance for the contract", "allowance", allowance.String(), "contract", contract)
 
 	return nil
 }
