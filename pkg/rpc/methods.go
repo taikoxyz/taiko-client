@@ -92,7 +92,7 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 			if ctx.Err() != nil && !errors.Is(ctx.Err(), context.DeadlineExceeded) {
 				return ctx.Err()
 			}
-			progress, err := c.L2ExecutionEngineSyncProgress(newCtx)
+			progress, err := c.L2ExecutionEngineSyncProgress(context.Background())
 			if err != nil {
 				log.Error("Fetch L2 execution engine sync progress error", "error", err)
 				return err
