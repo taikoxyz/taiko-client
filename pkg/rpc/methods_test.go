@@ -3,7 +3,6 @@ package rpc
 import (
 	"context"
 	"crypto/rand"
-	"golang.org/x/sync/errgroup"
 	"testing"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
