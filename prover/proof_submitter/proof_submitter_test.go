@@ -101,6 +101,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		s.RPCClient,
 		testState,
 		tracker,
+		0,
 	)
 	s.Nil(err)
 

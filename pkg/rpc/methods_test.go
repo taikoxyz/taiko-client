@@ -4,12 +4,14 @@ import (
 	"context"
 	"crypto/rand"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -112,6 +114,24 @@ func TestWaitTillL2ExecutionEngineSyncedContextErr(t *testing.T) {
 	cancel()
 
 	err := client.WaitTillL2ExecutionEngineSynced(ctx)
+	require.ErrorContains(t, err, "context canceled")
+}
+
+func TestWaitTillL2ExecutionEngineSyncedTimeoutErr(t *testing.T) {
+	client := newTestClient(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	time.Sleep(1 * time.Second)
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		err := client.WaitTillL2ExecutionEngineSynced(ctx)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	cancel()
+	err := g.Wait()
 	require.ErrorContains(t, err, "context canceled")
 }
 

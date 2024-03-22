@@ -153,6 +153,62 @@ func (s *ClientTestSuite) ProposeAndInsertValidBlock(
 	return event
 }
 
+func (s *ClientTestSuite) ProposeValidBlock(
+	proposer Proposer,
+) *bindings.TaikoL1ClientBlockProposed {
+	l1Head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+
+	l2Head, err := s.RPCClient.L2.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+
+	// Propose txs in L2 execution engine's mempool
+	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
+
+	sub, err := s.RPCClient.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
+	s.Nil(err)
+	defer func() {
+		sub.Unsubscribe()
+		close(sink)
+	}()
+
+	baseFeeInfo, err := s.RPCClient.TaikoL2.GetBasefee(nil, l1Head.Number.Uint64()+1, uint32(l2Head.GasUsed))
+	s.Nil(err)
+
+	nonce, err := s.RPCClient.L2.PendingNonceAt(context.Background(), s.TestAddr)
+	s.Nil(err)
+
+	tx := types.NewTransaction(
+		nonce,
+		common.BytesToAddress(RandomBytes(32)),
+		common.Big1,
+		100000,
+		baseFeeInfo.Basefee,
+		[]byte{},
+	)
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L2.ChainID), s.TestAddrPrivKey)
+	s.Nil(err)
+	s.Nil(s.RPCClient.L2.SendTransaction(context.Background(), signedTx))
+
+	s.Nil(proposer.ProposeOp(context.Background()))
+
+	event := <-sink
+
+	_, isPending, err := s.RPCClient.L1.TransactionByHash(context.Background(), event.Raw.TxHash)
+	s.Nil(err)
+	s.False(isPending)
+
+	receipt, err := s.RPCClient.L1.TransactionReceipt(context.Background(), event.Raw.TxHash)
+	s.Nil(err)
+	s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
+
+	newL1Head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
+	s.Nil(err)
+	s.Greater(newL1Head.Number.Uint64(), l1Head.Number.Uint64())
+
+	return event
+}
+
 // NewTestProverServer starts a new prover server that has channel listeners to respond and react
 // to requests for capacity, which provers can call.
 func (s *ClientTestSuite) NewTestProverServer(
