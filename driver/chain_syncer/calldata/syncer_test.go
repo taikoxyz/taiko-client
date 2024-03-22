@@ -30,13 +30,13 @@ type CalldataSyncerTestSuite struct {
 func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	state, err := state.New(context.Background(), s.RPCClient)
+	state2, err := state.New(context.Background(), s.RPCClient)
 	s.Nil(err)
 
 	syncer, err := NewSyncer(
 		context.Background(),
 		s.RPCClient,
-		state,
+		state2,
 		beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 1*time.Hour),
 		0,
 	)
@@ -211,6 +211,41 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 
 	s.True(hasNoneAnchorTxs)
 	s.Zero(balanceAfter.Cmp(balance))
+}
+
+func (s *CalldataSyncerTestSuite) TestRetrievePastBlock() {
+	syncer, err := NewSyncer(
+		context.Background(),
+		s.RPCClient,
+		s.s.state,
+		s.s.progressTracker,
+		5,
+	)
+	s.Nil(err)
+	sender := s.p.GetSender()
+
+	s.s = syncer
+	for i := 0; i < 10; i++ {
+		s.ProposeAndInsertValidBlock(s.p, s.s)
+	}
+	genesisL1Header, err := s.RPCClient.GetGenesisL1Header(context.Background())
+	s.Nil(err)
+	l1Snapshot := s.SetL1Snapshot()
+	for i := 0; i < 5; i++ {
+		s.ProposeAndInsertValidBlock(s.p, s.s)
+	}
+	s.RevertL1Snapshot(l1Snapshot)
+	// Because of evm_revert operation, the nonce of the proposer need to be adjusted.
+	s.Nil(sender.SetNonce(nil, true))
+	// Propose 5 blocks on another fork
+	for i := 0; i < 5; i++ {
+		s.ProposeInvalidTxListBytes(s.p)
+	}
+	reorgResult, err := s.s.retrievePastBlock(context.Background(), 12, 0, genesisL1Header)
+	s.Nil(err)
+	s.NotNil(reorgResult)
+	s.Equal(reorgResult.IsReorged, true)
+	s.GreaterOrEqual(reorgResult.L1CurrentToReset.Number.Uint64(), genesisL1Header.Number.Uint64())
 }
 
 func TestCalldataSyncerTestSuite(t *testing.T) {
