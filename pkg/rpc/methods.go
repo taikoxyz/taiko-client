@@ -84,15 +84,15 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 	if ctx.Err() != nil && !errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		return ctx.Err()
 	}
-	newCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	start := time.Now()
 	return backoff.Retry(
 		func() error {
 			if ctx.Err() != nil && !errors.Is(ctx.Err(), context.DeadlineExceeded) {
 				return ctx.Err()
 			}
-			progress, err := c.L2ExecutionEngineSyncProgress(context.Background())
+			newCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
+			defer cancel()
+			progress, err := c.L2ExecutionEngineSyncProgress(newCtx)
 			if err != nil {
 				log.Error("Fetch L2 execution engine sync progress error", "error", err)
 				return err
