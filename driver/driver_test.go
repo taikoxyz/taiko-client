@@ -244,7 +244,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	var (
 		testnetL1SnapshotID = s.SetL1Snapshot()
-		// sender              = s.p.GetSender()
 	)
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
