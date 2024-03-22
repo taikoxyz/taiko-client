@@ -104,7 +104,7 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 					"currentBlockID", progress.CurrentBlockID,
 					"highestBlockID", progress.HighestBlockID,
 					"progress", progress.SyncProgress,
-					"Time-consuming statistics", time.Since(start),
+					"time", time.Since(start),
 				)
 				return errSyncing
 			}
