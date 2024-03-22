@@ -81,15 +81,18 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 
 // WaitTillL2ExecutionEngineSynced keeps waiting until the L2 execution engine is fully synced.
 func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
-	if ctx.Err() != nil {
+	if ctx.Err() != nil && !errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		return ctx.Err()
 	}
+	start := time.Now()
 	return backoff.Retry(
 		func() error {
-			if ctx.Err() != nil {
+			if ctx.Err() != nil && !errors.Is(ctx.Err(), context.DeadlineExceeded) {
 				return ctx.Err()
 			}
-			progress, err := c.L2ExecutionEngineSyncProgress(ctx)
+			newCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
+			defer cancel()
+			progress, err := c.L2ExecutionEngineSyncProgress(newCtx)
 			if err != nil {
 				log.Error("Fetch L2 execution engine sync progress error", "error", err)
 				return err
@@ -101,6 +104,7 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 					"currentBlockID", progress.CurrentBlockID,
 					"highestBlockID", progress.HighestBlockID,
 					"progress", progress.SyncProgress,
+					"time", time.Since(start),
 				)
 				return errSyncing
 			}
