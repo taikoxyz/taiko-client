@@ -410,11 +410,11 @@ type ReorgCheckResult struct {
 // CheckL1Reorg checks whether the L2 block's corresponding L1 block has been reorged or not.
 // We will skip the reorg check if:
 //  1. When the L2 chain has just finished a P2P sync, so there is no L1Origin information recorded in
-//     its local database, and we assume the last verified L2 block is old enough, so its coreesponding
-//     L1 block should has also been finalized.
+//     its local database, and we assume the last verified L2 block is old enough, so its corresponding
+//     L1 block should have also been finalized.
 //
 // Then we will check:
-// 1. If the L2 block's coreesponding L1 block which in L1Origin has been reorged
+// 1. If the L2 block's corresponding L1 block which in L1Origin has been reorged
 // 2. If the L1 information which in the given L2 block's anchor transaction has been reorged
 //
 // And if a reorg is detected, we return a new L1 block cursor which need to reset to.
@@ -451,13 +451,6 @@ func (c *Client) CheckL1Reorg(ctx context.Context, blockID *big.Int) (*ReorgChec
 			// its local database, we skip this check.
 			if err.Error() == ethereum.NotFound.Error() {
 				log.Info("L1Origin not found, the L2 execution engine has just synced from P2P network", "blockID", blockID)
-				l1Header, err := c.L1.HeaderByNumber(ctxWithTimeout, l1Origin.L1BlockHeight)
-				if err != nil {
-					return nil, err
-				}
-				// If we rollback to that just P2P synced block, we reset the L1 cursor to the L1 block which in that L1Origin.
-				result.L1CurrentToReset = l1Header
-				result.LastHandledBlockIDToReset = l1Origin.BlockID
 				return result, nil
 			}
 

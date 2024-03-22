@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
@@ -40,6 +41,7 @@ type Syncer struct {
 	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
 	reorgDetectedFlag   bool
+	maxRetrieveExponent uint64
 }
 
 // NewSyncer creates a new syncer instance.
@@ -48,6 +50,7 @@ func NewSyncer(
 	client *rpc.Client,
 	state *state.State,
 	progressTracker *beaconsync.SyncProgressTracker,
+	maxRetrieveExponent uint64,
 ) (*Syncer, error) {
 	configs, err := client.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
@@ -70,6 +73,7 @@ func NewSyncer(
 			rpc.BlockMaxTxListBytes,
 			client.L2.ChainID,
 		),
+		maxRetrieveExponent: maxRetrieveExponent,
 	}, nil
 }
 
@@ -522,27 +526,110 @@ func (s *Syncer) createExecutionPayloads(
 
 // checkLastVerifiedBlockMismatch checks if there is a mismatch between protocol's last verified block hash and
 // the corresponding L2 EE block hash.
-func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (bool, error) {
+func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (*rpc.ReorgCheckResult, error) {
+	var (
+		reorgCheckResult = new(rpc.ReorgCheckResult)
+		err              error
+	)
+
 	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	if s.state.GetL2Head().Number.Uint64() < stateVars.B.LastVerifiedBlockId {
-		return false, nil
+		return reorgCheckResult, nil
 	}
 
-	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
+	genesisL1Header, err := s.rpc.GetGenesisL1Header(ctx)
 	if err != nil {
-		return false, err
+		return nil, fmt.Errorf("failed to fetch genesis L1 header: %w", err)
 	}
-
-	l2Header, err := s.rpc.L2.HeaderByNumber(ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
+	reorgCheckResult, err = s.retrievePastBlock(ctx, stateVars.B.LastVerifiedBlockId, 0, genesisL1Header)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	return blockInfo.Ts.BlockHash != l2Header.Hash(), nil
+	return reorgCheckResult, nil
+}
+
+// retrievePastBlock find proper L1 header and L2 block id to reset when there is a mismatch
+func (s *Syncer) retrievePastBlock(
+	ctx context.Context,
+	blockID uint64,
+	retries uint64,
+	genesisL1Header *types.Header) (*rpc.ReorgCheckResult, error) {
+	if retries > s.maxRetrieveExponent {
+		return &rpc.ReorgCheckResult{
+			IsReorged:                 true,
+			L1CurrentToReset:          genesisL1Header,
+			LastHandledBlockIDToReset: new(big.Int).SetUint64(blockID),
+		}, nil
+	}
+
+	var (
+		reorgCheckResult = new(rpc.ReorgCheckResult)
+		err              error
+		currentBlockID   uint64
+		l1HeaderToSet    = genesisL1Header
+	)
+
+	if val := uint64(1 << retries); blockID > val {
+		currentBlockID = blockID - val + 1
+	} else {
+		currentBlockID = 0
+	}
+
+	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(currentBlockID))
+	if err != nil {
+		return nil, err
+	}
+
+	l2Header, err := s.rpc.L2.HeaderByNumber(ctx, new(big.Int).SetUint64(currentBlockID))
+	if err != nil {
+		return nil, err
+	}
+	if blockInfo.Ts.BlockHash == l2Header.Hash() {
+		// To reduce the number of call contracts by bringing forward the termination condition judgement
+		if retries == 0 {
+			return nil, nil
+		}
+		l1Origin, err := s.rpc.L2.L1OriginByID(ctx, new(big.Int).SetUint64(currentBlockID))
+		if err != nil {
+			if err.Error() == ethereum.NotFound.Error() {
+				log.Info("L1Origin not found in retrievePastBlock because the L2 EE is just synced through P2P",
+					"blockID",
+					currentBlockID)
+				// Can't find l1Origin in L2 EE, so we call the contract to get block info
+				blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, currentBlockID)
+				if err != nil {
+					return nil, err
+				}
+				if blockInfo.Blk.ProposedIn != 0 {
+					l1HeaderToSet, err = s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.Blk.ProposedIn))
+					if err != nil {
+						return nil, err
+					}
+				}
+			} else {
+				return nil, err
+			}
+		} else {
+			l1HeaderToSet, err = s.rpc.L1.HeaderByNumber(ctx, l1Origin.L1BlockHeight)
+			if err != nil {
+				return nil, err
+			}
+		}
+		reorgCheckResult.IsReorged = retries > 0
+		reorgCheckResult.L1CurrentToReset = l1HeaderToSet
+		reorgCheckResult.LastHandledBlockIDToReset = new(big.Int).SetUint64(currentBlockID)
+	} else {
+		reorgCheckResult, err = s.retrievePastBlock(ctx, blockID, retries+1, genesisL1Header)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return reorgCheckResult, nil
 }
 
 // checkReorg checks whether the L1 chain has been reorged, and resets the L1Current cursor if necessary.
@@ -550,37 +637,18 @@ func (s *Syncer) checkReorg(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 ) (*rpc.ReorgCheckResult, error) {
-	var (
-		reorgCheckResult = new(rpc.ReorgCheckResult)
-		err              error
-	)
-
 	// If the L2 chain is at genesis, we don't need to check L1 reorg.
 	if s.state.GetL1Current().Number == s.state.GenesisL1Height {
-		return reorgCheckResult, nil
+		return new(rpc.ReorgCheckResult), nil
 	}
 
 	// 1. The latest verified block
-	mismatch, err := s.checkLastVerifiedBlockMismatch(ctx)
+	reorgCheckResult, err := s.checkLastVerifiedBlockMismatch(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if last verified block in L2 EE has been reorged: %w", err)
 	}
 
-	// If the latest verified block in chain is mismatched, we reset the L2 chain to genesis, and restart
-	// the calldata sync process.
-	// TODO(Gavin): improve this approach.
-	if mismatch {
-		log.Warn("The latest verified block mismatch detected, reset L2 chain to genesis")
-
-		genesisL1Header, err := s.rpc.GetGenesisL1Header(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch genesis L1 header: %w", err)
-		}
-
-		reorgCheckResult.IsReorged = true
-		reorgCheckResult.L1CurrentToReset = genesisL1Header
-		reorgCheckResult.LastHandledBlockIDToReset = common.Big0
-	} else {
+	if reorgCheckResult == nil {
 		// 2. Parent block
 		reorgCheckResult, err = s.rpc.CheckL1Reorg(
 			ctx,
