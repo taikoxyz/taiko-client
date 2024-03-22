@@ -25,6 +25,7 @@ import (
 	"github.com/taikoxyz/taiko-client/proposer"
 	guardianProverHeartbeater "github.com/taikoxyz/taiko-client/prover/guardian_prover_heartbeater"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
 )
 
 type ProverTestSuite struct {
@@ -268,6 +269,10 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.p.cfg.GuardianProverAddress = common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"))
 	s.True(s.p.IsGuardianProver())
 
+	txBuilder := transaction.NewProveBlockTxBuilder(s.p.rpc, s.p.cfg.TaikoL1Address, s.p.cfg.GuardianProverAddress)
+	s.p.proofSubmitters = nil
+	s.p.initProofSubmitters(s.p.txmgr, txBuilder)
+
 	s.p.rpc.GuardianProver, err = bindings.NewGuardianProver(s.p.cfg.GuardianProverAddress, s.p.rpc.L1)
 	s.Nil(err)
 
@@ -465,7 +470,6 @@ func (s *ProverTestSuite) initProver(
 		TaikoL2Address:        common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		TaikoTokenAddress:     common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		AssignmentHookAddress: common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-		GuardianProverAddress: common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
 		L1ProverPrivKey:       key,
 		Dummy:                 true,
 		ProveUnassignedBlocks: true,
