@@ -554,7 +554,11 @@ func (s *Syncer) checkLastVerifiedBlockMismatch(ctx context.Context) (*rpc.Reorg
 }
 
 // retrievePastBlock find proper L1 header and L2 block id to reset when there is a mismatch
-func (s *Syncer) retrievePastBlock(ctx context.Context, blockID uint64, retries uint64, genesisL1Header *types.Header) (*rpc.ReorgCheckResult, error) {
+func (s *Syncer) retrievePastBlock(
+	ctx context.Context,
+	blockID uint64,
+	retries uint64,
+	genesisL1Header *types.Header) (*rpc.ReorgCheckResult, error) {
 	if retries > s.maxRetrieveExponent {
 		return &rpc.ReorgCheckResult{
 			IsReorged:                 true,
@@ -593,7 +597,9 @@ func (s *Syncer) retrievePastBlock(ctx context.Context, blockID uint64, retries 
 		l1Origin, err := s.rpc.L2.L1OriginByID(ctx, new(big.Int).SetUint64(currentBlockID))
 		if err != nil {
 			if err.Error() == ethereum.NotFound.Error() {
-				log.Info("L1Origin not found in retrievePastBlock because the L2 EE is just synced through P2P", "blockID", currentBlockID)
+				log.Info("L1Origin not found in retrievePastBlock because the L2 EE is just synced through P2P",
+					"blockID",
+					currentBlockID)
 				// Can't find l1Origin in L2 EE, so we call the contract to get block info
 				blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, currentBlockID)
 				if err != nil {
