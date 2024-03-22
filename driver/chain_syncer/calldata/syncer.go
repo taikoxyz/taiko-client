@@ -417,7 +417,7 @@ func (s *Syncer) fillForkchoiceState(
 
 	// Fetch the latest verified block's header from protocol.
 	variables, err := s.rpc.GetProtocolStateVariables(
-		&bind.CallOpts{Context: ctx, BlockNumber: new(big.Int).SetUint64(event.Raw.BlockNumber - 1)},
+		&bind.CallOpts{Context: ctx, BlockNumber: new(big.Int).SetUint64(event.Raw.BlockNumber)},
 	)
 	if err != nil {
 		return err
