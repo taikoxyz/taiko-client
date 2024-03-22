@@ -75,7 +75,7 @@ func (a *ProveBlockTxBuilder) Build(
 		} else {
 			to = a.guardianProverAddress
 
-			if data, err = encoding.GuardianProverABI.Pack("Approve", *meta, *transition, *tierProof); err != nil {
+			if data, err = encoding.GuardianProverABI.Pack("approve", *meta, *transition, *tierProof); err != nil {
 				if isSubmitProofTxErrorRetryable(err, blockID) {
 					return nil, err
 				}
