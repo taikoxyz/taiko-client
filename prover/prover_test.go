@@ -271,8 +271,10 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.p.rpc.GuardianProver, err = bindings.NewGuardianProver(s.p.cfg.GuardianProverAddress, s.p.rpc.L1)
 	s.Nil(err)
 
-	approvedSink := make(chan *bindings.GuardianProverApproved)
-	approvedSub, err := s.p.rpc.GuardianProver.WatchApproved(nil, approvedSink, [](*big.Int){})
+	approvedSink := make(chan *bindings.GuardianProverGuardianApproval)
+	approvedSub, err := s.p.rpc.GuardianProver.WatchGuardianApproval(
+		nil, approvedSink, []common.Address{}, [](*big.Int){},
+	)
 	s.Nil(err)
 	defer func() {
 		approvedSub.Unsubscribe()
@@ -283,7 +285,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.Nil(s.p.selectSubmitter(encoding.TierGuardianID).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 	approvedEvent := <-approvedSink
 
-	s.Equal(header.Number.Uint64(), approvedEvent.OperationId.Uint64())
+	s.Equal(header.Number.Uint64(), approvedEvent.BlockId.Uint64())
 }
 
 func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
@@ -463,6 +465,7 @@ func (s *ProverTestSuite) initProver(
 		TaikoL2Address:        common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		TaikoTokenAddress:     common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		AssignmentHookAddress: common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
+		GuardianProverAddress: common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
 		L1ProverPrivKey:       key,
 		Dummy:                 true,
 		ProveUnassignedBlocks: true,

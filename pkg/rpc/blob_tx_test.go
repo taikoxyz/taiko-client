@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -66,7 +67,7 @@ func TestMakeSideCar(t *testing.T) {
 	sideCar, mErr := MakeSidecar(origin)
 	assert.NoError(t, mErr)
 
-	blob := Blob(sideCar.Blobs[0])
+	blob := eth.Blob(sideCar.Blobs[0])
 	origin1, dErr := blob.ToData()
 	assert.NoError(t, dErr)
 	assert.Equal(t, hexutil.Bytes(origin), origin1)
