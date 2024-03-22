@@ -271,7 +271,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 
 	txBuilder := transaction.NewProveBlockTxBuilder(s.p.rpc, s.p.cfg.TaikoL1Address, s.p.cfg.GuardianProverAddress)
 	s.p.proofSubmitters = nil
-	s.p.initProofSubmitters(s.p.txmgr, txBuilder)
+	s.Nil(s.p.initProofSubmitters(s.p.txmgr, txBuilder))
 
 	s.p.rpc.GuardianProver, err = bindings.NewGuardianProver(s.p.cfg.GuardianProverAddress, s.p.rpc.L1)
 	s.Nil(err)

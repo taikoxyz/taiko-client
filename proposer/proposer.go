@@ -120,10 +120,11 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 			MinBaseFeeGwei:            txmgr.DefaultBatcherFlagValues.MinBaseFeeGwei,
 			MinTipCapGwei:             txmgr.DefaultBatcherFlagValues.MinTipCapGwei,
 			ResubmissionTimeout:       txmgr.DefaultBatcherFlagValues.ResubmissionTimeout,
-			ReceiptQueryInterval:      txmgr.DefaultBatcherFlagValues.ReceiptQueryInterval,
-			NetworkTimeout:            txmgr.DefaultBatcherFlagValues.NetworkTimeout,
-			TxSendTimeout:             txmgr.DefaultBatcherFlagValues.TxSendTimeout,
-			TxNotInMempoolTimeout:     txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
+			// ReceiptQueryInterval:      txmgr.DefaultBatcherFlagValues.ReceiptQueryInterval
+			ReceiptQueryInterval:  1 * time.Second,
+			NetworkTimeout:        txmgr.DefaultBatcherFlagValues.NetworkTimeout,
+			TxSendTimeout:         txmgr.DefaultBatcherFlagValues.TxSendTimeout,
+			TxNotInMempoolTimeout: txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
 		},
 	); err != nil {
 		return err

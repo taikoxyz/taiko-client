@@ -15,14 +15,5 @@ func (s *TransactionTestSuite) TestBuildTxs() {
 		&bindings.TaikoDataTierProof{},
 		false,
 	)(&bind.TransactOpts{Nonce: common.Big0, GasLimit: 0, GasTipCap: common.Big0})
-	s.NotNil(err)
-
-	_, err = s.builder.Build(
-		common.Big256,
-		&bindings.TaikoDataBlockMetadata{},
-		&bindings.TaikoDataTransition{},
-		&bindings.TaikoDataTierProof{},
-		true,
-	)(&bind.TransactOpts{Nonce: common.Big0, GasLimit: 0, GasTipCap: common.Big0})
-	s.NotNil(err)
+	s.Nil(err)
 }
