@@ -2,11 +2,13 @@ package transaction
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"strings"
 
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/internal/metrics"
@@ -56,6 +58,10 @@ func (s *Sender) Send(
 	receipt, err := s.txmgr.Send(ctx, *txCandidate)
 	if err != nil {
 		return err
+	}
+
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return fmt.Errorf("failed to submit proof: %s", receipt.TxHash)
 	}
 
 	log.Info(
