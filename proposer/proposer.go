@@ -110,22 +110,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 		"proposer",
 		log.Root(),
 		new(txmgrMetrics.NoopTxMetrics),
-		txmgr.CLIConfig{
-			L1RPCURL:                  cfg.L1Endpoint,
-			NumConfirmations:          1,
-			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
-			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(cfg.L1ProposerPrivKey)),
-			FeeLimitMultiplier:        txmgr.DefaultBatcherFlagValues.FeeLimitMultiplier,
-			FeeLimitThresholdGwei:     txmgr.DefaultBatcherFlagValues.FeeLimitThresholdGwei,
-			MinBaseFeeGwei:            txmgr.DefaultBatcherFlagValues.MinBaseFeeGwei,
-			MinTipCapGwei:             txmgr.DefaultBatcherFlagValues.MinTipCapGwei,
-			ResubmissionTimeout:       txmgr.DefaultBatcherFlagValues.ResubmissionTimeout,
-			// ReceiptQueryInterval:      txmgr.DefaultBatcherFlagValues.ReceiptQueryInterval
-			ReceiptQueryInterval:  1 * time.Second,
-			NetworkTimeout:        txmgr.DefaultBatcherFlagValues.NetworkTimeout,
-			TxSendTimeout:         txmgr.DefaultBatcherFlagValues.TxSendTimeout,
-			TxNotInMempoolTimeout: txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
-		},
+		*cfg.TxmgrConfigs,
 	); err != nil {
 		return err
 	}

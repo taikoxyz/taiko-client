@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -91,6 +92,21 @@ func (s *ProverTestSuite) SetupTest() {
 		MaxTierFeePriceBumps:       3,
 		TierFeePriceBump:           common.Big2,
 		L1BlockBuilderTip:          common.Big0,
+		TxmgrConfigs: &txmgr.CLIConfig{
+			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
+			NumConfirmations:          1,
+			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
+			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(l1ProposerPrivKey)),
+			FeeLimitMultiplier:        txmgr.DefaultBatcherFlagValues.FeeLimitMultiplier,
+			FeeLimitThresholdGwei:     txmgr.DefaultBatcherFlagValues.FeeLimitThresholdGwei,
+			MinBaseFeeGwei:            txmgr.DefaultBatcherFlagValues.MinBaseFeeGwei,
+			MinTipCapGwei:             txmgr.DefaultBatcherFlagValues.MinTipCapGwei,
+			ResubmissionTimeout:       txmgr.DefaultBatcherFlagValues.ResubmissionTimeout,
+			ReceiptQueryInterval:      1 * time.Second,
+			NetworkTimeout:            txmgr.DefaultBatcherFlagValues.NetworkTimeout,
+			TxSendTimeout:             txmgr.DefaultBatcherFlagValues.TxSendTimeout,
+			TxNotInMempoolTimeout:     txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
+		},
 	}))
 
 	s.proposer = prop
@@ -109,21 +125,35 @@ func (s *ProverTestSuite) TestInitError() {
 	p := new(Prover)
 	// Error should be "context canceled", instead is "Dial ethclient error:"
 	s.ErrorContains(InitFromConfig(ctx, p, &Config{
-		L1WsEndpoint:                         os.Getenv("L1_NODE_WS_ENDPOINT"),
-		L1HttpEndpoint:                       os.Getenv("L1_NODE_HTTP_ENDPOINT"),
-		L2WsEndpoint:                         os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-		L2HttpEndpoint:                       os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
-		TaikoL1Address:                       common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-		TaikoL2Address:                       common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-		TaikoTokenAddress:                    common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		AssignmentHookAddress:                common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_CONTRACT_ADDRESS")),
-		L1ProverPrivKey:                      l1ProverPrivKey,
-		Dummy:                                true,
-		ProveUnassignedBlocks:                true,
-		ProveBlockTxReplacementGasGrowthRate: 2,
-		RPCTimeout:                           10 * time.Minute,
-		BackOffRetryInterval:                 3 * time.Second,
-		BackOffMaxRetrys:                     12,
+		L1WsEndpoint:          os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1HttpEndpoint:        os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+		L2WsEndpoint:          os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+		L2HttpEndpoint:        os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		TaikoL1Address:        common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		TaikoL2Address:        common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+		TaikoTokenAddress:     common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		AssignmentHookAddress: common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_CONTRACT_ADDRESS")),
+		L1ProverPrivKey:       l1ProverPrivKey,
+		Dummy:                 true,
+		ProveUnassignedBlocks: true,
+		RPCTimeout:            10 * time.Minute,
+		BackOffRetryInterval:  3 * time.Second,
+		BackOffMaxRetrys:      12,
+		TxmgrConfigs: &txmgr.CLIConfig{
+			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
+			NumConfirmations:          1,
+			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
+			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(l1ProverPrivKey)),
+			FeeLimitMultiplier:        txmgr.DefaultBatcherFlagValues.FeeLimitMultiplier,
+			FeeLimitThresholdGwei:     txmgr.DefaultBatcherFlagValues.FeeLimitThresholdGwei,
+			MinBaseFeeGwei:            txmgr.DefaultBatcherFlagValues.MinBaseFeeGwei,
+			MinTipCapGwei:             txmgr.DefaultBatcherFlagValues.MinTipCapGwei,
+			ResubmissionTimeout:       txmgr.DefaultBatcherFlagValues.ResubmissionTimeout,
+			ReceiptQueryInterval:      1 * time.Second,
+			NetworkTimeout:            txmgr.DefaultBatcherFlagValues.NetworkTimeout,
+			TxSendTimeout:             txmgr.DefaultBatcherFlagValues.TxSendTimeout,
+			TxNotInMempoolTimeout:     txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
+		},
 	}), "dial tcp:")
 }
 
@@ -484,6 +514,21 @@ func (s *ProverTestSuite) initProver(
 		BackOffMaxRetrys:      12,
 		L1NodeVersion:         "1.0.0",
 		L2NodeVersion:         "0.1.0",
+		TxmgrConfigs: &txmgr.CLIConfig{
+			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
+			NumConfirmations:          1,
+			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
+			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(p.cfg.L1ProverPrivKey)),
+			FeeLimitMultiplier:        txmgr.DefaultBatcherFlagValues.FeeLimitMultiplier,
+			FeeLimitThresholdGwei:     txmgr.DefaultBatcherFlagValues.FeeLimitThresholdGwei,
+			MinBaseFeeGwei:            txmgr.DefaultBatcherFlagValues.MinBaseFeeGwei,
+			MinTipCapGwei:             txmgr.DefaultBatcherFlagValues.MinTipCapGwei,
+			ResubmissionTimeout:       txmgr.DefaultBatcherFlagValues.ResubmissionTimeout,
+			ReceiptQueryInterval:      1 * time.Second,
+			NetworkTimeout:            txmgr.DefaultBatcherFlagValues.NetworkTimeout,
+			TxSendTimeout:             txmgr.DefaultBatcherFlagValues.TxSendTimeout,
+			TxNotInMempoolTimeout:     txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
+		},
 	}))
 	p.server = s.NewTestProverServer(
 		key,

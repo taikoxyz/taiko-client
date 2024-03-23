@@ -50,7 +50,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	txmgr, err := txmgr.NewSimpleTxManager(
+	txMgr, err := txmgr.NewSimpleTxManager(
 		"proofSubmitterTestSuite",
 		log.Root(),
 		new(metrics.NoopTxMetrics),
@@ -78,13 +78,13 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		s.proofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		"test",
-		txmgr,
+		txMgr,
 		builder,
 	)
 	s.Nil(err)
 	s.contester = NewProofContester(
 		s.RPCClient,
-		txmgr,
+		txMgr,
 		"test",
 		builder,
 	)
@@ -129,7 +129,21 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		SgxTierFee:                 common.Big256,
 		MaxTierFeePriceBumps:       3,
 		TierFeePriceBump:           common.Big2,
-		L1BlockBuilderTip:          common.Big0,
+		TxmgrConfigs: &txmgr.CLIConfig{
+			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
+			NumConfirmations:          1,
+			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
+			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(l1ProposerPrivKey)),
+			FeeLimitMultiplier:        txmgr.DefaultBatcherFlagValues.FeeLimitMultiplier,
+			FeeLimitThresholdGwei:     txmgr.DefaultBatcherFlagValues.FeeLimitThresholdGwei,
+			MinBaseFeeGwei:            txmgr.DefaultBatcherFlagValues.MinBaseFeeGwei,
+			MinTipCapGwei:             txmgr.DefaultBatcherFlagValues.MinTipCapGwei,
+			ResubmissionTimeout:       txmgr.DefaultBatcherFlagValues.ResubmissionTimeout,
+			ReceiptQueryInterval:      1 * time.Second,
+			NetworkTimeout:            txmgr.DefaultBatcherFlagValues.NetworkTimeout,
+			TxSendTimeout:             txmgr.DefaultBatcherFlagValues.TxSendTimeout,
+			TxNotInMempoolTimeout:     txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
+		},
 	}))
 
 	s.proposer = prop

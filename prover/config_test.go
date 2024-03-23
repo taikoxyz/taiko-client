@@ -51,8 +51,6 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal(uint64(8), c.Capacity)
 		s.Equal(uint64(minTierFee), c.MinOptimisticTierFee.Uint64())
 		s.Equal(uint64(minTierFee), c.MinSgxTierFee.Uint64())
-		s.Equal(uint64(3), c.ProveBlockTxReplacementGasGrowthRate)
-		s.Equal(uint64(256), c.ProveBlockMaxTxGasFeeCap.Uint64())
 		s.Equal(c.L1NodeVersion, l1NodeVersion)
 		s.Equal(c.L2NodeVersion, l2NodeVersion)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
@@ -76,15 +74,13 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.L1ProverPrivKey.Name, os.Getenv("L1_PROVER_PRIVATE_KEY"),
 		"--" + flags.StartingBlockID.Name, "0",
 		"--" + flags.RPCTimeout.Name, "5s",
-		"--" + flags.ProveBlockTxGasLimit.Name, "100000",
+		"--" + flags.TxGasLimit.Name, "100000",
 		"--" + flags.Dummy.Name,
 		"--" + flags.MinOptimisticTierFee.Name, fmt.Sprint(minTierFee),
 		"--" + flags.MinSgxTierFee.Name, fmt.Sprint(minTierFee),
 		"--" + flags.ProverCapacity.Name, "8",
 		"--" + flags.GuardianProver.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
 		"--" + flags.ProverAssignmentHookAddress.Name, os.Getenv("ASSIGNMENT_HOOK_ADDRESS"),
-		"--" + flags.TxReplacementGasGrowthRate.Name, "3",
-		"--" + flags.ProveBlockMaxTxGasFeeCap.Name, "256",
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.ProveUnassignedBlocks.Name,
 		"--" + flags.MaxProposedIn.Name, "100",
@@ -119,13 +115,11 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.GuardianProver.Name},
 		&cli.StringFlag{Name: flags.Graffiti.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
-		&cli.Uint64Flag{Name: flags.TxReplacementGasGrowthRate.Name},
-		&cli.Uint64Flag{Name: flags.ProveBlockMaxTxGasFeeCap.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
 		&cli.Uint64Flag{Name: flags.ProverCapacity.Name},
 		&cli.Uint64Flag{Name: flags.MinOptimisticTierFee.Name},
 		&cli.Uint64Flag{Name: flags.MinSgxTierFee.Name},
-		&cli.Uint64Flag{Name: flags.ProveBlockTxGasLimit.Name},
+		&cli.Uint64Flag{Name: flags.TxGasLimit.Name},
 		&cli.Uint64Flag{Name: flags.MaxProposedIn.Name},
 		&cli.StringFlag{Name: flags.ProverAssignmentHookAddress.Name},
 		&cli.StringFlag{Name: flags.Allowance.Name},
