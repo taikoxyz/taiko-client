@@ -140,12 +140,12 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.SgxTierFee.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
 		&cli.DurationFlag{Name: flags.WaitReceiptTimeout.Name},
-		&cli.Uint64Flag{Name: flags.TxGasLimit.Name},
 		&cli.Uint64Flag{Name: flags.TierFeePriceBump.Name},
 		&cli.Uint64Flag{Name: flags.MaxTierFeePriceBumps.Name},
 		&cli.BoolFlag{Name: flags.ProposeBlockIncludeParentMetaHash.Name},
 		&cli.StringFlag{Name: flags.ProposerAssignmentHookAddress.Name},
 	}
+	app.Flags = append(app.Flags, flags.TxmgrFlags...)
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
 		return err

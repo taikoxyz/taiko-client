@@ -123,7 +123,7 @@ func (s *ProverTestSuite) TestInitError() {
 	s.Nil(err)
 
 	p := new(Prover)
-	// Error should be "context canceled", instead is "Dial ethclient error:"
+
 	s.ErrorContains(InitFromConfig(ctx, p, &Config{
 		L1WsEndpoint:          os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L1HttpEndpoint:        os.Getenv("L1_NODE_HTTP_ENDPOINT"),
@@ -518,7 +518,7 @@ func (s *ProverTestSuite) initProver(
 			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
 			NumConfirmations:          1,
 			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
-			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(p.cfg.L1ProverPrivKey)),
+			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(key)),
 			FeeLimitMultiplier:        txmgr.DefaultBatcherFlagValues.FeeLimitMultiplier,
 			FeeLimitThresholdGwei:     txmgr.DefaultBatcherFlagValues.FeeLimitThresholdGwei,
 			MinBaseFeeGwei:            txmgr.DefaultBatcherFlagValues.MinBaseFeeGwei,

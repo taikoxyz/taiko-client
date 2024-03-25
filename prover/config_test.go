@@ -119,7 +119,6 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.ProverCapacity.Name},
 		&cli.Uint64Flag{Name: flags.MinOptimisticTierFee.Name},
 		&cli.Uint64Flag{Name: flags.MinSgxTierFee.Name},
-		&cli.Uint64Flag{Name: flags.TxGasLimit.Name},
 		&cli.Uint64Flag{Name: flags.MaxProposedIn.Name},
 		&cli.StringFlag{Name: flags.ProverAssignmentHookAddress.Name},
 		&cli.StringFlag{Name: flags.Allowance.Name},
@@ -127,6 +126,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.L1NodeVersion.Name},
 		&cli.StringFlag{Name: flags.L2NodeVersion.Name},
 	}
+	app.Flags = append(app.Flags, flags.TxmgrFlags...)
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
 		s.NotNil(err)
