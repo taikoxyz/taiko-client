@@ -8,11 +8,13 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	pkgFlags "github.com/taikoxyz/taiko-client/pkg/flags"
 )
 
 // Config contains the configurations to initialize a Taiko prover.
@@ -31,7 +33,6 @@ type Config struct {
 	Dummy                                   bool
 	GuardianProverAddress                   common.Address
 	GuardianProofSubmissionDelay            time.Duration
-	ProofSubmissionMaxRetry                 uint64
 	Graffiti                                string
 	BackOffMaxRetrys                        uint64
 	BackOffRetryInterval                    time.Duration
@@ -41,8 +42,6 @@ type Config struct {
 	RPCTimeout                              time.Duration
 	WaitReceiptTimeout                      time.Duration
 	ProveBlockGasLimit                      *uint64
-	ProveBlockTxReplacementGasGrowthRate    uint64
-	ProveBlockMaxTxGasFeeCap                *big.Int
 	HTTPServerPort                          uint64
 	Capacity                                uint64
 	MinOptimisticTierFee                    *big.Int
@@ -59,6 +58,7 @@ type Config struct {
 	L1NodeVersion                           string
 	L2NodeVersion                           string
 	BlockConfirmations                      uint64
+	TxmgrConfigs                            *txmgr.CLIConfig
 }
 
 // NewConfigFromCliContext creates a new config instance from command line flags.
@@ -78,22 +78,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	var proveBlockTxGasLimit *uint64
-	if c.IsSet(flags.ProveBlockTxGasLimit.Name) {
-		gasLimit := c.Uint64(flags.ProveBlockTxGasLimit.Name)
+	if c.IsSet(flags.TxGasLimit.Name) {
+		gasLimit := c.Uint64(flags.TxGasLimit.Name)
 		proveBlockTxGasLimit = &gasLimit
-	}
-
-	proveBlockTxReplacementMultiplier := c.Uint64(flags.TxReplacementGasGrowthRate.Name)
-	if proveBlockTxReplacementMultiplier == 0 {
-		return nil, fmt.Errorf(
-			"invalid --proveBlockTxReplacementMultiplier value: %d",
-			proveBlockTxReplacementMultiplier,
-		)
-	}
-
-	var proveBlockMaxTxGasTipCap *big.Int
-	if c.IsSet(flags.ProveBlockMaxTxGasFeeCap.Name) {
-		proveBlockMaxTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProveBlockMaxTxGasFeeCap.Name))
 	}
 
 	var allowance = common.Big0
@@ -156,7 +143,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		GuardianProverAddress:                   common.HexToAddress(c.String(flags.GuardianProver.Name)),
 		GuardianProofSubmissionDelay:            c.Duration(flags.GuardianProofSubmissionDelay.Name),
 		GuardianProverHealthCheckServerEndpoint: guardianProverHealthCheckServerEndpoint,
-		ProofSubmissionMaxRetry:                 c.Uint64(flags.ProofSubmissionMaxRetry.Name),
 		Graffiti:                                c.String(flags.Graffiti.Name),
 		BackOffMaxRetrys:                        c.Uint64(flags.BackOffMaxRetrys.Name),
 		BackOffRetryInterval:                    c.Duration(flags.BackOffRetryInterval.Name),
@@ -167,8 +153,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		WaitReceiptTimeout:                      c.Duration(flags.WaitReceiptTimeout.Name),
 		ProveBlockGasLimit:                      proveBlockTxGasLimit,
 		Capacity:                                c.Uint64(flags.ProverCapacity.Name),
-		ProveBlockTxReplacementGasGrowthRate:    proveBlockTxReplacementMultiplier,
-		ProveBlockMaxTxGasFeeCap:                proveBlockMaxTxGasTipCap,
 		HTTPServerPort:                          c.Uint64(flags.ProverHTTPServerPort.Name),
 		MinOptimisticTierFee:                    new(big.Int).SetUint64(c.Uint64(flags.MinOptimisticTierFee.Name)),
 		MinSgxTierFee:                           new(big.Int).SetUint64(c.Uint64(flags.MinSgxTierFee.Name)),
@@ -182,5 +166,10 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		L1NodeVersion:                           c.String(flags.L1NodeVersion.Name),
 		L2NodeVersion:                           c.String(flags.L2NodeVersion.Name),
 		BlockConfirmations:                      c.Uint64(flags.BlockConfirmations.Name),
+		TxmgrConfigs: pkgFlags.InitTxmgrConfigsFromCli(
+			c.String(flags.L1HTTPEndpoint.Name),
+			l1ProverPrivKey,
+			c,
+		),
 	}, nil
 }
