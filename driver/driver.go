@@ -81,6 +81,7 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 		d.state,
 		cfg.P2PSyncVerifiedBlocks,
 		cfg.P2PSyncTimeout,
+		cfg.MaxExponent,
 	); err != nil {
 		return err
 	}
@@ -122,7 +123,10 @@ func (d *Driver) eventLoop() {
 
 	// doSyncWithBackoff performs a synchronising operation with a backoff strategy.
 	doSyncWithBackoff := func() {
-		if err := backoff.Retry(d.doSync, backoff.NewConstantBackOff(d.RetryInterval)); err != nil {
+		if err := backoff.Retry(
+			d.doSync,
+			backoff.WithContext(backoff.NewConstantBackOff(d.RetryInterval), d.ctx),
+		); err != nil {
 			log.Error("Sync L2 execution engine's block chain error", "error", err)
 		}
 	}
@@ -192,7 +196,7 @@ func (d *Driver) reportProtocolStatus() {
 			maxNumBlocks = configs.BlockMaxProposals
 			return nil
 		},
-		backoff.NewConstantBackOff(d.RetryInterval),
+		backoff.WithContext(backoff.NewConstantBackOff(d.RetryInterval), d.ctx),
 	); err != nil {
 		log.Error("Failed to get protocol state variables", "error", err)
 		return

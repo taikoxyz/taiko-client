@@ -157,11 +157,6 @@ func (s *ProofSubmitter) SubmitProof(
 		return fmt.Errorf("invalid anchor transaction: %w", err)
 	}
 
-	// Get and validate this anchor transaction's receipt.
-	if _, err = s.anchorValidator.GetAndValidateAnchorTxReceipt(ctx, anchorTx); err != nil {
-		return fmt.Errorf("failed to fetch anchor transaction receipt: %w", err)
-	}
-
 	// Build the TaikoL1.proveBlock transaction and send it to the L1 node.
 	if err = encoding.TryParsingCustomError(s.sender.Send(
 		ctx,
