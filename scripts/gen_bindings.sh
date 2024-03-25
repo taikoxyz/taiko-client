@@ -75,7 +75,7 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/out/TaikoTimelockController.sol/TaikoTim
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TaikoTimelockController --pkg bindings --out $DIR/../bindings/gen_taiko_timelock_controller.go
 
-cat ${TAIKO_MONO_DIR}/packages/protocol/out/MainnetTierProvider.sol/MainnetTierProvider.json |
+cat ${TAIKO_MONO_DIR}/packages/protocol/out/DevnetTierProvider.sol/DevnetTierProvider.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type TierProvider --pkg bindings --out $DIR/../bindings/gen_tier_provider.go
 
