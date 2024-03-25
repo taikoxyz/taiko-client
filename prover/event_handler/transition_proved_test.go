@@ -2,6 +2,12 @@ package handler
 
 import (
 	"context"
+	"os"
+	"testing"
+	"time"
+
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
@@ -11,10 +17,6 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
-	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
-	"os"
-	"testing"
-	"time"
 )
 
 type EventHandlerTestSuite struct {

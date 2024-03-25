@@ -2,14 +2,15 @@ package handler
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/taikoxyz/taiko-client/bindings"
-	state "github.com/taikoxyz/taiko-client/prover/shared_state"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
+	state "github.com/taikoxyz/taiko-client/prover/shared_state"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 func (s *EventHandlerTestSuite) TestBlockProposedHandle() {
