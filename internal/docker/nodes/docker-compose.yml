@@ -3,7 +3,7 @@ version: "3.9"
 services:
   l1_node:
     container_name: l1_node
-    image: ghcr.dockerproxy.com/foundry-rs/foundry:nightly-4a643801d0b3855934cdec778e33e79c79971783
+    image: ghcr.io/foundry-rs/foundry:nightly-4a643801d0b3855934cdec778e33e79c79971783
     restart: unless-stopped
     pull_policy: always
     ports:
@@ -14,10 +14,12 @@ services:
       - "0.0.0.0"
       - --hardfork
       - cancun
+      - --block-time
+      - "1"
 
   l2_execution_engine:
     container_name: l2_node
-    image: gcr.dockerproxy.com/evmchain/taiko-geth:taiko
+    image: gcr.io/evmchain/taiko-geth:taiko
     restart: unless-stopped
     pull_policy: always
     volumes:

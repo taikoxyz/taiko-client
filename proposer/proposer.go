@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
+	txmgrMetrics "github.com/ethereum-optimism/optimism/op-service/txmgr/metrics"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -21,7 +23,6 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
 	builder "github.com/taikoxyz/taiko-client/proposer/transaction_builder"
 	"github.com/urfave/cli/v2"
@@ -35,10 +36,12 @@ var (
 
 // Proposer keep proposing new transactions from L2 execution engine's tx pool at a fixed interval.
 type Proposer struct {
+	// configurations
+	*Config
+
 	// RPC clients
 	rpc *rpc.Client
 
-	*Config
 	// Private keys and account addresses
 	proposerAddress common.Address
 
@@ -60,7 +63,7 @@ type Proposer struct {
 	CustomProposeOpHook func() error
 	AfterCommitHook     func() error
 
-	sender *sender.Sender
+	txmgr *txmgr.SimpleTxManager
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -103,12 +106,12 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 		return err
 	}
 
-	if p.sender, err = sender.NewSender(ctx, &sender.Config{
-		MaxGasFee:      20000000000,
-		GasGrowthRate:  20,
-		GasLimit:       cfg.ProposeBlockTxGasLimit,
-		MaxWaitingTime: time.Second * 30,
-	}, p.rpc.L1, cfg.L1ProposerPrivKey); err != nil {
+	if p.txmgr, err = txmgr.NewSimpleTxManager(
+		"proposer",
+		log.Root(),
+		new(txmgrMetrics.NoopTxMetrics),
+		*cfg.TxmgrConfigs,
+	); err != nil {
 		return err
 	}
 
@@ -135,6 +138,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 			cfg.TaikoL1Address,
 			cfg.L2SuggestedFeeRecipient,
 			cfg.AssignmentHookAddress,
+			cfg.ProposeBlockTxGasLimit,
 			cfg.ExtraData,
 		)
 	} else {
@@ -143,7 +147,9 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 			p.proverSelector,
 			p.Config.L1BlockBuilderTip,
 			cfg.L2SuggestedFeeRecipient,
+			cfg.TaikoL1Address,
 			cfg.AssignmentHookAddress,
+			cfg.ProposeBlockTxGasLimit,
 			cfg.ExtraData,
 		)
 	}
@@ -204,7 +210,6 @@ func (p *Proposer) eventLoop() {
 
 // Close closes the proposer instance.
 func (p *Proposer) Close(_ context.Context) {
-	p.sender.Close()
 	p.wg.Wait()
 }
 
@@ -268,13 +273,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return errNoNewTxs
 	}
 
-	// Wait for all transactions to be confirmed, if there is any.
-	defer func() {
-		if err := p.waitConfimations(); err != nil {
-			log.Error("Failed to wait proposer transactions confirmations", "error", err)
-		}
-	}()
-
 	// Propose all L2 transactions lists.
 	for i, txs := range txLists {
 		if i >= int(p.MaxProposedTxListsPerEpoch) {
@@ -294,26 +292,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	return nil
 }
 
-// waitConfimations waits for all current proposer transactions to be confirmed.
-func (p *Proposer) waitConfimations() error {
-	// Wait for all transactions to be confirmed.
-	for _, confirmCh := range p.sender.TxToConfirmChannels() {
-		confirm := <-confirmCh
-		if confirm.Err != nil {
-			log.Error("ProposeTxList error", "txId", confirm.ID, "error", confirm.Err)
-			return confirm.Err
-		}
-	}
-
-	if p.AfterCommitHook != nil {
-		if err := p.AfterCommitHook(); err != nil {
-			log.Error("Run AfterCommitHook error", "error", err)
-		}
-	}
-
-	return nil
-}
-
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
 func (p *Proposer) ProposeTxList(
 	ctx context.Context,
@@ -325,10 +303,9 @@ func (p *Proposer) ProposeTxList(
 		return err
 	}
 
-	tx, err := p.txBuilder.Build(
+	txCandidate, err := p.txBuilder.Build(
 		ctx,
 		p.tierFees,
-		p.sender.GetOpts(p.ctx),
 		p.IncludeParentMetaHash,
 		compressedTxListBytes,
 	)
@@ -337,9 +314,14 @@ func (p *Proposer) ProposeTxList(
 		return err
 	}
 
-	if _, err = p.sender.SendTransaction(tx); err != nil {
+	receipt, err := p.txmgr.Send(p.ctx, *txCandidate)
+	if err != nil {
 		log.Warn("Failed to send TaikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 		return err
+	}
+
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return fmt.Errorf("failed to propose block: %s", receipt.TxHash.Hex())
 	}
 
 	log.Info("📝 Propose transactions succeeded", "txs", txNum)
@@ -358,13 +340,6 @@ func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
 	}
 	if err = p.ProposeTxList(ctx, emptyTxListBytes, 0); err != nil {
 		return err
-	}
-	for _, confirmCh := range p.sender.TxToConfirmChannels() {
-		confirm := <-confirmCh
-		if confirm.Err != nil {
-			log.Error("ProposeEmptyBlockOp error", "td_id", confirm.ID, "error", confirm.Err)
-			return confirm.Err
-		}
 	}
 	return nil
 }
@@ -390,11 +365,6 @@ func (p *Proposer) updateProposingTicker() {
 // Name returns the application name.
 func (p *Proposer) Name() string {
 	return "proposer"
-}
-
-// GetSender returns the sender instance.
-func (p *Proposer) GetSender() *sender.Sender {
-	return p.sender
 }
 
 // initTierFees initializes the proving fees for every proof tier configured in the protocol for the proposer.

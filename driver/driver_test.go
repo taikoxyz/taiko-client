@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
@@ -49,33 +50,7 @@ func (s *DriverTestSuite) SetupTest() {
 	s.cancel = cancel
 
 	// InitFromConfig proposer
-	p := new(proposer.Proposer)
-
-	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	s.Nil(err)
-
-	s.Nil(p.InitFromConfig(context.Background(), &proposer.Config{
-		ClientConfig: &rpc.ClientConfig{
-			L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
-			L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-			TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		},
-		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-		L1ProposerPrivKey:          l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:            1024 * time.Hour,
-		MaxProposedTxListsPerEpoch: 1,
-		WaitReceiptTimeout:         12 * time.Second,
-		ProverEndpoints:            s.ProverEndpoints,
-		OptimisticTierFee:          common.Big256,
-		SgxTierFee:                 common.Big256,
-		MaxTierFeePriceBumps:       3,
-		TierFeePriceBump:           common.Big2,
-		L1BlockBuilderTip:          common.Big0,
-	}))
-	s.p = p
+	s.InitProposer()
 }
 
 func (s *DriverTestSuite) TestName() {
@@ -128,7 +103,6 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	var (
 		testnetL1SnapshotID = s.SetL1Snapshot()
-		sender              = s.p.GetSender()
 	)
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -156,6 +130,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 	// Reorg back to l2Head1
 	s.RevertL1Snapshot(testnetL1SnapshotID)
+	s.InitProposer()
 
 	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -163,7 +138,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Equal(l1Head3.Hash(), l1Head1.Hash())
 
 	// Because of evm_revert operation, the nonce of the proposer need to be adjusted.
-	s.Nil(sender.SetNonce(nil, true))
 	// Propose ten blocks on another fork
 	for i := 0; i < 10; i++ {
 		s.ProposeInvalidTxListBytes(s.p)
@@ -190,7 +164,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	var (
 		testnetL1SnapshotID = s.SetL1Snapshot()
-		sender              = s.p.GetSender()
 	)
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -218,13 +191,12 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 
 	// Reorg back to l2Head1
 	s.RevertL1Snapshot(testnetL1SnapshotID)
+	s.InitProposer()
 
 	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
-	s.Equal(l1Head3.Hash(), l1Head1.Hash())
+	s.GreaterOrEqual(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 
-	s.Nil(sender.SetNonce(nil, true))
 	// Propose one blocks on another fork
 	s.ProposeInvalidTxListBytes(s.p)
 
@@ -248,7 +220,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	var (
 		testnetL1SnapshotID = s.SetL1Snapshot()
-		sender              = s.p.GetSender()
 	)
 	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -276,13 +247,12 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 
 	// Reorg back to l2Head1
 	s.RevertL1Snapshot(testnetL1SnapshotID)
+	s.InitProposer()
 
 	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
-	s.Equal(l1Head3.Hash(), l1Head1.Hash())
+	s.GreaterOrEqual(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
 
-	s.Nil(sender.SetNonce(nil, true))
 	// Propose two blocks on another fork
 	s.ProposeInvalidTxListBytes(s.p)
 	time.Sleep(3 * time.Second)
@@ -292,7 +262,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Nil(err)
 
 	s.Greater(l1Head4.Number.Uint64(), l1Head3.Number.Uint64())
-	s.Equal(l1Head4.Number.Uint64(), l1Head2.Number.Uint64())
 
 	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head4))
 
@@ -321,6 +290,51 @@ func (s *DriverTestSuite) TestL1Current() {
 	s.ProposeAndInsertEmptyBlocks(s.p, s.d.ChainSyncer().CalldataSyncer())
 	// reset L1 current with increased height
 	s.Nil(s.d.state.ResetL1Current(s.d.ctx, common.Big1))
+}
+
+func (s *DriverTestSuite) InitProposer() {
+	p := new(proposer.Proposer)
+
+	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	s.Nil(p.InitFromConfig(context.Background(), &proposer.Config{
+		ClientConfig: &rpc.ClientConfig{
+			L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+			L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+			TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		},
+		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
+		L1ProposerPrivKey:          l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		ProposeInterval:            1024 * time.Hour,
+		MaxProposedTxListsPerEpoch: 1,
+		WaitReceiptTimeout:         12 * time.Second,
+		ProverEndpoints:            s.ProverEndpoints,
+		OptimisticTierFee:          common.Big256,
+		SgxTierFee:                 common.Big256,
+		MaxTierFeePriceBumps:       3,
+		TierFeePriceBump:           common.Big2,
+		L1BlockBuilderTip:          common.Big0,
+		TxmgrConfigs: &txmgr.CLIConfig{
+			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
+			NumConfirmations:          1,
+			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
+			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(l1ProposerPrivKey)),
+			FeeLimitMultiplier:        txmgr.DefaultBatcherFlagValues.FeeLimitMultiplier,
+			FeeLimitThresholdGwei:     txmgr.DefaultBatcherFlagValues.FeeLimitThresholdGwei,
+			MinBaseFeeGwei:            txmgr.DefaultBatcherFlagValues.MinBaseFeeGwei,
+			MinTipCapGwei:             txmgr.DefaultBatcherFlagValues.MinTipCapGwei,
+			ResubmissionTimeout:       txmgr.DefaultBatcherFlagValues.ResubmissionTimeout,
+			ReceiptQueryInterval:      1 * time.Second,
+			NetworkTimeout:            txmgr.DefaultBatcherFlagValues.NetworkTimeout,
+			TxSendTimeout:             txmgr.DefaultBatcherFlagValues.TxSendTimeout,
+			TxNotInMempoolTimeout:     txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
+		},
+	}))
+	s.p = p
 }
 
 func TestDriverTestSuite(t *testing.T) {

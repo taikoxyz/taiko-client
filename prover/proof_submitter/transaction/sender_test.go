@@ -6,16 +6,19 @@ import (
 	"math/big"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
+	"github.com/ethereum-optimism/optimism/op-service/txmgr/metrics"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
@@ -33,15 +36,38 @@ type TransactionTestSuite struct {
 func (s *TransactionTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
+	s.builder = NewProveBlockTxBuilder(
+		s.RPCClient,
+		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
+	)
+
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
 	s.Nil(err)
 
-	txSender, err := sender.NewSender(context.Background(), &sender.Config{}, s.RPCClient.L1, l1ProverPrivKey)
+	txmgr, err := txmgr.NewSimpleTxManager(
+		"transactionTestSuite",
+		log.Root(),
+		new(metrics.NoopTxMetrics),
+		txmgr.CLIConfig{
+			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
+			NumConfirmations:          1,
+			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
+			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(l1ProverPrivKey)),
+			FeeLimitMultiplier:        txmgr.DefaultBatcherFlagValues.FeeLimitMultiplier,
+			FeeLimitThresholdGwei:     txmgr.DefaultBatcherFlagValues.FeeLimitThresholdGwei,
+			MinBaseFeeGwei:            txmgr.DefaultBatcherFlagValues.MinBaseFeeGwei,
+			MinTipCapGwei:             txmgr.DefaultBatcherFlagValues.MinTipCapGwei,
+			ResubmissionTimeout:       txmgr.DefaultBatcherFlagValues.ResubmissionTimeout,
+			ReceiptQueryInterval:      1 * time.Second,
+			NetworkTimeout:            txmgr.DefaultBatcherFlagValues.NetworkTimeout,
+			TxSendTimeout:             txmgr.DefaultBatcherFlagValues.TxSendTimeout,
+			TxNotInMempoolTimeout:     txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
+		},
+	)
 	s.Nil(err)
 
-	s.sender = NewSender(s.RPCClient, txSender)
-
-	s.builder = NewProveBlockTxBuilder(s.RPCClient)
+	s.sender = NewSender(s.RPCClient, txmgr, 0)
 }
 
 func (s *TransactionTestSuite) TestIsSubmitProofTxErrorRetryable() {
@@ -65,7 +91,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 			Header:  &types.Header{},
 			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
-		func(*bind.TransactOpts) (*types.Transaction, error) { return nil, errors.New("L1_TEST") },
+		func(*bind.TransactOpts) (*txmgr.TxCandidate, error) { return nil, errors.New("L1_TEST") },
 	))
 
 	s.Nil(s.sender.Send(
@@ -76,7 +102,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 			Header:  &types.Header{},
 			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
 		},
-		func(*bind.TransactOpts) (*types.Transaction, error) {
+		func(*bind.TransactOpts) (*txmgr.TxCandidate, error) {
 			height, err := s.RPCClient.L1.BlockNumber(context.Background())
 			s.Nil(err)
 
@@ -90,7 +116,15 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 				height--
 			}
 
-			return block.Transactions()[0], nil
+			tx := block.Transactions()[0]
+
+			return &txmgr.TxCandidate{
+				TxData:   tx.Data(),
+				Blobs:    nil,
+				To:       tx.To(),
+				GasLimit: tx.Gas(),
+				Value:    tx.Value(),
+			}, nil
 		},
 	))
 }

@@ -4,10 +4,9 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum-optimism/optimism/op-service/eth"
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
@@ -22,6 +21,7 @@ type BlobTransactionBuilder struct {
 	taikoL1Address          common.Address
 	l2SuggestedFeeRecipient common.Address
 	assignmentHookAddress   common.Address
+	gasLimit                uint64
 	extraData               string
 }
 
@@ -33,6 +33,7 @@ func NewBlobTransactionBuilder(
 	taikoL1Address common.Address,
 	l2SuggestedFeeRecipient common.Address,
 	assignmentHookAddress common.Address,
+	gasLimit uint64,
 	extraData string,
 ) *BlobTransactionBuilder {
 	return &BlobTransactionBuilder{
@@ -42,6 +43,7 @@ func NewBlobTransactionBuilder(
 		taikoL1Address,
 		l2SuggestedFeeRecipient,
 		assignmentHookAddress,
+		gasLimit,
 		extraData,
 	}
 }
@@ -50,13 +52,17 @@ func NewBlobTransactionBuilder(
 func (b *BlobTransactionBuilder) Build(
 	ctx context.Context,
 	tierFees []encoding.TierFee,
-	opts *bind.TransactOpts,
 	includeParentMetaHash bool,
 	txListBytes []byte,
-) (*types.Transaction, error) {
+) (*txmgr.TxCandidate, error) {
 	// Make a sidecar then calculate the blob hash.
 	sideCar, err := rpc.MakeSidecar(txListBytes)
 	if err != nil {
+		return nil, err
+	}
+
+	var blob *eth.Blob
+	if err := blob.FromData(txListBytes); err != nil {
 		return nil, err
 	}
 
@@ -69,9 +75,6 @@ func (b *BlobTransactionBuilder) Build(
 	if err != nil {
 		return nil, err
 	}
-
-	// Set the ETHs that the current proposer needs to pay to the prover.
-	opts.Value = maxFee
 
 	// If the current proposer wants to include the parent meta hash, then fetch it from the protocol.
 	var parentMetaHash = [32]byte{}
@@ -103,20 +106,16 @@ func (b *BlobTransactionBuilder) Build(
 	}
 
 	// Send the transaction to the L1 node.
-	rawTx, err := b.rpc.TaikoL1.ProposeBlock(
-		opts,
-		encodedParams,
-		nil,
-	)
+	data, err := encoding.TaikoL1ABI.Pack("proposeBlock", encodedParams, nil)
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
 	}
 
-	tx, err := b.rpc.L1.TransactBlobTx(opts, b.taikoL1Address, rawTx.Data(), sideCar)
-	if err != nil {
-		log.Debug("Failed to transact blob tx", "value", maxFee, "blobGasFeeCap", tx.BlobGasFeeCap(), "err", err)
-		return nil, err
-	}
-
-	return tx, nil
+	return &txmgr.TxCandidate{
+		TxData:   data,
+		Blobs:    []*eth.Blob{blob},
+		To:       &b.taikoL1Address,
+		GasLimit: b.gasLimit,
+		Value:    maxFee,
+	}, nil
 }

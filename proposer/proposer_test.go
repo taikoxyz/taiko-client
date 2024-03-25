@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -42,20 +42,34 @@ func (s *ProposerTestSuite) SetupTest() {
 			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 		},
-		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-		L1ProposerPrivKey:                   l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:             common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:                     1024 * time.Hour,
-		MaxProposedTxListsPerEpoch:          1,
-		ProposeBlockTxReplacementMultiplier: 2,
-		WaitReceiptTimeout:                  12 * time.Second,
-		ProverEndpoints:                     s.ProverEndpoints,
-		OptimisticTierFee:                   common.Big256,
-		SgxTierFee:                          common.Big256,
-		TierFeePriceBump:                    common.Big2,
-		MaxTierFeePriceBumps:                3,
-		ExtraData:                           "test",
-		L1BlockBuilderTip:                   common.Big0,
+		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
+		L1ProposerPrivKey:          l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		ProposeInterval:            1024 * time.Hour,
+		MaxProposedTxListsPerEpoch: 1,
+		WaitReceiptTimeout:         12 * time.Second,
+		ProverEndpoints:            s.ProverEndpoints,
+		OptimisticTierFee:          common.Big256,
+		SgxTierFee:                 common.Big256,
+		TierFeePriceBump:           common.Big2,
+		MaxTierFeePriceBumps:       3,
+		ExtraData:                  "test",
+		L1BlockBuilderTip:          common.Big0,
+		TxmgrConfigs: &txmgr.CLIConfig{
+			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
+			NumConfirmations:          1,
+			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
+			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(l1ProposerPrivKey)),
+			FeeLimitMultiplier:        txmgr.DefaultBatcherFlagValues.FeeLimitMultiplier,
+			FeeLimitThresholdGwei:     txmgr.DefaultBatcherFlagValues.FeeLimitThresholdGwei,
+			MinBaseFeeGwei:            txmgr.DefaultBatcherFlagValues.MinBaseFeeGwei,
+			MinTipCapGwei:             txmgr.DefaultBatcherFlagValues.MinTipCapGwei,
+			ResubmissionTimeout:       txmgr.DefaultBatcherFlagValues.ResubmissionTimeout,
+			ReceiptQueryInterval:      1 * time.Second,
+			NetworkTimeout:            txmgr.DefaultBatcherFlagValues.NetworkTimeout,
+			TxSendTimeout:             txmgr.DefaultBatcherFlagValues.TxSendTimeout,
+			TxNotInMempoolTimeout:     txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
+		},
 	}))
 
 	s.p = p
@@ -147,54 +161,6 @@ func (s *ProposerTestSuite) TestCustomProposeOpHook() {
 
 	s.Nil(s.p.ProposeOp(context.Background()))
 	s.True(flag)
-}
-
-func (s *ProposerTestSuite) TestSendProposeBlockTx() {
-	sender := s.p.GetSender()
-	s.SetL1Automine(false)
-	defer s.SetL1Automine(true)
-
-	s.Nil(sender.SetNonce(nil, true))
-
-	nonce, err := s.RPCClient.L1.PendingNonceAt(context.Background(), s.p.proposerAddress)
-	s.Nil(err)
-
-	txID, err := sender.SendRawTransaction(
-		context.Background(),
-		nonce,
-		&common.Address{},
-		common.Big1,
-		nil,
-		nil,
-	)
-	s.Nil(err)
-	tx := sender.GetUnconfirmedTx(txID)
-
-	encoded, err := rlp.EncodeToBytes([]types.Transaction{})
-	s.Nil(err)
-
-	newTx, err := s.p.txBuilder.Build(
-		context.Background(),
-		s.p.tierFees,
-		sender.GetOpts(context.Background()),
-		false,
-		encoded,
-	)
-
-	s.Nil(err)
-
-	txID, err = sender.SendRawTransaction(
-		context.Background(),
-		nonce,
-		newTx.To(),
-		newTx.Value(),
-		newTx.Data(),
-		nil,
-	)
-	s.Nil(err)
-	newTx = sender.GetUnconfirmedTx(txID)
-
-	s.Greater(newTx.GasTipCap().Uint64(), tx.GasTipCap().Uint64())
 }
 
 func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {

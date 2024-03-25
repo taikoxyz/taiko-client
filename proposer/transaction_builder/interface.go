@@ -3,8 +3,7 @@ package builder
 import (
 	"context"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
@@ -13,8 +12,7 @@ type ProposeBlockTransactionBuilder interface {
 	Build(
 		ctx context.Context,
 		tierFees []encoding.TierFee,
-		opts *bind.TransactOpts,
 		includeParentMetaHash bool,
 		txListBytes []byte,
-	) (*types.Transaction, error)
+	) (*txmgr.TxCandidate, error)
 }

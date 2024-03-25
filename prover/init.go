@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
 	handler "github.com/taikoxyz/taiko-client/prover/event_handler"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
@@ -51,31 +52,26 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return nil
 	}
 
-	opts := p.txSender.GetOpts(ctx)
-
 	log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance.String(), "contract", contract)
-
-	tx, err := p.rpc.TaikoToken.Approve(
-		opts,
-		contract,
-		p.cfg.Allowance,
-	)
+	data, err := encoding.TaikoTokenABI.Pack("approve", contract, p.cfg.Allowance)
 	if err != nil {
 		return err
 	}
 
-	id, err := p.txSender.SendTransaction(tx)
+	receipt, err := p.txmgr.Send(ctx, txmgr.TxCandidate{
+		TxData: data,
+		To:     &p.cfg.TaikoTokenAddress,
+	})
 	if err != nil {
 		return err
 	}
-	confirm := <-p.txSender.TxToConfirmChannel(id)
-	if confirm.Err != nil {
-		return confirm.Err
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return fmt.Errorf("failed to approve allowance for contract (%s): %s", contract, receipt.TxHash.Hex())
 	}
 
 	log.Info(
 		"Approved the contract for taiko token",
-		"txHash", confirm.Receipt.TxHash.Hex(),
+		"txHash", receipt.TxHash.Hex(),
 		"contract", contract,
 	)
 
@@ -95,7 +91,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 
 // initProofSubmitters initializes the proof submitters from the given tiers in protocol.
 func (p *Prover) initProofSubmitters(
-	sender *sender.Sender,
+	txmgr *txmgr.SimpleTxManager,
 	txBuilder *transaction.ProveBlockTxBuilder,
 ) error {
 	for _, tier := range p.sharedState.GetTiers() {
@@ -127,7 +123,7 @@ func (p *Prover) initProofSubmitters(
 			p.proofGenerationCh,
 			p.cfg.TaikoL2Address,
 			p.cfg.Graffiti,
-			sender,
+			txmgr,
 			txBuilder,
 		); err != nil {
 			return err
