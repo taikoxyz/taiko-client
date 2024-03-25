@@ -106,7 +106,7 @@ func (b *BlobTransactionBuilder) Build(
 	}
 
 	// Send the transaction to the L1 node.
-	data, err := encoding.TaikoL1ABI.Pack("proposeBlock", encodedParams, nil)
+	data, err := encoding.TaikoL1ABI.Pack("proposeBlock", encodedParams, []byte{})
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
 	}
