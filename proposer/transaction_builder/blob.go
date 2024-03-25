@@ -61,7 +61,7 @@ func (b *BlobTransactionBuilder) Build(
 		return nil, err
 	}
 
-	var blob *eth.Blob
+	var blob = &eth.Blob{}
 	if err := blob.FromData(txListBytes); err != nil {
 		return nil, err
 	}
