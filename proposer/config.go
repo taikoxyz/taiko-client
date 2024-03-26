@@ -275,5 +275,10 @@ func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
 		IncludeParentMetaHash:      includeMetaHash,
 		BlobAllowed:                blobAllowed,
 		L1BlockBuilderTip:          l1BlockBuilderTip,
+		TxmgrConfigs: pkgFlags.InitTxmgrConfigsFromCli(
+			os.Getenv("L1_NODE_WS_ENDPOINT"),
+			l1ProposerPrivKey,
+			c,
+		),
 	}, nil
 }
