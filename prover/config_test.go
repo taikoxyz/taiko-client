@@ -173,6 +173,8 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.ProverCapacity.Name},
 		&cli.Uint64Flag{Name: flags.MinOptimisticTierFee.Name},
 		&cli.Uint64Flag{Name: flags.MinSgxTierFee.Name},
+		&cli.Uint64Flag{Name: flags.MinEthBalance.Name},
+		&cli.Uint64Flag{Name: flags.MinTaikoTokenBalance.Name},
 		&cli.Uint64Flag{Name: flags.MaxProposedIn.Name},
 		&cli.StringFlag{Name: flags.ProverAssignmentHookAddress.Name},
 		&cli.StringFlag{Name: flags.Allowance.Name},
