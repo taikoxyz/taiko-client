@@ -10,39 +10,40 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	pkgFlags "github.com/taikoxyz/taiko-client/pkg/flags"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // Config contains all configurations to initialize a Taiko proposer.
 type Config struct {
 	*rpc.ClientConfig
-	AssignmentHookAddress               common.Address
-	L1ProposerPrivKey                   *ecdsa.PrivateKey
-	L2SuggestedFeeRecipient             common.Address
-	ExtraData                           string
-	ProposeInterval                     time.Duration
-	LocalAddresses                      []common.Address
-	LocalAddressesOnly                  bool
-	ProposeEmptyBlocksInterval          time.Duration
-	MaxProposedTxListsPerEpoch          uint64
-	ProposeBlockTxGasLimit              uint64
-	ProposeBlockTxReplacementMultiplier uint64
-	WaitReceiptTimeout                  time.Duration
-	ProposeBlockTxGasTipCap             *big.Int
-	ProverEndpoints                     []*url.URL
-	OptimisticTierFee                   *big.Int
-	SgxTierFee                          *big.Int
-	TierFeePriceBump                    *big.Int
-	MaxTierFeePriceBumps                uint64
-	IncludeParentMetaHash               bool
-	BlobAllowed                         bool
-	L1BlockBuilderTip                   *big.Int
+	AssignmentHookAddress      common.Address
+	L1ProposerPrivKey          *ecdsa.PrivateKey
+	L2SuggestedFeeRecipient    common.Address
+	ExtraData                  string
+	ProposeInterval            time.Duration
+	LocalAddresses             []common.Address
+	LocalAddressesOnly         bool
+	ProposeEmptyBlocksInterval time.Duration
+	MaxProposedTxListsPerEpoch uint64
+	ProposeBlockTxGasLimit     uint64
+	WaitReceiptTimeout         time.Duration
+	ProverEndpoints            []*url.URL
+	OptimisticTierFee          *big.Int
+	SgxTierFee                 *big.Int
+	TierFeePriceBump           *big.Int
+	MaxTierFeePriceBumps       uint64
+	IncludeParentMetaHash      bool
+	BlobAllowed                bool
+	TxmgrConfigs               *txmgr.CLIConfig
+	L1BlockBuilderTip          *big.Int
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -70,19 +71,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		}
 	}
 
-	proposeBlockTxReplacementMultiplier := c.Uint64(flags.ProposeBlockTxReplacementMultiplier.Name)
-	if proposeBlockTxReplacementMultiplier == 0 {
-		return nil, fmt.Errorf(
-			"invalid --proposeBlockTxReplacementMultiplier value: %d",
-			proposeBlockTxReplacementMultiplier,
-		)
-	}
-
-	var proposeBlockTxGasTipCap *big.Int
-	if c.IsSet(flags.ProposeBlockTxGasTipCap.Name) {
-		proposeBlockTxGasTipCap = new(big.Int).SetUint64(c.Uint64(flags.ProposeBlockTxGasTipCap.Name))
-	}
-
 	var proverEndpoints []*url.URL
 	for _, e := range strings.Split(c.String(flags.ProverEndpoints.Name), ",") {
 		endpoint, err := url.Parse(e)
@@ -101,27 +89,30 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			TaikoTokenAddress: common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
 			Timeout:           c.Duration(flags.RPCTimeout.Name),
 		},
-		AssignmentHookAddress:               common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
-		L1ProposerPrivKey:                   l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:             common.HexToAddress(l2SuggestedFeeRecipient),
-		ExtraData:                           c.String(flags.ExtraData.Name),
-		ProposeInterval:                     c.Duration(flags.ProposeInterval.Name),
-		LocalAddresses:                      localAddresses,
-		LocalAddressesOnly:                  c.Bool(flags.TxPoolLocalsOnly.Name),
-		ProposeEmptyBlocksInterval:          c.Duration(flags.ProposeEmptyBlocksInterval.Name),
-		MaxProposedTxListsPerEpoch:          c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
-		ProposeBlockTxGasLimit:              c.Uint64(flags.ProposeBlockTxGasLimit.Name),
-		ProposeBlockTxReplacementMultiplier: proposeBlockTxReplacementMultiplier,
-		WaitReceiptTimeout:                  c.Duration(flags.WaitReceiptTimeout.Name),
-		ProposeBlockTxGasTipCap:             proposeBlockTxGasTipCap,
-		ProverEndpoints:                     proverEndpoints,
-		OptimisticTierFee:                   new(big.Int).SetUint64(c.Uint64(flags.OptimisticTierFee.Name)),
-		SgxTierFee:                          new(big.Int).SetUint64(c.Uint64(flags.SgxTierFee.Name)),
-		TierFeePriceBump:                    new(big.Int).SetUint64(c.Uint64(flags.TierFeePriceBump.Name)),
-		MaxTierFeePriceBumps:                c.Uint64(flags.MaxTierFeePriceBumps.Name),
-		IncludeParentMetaHash:               c.Bool(flags.ProposeBlockIncludeParentMetaHash.Name),
-		BlobAllowed:                         c.Bool(flags.BlobAllowed.Name),
-		L1BlockBuilderTip:                   new(big.Int).SetUint64(c.Uint64(flags.L1BlockBuilderTip.Name)),
+		AssignmentHookAddress:      common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
+		L1ProposerPrivKey:          l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:    common.HexToAddress(l2SuggestedFeeRecipient),
+		ExtraData:                  c.String(flags.ExtraData.Name),
+		ProposeInterval:            c.Duration(flags.ProposeInterval.Name),
+		LocalAddresses:             localAddresses,
+		LocalAddressesOnly:         c.Bool(flags.TxPoolLocalsOnly.Name),
+		ProposeEmptyBlocksInterval: c.Duration(flags.ProposeEmptyBlocksInterval.Name),
+		MaxProposedTxListsPerEpoch: c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
+		ProposeBlockTxGasLimit:     c.Uint64(flags.TxGasLimit.Name),
+		WaitReceiptTimeout:         c.Duration(flags.WaitReceiptTimeout.Name),
+		ProverEndpoints:            proverEndpoints,
+		OptimisticTierFee:          new(big.Int).SetUint64(c.Uint64(flags.OptimisticTierFee.Name)),
+		SgxTierFee:                 new(big.Int).SetUint64(c.Uint64(flags.SgxTierFee.Name)),
+		TierFeePriceBump:           new(big.Int).SetUint64(c.Uint64(flags.TierFeePriceBump.Name)),
+		MaxTierFeePriceBumps:       c.Uint64(flags.MaxTierFeePriceBumps.Name),
+		IncludeParentMetaHash:      c.Bool(flags.ProposeBlockIncludeParentMetaHash.Name),
+		BlobAllowed:                c.Bool(flags.BlobAllowed.Name),
+		L1BlockBuilderTip:          new(big.Int).SetUint64(c.Uint64(flags.L1BlockBuilderTip.Name)),
+		TxmgrConfigs: pkgFlags.InitTxmgrConfigsFromCli(
+			c.String(flags.L1WSEndpoint.Name),
+			l1ProposerPrivKey,
+			c,
+		),
 	}, nil
 }
 
@@ -202,13 +193,6 @@ func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
 		return nil, err
 	}
 
-	var proposeBlockTxGasTipCap *big.Int
-	isSet := os.Getenv("PROPOSE_BLOCK_TX_GAS_TIP_CAP")
-	if isSet != "" {
-		tmp, _ := strconv.ParseUint(os.Getenv("PROPOSE_BLOCK_TX_GAS_TIP_CAP"), 0, 64)
-		proposeBlockTxGasTipCap = new(big.Int).SetUint64(tmp)
-	}
-
 	var proverEndpoints []*url.URL
 	for _, e := range strings.Split(os.Getenv("PROVER_ENDPOINTS"), ",") {
 		endpoint, err := url.Parse(e)
@@ -272,26 +256,24 @@ func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
 			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
 			Timeout:           timeout,
 		},
-		AssignmentHookAddress:               common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-		L1ProposerPrivKey:                   l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:             common.HexToAddress(l2SuggestedFeeRecipient),
-		ExtraData:                           c.String(flags.ExtraData.Name),
-		ProposeInterval:                     proposeInterval,
-		LocalAddresses:                      localAddresses,
-		LocalAddressesOnly:                  localsOnly,
-		ProposeEmptyBlocksInterval:          proposeEmptyBlocksInteval,
-		MaxProposedTxListsPerEpoch:          maxProposedTxListsPerEpoch,
-		ProposeBlockTxGasLimit:              proposeBlockTxGasLimit,
-		ProposeBlockTxReplacementMultiplier: proposeBlockTxReplacementMultiplier,
-		WaitReceiptTimeout:                  waitReceiptTimeout,
-		ProposeBlockTxGasTipCap:             proposeBlockTxGasTipCap,
-		ProverEndpoints:                     proverEndpoints,
-		OptimisticTierFee:                   optimisticTierFee,
-		SgxTierFee:                          sgxTierFee,
-		TierFeePriceBump:                    tierFeePriceBump,
-		MaxTierFeePriceBumps:                maxTierFeePriceBumps,
-		IncludeParentMetaHash:               includeMetaHash,
-		BlobAllowed:                         blobAllowed,
-		L1BlockBuilderTip:                   l1BlockBuilderTip,
+		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
+		L1ProposerPrivKey:          l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:    common.HexToAddress(l2SuggestedFeeRecipient),
+		ExtraData:                  c.String(flags.ExtraData.Name),
+		ProposeInterval:            proposeInterval,
+		LocalAddresses:             localAddresses,
+		LocalAddressesOnly:         localsOnly,
+		ProposeEmptyBlocksInterval: proposeEmptyBlocksInteval,
+		MaxProposedTxListsPerEpoch: maxProposedTxListsPerEpoch,
+		ProposeBlockTxGasLimit:     proposeBlockTxGasLimit,
+		WaitReceiptTimeout:         waitReceiptTimeout,
+		ProverEndpoints:            proverEndpoints,
+		OptimisticTierFee:          optimisticTierFee,
+		SgxTierFee:                 sgxTierFee,
+		TierFeePriceBump:           tierFeePriceBump,
+		MaxTierFeePriceBumps:       maxTierFeePriceBumps,
+		IncludeParentMetaHash:      includeMetaHash,
+		BlobAllowed:                blobAllowed,
+		L1BlockBuilderTip:          l1BlockBuilderTip,
 	}, nil
 }

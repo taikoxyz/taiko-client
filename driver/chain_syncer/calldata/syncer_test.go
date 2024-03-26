@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -30,45 +31,20 @@ type CalldataSyncerTestSuite struct {
 func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
-	state, err := state.New(context.Background(), s.RPCClient)
+	state2, err := state.New(context.Background(), s.RPCClient)
 	s.Nil(err)
 
 	syncer, err := NewSyncer(
 		context.Background(),
 		s.RPCClient,
-		state,
+		state2,
 		beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 1*time.Hour),
+		0,
 	)
 	s.Nil(err)
 	s.s = syncer
 
-	prop := new(proposer.Proposer)
-	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
-	s.Nil(err)
-
-	s.Nil(prop.InitFromConfig(context.Background(), &proposer.Config{
-		ClientConfig: &rpc.ClientConfig{
-			L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
-			L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
-			TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
-			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
-		},
-		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-		L1ProposerPrivKey:          l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
-		ProposeInterval:            1024 * time.Hour,
-		MaxProposedTxListsPerEpoch: 1,
-		WaitReceiptTimeout:         12 * time.Second,
-		ProverEndpoints:            s.ProverEndpoints,
-		OptimisticTierFee:          common.Big256,
-		SgxTierFee:                 common.Big256,
-		MaxTierFeePriceBumps:       3,
-		TierFeePriceBump:           common.Big2,
-		L1BlockBuilderTip:          common.Big0,
-	}))
-
-	s.p = prop
+	s.initProposer()
 }
 func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -78,6 +54,7 @@ func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
 		s.RPCClient,
 		s.s.state,
 		s.s.progressTracker,
+		0,
 	)
 	s.Nil(syncer)
 	s.NotNil(err)
@@ -209,6 +186,85 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 
 	s.True(hasNoneAnchorTxs)
 	s.Zero(balanceAfter.Cmp(balance))
+}
+
+func (s *CalldataSyncerTestSuite) TestRetrievePastBlock() {
+	syncer, err := NewSyncer(
+		context.Background(),
+		s.RPCClient,
+		s.s.state,
+		s.s.progressTracker,
+		5,
+	)
+	s.Nil(err)
+
+	s.s = syncer
+	for i := 0; i < 10; i++ {
+		s.ProposeAndInsertValidBlock(s.p, s.s)
+	}
+	genesisL1Header, err := s.RPCClient.GetGenesisL1Header(context.Background())
+	s.Nil(err)
+	l1Snapshot := s.SetL1Snapshot()
+	for i := 0; i < 5; i++ {
+		s.ProposeAndInsertValidBlock(s.p, s.s)
+	}
+	s.RevertL1Snapshot(l1Snapshot)
+	s.initProposer()
+
+	// Propose 5 blocks on another fork
+	for i := 0; i < 5; i++ {
+		s.ProposeInvalidTxListBytes(s.p)
+	}
+	reorgResult, err := s.s.retrievePastBlock(context.Background(), 12, 0, genesisL1Header)
+	s.Nil(err)
+	s.NotNil(reorgResult)
+	s.Equal(reorgResult.IsReorged, true)
+	s.GreaterOrEqual(reorgResult.L1CurrentToReset.Number.Uint64(), genesisL1Header.Number.Uint64())
+}
+
+func (s *CalldataSyncerTestSuite) initProposer() {
+	prop := new(proposer.Proposer)
+	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	s.Nil(err)
+
+	s.Nil(prop.InitFromConfig(context.Background(), &proposer.Config{
+		ClientConfig: &rpc.ClientConfig{
+			L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+			L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+			TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
+			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
+		},
+		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
+		L1ProposerPrivKey:          l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		ProposeInterval:            1024 * time.Hour,
+		MaxProposedTxListsPerEpoch: 1,
+		WaitReceiptTimeout:         12 * time.Second,
+		ProverEndpoints:            s.ProverEndpoints,
+		OptimisticTierFee:          common.Big256,
+		SgxTierFee:                 common.Big256,
+		MaxTierFeePriceBumps:       3,
+		TierFeePriceBump:           common.Big2,
+		L1BlockBuilderTip:          common.Big0,
+		TxmgrConfigs: &txmgr.CLIConfig{
+			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
+			NumConfirmations:          1,
+			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
+			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(l1ProposerPrivKey)),
+			FeeLimitMultiplier:        txmgr.DefaultBatcherFlagValues.FeeLimitMultiplier,
+			FeeLimitThresholdGwei:     txmgr.DefaultBatcherFlagValues.FeeLimitThresholdGwei,
+			MinBaseFeeGwei:            txmgr.DefaultBatcherFlagValues.MinBaseFeeGwei,
+			MinTipCapGwei:             txmgr.DefaultBatcherFlagValues.MinTipCapGwei,
+			ResubmissionTimeout:       txmgr.DefaultBatcherFlagValues.ResubmissionTimeout,
+			ReceiptQueryInterval:      1 * time.Second,
+			NetworkTimeout:            txmgr.DefaultBatcherFlagValues.NetworkTimeout,
+			TxSendTimeout:             txmgr.DefaultBatcherFlagValues.TxSendTimeout,
+			TxNotInMempoolTimeout:     txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
+		},
+	}))
+
+	s.p = prop
 }
 
 func TestCalldataSyncerTestSuite(t *testing.T) {

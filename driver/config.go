@@ -23,6 +23,7 @@ type Config struct {
 	P2PSyncTimeout        time.Duration
 	RPCTimeout            time.Duration
 	RetryInterval         time.Duration
+	MaxExponent           uint64
 }
 
 // NewConfigFromCliContext creates a new config instance from
@@ -63,6 +64,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		P2PSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
 		P2PSyncTimeout:        c.Duration(flags.P2PSyncTimeout.Name),
 		RPCTimeout:            timeout,
+		MaxExponent:           c.Uint64(flags.MaxExponent.Name),
 	}, nil
 }
 

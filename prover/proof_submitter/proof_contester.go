@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
@@ -12,7 +13,6 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-client/pkg/sender"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	"github.com/taikoxyz/taiko-client/prover/proof_submitter/transaction"
 )
@@ -30,14 +30,14 @@ type ProofContester struct {
 // NewProofContester creates a new ProofContester instance.
 func NewProofContester(
 	rpcClient *rpc.Client,
-	txSender *sender.Sender,
+	txmgr *txmgr.SimpleTxManager,
 	graffiti string,
 	builder *transaction.ProveBlockTxBuilder,
 ) *ProofContester {
 	return &ProofContester{
 		rpc:       rpcClient,
 		txBuilder: builder,
-		sender:    transaction.NewSender(rpcClient, txSender),
+		sender:    transaction.NewSender(rpcClient, txmgr, 0), // TODO
 		graffiti:  rpc.StringToBytes32(graffiti),
 	}
 }

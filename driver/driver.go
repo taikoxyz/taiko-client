@@ -91,6 +91,7 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 		d.state,
 		cfg.P2PSyncVerifiedBlocks,
 		cfg.P2PSyncTimeout,
+		cfg.MaxExponent,
 	); err != nil {
 		return err
 	}

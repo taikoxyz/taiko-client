@@ -13,6 +13,7 @@ var (
 	driverCategory   = "DRIVER"
 	proposerCategory = "PROPOSER"
 	proverCategory   = "PROVER"
+	txmgrCategory    = "TX_MANAGER"
 )
 
 // Required flags used by all client software.
@@ -112,7 +113,7 @@ var (
 		Name:     "rpc.timeout",
 		Usage:    "Timeout in seconds for RPC calls",
 		Category: commonCategory,
-		Value:    1 * time.Minute,
+		Value:    12 * time.Second,
 	}
 	WaitReceiptTimeout = &cli.DurationFlag{
 		Name:     "rpc.waitReceiptTimeout",

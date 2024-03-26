@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -114,7 +115,7 @@ func (c *EthClient) CreateBlobTx(
 
 // MakeSidecar makes a sidecar which only includes one blob with the given data.
 func MakeSidecar(data []byte) (*types.BlobTxSidecar, error) {
-	var blob Blob
+	var blob eth.Blob
 	if err := blob.FromData(data); err != nil {
 		return nil, err
 	}

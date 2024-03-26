@@ -4,9 +4,8 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -21,7 +20,9 @@ type CalldataTransactionBuilder struct {
 	proverSelector          selector.ProverSelector
 	l1BlockBuilderTip       *big.Int
 	l2SuggestedFeeRecipient common.Address
+	taikoL1Address          common.Address
 	assignmentHookAddress   common.Address
+	gasLimit                uint64
 	extraData               string
 }
 
@@ -31,7 +32,9 @@ func NewCalldataTransactionBuilder(
 	proverSelector selector.ProverSelector,
 	l1BlockBuilderTip *big.Int,
 	l2SuggestedFeeRecipient common.Address,
+	taikoL1Address common.Address,
 	assignmentHookAddress common.Address,
+	gasLimit uint64,
 	extraData string,
 ) *CalldataTransactionBuilder {
 	return &CalldataTransactionBuilder{
@@ -39,7 +42,9 @@ func NewCalldataTransactionBuilder(
 		proverSelector,
 		l1BlockBuilderTip,
 		l2SuggestedFeeRecipient,
+		taikoL1Address,
 		assignmentHookAddress,
+		gasLimit,
 		extraData,
 	}
 }
@@ -48,10 +53,9 @@ func NewCalldataTransactionBuilder(
 func (b *CalldataTransactionBuilder) Build(
 	ctx context.Context,
 	tierFees []encoding.TierFee,
-	opts *bind.TransactOpts,
 	includeParentMetaHash bool,
 	txListBytes []byte,
-) (*types.Transaction, error) {
+) (*txmgr.TxCandidate, error) {
 	// Try to assign a prover.
 	assignment, assignedProver, maxFee, err := b.proverSelector.AssignProver(
 		ctx,
@@ -61,9 +65,6 @@ func (b *CalldataTransactionBuilder) Build(
 	if err != nil {
 		return nil, err
 	}
-
-	// Set the ETHs that the current proposer needs to pay to the prover.
-	opts.Value = maxFee
 
 	// If the current proposer wants to include the parent meta hash, then fetch it from the protocol.
 	var parentMetaHash = [32]byte{}
@@ -95,10 +96,16 @@ func (b *CalldataTransactionBuilder) Build(
 	}
 
 	// Send the transaction to the L1 node.
-	tx, err := b.rpc.TaikoL1.ProposeBlock(opts, encodedParams, txListBytes)
+	data, err := encoding.TaikoL1ABI.Pack("proposeBlock", encodedParams, txListBytes)
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
 	}
 
-	return tx, nil
+	return &txmgr.TxCandidate{
+		TxData:   data,
+		Blobs:    nil,
+		To:       &b.taikoL1Address,
+		GasLimit: b.gasLimit,
+		Value:    maxFee,
+	}, nil
 }

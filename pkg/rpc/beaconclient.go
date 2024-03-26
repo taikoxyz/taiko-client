@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/prysmaticlabs/prysm/v4/api/client"
@@ -66,7 +67,7 @@ func (c *BeaconClient) GetBlobByHash(ctx context.Context, slot *big.Int, blobHas
 			sha256.New(),
 			&commitment,
 		) == blobHash {
-			blob := Blob(common.FromHex(sidecar.Blob))
+			blob := eth.Blob(common.FromHex(sidecar.Blob))
 			return blob.ToData()
 		}
 	}

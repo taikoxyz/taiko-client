@@ -97,29 +97,13 @@ var (
 		Value:    1,
 		Category: proposerCategory,
 	}
-	// Transaction related.
-	ProposeBlockTxGasLimit = &cli.Uint64Flag{
-		Name:     "tx.gasLimit",
-		Usage:    "Gas limit will be used for TaikoL1.proposeBlock transactions",
-		Category: proposerCategory,
-	}
-	ProposeBlockTxReplacementMultiplier = &cli.Uint64Flag{
-		Name:     "tx.replacementMultiplier",
-		Value:    2,
-		Usage:    "Gas tip multiplier when replacing a TaikoL1.proposeBlock transaction with same nonce",
-		Category: proposerCategory,
-	}
-	ProposeBlockTxGasTipCap = &cli.Uint64Flag{
-		Name:     "tx.gasTipCap",
-		Usage:    "Gas tip cap (in wei) for a TaikoL1.proposeBlock transaction when doing the transaction replacement",
-		Category: proposerCategory,
-	}
 	ProposeBlockIncludeParentMetaHash = &cli.BoolFlag{
 		Name:     "includeParentMetaHash",
 		Usage:    "Include parent meta hash when proposing block",
 		Value:    false,
 		Category: proposerCategory,
 	}
+	// Transaction related.
 	BlobAllowed = &cli.BoolFlag{
 		Name:  "l1.blobAllowed",
 		Usage: "Send EIP-4844 blob transactions when proposing blocks",
@@ -145,9 +129,6 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ExtraData,
 	ProposeEmptyBlocksInterval,
 	MaxProposedTxListsPerEpoch,
-	ProposeBlockTxGasLimit,
-	ProposeBlockTxReplacementMultiplier,
-	ProposeBlockTxGasTipCap,
 	ProverEndpoints,
 	OptimisticTierFee,
 	SgxTierFee,
@@ -157,4 +138,4 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProposerAssignmentHookAddress,
 	BlobAllowed,
 	L1BlockBuilderTip,
-})
+}, TxmgrFlags)

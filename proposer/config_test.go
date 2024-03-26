@@ -46,7 +46,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
 		s.Equal(1, len(c.LocalAddresses))
 		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
-		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
 		s.Equal(5*time.Second, c.Timeout)
 		s.Equal(10*time.Second, c.WaitReceiptTimeout)
 		s.Equal(uint64(tierFee), c.OptimisticTierFee.Uint64())
@@ -74,11 +73,9 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"--" + flags.ProposeInterval.Name, proposeInterval,
 		"--" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
-		"--" + flags.ProposeBlockTxReplacementMultiplier.Name, "5",
 		"--" + flags.RPCTimeout.Name, rpcTimeout,
 		"--" + flags.WaitReceiptTimeout.Name, "10s",
-		"--" + flags.ProposeBlockTxGasTipCap.Name, "100000",
-		"--" + flags.ProposeBlockTxGasLimit.Name, "100000",
+		"--" + flags.TxGasLimit.Name, "100000",
 		"--" + flags.ProverEndpoints.Name, proverEndpoints,
 		"--" + flags.OptimisticTierFee.Name, fmt.Sprint(tierFee),
 		"--" + flags.SgxTierFee.Name, fmt.Sprint(tierFee),
@@ -138,7 +135,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
 		"--" + flags.ProposeInterval.Name, proposeInterval,
 		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
 		"--" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
-		"--" + flags.ProposeBlockTxReplacementMultiplier.Name, "0",
 	}), "invalid --proposeBlockTxReplacementMultiplier value")
 }
 
@@ -163,7 +159,6 @@ func (s *ProposerTestSuite) TestNewConfigFromConfig() {
 		s.Equal(float64(10), c.ProposeInterval.Seconds())
 		s.Equal(1, len(c.LocalAddresses))
 		s.Equal(common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")), c.LocalAddresses[0])
-		s.Equal(uint64(5), c.ProposeBlockTxReplacementMultiplier)
 		s.Equal(5*time.Second, c.Timeout)
 		s.Equal(10*time.Second, c.WaitReceiptTimeout)
 		s.Equal(uint64(tierFee), c.OptimisticTierFee.Uint64())
@@ -203,16 +198,14 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.ProverEndpoints.Name},
 		&cli.Uint64Flag{Name: flags.OptimisticTierFee.Name},
 		&cli.Uint64Flag{Name: flags.SgxTierFee.Name},
-		&cli.Uint64Flag{Name: flags.ProposeBlockTxReplacementMultiplier.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
 		&cli.DurationFlag{Name: flags.WaitReceiptTimeout.Name},
-		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasTipCap.Name},
-		&cli.Uint64Flag{Name: flags.ProposeBlockTxGasLimit.Name},
 		&cli.Uint64Flag{Name: flags.TierFeePriceBump.Name},
 		&cli.Uint64Flag{Name: flags.MaxTierFeePriceBumps.Name},
 		&cli.BoolFlag{Name: flags.ProposeBlockIncludeParentMetaHash.Name},
 		&cli.StringFlag{Name: flags.ProposerAssignmentHookAddress.Name},
 	}
+	app.Flags = append(app.Flags, flags.TxmgrFlags...)
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
 		return err

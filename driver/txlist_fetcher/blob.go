@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"math/big"
 
+	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
@@ -56,7 +57,7 @@ func (d *BlobFetcher) Fetch(
 			sha256.New(),
 			&commitment,
 		) == common.BytesToHash(meta.BlobHash[:]) {
-			blob := rpc.Blob(common.FromHex(sidecar.Blob))
+			blob := eth.Blob(common.FromHex(sidecar.Blob))
 			return blob.ToData()
 		}
 	}

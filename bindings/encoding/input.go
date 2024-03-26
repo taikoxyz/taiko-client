@@ -240,6 +240,7 @@ var (
 var (
 	TaikoL1ABI          *abi.ABI
 	TaikoL2ABI          *abi.ABI
+	TaikoTokenABI       *abi.ABI
 	GuardianProverABI   *abi.ABI
 	LibDepositingABI    *abi.ABI
 	LibProposingABI     *abi.ABI
@@ -262,6 +263,10 @@ func init() {
 
 	if TaikoL2ABI, err = bindings.TaikoL2ClientMetaData.GetAbi(); err != nil {
 		log.Crit("Get TaikoL2 ABI error", "error", err)
+	}
+
+	if TaikoTokenABI, err = bindings.TaikoTokenMetaData.GetAbi(); err != nil {
+		log.Crit("Get TaikoToken ABI error", "error", err)
 	}
 
 	if GuardianProverABI, err = bindings.GuardianProverMetaData.GetAbi(); err != nil {

@@ -93,29 +93,6 @@ var (
 		Value:    0 * time.Second,
 		Category: proverCategory,
 	}
-	// Transaction related.
-	ProofSubmissionMaxRetry = &cli.Uint64Flag{
-		Name:     "tx.submissionMaxRetry",
-		Usage:    "Max retry counts for proof submission",
-		Value:    3,
-		Category: proverCategory,
-	}
-	ProveBlockTxGasLimit = &cli.Uint64Flag{
-		Name:     "tx.gasLimit",
-		Usage:    "Gas limit will be used for TaikoL1.proveBlock transactions",
-		Category: proverCategory,
-	}
-	ProveBlockMaxTxGasFeeCap = &cli.Uint64Flag{
-		Name:     "tx.maxGasFeeCap",
-		Usage:    "Gas fee cap (in wei) for a TaikoL1.proveBlock transaction when doing the transaction replacement",
-		Category: proverCategory,
-	}
-	TxReplacementGasGrowthRate = &cli.Uint64Flag{
-		Name:     "tx.replacementProveBlockGasGrowthRate",
-		Value:    50,
-		Usage:    "Gas tip growth rate when replacing a TaikoL1.proveBlock transaction with same nonce",
-		Category: proverCategory,
-	}
 	// Running mode
 	ContesterMode = &cli.BoolFlag{
 		Name:     "mode.contester",
@@ -211,13 +188,9 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	GuardianProver,
 	GuardianProofSubmissionDelay,
 	GuardianProverHealthCheckServerEndpoint,
-	ProofSubmissionMaxRetry,
-	TxReplacementGasGrowthRate,
-	ProveBlockMaxTxGasFeeCap,
 	Graffiti,
 	ProveUnassignedBlocks,
 	ContesterMode,
-	ProveBlockTxGasLimit,
 	ProverHTTPServerPort,
 	ProverCapacity,
 	MaxExpiry,
@@ -229,4 +202,4 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L1NodeVersion,
 	L2NodeVersion,
 	BlockConfirmations,
-})
+}, TxmgrFlags)
