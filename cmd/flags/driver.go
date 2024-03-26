@@ -24,8 +24,8 @@ var (
 
 // Optional flags used by driver.
 var (
-	P2PSyncVerifiedBlocks = &cli.BoolFlag{
-		Name: "p2p.syncVerifiedBlocks",
+	P2PSyncBlocks = &cli.BoolFlag{
+		Name: "p2p.syncBlocks",
 		Usage: "Try P2P syncing verified blocks between L2 execution engines, " +
 			"will be helpful to bring a new node online quickly",
 		Value:    false,
@@ -59,7 +59,7 @@ var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2WSEndpoint,
 	L2AuthEndpoint,
 	JWTSecret,
-	P2PSyncVerifiedBlocks,
+	P2PSyncBlocks,
 	P2PSyncTimeout,
 	CheckPointSyncURL,
 	MaxExponent,

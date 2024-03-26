@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/beacon/engine"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -36,14 +34,17 @@ func NewSyncer(
 
 // TriggerBeaconSync triggers the L2 execution engine to start performing a beacon sync, if the
 // latest verified block has changed.
-func (s *Syncer) TriggerBeaconSync() error {
-	blockID, latestVerifiedHeadPayload, err := s.getVerifiedBlockPayload(s.ctx)
+func (s *Syncer) TriggerBeaconSync(number uint64) error {
+	blockID := new(big.Int).SetUint64(number)
+	header, err := s.rpc.L2CheckPoint.HeaderByNumber(s.ctx, blockID)
 	if err != nil {
 		return err
 	}
 
+	beaconHeadPayload := encoding.ToExecutableData(header)
+
 	if !s.progressTracker.HeadChanged(blockID) {
-		log.Debug("Verified head has not changed", "blockID", blockID, "hash", latestVerifiedHeadPayload.BlockHash)
+		log.Debug("beacon sync head has not changed", "blockID", blockID, "hash", beaconHeadPayload.BlockHash)
 		return nil
 	}
 
@@ -51,13 +52,13 @@ func (s *Syncer) TriggerBeaconSync() error {
 		if s.progressTracker.lastSyncProgress == nil {
 			log.Info(
 				"Syncing beacon headers, please check L2 execution engine logs for progress",
-				"currentSyncHead", s.progressTracker.LastSyncedVerifiedBlockID(),
+				"currentSyncHead", s.progressTracker.LastSyncedBlockID(),
 				"newBlockID", blockID,
 			)
 		}
 	}
 
-	status, err := s.rpc.L2Engine.NewPayload(s.ctx, latestVerifiedHeadPayload)
+	status, err := s.rpc.L2Engine.NewPayload(s.ctx, beaconHeadPayload)
 	if err != nil {
 		return err
 	}
@@ -67,9 +68,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 	}
 
 	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &engine.ForkchoiceStateV1{
-		HeadBlockHash:      latestVerifiedHeadPayload.BlockHash,
-		SafeBlockHash:      latestVerifiedHeadPayload.BlockHash,
-		FinalizedBlockHash: latestVerifiedHeadPayload.BlockHash,
+		HeadBlockHash: beaconHeadPayload.BlockHash,
 	}, nil)
 	if err != nil {
 		return err
@@ -79,42 +78,13 @@ func (s *Syncer) TriggerBeaconSync() error {
 	}
 
 	// Update sync status.
-	s.progressTracker.UpdateMeta(blockID, latestVerifiedHeadPayload.BlockHash)
+	s.progressTracker.UpdateMeta(blockID, beaconHeadPayload.BlockHash)
 
 	log.Info(
 		"⛓️ Beacon sync triggered",
 		"newHeadID", blockID,
-		"newHeadHash", s.progressTracker.LastSyncedVerifiedBlockHash(),
+		"newHeadHash", s.progressTracker.LastSyncedBlockHash(),
 	)
 
 	return nil
-}
-
-// getVerifiedBlockPayload fetches the latest verified block's header, and converts it to an Engine API executable data,
-// which will be used to let the node start beacon syncing.
-func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *engine.ExecutableData, error) {
-	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	header, err := s.rpc.L2CheckPoint.HeaderByNumber(s.ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if header.Hash() != blockInfo.Ts.BlockHash {
-		return nil, nil, fmt.Errorf(
-			"latest verified block hash mismatch: %s != %s", header.Hash(), common.BytesToHash(blockInfo.Ts.BlockHash[:]),
-		)
-	}
-
-	log.Info("Latest verified block header retrieved", "hash", header.Hash())
-
-	return new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId), encoding.ToExecutableData(header), nil
 }

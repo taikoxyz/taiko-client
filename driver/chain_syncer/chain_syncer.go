@@ -15,6 +15,10 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
+var (
+	beaconConfirm uint64 = 64
+)
+
 // L2ChainSyncer is responsible for keeping the L2 execution engine's local chain in sync with the one
 // in TaikoL1 contract.
 type L2ChainSyncer struct {
@@ -31,7 +35,7 @@ type L2ChainSyncer struct {
 
 	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
 	// the latest verified block head
-	p2pSyncVerifiedBlocks bool
+	p2pSyncBlocks bool
 }
 
 // New creates a new chain syncer instance.
@@ -39,7 +43,7 @@ func New(
 	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
-	p2pSyncVerifiedBlocks bool,
+	p2pSyncBlocks bool,
 	p2pSyncTimeout time.Duration,
 	maxRetrieveExponent uint64,
 ) (*L2ChainSyncer, error) {
@@ -53,27 +57,27 @@ func New(
 	}
 
 	return &L2ChainSyncer{
-		ctx:                   ctx,
-		rpc:                   rpc,
-		state:                 state,
-		beaconSyncer:          beaconSyncer,
-		calldataSyncer:        calldataSyncer,
-		progressTracker:       tracker,
-		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
+		ctx:             ctx,
+		rpc:             rpc,
+		state:           state,
+		beaconSyncer:    beaconSyncer,
+		calldataSyncer:  calldataSyncer,
+		progressTracker: tracker,
+		p2pSyncBlocks:   p2pSyncBlocks,
 	}, nil
 }
 
 // Sync performs a sync operation to L2 execution engine's local chain.
 func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
-	needNewBeaconSyncTriggered, err := s.needNewBeaconSyncTriggered()
+	syncNumber, syncTriggered, err := s.needNewBeaconSyncTriggered()
 	if err != nil {
 		return err
 	}
 	// If current L2 execution engine's chain is behind of the protocol's latest verified block head, and the
-	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
+	// `P2PSyncBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
 	// latest verified block head.
-	if needNewBeaconSyncTriggered {
-		if err := s.beaconSyncer.TriggerBeaconSync(); err != nil {
+	if syncTriggered {
+		if err := s.beaconSyncer.TriggerBeaconSync(syncNumber); err != nil {
 			return fmt.Errorf("trigger beacon sync error: %w", err)
 		}
 
@@ -85,7 +89,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	if s.progressTracker.Triggered() {
 		log.Info(
 			"Switch to insert pending blocks one by one",
-			"p2pEnabled", s.p2pSyncVerifiedBlocks,
+			"p2pEnabled", s.p2pSyncBlocks,
 			"p2pOutOfSync", s.progressTracker.OutOfSync(),
 		)
 
@@ -97,10 +101,10 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 
 		log.Info(
 			"L2 head information",
-			"number", l2Head.Number,
+			"syncNumber", l2Head.Number,
 			"hash", l2Head.Hash(),
-			"lastSyncedVerifiedBlockID", s.progressTracker.LastSyncedVerifiedBlockID(),
-			"lastSyncedVerifiedBlockHash", s.progressTracker.LastSyncedVerifiedBlockHash(),
+			"lastSyncedVerifiedBlockID", s.progressTracker.LastSyncedBlockID(),
+			"lastSyncedVerifiedBlockHash", s.progressTracker.LastSyncedBlockHash(),
 		)
 
 		// Reset the L1Current cursor.
@@ -116,29 +120,22 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	return s.calldataSyncer.ProcessL1Blocks(s.ctx, l1End)
 }
 
-// AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
-func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead(verifiedHeightToCompare uint64) bool {
+// AheadOfProtocolL2Head checks whether the L2 chain is ahead of verified head in protocol.
+func (s *L2ChainSyncer) AheadOfProtocolL2Head(recordL2HeightToCompare uint64) bool {
 	log.Debug(
 		"Checking whether the execution engine is ahead of protocol's verified head",
-		"latestVerifiedBlock", verifiedHeightToCompare,
+		"l1 number", recordL2HeightToCompare,
 		"executionEngineHead", s.state.GetL2Head().Number,
 	)
-	if verifiedHeightToCompare > 0 {
-		// If latest verified head height is equal to L2 execution engine's synced head height minus one,
-		// we also mark the triggered P2P sync progress as finished to prevent a potential `InsertBlockWithoutSetHead` in
-		// execution engine, which may cause errors since we do not pass all transactions in ExecutePayload when calling
-		// `NewPayloadV1`.
-		verifiedHeightToCompare--
-	}
 
 	// If the L2 execution engine's chain is behind of the protocol's latest verified block head,
 	// we should keep the beacon sync.
-	if s.state.GetL2Head().Number.Uint64() < verifiedHeightToCompare {
+	if s.state.GetL2Head().Number.Uint64() < recordL2HeightToCompare {
 		return false
 	}
 
-	if s.progressTracker.LastSyncedVerifiedBlockID() != nil {
-		return s.state.GetL2Head().Number.Uint64() >= s.progressTracker.LastSyncedVerifiedBlockID().Uint64()
+	if s.progressTracker.LastSyncedBlockID() != nil {
+		return s.state.GetL2Head().Number.Uint64() >= s.progressTracker.LastSyncedBlockID().Uint64()
 	}
 
 	return true
@@ -146,28 +143,29 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead(verifiedHeightToCompare uint
 
 // needNewBeaconSyncTriggered checks whether the current L2 execution engine needs to trigger
 // another new beacon sync, the following conditions should be met:
-// 1. The `P2PSyncVerifiedBlocks` flag is set.
+// 1. The `P2PSyncBlocks` flag is set.
 // 2. The protocol's latest verified block head is not zero.
 // 3. The L2 execution engine's chain is behind of the protocol's latest verified block head.
 // 4. The L2 execution engine's chain have met a sync timeout issue.
-func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (bool, error) {
+func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (uint64, bool, error) {
 	// If the flag is not set, we simply return false.
-	if !s.p2pSyncVerifiedBlocks {
-		return false, nil
+	if !s.p2pSyncBlocks {
+		return 0, false, nil
 	}
 
 	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: s.ctx})
 	if err != nil {
-		return false, err
+		return 0, false, err
 	}
 
 	// If the protocol's latest verified block head is zero, we simply return false.
-	if stateVars.B.LastVerifiedBlockId == 0 {
-		return false, nil
+	if stateVars.B.NumBlocks <= stateVars.B.LastVerifiedBlockId+64 ||
+		stateVars.B.NumBlocks <= beaconConfirm {
+		return 0, false, nil
 	}
+	number := stateVars.B.NumBlocks - beaconConfirm
 
-	return !s.AheadOfProtocolVerifiedHead(stateVars.B.LastVerifiedBlockId) &&
-		!s.progressTracker.OutOfSync(), nil
+	return number, !s.AheadOfProtocolL2Head(number) && !s.progressTracker.OutOfSync(), nil
 }
 
 // BeaconSyncer returns the inner beacon syncer.

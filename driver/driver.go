@@ -71,7 +71,7 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 		return err
 	}
 
-	if cfg.P2PSyncVerifiedBlocks && peers == 0 {
+	if cfg.P2PSyncBlocks && peers == 0 {
 		log.Warn("P2P syncing verified blocks enabled, but no connected peer found in L2 execution engine")
 	}
 
@@ -79,7 +79,7 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 		d.ctx,
 		d.rpc,
 		d.state,
-		cfg.P2PSyncVerifiedBlocks,
+		cfg.P2PSyncBlocks,
 		cfg.P2PSyncTimeout,
 		cfg.MaxExponent,
 	); err != nil {

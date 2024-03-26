@@ -37,7 +37,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(rpcTimeout, c.RPCTimeout)
 		s.NotEmpty(c.JwtSecret)
 		s.Nil(new(Driver).InitFromCli(context.Background(), ctx))
-		s.True(c.P2PSyncVerifiedBlocks)
+		s.True(c.P2PSyncBlocks)
 		s.Equal(l2CheckPoint, c.L2CheckPoint)
 
 		return err
@@ -54,7 +54,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
 		"--" + flags.P2PSyncTimeout.Name, "120s",
 		"--" + flags.RPCTimeout.Name, "5s",
-		"--" + flags.P2PSyncVerifiedBlocks.Name,
+		"--" + flags.P2PSyncBlocks.Name,
 		"--" + flags.CheckPointSyncURL.Name, l2CheckPoint,
 	}))
 }
@@ -72,7 +72,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContextEmptyL2CheckPoint() {
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
 		"--" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
-		"--" + flags.P2PSyncVerifiedBlocks.Name,
+		"--" + flags.P2PSyncBlocks.Name,
 		"--" + flags.L2WSEndpoint.Name, "",
 	}), "empty L2 check point URL")
 }
@@ -87,7 +87,7 @@ func (s *DriverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.TaikoL1Address.Name},
 		&cli.StringFlag{Name: flags.TaikoL2Address.Name},
 		&cli.StringFlag{Name: flags.JWTSecret.Name},
-		&cli.BoolFlag{Name: flags.P2PSyncVerifiedBlocks.Name},
+		&cli.BoolFlag{Name: flags.P2PSyncBlocks.Name},
 		&cli.DurationFlag{Name: flags.P2PSyncTimeout.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
 		&cli.StringFlag{Name: flags.CheckPointSyncURL.Name},

@@ -16,11 +16,11 @@ import (
 // Config contains the configurations to initialize a Taiko driver.
 type Config struct {
 	*rpc.ClientConfig
-	P2PSyncVerifiedBlocks bool
-	P2PSyncTimeout        time.Duration
-	RPCTimeout            time.Duration
-	RetryInterval         time.Duration
-	MaxExponent           uint64
+	P2PSyncBlocks  bool
+	P2PSyncTimeout time.Duration
+	RPCTimeout     time.Duration
+	RetryInterval  time.Duration
+	MaxExponent    uint64
 }
 
 // NewConfigFromCliContext creates a new config instance from
@@ -32,11 +32,11 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	var (
-		p2pSyncVerifiedBlocks = c.Bool(flags.P2PSyncVerifiedBlocks.Name)
-		l2CheckPoint          = c.String(flags.CheckPointSyncURL.Name)
+		p2pSyncBlocks = c.Bool(flags.P2PSyncBlocks.Name)
+		l2CheckPoint  = c.String(flags.CheckPointSyncURL.Name)
 	)
 
-	if p2pSyncVerifiedBlocks && len(l2CheckPoint) == 0 {
+	if p2pSyncBlocks && len(l2CheckPoint) == 0 {
 		return nil, errors.New("empty L2 check point URL")
 	}
 
@@ -57,10 +57,10 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			JwtSecret:        string(jwtSecret),
 			Timeout:          timeout,
 		},
-		RetryInterval:         c.Duration(flags.BackOffRetryInterval.Name),
-		P2PSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
-		P2PSyncTimeout:        c.Duration(flags.P2PSyncTimeout.Name),
-		RPCTimeout:            timeout,
-		MaxExponent:           c.Uint64(flags.MaxExponent.Name),
+		RetryInterval:  c.Duration(flags.BackOffRetryInterval.Name),
+		P2PSyncBlocks:  p2pSyncBlocks,
+		P2PSyncTimeout: c.Duration(flags.P2PSyncTimeout.Name),
+		RPCTimeout:     timeout,
+		MaxExponent:    c.Uint64(flags.MaxExponent.Name),
 	}, nil
 }

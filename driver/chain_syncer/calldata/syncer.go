@@ -211,11 +211,11 @@ func (s *Syncer) onBlockProposed(
 	)
 	if s.progressTracker.Triggered() {
 		// Already synced through beacon sync, just skip this event.
-		if event.BlockId.Cmp(s.progressTracker.LastSyncedVerifiedBlockID()) <= 0 {
+		if event.BlockId.Cmp(s.progressTracker.LastSyncedBlockID()) <= 0 {
 			return nil
 		}
 
-		parent, err = s.rpc.L2.HeaderByHash(ctx, s.progressTracker.LastSyncedVerifiedBlockHash())
+		parent, err = s.rpc.L2.HeaderByHash(ctx, s.progressTracker.LastSyncedBlockHash())
 	} else {
 		parent, err = s.rpc.L2ParentByBlockID(ctx, event.BlockId)
 	}

@@ -25,9 +25,9 @@ type SyncProgressTracker struct {
 	client *rpc.EthClient
 
 	// Meta data
-	triggered                   bool
-	lastSyncedVerifiedBlockID   *big.Int
-	lastSyncedVerifiedBlockHash common.Hash
+	triggered           bool
+	lastSyncedBlockID   *big.Int
+	lastSyncedBlockHash common.Hash
 
 	// Out-of-sync check related
 	lastSyncProgress   *ethereum.SyncProgress
@@ -94,13 +94,13 @@ func (t *SyncProgressTracker) track(ctx context.Context) {
 			return
 		}
 
-		if new(big.Int).SetUint64(headHeight).Cmp(t.lastSyncedVerifiedBlockID) >= 0 {
+		if new(big.Int).SetUint64(headHeight).Cmp(t.lastSyncedBlockID) >= 0 {
 			t.lastProgressedTime = time.Now()
 			log.Info(
 				"L2 execution engine has finished the P2P sync work, all verified blocks synced, "+
 					"will switch to insert pending blocks one by one",
-				"lastSyncedVerifiedBlockID", t.lastSyncedVerifiedBlockID,
-				"lastSyncedVerifiedBlockHash", t.lastSyncedVerifiedBlockHash,
+				"lastSyncedBlockID", t.lastSyncedBlockID,
+				"lastSyncedBlockHash", t.lastSyncedBlockHash,
 			)
 			return
 		}
@@ -142,8 +142,8 @@ func (t *SyncProgressTracker) UpdateMeta(id *big.Int, blockHash common.Hash) {
 	}
 
 	t.triggered = true
-	t.lastSyncedVerifiedBlockID = id
-	t.lastSyncedVerifiedBlockHash = blockHash
+	t.lastSyncedBlockID = id
+	t.lastSyncedBlockHash = blockHash
 }
 
 // ClearMeta cleans the inner beacon sync metadata.
@@ -154,8 +154,8 @@ func (t *SyncProgressTracker) ClearMeta() {
 	log.Debug("Clear sync progress tracker meta")
 
 	t.triggered = false
-	t.lastSyncedVerifiedBlockID = nil
-	t.lastSyncedVerifiedBlockHash = common.Hash{}
+	t.lastSyncedBlockID = nil
+	t.lastSyncedBlockHash = common.Hash{}
 	t.outOfSync = false
 }
 
@@ -168,7 +168,7 @@ func (t *SyncProgressTracker) HeadChanged(newID *big.Int) bool {
 		return true
 	}
 
-	return t.lastSyncedVerifiedBlockID != nil && t.lastSyncedVerifiedBlockID != newID
+	return t.lastSyncedBlockID != nil && t.lastSyncedBlockID != newID
 }
 
 // OutOfSync tells whether the L2 execution engine is marked as out of sync.
@@ -187,24 +187,24 @@ func (t *SyncProgressTracker) Triggered() bool {
 	return t.triggered
 }
 
-// LastSyncedVerifiedBlockID returns tracker.lastSyncedVerifiedBlockID.
-func (t *SyncProgressTracker) LastSyncedVerifiedBlockID() *big.Int {
+// LastSyncedBlockID returns tracker.lastSyncedBlockID.
+func (t *SyncProgressTracker) LastSyncedBlockID() *big.Int {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
 
-	if t.lastSyncedVerifiedBlockID == nil {
+	if t.lastSyncedBlockID == nil {
 		return nil
 	}
 
-	return new(big.Int).Set(t.lastSyncedVerifiedBlockID)
+	return new(big.Int).Set(t.lastSyncedBlockID)
 }
 
-// LastSyncedVerifiedBlockHash returns tracker.lastSyncedVerifiedBlockHash.
-func (t *SyncProgressTracker) LastSyncedVerifiedBlockHash() common.Hash {
+// LastSyncedBlockHash returns tracker.lastSyncedBlockHash.
+func (t *SyncProgressTracker) LastSyncedBlockHash() common.Hash {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
 
-	return t.lastSyncedVerifiedBlockHash
+	return t.lastSyncedBlockHash
 }
 
 // syncProgressed checks whether there is any new progress since last sync progress check.

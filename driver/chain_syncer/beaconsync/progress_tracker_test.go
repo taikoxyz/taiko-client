@@ -86,19 +86,19 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestTriggered() {
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestLastSyncedVerifiedBlockID() {
-	s.Nil(s.t.LastSyncedVerifiedBlockID())
-	s.t.lastSyncedVerifiedBlockID = common.Big1
-	s.Equal(common.Big1.Uint64(), s.t.LastSyncedVerifiedBlockID().Uint64())
+	s.Nil(s.t.LastSyncedBlockID())
+	s.t.lastSyncedBlockID = common.Big1
+	s.Equal(common.Big1.Uint64(), s.t.LastSyncedBlockID().Uint64())
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestLastSyncedVerifiedBlockHash() {
 	s.Equal(
 		common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
-		s.t.LastSyncedVerifiedBlockHash(),
+		s.t.LastSyncedBlockHash(),
 	)
 	randomHash := testutils.RandomHash()
-	s.t.lastSyncedVerifiedBlockHash = randomHash
-	s.Equal(randomHash, s.t.LastSyncedVerifiedBlockHash())
+	s.t.lastSyncedBlockHash = randomHash
+	s.Equal(randomHash, s.t.LastSyncedBlockHash())
 }
 
 func TestBeaconSyncProgressTrackerTestSuite(t *testing.T) {
