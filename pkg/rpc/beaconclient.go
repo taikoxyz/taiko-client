@@ -100,7 +100,7 @@ func (c *BeaconClient) GetBlobs(ctx context.Context, time uint64) ([]*blob.Sidec
 	return sidecars.Data, json.Unmarshal(resBytes, &sidecars)
 }
 
-// TimeToSlot returns the slots of the given timestamp.
+// timeToSlot returns the slots of the given timestamp.
 func (c *BeaconClient) timeToSlot(timestamp uint64) (uint64, error) {
 	if timestamp < c.genesisTime {
 		return 0, fmt.Errorf("provided timestamp (%v) precedes genesis time (%v)", timestamp, c.genesisTime)
