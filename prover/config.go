@@ -44,7 +44,6 @@ type Config struct {
 	EnableLivenessBondProof                 bool
 	RPCTimeout                              time.Duration
 	WaitReceiptTimeout                      time.Duration
-	ProveBlockGasLimit                      *uint64
 	HTTPServerPort                          uint64
 	Capacity                                uint64
 	MinOptimisticTierFee                    *big.Int
@@ -237,17 +236,6 @@ func NewConfigFromConfigFile(path string) (*Config, error) {
 	capacity, err := strconv.ParseUint(os.Getenv("PROVER_CAPACITY"), 0, 64)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing PROVER_CAPACITY: %w", err)
-	}
-
-	proveBlockTxReplacementMultiplier, err := strconv.ParseUint(os.Getenv("PROVE_BLOCK_REPLACEMENT_MULTIPLIER"), 0, 64)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing PROVE_BLOCK_REPLACEMENT_MULTIPLIER %w", err)
-	}
-	if proveBlockTxReplacementMultiplier == 0 {
-		return nil, fmt.Errorf(
-			"invalid --proveBlockTxReplacementMultiplier value: %d",
-			proveBlockTxReplacementMultiplier,
-		)
 	}
 
 	serverPort, err := strconv.ParseUint(os.Getenv("PROVER_HTTP_PORT"), 0, 64)

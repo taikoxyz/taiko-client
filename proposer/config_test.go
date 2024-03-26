@@ -122,22 +122,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
 	}), "invalid account in --txpool.locals")
 }
 
-func (s *ProposerTestSuite) TestNewConfigFromCliContextReplMultErr() {
-	goldenTouchAddress, err := s.RPCClient.TaikoL2.GOLDENTOUCHADDRESS(nil)
-	s.Nil(err)
-
-	app := s.SetupApp()
-
-	s.ErrorContains(app.Run([]string{
-		"TestNewConfigFromCliContextReplMultErr",
-		"--" + flags.L1ProposerPrivKey.Name, encoding.GoldenTouchPrivKey,
-		"--" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
-		"--" + flags.ProposeInterval.Name, proposeInterval,
-		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
-		"--" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
-	}), "invalid --proposeBlockTxReplacementMultiplier value")
-}
-
 func (s *ProposerTestSuite) TestNewConfigFromConfig() {
 	l1Proposer, err := crypto.ToECDSA(
 		common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")),
