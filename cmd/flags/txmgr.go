@@ -51,6 +51,12 @@ var (
 		Value:    48 * time.Second,
 		Category: txmgrCategory,
 	}
+	NetworkTimeout = &cli.DurationFlag{
+		Name:     "tx.networkTimeout",
+		Usage:    "Timeout for all network operations",
+		Value:    10 * time.Second,
+		Category: txmgrCategory,
+	}
 	TxSendTimeout = &cli.DurationFlag{
 		Name:     "tx.sendTimeout",
 		Usage:    "Timeout for sending transactions. If 0 it is disabled.",
@@ -85,6 +91,7 @@ var TxmgrFlags = []cli.Flag{
 	MinTipCap,
 	MinBaseFee,
 	ResubmissionTimeout,
+	NetworkTimeout,
 	TxSendTimeout,
 	TxNotInMempoolTimeout,
 	ReceiptQueryInterval,
