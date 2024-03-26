@@ -169,7 +169,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}, nil
 }
 
-func NewConfigFromConfigFile(path string) (*Config, error) {
+func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
 	err := godotenv.Load(path)
 	if err != nil {
 		return nil, fmt.Errorf("error loading .env config: %w", err)
@@ -377,5 +377,10 @@ func NewConfigFromConfigFile(path string) (*Config, error) {
 		L1NodeVersion:                           os.Getenv("L1_NODE_VERSION"),
 		L2NodeVersion:                           os.Getenv("L2_NODE_VERSION"),
 		BlockConfirmations:                      blockConfirmations,
+		TxmgrConfigs: pkgFlags.InitTxmgrConfigsFromCli(
+			os.Getenv("L1_NODE_HTTP_ENDPOINT"),
+			l1ProverPrivKey,
+			c,
+		),
 	}, nil
 }

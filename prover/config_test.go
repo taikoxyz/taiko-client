@@ -112,7 +112,7 @@ func (s *ProverTestSuite) TestNewConfigFromConfig() {
 	app := s.SetupApp()
 
 	app.Action = func(ctx *cli.Context) error {
-		c, err := NewConfigFromConfigFile(ctx.String("useConfig"))
+		c, err := NewConfigFromConfigFile(ctx, ctx.String("useConfig"))
 		s.Nil(err)
 		s.Equal(l1WsEndpoint, c.L1WsEndpoint)
 		s.Equal(l1HttpEndpoint, c.L1HttpEndpoint)
