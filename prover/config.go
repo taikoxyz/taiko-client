@@ -228,6 +228,7 @@ func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error parsing RPC_TIMEOUT: %w", err)
 	}
+	c.Set(flags.RPCTimeout.Name, timeout.String())
 	waitReceiptTimeout, err := time.ParseDuration(os.Getenv("WAIT_RECEIPT_TIMEOUT"))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing WAIT_RECEIPT_TIMEOUT: %w", err)

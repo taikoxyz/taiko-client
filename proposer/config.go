@@ -126,6 +126,7 @@ func NewConfigFromConfigFile(c *cli.Context, path string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error parsing RPC_TIMEOUT: %w", err)
 	}
+	c.Set(flags.RPCTimeout.Name, timeout.String())
 
 	l1ProposerPrivKey, err := crypto.ToECDSA(
 		common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")),
