@@ -2,12 +2,16 @@
 
 source scripts/common.sh
 
-DOCKER_SERVICE_LIST=("l1_node" "l2_execution_engine")
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # start docker compose service list
-echo "start docker compose service: ${DOCKER_SERVICE_LIST[*]}"
+docker compose -f "$DIR"/nodes/docker-compose.yml up -d
 
-compose_up "${DOCKER_SERVICE_LIST[@]}"
+# start blob devnet service list
+rm -rf /tmp/consensus /tmp/execution
+cp -R "$DIR"/blob_devnet/consensus /tmp
+cp -R "$DIR"/blob_devnet/execution /tmp
+docker compose -f "$DIR"/blob_devnet/docker-compose.yml up -d
 
 # show all the running containers
 echo

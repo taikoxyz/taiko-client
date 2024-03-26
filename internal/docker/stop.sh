@@ -2,8 +2,8 @@
 
 source scripts/common.sh
 
-DOCKER_SERVICE_LIST=("l1_node" "l2_execution_engine")
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "stop docker compose service: ${DOCKER_SERVICE_LIST[*]}"
+docker compose -f "$DIR"/nodes/docker-compose.yml down
 
-compose_down "${DOCKER_SERVICE_LIST[@]}"
+docker compose -f "$DIR"/blob_devnet/docker-compose.yml down
