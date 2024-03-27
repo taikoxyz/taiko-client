@@ -23,12 +23,14 @@ var (
 		Usage:    "Websocket RPC endpoint of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
+		EnvVars:  []string{""},
 	}
 	L2WSEndpoint = &cli.StringFlag{
 		Name:     "l2.ws",
 		Usage:    "Websocket RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
+		EnvVars:  []string{""},
 	}
 	L1HTTPEndpoint = &cli.StringFlag{
 		Name:     "l1.http",
@@ -121,6 +123,12 @@ var (
 		Category: commonCategory,
 		Value:    1 * time.Minute,
 	}
+	UseConfigFile = &cli.StringFlag{
+		Name:     "useConfig",
+		Usage:    "Whether to use a config file for flags",
+		Category: commonCategory,
+		Value:    "",
+	}
 )
 
 // CommonFlags All common flags.
@@ -139,6 +147,7 @@ var CommonFlags = []cli.Flag{
 	BackOffRetryInterval,
 	RPCTimeout,
 	WaitReceiptTimeout,
+	UseConfigFile,
 }
 
 // MergeFlags merges the given flag slices.

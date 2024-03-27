@@ -124,7 +124,7 @@ func (s *ProverTestSuite) TestInitError() {
 
 	p := new(Prover)
 
-	s.ErrorContains(InitFromConfig(ctx, p, &Config{
+	s.ErrorContains(p.InitFromConfig(ctx, &Config{
 		L1WsEndpoint:          os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L1HttpEndpoint:        os.Getenv("L1_NODE_HTTP_ENDPOINT"),
 		L2WsEndpoint:          os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -491,7 +491,7 @@ func (s *ProverTestSuite) initProver(
 	s.Nil(err)
 
 	p := new(Prover)
-	s.Nil(InitFromConfig(ctx, p, &Config{
+	s.Nil(p.InitFromConfig(ctx, &Config{
 		L1WsEndpoint:          os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L1HttpEndpoint:        os.Getenv("L1_NODE_HTTP_ENDPOINT"),
 		L2WsEndpoint:          os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),

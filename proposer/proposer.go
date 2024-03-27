@@ -20,6 +20,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -71,11 +72,20 @@ type Proposer struct {
 
 // InitFromCli New initializes the given proposer instance based on the command line flags.
 func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
-	cfg, err := NewConfigFromCliContext(c)
-	if err != nil {
-		return err
-	}
+	var cfg *Config
+	var err error
 
+	if c.String(flags.UseConfigFile.Name) != "" {
+		cfg, err = NewConfigFromConfigFile(c, c.String(flags.UseConfigFile.Name))
+		if err != nil {
+			return err
+		}
+	} else {
+		cfg, err = NewConfigFromCliContext(c)
+		if err != nil {
+			return err
+		}
+	}
 	return p.InitFromConfig(ctx, cfg)
 }
 

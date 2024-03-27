@@ -12,7 +12,7 @@ import (
 
 var (
 	l1Endpoint       = os.Getenv("L1_NODE_WS_ENDPOINT")
-	l1BeaconEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
+	l1BeaconEndpoint = os.Getenv("L1_BEACON_ENDPOINT")
 	l2Endpoint       = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
 	l2CheckPoint     = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 	l2EngineEndpoint = os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
@@ -38,7 +38,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.NotEmpty(c.JwtSecret)
 		s.True(c.P2PSyncVerifiedBlocks)
 		s.Equal(l2CheckPoint, c.L2CheckPoint)
-		s.NotNil(new(Driver).InitFromCli(context.Background(), ctx))
+		s.Nil(new(Driver).InitFromCli(context.Background(), ctx))
 
 		return err
 	}
@@ -77,9 +77,36 @@ func (s *DriverTestSuite) TestNewConfigFromCliContextEmptyL2CheckPoint() {
 	}), "empty L2 check point URL")
 }
 
+func (s *DriverTestSuite) TestNewConfigFromConfig() {
+	app := s.SetupApp()
+	app.Action = func(ctx *cli.Context) error {
+		c, err := NewConfigFromConfigFile(ctx.String("useConfig"))
+		s.Nil(err)
+		s.Equal(os.Getenv("L1_NODE_WS_ENDPOINT"), c.L1Endpoint)
+		s.Equal(os.Getenv("L1_NODE_HTTP_ENDPOINT"), c.L1BeaconEndpoint)
+		s.Equal(os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"), c.L2Endpoint)
+		s.Equal(os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"), c.L2EngineEndpoint)
+		s.Equal(taikoL1, c.TaikoL1Address.String())
+		s.Equal(taikoL2, c.TaikoL2Address.String())
+		s.Equal(120*time.Second, c.P2PSyncTimeout)
+		s.Equal(rpcTimeout, c.RPCTimeout)
+		s.NotEmpty(c.JwtSecret)
+		s.True(c.P2PSyncVerifiedBlocks)
+		s.Equal(os.Getenv("CHECKPOINT_SYNC_URL"), c.L2CheckPoint)
+
+		return err
+	}
+
+	s.Nil(app.Run([]string{
+		"TestNewConfigFromCliContext",
+		"--" + flags.UseConfigFile.Name, "../.env.test",
+	}))
+}
+
 func (s *DriverTestSuite) SetupApp() *cli.App {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
+		&cli.StringFlag{Name: flags.UseConfigFile.Name},
 		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
 		&cli.StringFlag{Name: flags.L1BeaconEndpoint.Name},
 		&cli.StringFlag{Name: flags.L2WSEndpoint.Name},

@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/urfave/cli/v2"
 
@@ -51,6 +52,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal(uint64(8), c.Capacity)
 		s.Equal(uint64(minTierFee), c.MinOptimisticTierFee.Uint64())
 		s.Equal(uint64(minTierFee), c.MinSgxTierFee.Uint64())
+		s.Equal(uint64(minTierFee), c.MinEthBalance.Uint64())
 		s.Equal(c.L1NodeVersion, l1NodeVersion)
 		s.Equal(c.L2NodeVersion, l2NodeVersion)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
@@ -78,6 +80,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.Dummy.Name,
 		"--" + flags.MinOptimisticTierFee.Name, fmt.Sprint(minTierFee),
 		"--" + flags.MinSgxTierFee.Name, fmt.Sprint(minTierFee),
+		"--" + flags.MinEthBalance.Name, fmt.Sprint(minTierFee),
+		"--" + flags.MinTaikoTokenBalance.Name, fmt.Sprint(minTierFee),
 		"--" + flags.ProverCapacity.Name, "8",
 		"--" + flags.GuardianProver.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
 		"--" + flags.ProverAssignmentHookAddress.Name, os.Getenv("ASSIGNMENT_HOOK_ADDRESS"),
@@ -99,9 +103,59 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextProverKeyError() {
 	}), "invalid L1 prover private key")
 }
 
+func (s *ProverTestSuite) TestNewConfigFromConfig() {
+	prover, err := crypto.ToECDSA(
+		common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")),
+	)
+	s.Nil(err)
+
+	app := s.SetupApp()
+
+	app.Action = func(ctx *cli.Context) error {
+		c, err := NewConfigFromConfigFile(ctx, ctx.String("useConfig"))
+		s.Nil(err)
+		s.Equal(l1WsEndpoint, c.L1WsEndpoint)
+		s.Equal(l1HttpEndpoint, c.L1HttpEndpoint)
+		s.Equal(l1BeaconEndpoint, c.L1BeaconEndpoint)
+		s.Equal(l2WsEndpoint, c.L2WsEndpoint)
+		s.Equal(l2HttpEndpoint, c.L2HttpEndpoint)
+		s.Equal(taikoL1, c.TaikoL1Address.String())
+		s.Equal(taikoL2, c.TaikoL2Address.String())
+		s.Equal(
+			crypto.PubkeyToAddress(prover.PublicKey),
+			crypto.PubkeyToAddress(c.L1ProverPrivKey.PublicKey),
+		)
+		s.True(c.Dummy)
+		s.Equal("", c.Graffiti)
+		s.True(c.ProveUnassignedBlocks)
+		s.True(c.ContesterMode)
+		s.Equal(rpcTimeout, c.RPCTimeout)
+		s.Equal(uint64(8), c.Capacity)
+		s.Equal(uint64(minTierFee), c.MinOptimisticTierFee.Uint64())
+		s.Equal(uint64(minTierFee), c.MinSgxTierFee.Uint64())
+		s.Equal(uint64(minTierFee), c.MinEthBalance.Uint64())
+		s.Equal(uint64(minTierFee), c.MinTaikoTokenBalance.Uint64())
+		s.Equal(c.L1NodeVersion, l1NodeVersion)
+		s.Equal(c.L2NodeVersion, l2NodeVersion)
+		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
+		s.True(c.ProveUnassignedBlocks)
+		s.Equal(uint64(100), c.MaxProposedIn)
+		s.Equal(os.Getenv("ASSIGNMENT_HOOK_ADDRESS"), c.AssignmentHookAddress.String())
+		s.Equal(allowance, c.Allowance.String())
+
+		return err
+	}
+
+	s.Nil(app.Run([]string{
+		"TestNewConfigFromConfigFile",
+		"--" + flags.UseConfigFile.Name, "../.env.test",
+	}))
+}
+
 func (s *ProverTestSuite) SetupApp() *cli.App {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
+		&cli.StringFlag{Name: flags.UseConfigFile.Name},
 		&cli.StringFlag{Name: flags.L1WSEndpoint.Name},
 		&cli.StringFlag{Name: flags.L1HTTPEndpoint.Name},
 		&cli.StringFlag{Name: flags.L1BeaconEndpoint.Name},
@@ -119,6 +173,8 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.ProverCapacity.Name},
 		&cli.Uint64Flag{Name: flags.MinOptimisticTierFee.Name},
 		&cli.Uint64Flag{Name: flags.MinSgxTierFee.Name},
+		&cli.Uint64Flag{Name: flags.MinEthBalance.Name},
+		&cli.Uint64Flag{Name: flags.MinTaikoTokenBalance.Name},
 		&cli.Uint64Flag{Name: flags.MaxProposedIn.Name},
 		&cli.StringFlag{Name: flags.ProverAssignmentHookAddress.Name},
 		&cli.StringFlag{Name: flags.Allowance.Name},
