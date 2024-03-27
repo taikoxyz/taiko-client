@@ -44,7 +44,7 @@ check_env "JWT_SECRET"
 check_env "VERBOSITY"
 
 RUN_TESTS=${RUN_TESTS:-false}
-PACKAGE=${PACKAGE:-proposer}
+PACKAGE=${PACKAGE:-...}
 
 if [ "$RUN_TESTS" == "true" ]; then
     go test -v -p=1 ./"$PACKAGE" -coverprofile=coverage.out -covermode=atomic -timeout=700s
