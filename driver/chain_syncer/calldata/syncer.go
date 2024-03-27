@@ -416,7 +416,7 @@ func (s *Syncer) fillForkchoiceState(
 	}
 
 	// Fetch the latest verified block's header from protocol.
-	variables, err := s.getStateVariablesByNumber(ctx, event.Raw.BlockNumber)
+	variables, err := s.rpc.GetTaikoDataSlotBByNumber(ctx, event.Raw.BlockNumber)
 	if err != nil {
 		return err
 	}
@@ -660,20 +660,4 @@ func (s *Syncer) checkReorg(
 	}
 
 	return reorgCheckResult, nil
-}
-
-// getStateVariablesByNumber fetches the state variables by block number.
-func (s *Syncer) getStateVariablesByNumber(ctx context.Context, number uint64) (*bindings.TaikoDataSlotB, error) {
-	iter, err := s.rpc.TaikoL1.FilterStateVariablesUpdated(
-		&bind.FilterOpts{Context: ctx, Start: number, End: &number},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	for iter.Next() {
-		return &iter.Event.SlotB, nil
-	}
-
-	return nil, fmt.Errorf("failed to get state variables by block number %d", number)
 }
