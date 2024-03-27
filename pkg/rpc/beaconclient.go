@@ -2,16 +2,12 @@ package rpc
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"math/big"
+	"strconv"
 	"time"
 
-	"github.com/ethereum-optimism/optimism/op-service/eth"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto/kzg4844"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/prysmaticlabs/prysm/v4/api/client"
 	"github.com/prysmaticlabs/prysm/v4/api/client/beacon"
 	"github.com/prysmaticlabs/prysm/v4/beacon-chain/rpc/eth/blob"
@@ -20,12 +16,25 @@ import (
 var (
 	// Request urls.
 	sidecarsRequestURL = "eth/v1/beacon/blob_sidecars/%d"
+	genesisRequestURL  = "eth/v1/beacon/genesis"
 )
+
+type ConfigSpec struct {
+	SecondsPerSlot string `json:"SECONDS_PER_SLOT"`
+}
+
+type GenesisResponse struct {
+	Data struct {
+		GenesisTime string `json:"genesis_time"`
+	} `json:"data"`
+}
 
 type BeaconClient struct {
 	*beacon.Client
 
-	timeout time.Duration
+	timeout        time.Duration
+	genesisTime    uint64
+	secondsPerSlot uint64
 }
 
 // NewBeaconClient returns a new beacon client.
@@ -34,13 +43,53 @@ func NewBeaconClient(endpoint string, timeout time.Duration) (*BeaconClient, err
 	if err != nil {
 		return nil, err
 	}
-	return &BeaconClient{cli, timeout}, nil
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	// Get the genesis time.
+	var genesisDetail *GenesisResponse
+	resBytes, err := cli.Get(ctx, genesisRequestURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(resBytes, &genesisDetail); err != nil {
+		return nil, err
+	}
+
+	genesisTime, err := strconv.Atoi(genesisDetail.Data.GenesisTime)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info("L1 genesis time", "time", genesisTime)
+
+	// Get the seconds per slot.
+	spec, err := cli.GetConfigSpec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	secondsPerSlot, err := strconv.Atoi(spec.Data.(map[string]interface{})["SECONDS_PER_SLOT"].(string))
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info("L1 seconds per slot", "seconds", secondsPerSlot)
+
+	return &BeaconClient{cli, timeout, uint64(genesisTime), uint64(secondsPerSlot)}, nil
 }
 
 // GetBlobs returns the sidecars for a given slot.
-func (c *BeaconClient) GetBlobs(ctx context.Context, slot *big.Int) ([]*blob.Sidecar, error) {
+func (c *BeaconClient) GetBlobs(ctx context.Context, time uint64) ([]*blob.Sidecar, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
 	defer cancel()
+
+	slot, err := c.timeToSlot(time)
+	if err != nil {
+		return nil, err
+	}
 
 	var sidecars *blob.SidecarsResponse
 	resBytes, err := c.Get(ctxWithTimeout, fmt.Sprintf(sidecarsRequestURL, slot))
@@ -51,26 +100,10 @@ func (c *BeaconClient) GetBlobs(ctx context.Context, slot *big.Int) ([]*blob.Sid
 	return sidecars.Data, json.Unmarshal(resBytes, &sidecars)
 }
 
-// GetBlobByHash returns the sidecars for a given slot.
-func (c *BeaconClient) GetBlobByHash(ctx context.Context, slot *big.Int, blobHash common.Hash) ([]byte, error) {
-	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, c.timeout)
-	defer cancel()
-
-	sidecars, err := c.GetBlobs(ctxWithTimeout, slot)
-	if err != nil {
-		return nil, err
+// timeToSlot returns the slots of the given timestamp.
+func (c *BeaconClient) timeToSlot(timestamp uint64) (uint64, error) {
+	if timestamp < c.genesisTime {
+		return 0, fmt.Errorf("provided timestamp (%v) precedes genesis time (%v)", timestamp, c.genesisTime)
 	}
-
-	for _, sidecar := range sidecars {
-		commitment := kzg4844.Commitment(common.FromHex(sidecar.KzgCommitment))
-		if kzg4844.CalcBlobHashV1(
-			sha256.New(),
-			&commitment,
-		) == blobHash {
-			blob := eth.Blob(common.FromHex(sidecar.Blob))
-			return blob.ToData()
-		}
-	}
-
-	return nil, errors.New("sidecar not found")
+	return (timestamp - c.genesisTime) / c.secondsPerSlot, nil
 }

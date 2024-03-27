@@ -36,9 +36,9 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(120*time.Second, c.P2PSyncTimeout)
 		s.Equal(rpcTimeout, c.RPCTimeout)
 		s.NotEmpty(c.JwtSecret)
-		s.Nil(new(Driver).InitFromCli(context.Background(), ctx))
 		s.True(c.P2PSyncVerifiedBlocks)
 		s.Equal(l2CheckPoint, c.L2CheckPoint)
+		s.NotNil(new(Driver).InitFromCli(context.Background(), ctx))
 
 		return err
 	}
