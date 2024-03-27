@@ -3,7 +3,6 @@ package txlistdecoder
 import (
 	"context"
 	"crypto/sha256"
-	"math/big"
 
 	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum/go-ethereum/common"
@@ -36,12 +35,12 @@ func (d *BlobFetcher) Fetch(
 	}
 
 	// Fetch the L1 block sidecars.
-	sidecars, err := d.rpc.L1Beacon.GetBlobs(ctx, new(big.Int).SetUint64(meta.L1Height+1))
+	sidecars, err := d.rpc.L1Beacon.GetBlobs(ctx, meta.Timestamp)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info("Fetch sidecars", "slot", meta.L1Height+1, "sidecars", len(sidecars))
+	log.Info("Fetch sidecars", "blockNumber", meta.L1Height+1, "sidecars", len(sidecars))
 
 	// Compare the blob hash with the sidecar's kzg commitment.
 	for i, sidecar := range sidecars {
