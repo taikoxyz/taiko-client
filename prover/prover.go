@@ -232,7 +232,7 @@ func (p *Prover) Start() error {
 			log.Error("Failed to send guardian prover startup", "error", err)
 		}
 
-		go p.gurdianProverHeartbeatLoop(p.ctx)
+		go p.guardianProverHeartbeatLoop(p.ctx)
 	}
 
 	// 4. Start the main event loop of the prover.

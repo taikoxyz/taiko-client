@@ -12,9 +12,9 @@ var (
 	heartbeatInterval = 12 * time.Second
 )
 
-// gurdianProverHeartbeatLoop keeps sending heartbeats to the guardian prover health check server
+// guardianProverHeartbeatLoop keeps sending heartbeats to the guardian prover health check server
 // on an interval.
-func (p *Prover) gurdianProverHeartbeatLoop(ctx context.Context) {
+func (p *Prover) guardianProverHeartbeatLoop(ctx context.Context) {
 	p.wg.Add(1)
 	defer p.wg.Done()
 
