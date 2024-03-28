@@ -416,13 +416,11 @@ func (s *Syncer) fillForkchoiceState(
 	}
 
 	// Fetch the latest verified block's header from protocol.
-	variables, err := s.rpc.GetProtocolStateVariables(
-		&bind.CallOpts{Context: ctx, BlockNumber: new(big.Int).SetUint64(event.Raw.BlockNumber)},
-	)
+	variables, err := s.rpc.GetTaikoDataSlotBByNumber(ctx, event.Raw.BlockNumber)
 	if err != nil {
 		return err
 	}
-	finalizeHeader, err := s.rpc.L2.HeaderByNumber(ctx, new(big.Int).SetUint64(variables.B.LastVerifiedBlockId))
+	finalizeHeader, err := s.rpc.L2.HeaderByNumber(ctx, new(big.Int).SetUint64(variables.LastVerifiedBlockId))
 	if err != nil {
 		return err
 	}
@@ -597,9 +595,11 @@ func (s *Syncer) retrievePastBlock(
 		l1Origin, err := s.rpc.L2.L1OriginByID(ctx, new(big.Int).SetUint64(currentBlockID))
 		if err != nil {
 			if err.Error() == ethereum.NotFound.Error() {
-				log.Info("L1Origin not found in retrievePastBlock because the L2 EE is just synced through P2P",
+				log.Info(
+					"L1Origin not found in retrievePastBlock because the L2 EE is just synced through P2P",
 					"blockID",
-					currentBlockID)
+					currentBlockID,
+				)
 				// Can't find l1Origin in L2 EE, so we call the contract to get block info
 				blockInfo, err := s.rpc.TaikoL1.GetBlock(&bind.CallOpts{Context: ctx}, currentBlockID)
 				if err != nil {
