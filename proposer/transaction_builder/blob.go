@@ -61,7 +61,7 @@ func (b *BlobTransactionBuilder) Build(
 		return nil, err
 	}
 
-	var blob *eth.Blob
+	var blob = &eth.Blob{}
 	if err := blob.FromData(txListBytes); err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (b *BlobTransactionBuilder) Build(
 	}
 
 	// Send the transaction to the L1 node.
-	data, err := encoding.TaikoL1ABI.Pack("proposeBlock", encodedParams, nil)
+	data, err := encoding.TaikoL1ABI.Pack("proposeBlock", encodedParams, []byte{})
 	if err != nil {
 		return nil, encoding.TryParsingCustomError(err)
 	}
