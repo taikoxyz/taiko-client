@@ -444,7 +444,7 @@ func (c *Client) CheckL1Reorg(ctx context.Context, blockID *big.Int) (*ReorgChec
 			return result, nil
 		}
 
-		// 1. Check whether the L2 block's coreesponding L1 block which in L1Origin has been reorged.
+		// 1. Check whether the L2 block's corresponding L1 block which in L1Origin has been reorged.
 		l1Origin, err := c.L2.L1OriginByID(ctxWithTimeout, blockID)
 		if err != nil {
 			// If the L2 EE is just synced through P2P, so there is no L1Origin information recorded in
