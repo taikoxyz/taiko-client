@@ -1,7 +1,6 @@
 package proposer
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -58,7 +57,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 			s.Equal(c.ProverEndpoints[i].String(), e)
 		}
 
-		s.Nil(new(Proposer).InitFromCli(context.Background(), ctx))
+		s.Nil(new(Proposer).InitFromCli(ctx))
 		return nil
 	}
 

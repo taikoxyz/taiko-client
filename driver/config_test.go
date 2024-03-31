@@ -1,7 +1,6 @@
 package driver
 
 import (
-	"context"
 	"os"
 	"time"
 
@@ -38,7 +37,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.NotEmpty(c.JwtSecret)
 		s.True(c.P2PSyncVerifiedBlocks)
 		s.Equal(l2CheckPoint, c.L2CheckPoint)
-		s.NotNil(new(Driver).InitFromCli(context.Background(), ctx))
+		s.NotNil(new(Driver).InitFromCli(ctx))
 
 		return err
 	}

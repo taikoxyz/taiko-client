@@ -59,22 +59,22 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestTrack() {
 
 	// Triggered
 	ctx, cancel = context.WithCancel(context.Background())
-	s.t.UpdateMeta(common.Big256, testutils.RandomHash())
+	s.t.UpdateMeta(common.Big256.Uint64(), testutils.RandomHash())
 	go s.t.Track(ctx)
 	time.Sleep(syncProgressCheckInterval + 5*time.Second)
 	cancel()
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestClearMeta() {
-	s.t.triggered = true
+	s.t.triggered.Store(true)
 	s.t.ClearMeta()
-	s.False(s.t.triggered)
+	s.False(s.t.triggered.Load())
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestHeadChanged() {
-	s.True(s.t.HeadChanged(common.Big256))
-	s.t.triggered = true
-	s.False(s.t.HeadChanged(common.Big256))
+	s.True(s.t.HeadChanged(common.Big256.Uint64()))
+	s.t.triggered.Store(true)
+	s.False(s.t.HeadChanged(common.Big256.Uint64()))
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestOutOfSync() {
@@ -87,8 +87,8 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestTriggered() {
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestLastSyncedVerifiedBlockID() {
 	s.Nil(s.t.LastSyncedVerifiedBlockID())
-	s.t.lastSyncedVerifiedBlockID = common.Big1
-	s.Equal(common.Big1.Uint64(), s.t.LastSyncedVerifiedBlockID().Uint64())
+	s.t.lastSyncedVerifiedBlockID.Store(1)
+	s.Equal(common.Big1.Uint64(), s.t.LastSyncedVerifiedBlockID())
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestLastSyncedVerifiedBlockHash() {
@@ -97,7 +97,7 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestLastSyncedVerifiedBlockHash() {
 		s.t.LastSyncedVerifiedBlockHash(),
 	)
 	randomHash := testutils.RandomHash()
-	s.t.lastSyncedVerifiedBlockHash = randomHash
+	s.t.lastSyncedVerifiedBlockHash.Store(randomHash)
 	s.Equal(randomHash, s.t.LastSyncedVerifiedBlockHash())
 }
 

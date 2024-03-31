@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
@@ -64,8 +63,8 @@ func New(
 }
 
 // Sync performs a sync operation to L2 execution engine's local chain.
-func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
-	needNewBeaconSyncTriggered, err := s.needNewBeaconSyncTriggered()
+func (s *L2ChainSyncer) Sync() error {
+	blockID, needNewBeaconSyncTriggered, err := s.needNewBeaconSyncTriggered()
 	if err != nil {
 		return err
 	}
@@ -73,7 +72,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
 	// latest verified block head.
 	if needNewBeaconSyncTriggered {
-		if err := s.beaconSyncer.TriggerBeaconSync(); err != nil {
+		if err := s.beaconSyncer.TriggerBeaconSync(blockID); err != nil {
 			return fmt.Errorf("trigger beacon sync error: %w", err)
 		}
 
@@ -109,11 +108,11 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		}
 
 		// Reset to the latest L2 execution engine's chain status.
-		s.progressTracker.UpdateMeta(l2Head.Number, l2Head.Hash())
+		s.progressTracker.UpdateMeta(l2Head.Number.Uint64(), l2Head.Hash())
 	}
 
 	// Insert the proposed block one by one.
-	return s.calldataSyncer.ProcessL1Blocks(s.ctx, l1End)
+	return s.calldataSyncer.ProcessL1Blocks(s.ctx)
 }
 
 // AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
@@ -137,8 +136,8 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead(verifiedHeightToCompare uint
 		return false
 	}
 
-	if s.progressTracker.LastSyncedVerifiedBlockID() != nil {
-		return s.state.GetL2Head().Number.Uint64() >= s.progressTracker.LastSyncedVerifiedBlockID().Uint64()
+	if s.progressTracker.LastSyncedVerifiedBlockID() != 0 {
+		return s.state.GetL2Head().Number.Uint64() >= s.progressTracker.LastSyncedVerifiedBlockID()
 	}
 
 	return true
@@ -150,23 +149,23 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead(verifiedHeightToCompare uint
 // 2. The protocol's latest verified block head is not zero.
 // 3. The L2 execution engine's chain is behind of the protocol's latest verified block head.
 // 4. The L2 execution engine's chain have met a sync timeout issue.
-func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (bool, error) {
+func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (uint64, bool, error) {
 	// If the flag is not set, we simply return false.
 	if !s.p2pSyncVerifiedBlocks {
-		return false, nil
+		return 0, false, nil
 	}
 
 	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: s.ctx})
 	if err != nil {
-		return false, err
+		return 0, false, err
 	}
 
 	// If the protocol's latest verified block head is zero, we simply return false.
 	if stateVars.B.LastVerifiedBlockId == 0 {
-		return false, nil
+		return 0, false, nil
 	}
 
-	return !s.AheadOfProtocolVerifiedHead(stateVars.B.LastVerifiedBlockId) &&
+	return stateVars.B.LastVerifiedBlockId, !s.AheadOfProtocolVerifiedHead(stateVars.B.LastVerifiedBlockId) &&
 		!s.progressTracker.OutOfSync(), nil
 }
 

@@ -61,16 +61,12 @@ func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
 }
 
 func (s *CalldataSyncerTestSuite) TestProcessL1Blocks() {
-	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-	s.Nil(s.s.ProcessL1Blocks(context.Background(), head))
+	s.Nil(s.s.ProcessL1Blocks(context.Background()))
 }
 
 func (s *CalldataSyncerTestSuite) TestProcessL1BlocksReorg() {
-	head, err := s.s.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.ProposeAndInsertEmptyBlocks(s.p, s.s)
-	s.Nil(err)
-	s.Nil(s.s.ProcessL1Blocks(context.Background(), head))
+	s.Nil(s.s.ProcessL1Blocks(context.Background()))
 }
 
 func (s *CalldataSyncerTestSuite) TestOnBlockProposed() {

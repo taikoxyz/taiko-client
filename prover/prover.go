@@ -78,13 +78,13 @@ type Prover struct {
 }
 
 // InitFromCli initializes the given prover instance based on the command line flags.
-func (p *Prover) InitFromCli(ctx context.Context, c *cli.Context) error {
+func (p *Prover) InitFromCli(c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {
 		return err
 	}
 
-	return InitFromConfig(ctx, p, cfg)
+	return InitFromConfig(c.Context, p, cfg)
 }
 
 // InitFromConfig initializes the prover instance based on the given configurations.
@@ -312,8 +312,8 @@ func (p *Prover) eventLoop() {
 }
 
 // Close closes the prover instance.
-func (p *Prover) Close(ctx context.Context) {
-	if err := p.server.Shutdown(ctx); err != nil {
+func (p *Prover) Close() {
+	if err := p.server.Shutdown(p.ctx); err != nil {
 		log.Error("Failed to shut down prover server", "error", err)
 	}
 	p.wg.Wait()
