@@ -688,20 +688,8 @@ func (c *Client) GetTiers(ctx context.Context) ([]*TierProviderTierWithID, error
 
 // GetTaikoDataSlotBByNumber fetches the state variables by block number.
 func (c *Client) GetTaikoDataSlotBByNumber(ctx context.Context, number uint64) (*bindings.TaikoDataSlotB, error) {
-	stateVaiables, err := c.TaikoL1.GetStateVariables(
-		&bind.CallOpts{
-			Context:     ctx,
-			BlockNumber: new(big.Int).SetUint64(number),
-		},
-	)
-	if err == nil {
-		return &stateVaiables.B, nil
-	}
-	log.Warn("failed to get TaikoDataSlotB", "error", err)
-
 	iter, err := c.TaikoL1.FilterStateVariablesUpdated(
 		&bind.FilterOpts{Context: ctx, Start: number, End: &number},
-		nil,
 	)
 	if err != nil {
 		return nil, err
