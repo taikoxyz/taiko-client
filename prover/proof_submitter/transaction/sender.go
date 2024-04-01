@@ -60,7 +60,7 @@ func (s *Sender) Send(
 	}
 
 	if receipt.Status != types.ReceiptStatusSuccessful {
-		log.Error("failed to submit proof", "txHash in receipt", receipt.TxHash)
+		log.Error("Failed to submit proof", "txHash", receipt.TxHash)
 	}
 
 	log.Info(
