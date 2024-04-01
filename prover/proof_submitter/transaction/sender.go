@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
-	
+
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
@@ -75,6 +75,7 @@ func (s *Sender) Send(
 		"tier", proofWithHeader.Tier,
 		"isContest", len(proofWithHeader.Proof) == 0,
 	)
+
 	metrics.ProverSubmissionAcceptedCounter.Inc(1)
 
 	return nil
