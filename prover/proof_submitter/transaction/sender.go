@@ -2,7 +2,6 @@ package transaction
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -61,7 +60,7 @@ func (s *Sender) Send(
 	}
 
 	if receipt.Status != types.ReceiptStatusSuccessful {
-		return fmt.Errorf("failed to submit proof: %s", receipt.TxHash)
+		log.Error("failed to submit proof", "txHash in receipt", receipt.TxHash)
 	}
 
 	log.Info(
