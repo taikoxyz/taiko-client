@@ -11,8 +11,8 @@ check_command "forge"
 check_command "docker"
 
 # start and stop docker compose
-internal/docker/start.sh
-trap "internal/docker/stop.sh" EXIT INT KILL ERR
+#internal/docker/start.sh
+#trap "internal/docker/stop.sh" EXIT INT KILL ERR
 
 # deploy l1 contracts
 integration_test/deploy_l1_contract.sh
