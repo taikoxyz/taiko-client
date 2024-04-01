@@ -2,14 +2,12 @@ package handler
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	state "github.com/taikoxyz/taiko-client/prover/shared_state"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
@@ -31,11 +29,7 @@ func (s *EventHandlerTestSuite) TestBlockProposedHandle() {
 	handler := NewBlockProposedEventHandler(
 		opts,
 	)
-	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	e := s.ProposeAndInsertValidBlock(s.proposer, s.calldataSyncer)
 	err := handler.Handle(context.Background(), e, func() {})
 	s.Nil(err)
-}
-
-func TestBlockProposedEventHandlerTestSuite(t *testing.T) {
-	suite.Run(t, new(EventHandlerTestSuite))
 }

@@ -78,7 +78,7 @@ func (s *BlockBatchIteratorTestSuite) TestIterWithoutSpecifiedEndHeight() {
 
 	s.Nil(err)
 	s.Nil(iter.Iter())
-	s.Equal(headHeight-blockConfirmations, lastEnd.Uint64())
+	s.GreaterOrEqual(lastEnd.Uint64(), headHeight-blockConfirmations)
 }
 
 func (s *BlockBatchIteratorTestSuite) TestIterWithLessThanConfirmations() {

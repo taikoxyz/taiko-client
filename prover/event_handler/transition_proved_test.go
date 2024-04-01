@@ -2,18 +2,21 @@ package handler
 
 import (
 	"context"
-	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"os"
 	"testing"
 	"time"
 
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
+	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -22,8 +25,9 @@ import (
 
 type EventHandlerTestSuite struct {
 	testutils.ClientTestSuite
-	d        *driver.Driver
-	proposer *proposer.Proposer
+	d              *driver.Driver
+	proposer       *proposer.Proposer
+	calldataSyncer *calldata.Syncer
 }
 
 func (s *EventHandlerTestSuite) SetupTest() {
@@ -33,6 +37,7 @@ func (s *EventHandlerTestSuite) SetupTest() {
 	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
 	s.Nil(err)
 	s.NotEmpty(jwtSecret)
+
 	d := new(driver.Driver)
 	s.Nil(d.InitFromConfig(context.Background(), &driver.Config{
 		ClientConfig: &rpc.ClientConfig{
@@ -45,6 +50,21 @@ func (s *EventHandlerTestSuite) SetupTest() {
 		},
 	}))
 	s.d = d
+
+	// Init calldata syncer
+	testState, err := state.New(context.Background(), s.RPCClient)
+	s.Nil(err)
+	s.Nil(testState.ResetL1Current(context.Background(), common.Big0))
+
+	tracker := beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 30*time.Second)
+	s.calldataSyncer, err = calldata.NewSyncer(
+		context.Background(),
+		s.RPCClient,
+		testState,
+		tracker,
+		0,
+	)
+	s.Nil(err)
 
 	// Init proposer
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
@@ -98,7 +118,7 @@ func (s *EventHandlerTestSuite) TestTransitionProvedHandle() {
 		make(chan *proofProducer.ContestRequestBody),
 		true,
 	)
-	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	e := s.ProposeAndInsertValidBlock(s.proposer, s.calldataSyncer)
 	err := handler.Handle(context.Background(), &bindings.TaikoL1ClientTransitionProved{
 		BlockId: e.BlockId,
 		Tier:    e.Meta.MinTier,

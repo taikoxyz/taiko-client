@@ -157,9 +157,3 @@ func (s *ClientTestSuite) RevertL1Snapshot(snapshotID string) {
 	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", snapshotID))
 	s.True(revertRes)
 }
-
-func (s *ClientTestSuite) MineL1Block() {
-	var blockID string
-	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &blockID, "evm_mine"))
-	s.NotEmpty(blockID)
-}
