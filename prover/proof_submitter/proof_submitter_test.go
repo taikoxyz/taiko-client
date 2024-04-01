@@ -97,7 +97,6 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 	tracker := beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 30*time.Second)
 
 	s.calldataSyncer, err = calldata.NewSyncer(
-		context.Background(),
 		s.RPCClient,
 		testState,
 		tracker,

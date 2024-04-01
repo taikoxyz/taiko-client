@@ -1,7 +1,6 @@
 package beaconsync
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -52,17 +51,13 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestSyncProgressed() {
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestTrack() {
 	// Not triggered
-	ctx, cancel := context.WithCancel(context.Background())
-	go s.t.Track(ctx)
+	go s.t.Track()
 	time.Sleep(syncProgressCheckInterval + 5*time.Second)
-	cancel()
 
 	// Triggered
-	ctx, cancel = context.WithCancel(context.Background())
 	s.t.UpdateMeta(common.Big256, testutils.RandomHash())
-	go s.t.Track(ctx)
+	go s.t.Track()
 	time.Sleep(syncProgressCheckInterval + 5*time.Second)
-	cancel()
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestClearMeta() {
@@ -99,6 +94,10 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestLastSyncedVerifiedBlockHash() {
 	randomHash := testutils.RandomHash()
 	s.t.lastSyncedVerifiedBlockHash = randomHash
 	s.Equal(randomHash, s.t.LastSyncedVerifiedBlockHash())
+}
+
+func (s *BeaconSyncProgressTrackerTestSuite) TearDownTest() {
+	s.t.Close()
 }
 
 func TestBeaconSyncProgressTrackerTestSuite(t *testing.T) {

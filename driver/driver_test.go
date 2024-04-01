@@ -276,7 +276,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 }
 
 func (s *DriverTestSuite) TestDoSyncNoNewL2Blocks() {
-	s.Nil(s.d.doSync())
+	s.Nil(s.d.l2ChainSyncer.Sync(context.Background(), s.d.state.GetL1Head()))
 }
 
 func (s *DriverTestSuite) TestStartClose() {

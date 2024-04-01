@@ -18,7 +18,6 @@ import (
 // L2ChainSyncer is responsible for keeping the L2 execution engine's local chain in sync with the one
 // in TaikoL1 contract.
 type L2ChainSyncer struct {
-	ctx   context.Context
 	state *state.State // Driver's state
 	rpc   *rpc.Client  // L1/L2 RPC clients
 
@@ -36,7 +35,6 @@ type L2ChainSyncer struct {
 
 // New creates a new chain syncer instance.
 func New(
-	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
 	p2pSyncVerifiedBlocks bool,
@@ -44,16 +42,15 @@ func New(
 	maxRetrieveExponent uint64,
 ) (*L2ChainSyncer, error) {
 	tracker := beaconsync.NewSyncProgressTracker(rpc.L2, p2pSyncTimeout)
-	go tracker.Track(ctx)
+	go tracker.Track()
 
-	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, tracker)
-	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, maxRetrieveExponent)
+	beaconSyncer := beaconsync.NewSyncer(rpc, state, tracker)
+	calldataSyncer, err := calldata.NewSyncer(rpc, state, tracker, maxRetrieveExponent)
 	if err != nil {
 		return nil, err
 	}
 
 	return &L2ChainSyncer{
-		ctx:                   ctx,
 		rpc:                   rpc,
 		state:                 state,
 		beaconSyncer:          beaconSyncer,
@@ -63,9 +60,13 @@ func New(
 	}, nil
 }
 
+func (s *L2ChainSyncer) Close() {
+	s.progressTracker.Close()
+}
+
 // Sync performs a sync operation to L2 execution engine's local chain.
-func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
-	needNewBeaconSyncTriggered, err := s.needNewBeaconSyncTriggered()
+func (s *L2ChainSyncer) Sync(ctx context.Context, l1End *types.Header) error {
+	needNewBeaconSyncTriggered, err := s.needNewBeaconSyncTriggered(ctx)
 	if err != nil {
 		return err
 	}
@@ -73,7 +74,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
 	// latest verified block head.
 	if needNewBeaconSyncTriggered {
-		if err := s.beaconSyncer.TriggerBeaconSync(); err != nil {
+		if err := s.beaconSyncer.TriggerBeaconSync(ctx); err != nil {
 			return fmt.Errorf("trigger beacon sync error: %w", err)
 		}
 
@@ -90,7 +91,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		)
 
 		// Get the execution engine's chain head.
-		l2Head, err := s.rpc.L2.HeaderByNumber(s.ctx, nil)
+		l2Head, err := s.rpc.L2.HeaderByNumber(ctx, nil)
 		if err != nil {
 			return err
 		}
@@ -104,7 +105,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 		)
 
 		// Reset the L1Current cursor.
-		if err := s.state.ResetL1Current(s.ctx, l2Head.Number); err != nil {
+		if err := s.state.ResetL1Current(ctx, l2Head.Number); err != nil {
 			return err
 		}
 
@@ -113,7 +114,7 @@ func (s *L2ChainSyncer) Sync(l1End *types.Header) error {
 	}
 
 	// Insert the proposed block one by one.
-	return s.calldataSyncer.ProcessL1Blocks(s.ctx, l1End)
+	return s.calldataSyncer.ProcessL1Blocks(ctx, l1End)
 }
 
 // AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
@@ -150,13 +151,13 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead(verifiedHeightToCompare uint
 // 2. The protocol's latest verified block head is not zero.
 // 3. The L2 execution engine's chain is behind of the protocol's latest verified block head.
 // 4. The L2 execution engine's chain have met a sync timeout issue.
-func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (bool, error) {
+func (s *L2ChainSyncer) needNewBeaconSyncTriggered(ctx context.Context) (bool, error) {
 	// If the flag is not set, we simply return false.
 	if !s.p2pSyncVerifiedBlocks {
 		return false, nil
 	}
 
-	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: s.ctx})
+	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		return false, err
 	}

@@ -34,24 +34,35 @@ type SyncProgressTracker struct {
 	lastProgressedTime time.Time
 	timeout            time.Duration
 	outOfSync          bool
-	ticker             *time.Ticker
 
 	// Read-write mutex
 	mutex sync.RWMutex
+
+	stopCh chan struct{}
 }
 
 // NewSyncProgressTracker creates a new SyncProgressTracker instance.
 func NewSyncProgressTracker(c *rpc.EthClient, timeout time.Duration) *SyncProgressTracker {
-	return &SyncProgressTracker{client: c, timeout: timeout, ticker: time.NewTicker(syncProgressCheckInterval)}
+	return &SyncProgressTracker{client: c, timeout: timeout, stopCh: make(chan struct{})}
+}
+
+func (t *SyncProgressTracker) Close() {
+	close(t.stopCh)
 }
 
 // Track starts the inner event loop, to monitor the sync progress.
-func (t *SyncProgressTracker) Track(ctx context.Context) {
+func (t *SyncProgressTracker) Track() {
+	ticker := time.NewTicker(syncProgressCheckInterval)
+	defer ticker.Stop()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	for {
 		select {
-		case <-ctx.Done():
+		case <-t.stopCh:
 			return
-		case <-t.ticker.C:
+		case <-ticker.C:
 			t.track(ctx)
 		}
 	}

@@ -32,7 +32,6 @@ import (
 // Syncer responsible for letting the L2 execution engine catching up with protocol's latest
 // pending block through deriving L1 calldata.
 type Syncer struct {
-	ctx               context.Context
 	rpc               *rpc.Client
 	state             *state.State
 	progressTracker   *beaconsync.SyncProgressTracker          // Sync progress tracker
@@ -46,13 +45,12 @@ type Syncer struct {
 
 // NewSyncer creates a new syncer instance.
 func NewSyncer(
-	ctx context.Context,
 	client *rpc.Client,
 	state *state.State,
 	progressTracker *beaconsync.SyncProgressTracker,
 	maxRetrieveExponent uint64,
 ) (*Syncer, error) {
-	configs, err := client.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
+	configs, err := client.TaikoL1.GetConfig(nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get protocol configs: %w", err)
 	}
@@ -63,7 +61,6 @@ func NewSyncer(
 	}
 
 	return &Syncer{
-		ctx:               ctx,
 		rpc:               client,
 		state:             state,
 		progressTracker:   progressTracker,
@@ -80,18 +77,17 @@ func NewSyncer(
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
 // L1 block heights, and then tries inserting them into L2 execution engine's blockchain.
 func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
-	for {
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
 		if err := s.processL1Blocks(ctx, l1End); err != nil {
 			return err
 		}
-
-		// If the L1 chain has been reorged, we process the new L1 blocks again with
-		// the new L1Current cursor.
 		if s.reorgDetectedFlag {
 			s.reorgDetectedFlag = false
-			continue
+			return s.processL1Blocks(ctx, l1End)
 		}
-
 		return nil
 	}
 }

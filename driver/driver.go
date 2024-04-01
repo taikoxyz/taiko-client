@@ -5,13 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 
 	chainSyncer "github.com/taikoxyz/taiko-client/driver/chain_syncer"
@@ -33,12 +31,13 @@ type Driver struct {
 	l2ChainSyncer *chainSyncer.L2ChainSyncer
 	state         *state.State
 
-	l1HeadCh   chan *types.Header
-	l1HeadSub  event.Subscription
 	syncNotify chan struct{}
 
-	ctx context.Context
-	wg  sync.WaitGroup
+	maxNumBlocks uint64
+
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
 }
 
 // InitFromCli initializes the given driver instance based on the command line flags.
@@ -53,9 +52,8 @@ func (d *Driver) InitFromCli(ctx context.Context, c *cli.Context) error {
 
 // InitFromConfig initializes the driver instance based on the given configurations.
 func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
-	d.l1HeadCh = make(chan *types.Header, 1024)
 	d.syncNotify = make(chan struct{}, 1)
-	d.ctx = ctx
+	d.ctx, d.cancel = context.WithCancel(ctx)
 	d.Config = cfg
 
 	if d.rpc, err = rpc.NewClient(d.ctx, cfg.ClientConfig); err != nil {
@@ -76,7 +74,6 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 	}
 
 	if d.l2ChainSyncer, err = chainSyncer.New(
-		d.ctx,
 		d.rpc,
 		d.state,
 		cfg.P2PSyncVerifiedBlocks,
@@ -86,7 +83,12 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 		return err
 	}
 
-	d.l1HeadSub = d.state.SubL1HeadsFeed(d.l1HeadCh)
+	configs, err := d.rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: d.ctx})
+	if err != nil {
+		log.Error("Failed to get protocol state variables", "error", err)
+		return err
+	}
+	d.maxNumBlocks = configs.BlockMaxProposals
 
 	return nil
 }
@@ -102,9 +104,13 @@ func (d *Driver) Start() error {
 
 // Close closes the driver instance.
 func (d *Driver) Close(_ context.Context) {
-	d.l1HeadSub.Unsubscribe()
-	d.state.Close()
+	if d.cancel != nil {
+		d.cancel()
+	}
 	d.wg.Wait()
+	d.l2ChainSyncer.Close()
+	d.state.Close()
+	d.rpc.Close()
 }
 
 // eventLoop starts the main loop of a L2 execution engine's driver.
@@ -121,18 +127,22 @@ func (d *Driver) eventLoop() {
 		}
 	}
 
+	ctx, cancel := context.WithCancel(d.ctx)
+	defer cancel()
+
 	// doSyncWithBackoff performs a synchronising operation with a backoff strategy.
 	doSyncWithBackoff := func() {
-		if err := backoff.Retry(
-			d.doSync,
-			backoff.WithContext(backoff.NewConstantBackOff(d.RetryInterval), d.ctx),
-		); err != nil {
-			log.Error("Sync L2 execution engine's block chain error", "error", err)
+		if err := d.l2ChainSyncer.Sync(ctx, d.state.GetL1Head()); err != nil {
+			log.Error("Process new L1 blocks error", "error", err)
 		}
 	}
 
 	// Call doSync() right away to catch up with the latest known L1 head.
 	doSyncWithBackoff()
+
+	l1HeadCh := make(chan *types.Header, 1024)
+	l1HeadSub := d.state.SubL1HeadsFeed(l1HeadCh)
+	defer l1HeadSub.Unsubscribe()
 
 	for {
 		select {
@@ -140,28 +150,10 @@ func (d *Driver) eventLoop() {
 			return
 		case <-d.syncNotify:
 			doSyncWithBackoff()
-		case <-d.l1HeadCh:
+		case <-l1HeadCh:
 			reqSync()
 		}
 	}
-}
-
-// doSync fetches all `BlockProposed` events emitted from local
-// L1 sync cursor to the L1 head, and then applies all corresponding
-// L2 blocks into node's local blockchain.
-func (d *Driver) doSync() error {
-	// Check whether the application is closing.
-	if d.ctx.Err() != nil {
-		log.Warn("Driver context error", "error", d.ctx.Err())
-		return nil
-	}
-
-	if err := d.l2ChainSyncer.Sync(d.state.GetL1Head()); err != nil {
-		log.Error("Process new L1 blocks error", "error", err)
-		return err
-	}
-
-	return nil
 }
 
 // ChainSyncer returns the driver's chain syncer, this method
@@ -172,42 +164,21 @@ func (d *Driver) ChainSyncer() *chainSyncer.L2ChainSyncer {
 
 // reportProtocolStatus reports some protocol status intervally.
 func (d *Driver) reportProtocolStatus() {
-	var (
-		ticker       = time.NewTicker(protocolStatusReportInterval)
-		maxNumBlocks uint64
-	)
 	d.wg.Add(1)
+	defer d.wg.Done()
 
-	defer func() {
-		ticker.Stop()
-		d.wg.Done()
-	}()
+	var ticker = time.NewTicker(protocolStatusReportInterval)
+	defer ticker.Stop()
 
-	if err := backoff.Retry(
-		func() error {
-			if d.ctx.Err() != nil {
-				return nil
-			}
-			configs, err := d.rpc.TaikoL1.GetConfig(&bind.CallOpts{Context: d.ctx})
-			if err != nil {
-				return err
-			}
-
-			maxNumBlocks = configs.BlockMaxProposals
-			return nil
-		},
-		backoff.WithContext(backoff.NewConstantBackOff(d.RetryInterval), d.ctx),
-	); err != nil {
-		log.Error("Failed to get protocol state variables", "error", err)
-		return
-	}
+	subCtx, cancel := context.WithCancel(d.ctx)
+	defer cancel()
 
 	for {
 		select {
 		case <-d.ctx.Done():
 			return
 		case <-ticker.C:
-			vars, err := d.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: d.ctx})
+			vars, err := d.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: subCtx})
 			if err != nil {
 				log.Error("Failed to get protocol state variables", "error", err)
 				continue
@@ -217,7 +188,7 @@ func (d *Driver) reportProtocolStatus() {
 				"📖 Protocol status",
 				"lastVerifiedBlockId", vars.B.LastVerifiedBlockId,
 				"pendingBlocks", vars.B.NumBlocks-vars.B.LastVerifiedBlockId-1,
-				"availableSlots", vars.B.LastVerifiedBlockId+maxNumBlocks-vars.B.NumBlocks,
+				"availableSlots", vars.B.LastVerifiedBlockId+d.maxNumBlocks-vars.B.NumBlocks,
 			)
 		}
 	}
@@ -226,13 +197,14 @@ func (d *Driver) reportProtocolStatus() {
 // exchangeTransitionConfigLoop keeps exchanging transition configs with the
 // L2 execution engine.
 func (d *Driver) exchangeTransitionConfigLoop() {
-	ticker := time.NewTicker(exchangeTransitionConfigInterval)
 	d.wg.Add(1)
+	defer d.wg.Done()
 
-	defer func() {
-		ticker.Stop()
-		d.wg.Done()
-	}()
+	ticker := time.NewTicker(exchangeTransitionConfigInterval)
+	defer ticker.Stop()
+
+	subCtx, cancel := context.WithCancel(d.ctx)
+	defer cancel()
 
 	for {
 		select {
@@ -240,7 +212,7 @@ func (d *Driver) exchangeTransitionConfigLoop() {
 			return
 		case <-ticker.C:
 			func() {
-				tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
+				tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(subCtx, &engine.TransitionConfigurationV1{
 					TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
 					TerminalBlockHash:       common.Hash{},
 					TerminalBlockNumber:     0,

@@ -35,7 +35,6 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 	s.Nil(err)
 
 	syncer, err := New(
-		context.Background(),
 		s.RPCClient,
 		state,
 		false,
@@ -98,7 +97,7 @@ func (s *ChainSyncerTestSuite) TestGetInnerSyncers() {
 func (s *ChainSyncerTestSuite) TestSync() {
 	head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
-	s.Nil(s.s.Sync(head))
+	s.Nil(s.s.Sync(context.Background(), head))
 }
 
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {

@@ -129,3 +129,14 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 
 	return client, nil
 }
+
+func (c *Client) Close() {
+	c.L1.Close()
+	c.L2.Close()
+	if c.L2CheckPoint != nil {
+		c.L2CheckPoint.Close()
+	}
+	if c.L2Engine != nil {
+		c.L2Engine.Close()
+	}
+}

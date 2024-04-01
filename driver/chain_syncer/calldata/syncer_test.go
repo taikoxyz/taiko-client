@@ -35,7 +35,6 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.Nil(err)
 
 	syncer, err := NewSyncer(
-		context.Background(),
 		s.RPCClient,
 		state2,
 		beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 1*time.Hour),
@@ -47,10 +46,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 	s.initProposer()
 }
 func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
 	syncer, err := NewSyncer(
-		ctx,
 		s.RPCClient,
 		s.s.state,
 		s.s.progressTracker,
@@ -190,7 +186,6 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 
 func (s *CalldataSyncerTestSuite) TestRetrievePastBlock() {
 	syncer, err := NewSyncer(
-		context.Background(),
 		s.RPCClient,
 		s.s.state,
 		s.s.progressTracker,

@@ -18,7 +18,6 @@ import (
 // Syncer responsible for letting the L2 execution engine catching up with protocol's latest
 // verified block through P2P beacon sync.
 type Syncer struct {
-	ctx             context.Context
 	rpc             *rpc.Client
 	state           *state.State
 	progressTracker *SyncProgressTracker // Sync progress tracker
@@ -26,18 +25,17 @@ type Syncer struct {
 
 // NewSyncer creates a new syncer instance.
 func NewSyncer(
-	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
 	progressTracker *SyncProgressTracker,
 ) *Syncer {
-	return &Syncer{ctx, rpc, state, progressTracker}
+	return &Syncer{rpc, state, progressTracker}
 }
 
 // TriggerBeaconSync triggers the L2 execution engine to start performing a beacon sync, if the
 // latest verified block has changed.
-func (s *Syncer) TriggerBeaconSync() error {
-	blockID, latestVerifiedHeadPayload, err := s.getVerifiedBlockPayload(s.ctx)
+func (s *Syncer) TriggerBeaconSync(ctx context.Context) error {
+	blockID, latestVerifiedHeadPayload, err := s.getVerifiedBlockPayload(ctx)
 	if err != nil {
 		return err
 	}
@@ -57,7 +55,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 		}
 	}
 
-	status, err := s.rpc.L2Engine.NewPayload(s.ctx, latestVerifiedHeadPayload)
+	status, err := s.rpc.L2Engine.NewPayload(ctx, latestVerifiedHeadPayload)
 	if err != nil {
 		return err
 	}
@@ -66,7 +64,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 		return fmt.Errorf("unexpected NewPayload response status: %s", status.Status)
 	}
 
-	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(s.ctx, &engine.ForkchoiceStateV1{
+	fcRes, err := s.rpc.L2Engine.ForkchoiceUpdate(ctx, &engine.ForkchoiceStateV1{
 		HeadBlockHash:      latestVerifiedHeadPayload.BlockHash,
 		SafeBlockHash:      latestVerifiedHeadPayload.BlockHash,
 		FinalizedBlockHash: latestVerifiedHeadPayload.BlockHash,
@@ -103,7 +101,7 @@ func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *engine
 		return nil, nil, err
 	}
 
-	header, err := s.rpc.L2CheckPoint.HeaderByNumber(s.ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
+	header, err := s.rpc.L2CheckPoint.HeaderByNumber(ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
 	if err != nil {
 		return nil, nil, err
 	}
