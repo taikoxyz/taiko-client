@@ -72,9 +72,9 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestClearMeta() {
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestHeadChanged() {
-	s.True(s.t.HeadChanged(common.Big256.Uint64()))
+	s.True(s.t.HeadChanged(256))
 	s.t.triggered.Store(true)
-	s.False(s.t.HeadChanged(common.Big256.Uint64()))
+	s.False(s.t.HeadChanged(s.t.LastSyncedVerifiedBlockID()))
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestOutOfSync() {
@@ -86,9 +86,9 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestTriggered() {
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestLastSyncedVerifiedBlockID() {
-	s.Nil(s.t.LastSyncedVerifiedBlockID())
+	s.Equal(uint64(0), s.t.LastSyncedVerifiedBlockID())
 	s.t.lastSyncedVerifiedBlockID.Store(1)
-	s.Equal(common.Big1.Uint64(), s.t.LastSyncedVerifiedBlockID())
+	s.Equal(uint64(1), s.t.LastSyncedVerifiedBlockID())
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestLastSyncedVerifiedBlockHash() {
