@@ -212,7 +212,7 @@ func (s *Syncer) onBlockProposed(
 	)
 	if s.progressTracker.Triggered() {
 		// Already synced through beacon sync, just skip this event.
-		if event.BlockId.Uint64() <= s.progressTracker.LastSyncedVerifiedBlockID() {
+		if event.BlockId.Cmp(s.progressTracker.LastSyncedVerifiedBlockID()) <= 0 {
 			return nil
 		}
 

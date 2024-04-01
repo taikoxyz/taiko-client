@@ -41,7 +41,7 @@ func (s *Syncer) TriggerBeaconSync(blockID uint64) error {
 		return err
 	}
 
-	if !s.progressTracker.HeadChanged(blockID) {
+	if !s.progressTracker.HeadChanged(new(big.Int).SetUint64(blockID)) {
 		log.Debug("Verified head has not changed", "blockID", blockID, "hash", latestVerifiedHeadPayload.BlockHash)
 		return nil
 	}
@@ -78,7 +78,7 @@ func (s *Syncer) TriggerBeaconSync(blockID uint64) error {
 	}
 
 	// Update sync status.
-	s.progressTracker.UpdateMeta(blockID, latestVerifiedHeadPayload.BlockHash)
+	s.progressTracker.UpdateMeta(new(big.Int).SetUint64(blockID), latestVerifiedHeadPayload.BlockHash)
 
 	log.Info(
 		"⛓️ Beacon sync triggered",

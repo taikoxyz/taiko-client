@@ -108,7 +108,7 @@ func (s *L2ChainSyncer) Sync() error {
 		}
 
 		// Reset to the latest L2 execution engine's chain status.
-		s.progressTracker.UpdateMeta(l2Head.Number.Uint64(), l2Head.Hash())
+		s.progressTracker.UpdateMeta(l2Head.Number, l2Head.Hash())
 	}
 
 	// Insert the proposed block one by one.
@@ -136,8 +136,8 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead(verifiedHeightToCompare uint
 		return false
 	}
 
-	if s.progressTracker.LastSyncedVerifiedBlockID() != 0 {
-		return s.state.GetL2Head().Number.Uint64() >= s.progressTracker.LastSyncedVerifiedBlockID()
+	if s.progressTracker.LastSyncedVerifiedBlockID() != nil {
+		return s.state.GetL2Head().Number.Uint64() >= s.progressTracker.LastSyncedVerifiedBlockID().Uint64()
 	}
 
 	return true
