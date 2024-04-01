@@ -31,7 +31,7 @@ var (
 
 // LibVerifyingMetaData contains all meta data concerning the LibVerifying contract.
 var LibVerifyingMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"event\",\"name\":\"BlockVerified\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"assignedProver\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"prover\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"contestations\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"StateVariablesUpdated\",\"inputs\":[{\"name\":\"slotB\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.SlotB\",\"components\":[{\"name\":\"numBlocks\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"lastVerifiedBlockId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"provingPaused\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"__reserved1\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"__reserved2\",\"type\":\"uint16\",\"internalType\":\"uint16\"},{\"name\":\"__reserved3\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"lastUnpausedAt\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"L1_BLOCK_MISMATCH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_CONFIG\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_TRANSITION_ID_ZERO\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"event\",\"name\":\"BlockVerified\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"assignedProver\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"prover\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"contestations\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"StateVariablesUpdated\",\"inputs\":[{\"name\":\"BlockID\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"slotB\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.SlotB\",\"components\":[{\"name\":\"numBlocks\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"lastVerifiedBlockId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"provingPaused\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"__reserved1\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"__reserved2\",\"type\":\"uint16\",\"internalType\":\"uint16\"},{\"name\":\"__reserved3\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"lastUnpausedAt\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"L1_BLOCK_MISMATCH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_CONFIG\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_TRANSITION_ID_ZERO\",\"inputs\":[]}]",
 }
 
 // LibVerifyingABI is the input ABI used to generate the binding from.
@@ -415,28 +415,39 @@ func (it *LibVerifyingStateVariablesUpdatedIterator) Close() error {
 
 // LibVerifyingStateVariablesUpdated represents a StateVariablesUpdated event raised by the LibVerifying contract.
 type LibVerifyingStateVariablesUpdated struct {
-	SlotB TaikoDataSlotB
-	Raw   types.Log // Blockchain specific contextual infos
+	BlockID *big.Int
+	SlotB   TaikoDataSlotB
+	Raw     types.Log // Blockchain specific contextual infos
 }
 
-// FilterStateVariablesUpdated is a free log retrieval operation binding the contract event 0xdf66aee38ea9fe523cfd238705d455a354305a646748dbb931898b51cee4727b.
+// FilterStateVariablesUpdated is a free log retrieval operation binding the contract event 0xa14044817df9489daf99e2127a4c14ece01bb3248ed2ea2968a0e4814fb631f2.
 //
-// Solidity: event StateVariablesUpdated((uint64,uint64,bool,uint8,uint16,uint32,uint64) slotB)
-func (_LibVerifying *LibVerifyingFilterer) FilterStateVariablesUpdated(opts *bind.FilterOpts) (*LibVerifyingStateVariablesUpdatedIterator, error) {
+// Solidity: event StateVariablesUpdated(uint256 indexed BlockID, (uint64,uint64,bool,uint8,uint16,uint32,uint64) slotB)
+func (_LibVerifying *LibVerifyingFilterer) FilterStateVariablesUpdated(opts *bind.FilterOpts, BlockID []*big.Int) (*LibVerifyingStateVariablesUpdatedIterator, error) {
 
-	logs, sub, err := _LibVerifying.contract.FilterLogs(opts, "StateVariablesUpdated")
+	var BlockIDRule []interface{}
+	for _, BlockIDItem := range BlockID {
+		BlockIDRule = append(BlockIDRule, BlockIDItem)
+	}
+
+	logs, sub, err := _LibVerifying.contract.FilterLogs(opts, "StateVariablesUpdated", BlockIDRule)
 	if err != nil {
 		return nil, err
 	}
 	return &LibVerifyingStateVariablesUpdatedIterator{contract: _LibVerifying.contract, event: "StateVariablesUpdated", logs: logs, sub: sub}, nil
 }
 
-// WatchStateVariablesUpdated is a free log subscription operation binding the contract event 0xdf66aee38ea9fe523cfd238705d455a354305a646748dbb931898b51cee4727b.
+// WatchStateVariablesUpdated is a free log subscription operation binding the contract event 0xa14044817df9489daf99e2127a4c14ece01bb3248ed2ea2968a0e4814fb631f2.
 //
-// Solidity: event StateVariablesUpdated((uint64,uint64,bool,uint8,uint16,uint32,uint64) slotB)
-func (_LibVerifying *LibVerifyingFilterer) WatchStateVariablesUpdated(opts *bind.WatchOpts, sink chan<- *LibVerifyingStateVariablesUpdated) (event.Subscription, error) {
+// Solidity: event StateVariablesUpdated(uint256 indexed BlockID, (uint64,uint64,bool,uint8,uint16,uint32,uint64) slotB)
+func (_LibVerifying *LibVerifyingFilterer) WatchStateVariablesUpdated(opts *bind.WatchOpts, sink chan<- *LibVerifyingStateVariablesUpdated, BlockID []*big.Int) (event.Subscription, error) {
 
-	logs, sub, err := _LibVerifying.contract.WatchLogs(opts, "StateVariablesUpdated")
+	var BlockIDRule []interface{}
+	for _, BlockIDItem := range BlockID {
+		BlockIDRule = append(BlockIDRule, BlockIDItem)
+	}
+
+	logs, sub, err := _LibVerifying.contract.WatchLogs(opts, "StateVariablesUpdated", BlockIDRule)
 	if err != nil {
 		return nil, err
 	}
@@ -468,9 +479,9 @@ func (_LibVerifying *LibVerifyingFilterer) WatchStateVariablesUpdated(opts *bind
 	}), nil
 }
 
-// ParseStateVariablesUpdated is a log parse operation binding the contract event 0xdf66aee38ea9fe523cfd238705d455a354305a646748dbb931898b51cee4727b.
+// ParseStateVariablesUpdated is a log parse operation binding the contract event 0xa14044817df9489daf99e2127a4c14ece01bb3248ed2ea2968a0e4814fb631f2.
 //
-// Solidity: event StateVariablesUpdated((uint64,uint64,bool,uint8,uint16,uint32,uint64) slotB)
+// Solidity: event StateVariablesUpdated(uint256 indexed BlockID, (uint64,uint64,bool,uint8,uint16,uint32,uint64) slotB)
 func (_LibVerifying *LibVerifyingFilterer) ParseStateVariablesUpdated(log types.Log) (*LibVerifyingStateVariablesUpdated, error) {
 	event := new(LibVerifyingStateVariablesUpdated)
 	if err := _LibVerifying.contract.UnpackLog(event, "StateVariablesUpdated", log); err != nil {
