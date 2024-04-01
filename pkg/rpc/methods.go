@@ -690,6 +690,7 @@ func (c *Client) GetTiers(ctx context.Context) ([]*TierProviderTierWithID, error
 func (c *Client) GetTaikoDataSlotBByNumber(ctx context.Context, number uint64) (*bindings.TaikoDataSlotB, error) {
 	iter, err := c.TaikoL1.FilterStateVariablesUpdated(
 		&bind.FilterOpts{Context: ctx, Start: number, End: &number},
+		nil,
 	)
 	if err != nil {
 		return nil, err
