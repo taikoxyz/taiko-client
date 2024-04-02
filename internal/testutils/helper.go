@@ -74,7 +74,7 @@ func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 	defer cancel()
 
 	s.Nil(backoff.Retry(func() error {
-		return calldataSyncer.ProcessL1Blocks(ctx, newL1Head)
+		return calldataSyncer.ProcessL1Blocks(ctx)
 	}, backoff.NewExponentialBackOff()))
 
 	s.Nil(s.RPCClient.WaitTillL2ExecutionEngineSynced(context.Background()))
@@ -142,7 +142,7 @@ func (s *ClientTestSuite) ProposeAndInsertValidBlock(
 	defer cancel()
 
 	s.Nil(backoff.Retry(func() error {
-		return calldataSyncer.ProcessL1Blocks(ctx, newL1Head)
+		return calldataSyncer.ProcessL1Blocks(ctx)
 	}, backoff.NewExponentialBackOff()))
 
 	s.Nil(s.RPCClient.WaitTillL2ExecutionEngineSynced(context.Background()))

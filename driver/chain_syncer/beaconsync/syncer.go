@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
@@ -36,13 +35,13 @@ func NewSyncer(
 
 // TriggerBeaconSync triggers the L2 execution engine to start performing a beacon sync, if the
 // latest verified block has changed.
-func (s *Syncer) TriggerBeaconSync() error {
-	blockID, latestVerifiedHeadPayload, err := s.getVerifiedBlockPayload(s.ctx)
+func (s *Syncer) TriggerBeaconSync(blockID uint64) error {
+	latestVerifiedHeadPayload, err := s.getVerifiedBlockPayload(s.ctx, blockID)
 	if err != nil {
 		return err
 	}
 
-	if !s.progressTracker.HeadChanged(blockID) {
+	if !s.progressTracker.HeadChanged(new(big.Int).SetUint64(blockID)) {
 		log.Debug("Verified head has not changed", "blockID", blockID, "hash", latestVerifiedHeadPayload.BlockHash)
 		return nil
 	}
@@ -79,7 +78,7 @@ func (s *Syncer) TriggerBeaconSync() error {
 	}
 
 	// Update sync status.
-	s.progressTracker.UpdateMeta(blockID, latestVerifiedHeadPayload.BlockHash)
+	s.progressTracker.UpdateMeta(new(big.Int).SetUint64(blockID), latestVerifiedHeadPayload.BlockHash)
 
 	log.Info(
 		"⛓️ Beacon sync triggered",
@@ -92,29 +91,24 @@ func (s *Syncer) TriggerBeaconSync() error {
 
 // getVerifiedBlockPayload fetches the latest verified block's header, and converts it to an Engine API executable data,
 // which will be used to let the node start beacon syncing.
-func (s *Syncer) getVerifiedBlockPayload(ctx context.Context) (*big.Int, *engine.ExecutableData, error) {
-	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: ctx})
+func (s *Syncer) getVerifiedBlockPayload(ctx context.Context, blockID uint64) (*engine.ExecutableData, error) {
+	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(blockID))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
+	header, err := s.rpc.L2CheckPoint.HeaderByNumber(s.ctx, new(big.Int).SetUint64(blockID))
 	if err != nil {
-		return nil, nil, err
-	}
-
-	header, err := s.rpc.L2CheckPoint.HeaderByNumber(s.ctx, new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId))
-	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if header.Hash() != blockInfo.Ts.BlockHash {
-		return nil, nil, fmt.Errorf(
+		return nil, fmt.Errorf(
 			"latest verified block hash mismatch: %s != %s", header.Hash(), common.BytesToHash(blockInfo.Ts.BlockHash[:]),
 		)
 	}
 
 	log.Info("Latest verified block header retrieved", "hash", header.Hash())
 
-	return new(big.Int).SetUint64(stateVars.B.LastVerifiedBlockId), encoding.ToExecutableData(header), nil
+	return encoding.ToExecutableData(header), nil
 }

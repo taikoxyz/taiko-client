@@ -58,13 +58,10 @@ func (s *DriverTestSuite) TestName() {
 }
 
 func (s *DriverTestSuite) TestProcessL1Blocks() {
-	l1Head1, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-
 	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head1))
+	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background()))
 
 	// Propose a valid L2 block
 	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
@@ -143,7 +140,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 	s.Greater(l1Head4.Number.Uint64(), l1Head2.Number.Uint64())
 
-	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head4))
+	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background()))
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -201,7 +198,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Greater(l1Head4.Number.Uint64(), l1Head3.Number.Uint64())
 	s.Less(l1Head4.Number.Uint64(), l1Head2.Number.Uint64())
 
-	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head4))
+	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background()))
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -258,7 +255,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 
 	s.Greater(l1Head4.Number.Uint64(), l1Head3.Number.Uint64())
 
-	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background(), l1Head4))
+	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background()))
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -271,13 +268,13 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 }
 
 func (s *DriverTestSuite) TestDoSyncNoNewL2Blocks() {
-	s.Nil(s.d.doSync())
+	s.Nil(s.d.l2ChainSyncer.Sync())
 }
 
 func (s *DriverTestSuite) TestStartClose() {
 	s.Nil(s.d.Start())
 	s.cancel()
-	s.d.Close(context.Background())
+	s.d.Close()
 }
 
 func (s *DriverTestSuite) TestL1Current() {
