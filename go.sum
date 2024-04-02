@@ -958,8 +958,8 @@ github.com/swaggo/swag v1.16.2/go.mod h1:6YzXnDcpr0767iOejs318CwYkCQqyGer6BizOg0
 github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7/go.mod h1:q4W45IWZaF22tdD+VEXcAWRA037jwmWEB5VWYORlTpc=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d h1:vfofYNRScrDdvS342BElfbETmL1Aiz3i2t0zfRj16Hs=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
-github.com/taikoxyz/optimism v0.0.0-20240328025531-2e40f7d36ae4 h1:/9evXNu7ZFtiKWG8Xc9F1pgh2wpkDpvTkNmLoBCoSDQ=
-github.com/taikoxyz/optimism v0.0.0-20240328025531-2e40f7d36ae4/go.mod h1:X4jEuxN69o7ZVG20Yt3joIOaCDKb1G/dPYVjnR3XxrU=
+github.com/taikoxyz/optimism v0.0.0-20240402021550-16ec55b37cab h1:YZKGqLj9wmU9S43L/zgOu0FK9dDha2q5Ff1gsNjLrCk=
+github.com/taikoxyz/optimism v0.0.0-20240402021550-16ec55b37cab/go.mod h1:X4jEuxN69o7ZVG20Yt3joIOaCDKb1G/dPYVjnR3XxrU=
 github.com/taikoxyz/taiko-geth v0.0.0-20240325051151-061196ff327c h1:xrVME9T4Gq4DH9y46/b2JqO1uIWwT4wWISWn9e4WqI4=
 github.com/taikoxyz/taiko-geth v0.0.0-20240325051151-061196ff327c/go.mod h1:nqByouVW0a0qx5KKgvYgoXba+pYEHznAAQp6LhZilgM=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
