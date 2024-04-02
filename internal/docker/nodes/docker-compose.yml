@@ -14,8 +14,6 @@ services:
       - "0.0.0.0"
       - --hardfork
       - cancun
-      - --block-time
-      - "1"
 
   l2_execution_engine:
     container_name: l2_node
