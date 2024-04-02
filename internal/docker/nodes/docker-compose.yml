@@ -17,7 +17,7 @@ services:
 
   l2_execution_engine:
     container_name: l2_node
-    image: gcr.io/evmchain/taiko-geth:sha-7ec6b5e
+    image: gcr.io/evmchain/taiko-geth:sha-da89c69
     restart: unless-stopped
     pull_policy: always
     volumes:

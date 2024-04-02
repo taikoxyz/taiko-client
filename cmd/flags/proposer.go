@@ -66,6 +66,18 @@ var (
 		Category: proposerCategory,
 		Value:    0,
 	}
+	BlockMinGasLimit = &cli.Uint64Flag{
+		Name:     "epoch.minGasLimit",
+		Usage:    "Minimum gas limit for a proposed block",
+		Category: proposerCategory,
+		Value:    0,
+	}
+	BlockMinTxListBytes = &cli.Uint64Flag{
+		Name:     "epoch.minTxListBytes",
+		Usage:    "Minimum bytes for a proposed transaction list",
+		Category: proposerCategory,
+		Value:    0,
+	}
 	ProposeEmptyBlocksInterval = &cli.DurationFlag{
 		Name:     "epoch.emptyBlockInterval",
 		Usage:    "Time interval to propose empty blocks",

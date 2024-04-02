@@ -962,8 +962,8 @@ github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d h1:vfofYNRScrDd
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
 github.com/taikoxyz/optimism v0.0.0-20240402022152-070fc9dba2ec h1:3CwBNzTe8gl+enXcbsQrbh4RObS/UCWvZ3dtMrdiuEg=
 github.com/taikoxyz/optimism v0.0.0-20240402022152-070fc9dba2ec/go.mod h1:X4jEuxN69o7ZVG20Yt3joIOaCDKb1G/dPYVjnR3XxrU=
-github.com/taikoxyz/taiko-geth v0.0.0-20240401065233-1e8d3b233894 h1:sXS2kkWgkoxPbtWD5csZGI3YnvD8CBeiFUpL4bba9Bc=
-github.com/taikoxyz/taiko-geth v0.0.0-20240401065233-1e8d3b233894/go.mod h1:nqByouVW0a0qx5KKgvYgoXba+pYEHznAAQp6LhZilgM=
+github.com/taikoxyz/taiko-geth v0.0.0-20240402074646-f24e67d028a4 h1:wfL0uOnwLk/njskM/ZLLhvlZXVzg4ASHNmIGUpk0ObE=
+github.com/taikoxyz/taiko-geth v0.0.0-20240402074646-f24e67d028a4/go.mod h1:nqByouVW0a0qx5KKgvYgoXba+pYEHznAAQp6LhZilgM=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
 github.com/templexxx/cpufeat v0.0.0-20180724012125-cef66df7f161/go.mod h1:wM7WEvslTq+iOEAMDLSzhVuOt5BRZ05WirO+b09GHQU=
 github.com/templexxx/xor v0.0.0-20191217153810-f85b25db303b/go.mod h1:5XA7W9S6mni3h5uvOC75dA3m9CCCaS83lltmc0ukdi4=

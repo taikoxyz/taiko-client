@@ -28,7 +28,9 @@ type Config struct {
 	ProposeInterval            time.Duration
 	LocalAddresses             []common.Address
 	LocalAddressesOnly         bool
-	ProposeEmptyBlocksInterval time.Duration
+	BlockMinGasLimit           uint64
+	BlockMinTxListBytes        uint64
+	ForceEmptyBlocksInterval   time.Duration
 	MaxProposedTxListsPerEpoch uint64
 	ProposeBlockTxGasLimit     uint64
 	WaitReceiptTimeout         time.Duration
@@ -86,14 +88,17 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			TaikoTokenAddress: common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
 			Timeout:           c.Duration(flags.RPCTimeout.Name),
 		},
-		AssignmentHookAddress:      common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
-		L1ProposerPrivKey:          l1ProposerPrivKey,
-		L2SuggestedFeeRecipient:    common.HexToAddress(l2SuggestedFeeRecipient),
-		ExtraData:                  c.String(flags.ExtraData.Name),
-		ProposeInterval:            c.Duration(flags.ProposeInterval.Name),
-		LocalAddresses:             localAddresses,
-		LocalAddressesOnly:         c.Bool(flags.TxPoolLocalsOnly.Name),
-		ProposeEmptyBlocksInterval: c.Duration(flags.ProposeEmptyBlocksInterval.Name),
+		AssignmentHookAddress:   common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
+		L1ProposerPrivKey:       l1ProposerPrivKey,
+		L2SuggestedFeeRecipient: common.HexToAddress(l2SuggestedFeeRecipient),
+		ExtraData:               c.String(flags.ExtraData.Name),
+		ProposeInterval:         c.Duration(flags.ProposeInterval.Name),
+		LocalAddresses:          localAddresses,
+		LocalAddressesOnly:      c.Bool(flags.TxPoolLocalsOnly.Name),
+
+		BlockMinGasLimit:           c.Uint64(flags.BlockMinGasLimit.Name),
+		BlockMinTxListBytes:        c.Uint64(flags.BlockMinTxListBytes.Name),
+		ForceEmptyBlocksInterval:   c.Duration(flags.ProposeEmptyBlocksInterval.Name),
 		MaxProposedTxListsPerEpoch: c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
 		ProposeBlockTxGasLimit:     c.Uint64(flags.TxGasLimit.Name),
 		WaitReceiptTimeout:         c.Duration(flags.WaitReceiptTimeout.Name),

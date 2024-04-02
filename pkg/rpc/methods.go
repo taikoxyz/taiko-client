@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/miner"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -240,7 +241,7 @@ func (c *Client) GetPoolContent(
 	maxBytesPerTxList uint64,
 	locals []common.Address,
 	maxTransactionsLists uint64,
-) ([]types.Transactions, error) {
+) ([]*miner.PreBuiltTxList, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
@@ -270,20 +271,13 @@ func (c *Client) GetPoolContent(
 		localsArg = append(localsArg, local.Hex())
 	}
 
-	var result []types.Transactions
-	err = c.L2.CallContext(
-		ctxWithTimeout,
-		&result,
-		"taiko_txPoolContent",
-		beneficiary,
+	return c.L2Engine.TxPoolContent(
+		ctxWithTimeout, beneficiary,
 		baseFeeInfo.Basefee,
-		blockMaxGasLimit,
+		uint64(blockMaxGasLimit),
 		maxBytesPerTxList,
 		localsArg,
-		maxTransactionsLists,
-	)
-
-	return result, err
+		maxTransactionsLists)
 }
 
 // L2AccountNonce fetches the nonce of the given L2 account at a specified height.

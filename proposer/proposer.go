@@ -188,8 +188,8 @@ func (p *Proposer) eventLoop() {
 					continue
 				}
 				// if no new transactions and empty block interval has passed, propose an empty block
-				if p.ProposeEmptyBlocksInterval != 0 {
-					if time.Now().Before(lastNonEmptyBlockProposedAt.Add(p.ProposeEmptyBlocksInterval)) {
+				if p.ForceEmptyBlocksInterval != 0 {
+					if time.Now().Before(lastNonEmptyBlockProposedAt.Add(p.ForceEmptyBlocksInterval)) {
 						continue
 					}
 
@@ -228,7 +228,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Start fetching L2 execution engine's transaction pool content")
 
-	txLists, err := p.rpc.GetPoolContent(
+	preBuiltTxList, err := p.rpc.GetPoolContent(
 		ctx,
 		p.proposerAddress,
 		p.protocolConfigs.BlockMaxGasLimit,
@@ -238,6 +238,15 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	)
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
+	}
+
+	txLists := make([]types.Transactions, 0, len(preBuiltTxList))
+	for _, txs := range preBuiltTxList {
+		if txs.EstimatedGasUsed < p.BlockMinGasLimit ||
+			txs.BytesLength < p.BlockMinTxListBytes {
+			break
+		}
+		txLists = append(txLists, txs.TxList)
 	}
 
 	if p.LocalAddressesOnly {
