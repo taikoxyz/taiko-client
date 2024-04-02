@@ -48,7 +48,7 @@ func TestTransactionSender(t *testing.T) {
 
 	block, err := client.L1.BlockByNumber(context.Background(), nil)
 	require.Nil(t, err)
-	require.Zero(t, block.Transactions().Len())
+	require.NotZero(t, block.Transactions().Len())
 }
 
 func TestTransactionCount(t *testing.T) {
@@ -56,7 +56,7 @@ func TestTransactionCount(t *testing.T) {
 
 	block, err := client.L1.BlockByNumber(context.Background(), nil)
 	require.Nil(t, err)
-	require.Zero(t, block.Transactions().Len())
+	require.NotZero(t, block.Transactions().Len())
 }
 
 func TestTransactionInBlock(t *testing.T) {
@@ -64,10 +64,10 @@ func TestTransactionInBlock(t *testing.T) {
 
 	block, err := client.L1.BlockByNumber(context.Background(), nil)
 	require.Nil(t, err)
-	require.Zero(t, block.Transactions().Len())
+	require.NotZero(t, block.Transactions().Len())
 
 	_, err = client.L1.TransactionInBlock(context.Background(), block.Hash(), 0)
-	require.NotNil(t, err)
+	require.Nil(t, err)
 }
 
 func TestNetworkID(t *testing.T) {
