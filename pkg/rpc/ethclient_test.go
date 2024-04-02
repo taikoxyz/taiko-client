@@ -7,8 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
-
-	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 func TestBlockByHash(t *testing.T) {
@@ -46,10 +44,7 @@ func TestTransactionByHash(t *testing.T) {
 }
 
 func TestTransactionSender(t *testing.T) {
-	utils.LoadEnv()
 	client := newTestClientWithTimeout(t)
-
-	utils.MineL1Block(t, client.L1.Client)
 
 	block, err := client.L1.BlockByNumber(context.Background(), nil)
 	require.Nil(t, err)
@@ -57,10 +52,7 @@ func TestTransactionSender(t *testing.T) {
 }
 
 func TestTransactionCount(t *testing.T) {
-	utils.LoadEnv()
 	client := newTestClientWithTimeout(t)
-
-	utils.MineL1Block(t, client.L1.Client)
 
 	block, err := client.L1.BlockByNumber(context.Background(), nil)
 	require.Nil(t, err)
@@ -68,10 +60,7 @@ func TestTransactionCount(t *testing.T) {
 }
 
 func TestTransactionInBlock(t *testing.T) {
-	utils.LoadEnv()
 	client := newTestClientWithTimeout(t)
-
-	utils.MineL1Block(t, client.L1.Client)
 
 	block, err := client.L1.BlockByNumber(context.Background(), nil)
 	require.Nil(t, err)
