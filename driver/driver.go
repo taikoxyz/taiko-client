@@ -110,9 +110,22 @@ func (d *Driver) eventLoop() {
 	d.wg.Add(1)
 	defer d.wg.Done()
 
+	syncNotify := make(chan struct{}, 1)
+	// reqSync requests performing a synchronising operation, won't block
+	// if we are already synchronising.
+	reqSync := func() {
+		select {
+		case syncNotify <- struct{}{}:
+		default:
+		}
+	}
+
 	// doSyncWithBackoff performs a synchronising operation with a backoff strategy.
 	doSyncWithBackoff := func() {
-		if err := d.l2ChainSyncer.Sync(); err != nil {
+		if err := backoff.Retry(
+			d.l2ChainSyncer.Sync,
+			backoff.WithContext(backoff.NewConstantBackOff(d.RetryInterval), d.ctx),
+		); err != nil {
 			log.Error("Sync L2 execution engine's block chain error", "error", err)
 		}
 	}
@@ -124,8 +137,10 @@ func (d *Driver) eventLoop() {
 		select {
 		case <-d.ctx.Done():
 			return
-		case <-d.l1HeadCh:
+		case <-syncNotify:
 			doSyncWithBackoff()
+		case <-d.l1HeadCh:
+			reqSync()
 		}
 	}
 }
