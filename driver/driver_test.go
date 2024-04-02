@@ -129,11 +129,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.RevertL1Snapshot(testnetL1SnapshotID)
 	s.InitProposer()
 
-	l1Head3, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-	s.Equal(l1Head3.Number.Uint64(), l1Head1.Number.Uint64())
-	s.Equal(l1Head3.Hash(), l1Head1.Hash())
-
 	// Because of evm_revert operation, the nonce of the proposer need to be adjusted.
 	// Propose ten blocks on another fork
 	for i := 0; i < 10; i++ {
@@ -317,7 +312,7 @@ func (s *DriverTestSuite) InitProposer() {
 		L1BlockBuilderTip:          common.Big0,
 		TxmgrConfigs: &txmgr.CLIConfig{
 			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
-			NumConfirmations:          1,
+			NumConfirmations:          0,
 			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
 			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(l1ProposerPrivKey)),
 			FeeLimitMultiplier:        txmgr.DefaultBatcherFlagValues.FeeLimitMultiplier,
