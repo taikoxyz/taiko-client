@@ -57,6 +57,8 @@ func (h *TransitionProvedEventHandler) Handle(
 		return nil
 	}
 
+	log.Info("Is valid proof", "isValid", isValid)
+
 	// If the proof is invalid, we contest it.
 	blockInfo, err := h.rpc.GetL2BlockInfo(ctx, e.BlockId)
 	if err != nil {
