@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [main,fix-isValidProof]
+    branches: [main]
     tags:
       - "v*"
 
