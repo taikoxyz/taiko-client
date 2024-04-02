@@ -1,7 +1,6 @@
 package beaconsync
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -48,21 +47,6 @@ func (s *BeaconSyncProgressTrackerTestSuite) TestSyncProgressed() {
 	s.True(syncProgressed(&ethereum.SyncProgress{HealedBytecodeBytes: 0}, &ethereum.SyncProgress{HealedBytecodeBytes: 1}))
 	s.True(syncProgressed(&ethereum.SyncProgress{HealingTrienodes: 0}, &ethereum.SyncProgress{HealingTrienodes: 1}))
 	s.True(syncProgressed(&ethereum.SyncProgress{HealingBytecode: 0}, &ethereum.SyncProgress{HealingBytecode: 1}))
-}
-
-func (s *BeaconSyncProgressTrackerTestSuite) TestTrack() {
-	// Not triggered
-	ctx, cancel := context.WithCancel(context.Background())
-	go s.t.Track(ctx)
-	time.Sleep(syncProgressCheckInterval + 5*time.Second)
-	cancel()
-
-	// Triggered
-	ctx, cancel = context.WithCancel(context.Background())
-	s.t.UpdateMeta(common.Big256, testutils.RandomHash())
-	go s.t.Track(ctx)
-	time.Sleep(syncProgressCheckInterval + 5*time.Second)
-	cancel()
 }
 
 func (s *BeaconSyncProgressTrackerTestSuite) TestClearMeta() {

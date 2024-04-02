@@ -10,7 +10,7 @@ var (
 	NumConfirmations = &cli.Uint64Flag{
 		Name:     "tx.numConfirmations",
 		Usage:    "Number of confirmations which we will wait after sending a transaction",
-		Value:    1,
+		Value:    0,
 		Category: txmgrCategory,
 	}
 	SafeAbortNonceTooLowCount = &cli.Uint64Flag{
