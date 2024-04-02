@@ -308,7 +308,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 
 	approvedSink := make(chan *bindings.GuardianProverGuardianApproval)
 	approvedSub, err := s.p.rpc.GuardianProver.WatchGuardianApproval(
-		nil, approvedSink, []common.Address{}, [](*big.Int){},
+		nil, approvedSink, []common.Address{}, [](*big.Int){}, []([32]byte){},
 	)
 	s.Nil(err)
 	defer func() {
