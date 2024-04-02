@@ -123,7 +123,7 @@ func (d *Driver) eventLoop() {
 	// doSyncWithBackoff performs a synchronising operation with a backoff strategy.
 	doSyncWithBackoff := func() {
 		if err := backoff.Retry(
-			d.l2ChainSyncer.Sync,
+			d.doSync,
 			backoff.WithContext(backoff.NewConstantBackOff(d.RetryInterval), d.ctx),
 		); err != nil {
 			log.Error("Sync L2 execution engine's block chain error", "error", err)
@@ -143,6 +143,24 @@ func (d *Driver) eventLoop() {
 			reqSync()
 		}
 	}
+}
+
+// doSync fetches all `BlockProposed` events emitted from local
+// L1 sync cursor to the L1 head, and then applies all corresponding
+// L2 blocks into node's local blockchain.
+func (d *Driver) doSync() error {
+	// Check whether the application is closing.
+	if d.ctx.Err() != nil {
+		log.Warn("Driver context error", "error", d.ctx.Err())
+		return nil
+	}
+
+	if err := d.l2ChainSyncer.Sync(); err != nil {
+		log.Error("Process new L1 blocks error", "error", err)
+		return err
+	}
+
+	return nil
 }
 
 // ChainSyncer returns the driver's chain syncer, this method
