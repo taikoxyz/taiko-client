@@ -78,7 +78,7 @@ var (
 		Category: proposerCategory,
 		Value:    0,
 	}
-	ProposeEmptyBlocksInterval = &cli.DurationFlag{
+	FroceProposingInternal = &cli.DurationFlag{
 		Name:     "epoch.emptyBlockInterval",
 		Usage:    "Time interval to propose empty blocks",
 		Category: proposerCategory,
@@ -139,7 +139,7 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	TxPoolLocals,
 	TxPoolLocalsOnly,
 	ExtraData,
-	ProposeEmptyBlocksInterval,
+	FroceProposingInternal,
 	MaxProposedTxListsPerEpoch,
 	ProverEndpoints,
 	OptimisticTierFee,

@@ -153,7 +153,7 @@ func (s *ProposerTestSuite) getLatestProposedTxs(
 }
 
 func (s *ProposerTestSuite) TestEmptyBlock() {
-	s.p.ForceEmptyBlocksInterval = 3 * time.Second
+	s.p.FroceProposingInternal = 3 * time.Second
 	s.p.BlockMinGasLimit = math.MaxUint64
 	s.p.BlockMinTxListBytes = math.MaxUint64
 	s.p.ProposeInterval = time.Second

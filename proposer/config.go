@@ -30,7 +30,7 @@ type Config struct {
 	LocalAddressesOnly         bool
 	BlockMinGasLimit           uint64
 	BlockMinTxListBytes        uint64
-	ForceEmptyBlocksInterval   time.Duration
+	FroceProposingInternal     time.Duration
 	MaxProposedTxListsPerEpoch uint64
 	ProposeBlockTxGasLimit     uint64
 	WaitReceiptTimeout         time.Duration
@@ -98,7 +98,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 
 		BlockMinGasLimit:           c.Uint64(flags.BlockMinGasLimit.Name),
 		BlockMinTxListBytes:        c.Uint64(flags.BlockMinTxListBytes.Name),
-		ForceEmptyBlocksInterval:   c.Duration(flags.ProposeEmptyBlocksInterval.Name),
+		FroceProposingInternal:     c.Duration(flags.FroceProposingInternal.Name),
 		MaxProposedTxListsPerEpoch: c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
 		ProposeBlockTxGasLimit:     c.Uint64(flags.TxGasLimit.Name),
 		WaitReceiptTimeout:         c.Duration(flags.WaitReceiptTimeout.Name),

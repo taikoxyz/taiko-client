@@ -100,7 +100,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextL2RecipErr() {
 		"TestNewConfigFromCliContextL2RecipErr",
 		"--" + flags.L1ProposerPrivKey.Name, encoding.GoldenTouchPrivKey,
 		"--" + flags.ProposeInterval.Name, proposeInterval,
-		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
+		"--" + flags.FroceProposingInternal.Name, proposeInterval,
 		"--" + flags.L2SuggestedFeeRecipient.Name, "notAnAddress",
 	}), "invalid L2 suggested fee recipient address")
 }
@@ -115,7 +115,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
 		"TestNewConfigFromCliContextTxPoolLocalsErr",
 		"--" + flags.L1ProposerPrivKey.Name, encoding.GoldenTouchPrivKey,
 		"--" + flags.ProposeInterval.Name, proposeInterval,
-		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
+		"--" + flags.FroceProposingInternal.Name, proposeInterval,
 		"--" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"--" + flags.TxPoolLocals.Name, "notAnAddress",
 	}), "invalid account in --txpool.locals")
@@ -131,7 +131,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.TaikoTokenAddress.Name},
 		&cli.StringFlag{Name: flags.L1ProposerPrivKey.Name},
 		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
-		&cli.DurationFlag{Name: flags.ProposeEmptyBlocksInterval.Name},
+		&cli.DurationFlag{Name: flags.FroceProposingInternal.Name},
 		&cli.DurationFlag{Name: flags.ProposeInterval.Name},
 		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
 		&cli.StringFlag{Name: flags.ProverEndpoints.Name},
