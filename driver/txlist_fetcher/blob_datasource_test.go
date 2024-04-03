@@ -2,12 +2,12 @@ package txlistdecoder
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/taikoxyz/taiko-client/bindings"
 	"net/url"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/suite"
+	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 )
 
