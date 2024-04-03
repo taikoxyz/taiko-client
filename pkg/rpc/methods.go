@@ -82,15 +82,10 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 
 // WaitTillL2ExecutionEngineSynced keeps waiting until the L2 execution engine is fully synced.
 func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
-	if ctx.Err() != nil && !errors.Is(ctx.Err(), context.DeadlineExceeded) {
-		return ctx.Err()
-	}
 	start := time.Now()
+
 	return backoff.Retry(
 		func() error {
-			if ctx.Err() != nil && !errors.Is(ctx.Err(), context.DeadlineExceeded) {
-				return ctx.Err()
-			}
 			newCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 			defer cancel()
 			progress, err := c.L2ExecutionEngineSyncProgress(newCtx)
@@ -112,7 +107,7 @@ func (c *Client) WaitTillL2ExecutionEngineSynced(ctx context.Context) error {
 
 			return nil
 		},
-		backoff.NewExponentialBackOff(),
+		backoff.WithContext(backoff.NewExponentialBackOff(), ctx),
 	)
 }
 

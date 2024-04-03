@@ -96,9 +96,7 @@ func (s *ChainSyncerTestSuite) TestGetInnerSyncers() {
 }
 
 func (s *ChainSyncerTestSuite) TestSync() {
-	head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-	s.Nil(s.s.Sync(head))
+	s.Nil(s.s.Sync())
 }
 
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {

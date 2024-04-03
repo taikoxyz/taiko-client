@@ -3,13 +3,11 @@ package testutils
 import (
 	"context"
 
-	"github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/taikoxyz/taiko-client/cmd/utils"
 )
 
 type CalldataSyncer interface {
-	ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
+	ProcessL1Blocks(ctx context.Context) error
 }
 
 type Proposer interface {

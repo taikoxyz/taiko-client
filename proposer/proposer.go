@@ -70,13 +70,13 @@ type Proposer struct {
 }
 
 // InitFromCli New initializes the given proposer instance based on the command line flags.
-func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
+func (p *Proposer) InitFromCli(c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {
 		return err
 	}
 
-	return p.InitFromConfig(ctx, cfg)
+	return p.InitFromConfig(c.Context, cfg)
 }
 
 // InitFromConfig initializes the proposer instance based on the given configurations.
@@ -181,7 +181,7 @@ func (p *Proposer) eventLoop() {
 		// proposing interval timer has been reached
 		case <-p.proposingTimer.C:
 			metrics.ProposerProposeEpochCounter.Inc(1)
-			// attempt propose operation
+			// Attempt propose operation
 			if err := p.ProposeOp(p.ctx); err != nil {
 				if !errors.Is(err, errNoNewTxs) {
 					log.Error("Proposing operation error", "error", err)
@@ -209,7 +209,7 @@ func (p *Proposer) eventLoop() {
 }
 
 // Close closes the proposer instance.
-func (p *Proposer) Close(_ context.Context) {
+func (p *Proposer) Close() {
 	p.wg.Wait()
 }
 

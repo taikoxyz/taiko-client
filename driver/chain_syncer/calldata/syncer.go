@@ -79,9 +79,9 @@ func NewSyncer(
 
 // ProcessL1Blocks fetches all `TaikoL1.BlockProposed` events between given
 // L1 block heights, and then tries inserting them into L2 execution engine's blockchain.
-func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error {
+func (s *Syncer) ProcessL1Blocks(ctx context.Context) error {
 	for {
-		if err := s.processL1Blocks(ctx, l1End); err != nil {
+		if err := s.processL1Blocks(ctx); err != nil {
 			return err
 		}
 
@@ -98,7 +98,8 @@ func (s *Syncer) ProcessL1Blocks(ctx context.Context, l1End *types.Header) error
 
 // processL1Blocks is the inner method which responsible for processing
 // all new L1 blocks.
-func (s *Syncer) processL1Blocks(ctx context.Context, l1End *types.Header) error {
+func (s *Syncer) processL1Blocks(ctx context.Context) error {
+	l1End := s.state.GetL1Head()
 	startL1Current := s.state.GetL1Current()
 	// If there is a L1 reorg, sometimes this will happen.
 	if startL1Current.Number.Uint64() >= l1End.Number.Uint64() && startL1Current.Hash() != l1End.Hash() {

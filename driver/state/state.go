@@ -22,10 +22,10 @@ type State struct {
 	// Feeds
 	l1HeadsFeed event.Feed // L1 new heads notification feed
 
-	l1Head        *atomic.Value // Latest known L1 head
-	l2Head        *atomic.Value // Current L2 execution engine's local chain head
-	l2HeadBlockID *atomic.Value // Latest known L2 block ID in protocol
-	l1Current     *atomic.Value // Current L1 block sync cursor
+	l1Head        atomic.Value // Latest known L1 head
+	l2Head        atomic.Value // Current L2 execution engine's local chain head
+	l2HeadBlockID atomic.Value // Latest known L2 block ID in protocol
+	l1Current     atomic.Value // Current L1 block sync cursor
 
 	// Constants
 	GenesisL1Height *big.Int
@@ -40,12 +40,8 @@ type State struct {
 // New creates a new driver state instance.
 func New(ctx context.Context, rpc *rpc.Client) (*State, error) {
 	s := &State{
-		rpc:           rpc,
-		l1Head:        new(atomic.Value),
-		l2Head:        new(atomic.Value),
-		l2HeadBlockID: new(atomic.Value),
-		l1Current:     new(atomic.Value),
-		stopCh:        make(chan struct{}),
+		rpc:    rpc,
+		stopCh: make(chan struct{}),
 	}
 
 	if err := s.init(ctx); err != nil {

@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,20 +13,17 @@ import (
 )
 
 type SubcommandApplication interface {
-	InitFromCli(context.Context, *cli.Context) error
+	InitFromCli(*cli.Context) error
 	Name() string
 	Start() error
-	Close(context.Context)
+	Close()
 }
 
 func SubcommandAction(app SubcommandApplication) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		logger.InitLogger(c)
 
-		ctx, ctxClose := context.WithCancel(context.Background())
-		defer ctxClose()
-
-		if err := app.InitFromCli(ctx, c); err != nil {
+		if err := app.InitFromCli(c); err != nil {
 			return err
 		}
 
@@ -38,14 +34,13 @@ func SubcommandAction(app SubcommandApplication) cli.ActionFunc {
 			return err
 		}
 
-		if err := metrics.Serve(ctx, c); err != nil {
+		if err := metrics.Serve(c); err != nil {
 			log.Error("Starting metrics server error", "error", err)
 			return err
 		}
 
 		defer func() {
-			ctxClose()
-			app.Close(ctx)
+			app.Close()
 			log.Info("Application stopped", "name", app.Name())
 		}()
 

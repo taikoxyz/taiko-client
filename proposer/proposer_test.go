@@ -163,7 +163,7 @@ func (s *ProposerTestSuite) TestEmptyBlock() {
 
 	// start proposer
 	s.Nil(s.p.Start())
-	defer s.p.Close(context.Background())
+	defer s.p.Close()
 
 	txs, err := s.getLatestProposedTxs(number, 1, time.Second*30)
 	s.Nil(err)
@@ -241,7 +241,7 @@ func (s *ProposerTestSuite) TestProposeOpNoEmptyBlock() {
 	p.BlockMinTxListBytes = blockMinTxListBytes
 	p.ProposeInterval = time.Second
 	s.Nil(p.Start())
-	defer p.Close(context.Background())
+	defer p.Close()
 
 	txs, err := s.getLatestProposedTxs(head.Number.Uint64(), len(txLists), time.Minute)
 	s.Nil(err)
@@ -355,7 +355,7 @@ func (s *ProposerTestSuite) TestUpdateProposingTicker() {
 func (s *ProposerTestSuite) TestStartClose() {
 	s.Nil(s.p.Start())
 	s.cancel()
-	s.NotPanics(func() { s.p.Close(context.Background()) })
+	s.NotPanics(func() { s.p.Close() })
 }
 
 func TestProposerTestSuite(t *testing.T) {

@@ -33,28 +33,26 @@ type Driver struct {
 	l2ChainSyncer *chainSyncer.L2ChainSyncer
 	state         *state.State
 
-	l1HeadCh   chan *types.Header
-	l1HeadSub  event.Subscription
-	syncNotify chan struct{}
+	l1HeadCh  chan *types.Header
+	l1HeadSub event.Subscription
 
 	ctx context.Context
 	wg  sync.WaitGroup
 }
 
 // InitFromCli initializes the given driver instance based on the command line flags.
-func (d *Driver) InitFromCli(ctx context.Context, c *cli.Context) error {
+func (d *Driver) InitFromCli(c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {
 		return err
 	}
 
-	return d.InitFromConfig(ctx, cfg)
+	return d.InitFromConfig(c.Context, cfg)
 }
 
 // InitFromConfig initializes the driver instance based on the given configurations.
 func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 	d.l1HeadCh = make(chan *types.Header, 1024)
-	d.syncNotify = make(chan struct{}, 1)
 	d.ctx = ctx
 	d.Config = cfg
 
@@ -101,7 +99,7 @@ func (d *Driver) Start() error {
 }
 
 // Close closes the driver instance.
-func (d *Driver) Close(_ context.Context) {
+func (d *Driver) Close() {
 	d.l1HeadSub.Unsubscribe()
 	d.state.Close()
 	d.wg.Wait()
@@ -112,11 +110,12 @@ func (d *Driver) eventLoop() {
 	d.wg.Add(1)
 	defer d.wg.Done()
 
+	syncNotify := make(chan struct{}, 1)
 	// reqSync requests performing a synchronising operation, won't block
 	// if we are already synchronising.
 	reqSync := func() {
 		select {
-		case d.syncNotify <- struct{}{}:
+		case syncNotify <- struct{}{}:
 		default:
 		}
 	}
@@ -138,7 +137,7 @@ func (d *Driver) eventLoop() {
 		select {
 		case <-d.ctx.Done():
 			return
-		case <-d.syncNotify:
+		case <-syncNotify:
 			doSyncWithBackoff()
 		case <-d.l1HeadCh:
 			reqSync()
@@ -156,7 +155,7 @@ func (d *Driver) doSync() error {
 		return nil
 	}
 
-	if err := d.l2ChainSyncer.Sync(d.state.GetL1Head()); err != nil {
+	if err := d.l2ChainSyncer.Sync(); err != nil {
 		log.Error("Process new L1 blocks error", "error", err)
 		return err
 	}
@@ -239,18 +238,16 @@ func (d *Driver) exchangeTransitionConfigLoop() {
 		case <-d.ctx.Done():
 			return
 		case <-ticker.C:
-			func() {
-				tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
-					TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
-					TerminalBlockHash:       common.Hash{},
-					TerminalBlockNumber:     0,
-				})
-				if err != nil {
-					log.Error("Failed to exchange Transition Configuration", "error", err)
-				} else {
-					log.Debug("Exchanged transition config", "transitionConfig", tc)
-				}
-			}()
+			tc, err := d.rpc.L2Engine.ExchangeTransitionConfiguration(d.ctx, &engine.TransitionConfigurationV1{
+				TerminalTotalDifficulty: (*hexutil.Big)(common.Big0),
+				TerminalBlockHash:       common.Hash{},
+				TerminalBlockNumber:     0,
+			})
+			if err != nil {
+				log.Error("Failed to exchange Transition Configuration", "error", err)
+			} else {
+				log.Debug("Exchanged transition config", "transitionConfig", tc)
+			}
 		}
 	}
 }
