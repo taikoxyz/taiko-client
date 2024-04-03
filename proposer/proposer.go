@@ -187,7 +187,7 @@ func (p *Proposer) eventLoop() {
 					log.Error("Proposing operation error", "error", err)
 					continue
 				}
-				// if no new transactions and empty block interval has passed, propose an empty block
+				// If there is always no new transaction and the empty block interval has passed, propose an empty block.
 				if p.ForceEmptyBlocksInterval != 0 {
 					if time.Now().Before(lastNonEmptyBlockProposedAt.Add(p.ForceEmptyBlocksInterval)) {
 						continue
