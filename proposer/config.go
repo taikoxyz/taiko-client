@@ -28,9 +28,9 @@ type Config struct {
 	ProposeInterval            time.Duration
 	LocalAddresses             []common.Address
 	LocalAddressesOnly         bool
-	BlockMinGasLimit           uint64
-	BlockMinTxListBytes        uint64
-	FroceProposingInternal     time.Duration
+	MinGasUsed                 uint64
+	MinTxListBytes             uint64
+	MinProposingInternal       time.Duration
 	MaxProposedTxListsPerEpoch uint64
 	ProposeBlockTxGasLimit     uint64
 	WaitReceiptTimeout         time.Duration
@@ -88,17 +88,16 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			TaikoTokenAddress: common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
 			Timeout:           c.Duration(flags.RPCTimeout.Name),
 		},
-		AssignmentHookAddress:   common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
-		L1ProposerPrivKey:       l1ProposerPrivKey,
-		L2SuggestedFeeRecipient: common.HexToAddress(l2SuggestedFeeRecipient),
-		ExtraData:               c.String(flags.ExtraData.Name),
-		ProposeInterval:         c.Duration(flags.ProposeInterval.Name),
-		LocalAddresses:          localAddresses,
-		LocalAddressesOnly:      c.Bool(flags.TxPoolLocalsOnly.Name),
-
-		BlockMinGasLimit:           c.Uint64(flags.BlockMinGasLimit.Name),
-		BlockMinTxListBytes:        c.Uint64(flags.BlockMinTxListBytes.Name),
-		FroceProposingInternal:     c.Duration(flags.FroceProposingInternal.Name),
+		AssignmentHookAddress:      common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
+		L1ProposerPrivKey:          l1ProposerPrivKey,
+		L2SuggestedFeeRecipient:    common.HexToAddress(l2SuggestedFeeRecipient),
+		ExtraData:                  c.String(flags.ExtraData.Name),
+		ProposeInterval:            c.Duration(flags.ProposeInterval.Name),
+		LocalAddresses:             localAddresses,
+		LocalAddressesOnly:         c.Bool(flags.TxPoolLocalsOnly.Name),
+		MinGasUsed:                 c.Uint64(flags.MinGasUsed.Name),
+		MinTxListBytes:             c.Uint64(flags.MinTxListBytes.Name),
+		MinProposingInternal:       c.Duration(flags.MinProposingInternal.Name),
 		MaxProposedTxListsPerEpoch: c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
 		ProposeBlockTxGasLimit:     c.Uint64(flags.TxGasLimit.Name),
 		WaitReceiptTimeout:         c.Duration(flags.WaitReceiptTimeout.Name),

@@ -66,21 +66,21 @@ var (
 		Category: proposerCategory,
 		Value:    0,
 	}
-	BlockMinGasLimit = &cli.Uint64Flag{
-		Name:     "epoch.minGasLimit",
-		Usage:    "Minimum gas limit for a proposed block",
+	MinGasUsed = &cli.Uint64Flag{
+		Name:     "epoch.minGasUsed",
+		Usage:    "Minimum gas used for a transactions list to propose",
 		Category: proposerCategory,
 		Value:    0,
 	}
-	BlockMinTxListBytes = &cli.Uint64Flag{
+	MinTxListBytes = &cli.Uint64Flag{
 		Name:     "epoch.minTxListBytes",
-		Usage:    "Minimum bytes for a proposed transaction list",
+		Usage:    "Minimum bytes for a transactions list to propose",
 		Category: proposerCategory,
 		Value:    0,
 	}
-	FroceProposingInternal = &cli.DurationFlag{
-		Name:     "epoch.emptyBlockInterval",
-		Usage:    "Time interval to propose empty blocks",
+	MinProposingInternal = &cli.DurationFlag{
+		Name:     "epoch.minProposingInterval",
+		Usage:    "Minimum time interval to force proposing a block, even if there are no transaction in mempool",
 		Category: proposerCategory,
 		Value:    0,
 	}
@@ -139,7 +139,9 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	TxPoolLocals,
 	TxPoolLocalsOnly,
 	ExtraData,
-	FroceProposingInternal,
+	MinGasUsed,
+	MinTxListBytes,
+	MinProposingInternal,
 	MaxProposedTxListsPerEpoch,
 	ProverEndpoints,
 	OptimisticTierFee,

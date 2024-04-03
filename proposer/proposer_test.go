@@ -2,21 +2,24 @@ package proposer
 
 import (
 	"context"
-	"math/big"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/miner"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
+	"github.com/taikoxyz/taiko-client/driver/state"
 	txlistfetcher "github.com/taikoxyz/taiko-client/driver/txlist_fetcher"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/internal/utils"
@@ -26,12 +29,26 @@ import (
 
 type ProposerTestSuite struct {
 	testutils.ClientTestSuite
+	s      *calldata.Syncer
 	p      *Proposer
 	cancel context.CancelFunc
 }
 
 func (s *ProposerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
+
+	state2, err := state.New(context.Background(), s.RPCClient)
+	s.Nil(err)
+
+	syncer, err := calldata.NewSyncer(
+		context.Background(),
+		s.RPCClient,
+		state2,
+		beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 1*time.Hour),
+		0,
+	)
+	s.Nil(err)
+	s.s = syncer
 
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -57,6 +74,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		AssignmentHookAddress:      common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
+		MinProposingInternal:       0,
 		ProposeInterval:            1024 * time.Hour,
 		MaxProposedTxListsPerEpoch: 1,
 		WaitReceiptTimeout:         12 * time.Second,
@@ -120,101 +138,92 @@ func parseTxs(client *rpc.Client, event *bindings.TaikoL1ClientBlockProposed) (t
 }
 
 func (s *ProposerTestSuite) getLatestProposedTxs(
-	start uint64,
 	n int,
 	timeout time.Duration,
-) ([]types.Transactions, error) {
+) (<-chan []types.Transactions, error) {
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
-
-	sub, err := s.p.rpc.TaikoL1.WatchBlockProposed(&bind.WatchOpts{
-		Start: &start,
-	}, sink, nil, nil)
+	sub, err := s.p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	defer sub.Unsubscribe()
 
-	var txLst = make([]types.Transactions, 0, n)
-	tick := time.After(timeout)
-	for len(txLst) < cap(txLst) {
-		select {
-		case event := <-sink:
-			txs, err := parseTxs(s.RPCClient, event)
-			if err != nil {
-				return nil, err
+	var resCh = make(chan []types.Transactions, 1)
+	go func() {
+		defer sub.Unsubscribe()
+
+		txLst := make([]types.Transactions, 0, n)
+		tick := time.After(timeout)
+		for len(txLst) < cap(txLst) {
+			select {
+			case event := <-sink:
+				txs, err := parseTxs(s.RPCClient, event)
+				if err != nil {
+					log.Error("failed to parse txs", "err", err)
+				}
+				txLst = append(txLst, txs)
+			case <-tick:
+				return
 			}
-			txLst = append(txLst, txs)
-		case <-tick:
-			break
 		}
-	}
+		resCh <- txLst
+	}()
 
-	return txLst, nil
+	return resCh, nil
 }
 
-func (s *ProposerTestSuite) TestEmptyBlock() {
-	s.p.FroceProposingInternal = 3 * time.Second
-	s.p.BlockMinGasLimit = math.MaxUint64
-	s.p.BlockMinTxListBytes = math.MaxUint64
-	s.p.ProposeInterval = time.Second
+func (s *ProposerTestSuite) TestProposeOpEmptyBlock() {
+	// mint blocks
+	defer s.Nil(s.s.ProcessL1Blocks(context.Background()))
 
-	number, err := s.RPCClient.L1.BlockNumber(context.Background())
+	p := s.p
+
+	txsCh, err := s.getLatestProposedTxs(1, time.Minute)
 	s.Nil(err)
 
-	// start proposer
-	s.Nil(s.p.Start())
-	defer s.p.Close()
+	// Start proposer
+	p.LocalAddressesOnly = false
+	p.MinGasUsed = math.MaxUint64
+	p.MinTxListBytes = math.MaxUint64
+	p.MinProposingInternal = 0
+	s.Nil(p.ProposeOp(context.Background()))
 
-	txs, err := s.getLatestProposedTxs(number, 1, time.Second*30)
+	// wait result.
+	txs := <-txsCh
 	s.Nil(err)
-	s.Equal(true, len(txs) == 1 && len(txs[0]) == 0)
+	s.Equal(true, len(txs) == 1 && txs[0].Len() == 0)
 }
 
 func (s *ProposerTestSuite) TestProposeOpNoEmptyBlock() {
+	defer s.Nil(s.s.ProcessL1Blocks(context.Background()))
+
 	p := s.p
 
-	head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-
-	auth, err := bind.NewKeyedTransactorWithChainID(p.L1ProposerPrivKey, s.RPCClient.L2.ChainID)
-	s.Nil(err)
-
-	nonce, err := s.RPCClient.L2.PendingNonceAt(context.Background(), auth.From)
-	s.Nil(err)
-
-	gasTipCap, err := s.RPCClient.L2.SuggestGasTipCap(context.Background())
-	s.Nil(err)
-	gasFeeCap := new(big.Int).Add(
-		gasTipCap,
-		new(big.Int).Mul(head.BaseFee, big.NewInt(2)),
-	)
-
 	batchSize := 100
+
+	var err error
 	for i := 0; i < batchSize; i++ {
 		to := common.BytesToAddress(testutils.RandomBytes(32))
-		baseTx := types.NewTx(&types.DynamicFeeTx{
-			ChainID:   s.RPCClient.L2.ChainID,
-			To:        &to,
-			Nonce:     nonce + uint64(i),
-			GasTipCap: gasTipCap,
-			GasFeeCap: gasFeeCap,
-			Gas:       2100000,
-		})
-		tx, err := auth.Signer(auth.From, baseTx)
+		_, err = testutils.MakeDynamicTx(s.RPCClient.L2, s.TestAddrPrivKey, &to, nil, nil)
 		s.Nil(err)
-		s.Nil(s.RPCClient.L2.SendTransaction(context.Background(), tx))
 	}
 
-	preBuiltTxList, err := s.RPCClient.GetPoolContent(
-		context.Background(),
-		p.proposerAddress,
-		p.protocolConfigs.BlockMaxGasLimit,
-		rpc.BlockMaxTxListBytes,
-		p.LocalAddresses,
-		p.MaxProposedTxListsPerEpoch,
-	)
+	var preBuiltTxList []*miner.PreBuiltTxList
+	for i := 0; i < 3 && len(preBuiltTxList) == 0; i++ {
+		preBuiltTxList, err = s.RPCClient.GetPoolContent(
+			context.Background(),
+			p.proposerAddress,
+			p.protocolConfigs.BlockMaxGasLimit,
+			rpc.BlockMaxTxListBytes,
+			p.LocalAddresses,
+			p.MaxProposedTxListsPerEpoch,
+		)
+		time.Sleep(time.Second)
+	}
 	s.Nil(err)
 	s.Equal(true, len(preBuiltTxList) > 0)
+
+	txsCh, err := s.getLatestProposedTxs(len(preBuiltTxList), time.Minute)
+	s.Nil(err)
 
 	var (
 		blockMinGasLimit    uint64 = math.MaxUint64
@@ -237,21 +246,22 @@ func (s *ProposerTestSuite) TestProposeOpNoEmptyBlock() {
 
 	// Start proposer
 	p.LocalAddressesOnly = false
-	p.BlockMinGasLimit = blockMinGasLimit
-	p.BlockMinTxListBytes = blockMinTxListBytes
+	p.MinGasUsed = blockMinGasLimit
+	p.MinTxListBytes = blockMinTxListBytes
 	p.ProposeInterval = time.Second
-	s.Nil(p.Start())
-	defer p.Close()
+	p.MinProposingInternal = time.Minute
+	s.Nil(p.ProposeOp(context.Background()))
 
-	txs, err := s.getLatestProposedTxs(head.Number.Uint64(), len(txLists), time.Minute)
-	s.Nil(err)
-
+	txs := <-txsCh
 	for i := 0; i < len(txLists); i++ {
 		s.Equal(txLists[i].Len(), txs[i].Len())
 	}
 }
 
 func (s *ProposerTestSuite) TestProposeOp() {
+	// mint blocks
+	defer s.Nil(s.s.ProcessL1Blocks(context.Background()))
+
 	// Propose txs in L2 execution engine's mempool
 	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
 
@@ -262,29 +272,9 @@ func (s *ProposerTestSuite) TestProposeOp() {
 		close(sink)
 	}()
 
-	nonce, err := s.p.rpc.L2.PendingNonceAt(context.Background(), s.TestAddr)
+	to := common.BytesToAddress(testutils.RandomBytes(20))
+	_, err = testutils.MakeDynamicTx(s.RPCClient.L2, s.TestAddrPrivKey, &to, nil, nil)
 	s.Nil(err)
-
-	parent, err := s.p.rpc.L2.BlockByNumber(context.Background(), nil)
-	s.Nil(err)
-
-	baseFeeInfo, err := s.p.rpc.TaikoL2.GetBasefee(nil, 1, uint32(parent.GasUsed()))
-	s.Nil(err)
-
-	to := common.BytesToAddress(testutils.RandomBytes(32))
-	tx := types.NewTx(&types.DynamicFeeTx{
-		ChainID:   s.RPCClient.L2.ChainID,
-		Nonce:     nonce,
-		GasTipCap: common.Big0,
-		GasFeeCap: new(big.Int).SetUint64(baseFeeInfo.Basefee.Uint64() * 2),
-		Gas:       21000,
-		To:        &to,
-		Value:     common.Big1,
-	})
-
-	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.p.rpc.L2.ChainID), s.TestAddrPrivKey)
-	s.Nil(err)
-	s.Nil(s.p.rpc.L2.SendTransaction(context.Background(), signedTx))
 
 	s.Nil(s.p.ProposeOp(context.Background()))
 
@@ -315,11 +305,8 @@ func (s *ProposerTestSuite) TestProposeOpLocalsOnly() {
 		close(sink)
 	}()
 
+	s.p.MinProposingInternal = 1 * time.Hour
 	s.Error(errNoNewTxs, s.p.ProposeOp(context.Background()))
-}
-
-func (s *ProposerTestSuite) TestProposeEmptyBlockOp() {
-	s.Nil(s.p.ProposeEmptyBlockOp(context.Background()))
 }
 
 func (s *ProposerTestSuite) TestCustomProposeOpHook() {

@@ -13,7 +13,6 @@ type CalldataSyncer interface {
 type Proposer interface {
 	utils.SubcommandApplication
 	ProposeOp(ctx context.Context) error
-	ProposeEmptyBlockOp(ctx context.Context) error
 	ProposeTxList(
 		ctx context.Context,
 		txListBytes []byte,
