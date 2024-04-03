@@ -63,6 +63,7 @@ func (s *EventHandlerTestSuite) SetupTest() {
 		testState,
 		tracker,
 		0,
+		nil,
 	)
 	s.Nil(err)
 
