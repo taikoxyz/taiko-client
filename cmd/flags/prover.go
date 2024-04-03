@@ -26,15 +26,16 @@ var (
 		Required: true,
 		Category: proverCategory,
 	}
+	RaikoHostEndpoint = &cli.StringFlag{
+		Name:     "raiko.hostEndpoint",
+		Usage:    "RPC endpoint of a Raiko host service",
+		Required: true,
+		Category: proverCategory,
+	}
 )
 
 // Optional flags used by prover.
 var (
-	RaikoHostEndpoint = &cli.StringFlag{
-		Name:     "raiko.hostEndpoint",
-		Usage:    "RPC endpoint of a Raiko host service",
-		Category: proverCategory,
-	}
 	StartingBlockID = &cli.Uint64Flag{
 		Name:     "prover.startingBlockID",
 		Usage:    "If set, prover will start proving blocks from the block with this ID",
