@@ -290,36 +290,6 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	s.Equal(types.ReceiptStatusSuccessful, receipt.Status)
 }
 
-func (s *ProposerTestSuite) TestProposeOpLocalsOnly() {
-	s.p.LocalAddresses = []common.Address{common.BytesToAddress(testutils.RandomBytes(20))}
-	s.p.LocalAddressesOnly = true
-
-	// Propose txs in L2 execution engine's mempool
-	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
-
-	sub, err := s.p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
-	s.Nil(err)
-	defer func() {
-		sub.Unsubscribe()
-		close(sink)
-	}()
-
-	s.p.MinProposingInternal = 1 * time.Hour
-	s.Error(errNoNewTxs, s.p.ProposeOp(context.Background()))
-}
-
-func (s *ProposerTestSuite) TestCustomProposeOpHook() {
-	flag := false
-
-	s.p.CustomProposeOpHook = func() error {
-		flag = true
-		return nil
-	}
-
-	s.Nil(s.p.ProposeOp(context.Background()))
-	s.True(flag)
-}
-
 func (s *ProposerTestSuite) TestAssignProverSuccessFirstRound() {
 	s.SetL1Automine(false)
 	defer s.SetL1Automine(true)
