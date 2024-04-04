@@ -7,7 +7,10 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
+	"github.com/ethereum-optimism/optimism/op-service/txmgr/metrics"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -15,6 +18,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -100,26 +104,58 @@ func (s *ClientTestSuite) SetupTest() {
 }
 
 func (s *ClientTestSuite) setAllowance(key *ecdsa.PrivateKey) {
+	t, err := txmgr.NewSimpleTxManager(
+		"setAllowance",
+		log.Root(),
+		new(metrics.NoopTxMetrics),
+		txmgr.CLIConfig{
+			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
+			NumConfirmations:          0,
+			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
+			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(key)),
+			FeeLimitMultiplier:        txmgr.DefaultBatcherFlagValues.FeeLimitMultiplier,
+			FeeLimitThresholdGwei:     txmgr.DefaultBatcherFlagValues.FeeLimitThresholdGwei,
+			MinBaseFeeGwei:            txmgr.DefaultBatcherFlagValues.MinBaseFeeGwei,
+			MinTipCapGwei:             txmgr.DefaultBatcherFlagValues.MinTipCapGwei,
+			ResubmissionTimeout:       txmgr.DefaultBatcherFlagValues.ResubmissionTimeout,
+			ReceiptQueryInterval:      1 * time.Second,
+			NetworkTimeout:            txmgr.DefaultBatcherFlagValues.NetworkTimeout,
+			TxSendTimeout:             txmgr.DefaultBatcherFlagValues.TxSendTimeout,
+			TxNotInMempoolTimeout:     txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
+		},
+	)
+	s.Nil(err)
+
 	decimal, err := s.RPCClient.TaikoToken.Decimals(nil)
 	s.Nil(err)
 
-	bigInt := new(big.Int).Exp(big.NewInt(1_000_000_000), new(big.Int).SetUint64(uint64(decimal)), nil)
+	var (
+		bigInt            = new(big.Int).Exp(big.NewInt(1_000_000_000), new(big.Int).SetUint64(uint64(decimal)), nil)
+		taikoTokenAddress = common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS"))
+	)
 
-	opts, err := bind.NewKeyedTransactorWithChainID(key, s.RPCClient.L1.ChainID)
-	s.Nil(err)
-
-	_, err = s.RPCClient.TaikoToken.Approve(
-		opts,
+	data, err := encoding.TaikoTokenABI.Pack(
+		"approve",
 		common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		bigInt,
 	)
 	s.Nil(err)
+	_, err = t.Send(context.Background(), txmgr.TxCandidate{
+		TxData: data,
+		To:     &taikoTokenAddress,
+	})
+	s.Nil(err)
 
-	_, err = s.RPCClient.TaikoToken.Approve(
-		opts,
+	data, err = encoding.TaikoTokenABI.Pack(
+		"approve",
 		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		bigInt,
 	)
+	s.Nil(err)
+	_, err = t.Send(context.Background(), txmgr.TxCandidate{
+		TxData: data,
+		To:     &taikoTokenAddress,
+	})
 	s.Nil(err)
 }
 
