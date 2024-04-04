@@ -130,6 +130,10 @@ var (
 				},
 			},
 		},
+		{
+			Name: "signature",
+			Type: "bytes",
+		},
 	}
 	proverAssignmentComponents = []abi.ArgumentMarshaling{
 		{

@@ -2,6 +2,7 @@ package builder
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"math/big"
 
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
@@ -17,6 +18,7 @@ import (
 // bytes saved in calldata.
 type CalldataTransactionBuilder struct {
 	rpc                     *rpc.Client
+	proposerPrivateKey      *ecdsa.PrivateKey
 	proverSelector          selector.ProverSelector
 	l1BlockBuilderTip       *big.Int
 	l2SuggestedFeeRecipient common.Address
@@ -29,6 +31,7 @@ type CalldataTransactionBuilder struct {
 // NewCalldataTransactionBuilder creates a new CalldataTransactionBuilder instance based on giving configurations.
 func NewCalldataTransactionBuilder(
 	rpc *rpc.Client,
+	proposerPrivateKey *ecdsa.PrivateKey,
 	proverSelector selector.ProverSelector,
 	l1BlockBuilderTip *big.Int,
 	l2SuggestedFeeRecipient common.Address,
@@ -39,6 +42,7 @@ func NewCalldataTransactionBuilder(
 ) *CalldataTransactionBuilder {
 	return &CalldataTransactionBuilder{
 		rpc,
+		proposerPrivateKey,
 		proverSelector,
 		l1BlockBuilderTip,
 		l2SuggestedFeeRecipient,
@@ -83,6 +87,12 @@ func (b *CalldataTransactionBuilder) Build(
 		return nil, err
 	}
 
+	signature, err := crypto.Sign(crypto.Keccak256(txListBytes), b.proposerPrivateKey)
+	if err != nil {
+		return nil, err
+	}
+	signature[64] = uint8(uint(signature[64])) + 27
+
 	// ABI encode the TaikoL1.proposeBlock parameters.
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		AssignedProver: assignedProver,
@@ -90,6 +100,7 @@ func (b *CalldataTransactionBuilder) Build(
 		ExtraData:      rpc.StringToBytes32(b.extraData),
 		ParentMetaHash: parentMetaHash,
 		HookCalls:      []encoding.HookCall{{Hook: b.assignmentHookAddress, Data: hookInputData}},
+		Signature:      signature,
 	})
 	if err != nil {
 		return nil, err

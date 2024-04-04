@@ -132,6 +132,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	if cfg.BlobAllowed {
 		p.txBuilder = builder.NewBlobTransactionBuilder(
 			p.rpc,
+			p.L1ProposerPrivKey,
 			p.proverSelector,
 			p.Config.L1BlockBuilderTip,
 			cfg.TaikoL1Address,
@@ -143,6 +144,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	} else {
 		p.txBuilder = builder.NewCalldataTransactionBuilder(
 			p.rpc,
+			p.L1ProposerPrivKey,
 			p.proverSelector,
 			p.Config.L1BlockBuilderTip,
 			cfg.L2SuggestedFeeRecipient,
