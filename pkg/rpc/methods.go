@@ -370,7 +370,7 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*struct {
 	if opts.Context != nil {
 		ctx = opts.Context
 	}
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, defaultWaitReceiptTimeout)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 	opts.Context = ctxWithTimeout
 

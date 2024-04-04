@@ -65,7 +65,7 @@ func (s *TransactionBuilderTestSuite) SetupTest() {
 func (s *TransactionBuilderTestSuite) TestGetParentMetaHash() {
 	metahash, err := getParentMetaHash(context.Background(), s.RPCClient)
 	s.Nil(err)
-	s.Empty(metahash)
+	s.NotEmpty(metahash)
 }
 
 func TestTransactionBuilderTestSuite(t *testing.T) {

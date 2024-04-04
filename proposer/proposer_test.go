@@ -77,7 +77,6 @@ func (s *ProposerTestSuite) SetupTest() {
 		MinProposingInternal:       0,
 		ProposeInterval:            1024 * time.Hour,
 		MaxProposedTxListsPerEpoch: 1,
-		WaitReceiptTimeout:         12 * time.Second,
 		ProverEndpoints:            s.ProverEndpoints,
 		OptimisticTierFee:          common.Big256,
 		SgxTierFee:                 common.Big256,
