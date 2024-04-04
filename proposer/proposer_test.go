@@ -202,7 +202,7 @@ func (s *ProposerTestSuite) TestProposeOpNoEmptyBlock() {
 	var err error
 	for i := 0; i < batchSize; i++ {
 		to := common.BytesToAddress(testutils.RandomBytes(32))
-		_, err = testutils.MakeDynamicTx(s.RPCClient.L2, s.TestAddrPrivKey, &to, nil, nil)
+		_, err = testutils.SendDynamicFeeTx(s.RPCClient.L2, s.TestAddrPrivKey, &to, nil, nil)
 		s.Nil(err)
 	}
 
@@ -272,7 +272,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 	}()
 
 	to := common.BytesToAddress(testutils.RandomBytes(20))
-	_, err = testutils.MakeDynamicTx(s.RPCClient.L2, s.TestAddrPrivKey, &to, nil, nil)
+	_, err = testutils.SendDynamicFeeTx(s.RPCClient.L2, s.TestAddrPrivKey, &to, nil, nil)
 	s.Nil(err)
 
 	s.Nil(s.p.ProposeOp(context.Background()))

@@ -267,12 +267,14 @@ func (c *Client) GetPoolContent(
 	}
 
 	return c.L2Engine.TxPoolContent(
-		ctxWithTimeout, beneficiary,
+		ctxWithTimeout,
+		beneficiary,
 		baseFeeInfo.Basefee,
 		uint64(blockMaxGasLimit),
 		maxBytesPerTxList,
 		localsArg,
-		maxTransactionsLists)
+		maxTransactionsLists,
+	)
 }
 
 // L2AccountNonce fetches the nonce of the given L2 account at a specified height.

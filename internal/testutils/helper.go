@@ -33,15 +33,10 @@ func (s *ClientTestSuite) ProposeInvalidTxListBytes(proposer Proposer) {
 	s.Nil(proposer.ProposeTxList(context.Background(), invalidTxListBytes, 1))
 }
 
-func (s *ClientTestSuite) proposeEmptyBlockOp(ctx context.Context, proposer Proposer) error {
+func (s *ClientTestSuite) proposeEmptyBlockOp(ctx context.Context, proposer Proposer) {
 	emptyTxListBytes, err := rlp.EncodeToBytes(types.Transactions{})
-	if err != nil {
-		return err
-	}
-	if err = proposer.ProposeTxList(ctx, emptyTxListBytes, 0); err != nil {
-		return err
-	}
-	return nil
+	s.Nil(err)
+	s.Nil(proposer.ProposeTxList(ctx, emptyTxListBytes, 0))
 }
 
 func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
@@ -72,7 +67,7 @@ func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 	s.ProposeInvalidTxListBytes(proposer)
 
 	// Random bytes txList
-	s.Nil(s.proposeEmptyBlockOp(context.Background(), proposer))
+	s.proposeEmptyBlockOp(context.Background(), proposer)
 
 	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
 
@@ -314,8 +309,8 @@ func SignatureFromRSV(r, s string, v byte) []byte {
 	return append(append(hexutil.MustDecode(r), hexutil.MustDecode(s)...), v)
 }
 
-// MakeDynamicTx creates a dynamic transaction, used for tests.
-func MakeDynamicTx(
+// SendDynamicFeeTx sends a dynamic transaction, used for tests.
+func SendDynamicFeeTx(
 	client *rpc.EthClient,
 	priv *ecdsa.PrivateKey,
 	to *common.Address,

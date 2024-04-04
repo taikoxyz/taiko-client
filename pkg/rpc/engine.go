@@ -99,6 +99,7 @@ func (c *EngineClient) ExchangeTransitionConfiguration(
 	return result, nil
 }
 
+// TxPoolContent fetches the transaction pool content from the L2 execution engine.
 func (c *EngineClient) TxPoolContent(
 	ctx context.Context,
 	beneficiary common.Address,
@@ -111,8 +112,8 @@ func (c *EngineClient) TxPoolContent(
 	timeoutCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
-	result := make([]*miner.PreBuiltTxList, 0)
-	err := c.CallContext(
+	var result []*miner.PreBuiltTxList
+	if err := c.CallContext(
 		timeoutCtx,
 		&result,
 		"taikoAuth_txPoolContent",
@@ -122,8 +123,7 @@ func (c *EngineClient) TxPoolContent(
 		maxBytesPerTxList,
 		locals,
 		maxTransactionsLists,
-	)
-	if err != nil {
+	); err != nil {
 		return nil, err
 	}
 	return result, nil
