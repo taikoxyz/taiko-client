@@ -61,9 +61,8 @@ type Proposer struct {
 
 	txmgr *txmgr.SimpleTxManager
 
-	ctx    context.Context
-	wg     sync.WaitGroup
-	stopCh chan struct{}
+	ctx context.Context
+	wg  sync.WaitGroup
 }
 
 // InitFromCli New initializes the given proposer instance based on the command line flags.
@@ -82,7 +81,6 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	p.ctx = ctx
 	p.Config = cfg
 	p.lastUnfilteredPoolContentProposedAt = time.Now()
-	p.stopCh = make(chan struct{})
 
 	// RPC clients
 	if p.rpc, err = rpc.NewClient(p.ctx, cfg.ClientConfig); err != nil {
@@ -176,8 +174,6 @@ func (p *Proposer) eventLoop() {
 		p.updateProposingTicker()
 
 		select {
-		case <-p.stopCh:
-			return
 		case <-p.ctx.Done():
 			return
 		// proposing interval timer has been reached
@@ -195,7 +191,6 @@ func (p *Proposer) eventLoop() {
 
 // Close closes the proposer instance.
 func (p *Proposer) Close() {
-	close(p.stopCh)
 	p.wg.Wait()
 }
 

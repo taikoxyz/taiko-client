@@ -33,16 +33,12 @@ type State struct {
 	// RPC clients
 	rpc *rpc.Client
 
-	stopCh chan struct{}
-	wg     sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 // New creates a new driver state instance.
 func New(ctx context.Context, rpc *rpc.Client) (*State, error) {
-	s := &State{
-		rpc:    rpc,
-		stopCh: make(chan struct{}),
-	}
+	s := &State{rpc: rpc}
 
 	if err := s.init(ctx); err != nil {
 		return nil, err
@@ -55,7 +51,6 @@ func New(ctx context.Context, rpc *rpc.Client) (*State, error) {
 
 // Close closes all inner subscriptions.
 func (s *State) Close() {
-	close(s.stopCh)
 	s.wg.Wait()
 }
 
@@ -129,8 +124,6 @@ func (s *State) eventLoop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			return
-		case <-s.stopCh:
 			return
 		case e := <-blockProposedCh:
 			s.setHeadBlockID(e.BlockId)
