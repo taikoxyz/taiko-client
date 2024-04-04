@@ -180,8 +180,9 @@ func (p *Proposer) eventLoop() {
 			return
 		// proposing interval timer has been reached
 		case <-p.proposingTimer.C:
-			// Attempt propose operation
 			metrics.ProposerProposeEpochCounter.Inc(1)
+
+			// Attempt a proposing operation
 			if err := p.ProposeOp(p.ctx); err != nil {
 				log.Error("Proposing operation error", "error", err)
 				continue
