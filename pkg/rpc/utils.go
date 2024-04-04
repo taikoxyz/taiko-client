@@ -2,9 +2,7 @@ package rpc
 
 import (
 	"context"
-	"fmt"
 	"math/big"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -24,7 +22,6 @@ import (
 var (
 	ZeroAddress                common.Address
 	waitReceiptPollingInterval        = 3 * time.Second
-	defaultWaitReceiptTimeout         = 1 * time.Minute
 	BlobBytes                         = params.BlobTxBytesPerFieldElement * params.BlobTxFieldElementsPerBlob
 	BlockMaxTxListBytes        uint64 = (params.BlobTxBytesPerFieldElement - 1) * params.BlobTxFieldElementsPerBlob
 )
@@ -94,48 +91,6 @@ func CheckProverBalance(
 	}
 
 	return true, nil
-}
-
-// WaitReceipt keeps waiting until the given transaction has an execution
-// receipt to know whether it was reverted or not.
-func WaitReceipt(
-	ctx context.Context,
-	client *EthClient,
-	tx *types.Transaction,
-) (*types.Receipt, error) {
-	ticker := time.NewTicker(waitReceiptPollingInterval)
-	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultWaitReceiptTimeout)
-
-	defer func() {
-		cancel()
-		ticker.Stop()
-	}()
-
-	// If we are running tests, we don't need to wait for `waitL1OriginPollingInterval` seconds
-	// at first, just start fetching the receipt immediately.
-	if os.Getenv("RUN_TESTS") == "" {
-		<-time.After(waitL1OriginPollingInterval)
-	}
-
-	for ; true; <-ticker.C {
-		if ctxWithTimeout.Err() != nil {
-			return nil, ctxWithTimeout.Err()
-		}
-
-		receipt, err := client.TransactionReceipt(ctxWithTimeout, tx.Hash())
-		if err != nil {
-			log.Debug("Failed to fetch transaction receipt", "hash", tx.Hash(), "error", err)
-			continue
-		}
-
-		if receipt.Status != types.ReceiptStatusSuccessful {
-			return nil, fmt.Errorf("transaction reverted, hash: %s", tx.Hash())
-		}
-
-		return receipt, nil
-	}
-
-	return nil, fmt.Errorf("failed to find the receipt for transaction %s", tx.Hash())
 }
 
 // BlockProofStatus represents the proving status of the given L2 block.

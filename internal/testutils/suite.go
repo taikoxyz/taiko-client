@@ -89,9 +89,7 @@ func (s *ClientTestSuite) SetupTest() {
 		proverBalance := new(big.Int).Div(balance, common.Big2)
 		s.Greater(proverBalance.Cmp(common.Big0), 0)
 
-		tx, err := rpcCli.TaikoToken.Transfer(opts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), proverBalance)
-		s.Nil(err)
-		_, err = rpc.WaitReceipt(context.Background(), rpcCli.L1, tx)
+		_, err = rpcCli.TaikoToken.Transfer(opts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), proverBalance)
 		s.Nil(err)
 
 		// Increase allowance for AssignmentHook and TaikoL1
@@ -117,14 +115,11 @@ func (s *ClientTestSuite) setAllowance(key *ecdsa.PrivateKey) {
 	)
 	s.Nil(err)
 
-	tx, err := s.RPCClient.TaikoToken.Approve(
+	_, err = s.RPCClient.TaikoToken.Approve(
 		opts,
 		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		bigInt,
 	)
-	s.Nil(err)
-
-	_, err = rpc.WaitReceipt(context.Background(), s.RPCClient.L1, tx)
 	s.Nil(err)
 }
 

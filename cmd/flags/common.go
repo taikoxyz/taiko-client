@@ -115,12 +115,6 @@ var (
 		Category: commonCategory,
 		Value:    12 * time.Second,
 	}
-	WaitReceiptTimeout = &cli.DurationFlag{
-		Name:     "rpc.waitReceiptTimeout",
-		Usage:    "Timeout for waiting for receipts for RPC transactions",
-		Category: commonCategory,
-		Value:    1 * time.Minute,
-	}
 )
 
 // CommonFlags All common flags.
@@ -138,7 +132,6 @@ var CommonFlags = []cli.Flag{
 	BackOffMaxRetrys,
 	BackOffRetryInterval,
 	RPCTimeout,
-	WaitReceiptTimeout,
 }
 
 // MergeFlags merges the given flag slices.
