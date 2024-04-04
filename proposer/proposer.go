@@ -182,13 +182,10 @@ func (p *Proposer) eventLoop() {
 		case <-p.proposingTimer.C:
 			// Attempt propose operation
 			metrics.ProposerProposeEpochCounter.Inc(1)
-			if err := p.ProposeOp(
-				p.ctx,
-			); err != nil {
+			if err := p.ProposeOp(p.ctx); err != nil {
 				log.Error("Proposing operation error", "error", err)
 				continue
 			}
-			p.lastUnfilteredPoolContentProposedAt = time.Now()
 		}
 	}
 }
@@ -304,6 +301,10 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 		if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len())); err != nil {
 			return fmt.Errorf("failed to send TaikoL1.proposeBlock transactions: %w", err)
+		}
+
+		if len(txs) != 0 {
+			p.lastUnfilteredPoolContentProposedAt = time.Now()
 		}
 	}
 
