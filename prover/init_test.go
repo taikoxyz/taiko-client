@@ -3,7 +3,6 @@ package prover
 import (
 	"context"
 	"math/big"
-	"os"
 
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
@@ -13,7 +12,7 @@ import (
 func (s *ProverTestSuite) TestSetApprovalAmount() {
 	data, err := encoding.TaikoTokenABI.Pack(
 		"approve",
-		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
+		s.p.cfg.AssignmentHookAddress,
 		common.Big0,
 	)
 	s.Nil(err)
