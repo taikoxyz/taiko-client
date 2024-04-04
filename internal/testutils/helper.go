@@ -6,14 +6,12 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"math/big"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -23,7 +21,6 @@ import (
 	"github.com/phayes/freeport"
 
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/prover/server"
 )
 
@@ -307,53 +304,4 @@ func LocalRandomProverEndpoint() *url.URL {
 // SignatureFromRSV creates the signature bytes from r,s,v.
 func SignatureFromRSV(r, s string, v byte) []byte {
 	return append(append(hexutil.MustDecode(r), hexutil.MustDecode(s)...), v)
-}
-
-// SendDynamicFeeTx sends a dynamic transaction, used for tests.
-func SendDynamicFeeTx(
-	client *rpc.EthClient,
-	priv *ecdsa.PrivateKey,
-	to *common.Address,
-	value *big.Int,
-	data []byte,
-) (*types.Transaction, error) {
-	head, err := client.HeaderByNumber(context.Background(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	auth, err := bind.NewKeyedTransactorWithChainID(priv, client.ChainID)
-	if err != nil {
-		return nil, err
-	}
-
-	nonce, err := client.PendingNonceAt(context.Background(), auth.From)
-	if err != nil {
-		return nil, err
-	}
-
-	gasTipCap, err := client.SuggestGasTipCap(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	tx, err := auth.Signer(auth.From, types.NewTx(&types.DynamicFeeTx{
-		To:        to,
-		Nonce:     nonce,
-		Value:     value,
-		GasTipCap: gasTipCap,
-		GasFeeCap: new(big.Int).Add(
-			gasTipCap,
-			new(big.Int).Mul(head.BaseFee, big.NewInt(2)),
-		),
-		Gas:  2100_000,
-		Data: data,
-	}))
-	if err != nil {
-		return nil, err
-	}
-	if err = client.SendTransaction(context.Background(), tx); err != nil {
-		return nil, err
-	}
-	return tx, nil
 }
