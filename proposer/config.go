@@ -31,7 +31,6 @@ type Config struct {
 	ProposeEmptyBlocksInterval time.Duration
 	MaxProposedTxListsPerEpoch uint64
 	ProposeBlockTxGasLimit     uint64
-	WaitReceiptTimeout         time.Duration
 	ProverEndpoints            []*url.URL
 	OptimisticTierFee          *big.Int
 	SgxTierFee                 *big.Int
@@ -96,7 +95,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProposeEmptyBlocksInterval: c.Duration(flags.ProposeEmptyBlocksInterval.Name),
 		MaxProposedTxListsPerEpoch: c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
 		ProposeBlockTxGasLimit:     c.Uint64(flags.TxGasLimit.Name),
-		WaitReceiptTimeout:         c.Duration(flags.WaitReceiptTimeout.Name),
 		ProverEndpoints:            proverEndpoints,
 		OptimisticTierFee:          new(big.Int).SetUint64(c.Uint64(flags.OptimisticTierFee.Name)),
 		SgxTierFee:                 new(big.Int).SetUint64(c.Uint64(flags.SgxTierFee.Name)),

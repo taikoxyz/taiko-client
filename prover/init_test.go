@@ -4,19 +4,23 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 func (s *ProverTestSuite) TestSetApprovalAmount() {
-	opts, err := bind.NewKeyedTransactorWithChainID(s.p.cfg.L1ProverPrivKey, s.p.rpc.L1.ChainID)
+	data, err := encoding.TaikoTokenABI.Pack(
+		"approve",
+		s.p.cfg.AssignmentHookAddress,
+		common.Big0,
+	)
 	s.Nil(err)
 
-	tx, err := s.p.rpc.TaikoToken.Approve(opts, s.p.cfg.AssignmentHookAddress, common.Big0)
-	s.Nil(err)
-
-	_, err = rpc.WaitReceipt(context.Background(), s.p.rpc.L1, tx)
+	_, err = s.p.txmgr.Send(context.Background(), txmgr.TxCandidate{
+		TxData: data,
+		To:     &s.p.cfg.TaikoTokenAddress,
+	})
 	s.Nil(err)
 
 	allowance, err := s.p.rpc.TaikoToken.Allowance(nil, s.p.ProverAddress(), s.p.cfg.AssignmentHookAddress)
