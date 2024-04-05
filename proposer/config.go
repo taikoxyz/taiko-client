@@ -113,6 +113,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			l1ProposerPrivKey,
 			c,
 		),
-		MaxTierFee: new(big.Int).SetUint64(c.Uint64(flags.OptimisticTierFee.Name)),
+		MaxTierFee: new(big.Int).SetUint64(c.Uint64(flags. MaxTierFee.Name)),
 	}, nil
 }
