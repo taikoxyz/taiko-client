@@ -16,12 +16,12 @@ import (
 
 // BlobFetcher is responsible for fetching the txList blob from the L1 block sidecar.
 type BlobFetcher struct {
-	rpc *rpc.Client
+	l1Beacon *rpc.BeaconClient
 }
 
 // NewBlobTxListFetcher creates a new BlobFetcher instance based on the given rpc client.
-func NewBlobTxListFetcher(rpc *rpc.Client) *BlobFetcher {
-	return &BlobFetcher{rpc}
+func NewBlobTxListFetcher(l1Beacon *rpc.BeaconClient) *BlobFetcher {
+	return &BlobFetcher{l1Beacon}
 }
 
 // Fetch implements the TxListFetcher interface.
@@ -35,7 +35,7 @@ func (d *BlobFetcher) Fetch(
 	}
 
 	// Fetch the L1 block sidecars.
-	sidecars, err := d.rpc.L1Beacon.GetBlobs(ctx, meta.Timestamp)
+	sidecars, err := d.l1Beacon.GetBlobs(ctx, meta.Timestamp)
 	if err != nil {
 		return nil, err
 	}
