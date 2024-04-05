@@ -42,6 +42,7 @@ type Config struct {
 	BlobAllowed                bool
 	TxmgrConfigs               *txmgr.CLIConfig
 	L1BlockBuilderTip          *big.Int
+	MaxTierFee                 *big.Int
 }
 
 // NewConfigFromCliContext initializes a Config instance from
@@ -112,5 +113,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			l1ProposerPrivKey,
 			c,
 		),
+		MaxTierFee: new(big.Int).SetUint64(c.Uint64(flags.OptimisticTierFee.Name)),
 	}, nil
 }

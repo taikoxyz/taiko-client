@@ -123,6 +123,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 		cfg.MaxTierFeePriceBumps,
 		proverAssignmentTimeout,
 		requestProverServerTimeout,
+		cfg.MaxTierFee,
 	); err != nil {
 		return err
 	}
