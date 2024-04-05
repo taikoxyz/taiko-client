@@ -33,11 +33,14 @@ func GetProtocolStateVariables(
 	A bindings.TaikoDataSlotA
 	B bindings.TaikoDataSlotB
 }, error) {
-	stateVars, err := taikoL1Client.GetStateVariables(opts)
+	slotA, slotB, err := taikoL1Client.GetStateVariables(opts)
 	if err != nil {
 		return nil, err
 	}
-	return &stateVars, nil
+	return &struct {
+		A bindings.TaikoDataSlotA
+		B bindings.TaikoDataSlotB
+	}{slotA, slotB}, nil
 }
 
 // CheckProverBalance checks if the prover has the necessary allowance and
