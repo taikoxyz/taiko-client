@@ -115,27 +115,6 @@ func TestWaitTillL2ExecutionEngineSyncedContextErr(t *testing.T) {
 	require.ErrorContains(t, err, "context canceled")
 }
 
-func TestGetPoolContentValid(t *testing.T) {
-	client := newTestClient(t)
-	configs, err := client.TaikoL1.GetConfig(&bind.CallOpts{Context: context.Background()})
-	require.Nil(t, err)
-	goldenTouchAddress, err := client.TaikoL2.GOLDENTOUCHADDRESS(nil)
-	require.Nil(t, err)
-	gasLimit := configs.BlockMaxGasLimit
-
-	txPools := []common.Address{goldenTouchAddress}
-
-	_, err2 := client.GetPoolContent(
-		context.Background(),
-		goldenTouchAddress,
-		gasLimit,
-		BlockMaxTxListBytes,
-		txPools,
-		4,
-	)
-	require.Nil(t, err2)
-}
-
 // randomHash generates a random blob of data and returns it as a hash.
 func randomHash() common.Hash {
 	var hash common.Hash

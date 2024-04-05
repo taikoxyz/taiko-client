@@ -39,10 +39,6 @@ cat ${TAIKO_MONO_DIR}/packages/protocol/out/LibProposing.sol/LibProposing.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type LibProposing --pkg bindings --out $DIR/../bindings/gen_lib_proposing.go
 
-cat ${TAIKO_MONO_DIR}/packages/protocol/out/LibDepositing.sol/LibDepositing.json |
-	jq .abi |
-	${ABIGEN_BIN} --abi - --type LibDepositing --pkg bindings --out $DIR/../bindings/gen_lib_depositing.go
-
 cat ${TAIKO_MONO_DIR}/packages/protocol/out/LibUtils.sol/LibUtils.json |
 	jq .abi |
 	${ABIGEN_BIN} --abi - --type LibUtils --pkg bindings --out $DIR/../bindings/gen_lib_utils.go

@@ -40,7 +40,6 @@ type Config struct {
 	ContesterMode                           bool
 	EnableLivenessBondProof                 bool
 	RPCTimeout                              time.Duration
-	WaitReceiptTimeout                      time.Duration
 	ProveBlockGasLimit                      *uint64
 	HTTPServerPort                          uint64
 	Capacity                                uint64
@@ -150,7 +149,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ContesterMode:                           c.Bool(flags.ContesterMode.Name),
 		EnableLivenessBondProof:                 c.Bool(flags.EnableLivenessBondProof.Name),
 		RPCTimeout:                              c.Duration(flags.RPCTimeout.Name),
-		WaitReceiptTimeout:                      c.Duration(flags.WaitReceiptTimeout.Name),
 		ProveBlockGasLimit:                      proveBlockTxGasLimit,
 		Capacity:                                c.Uint64(flags.ProverCapacity.Name),
 		HTTPServerPort:                          c.Uint64(flags.ProverHTTPServerPort.Name),

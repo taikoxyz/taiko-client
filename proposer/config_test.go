@@ -46,7 +46,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(1, len(c.LocalAddresses))
 		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
 		s.Equal(5*time.Second, c.Timeout)
-		s.Equal(10*time.Second, c.WaitReceiptTimeout)
 		s.Equal(uint64(tierFee), c.OptimisticTierFee.Uint64())
 		s.Equal(uint64(tierFee), c.SgxTierFee.Uint64())
 		s.Equal(uint64(15), c.TierFeePriceBump.Uint64())
@@ -73,7 +72,6 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		"--" + flags.ProposeInterval.Name, proposeInterval,
 		"--" + flags.TxPoolLocals.Name, goldenTouchAddress.Hex(),
 		"--" + flags.RPCTimeout.Name, rpcTimeout,
-		"--" + flags.WaitReceiptTimeout.Name, "10s",
 		"--" + flags.TxGasLimit.Name, "100000",
 		"--" + flags.ProverEndpoints.Name, proverEndpoints,
 		"--" + flags.OptimisticTierFee.Name, fmt.Sprint(tierFee),
@@ -100,7 +98,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextL2RecipErr() {
 		"TestNewConfigFromCliContextL2RecipErr",
 		"--" + flags.L1ProposerPrivKey.Name, encoding.GoldenTouchPrivKey,
 		"--" + flags.ProposeInterval.Name, proposeInterval,
-		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
+		"--" + flags.MinProposingInternal.Name, proposeInterval,
 		"--" + flags.L2SuggestedFeeRecipient.Name, "notAnAddress",
 	}), "invalid L2 suggested fee recipient address")
 }
@@ -115,7 +113,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContextTxPoolLocalsErr() {
 		"TestNewConfigFromCliContextTxPoolLocalsErr",
 		"--" + flags.L1ProposerPrivKey.Name, encoding.GoldenTouchPrivKey,
 		"--" + flags.ProposeInterval.Name, proposeInterval,
-		"--" + flags.ProposeEmptyBlocksInterval.Name, proposeInterval,
+		"--" + flags.MinProposingInternal.Name, proposeInterval,
 		"--" + flags.L2SuggestedFeeRecipient.Name, goldenTouchAddress.Hex(),
 		"--" + flags.TxPoolLocals.Name, "notAnAddress",
 	}), "invalid account in --txpool.locals")
@@ -131,14 +129,13 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.TaikoTokenAddress.Name},
 		&cli.StringFlag{Name: flags.L1ProposerPrivKey.Name},
 		&cli.StringFlag{Name: flags.L2SuggestedFeeRecipient.Name},
-		&cli.DurationFlag{Name: flags.ProposeEmptyBlocksInterval.Name},
+		&cli.DurationFlag{Name: flags.MinProposingInternal.Name},
 		&cli.DurationFlag{Name: flags.ProposeInterval.Name},
 		&cli.StringFlag{Name: flags.TxPoolLocals.Name},
 		&cli.StringFlag{Name: flags.ProverEndpoints.Name},
 		&cli.Uint64Flag{Name: flags.OptimisticTierFee.Name},
 		&cli.Uint64Flag{Name: flags.SgxTierFee.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
-		&cli.DurationFlag{Name: flags.WaitReceiptTimeout.Name},
 		&cli.Uint64Flag{Name: flags.TierFeePriceBump.Name},
 		&cli.Uint64Flag{Name: flags.MaxTierFeePriceBumps.Name},
 		&cli.BoolFlag{Name: flags.ProposeBlockIncludeParentMetaHash.Name},

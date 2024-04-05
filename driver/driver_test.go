@@ -287,6 +287,10 @@ func (s *DriverTestSuite) TestL1Current() {
 func (s *DriverTestSuite) InitProposer() {
 	p := new(proposer.Proposer)
 
+	jwtSecret, err := jwt.ParseSecretFromFile(os.Getenv("JWT_SECRET"))
+	s.Nil(err)
+	s.NotEmpty(jwtSecret)
+
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
 
@@ -294,6 +298,8 @@ func (s *DriverTestSuite) InitProposer() {
 		ClientConfig: &rpc.ClientConfig{
 			L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
 			L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
+			L2EngineEndpoint:  os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
+			JwtSecret:         string(jwtSecret),
 			TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 			TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 			TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")),
@@ -303,7 +309,6 @@ func (s *DriverTestSuite) InitProposer() {
 		L2SuggestedFeeRecipient:    common.HexToAddress(os.Getenv("L2_SUGGESTED_FEE_RECIPIENT")),
 		ProposeInterval:            1024 * time.Hour,
 		MaxProposedTxListsPerEpoch: 1,
-		WaitReceiptTimeout:         12 * time.Second,
 		ProverEndpoints:            s.ProverEndpoints,
 		OptimisticTierFee:          common.Big256,
 		SgxTierFee:                 common.Big256,

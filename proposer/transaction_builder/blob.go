@@ -2,11 +2,15 @@ package builder
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/sha256"
 	"math/big"
 
 	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
@@ -16,6 +20,7 @@ import (
 // bytes saved in blob.
 type BlobTransactionBuilder struct {
 	rpc                     *rpc.Client
+	proposerPrivateKey      *ecdsa.PrivateKey
 	proverSelector          selector.ProverSelector
 	l1BlockBuilderTip       *big.Int
 	taikoL1Address          common.Address
@@ -28,6 +33,7 @@ type BlobTransactionBuilder struct {
 // NewBlobTransactionBuilder creates a new BlobTransactionBuilder instance based on giving configurations.
 func NewBlobTransactionBuilder(
 	rpc *rpc.Client,
+	proposerPrivateKey *ecdsa.PrivateKey,
 	proverSelector selector.ProverSelector,
 	l1BlockBuilderTip *big.Int,
 	taikoL1Address common.Address,
@@ -38,6 +44,7 @@ func NewBlobTransactionBuilder(
 ) *BlobTransactionBuilder {
 	return &BlobTransactionBuilder{
 		rpc,
+		proposerPrivateKey,
 		proverSelector,
 		l1BlockBuilderTip,
 		taikoL1Address,
@@ -93,6 +100,18 @@ func (b *BlobTransactionBuilder) Build(
 		return nil, err
 	}
 
+	commitment, err := blob.ComputeKZGCommitment()
+	if err != nil {
+		return nil, err
+	}
+	blobHash := kzg4844.CalcBlobHashV1(sha256.New(), &commitment)
+
+	signature, err := crypto.Sign(blobHash[:], b.proposerPrivateKey)
+	if err != nil {
+		return nil, err
+	}
+	signature[64] = uint8(uint(signature[64])) + 27
+
 	// ABI encode the TaikoL1.proposeBlock parameters.
 	encodedParams, err := encoding.EncodeBlockParams(&encoding.BlockParams{
 		AssignedProver: assignedProver,
@@ -100,6 +119,7 @@ func (b *BlobTransactionBuilder) Build(
 		Coinbase:       b.l2SuggestedFeeRecipient,
 		ParentMetaHash: parentMetaHash,
 		HookCalls:      []encoding.HookCall{{Hook: b.assignmentHookAddress, Data: hookInputData}},
+		Signature:      signature,
 	})
 	if err != nil {
 		return nil, err
