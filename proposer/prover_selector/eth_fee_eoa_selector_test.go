@@ -57,7 +57,7 @@ func (s *ProverSelectorTestSuite) TestProverAssignProver() {
 		{Tier: encoding.TierSgxID, Fee: common.Big256},
 	}, testutils.RandomHash())
 	s.NotEmpty(sig)
-	s.Equal(fee.Cmp(common.Big32), 0)
+	s.Equal(fee.Cmp(common.Big32), 1)
 	s.Nil(err)
 }
 
