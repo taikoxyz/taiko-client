@@ -15,6 +15,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	pkgFlags "github.com/taikoxyz/taiko-client/pkg/flags"
+	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -48,6 +49,11 @@ type Config struct {
 // NewConfigFromCliContext initializes a Config instance from
 // command line flags.
 func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
+	jwtSecret, err := jwt.ParseSecretFromFile(c.String(flags.JWTSecret.Name))
+	if err != nil {
+		return nil, fmt.Errorf("invalid JWT secret file: %w", err)
+	}
+
 	l1ProposerPrivKey, err := crypto.ToECDSA(
 		common.Hex2Bytes(c.String(flags.L1ProposerPrivKey.Name)),
 	)
@@ -85,6 +91,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			L2Endpoint:        c.String(flags.L2HTTPEndpoint.Name),
 			TaikoL1Address:    common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 			TaikoL2Address:    common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
+			L2EngineEndpoint:  c.String(flags.L2AuthEndpoint.Name),
+			JwtSecret:         string(jwtSecret),
 			TaikoTokenAddress: common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
 			Timeout:           c.Duration(flags.RPCTimeout.Name),
 		},

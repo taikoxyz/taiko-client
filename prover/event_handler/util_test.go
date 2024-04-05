@@ -26,13 +26,13 @@ func (s *ProverEventHandlerTestSuite) TestGetProvingWindowNotFound() {
 }
 
 func (s *ProverEventHandlerTestSuite) TestIsBlockVerified() {
-	vars, err := s.RPCClient.TaikoL1.GetStateVariables(nil)
+	_, slotB, err := s.RPCClient.TaikoL1.GetStateVariables(nil)
 	s.Nil(err)
 
 	verified, err := isBlockVerified(
 		context.Background(),
 		s.RPCClient,
-		new(big.Int).SetUint64(vars.B.LastVerifiedBlockId),
+		new(big.Int).SetUint64(slotB.LastVerifiedBlockId),
 	)
 	s.Nil(err)
 	s.True(verified)
@@ -40,7 +40,7 @@ func (s *ProverEventHandlerTestSuite) TestIsBlockVerified() {
 	verified, err = isBlockVerified(
 		context.Background(),
 		s.RPCClient,
-		new(big.Int).SetUint64(vars.B.LastVerifiedBlockId+1),
+		new(big.Int).SetUint64(slotB.LastVerifiedBlockId+1),
 	)
 	s.Nil(err)
 	s.False(verified)
