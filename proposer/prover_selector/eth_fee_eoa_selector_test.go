@@ -42,7 +42,7 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 		32,
 		1*time.Minute,
 		1*time.Minute,
-		common.Big0,
+		common.Big32,
 	)
 	s.Nil(err)
 }
@@ -57,7 +57,7 @@ func (s *ProverSelectorTestSuite) TestProverAssignProver() {
 		{Tier: encoding.TierSgxID, Fee: common.Big256},
 	}, testutils.RandomHash())
 	s.NotEmpty(sig)
-	s.True(fee.Cmp(common.Big0) > 0)
+	s.Equal(fee.Cmp(common.Big32), 0)
 	s.Nil(err)
 }
 
