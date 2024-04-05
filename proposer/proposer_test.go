@@ -138,7 +138,7 @@ func (s *ProposerTestSuite) TestProposeOp() {
 
 func (s *ProposerTestSuite) TestProposeEmptyBlockOp() {
 	s.p.MinProposingInternal = 1 * time.Second
-	s.p.lastUnfilteredPoolContentProposedAt = time.Now().Add(-10 * time.Second)
+	s.p.lastProposedAt = time.Now().Add(-10 * time.Second)
 	s.Nil(s.p.ProposeOp(context.Background()))
 }
 

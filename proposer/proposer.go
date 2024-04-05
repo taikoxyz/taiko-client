@@ -57,7 +57,7 @@ type Proposer struct {
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
 
-	lastUnfilteredPoolContentProposedAt time.Time
+	lastProposedAt time.Time
 
 	txmgr *txmgr.SimpleTxManager
 
@@ -80,7 +80,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	p.proposerAddress = crypto.PubkeyToAddress(cfg.L1ProposerPrivKey.PublicKey)
 	p.ctx = ctx
 	p.Config = cfg
-	p.lastUnfilteredPoolContentProposedAt = time.Now()
+	p.lastProposedAt = time.Now()
 
 	// RPC clients
 	if p.rpc, err = rpc.NewClient(p.ctx, cfg.ClientConfig); err != nil {
@@ -268,7 +268,7 @@ func (p *Proposer) fetchPoolContent(filterPoolContent bool) ([]types.Transaction
 // and then proposing them to TaikoL1 contract.
 func (p *Proposer) ProposeOp(ctx context.Context) error {
 	// Check if it's time to propose unfiltered pool content.
-	filterPoolContent := time.Now().Before(p.lastUnfilteredPoolContentProposedAt.Add(p.MinProposingInternal))
+	filterPoolContent := time.Now().Before(p.lastProposedAt.Add(p.MinProposingInternal))
 
 	// Wait until L2 execution engine is synced at first.
 	if err := p.rpc.WaitTillL2ExecutionEngineSynced(ctx); err != nil {
@@ -278,7 +278,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	log.Info(
 		"Start fetching L2 execution engine's transaction pool content",
 		"filterPoolContent", filterPoolContent,
-		"lastUnfilteredPoolContentProposedAt", p.lastUnfilteredPoolContentProposedAt,
+		"lastProposedAt", p.lastProposedAt,
 	)
 
 	txLists, err := p.fetchPoolContent(filterPoolContent)
@@ -301,9 +301,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			return fmt.Errorf("failed to send TaikoL1.proposeBlock transactions: %w", err)
 		}
 
-		if len(txs) != 0 {
-			p.lastUnfilteredPoolContentProposedAt = time.Now()
-		}
+		p.lastProposedAt = time.Now()
 	}
 
 	return nil
