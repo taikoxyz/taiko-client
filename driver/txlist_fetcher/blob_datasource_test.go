@@ -27,7 +27,7 @@ func (s *BlobDataSourceTestSuite) SetupTest() {
 func (s *BlobDataSourceTestSuite) TestGetBlobs() {
 	meta := &bindings.TaikoDataBlockMetadata{
 		BlobUsed:  true,
-		BlobHash:  common.HexToHash(""),
+		BlobHash:  common.HexToHash("0x019101fb28118ceccaabca22a47e35b9c3f12eb2dcb25e5c543d5b75e6cd841f"),
 		Timestamp: 1,
 	}
 	sidecars, err := s.ds.GetBlobs(context.Background(), meta)
