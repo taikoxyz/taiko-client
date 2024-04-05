@@ -130,6 +130,10 @@ var (
 				},
 			},
 		},
+		{
+			Name: "signature",
+			Type: "bytes",
+		},
 	}
 	proverAssignmentComponents = []abi.ArgumentMarshaling{
 		{
@@ -242,7 +246,6 @@ var (
 	TaikoL2ABI          *abi.ABI
 	TaikoTokenABI       *abi.ABI
 	GuardianProverABI   *abi.ABI
-	LibDepositingABI    *abi.ABI
 	LibProposingABI     *abi.ABI
 	LibProvingABI       *abi.ABI
 	LibUtilsABI         *abi.ABI
@@ -271,10 +274,6 @@ func init() {
 
 	if GuardianProverABI, err = bindings.GuardianProverMetaData.GetAbi(); err != nil {
 		log.Crit("Get GuardianProver ABI error", "error", err)
-	}
-
-	if LibDepositingABI, err = bindings.LibDepositingMetaData.GetAbi(); err != nil {
-		log.Crit("Get LibDepositing ABI error", "error", err)
 	}
 
 	if LibProposingABI, err = bindings.LibProposingMetaData.GetAbi(); err != nil {
@@ -309,7 +308,6 @@ func init() {
 		TaikoL1ABI.Errors,
 		TaikoL2ABI.Errors,
 		GuardianProverABI.Errors,
-		LibDepositingABI.Errors,
 		LibProposingABI.Errors,
 		LibProvingABI.Errors,
 		LibUtilsABI.Errors,

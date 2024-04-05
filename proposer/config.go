@@ -28,7 +28,9 @@ type Config struct {
 	ProposeInterval            time.Duration
 	LocalAddresses             []common.Address
 	LocalAddressesOnly         bool
-	ProposeEmptyBlocksInterval time.Duration
+	MinGasUsed                 uint64
+	MinTxListBytes             uint64
+	MinProposingInternal       time.Duration
 	MaxProposedTxListsPerEpoch uint64
 	ProposeBlockTxGasLimit     uint64
 	ProverEndpoints            []*url.URL
@@ -92,7 +94,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProposeInterval:            c.Duration(flags.ProposeInterval.Name),
 		LocalAddresses:             localAddresses,
 		LocalAddressesOnly:         c.Bool(flags.TxPoolLocalsOnly.Name),
-		ProposeEmptyBlocksInterval: c.Duration(flags.ProposeEmptyBlocksInterval.Name),
+		MinGasUsed:                 c.Uint64(flags.MinGasUsed.Name),
+		MinTxListBytes:             c.Uint64(flags.MinTxListBytes.Name),
+		MinProposingInternal:       c.Duration(flags.MinProposingInternal.Name),
 		MaxProposedTxListsPerEpoch: c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
 		ProposeBlockTxGasLimit:     c.Uint64(flags.TxGasLimit.Name),
 		ProverEndpoints:            proverEndpoints,

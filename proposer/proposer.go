@@ -3,7 +3,6 @@ package proposer
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -29,7 +28,6 @@ import (
 )
 
 var (
-	errNoNewTxs                = errors.New("no new transactions")
 	proverAssignmentTimeout    = 30 * time.Minute
 	requestProverServerTimeout = 12 * time.Second
 )
@@ -59,9 +57,7 @@ type Proposer struct {
 	// Protocol configurations
 	protocolConfigs *bindings.TaikoDataConfig
 
-	// Only for testing purposes
-	CustomProposeOpHook func() error
-	AfterCommitHook     func() error
+	lastUnfilteredPoolContentProposedAt time.Time
 
 	txmgr *txmgr.SimpleTxManager
 
@@ -84,6 +80,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	p.proposerAddress = crypto.PubkeyToAddress(cfg.L1ProposerPrivKey.PublicKey)
 	p.ctx = ctx
 	p.Config = cfg
+	p.lastUnfilteredPoolContentProposedAt = time.Now()
 
 	// RPC clients
 	if p.rpc, err = rpc.NewClient(p.ctx, cfg.ClientConfig); err != nil {
@@ -133,6 +130,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	if cfg.BlobAllowed {
 		p.txBuilder = builder.NewBlobTransactionBuilder(
 			p.rpc,
+			p.L1ProposerPrivKey,
 			p.proverSelector,
 			p.Config.L1BlockBuilderTip,
 			cfg.TaikoL1Address,
@@ -144,6 +142,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	} else {
 		p.txBuilder = builder.NewCalldataTransactionBuilder(
 			p.rpc,
+			p.L1ProposerPrivKey,
 			p.proverSelector,
 			p.Config.L1BlockBuilderTip,
 			cfg.L2SuggestedFeeRecipient,
@@ -171,7 +170,6 @@ func (p *Proposer) eventLoop() {
 		p.wg.Done()
 	}()
 
-	var lastNonEmptyBlockProposedAt = time.Now()
 	for {
 		p.updateProposingTicker()
 
@@ -181,29 +179,12 @@ func (p *Proposer) eventLoop() {
 		// proposing interval timer has been reached
 		case <-p.proposingTimer.C:
 			metrics.ProposerProposeEpochCounter.Inc(1)
-			// Attempt propose operation
+
+			// Attempt a proposing operation
 			if err := p.ProposeOp(p.ctx); err != nil {
-				if !errors.Is(err, errNoNewTxs) {
-					log.Error("Proposing operation error", "error", err)
-					continue
-				}
-				// If there is always no new transaction and the empty block interval has passed, propose an empty block.
-				if p.ProposeEmptyBlocksInterval != 0 {
-					if time.Now().Before(lastNonEmptyBlockProposedAt.Add(p.ProposeEmptyBlocksInterval)) {
-						continue
-					}
-
-					if err := p.ProposeEmptyBlockOp(p.ctx); err != nil {
-						log.Error("Proposing an empty block operation error", "error", err)
-					}
-
-					lastNonEmptyBlockProposedAt = time.Now()
-				}
-
+				log.Error("Proposing operation error", "error", err)
 				continue
 			}
-
-			lastNonEmptyBlockProposedAt = time.Now()
 		}
 	}
 }
@@ -213,23 +194,11 @@ func (p *Proposer) Close() {
 	p.wg.Wait()
 }
 
-// ProposeOp performs a proposing operation, fetching transactions
-// from L2 execution engine's tx pool, splitting them by proposing constraints,
-// and then proposing them to TaikoL1 contract.
-func (p *Proposer) ProposeOp(ctx context.Context) error {
-	if p.CustomProposeOpHook != nil {
-		return p.CustomProposeOpHook()
-	}
-
-	// Wait until L2 execution engine is synced at first.
-	if err := p.rpc.WaitTillL2ExecutionEngineSynced(ctx); err != nil {
-		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
-	}
-
-	log.Info("Start fetching L2 execution engine's transaction pool content")
-
-	txLists, err := p.rpc.GetPoolContent(
-		ctx,
+// fetchPoolContent fetches the transaction pool content from L2 execution engine.
+func (p *Proposer) fetchPoolContent(filterPoolContent bool) ([]types.Transactions, error) {
+	// Fetch the pool content.
+	preBuiltTxList, err := p.rpc.GetPoolContent(
+		p.ctx,
 		p.proposerAddress,
 		p.protocolConfigs.BlockMaxGasLimit,
 		rpc.BlockMaxTxListBytes,
@@ -237,9 +206,31 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		p.MaxProposedTxListsPerEpoch,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to fetch transaction pool content: %w", err)
+		return nil, fmt.Errorf("failed to fetch transaction pool content: %w", err)
 	}
 
+	txLists := []types.Transactions{}
+	for i, txs := range preBuiltTxList {
+		// Filter the pool content if the filterPoolContent flag is set.
+		if txs.EstimatedGasUsed < p.MinGasUsed && txs.BytesLength < p.MinTxListBytes && filterPoolContent {
+			log.Info(
+				"Pool content skipped",
+				"index", i,
+				"estimatedGasUsed", txs.EstimatedGasUsed,
+				"minGasUsed", p.MinGasUsed,
+				"bytesLength", txs.BytesLength,
+				"minBytesLength", p.MinTxListBytes,
+			)
+			break
+		}
+		txLists = append(txLists, txs.TxList)
+	}
+	// If the pool content is empty and the checkPoolContent flag is not set, return an empty list.
+	if !filterPoolContent && len(txLists) == 0 {
+		txLists = append(txLists, types.Transactions{})
+	}
+
+	// If LocalAddressesOnly is set, filter the transactions by the local addresses.
 	if p.LocalAddressesOnly {
 		var (
 			localTxsLists []types.Transactions
@@ -250,7 +241,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			for _, tx := range txs {
 				sender, err := types.Sender(signer, tx)
 				if err != nil {
-					return err
+					return nil, err
 				}
 
 				for _, localAddress := range p.LocalAddresses {
@@ -269,8 +260,30 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	log.Info("Transactions lists count", "count", len(txLists))
 
-	if len(txLists) == 0 {
-		return errNoNewTxs
+	return txLists, nil
+}
+
+// ProposeOp performs a proposing operation, fetching transactions
+// from L2 execution engine's tx pool, splitting them by proposing constraints,
+// and then proposing them to TaikoL1 contract.
+func (p *Proposer) ProposeOp(ctx context.Context) error {
+	// Check if it's time to propose unfiltered pool content.
+	filterPoolContent := time.Now().Before(p.lastUnfilteredPoolContentProposedAt.Add(p.MinProposingInternal))
+
+	// Wait until L2 execution engine is synced at first.
+	if err := p.rpc.WaitTillL2ExecutionEngineSynced(ctx); err != nil {
+		return fmt.Errorf("failed to wait until L2 execution engine synced: %w", err)
+	}
+
+	log.Info(
+		"Start fetching L2 execution engine's transaction pool content",
+		"filterPoolContent", filterPoolContent,
+		"lastUnfilteredPoolContentProposedAt", p.lastUnfilteredPoolContentProposedAt,
+	)
+
+	txLists, err := p.fetchPoolContent(filterPoolContent)
+	if err != nil {
+		return err
 	}
 
 	// Propose all L2 transactions lists.
@@ -286,6 +299,10 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 		if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len())); err != nil {
 			return fmt.Errorf("failed to send TaikoL1.proposeBlock transactions: %w", err)
+		}
+
+		if len(txs) != 0 {
+			p.lastUnfilteredPoolContentProposedAt = time.Now()
 		}
 	}
 
@@ -329,18 +346,6 @@ func (p *Proposer) ProposeTxList(
 	metrics.ProposerProposedTxListsCounter.Inc(1)
 	metrics.ProposerProposedTxsCounter.Inc(int64(txNum))
 
-	return nil
-}
-
-// ProposeEmptyBlockOp performs a proposing one empty block operation.
-func (p *Proposer) ProposeEmptyBlockOp(ctx context.Context) error {
-	emptyTxListBytes, err := rlp.EncodeToBytes(types.Transactions{})
-	if err != nil {
-		return err
-	}
-	if err = p.ProposeTxList(ctx, emptyTxListBytes, 0); err != nil {
-		return err
-	}
 	return nil
 }
 

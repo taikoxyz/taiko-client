@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -27,6 +28,9 @@ func (s *TransactionBuilderTestSuite) SetupTest() {
 	protocolConfigs, err := s.RPCClient.TaikoL1.GetConfig(nil)
 	s.Nil(err)
 
+	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	s.Nil(err)
+
 	proverSelector, err := selector.NewETHFeeEOASelector(
 		&protocolConfigs,
 		s.RPCClient,
@@ -42,6 +46,7 @@ func (s *TransactionBuilderTestSuite) SetupTest() {
 	s.Nil(err)
 	s.calldataTxBuilder = NewCalldataTransactionBuilder(
 		s.RPCClient,
+		l1ProposerPrivKey,
 		proverSelector,
 		common.Big0,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
@@ -52,6 +57,7 @@ func (s *TransactionBuilderTestSuite) SetupTest() {
 	)
 	s.blobTxBuiler = NewBlobTransactionBuilder(
 		s.RPCClient,
+		l1ProposerPrivKey,
 		proverSelector,
 		common.Big0,
 		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),

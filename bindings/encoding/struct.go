@@ -31,6 +31,7 @@ type BlockParams struct {
 	ExtraData      [32]byte
 	ParentMetaHash [32]byte
 	HookCalls      []HookCall
+	Signature      []byte
 }
 
 // TierFee should be same with TaikoData.TierFee.

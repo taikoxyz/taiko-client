@@ -30,6 +30,12 @@ func (s *ClientTestSuite) ProposeInvalidTxListBytes(proposer Proposer) {
 	s.Nil(proposer.ProposeTxList(context.Background(), invalidTxListBytes, 1))
 }
 
+func (s *ClientTestSuite) proposeEmptyBlockOp(ctx context.Context, proposer Proposer) {
+	emptyTxListBytes, err := rlp.EncodeToBytes(types.Transactions{})
+	s.Nil(err)
+	s.Nil(proposer.ProposeTxList(ctx, emptyTxListBytes, 0))
+}
+
 func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 	proposer Proposer,
 	calldataSyncer CalldataSyncer,
@@ -58,7 +64,7 @@ func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 	s.ProposeInvalidTxListBytes(proposer)
 
 	// Random bytes txList
-	s.Nil(proposer.ProposeEmptyBlockOp(context.Background()))
+	s.proposeEmptyBlockOp(context.Background(), proposer)
 
 	events = append(events, []*bindings.TaikoL1ClientBlockProposed{<-sink, <-sink, <-sink}...)
 
