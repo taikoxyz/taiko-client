@@ -71,7 +71,6 @@ type SGXRequestProofBodyResponse struct {
 
 // RaikoHostOutput represents the JSON body of SGXRequestProofBodyResponse's `result` field.
 type RaikoHostOutput struct {
-	Type  string `json:"type"`
 	Proof string `json:"proof"`
 }
 
