@@ -85,7 +85,7 @@ func (ds *BlobDataSource) GetBlobs(
 func (ds *BlobDataSource) getBlobFromServer(ctx context.Context, blobHash common.Hash) (*BlobDataSeq, error) {
 	var (
 		route = "/getBlob"
-		param = map[string]string{"blobHash": blobHash}
+		param = map[string]string{"blobHash": blobHash.String()}
 	)
 	requestURL, err := url.JoinPath(ds.blobServerEndpoint.String(), route)
 	if err != nil {
