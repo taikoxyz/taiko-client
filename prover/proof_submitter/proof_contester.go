@@ -30,6 +30,7 @@ type ProofContester struct {
 // NewProofContester creates a new ProofContester instance.
 func NewProofContester(
 	rpcClient *rpc.Client,
+	gasLimit uint64,
 	txmgr *txmgr.SimpleTxManager,
 	graffiti string,
 	builder *transaction.ProveBlockTxBuilder,
@@ -37,7 +38,7 @@ func NewProofContester(
 	return &ProofContester{
 		rpc:       rpcClient,
 		txBuilder: builder,
-		sender:    transaction.NewSender(rpcClient, txmgr, 0), // TODO
+		sender:    transaction.NewSender(rpcClient, txmgr, gasLimit),
 		graffiti:  rpc.StringToBytes32(graffiti),
 	}
 }
