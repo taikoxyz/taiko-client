@@ -78,12 +78,14 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		s.proofCh,
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		"test",
+		0,
 		txMgr,
 		builder,
 	)
 	s.Nil(err)
 	s.contester = NewProofContester(
 		s.RPCClient,
+		0,
 		txMgr,
 		"test",
 		builder,
