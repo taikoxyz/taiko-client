@@ -41,17 +41,17 @@ type SGXRequestProofBody struct {
 
 // SGXRequestProofBodyParam represents the JSON body of RequestProofBody's `param` field.
 type SGXRequestProofBodyParam struct {
-	Type        string      `json:"proofType"`
-	Block       *big.Int    `json:"blockNumber"`
+	Type        string      `json:"proof_type"`
+	Block       *big.Int    `json:"block_number"`
 	L2RPC       string      `json:"rpc"`
-	L1RPC       string      `json:"l1Rpc"`
-	L1BeaconRPC string      `json:"beaconRpc"`
+	L1RPC       string      `json:"l1_rpc"`
+	L1BeaconRPC string      `json:"beacon_rpc"`
 	Prover      string      `json:"prover"`
 	Graffiti    string      `json:"graffiti"`
-	ProofParam  *ProofParam `json:"proofParam"`
+	ProofParam  *ProofParam `json:"sgx"`
 }
 
-// ProofParam represents the JSON body of SGXRequestProofBodyParam's `proofParam` field.
+// ProofParam represents the JSON body of SGXRequestProofBodyParam's `sgx` field.
 type ProofParam struct {
 	Setup     bool `json:"setup"`
 	Bootstrap bool `json:"bootstrap"`
