@@ -82,7 +82,7 @@ func (ds *BlobDataSource) GetBlobs(
 }
 
 // getBlobFromServer get blob data from server path `/getBlob`.
-func (ds *BlobDataSource) getBlobFromServer(ctx context.Context, blobHash string) (*BlobDataSeq, error) {
+func (ds *BlobDataSource) getBlobFromServer(ctx context.Context, blobHash common.Hash) (*BlobDataSeq, error) {
 	var (
 		route = "/getBlob"
 		param = map[string]string{"blobHash": blobHash}
