@@ -170,7 +170,7 @@ func (s *SGXProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOu
 			Graffiti:    opts.Graffiti,
 			ProofParam: &ProofParam{
 				Setup:     false,
-				Bootstrap: true,
+				Bootstrap: false,
 				Prove:     true,
 			},
 		}},
