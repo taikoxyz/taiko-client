@@ -41,13 +41,21 @@ type SGXRequestProofBody struct {
 
 // SGXRequestProofBodyParam represents the JSON body of RequestProofBody's `param` field.
 type SGXRequestProofBodyParam struct {
-	Type        string   `json:"type"`
-	Block       *big.Int `json:"block"`
-	L2RPC       string   `json:"l2Rpc"`
-	L1RPC       string   `json:"l1Rpc"`
-	L1BeaconRPC string   `json:"l1BeaconRpc"`
-	Prover      string   `json:"prover"`
-	Graffiti    string   `json:"graffiti"`
+	Type        string      `json:"proofType"`
+	Block       *big.Int    `json:"blockNumber"`
+	L2RPC       string      `json:"rpc"`
+	L1RPC       string      `json:"l1Rpc"`
+	L1BeaconRPC string      `json:"beaconRpc"`
+	Prover      string      `json:"prover"`
+	Graffiti    string      `json:"graffiti"`
+	ProofParam  *ProofParam `json:"proofParam"`
+}
+
+// ProofParam represents the JSON body of SGXRequestProofBodyParam's `proofParam` field.
+type ProofParam struct {
+	Setup     bool `json:"setup"`
+	Bootstrap bool `json:"bootstrap"`
+	Prove     bool `json:"prove"`
 }
 
 // SGXRequestProofBodyResponse represents the JSON body of the response of the proof requests.
@@ -63,7 +71,6 @@ type SGXRequestProofBodyResponse struct {
 
 // RaikoHostOutput represents the JSON body of SGXRequestProofBodyResponse's `result` field.
 type RaikoHostOutput struct {
-	Type  string `json:"type"`
 	Proof string `json:"proof"`
 }
 
@@ -154,13 +161,18 @@ func (s *SGXProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOu
 		ID:      common.Big1,
 		Method:  "proof",
 		Params: []*SGXRequestProofBodyParam{{
-			Type:        "Sgx",
+			Type:        "sgx",
 			Block:       opts.BlockID,
 			L2RPC:       s.L2Endpoint,
 			L1RPC:       s.L1Endpoint,
 			L1BeaconRPC: s.L1BeaconEndpoint,
 			Prover:      opts.ProverAddress.Hex()[2:],
 			Graffiti:    opts.Graffiti,
+			ProofParam: &ProofParam{
+				Setup:     false,
+				Bootstrap: true,
+				Prove:     true,
+			},
 		}},
 	}
 
