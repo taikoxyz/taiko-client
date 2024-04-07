@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [main,SGXRequestProofBodyParam]
+    branches: [main]
     tags:
       - "v*"
 
