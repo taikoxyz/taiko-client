@@ -40,7 +40,7 @@ type Config struct {
 	ContesterMode                           bool
 	EnableLivenessBondProof                 bool
 	RPCTimeout                              time.Duration
-	ProveBlockGasLimit                      *uint64
+	ProveBlockGasLimit                      uint64
 	HTTPServerPort                          uint64
 	Capacity                                uint64
 	MinOptimisticTierFee                    *big.Int
@@ -74,12 +74,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	var startingBlockID *big.Int
 	if c.IsSet(flags.StartingBlockID.Name) {
 		startingBlockID = new(big.Int).SetUint64(c.Uint64(flags.StartingBlockID.Name))
-	}
-
-	var proveBlockTxGasLimit *uint64
-	if c.IsSet(flags.TxGasLimit.Name) {
-		gasLimit := c.Uint64(flags.TxGasLimit.Name)
-		proveBlockTxGasLimit = &gasLimit
 	}
 
 	var allowance = common.Big0
@@ -149,7 +143,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ContesterMode:                           c.Bool(flags.ContesterMode.Name),
 		EnableLivenessBondProof:                 c.Bool(flags.EnableLivenessBondProof.Name),
 		RPCTimeout:                              c.Duration(flags.RPCTimeout.Name),
-		ProveBlockGasLimit:                      proveBlockTxGasLimit,
+		ProveBlockGasLimit:                      c.Uint64(flags.TxGasLimit.Name),
 		Capacity:                                c.Uint64(flags.ProverCapacity.Name),
 		HTTPServerPort:                          c.Uint64(flags.ProverHTTPServerPort.Name),
 		MinOptimisticTierFee:                    new(big.Int).SetUint64(c.Uint64(flags.MinOptimisticTierFee.Name)),

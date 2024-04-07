@@ -160,6 +160,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	// Proof contester
 	p.proofContester = proofSubmitter.NewProofContester(
 		p.rpc,
+		p.cfg.ProveBlockGasLimit,
 		p.txmgr,
 		p.cfg.Graffiti,
 		txBuilder,
