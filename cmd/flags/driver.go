@@ -1,7 +1,7 @@
 package flags
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum/eth/downloader"
@@ -16,8 +16,9 @@ var (
 		Value:    "snap",
 		Category: driverCategory,
 		Action: func(_ *cli.Context, s string) error {
-			if s != downloader.SnapSync.String() && s != downloader.FullSync.String() {
-				return errors.New("invalid sync mode")
+			if s != downloader.SnapSync.String() &&
+				s != downloader.FullSync.String() {
+				return fmt.Errorf("invalid sync mode: %s", s)
 			}
 			return nil
 		},
