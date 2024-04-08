@@ -287,7 +287,7 @@ func RandomBytes(size int) (b []byte) {
 func RandomPort() int {
 	port, err := freeport.GetFreePort()
 	if err != nil {
-		log.Crit("Failed to get local free random port", "err", err)
+		log.Crit("Failed to get local free random port", "custom_err", err)
 	}
 	return port
 }
@@ -298,7 +298,7 @@ func LocalRandomProverEndpoint() *url.URL {
 
 	proverEndpoint, err := url.Parse(fmt.Sprintf("http://localhost:%v", port))
 	if err != nil {
-		log.Crit("Failed to parse local prover endpoint", "err", err)
+		log.Crit("Failed to parse local prover endpoint", "custom_err", err)
 	}
 
 	return proverEndpoint

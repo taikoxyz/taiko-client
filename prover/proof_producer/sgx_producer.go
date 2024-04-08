@@ -116,7 +116,7 @@ func (s *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 		}
 		output, err := s.requestProof(opts)
 		if err != nil {
-			log.Error("Failed to request proof", "height", opts.BlockID, "err", err, "endpoint", s.RaikoHostEndpoint)
+			log.Error("Failed to request proof", "height", opts.BlockID, "custom_err", err, "endpoint", s.RaikoHostEndpoint)
 			return err
 		}
 

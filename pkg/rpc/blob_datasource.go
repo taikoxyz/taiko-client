@@ -1,4 +1,4 @@
-package txlistdecoder
+package rpc
 
 import (
 	"context"
@@ -10,12 +10,12 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/prysmaticlabs/prysm/v4/beacon-chain/rpc/eth/blob"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-client/pkg/customerr"
 )
 
 type BlobDataSource struct {
 	ctx                context.Context
-	rpc                *rpc.Client
+	client             *Client
 	blobServerEndpoint *url.URL
 }
 
@@ -31,12 +31,12 @@ type BlobDataSeq struct {
 
 func NewBlobDataSource(
 	ctx context.Context,
-	rpc *rpc.Client,
+	client *Client,
 	blobServerEndpoint *url.URL,
 ) *BlobDataSource {
 	return &BlobDataSource{
 		ctx:                ctx,
-		rpc:                rpc,
+		client:             client,
 		blobServerEndpoint: blobServerEndpoint,
 	}
 }
@@ -47,20 +47,20 @@ func (ds *BlobDataSource) GetBlobs(
 	meta *bindings.TaikoDataBlockMetadata,
 ) ([]*blob.Sidecar, error) {
 	if !meta.BlobUsed {
-		return nil, errBlobUnused
+		return nil, customerr.ErrBlobUnused
 	}
 
 	var (
 		sidecars []*blob.Sidecar
 		err      error
 	)
-	if ds.rpc.L1Beacon == nil {
-		sidecars, err = nil, errBeaconNotFound
+	if ds.client.L1Beacon == nil {
+		sidecars, err = nil, customerr.ErrBeaconNotFound
 	} else {
-		sidecars, err = ds.rpc.L1Beacon.GetBlobs(ctx, meta.Timestamp)
+		sidecars, err = ds.client.L1Beacon.GetBlobs(ctx, meta.Timestamp)
 	}
 	if err != nil {
-		log.Info("Failed to get blobs from beacon, try to use blob server.", "err", err.Error())
+		log.Info("Failed to get blobs from beacon, try to use blob server.", "custom_err", err.Error())
 		if ds.blobServerEndpoint == nil {
 			log.Info("No blob server endpoint set")
 			return nil, err

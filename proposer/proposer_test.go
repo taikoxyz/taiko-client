@@ -114,7 +114,7 @@ func parseTxs(client *rpc.Client, event *bindings.TaikoL1ClientBlockProposed) (t
 	// Decode transactions list.
 	var txListDecoder txlistfetcher.TxListFetcher
 	if event.Meta.BlobUsed {
-		txListDecoder = txlistfetcher.NewBlobTxListFetcher(client.L1Beacon, txlistfetcher.NewBlobDataSource(
+		txListDecoder = txlistfetcher.NewBlobTxListFetcher(client.L1Beacon, rpc.NewBlobDataSource(
 			context.Background(),
 			client,
 			nil,
@@ -157,7 +157,7 @@ func (s *ProposerTestSuite) getLatestProposedTxs(
 			case event := <-sink:
 				txs, err := parseTxs(s.RPCClient, event)
 				if err != nil {
-					log.Error("failed to parse txs", "err", err)
+					log.Error("failed to parse txs", "custom_err", err)
 				}
 				txLst = append(txLst, txs)
 			case <-tick:

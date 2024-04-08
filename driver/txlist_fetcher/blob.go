@@ -11,17 +11,18 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/pkg/customerr"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
 // BlobFetcher is responsible for fetching the txList blob from the L1 block sidecar.
 type BlobFetcher struct {
 	l1Beacon *rpc.BeaconClient
-	ds       *BlobDataSource
+	ds       *rpc.BlobDataSource
 }
 
 // NewBlobTxListFetcher creates a new BlobFetcher instance based on the given rpc client.
-func NewBlobTxListFetcher(l1Beacon *rpc.BeaconClient, ds *BlobDataSource) *BlobFetcher {
+func NewBlobTxListFetcher(l1Beacon *rpc.BeaconClient, ds *rpc.BlobDataSource) *BlobFetcher {
 	return &BlobFetcher{l1Beacon, ds}
 }
 
@@ -32,7 +33,7 @@ func (d *BlobFetcher) Fetch(
 	meta *bindings.TaikoDataBlockMetadata,
 ) ([]byte, error) {
 	if !meta.BlobUsed {
-		return nil, errBlobUnused
+		return nil, customerr.ErrBlobUsed
 	}
 
 	// Fetch the L1 block sidecars.
@@ -62,5 +63,5 @@ func (d *BlobFetcher) Fetch(
 		}
 	}
 
-	return nil, errSidecarNotFound
+	return nil, customerr.ErrSidecarNotFound
 }

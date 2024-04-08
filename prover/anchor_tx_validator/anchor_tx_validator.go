@@ -48,7 +48,7 @@ func (v *AnchorTxValidator) ValidateAnchorTx(tx *types.Transaction) error {
 
 	method, err := encoding.TaikoL2ABI.MethodById(tx.Data())
 	if err != nil || method.Name != "anchor" {
-		return fmt.Errorf("invalid TaikoL2.anchor transaction selector, err: %w", err)
+		return fmt.Errorf("invalid TaikoL2.anchor transaction selector, custom_err: %w", err)
 	}
 
 	return nil
@@ -61,7 +61,7 @@ func (v *AnchorTxValidator) GetAndValidateAnchorTxReceipt(
 ) (*types.Receipt, error) {
 	receipt, err := v.rpc.L2.TransactionReceipt(ctx, tx.Hash())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get TaikoL2.anchor transaction receipt, err: %w", err)
+		return nil, fmt.Errorf("failed to get TaikoL2.anchor transaction receipt, custom_err: %w", err)
 	}
 
 	if receipt.Status != types.ReceiptStatusSuccessful {

@@ -43,7 +43,7 @@ type Syncer struct {
 	lastInsertedBlockID *big.Int
 	reorgDetectedFlag   bool
 	maxRetrieveExponent uint64
-	blobDatasource      *txlistfetcher.BlobDataSource
+	blobDatasource      *rpc.BlobDataSource
 }
 
 // NewSyncer creates a new syncer instance.
@@ -77,7 +77,7 @@ func NewSyncer(
 			client.L2.ChainID,
 		),
 		maxRetrieveExponent: maxRetrieveExponent,
-		blobDatasource: txlistfetcher.NewBlobDataSource(
+		blobDatasource: rpc.NewBlobDataSource(
 			ctx,
 			client,
 			blobServerEndpoint,
