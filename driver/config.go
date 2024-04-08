@@ -16,7 +16,6 @@ import (
 // Config contains the configurations to initialize a Taiko driver.
 type Config struct {
 	*rpc.ClientConfig
-	SyncMode              string
 	P2PSyncVerifiedBlocks bool
 	P2PSyncTimeout        time.Duration
 	RPCTimeout            time.Duration
@@ -58,7 +57,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			JwtSecret:        string(jwtSecret),
 			Timeout:          timeout,
 		},
-		SyncMode:              c.String(flags.SyncModeFlag.Name),
 		RetryInterval:         c.Duration(flags.BackOffRetryInterval.Name),
 		P2PSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
 		P2PSyncTimeout:        c.Duration(flags.P2PSyncTimeout.Name),

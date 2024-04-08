@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/suite"
 
@@ -39,7 +38,6 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 		context.Background(),
 		s.RPCClient,
 		state,
-		downloader.FullSync.String(),
 		false,
 		1*time.Hour,
 		0,

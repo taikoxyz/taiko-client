@@ -2,7 +2,6 @@ package driver
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -61,17 +60,6 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 		return err
 	}
 
-	// check the sync mode of the L2 node.
-	if syncMode, err := d.rpc.L2.GetSyncMode(d.ctx); err != nil {
-		return err
-	} else if syncMode != d.SyncMode {
-		return fmt.Errorf(
-			"the type is inconsistent with taiko-geth's sync mode, expect: %s, actual: %s",
-			syncMode,
-			d.SyncMode,
-		)
-	}
-
 	if d.state, err = state.New(d.ctx, d.rpc); err != nil {
 		return err
 	}
@@ -89,7 +77,6 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 		d.ctx,
 		d.rpc,
 		d.state,
-		d.SyncMode,
 		cfg.P2PSyncVerifiedBlocks,
 		cfg.P2PSyncTimeout,
 		cfg.MaxExponent,

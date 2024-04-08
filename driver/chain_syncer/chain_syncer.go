@@ -42,7 +42,6 @@ func New(
 	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
-	syncMode string,
 	p2pSyncVerifiedBlocks bool,
 	p2pSyncTimeout time.Duration,
 	maxRetrieveExponent uint64,
@@ -50,6 +49,10 @@ func New(
 	tracker := beaconsync.NewSyncProgressTracker(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
+	syncMode, err := rpc.L2.GetSyncMode(ctx)
+	if err != nil {
+		return nil, err
+	}
 	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, syncMode, tracker)
 	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, maxRetrieveExponent)
 	if err != nil {
