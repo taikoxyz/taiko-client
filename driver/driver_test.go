@@ -38,7 +38,7 @@ func (s *DriverTestSuite) SetupTest() {
 	d := new(Driver)
 	ctx, cancel := context.WithCancel(context.Background())
 	s.Nil(d.InitFromConfig(ctx, &Config{
-		SyncMode: downloader.SnapSync.String(),
+		SyncMode: downloader.FullSync.String(),
 		ClientConfig: &rpc.ClientConfig{
 			L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
 			L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),

@@ -41,7 +41,7 @@ func (s *EventHandlerTestSuite) SetupTest() {
 
 	d := new(driver.Driver)
 	s.Nil(d.InitFromConfig(context.Background(), &driver.Config{
-		SyncMode: downloader.SnapSync.String(),
+		SyncMode: downloader.FullSync.String(),
 		ClientConfig: &rpc.ClientConfig{
 			L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
 			L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),

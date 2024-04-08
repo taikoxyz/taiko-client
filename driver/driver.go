@@ -2,7 +2,7 @@ package driver
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -65,7 +65,7 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 	if syncMode, err := d.rpc.L2.GetSyncMode(d.ctx); err != nil {
 		return err
 	} else if syncMode != d.SyncMode {
-		return errors.New("the type is inconsistent with taiko-geth's sync mode")
+		return fmt.Errorf("the type is inconsistent with taiko-geth's sync mode, expect: %s, actual: %s", syncMode, d.SyncMode)
 	}
 
 	if d.state, err = state.New(d.ctx, d.rpc); err != nil {
