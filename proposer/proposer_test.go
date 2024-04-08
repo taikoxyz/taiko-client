@@ -157,7 +157,7 @@ func (s *ProposerTestSuite) getLatestProposedTxs(
 			case event := <-sink:
 				txs, err := parseTxs(s.RPCClient, event)
 				if err != nil {
-					log.Error("failed to parse txs", "custom_err", err)
+					log.Error("failed to parse txs", "error", err)
 				}
 				txLst = append(txLst, txs)
 			case <-tick:
