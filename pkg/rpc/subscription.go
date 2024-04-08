@@ -34,7 +34,7 @@ func SubscribeBlockVerified(
 	ch chan *bindings.TaikoL1ClientBlockVerified,
 ) event.Subscription {
 	return SubscribeEvent("BlockVerified", func(ctx context.Context) (event.Subscription, error) {
-		sub, err := taikoL1.WatchBlockVerified(nil, ch, nil, nil, nil)
+		sub, err := taikoL1.WatchBlockVerified(nil, ch, nil, nil)
 		if err != nil {
 			log.Error("Create TaikoL1.BlockVerified subscription error", "error", err)
 			return nil, err

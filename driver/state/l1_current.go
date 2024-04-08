@@ -49,7 +49,7 @@ func (s *State) ResetL1Current(ctx context.Context, blockID *big.Int) error {
 	if err != nil {
 		return err
 	}
-	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.Blk.ProposedIn))
+	l1Current, err := s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.ProposedIn))
 	if err != nil {
 		return err
 	}

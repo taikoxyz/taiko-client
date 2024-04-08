@@ -96,7 +96,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		ProverAddress:      s.proverAddress,
 		ProposeBlockTxHash: event.Raw.TxHash,
 		TaikoL2:            s.taikoL2Address,
-		MetaHash:           blockInfo.Blk.MetaHash,
+		MetaHash:           blockInfo.MetaHash,
 		BlockHash:          block.Hash(),
 		ParentHash:         block.ParentHash(),
 		StateRoot:          block.Root(),

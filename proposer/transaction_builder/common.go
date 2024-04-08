@@ -21,5 +21,5 @@ func getParentMetaHash(ctx context.Context, rpc *rpc.Client) (common.Hash, error
 		return common.Hash{}, err
 	}
 
-	return parent.Blk.MetaHash, nil
+	return parent.MetaHash, nil
 }
