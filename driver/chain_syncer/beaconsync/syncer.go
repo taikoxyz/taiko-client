@@ -50,7 +50,7 @@ func (s *Syncer) TriggerBeaconSync(blockID uint64) error {
 		if s.progressTracker.lastSyncProgress == nil {
 			log.Info(
 				"Syncing beacon headers, please check L2 execution engine logs for progress",
-				"currentSyncHead", s.progressTracker.LastSyncedVerifiedBlockID(),
+				"currentSyncHead", s.progressTracker.LastSyncedBlockID(),
 				"newBlockID", blockID,
 			)
 		}
@@ -83,7 +83,7 @@ func (s *Syncer) TriggerBeaconSync(blockID uint64) error {
 	log.Info(
 		"⛓️ Beacon sync triggered",
 		"newHeadID", blockID,
-		"newHeadHash", s.progressTracker.LastSyncedVerifiedBlockHash(),
+		"newHeadHash", s.progressTracker.LastSyncedBlockHash(),
 	)
 
 	return nil

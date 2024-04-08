@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
@@ -28,6 +29,9 @@ type L2ChainSyncer struct {
 	// Monitors
 	progressTracker *beaconsync.SyncProgressTracker
 
+	// Sync mode
+	syncMode string
+
 	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
 	// the latest verified block head
 	p2pSyncVerifiedBlocks bool
@@ -38,6 +42,7 @@ func New(
 	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
+	syncMode string,
 	p2pSyncVerifiedBlocks bool,
 	p2pSyncTimeout time.Duration,
 	maxRetrieveExponent uint64,
@@ -58,6 +63,7 @@ func New(
 		beaconSyncer:          beaconSyncer,
 		calldataSyncer:        calldataSyncer,
 		progressTracker:       tracker,
+		syncMode:              syncMode,
 		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
 	}, nil
 }
@@ -98,8 +104,8 @@ func (s *L2ChainSyncer) Sync() error {
 			"L2 head information",
 			"number", l2Head.Number,
 			"hash", l2Head.Hash(),
-			"lastSyncedVerifiedBlockID", s.progressTracker.LastSyncedVerifiedBlockID(),
-			"lastSyncedVerifiedBlockHash", s.progressTracker.LastSyncedVerifiedBlockHash(),
+			"lastSyncedVerifiedBlockID", s.progressTracker.LastSyncedBlockID(),
+			"lastSyncedVerifiedBlockHash", s.progressTracker.LastSyncedBlockHash(),
 		)
 
 		// Reset the L1Current cursor.
@@ -136,8 +142,8 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead(verifiedHeightToCompare uint
 		return false
 	}
 
-	if s.progressTracker.LastSyncedVerifiedBlockID() != nil {
-		return s.state.GetL2Head().Number.Uint64() >= s.progressTracker.LastSyncedVerifiedBlockID().Uint64()
+	if s.progressTracker.LastSyncedBlockID() != nil {
+		return s.state.GetL2Head().Number.Uint64() >= s.progressTracker.LastSyncedBlockID().Uint64()
 	}
 
 	return true
@@ -160,12 +166,24 @@ func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (uint64, bool, error) {
 		return 0, false, err
 	}
 
-	// If the protocol's latest verified block head is zero, we simply return false.
-	if stateVars.B.LastVerifiedBlockId == 0 {
+	// full sync mode will use the verified block head.
+	// snap sync mode will use the latest block head.
+	var blockID uint64
+	switch s.syncMode {
+	case downloader.SnapSync.String():
+		blockID = stateVars.B.NumBlocks
+	case downloader.FullSync.String():
+		blockID = stateVars.B.LastVerifiedBlockId
+	default:
+		return 0, false, fmt.Errorf("invalid sync mode: %s", s.syncMode)
+	}
+
+	// If the protocol's block head is zero, we simply return false.
+	if blockID == 0 {
 		return 0, false, nil
 	}
 
-	return stateVars.B.LastVerifiedBlockId, !s.AheadOfProtocolVerifiedHead(stateVars.B.LastVerifiedBlockId) &&
+	return blockID, !s.AheadOfProtocolVerifiedHead(blockID) &&
 		!s.progressTracker.OutOfSync(), nil
 }
 

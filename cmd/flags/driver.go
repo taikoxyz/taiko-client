@@ -1,13 +1,27 @@
 package flags
 
 import (
+	"errors"
 	"time"
 
+	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/urfave/cli/v2"
 )
 
 // Optional flags used by driver.
 var (
+	SyncModeFlag = &cli.StringFlag{
+		Name:     "syncmode",
+		Usage:    `Blockchain sync mode ("snap" or "full")`,
+		Value:    "snap",
+		Category: driverCategory,
+		Action: func(_ *cli.Context, s string) error {
+			if s != downloader.SnapSync.String() && s != downloader.FullSync.String() {
+				return errors.New("invalid sync mode")
+			}
+			return nil
+		},
+	}
 	P2PSyncVerifiedBlocks = &cli.BoolFlag{
 		Name: "p2p.syncVerifiedBlocks",
 		Usage: "Try P2P syncing verified blocks between L2 execution engines, " +
@@ -43,6 +57,7 @@ var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2WSEndpoint,
 	L2AuthEndpoint,
 	JWTSecret,
+	SyncModeFlag,
 	P2PSyncVerifiedBlocks,
 	P2PSyncTimeout,
 	CheckPointSyncURL,
