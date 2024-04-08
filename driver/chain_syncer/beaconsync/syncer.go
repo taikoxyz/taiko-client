@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -20,6 +21,7 @@ type Syncer struct {
 	ctx             context.Context
 	rpc             *rpc.Client
 	state           *state.State
+	syncMode        string
 	progressTracker *SyncProgressTracker // Sync progress tracker
 }
 
@@ -28,9 +30,10 @@ func NewSyncer(
 	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
+	syncMode string,
 	progressTracker *SyncProgressTracker,
 ) *Syncer {
-	return &Syncer{ctx, rpc, state, progressTracker}
+	return &Syncer{ctx, rpc, state, syncMode, progressTracker}
 }
 
 // TriggerBeaconSync triggers the L2 execution engine to start performing a beacon sync, if the
@@ -50,7 +53,7 @@ func (s *Syncer) TriggerBeaconSync(blockID uint64) error {
 		if s.progressTracker.lastSyncProgress == nil {
 			log.Info(
 				"Syncing beacon headers, please check L2 execution engine logs for progress",
-				"currentSyncHead", s.progressTracker.LastSyncedVerifiedBlockID(),
+				"currentSyncHead", s.progressTracker.LastSyncedBlockID(),
 				"newBlockID", blockID,
 			)
 		}
@@ -83,7 +86,7 @@ func (s *Syncer) TriggerBeaconSync(blockID uint64) error {
 	log.Info(
 		"⛓️ Beacon sync triggered",
 		"newHeadID", blockID,
-		"newHeadHash", s.progressTracker.LastSyncedVerifiedBlockHash(),
+		"newHeadHash", s.progressTracker.LastSyncedBlockHash(),
 	)
 
 	return nil
@@ -102,9 +105,11 @@ func (s *Syncer) getVerifiedBlockPayload(ctx context.Context, blockID uint64) (*
 		return nil, err
 	}
 
-	if header.Hash() != blockInfo.Ts.BlockHash {
+	if s.syncMode == downloader.FullSync.String() && header.Hash() != blockInfo.Ts.BlockHash {
 		return nil, fmt.Errorf(
-			"latest verified block hash mismatch: %s != %s", header.Hash(), common.BytesToHash(blockInfo.Ts.BlockHash[:]),
+			"latest verified block hash mismatch: %s != %s",
+			header.Hash(),
+			common.BytesToHash(blockInfo.Ts.BlockHash[:]),
 		)
 	}
 
