@@ -171,7 +171,10 @@ func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (uint64, bool, error) {
 	var blockID uint64
 	switch s.syncMode {
 	case downloader.SnapSync.String():
-		blockID = stateVars.B.NumBlocks
+		blockID, err = s.rpc.L2CheckPoint.BlockNumber(s.ctx)
+		if err != nil {
+			return 0, false, err
+		}
 	case downloader.FullSync.String():
 		blockID = stateVars.B.LastVerifiedBlockId
 	default:
