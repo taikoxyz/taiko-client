@@ -11,7 +11,7 @@ import (
 // Optional flags used by driver.
 var (
 	SyncModeFlag = &cli.StringFlag{
-		Name:     "syncmode",
+		Name:     "p2p.syncmode",
 		Usage:    `Blockchain sync mode ("snap" or "full")`,
 		Value:    "snap",
 		Category: driverCategory,
