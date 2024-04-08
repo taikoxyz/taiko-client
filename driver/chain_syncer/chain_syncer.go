@@ -50,7 +50,7 @@ func New(
 	tracker := beaconsync.NewSyncProgressTracker(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
 
-	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, tracker)
+	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, syncMode, tracker)
 	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, maxRetrieveExponent)
 	if err != nil {
 		return nil, err
@@ -161,21 +161,22 @@ func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (uint64, bool, error) {
 		return 0, false, nil
 	}
 
-	stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: s.ctx})
-	if err != nil {
-		return 0, false, err
-	}
-
 	// full sync mode will use the verified block head.
 	// snap sync mode will use the latest block head.
-	var blockID uint64
+	var (
+		blockID uint64
+		err     error
+	)
 	switch s.syncMode {
 	case downloader.SnapSync.String():
-		blockID, err = s.rpc.L2CheckPoint.BlockNumber(s.ctx)
-		if err != nil {
+		if blockID, err = s.rpc.L2CheckPoint.BlockNumber(s.ctx); err != nil {
 			return 0, false, err
 		}
 	case downloader.FullSync.String():
+		stateVars, err := s.rpc.GetProtocolStateVariables(&bind.CallOpts{Context: s.ctx})
+		if err != nil {
+			return 0, false, err
+		}
 		blockID = stateVars.B.LastVerifiedBlockId
 	default:
 		return 0, false, fmt.Errorf("invalid sync mode: %s", s.syncMode)
