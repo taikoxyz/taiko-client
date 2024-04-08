@@ -1,4 +1,4 @@
-package customerr
+package pkg
 
 import (
 	"errors"

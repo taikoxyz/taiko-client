@@ -10,7 +10,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/prysmaticlabs/prysm/v4/beacon-chain/rpc/eth/blob"
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/pkg/customerr"
+	"github.com/taikoxyz/taiko-client/pkg"
 )
 
 type BlobDataSource struct {
@@ -47,7 +47,7 @@ func (ds *BlobDataSource) GetBlobs(
 	meta *bindings.TaikoDataBlockMetadata,
 ) ([]*blob.Sidecar, error) {
 	if !meta.BlobUsed {
-		return nil, customerr.ErrBlobUnused
+		return nil, pkg.ErrBlobUnused
 	}
 
 	var (
@@ -55,7 +55,7 @@ func (ds *BlobDataSource) GetBlobs(
 		err      error
 	)
 	if ds.client.L1Beacon == nil {
-		sidecars, err = nil, customerr.ErrBeaconNotFound
+		sidecars, err = nil, pkg.ErrBeaconNotFound
 	} else {
 		sidecars, err = ds.client.L1Beacon.GetBlobs(ctx, meta.Timestamp)
 	}

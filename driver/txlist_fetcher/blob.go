@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/pkg/customerr"
+	"github.com/taikoxyz/taiko-client/pkg"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -33,7 +33,7 @@ func (d *BlobFetcher) Fetch(
 	meta *bindings.TaikoDataBlockMetadata,
 ) ([]byte, error) {
 	if !meta.BlobUsed {
-		return nil, customerr.ErrBlobUsed
+		return nil, pkg.ErrBlobUsed
 	}
 
 	// Fetch the L1 block sidecars.
@@ -63,5 +63,5 @@ func (d *BlobFetcher) Fetch(
 		}
 	}
 
-	return nil, customerr.ErrSidecarNotFound
+	return nil, pkg.ErrSidecarNotFound
 }
