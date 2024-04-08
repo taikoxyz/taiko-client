@@ -115,6 +115,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	if p.proverSelector, err = selector.NewETHFeeEOASelector(
 		&protocolConfigs,
 		p.rpc,
+		p.proposerAddress,
 		cfg.TaikoL1Address,
 		cfg.AssignmentHookAddress,
 		p.tierFees,

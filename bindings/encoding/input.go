@@ -1,11 +1,14 @@
 package encoding
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -13,7 +16,10 @@ import (
 
 // ABI arguments marshaling components.
 var (
-	blockMetadataComponents = []abi.ArgumentMarshaling{
+	assignmentPayloadPrefix            = "PROVER_ASSIGNMENT"
+	assignmentPayloadPrefixSize        = len([]byte(assignmentPayloadPrefix))
+	paddedAssignmentPayloadPrefixBytes = common.LeftPadBytes([]byte(assignmentPayloadPrefix), assignmentPayloadPrefixSize)
+	blockMetadataComponents            = []abi.ArgumentMarshaling{
 		{
 			Name: "l1Hash",
 			Type: "bytes32",
@@ -198,7 +204,6 @@ var (
 	blockParamsComponentsType, _ = abi.NewType("tuple", "TaikoData.BlockParams", blockParamsComponents)
 	blockParamsComponentsArgs    = abi.Arguments{{Name: "TaikoData.BlockParams", Type: blockParamsComponentsType}}
 	// ProverAssignmentPayload
-	stringType, _   = abi.NewType("string", "", nil)
 	bytes32Type, _  = abi.NewType("bytes32", "", nil)
 	addressType, _  = abi.NewType("address", "", nil)
 	uint64Type, _   = abi.NewType("uint64", "", nil)
@@ -216,19 +221,14 @@ var (
 			},
 		},
 	)
-	proverAssignmentPayloadArgs = abi.Arguments{
-		{Name: "PROVER_ASSIGNMENT", Type: stringType},
-		{Name: "chainID", Type: uint64Type},
-		{Name: "taikoAddress", Type: addressType},
-		{Name: "assignmentHookAddress", Type: addressType},
-		{Name: "metaHash", Type: bytes32Type},
-		{Name: "parentMetaHash", Type: bytes32Type},
-		{Name: "blobHash", Type: bytes32Type},
-		{Name: "assignment.feeToken", Type: addressType},
-		{Name: "assignment.expiry", Type: uint64Type},
-		{Name: "assignment.maxBlockId", Type: uint64Type},
-		{Name: "assignment.maxProposedIn", Type: uint64Type},
-		{Name: "assignment.tierFees", Type: tierFeesType},
+	proverAssignmentHashPayloadArgs = abi.Arguments{
+		{Name: "_assignment.metaHash", Type: bytes32Type},
+		{Name: "_assignment.parentMetaHash", Type: bytes32Type},
+		{Name: "_assignment.feeToken", Type: addressType},
+		{Name: "_assignment.expiry", Type: uint64Type},
+		{Name: "_assignment.maxBlockId", Type: uint64Type},
+		{Name: "_assignment.maxProposedIn", Type: uint64Type},
+		{Name: "_assignment.tierFees", Type: tierFeesType},
 	}
 	blockMetadataComponentsType, _ = abi.NewType("tuple", "TaikoData.BlockMetadata", blockMetadataComponents)
 	transitionComponentsType, _    = abi.NewType("tuple", "TaikoData.Transition", transitionComponents)
@@ -341,21 +341,18 @@ func EncodeProverAssignmentPayload(
 	chainID uint64,
 	taikoAddress common.Address,
 	assignmentHookAddress common.Address,
-	txListHash common.Hash,
+	blockProposer common.Address,
+	assignedProver common.Address,
+	blobHash common.Hash,
 	feeToken common.Address,
 	expiry uint64,
 	maxBlockID uint64,
 	maxProposedIn uint64,
 	tierFees []TierFee,
 ) ([]byte, error) {
-	b, err := proverAssignmentPayloadArgs.Pack(
-		"PROVER_ASSIGNMENT",
-		chainID,
-		taikoAddress,
-		assignmentHookAddress,
+	hashBytesPayload, err := proverAssignmentHashPayloadArgs.Pack(
 		common.Hash{},
 		common.Hash{},
-		txListHash,
 		feeToken,
 		expiry,
 		maxBlockID,
@@ -365,7 +362,20 @@ func EncodeProverAssignmentPayload(
 	if err != nil {
 		return nil, fmt.Errorf("failed to abi.encode prover assignment hash payload, %w", err)
 	}
-	return b, nil
+
+	chainIDBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(chainIDBytes, chainID)
+
+	return bytes.Join([][]byte{
+		paddedAssignmentPayloadPrefixBytes[len(paddedAssignmentPayloadPrefixBytes)-assignmentPayloadPrefixSize:],
+		chainIDBytes,
+		taikoAddress.Bytes(),
+		blockProposer.Bytes(),
+		assignedProver.Bytes(),
+		blobHash.Bytes(),
+		crypto.Keccak256Hash(hashBytesPayload).Bytes(),
+		assignmentHookAddress.Bytes(),
+	}, nil), nil
 }
 
 // EncodeProveBlockInput performs the solidity `abi.encode` for the given TaikoL1.proveBlock input.

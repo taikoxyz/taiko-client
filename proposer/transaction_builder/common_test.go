@@ -34,6 +34,7 @@ func (s *TransactionBuilderTestSuite) SetupTest() {
 	proverSelector, err := selector.NewETHFeeEOASelector(
 		&protocolConfigs,
 		s.RPCClient,
+		crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey),
 		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
 		[]encoding.TierFee{},
