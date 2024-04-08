@@ -113,7 +113,7 @@ func (s *Syncer) getVerifiedBlockPayload(ctx context.Context, blockID uint64) (*
 		return nil, fmt.Errorf(
 			"latest verified block hash mismatch: %s != %s",
 			header.Hash(),
-			common.BytesToHash(blockInfo.Ts.BlockHash[:]),
+			common.BytesToHash(ts.BlockHash[:]),
 		)
 	}
 
