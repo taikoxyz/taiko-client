@@ -287,7 +287,7 @@ func RandomBytes(size int) (b []byte) {
 func RandomPort() int {
 	port, err := freeport.GetFreePort()
 	if err != nil {
-		log.Crit("Failed to get local free random port", "custom_err", err)
+		log.Crit("Failed to get local free random port", "error", err)
 	}
 	return port
 }
