@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -37,6 +38,7 @@ func (s *DriverTestSuite) SetupTest() {
 	d := new(Driver)
 	ctx, cancel := context.WithCancel(context.Background())
 	s.Nil(d.InitFromConfig(ctx, &Config{
+		SyncMode: downloader.SnapSync.String(),
 		ClientConfig: &rpc.ClientConfig{
 			L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
 			L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),

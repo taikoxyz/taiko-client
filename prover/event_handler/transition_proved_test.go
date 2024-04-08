@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
-
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/stretchr/testify/suite"
+
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
@@ -21,6 +21,7 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-client/proposer"
+	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
 
 type EventHandlerTestSuite struct {
@@ -40,6 +41,7 @@ func (s *EventHandlerTestSuite) SetupTest() {
 
 	d := new(driver.Driver)
 	s.Nil(d.InitFromConfig(context.Background(), &driver.Config{
+		SyncMode: downloader.SnapSync.String(),
 		ClientConfig: &rpc.ClientConfig{
 			L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
 			L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
