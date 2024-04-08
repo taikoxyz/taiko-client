@@ -36,8 +36,8 @@ func (s *ProverServerTestSuite) TestProposeBlockSuccess() {
 			{Tier: encoding.TierOptimisticID, Fee: common.Big256},
 			{Tier: encoding.TierSgxID, Fee: common.Big256},
 		},
-		Expiry:     uint64(time.Now().Add(time.Minute).Unix()),
-		TxListHash: common.BigToHash(common.Big1),
+		Expiry:   uint64(time.Now().Add(time.Minute).Unix()),
+		BlobHash: common.BigToHash(common.Big1),
 	})
 	s.Nil(err)
 	res, err := http.Post(s.testServer.URL+"/assignment", "application/json", strings.NewReader(string(data)))

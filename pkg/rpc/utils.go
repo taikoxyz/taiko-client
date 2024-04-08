@@ -139,7 +139,7 @@ func GetBlockProofStatus(
 	}
 
 	// Get the transition state from TaikoL1 contract.
-	transition, err := cli.TaikoL1.GetTransition(
+	transition, err := cli.TaikoL1.GetTransition0(
 		&bind.CallOpts{Context: ctxWithTimeout},
 		id.Uint64(),
 		parent.Hash(),

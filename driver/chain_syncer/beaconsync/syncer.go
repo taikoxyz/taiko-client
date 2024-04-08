@@ -95,21 +95,25 @@ func (s *Syncer) TriggerBeaconSync(blockID uint64) error {
 // getVerifiedBlockPayload fetches the latest verified block's header, and converts it to an Engine API executable data,
 // which will be used to let the node start beacon syncing.
 func (s *Syncer) getVerifiedBlockPayload(ctx context.Context, blockID uint64) (*engine.ExecutableData, error) {
-	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(blockID))
-	if err != nil {
-		return nil, err
-	}
-
 	header, err := s.rpc.L2CheckPoint.HeaderByNumber(s.ctx, new(big.Int).SetUint64(blockID))
 	if err != nil {
 		return nil, err
 	}
 
-	if s.syncMode == downloader.FullSync.String() && header.Hash() != blockInfo.Ts.BlockHash {
+	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(blockID))
+	if err != nil {
+		return nil, err
+	}
+	ts, err := s.rpc.GetTransition(ctx, new(big.Int).SetUint64(blockInfo.BlockId), blockInfo.VerifiedTransitionId)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.syncMode == downloader.FullSync.String() && header.Hash() != ts.BlockHash {
 		return nil, fmt.Errorf(
 			"latest verified block hash mismatch: %s != %s",
 			header.Hash(),
-			common.BytesToHash(blockInfo.Ts.BlockHash[:]),
+			common.BytesToHash(ts.BlockHash[:]),
 		)
 	}
 

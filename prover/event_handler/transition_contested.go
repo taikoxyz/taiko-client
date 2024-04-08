@@ -48,7 +48,7 @@ func (h *TransitionContestedEventHandler) Handle(
 		return nil
 	}
 
-	contestedTransition, err := h.rpc.TaikoL1.GetTransition(
+	contestedTransition, err := h.rpc.TaikoL1.GetTransition0(
 		&bind.CallOpts{Context: ctx},
 		e.BlockId.Uint64(),
 		e.Tran.ParentHash,
@@ -92,7 +92,7 @@ func (h *TransitionContestedEventHandler) Handle(
 		ctx,
 		h.rpc,
 		e.BlockId,
-		new(big.Int).SetUint64(blockInfo.Blk.ProposedIn),
+		new(big.Int).SetUint64(blockInfo.ProposedIn),
 	)
 	if err != nil {
 		return err
