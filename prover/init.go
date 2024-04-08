@@ -123,6 +123,7 @@ func (p *Prover) initProofSubmitters(
 			p.proofGenerationCh,
 			p.cfg.TaikoL2Address,
 			p.cfg.Graffiti,
+			p.cfg.ProveBlockGasLimit,
 			txmgr,
 			txBuilder,
 		); err != nil {

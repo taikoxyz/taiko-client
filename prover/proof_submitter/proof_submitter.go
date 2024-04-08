@@ -41,6 +41,7 @@ func NewProofSubmitter(
 	resultCh chan *proofProducer.ProofWithHeader,
 	taikoL2Address common.Address,
 	graffiti string,
+	gasLimit uint64,
 	txmgr *txmgr.SimpleTxManager,
 	builder *transaction.ProveBlockTxBuilder,
 ) (*ProofSubmitter, error) {
@@ -55,7 +56,7 @@ func NewProofSubmitter(
 		resultCh:        resultCh,
 		anchorValidator: anchorValidator,
 		txBuilder:       builder,
-		sender:          transaction.NewSender(rpcClient, txmgr, 0),
+		sender:          transaction.NewSender(rpcClient, txmgr, gasLimit),
 		proverAddress:   txmgr.From(),
 		taikoL2Address:  taikoL2Address,
 		graffiti:        rpc.StringToBytes32(graffiti),
@@ -131,7 +132,7 @@ func (s *ProofSubmitter) SubmitProof(
 	log.Info(
 		"NewProofSubmitter block proof",
 		"blockID", proofWithHeader.BlockID,
-		"proposer", proofWithHeader.Meta.Coinbase,
+		"coinbase", proofWithHeader.Meta.Coinbase,
 		"parentHash", proofWithHeader.Header.ParentHash,
 		"hash", proofWithHeader.Opts.BlockHash,
 		"stateRoot", proofWithHeader.Opts.StateRoot,

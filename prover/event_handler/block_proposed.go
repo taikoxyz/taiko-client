@@ -85,7 +85,7 @@ func (h *BlockProposedEventHandler) Handle(
 	end eventIterator.EndBlockProposedEventIterFunc,
 ) error {
 	// If there are newly generated proofs, we need to submit them as soon as possible,
-	// to aviod proof submission timeout.
+	// to avoid proof submission timeout.
 	if len(h.proofGenerationCh) > 0 {
 		log.Info("onBlockProposed callback early return", "proofGenerationChannelLength", len(h.proofGenerationCh))
 		end()

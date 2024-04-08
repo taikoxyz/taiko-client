@@ -42,6 +42,7 @@ func (s *TransactionBuilderTestSuite) SetupTest() {
 		32,
 		1*time.Minute,
 		1*time.Minute,
+		common.Big0,
 	)
 	s.Nil(err)
 	s.calldataTxBuilder = NewCalldataTransactionBuilder(

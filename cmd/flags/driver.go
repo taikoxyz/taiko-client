@@ -6,22 +6,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// Flags used by driver.
-var (
-	L2AuthEndpoint = &cli.StringFlag{
-		Name:     "l2.auth",
-		Usage:    "Authenticated HTTP RPC endpoint of a L2 taiko-geth execution engine",
-		Required: true,
-		Category: driverCategory,
-	}
-	JWTSecret = &cli.StringFlag{
-		Name:     "jwtSecret",
-		Usage:    "Path to a JWT secret to use for authenticated RPC endpoints",
-		Required: true,
-		Category: driverCategory,
-	}
-)
-
 // Optional flags used by driver.
 var (
 	P2PSyncVerifiedBlocks = &cli.BoolFlag{

@@ -40,6 +40,7 @@ type ETHFeeEOASelector struct {
 	maxTierFeePriceBumpIterations uint64
 	proposalExpiry                time.Duration
 	requestTimeout                time.Duration
+	MaxTierFee                    *big.Int
 }
 
 // NewETHFeeEOASelector creates a new ETHFeeEOASelector instance.
@@ -54,6 +55,7 @@ func NewETHFeeEOASelector(
 	maxTierFeePriceBumpIterations uint64,
 	proposalExpiry time.Duration,
 	requestTimeout time.Duration,
+	MaxTierFee *big.Int,
 ) (*ETHFeeEOASelector, error) {
 	if len(proverEndpoints) == 0 {
 		return nil, errEmptyProverEndpoints
@@ -76,6 +78,7 @@ func NewETHFeeEOASelector(
 		maxTierFeePriceBumpIterations,
 		proposalExpiry,
 		requestTimeout,
+		MaxTierFee,
 	}, nil
 }
 
@@ -94,7 +97,11 @@ func (s *ETHFeeEOASelector) AssignProver(
 		big100       = new(big.Int).SetUint64(uint64(100))
 		maxProverFee = common.Big0
 	)
-	copy(fees, tierFees)
+
+	// Deep copy
+	for i, fee := range tierFees {
+		fees[i] = encoding.TierFee{Tier: fee.Tier, Fee: fee.Fee}
+	}
 
 	// Iterate over each configured endpoint, and see if someone wants to accept this block.
 	// If it is denied, we continue on to the next endpoint.
@@ -105,7 +112,12 @@ func (s *ETHFeeEOASelector) AssignProver(
 		for idx := range fees {
 			if i > 0 {
 				fee := new(big.Int).Mul(fees[idx].Fee, cumulativeBumpPercent)
-				fees[idx].Fee = fees[idx].Fee.Add(fees[idx].Fee, fee.Div(fee, big100))
+				tempFee := fees[idx].Fee.Add(fees[idx].Fee, fee.Div(fee, big100))
+				if s.MaxTierFee.Cmp(common.Big0) > 0 && tempFee.Cmp(s.MaxTierFee) > 0 {
+					fees[idx].Fee = s.MaxTierFee
+				} else {
+					fees[idx].Fee = tempFee
+				}
 			}
 			if fees[idx].Fee.Cmp(maxProverFee) > 0 {
 				maxProverFee = fees[idx].Fee
@@ -118,7 +130,7 @@ func (s *ETHFeeEOASelector) AssignProver(
 				s.protocolConfigs.ChainId,
 				endpoint,
 				expiry,
-				tierFees,
+				fees,
 				s.taikoL1Address,
 				s.assignmentHookAddress,
 				txListHash,
@@ -180,6 +192,7 @@ func assignProver(
 		"endpoint", endpoint,
 		"expiry", expiry,
 		"txListHash", txListHash,
+		"tierFees", tierFees,
 	)
 
 	// Send the HTTP request

@@ -47,6 +47,18 @@ var (
 		Required: true,
 		Category: commonCategory,
 	}
+	L2AuthEndpoint = &cli.StringFlag{
+		Name:     "l2.auth",
+		Usage:    "Authenticated HTTP RPC endpoint of a L2 taiko-geth execution engine",
+		Required: true,
+		Category: commonCategory,
+	}
+	JWTSecret = &cli.StringFlag{
+		Name:     "jwtSecret",
+		Usage:    "Path to a JWT secret to use for authenticated RPC endpoints",
+		Required: true,
+		Category: commonCategory,
+	}
 	TaikoL1Address = &cli.StringFlag{
 		Name:     "taikoL1",
 		Usage:    "TaikoL1 contract `address`",

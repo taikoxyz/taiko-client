@@ -59,6 +59,12 @@ var (
 		Category: proposerCategory,
 		Value:    3,
 	}
+	MaxTierFee = &cli.Uint64Flag{
+		Name:     "tierFee.max",
+		Usage:    "Fee max limit for all tier types. 0 means unlimited",
+		Value:    0,
+		Category: proposerCategory,
+	}
 	// Proposing epoch related.
 	ProposeInterval = &cli.DurationFlag{
 		Name:     "epoch.interval",
@@ -132,6 +138,8 @@ var (
 // ProposerFlags All proposer flags.
 var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2HTTPEndpoint,
+	L2AuthEndpoint,
+	JWTSecret,
 	TaikoTokenAddress,
 	L1ProposerPrivKey,
 	L2SuggestedFeeRecipient,
@@ -152,4 +160,5 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	ProposerAssignmentHookAddress,
 	BlobAllowed,
 	L1BlockBuilderTip,
+	MaxTierFee,
 }, TxmgrFlags)
