@@ -298,7 +298,7 @@ func LocalRandomProverEndpoint() *url.URL {
 
 	proverEndpoint, err := url.Parse(fmt.Sprintf("http://localhost:%v", port))
 	if err != nil {
-		log.Crit("Failed to parse local prover endpoint", "custom_err", err)
+		log.Crit("Failed to parse local prover endpoint", "error", err)
 	}
 
 	return proverEndpoint
