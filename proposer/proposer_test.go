@@ -296,7 +296,7 @@ func (s *ProposerTestSuite) TestUpdateProposingTicker() {
 func (s *ProposerTestSuite) TestStartClose() {
 	s.Nil(s.p.Start())
 	s.cancel()
-	s.NotPanics(func() { s.p.Close() })
+	s.NotPanics(func() { s.p.Close(s.p.ctx) })
 }
 
 func TestProposerTestSuite(t *testing.T) {

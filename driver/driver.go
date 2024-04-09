@@ -41,13 +41,13 @@ type Driver struct {
 }
 
 // InitFromCli initializes the given driver instance based on the command line flags.
-func (d *Driver) InitFromCli(c *cli.Context) error {
+func (d *Driver) InitFromCli(ctx context.Context, c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {
 		return err
 	}
 
-	return d.InitFromConfig(c.Context, cfg)
+	return d.InitFromConfig(ctx, cfg)
 }
 
 // InitFromConfig initializes the driver instance based on the given configurations.
@@ -100,7 +100,7 @@ func (d *Driver) Start() error {
 }
 
 // Close closes the driver instance.
-func (d *Driver) Close() {
+func (d *Driver) Close(_ context.Context) {
 	d.l1HeadSub.Unsubscribe()
 	d.state.Close()
 	d.wg.Wait()

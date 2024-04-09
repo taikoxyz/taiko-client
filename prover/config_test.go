@@ -1,6 +1,7 @@
 package prover
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -52,7 +53,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.Equal(uint64(minTierFee), c.MinSgxTierFee.Uint64())
 		s.Equal(c.L1NodeVersion, l1NodeVersion)
 		s.Equal(c.L2NodeVersion, l2NodeVersion)
-		s.Nil(new(Prover).InitFromCli(ctx))
+		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 		s.True(c.ProveUnassignedBlocks)
 		s.Equal(uint64(100), c.MaxProposedIn)
 		s.Equal(os.Getenv("ASSIGNMENT_HOOK_ADDRESS"), c.AssignmentHookAddress.String())
