@@ -3,6 +3,7 @@ package driver
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -21,6 +22,7 @@ type Config struct {
 	RPCTimeout            time.Duration
 	RetryInterval         time.Duration
 	MaxExponent           uint64
+	BlobServerEndpoint    *url.URL
 }
 
 // NewConfigFromCliContext creates a new config instance from
@@ -44,6 +46,15 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, errors.New("empty L1 beacon endpoint")
 	}
 
+	var blobServerEndpoint *url.URL
+	if c.IsSet(flags.BlobServerEndpoint.Name) {
+		if blobServerEndpoint, err = url.Parse(
+			c.String(flags.BlobServerEndpoint.Name),
+		); err != nil {
+			return nil, err
+		}
+	}
+
 	var timeout = c.Duration(flags.RPCTimeout.Name)
 	return &Config{
 		ClientConfig: &rpc.ClientConfig{
@@ -62,5 +73,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		P2PSyncTimeout:        c.Duration(flags.P2PSyncTimeout.Name),
 		RPCTimeout:            timeout,
 		MaxExponent:           c.Uint64(flags.MaxExponent.Name),
+		BlobServerEndpoint:    blobServerEndpoint,
 	}, nil
 }
