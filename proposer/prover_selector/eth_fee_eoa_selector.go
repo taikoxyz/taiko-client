@@ -41,7 +41,6 @@ type ETHFeeEOASelector struct {
 	maxTierFeePriceBumpIterations uint64
 	proposalExpiry                time.Duration
 	requestTimeout                time.Duration
-	MaxTierFee                    *big.Int
 }
 
 // NewETHFeeEOASelector creates a new ETHFeeEOASelector instance.
@@ -57,7 +56,6 @@ func NewETHFeeEOASelector(
 	maxTierFeePriceBumpIterations uint64,
 	proposalExpiry time.Duration,
 	requestTimeout time.Duration,
-	MaxTierFee *big.Int,
 ) (*ETHFeeEOASelector, error) {
 	if len(proverEndpoints) == 0 {
 		return nil, errEmptyProverEndpoints
@@ -81,7 +79,6 @@ func NewETHFeeEOASelector(
 		maxTierFeePriceBumpIterations,
 		proposalExpiry,
 		requestTimeout,
-		MaxTierFee,
 	}, nil
 }
 
@@ -101,7 +98,7 @@ func (s *ETHFeeEOASelector) AssignProver(
 		maxProverFee = common.Big0
 	)
 
-	// Deep copy
+	// Deep copy the tierFees slice.
 	for i, fee := range tierFees {
 		fees[i] = encoding.TierFee{Tier: fee.Tier, Fee: fee.Fee}
 	}
@@ -110,23 +107,19 @@ func (s *ETHFeeEOASelector) AssignProver(
 	// If it is denied, we continue on to the next endpoint.
 	// If we do not find a prover, we can increase the fee up to a point, or give up.
 	for i := 0; i < int(s.maxTierFeePriceBumpIterations); i++ {
-		// Bump tier fee on each failed loop
+		// Bump tier fee on each failed loop.
 		cumulativeBumpPercent := new(big.Int).Mul(s.tierFeePriceBump, new(big.Int).SetUint64(uint64(i)))
 		for idx := range fees {
 			if i > 0 {
 				fee := new(big.Int).Mul(fees[idx].Fee, cumulativeBumpPercent)
-				tempFee := fees[idx].Fee.Add(fees[idx].Fee, fee.Div(fee, big100))
-				if s.MaxTierFee.Cmp(common.Big0) > 0 && tempFee.Cmp(s.MaxTierFee) > 0 {
-					fees[idx].Fee = s.MaxTierFee
-				} else {
-					fees[idx].Fee = tempFee
-				}
+				fees[idx].Fee = fees[idx].Fee.Add(fees[idx].Fee, fee.Div(fee, big100))
 			}
 			if fees[idx].Fee.Cmp(maxProverFee) > 0 {
 				maxProverFee = fees[idx].Fee
 			}
 		}
 
+		// Try to assign a prover from all given endpoints.
 		for _, endpoint := range s.shuffleProverEndpoints() {
 			encodedAssignment, proverAddress, err := assignProver(
 				ctx,

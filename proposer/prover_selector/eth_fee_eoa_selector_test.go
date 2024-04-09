@@ -46,7 +46,6 @@ func (s *ProverSelectorTestSuite) SetupTest() {
 		32,
 		1*time.Minute,
 		1*time.Minute,
-		common.Big32,
 	)
 	s.Nil(err)
 }
