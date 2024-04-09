@@ -192,7 +192,7 @@ func (p *Proposer) eventLoop() {
 }
 
 // Close closes the proposer instance.
-func (p *Proposer) Close(ctx context.Context) {
+func (p *Proposer) Close(_ context.Context) {
 	p.wg.Wait()
 }
 
