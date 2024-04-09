@@ -274,7 +274,7 @@ func (s *DriverTestSuite) TestDoSyncNoNewL2Blocks() {
 func (s *DriverTestSuite) TestStartClose() {
 	s.Nil(s.d.Start())
 	s.cancel()
-	s.d.Close()
+	s.d.Close(s.d.ctx)
 }
 
 func (s *DriverTestSuite) TestL1Current() {

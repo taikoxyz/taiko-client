@@ -53,7 +53,7 @@ func (c *ProofContester) SubmitContest(
 	tier uint16,
 ) error {
 	// Ensure the transition has not been contested yet.
-	transition, err := c.rpc.TaikoL1.GetTransition(
+	transition, err := c.rpc.TaikoL1.GetTransition0(
 		&bind.CallOpts{Context: ctx},
 		blockID.Uint64(),
 		parentHash,

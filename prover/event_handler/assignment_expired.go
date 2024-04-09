@@ -42,10 +42,7 @@ func (h *AssignmentExpiredEventHandler) Handle(
 		"assignedProver", e.AssignedProver,
 		"minTier", e.Meta.MinTier,
 	)
-	// If Proof assignment window is expired, then the assigned prover can not submit new proofs for it anymore.
-	if h.proverAddress == e.AssignedProver {
-		return nil
-	}
+
 	// Check if we still need to generate a new proof for that block.
 	proofStatus, err := rpc.GetBlockProofStatus(ctx, h.rpc, e.BlockId, h.proverAddress)
 	if err != nil {

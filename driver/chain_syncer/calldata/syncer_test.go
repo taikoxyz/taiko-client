@@ -41,6 +41,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 		state2,
 		beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 1*time.Hour),
 		0,
+		nil,
 	)
 	s.Nil(err)
 	s.s = syncer
@@ -56,6 +57,7 @@ func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
 		s.s.state,
 		s.s.progressTracker,
 		0,
+		nil,
 	)
 	s.Nil(syncer)
 	s.NotNil(err)

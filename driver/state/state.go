@@ -142,7 +142,6 @@ func (s *State) eventLoop(ctx context.Context) {
 				"blockID", e.BlockId,
 				"hash", common.Hash(e.BlockHash),
 				"stateRoot", common.Hash(e.StateRoot),
-				"assignedProver", e.AssignedProver,
 				"prover", e.Prover,
 			)
 		case newHead := <-l1HeadCh:

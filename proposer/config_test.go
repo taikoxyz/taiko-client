@@ -1,6 +1,7 @@
 package proposer
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -32,8 +33,8 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 
 	app := s.SetupApp()
 
-	app.Action = func(ctx *cli.Context) error {
-		c, err := NewConfigFromCliContext(ctx)
+	app.Action = func(cliCtx *cli.Context) error {
+		c, err := NewConfigFromCliContext(cliCtx)
 		s.Nil(err)
 		s.Equal(l1Endpoint, c.L1Endpoint)
 		s.Equal(l2Endpoint, c.L2Endpoint)
@@ -56,7 +57,7 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 			s.Equal(c.ProverEndpoints[i].String(), e)
 		}
 
-		s.Nil(new(Proposer).InitFromCli(ctx))
+		s.Nil(new(Proposer).InitFromCli(context.Background(), cliCtx))
 		return nil
 	}
 

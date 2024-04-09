@@ -33,10 +33,11 @@ const (
 
 // CreateAssignmentRequestBody represents a request body when handling assignment creation request.
 type CreateAssignmentRequestBody struct {
-	FeeToken   common.Address
-	TierFees   []encoding.TierFee
-	Expiry     uint64
-	TxListHash common.Hash
+	Proposer common.Address
+	FeeToken common.Address
+	TierFees []encoding.TierFee
+	Expiry   uint64
+	BlobHash common.Hash
 }
 
 // Status represents the current prover server status.
@@ -84,7 +85,7 @@ type ProposeBlockResponse struct {
 //	@Accept			json
 //	@Produce		json
 //	@Success		200		{object} ProposeBlockResponse
-//	@Failure		422		{string} string	"invalid txList hash"
+//	@Failure		422		{string} string	"empty blob hash"
 //	@Failure		422		{string} string	"only receive ETH"
 //	@Failure		422		{string} string	"insufficient prover balance"
 //	@Failure		422		{string} string	"proof fee too low"
@@ -102,16 +103,17 @@ func (s *ProverServer) CreateAssignment(c echo.Context) error {
 		"feeToken", req.FeeToken,
 		"expiry", req.Expiry,
 		"tierFees", req.TierFees,
-		"txListHash", req.TxListHash,
+		"blobHash", req.BlobHash,
 		"currentUsedCapacity", len(s.proofSubmissionCh),
 	)
 
 	// 1. Check if the request body is valid.
-	if req.TxListHash == (common.Hash{}) {
-		log.Info("Invalid txList hash")
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, "invalid txList hash")
+	if req.BlobHash == (common.Hash{}) {
+		log.Warn("Empty blob hash", "prover", s.proverAddress)
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, "empty blob hash")
 	}
 	if req.FeeToken != (common.Address{}) {
+		log.Warn("Only receive ETH", "prover", s.proverAddress)
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, "only receive ETH")
 	}
 
@@ -201,7 +203,9 @@ func (s *ProverServer) CreateAssignment(c echo.Context) error {
 		s.protocolConfigs.ChainId,
 		s.taikoL1Address,
 		s.assignmentHookAddress,
-		req.TxListHash,
+		req.Proposer,
+		s.proverAddress,
+		req.BlobHash,
 		req.FeeToken,
 		req.Expiry,
 		l1Head+s.maxSlippage,

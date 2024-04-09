@@ -281,63 +281,35 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 		return fmt.Errorf("failed to check if the proving window is expired: %w", err)
 	}
 
-	if windowExpired {
-		// If the proving window is expired, we need to check if the current prover is the assigned prover
-		// at first, if yes, we should skip proving this block, if no, then we check if the current prover
-		// wants to prove unassigned blocks.
+	// If the proving window is not expired, we need to check if the current prover is the assigned prover,
+	// if no and the current prover wants to prove unassigned blocks, then we should wait for its expiration.
+	if !windowExpired && e.AssignedProver != h.proverAddress {
 		log.Info(
-			"Proposed block's proving window has expired",
+			"Proposed block is not provable by current prover at the moment",
 			"blockID", e.BlockId,
 			"prover", e.AssignedProver,
 			"timeToExpire", timeToExpire,
-			"minTier", e.Meta.MinTier,
 		)
-		if e.AssignedProver == h.proverAddress {
-			log.Warn(
-				"Assigned prover is the current prover, but the proving window has expired, skip proving",
-				"blockID", e.BlockId,
-				"prover", e.AssignedProver,
-			)
-			return nil
-		}
-		// If the current prover doesn't want to prove unassigned blocks, we should skip proving this block.
-		if !h.proveUnassignedBlocks {
+
+		if h.proveUnassignedBlocks {
 			log.Info(
-				"Skip proving expired blocks",
+				"Add proposed block to wait for proof window expiration",
 				"blockID", e.BlockId,
-				"prover", e.AssignedProver,
-			)
-			return nil
-		}
-	} else {
-		// If the proving window is not expired, we need to check if the current prover is the assigned prover,
-		// if no and the current prover wants to prove unassigned blocks, then we should wait for its expiration.
-		if e.AssignedProver != h.proverAddress {
-			log.Info(
-				"Proposed block is not provable by current prover at the moment",
-				"blockID", e.BlockId,
-				"prover", e.AssignedProver,
+				"assignProver", e.AssignedProver,
 				"timeToExpire", timeToExpire,
 			)
-
-			if h.proveUnassignedBlocks {
-				log.Info(
-					"Add proposed block to wait for proof window expiration",
-					"blockID", e.BlockId,
-					"prover", e.AssignedProver,
-					"timeToExpire", timeToExpire,
-				)
-				time.AfterFunc(
-					// Add another 60 seconds, to ensure one more L1 block will be mined before the proof submission
-					timeToExpire+proofExpirationDelay,
-					func() { h.assignmentExpiredCh <- e },
-				)
-			}
-
-			return nil
+			time.AfterFunc(
+				// Add another 60 seconds, to ensure one more L1 block will be mined before the proof submission
+				timeToExpire+proofExpirationDelay,
+				func() { h.assignmentExpiredCh <- e },
+			)
 		}
+
+		return nil
 	}
 
+	// The current prover is the assigned prover, or the proving window is expired,
+	// try to submit a proof for this proposed block.
 	tier := e.Meta.MinTier
 	if h.tierToOverride != 0 {
 		tier = h.tierToOverride
@@ -346,7 +318,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 	log.Info(
 		"Proposed block is provable",
 		"blockID", e.BlockId,
-		"prover", e.AssignedProver,
+		"assignProver", e.AssignedProver,
 		"minTier", e.Meta.MinTier,
 		"tier", tier,
 	)

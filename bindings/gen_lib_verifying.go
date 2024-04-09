@@ -31,7 +31,7 @@ var (
 
 // LibVerifyingMetaData contains all meta data concerning the LibVerifying contract.
 var LibVerifyingMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"event\",\"name\":\"BlockVerified\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"assignedProver\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"prover\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"contestations\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"StateVariablesUpdated\",\"inputs\":[{\"name\":\"slotB\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.SlotB\",\"components\":[{\"name\":\"numBlocks\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"lastVerifiedBlockId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"provingPaused\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"__reservedB1\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"__reservedB2\",\"type\":\"uint16\",\"internalType\":\"uint16\"},{\"name\":\"__reservedB3\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"lastUnpausedAt\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"L1_BLOCK_MISMATCH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_CONFIG\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_TRANSITION_ID_ZERO\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"event\",\"name\":\"BlockVerified\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"prover\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"StateVariablesUpdated\",\"inputs\":[{\"name\":\"slotB\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.SlotB\",\"components\":[{\"name\":\"numBlocks\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"lastVerifiedBlockId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"provingPaused\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"__reservedB1\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"__reservedB2\",\"type\":\"uint16\",\"internalType\":\"uint16\"},{\"name\":\"__reservedB3\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"lastUnpausedAt\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"L1_BLOCK_MISMATCH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_CONFIG\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_GENESIS_HASH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_TRANSITION_ID_ZERO\",\"inputs\":[]}]",
 }
 
 // LibVerifyingABI is the input ABI used to generate the binding from.
@@ -249,60 +249,50 @@ func (it *LibVerifyingBlockVerifiedIterator) Close() error {
 
 // LibVerifyingBlockVerified represents a BlockVerified event raised by the LibVerifying contract.
 type LibVerifyingBlockVerified struct {
-	BlockId        *big.Int
-	AssignedProver common.Address
-	Prover         common.Address
-	BlockHash      [32]byte
-	StateRoot      [32]byte
-	Tier           uint16
-	Contestations  uint8
-	Raw            types.Log // Blockchain specific contextual infos
+	BlockId   *big.Int
+	Prover    common.Address
+	BlockHash [32]byte
+	StateRoot [32]byte
+	Tier      uint16
+	Raw       types.Log // Blockchain specific contextual infos
 }
 
-// FilterBlockVerified is a free log retrieval operation binding the contract event 0xaeba6e73abba9419294b1017075cf8dc2e7de6f2d7fd3b336b3ba882a2acfca5.
+// FilterBlockVerified is a free log retrieval operation binding the contract event 0xdecbd2c61cbda254917d6fd4c980a470701e8f9f1b744f6ad163ca70ca5db289.
 //
-// Solidity: event BlockVerified(uint256 indexed blockId, address indexed assignedProver, address indexed prover, bytes32 blockHash, bytes32 stateRoot, uint16 tier, uint8 contestations)
-func (_LibVerifying *LibVerifyingFilterer) FilterBlockVerified(opts *bind.FilterOpts, blockId []*big.Int, assignedProver []common.Address, prover []common.Address) (*LibVerifyingBlockVerifiedIterator, error) {
+// Solidity: event BlockVerified(uint256 indexed blockId, address indexed prover, bytes32 blockHash, bytes32 stateRoot, uint16 tier)
+func (_LibVerifying *LibVerifyingFilterer) FilterBlockVerified(opts *bind.FilterOpts, blockId []*big.Int, prover []common.Address) (*LibVerifyingBlockVerifiedIterator, error) {
 
 	var blockIdRule []interface{}
 	for _, blockIdItem := range blockId {
 		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-	var assignedProverRule []interface{}
-	for _, assignedProverItem := range assignedProver {
-		assignedProverRule = append(assignedProverRule, assignedProverItem)
 	}
 	var proverRule []interface{}
 	for _, proverItem := range prover {
 		proverRule = append(proverRule, proverItem)
 	}
 
-	logs, sub, err := _LibVerifying.contract.FilterLogs(opts, "BlockVerified", blockIdRule, assignedProverRule, proverRule)
+	logs, sub, err := _LibVerifying.contract.FilterLogs(opts, "BlockVerified", blockIdRule, proverRule)
 	if err != nil {
 		return nil, err
 	}
 	return &LibVerifyingBlockVerifiedIterator{contract: _LibVerifying.contract, event: "BlockVerified", logs: logs, sub: sub}, nil
 }
 
-// WatchBlockVerified is a free log subscription operation binding the contract event 0xaeba6e73abba9419294b1017075cf8dc2e7de6f2d7fd3b336b3ba882a2acfca5.
+// WatchBlockVerified is a free log subscription operation binding the contract event 0xdecbd2c61cbda254917d6fd4c980a470701e8f9f1b744f6ad163ca70ca5db289.
 //
-// Solidity: event BlockVerified(uint256 indexed blockId, address indexed assignedProver, address indexed prover, bytes32 blockHash, bytes32 stateRoot, uint16 tier, uint8 contestations)
-func (_LibVerifying *LibVerifyingFilterer) WatchBlockVerified(opts *bind.WatchOpts, sink chan<- *LibVerifyingBlockVerified, blockId []*big.Int, assignedProver []common.Address, prover []common.Address) (event.Subscription, error) {
+// Solidity: event BlockVerified(uint256 indexed blockId, address indexed prover, bytes32 blockHash, bytes32 stateRoot, uint16 tier)
+func (_LibVerifying *LibVerifyingFilterer) WatchBlockVerified(opts *bind.WatchOpts, sink chan<- *LibVerifyingBlockVerified, blockId []*big.Int, prover []common.Address) (event.Subscription, error) {
 
 	var blockIdRule []interface{}
 	for _, blockIdItem := range blockId {
 		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-	var assignedProverRule []interface{}
-	for _, assignedProverItem := range assignedProver {
-		assignedProverRule = append(assignedProverRule, assignedProverItem)
 	}
 	var proverRule []interface{}
 	for _, proverItem := range prover {
 		proverRule = append(proverRule, proverItem)
 	}
 
-	logs, sub, err := _LibVerifying.contract.WatchLogs(opts, "BlockVerified", blockIdRule, assignedProverRule, proverRule)
+	logs, sub, err := _LibVerifying.contract.WatchLogs(opts, "BlockVerified", blockIdRule, proverRule)
 	if err != nil {
 		return nil, err
 	}
@@ -334,9 +324,9 @@ func (_LibVerifying *LibVerifyingFilterer) WatchBlockVerified(opts *bind.WatchOp
 	}), nil
 }
 
-// ParseBlockVerified is a log parse operation binding the contract event 0xaeba6e73abba9419294b1017075cf8dc2e7de6f2d7fd3b336b3ba882a2acfca5.
+// ParseBlockVerified is a log parse operation binding the contract event 0xdecbd2c61cbda254917d6fd4c980a470701e8f9f1b744f6ad163ca70ca5db289.
 //
-// Solidity: event BlockVerified(uint256 indexed blockId, address indexed assignedProver, address indexed prover, bytes32 blockHash, bytes32 stateRoot, uint16 tier, uint8 contestations)
+// Solidity: event BlockVerified(uint256 indexed blockId, address indexed prover, bytes32 blockHash, bytes32 stateRoot, uint16 tier)
 func (_LibVerifying *LibVerifyingFilterer) ParseBlockVerified(log types.Log) (*LibVerifyingBlockVerified, error) {
 	event := new(LibVerifyingBlockVerified)
 	if err := _LibVerifying.contract.UnpackLog(event, "BlockVerified", log); err != nil {

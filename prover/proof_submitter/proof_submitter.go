@@ -67,7 +67,7 @@ func NewProofSubmitter(
 func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
 	l1Origin, err := s.rpc.WaitL1Origin(ctx, event.BlockId)
 	if err != nil {
-		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, err: %w", event.BlockId, err)
+		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, error: %w", event.BlockId, err)
 	}
 
 	// Get the header of the block to prove from L2 execution engine.
@@ -96,7 +96,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		ProverAddress:      s.proverAddress,
 		ProposeBlockTxHash: event.Raw.TxHash,
 		TaikoL2:            s.taikoL2Address,
-		MetaHash:           blockInfo.Blk.MetaHash,
+		MetaHash:           blockInfo.MetaHash,
 		BlockHash:          block.Hash(),
 		ParentHash:         block.ParentHash(),
 		StateRoot:          block.Root(),

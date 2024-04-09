@@ -66,13 +66,13 @@ type Proposer struct {
 }
 
 // InitFromCli New initializes the given proposer instance based on the command line flags.
-func (p *Proposer) InitFromCli(c *cli.Context) error {
+func (p *Proposer) InitFromCli(ctx context.Context, c *cli.Context) error {
 	cfg, err := NewConfigFromCliContext(c)
 	if err != nil {
 		return err
 	}
 
-	return p.InitFromConfig(c.Context, cfg)
+	return p.InitFromConfig(ctx, cfg)
 }
 
 // InitFromConfig initializes the proposer instance based on the given configurations.
@@ -115,6 +115,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	if p.proverSelector, err = selector.NewETHFeeEOASelector(
 		&protocolConfigs,
 		p.rpc,
+		p.proposerAddress,
 		cfg.TaikoL1Address,
 		cfg.AssignmentHookAddress,
 		p.tierFees,
@@ -191,7 +192,7 @@ func (p *Proposer) eventLoop() {
 }
 
 // Close closes the proposer instance.
-func (p *Proposer) Close() {
+func (p *Proposer) Close(_ context.Context) {
 	p.wg.Wait()
 }
 

@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"net/url"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
@@ -14,18 +16,17 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
-
-	"github.com/ethereum/go-ethereum"
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
-	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	txlistfetcher "github.com/taikoxyz/taiko-client/driver/txlist_fetcher"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/internal/utils"
-	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+
+	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
+	txlistfetcher "github.com/taikoxyz/taiko-client/driver/txlist_fetcher"
+	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	txListValidator "github.com/taikoxyz/taiko-client/pkg/txlist_validator"
 )
 
@@ -42,6 +43,7 @@ type Syncer struct {
 	lastInsertedBlockID *big.Int
 	reorgDetectedFlag   bool
 	maxRetrieveExponent uint64
+	blobDatasource      *rpc.BlobDataSource
 }
 
 // NewSyncer creates a new syncer instance.
@@ -51,6 +53,7 @@ func NewSyncer(
 	state *state.State,
 	progressTracker *beaconsync.SyncProgressTracker,
 	maxRetrieveExponent uint64,
+	blobServerEndpoint *url.URL,
 ) (*Syncer, error) {
 	configs, err := client.TaikoL1.GetConfig(&bind.CallOpts{Context: ctx})
 	if err != nil {
@@ -74,6 +77,11 @@ func NewSyncer(
 			client.L2.ChainID,
 		),
 		maxRetrieveExponent: maxRetrieveExponent,
+		blobDatasource: rpc.NewBlobDataSource(
+			ctx,
+			client,
+			blobServerEndpoint,
+		),
 	}, nil
 }
 
@@ -239,7 +247,7 @@ func (s *Syncer) onBlockProposed(
 	// Decode transactions list.
 	var txListDecoder txlistfetcher.TxListFetcher
 	if event.Meta.BlobUsed {
-		txListDecoder = txlistfetcher.NewBlobTxListFetcher(s.rpc.L1Beacon)
+		txListDecoder = txlistfetcher.NewBlobTxListFetcher(s.rpc.L1Beacon, s.blobDatasource)
 	} else {
 		txListDecoder = new(txlistfetcher.CalldataFetcher)
 	}
@@ -583,12 +591,16 @@ func (s *Syncer) retrievePastBlock(
 	if err != nil {
 		return nil, err
 	}
+	ts, err := s.rpc.GetTransition(ctx, new(big.Int).SetUint64(blockInfo.BlockId), blockInfo.VerifiedTransitionId)
+	if err != nil {
+		return nil, err
+	}
 
 	l2Header, err := s.rpc.L2.HeaderByNumber(ctx, new(big.Int).SetUint64(currentBlockID))
 	if err != nil {
 		return nil, err
 	}
-	if blockInfo.Ts.BlockHash == l2Header.Hash() {
+	if ts.BlockHash == l2Header.Hash() {
 		// To reduce the number of call contracts by bringing forward the termination condition judgement
 		if retries == 0 {
 			return nil, nil
@@ -606,8 +618,8 @@ func (s *Syncer) retrievePastBlock(
 				if err != nil {
 					return nil, err
 				}
-				if blockInfo.Blk.ProposedIn != 0 {
-					l1HeaderToSet, err = s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.Blk.ProposedIn))
+				if blockInfo.ProposedIn != 0 {
+					l1HeaderToSet, err = s.rpc.L1.HeaderByNumber(ctx, new(big.Int).SetUint64(blockInfo.ProposedIn))
 					if err != nil {
 						return nil, err
 					}

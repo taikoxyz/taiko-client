@@ -35,6 +35,12 @@ var (
 		Value:    0,
 		Category: driverCategory,
 	}
+	// blob server endpoint
+	BlobServerEndpoint = &cli.StringFlag{
+		Name:     "blob.server",
+		Usage:    "Blob sidecar storage server",
+		Category: driverCategory,
+	}
 )
 
 // DriverFlags All driver flags.
@@ -47,4 +53,5 @@ var DriverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	P2PSyncTimeout,
 	CheckPointSyncURL,
 	MaxExponent,
+	BlobServerEndpoint,
 })

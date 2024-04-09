@@ -46,7 +46,6 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 		&bind.FilterOpts{Start: stateVars.A.GenesisHeight, End: &stateVars.A.GenesisHeight, Context: ctxWithTimeout},
 		[]*big.Int{common.Big0},
 		nil,
-		nil,
 	)
 	if err != nil {
 		return err
@@ -379,15 +378,28 @@ func (c *Client) GetProtocolStateVariables(opts *bind.CallOpts) (*struct {
 	return GetProtocolStateVariables(c.TaikoL1, opts)
 }
 
-// GetL2BlockInfo fetches the L2 block and its corresponding transition state from the protocol.
-func (c *Client) GetL2BlockInfo(ctx context.Context, blockID *big.Int) (struct {
-	Blk bindings.TaikoDataBlock
-	Ts  bindings.TaikoDataTransitionState // nolint: stylecheck
-}, error) {
+// GetL2BlockInfo fetches the L2 block information from the protocol.
+func (c *Client) GetL2BlockInfo(ctx context.Context, blockID *big.Int) (bindings.TaikoDataBlock, error) {
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
 	return c.TaikoL1.GetBlock(&bind.CallOpts{Context: ctxWithTimeout}, blockID.Uint64())
+}
+
+// GetTransition fetches the L2 block's corresponding transition state from the protocol.
+func (c *Client) GetTransition(
+	ctx context.Context,
+	blockID *big.Int,
+	transactionID uint32,
+) (bindings.TaikoDataTransitionState, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	return c.TaikoL1.GetTransition(
+		&bind.CallOpts{Context: ctxWithTimeout},
+		blockID.Uint64(),
+		transactionID,
+	)
 }
 
 // ReorgCheckResult represents the information about whether the L1 block has been reorged
