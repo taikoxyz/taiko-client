@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
@@ -19,7 +20,9 @@ type DriverStateTestSuite struct {
 
 func (s *DriverStateTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
-	state, err := New(context.Background(), s.RPCClient)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*200)
+	defer cancel()
+	state, err := New(ctx, s.RPCClient)
 	s.Nil(err)
 	s.s = state
 }
