@@ -3,6 +3,7 @@ package chainsyncer
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -45,6 +46,8 @@ func New(
 	p2pSyncVerifiedBlocks bool,
 	p2pSyncTimeout time.Duration,
 	maxRetrieveExponent uint64,
+	blobServerEndpoint *url.URL,
+
 ) (*L2ChainSyncer, error) {
 	tracker := beaconsync.NewSyncProgressTracker(rpc.L2, p2pSyncTimeout)
 	go tracker.Track(ctx)
@@ -54,7 +57,7 @@ func New(
 		return nil, err
 	}
 	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, syncMode, tracker)
-	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, maxRetrieveExponent)
+	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, maxRetrieveExponent, blobServerEndpoint)
 	if err != nil {
 		return nil, err
 	}

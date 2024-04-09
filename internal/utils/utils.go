@@ -22,14 +22,14 @@ import (
 func LoadEnv() {
 	currentPath, err := os.Getwd()
 	if err != nil {
-		log.Debug("Failed to get current path", "err", err)
+		log.Debug("Failed to get current path", "error", err)
 	}
 	path := strings.Split(currentPath, "/taiko-client")
 	if len(path) == 0 {
 		log.Debug("Not a taiko-client repo")
 	}
 	if godotenv.Load(fmt.Sprintf("%s/taiko-client/integration_test/.env", path[0])) != nil {
-		log.Debug("Failed to load test env", "current path", currentPath, "err", err)
+		log.Debug("Failed to load test env", "current path", currentPath, "error", err)
 	}
 }
 

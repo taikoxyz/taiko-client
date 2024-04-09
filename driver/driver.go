@@ -80,6 +80,7 @@ func (d *Driver) InitFromConfig(ctx context.Context, cfg *Config) (err error) {
 		cfg.P2PSyncVerifiedBlocks,
 		cfg.P2PSyncTimeout,
 		cfg.MaxExponent,
+		cfg.BlobServerEndpoint,
 	); err != nil {
 		return err
 	}
