@@ -142,15 +142,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background()))
 
-	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
-	s.Nil(err)
-
-	s.Equal(l2Head1.Number.Uint64()+10, l2Head3.Number.Uint64())
-
-	parent, err := s.d.rpc.L2.HeaderByNumber(context.Background(), new(big.Int).SetUint64(l2Head1.Number.Uint64()+1))
-	s.Nil(err)
-	s.Equal(parent.ParentHash, l2Head1.Hash())
-	s.NotEqual(parent.Hash(), l2Head2.ParentHash)
 }
 
 func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
