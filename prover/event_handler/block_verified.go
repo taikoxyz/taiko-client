@@ -19,7 +19,6 @@ func (h *BlockVerifiedEventHandler) Handle(e *bindings.TaikoL1ClientBlockVerifie
 		"blockID", e.BlockId,
 		"hash", common.BytesToHash(e.BlockHash[:]),
 		"stateRoot", common.BytesToHash(e.StateRoot[:]),
-		"assignedProver", e.AssignedProver,
 		"prover", e.Prover,
 	)
 }

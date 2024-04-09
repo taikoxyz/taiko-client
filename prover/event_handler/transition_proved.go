@@ -63,7 +63,7 @@ func (h *TransitionProvedEventHandler) Handle(
 		return err
 	}
 
-	meta, err := getMetadataFromBlockID(ctx, h.rpc, e.BlockId, new(big.Int).SetUint64(blockInfo.Blk.ProposedIn))
+	meta, err := getMetadataFromBlockID(ctx, h.rpc, e.BlockId, new(big.Int).SetUint64(blockInfo.ProposedIn))
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (h *TransitionProvedEventHandler) Handle(
 	log.Info(
 		"Attempting to contest a proven transition",
 		"blockID", e.BlockId,
-		"l1Height", blockInfo.Blk.ProposedIn,
+		"l1Height", blockInfo.ProposedIn,
 		"tier", e.Tier,
 		"parentHash", common.Bytes2Hex(e.Tran.ParentHash[:]),
 		"blockHash", common.Bytes2Hex(e.Tran.BlockHash[:]),
@@ -81,7 +81,7 @@ func (h *TransitionProvedEventHandler) Handle(
 	go func() {
 		h.proofContestCh <- &proofProducer.ContestRequestBody{
 			BlockID:    e.BlockId,
-			ProposedIn: new(big.Int).SetUint64(blockInfo.Blk.ProposedIn),
+			ProposedIn: new(big.Int).SetUint64(blockInfo.ProposedIn),
 			ParentHash: e.Tran.ParentHash,
 			Meta:       meta,
 			Tier:       e.Tier,

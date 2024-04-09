@@ -32,6 +32,7 @@ var (
 type ETHFeeEOASelector struct {
 	protocolConfigs               *bindings.TaikoDataConfig
 	rpc                           *rpc.Client
+	proposerAddress               common.Address
 	taikoL1Address                common.Address
 	assignmentHookAddress         common.Address
 	tiersFee                      []encoding.TierFee
@@ -47,6 +48,7 @@ type ETHFeeEOASelector struct {
 func NewETHFeeEOASelector(
 	protocolConfigs *bindings.TaikoDataConfig,
 	rpc *rpc.Client,
+	proposerAddress common.Address,
 	taikoL1Address common.Address,
 	assignmentHookAddress common.Address,
 	tiersFee []encoding.TierFee,
@@ -70,6 +72,7 @@ func NewETHFeeEOASelector(
 	return &ETHFeeEOASelector{
 		protocolConfigs,
 		rpc,
+		proposerAddress,
 		taikoL1Address,
 		assignmentHookAddress,
 		tiersFee,
@@ -130,6 +133,7 @@ func (s *ETHFeeEOASelector) AssignProver(
 				s.protocolConfigs.ChainId,
 				endpoint,
 				expiry,
+				s.proposerAddress,
 				fees,
 				s.taikoL1Address,
 				s.assignmentHookAddress,
@@ -181,6 +185,7 @@ func assignProver(
 	chainID uint64,
 	endpoint *url.URL,
 	expiry uint64,
+	proposerAddress common.Address,
 	tierFees []encoding.TierFee,
 	taikoL1Address common.Address,
 	assignmentHookAddress common.Address,
@@ -199,10 +204,11 @@ func assignProver(
 	var (
 		client  = resty.New()
 		reqBody = &server.CreateAssignmentRequestBody{
-			FeeToken:   rpc.ZeroAddress,
-			TierFees:   tierFees,
-			Expiry:     expiry,
-			TxListHash: txListHash,
+			Proposer: proposerAddress,
+			FeeToken: rpc.ZeroAddress,
+			TierFees: tierFees,
+			Expiry:   expiry,
+			BlobHash: txListHash,
 		}
 		result = server.ProposeBlockResponse{}
 	)
@@ -234,6 +240,8 @@ func assignProver(
 		chainID,
 		taikoL1Address,
 		assignmentHookAddress,
+		proposerAddress,
+		result.Prover,
 		txListHash,
 		common.Address{},
 		expiry,
