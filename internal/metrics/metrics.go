@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"strconv"
@@ -55,7 +56,7 @@ var (
 
 // Serve starts the metrics server on the given address, will be closed when the given
 // context is cancelled.
-func Serve(c *cli.Context) error {
+func Serve(ctx context.Context, c *cli.Context) error {
 	if !c.Bool(flags.MetricsEnabled.Name) {
 		return nil
 	}
@@ -72,7 +73,7 @@ func Serve(c *cli.Context) error {
 	}
 
 	go func() {
-		<-c.Context.Done()
+		<-ctx.Done()
 		if err := server.Close(); err != nil {
 			log.Error("Failed to close metrics server", "error", err)
 		}
