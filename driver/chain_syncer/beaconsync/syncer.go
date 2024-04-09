@@ -100,21 +100,22 @@ func (s *Syncer) getVerifiedBlockPayload(ctx context.Context, blockID uint64) (*
 		return nil, err
 	}
 
-	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(blockID))
-	if err != nil {
-		return nil, err
-	}
-	ts, err := s.rpc.GetTransition(ctx, new(big.Int).SetUint64(blockInfo.BlockId), blockInfo.VerifiedTransitionId)
-	if err != nil {
-		return nil, err
-	}
-
-	if s.syncMode == downloader.FullSync.String() && header.Hash() != ts.BlockHash {
-		return nil, fmt.Errorf(
-			"latest verified block hash mismatch: %s != %s",
-			header.Hash(),
-			common.BytesToHash(ts.BlockHash[:]),
-		)
+	if s.syncMode == downloader.FullSync.String() {
+		blockInfo, err := s.rpc.GetL2BlockInfo(ctx, new(big.Int).SetUint64(blockID))
+		if err != nil {
+			return nil, err
+		}
+		ts, err := s.rpc.GetTransition(ctx, new(big.Int).SetUint64(blockInfo.BlockId), blockInfo.VerifiedTransitionId)
+		if err != nil {
+			return nil, err
+		}
+		if header.Hash() != ts.BlockHash {
+			return nil, fmt.Errorf(
+				"latest verified block hash mismatch: %s != %s",
+				header.Hash(),
+				common.BytesToHash(ts.BlockHash[:]),
+			)
+		}
 	}
 
 	log.Info("Latest verified block header retrieved", "hash", header.Hash())
