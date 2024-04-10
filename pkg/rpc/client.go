@@ -59,7 +59,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	)
 
 	// Keep retrying to connect to the RPC endpoints until success or context is cancelled.
-	backoff.Retry(func() error {
+	if err := backoff.Retry(func() error {
 		ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 		defer cancel()
 
@@ -89,7 +89,9 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		}
 
 		return nil
-	}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
+	}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx)); err != nil {
+		return nil, err
+	}
 
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
