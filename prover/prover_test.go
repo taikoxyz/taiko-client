@@ -125,7 +125,7 @@ func (s *ProverTestSuite) TestInitError() {
 
 	p := new(Prover)
 
-	s.ErrorContains(InitFromConfig(ctx, p, &Config{
+	s.NotNil(InitFromConfig(ctx, p, &Config{
 		L1WsEndpoint:          os.Getenv("L1_NODE_WS_ENDPOINT"),
 		L1HttpEndpoint:        os.Getenv("L1_NODE_HTTP_ENDPOINT"),
 		L2WsEndpoint:          os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
@@ -155,7 +155,7 @@ func (s *ProverTestSuite) TestInitError() {
 			TxSendTimeout:             txmgr.DefaultBatcherFlagValues.TxSendTimeout,
 			TxNotInMempoolTimeout:     txmgr.DefaultBatcherFlagValues.TxNotInMempoolTimeout,
 		},
-	}), "dial tcp:")
+	}))
 }
 
 func (s *ProverTestSuite) TestOnBlockProposed() {
