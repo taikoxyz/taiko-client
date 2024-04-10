@@ -100,21 +100,20 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		if err := c.Set(flags.ProveUnassignedBlocks.Name, "true"); err != nil {
 			return nil, err
 		}
-
 		if err := c.Set(flags.ContesterMode.Name, "true"); err != nil {
 			return nil, err
 		}
 
-		// l1 and l2 node version flags are required only if guardian prover
+		// L1 and L2 node version flags are required only if guardian prover
 		if !c.IsSet(flags.L1NodeVersion.Name) {
-			return nil, errors.New("L1NodeVersion is required if guardian prover is set")
+			return nil, errors.New("--prover.l1NodeVersion flag is required if guardian prover is set")
 		}
-
 		if !c.IsSet(flags.L2NodeVersion.Name) {
-			return nil, errors.New("L2NodeVersion is required if guardian prover is set")
+			return nil, errors.New("--prover.l2NodeVersion flag is required if guardian prover is set")
 		}
 	}
 
+	// If we are not running a guardian prover, a raiko host endpoint is required.
 	if !c.IsSet(flags.GuardianProver.Name) && !c.IsSet(flags.RaikoHostEndpoint.Name) {
 		return nil, fmt.Errorf("raiko host not provided")
 	}

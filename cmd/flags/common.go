@@ -3,6 +3,7 @@ package flags
 import (
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/urfave/cli/v2"
 )
 
@@ -119,7 +120,7 @@ var (
 		Name:     "backoff.retryInterval",
 		Usage:    "Retry interval in seconds when there is an error",
 		Category: commonCategory,
-		Value:    12 * time.Second,
+		Value:    backoff.DefaultMaxInterval,
 	}
 	RPCTimeout = &cli.DurationFlag{
 		Name:     "rpc.timeout",
