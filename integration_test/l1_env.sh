@@ -27,5 +27,12 @@ export GUARDIAN_PROVERS=${GUARDIAN_PROVERS_ADDRESSES:1}
 export MIN_GUARDIANS=${#GUARDIAN_PROVERS_ADDRESSES_LIST[@]}
 
 # Get the hash of L2 genesis.
-export L2_GENESIS_HASH=$(cast block --rpc-url "$L2_EXECUTION_ENGINE_HTTP_ENDPOINT" 0x0 -f hash)
+export L2_GENESIS_HASH=$(
+    curl \
+        --silent \
+        -X POST \
+        -H "Content-Type: application/json" \
+        -d '{"jsonrpc":"2.0","id":0,"method":"eth_getBlockByNumber","params":["0x0", false]}' \
+        $L2_EXECUTION_ENGINE_HTTP_ENDPOINT | jq .result.hash | sed 's/\"//g'
+)
 echo "L2_GENESIS_HASH: $L2_GENESIS_HASH"
