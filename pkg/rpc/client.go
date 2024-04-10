@@ -2,9 +2,12 @@ package rpc
 
 import (
 	"context"
+	"os"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
@@ -48,18 +51,52 @@ type ClientConfig struct {
 
 // NewClient initializes all RPC clients used by Taiko client software.
 func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
+	var (
+		l1Client       *EthClient
+		l2Client       *EthClient
+		l1BeaconClient *BeaconClient
+		l2CheckPoint   *EthClient
+		err            error
+	)
+
+	// Keep retrying to connect to the RPC endpoints until success or context is cancelled.
+	if err := backoff.Retry(func() error {
+		ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+		defer cancel()
+
+		if l1Client, err = NewEthClient(ctxWithTimeout, cfg.L1Endpoint, cfg.Timeout); err != nil {
+			log.Error("Failed to connect to L1 endpoint, retrying", "endpoint", cfg.L1Endpoint, "err", err)
+			return err
+		}
+
+		if l2Client, err = NewEthClient(ctxWithTimeout, cfg.L2Endpoint, cfg.Timeout); err != nil {
+			log.Error("Failed to connect to L2 endpoint, retrying", "endpoint", cfg.L2Endpoint, "err", err)
+			return err
+		}
+
+		// NOTE: when running tests, we do not have a L1 beacon endpoint.
+		if cfg.L1BeaconEndpoint != "" && os.Getenv("RUN_TESTS") == "" {
+			if l1BeaconClient, err = NewBeaconClient(cfg.L1BeaconEndpoint, defaultTimeout); err != nil {
+				log.Error("Failed to connect to L1 beacon endpoint, retrying", "endpoint", cfg.L1BeaconEndpoint, "err", err)
+				return err
+			}
+		}
+
+		if cfg.L2CheckPoint != "" {
+			l2CheckPoint, err = NewEthClient(ctxWithTimeout, cfg.L2CheckPoint, cfg.Timeout)
+			if err != nil {
+				log.Error("Failed to connect to L2 checkpoint endpoint, retrying", "endpoint", cfg.L2CheckPoint, "err", err)
+				return err
+			}
+		}
+
+		return nil
+	}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx)); err != nil {
+		return nil, err
+	}
+
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
-
-	l1Client, err := NewEthClient(ctxWithTimeout, cfg.L1Endpoint, cfg.Timeout)
-	if err != nil {
-		return nil, err
-	}
-
-	l2Client, err := NewEthClient(ctxWithTimeout, cfg.L2Endpoint, cfg.Timeout)
-	if err != nil {
-		return nil, err
-	}
 
 	taikoL1, err := bindings.NewTaikoL1Client(cfg.TaikoL1Address, l1Client)
 	if err != nil {
@@ -91,21 +128,6 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	var l2AuthClient *EngineClient
 	if len(cfg.L2EngineEndpoint) != 0 && len(cfg.JwtSecret) != 0 {
 		l2AuthClient, err = NewJWTEngineClient(cfg.L2EngineEndpoint, cfg.JwtSecret)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	var l1BeaconClient *BeaconClient
-	if cfg.L1BeaconEndpoint != "" {
-		if l1BeaconClient, err = NewBeaconClient(cfg.L1BeaconEndpoint, defaultTimeout); err != nil {
-			return nil, err
-		}
-	}
-
-	var l2CheckPoint *EthClient
-	if cfg.L2CheckPoint != "" {
-		l2CheckPoint, err = NewEthClient(ctxWithTimeout, cfg.L2CheckPoint, cfg.Timeout)
 		if err != nil {
 			return nil, err
 		}
