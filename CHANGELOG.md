@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.21.0](https://github.com/taikoxyz/taiko-client/compare/v0.20.0...v0.21.0) (2024-04-10)
+
+
+### Features
+
+* **bindings:** bump bindings ([#671](https://github.com/taikoxyz/taiko-client/issues/671)) ([16fe52a](https://github.com/taikoxyz/taiko-client/commit/16fe52a94337ab27a53c8c6213a6c13702b79171))
+* **bindings:** update Go contract bindings ([#680](https://github.com/taikoxyz/taiko-client/issues/680)) ([b64bf1a](https://github.com/taikoxyz/taiko-client/commit/b64bf1a6a5a5ebce0c312d40ea13155db55d0b21))
+* **bindings:** update Go contract bindings ([#689](https://github.com/taikoxyz/taiko-client/issues/689)) ([fd98d4b](https://github.com/taikoxyz/taiko-client/commit/fd98d4bab4be82d0220e8805e17592feceabb519))
+* **bindings:** update Go contract bindings ([#697](https://github.com/taikoxyz/taiko-client/issues/697)) ([993d491](https://github.com/taikoxyz/taiko-client/commit/993d4919958181e38cc413a73ea278c8ab5ab439))
+* **bindings:** update Go contract bindings ([#705](https://github.com/taikoxyz/taiko-client/issues/705)) ([a97255d](https://github.com/taikoxyz/taiko-client/commit/a97255dd18df15a4a2ad47f900bc5458679546d6))
+* **cmd:** revert `SubcommandApplication` context changes ([#701](https://github.com/taikoxyz/taiko-client/issues/701)) ([985f030](https://github.com/taikoxyz/taiko-client/commit/985f030209029c3f8fca6dc814b524c7ef16b898))
+* **driver:** add blob datasource ([#688](https://github.com/taikoxyz/taiko-client/issues/688)) ([a598847](https://github.com/taikoxyz/taiko-client/commit/a5988478251179a72dd7b5ca71754b8c0fbeb666))
+* **driver:** fix the latest verified block hash check when using snap sync ([#700](https://github.com/taikoxyz/taiko-client/issues/700)) ([3cae4ea](https://github.com/taikoxyz/taiko-client/commit/3cae4eadc24f07b87808db0df419c894b0c93357))
+* **driver:** improve driver implementation ([#672](https://github.com/taikoxyz/taiko-client/issues/672)) ([55717c8](https://github.com/taikoxyz/taiko-client/commit/55717c8ff8c9541640c5368c2e937451ae6af7aa))
+* **driver:** update snap sync strategy ([#695](https://github.com/taikoxyz/taiko-client/issues/695)) ([7a68a25](https://github.com/taikoxyz/taiko-client/commit/7a68a25f6c16878e0cf44b3ef3816e9f6544d263))
+* **flags:** remove `--rpc.waitReceiptTimeout` flag ([#684](https://github.com/taikoxyz/taiko-client/issues/684)) ([a70519b](https://github.com/taikoxyz/taiko-client/commit/a70519b585ac19a1ad8df629edf8364a3afaf8cf))
+* **pkg:** update `WaitTillL2ExecutionEngineSynced` ([#677](https://github.com/taikoxyz/taiko-client/issues/677)) ([2c2b996](https://github.com/taikoxyz/taiko-client/commit/2c2b996be04d445b289a9c65aebb01f4afd1ed3b))
+* **proof_producer:** update `sgxProducer` request body ([#693](https://github.com/taikoxyz/taiko-client/issues/693)) ([ba40ced](https://github.com/taikoxyz/taiko-client/commit/ba40ceddea6857f68d9a0187e490306038ee1e48))
+* **proof_producer:** update SGX `proofParam.bootstrap` to `false` ([#694](https://github.com/taikoxyz/taiko-client/issues/694)) ([78d5303](https://github.com/taikoxyz/taiko-client/commit/78d5303033992c46f7edd22ae1384eff59fa735d))
+* **proposer:** add more tests for propsoer ([#686](https://github.com/taikoxyz/taiko-client/issues/686)) ([cd26204](https://github.com/taikoxyz/taiko-client/commit/cd2620486c8cd8e1c4f293036e4afc3dabec46cb))
+* **proposer:** improve proposing strategy  ([#682](https://github.com/taikoxyz/taiko-client/issues/682)) ([62cc7ff](https://github.com/taikoxyz/taiko-client/commit/62cc7ffcc3e7b08fb1bd040081a34bf676ec0832))
+* **proposer:** remove `--tierFee.max` flag ([#702](https://github.com/taikoxyz/taiko-client/issues/702)) ([553c432](https://github.com/taikoxyz/taiko-client/commit/553c4322812f69e8ace719612e4c3f7696263cd2))
+* **prover_producer:** update `SGXRequestProofBodyParam` ([#691](https://github.com/taikoxyz/taiko-client/issues/691)) ([41c2019](https://github.com/taikoxyz/taiko-client/commit/41c201937aa5613e3d4d81a3478f2c67a942b387))
+* **prover:** stop retrying when error is `vm.ErrExecutionReverted` ([#706](https://github.com/taikoxyz/taiko-client/issues/706)) ([971f581](https://github.com/taikoxyz/taiko-client/commit/971f5815d767c0d152cac510c67928dc4e355279))
+
+
+### Bug Fixes
+
+* **pkg:** remove redundant alias ([#665](https://github.com/taikoxyz/taiko-client/issues/665)) ([bd1c324](https://github.com/taikoxyz/taiko-client/commit/bd1c3241554cbbf3a905a3cf1554368870dacf9e))
+* **proposer:** fix tier fee ([#687](https://github.com/taikoxyz/taiko-client/issues/687)) ([651f188](https://github.com/taikoxyz/taiko-client/commit/651f18891d77e87f9ee4906b7298e8ab89deb1ee))
+* **proposer:** rename `lastUnfilteredPoolContentProposedAt` ([#685](https://github.com/taikoxyz/taiko-client/issues/685)) ([8c85703](https://github.com/taikoxyz/taiko-client/commit/8c8570313a2e37f63284a1f78eee2d7eded09dde))
+* **prover:** do not retry when the status in receipt is not `types.ReceiptStatusSuccessful` ([#675](https://github.com/taikoxyz/taiko-client/issues/675)) ([5f91e0e](https://github.com/taikoxyz/taiko-client/commit/5f91e0e4f2788b71f3ea6c814171a0d4532c0918))
+* **prover:** fix `tx.gasLimit` flag for prover ([#692](https://github.com/taikoxyz/taiko-client/issues/692)) ([6683d54](https://github.com/taikoxyz/taiko-client/commit/6683d54e7526c53197e9bc6d414f2cfca586a1bd))
+* **prover:** fix a check in `isValidProof()` ([#679](https://github.com/taikoxyz/taiko-client/issues/679)) ([16857ba](https://github.com/taikoxyz/taiko-client/commit/16857ba2d07bc969223f90fcd20c5dbae084beaa))
+
 ## [0.20.0](https://github.com/taikoxyz/taiko-client/compare/v0.19.0...v0.20.0) (2024-03-28)
 
 
