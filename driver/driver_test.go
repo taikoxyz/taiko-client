@@ -141,7 +141,6 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Greater(l1Head4.Number.Uint64(), l1Head2.Number.Uint64())
 
 	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background()))
-
 }
 
 func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
