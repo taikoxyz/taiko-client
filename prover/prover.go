@@ -444,8 +444,7 @@ func (p *Prover) withRetry(f func() error) {
 	p.wg.Add(1)
 	go func() {
 		defer p.wg.Done()
-		err := backoff.Retry(f, p.backoff)
-		if err != nil {
+		if err := backoff.Retry(f, p.backoff); err != nil {
 			log.Error("Operation failed", "error", err)
 		}
 	}()
