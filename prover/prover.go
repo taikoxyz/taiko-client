@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/ethereum-optimism/optimism/op-service/txmgr/metrics"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/urfave/cli/v2"
 
@@ -286,12 +288,12 @@ func (p *Prover) eventLoop() {
 		select {
 		case <-p.ctx.Done():
 			return
+		case req := <-p.proofContestCh:
+			p.withRetry(func() error { return p.contestProofOp(req) })
 		case proofWithHeader := <-p.proofGenerationCh:
 			p.withRetry(func() error { return p.submitProofOp(proofWithHeader) })
 		case req := <-p.proofSubmissionCh:
 			p.withRetry(func() error { return p.requestProofOp(req.Event, req.Tier) })
-		case req := <-p.proofContestCh:
-			p.withRetry(func() error { return p.contestProofOp(req) })
 		case <-p.proveNotify:
 			if err := p.proveOp(); err != nil {
 				log.Error("Prove new blocks error", "error", err)
@@ -320,7 +322,7 @@ func (p *Prover) Close(ctx context.Context) {
 	p.wg.Wait()
 }
 
-// proveOp iterates through BlockProposed events
+// proveOp iterates through BlockProposed events.
 func (p *Prover) proveOp() error {
 	iter, err := eventIterator.NewBlockProposedIterator(p.ctx, &eventIterator.BlockProposedIteratorConfig{
 		Client:               p.rpc.L1,
@@ -347,6 +349,15 @@ func (p *Prover) contestProofOp(req *proofProducer.ContestRequestBody) error {
 		req.Meta,
 		req.Tier,
 	); err != nil {
+		if strings.Contains(err.Error(), vm.ErrExecutionReverted.Error()) {
+			log.Error(
+				"Proof contest submission reverted",
+				"blockID", req.BlockID,
+				"minTier", req.Meta.MinTier,
+				"error", err,
+			)
+			return nil
+		}
 		log.Error(
 			"Request new proof contest error",
 			"blockID", req.BlockID,
@@ -385,6 +396,15 @@ func (p *Prover) submitProofOp(proofWithHeader *proofProducer.ProofWithHeader) e
 	}
 
 	if err := submitter.SubmitProof(p.ctx, proofWithHeader); err != nil {
+		if strings.Contains(err.Error(), vm.ErrExecutionReverted.Error()) {
+			log.Error(
+				"Proof submission reverted",
+				"blockID", proofWithHeader.BlockID,
+				"minTier", proofWithHeader.Meta.MinTier,
+				"error", err,
+			)
+			return nil
+		}
 		log.Error(
 			"Submit proof error",
 			"blockID", proofWithHeader.BlockID,

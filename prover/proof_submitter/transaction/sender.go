@@ -60,7 +60,12 @@ func (s *Sender) Send(
 	}
 
 	if receipt.Status != types.ReceiptStatusSuccessful {
-		log.Error("Failed to submit proof", "txHash", receipt.TxHash)
+		log.Error(
+			"Failed to submit proof",
+			"blockID", proofWithHeader.BlockID,
+			"tier", proofWithHeader.Tier,
+			"txHash", receipt.TxHash,
+		)
 		metrics.ProverSubmissionRevertedCounter.Inc(1)
 		return ErrUnretryableSubmission
 	}
