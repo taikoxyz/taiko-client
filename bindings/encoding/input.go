@@ -16,10 +16,7 @@ import (
 
 // ABI arguments marshaling components.
 var (
-	assignmentPayloadPrefix            = "PROVER_ASSIGNMENT"
-	assignmentPayloadPrefixSize        = len([]byte(assignmentPayloadPrefix))
-	paddedAssignmentPayloadPrefixBytes = common.LeftPadBytes([]byte(assignmentPayloadPrefix), assignmentPayloadPrefixSize)
-	blockMetadataComponents            = []abi.ArgumentMarshaling{
+	blockMetadataComponents = []abi.ArgumentMarshaling{
 		{
 			Name: "l1Hash",
 			Type: "bytes32",
@@ -367,7 +364,7 @@ func EncodeProverAssignmentPayload(
 	binary.BigEndian.PutUint64(chainIDBytes, chainID)
 
 	return bytes.Join([][]byte{
-		paddedAssignmentPayloadPrefixBytes[len(paddedAssignmentPayloadPrefixBytes)-assignmentPayloadPrefixSize:],
+		common.RightPadBytes([]byte("PROVER_ASSIGNMENT"), 32),
 		chainIDBytes,
 		taikoAddress.Bytes(),
 		blockProposer.Bytes(),
