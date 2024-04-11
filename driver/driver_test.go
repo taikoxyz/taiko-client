@@ -127,6 +127,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 	// Reorg back to l2Head1
 	s.RevertL1Snapshot(testnetL1SnapshotID)
+	s.IncreaseTime(uint64((3 * time.Second).Seconds()))
 	s.InitProposer()
 
 	// Because of evm_revert operation, the nonce of the proposer need to be adjusted.
