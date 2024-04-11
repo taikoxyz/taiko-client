@@ -41,7 +41,6 @@ var (
 	ProverSubmissionAcceptedCounter  = metrics.NewRegisteredCounter("prover/proof/submission/accepted", nil)
 	ProverSubmissionErrorCounter     = metrics.NewRegisteredCounter("prover/proof/submission/error", nil)
 	ProverSgxProofGeneratedCounter   = metrics.NewRegisteredCounter("prover/proof/sgx/generated", nil)
-	ProverPseProofGeneratedCounter   = metrics.NewRegisteredCounter("prover/proof/pse/generated", nil)
 	ProverSubmissionRevertedCounter  = metrics.NewRegisteredCounter("prover/proof/submission/reverted", nil)
 
 	// Transaction sender
