@@ -54,6 +54,9 @@ type Config struct {
 	Allowance                               *big.Int
 	GuardianProverHealthCheckServerEndpoint *url.URL
 	RaikoHostEndpoint                       string
+	RaikoL1Endpoint                         string
+	RaikoL1BeaconEndpoint                   string
+	RaikoL2Endpoint                         string
 	L1NodeVersion                           string
 	L2NodeVersion                           string
 	BlockConfirmations                      uint64
@@ -118,6 +121,21 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		return nil, fmt.Errorf("raiko host not provided")
 	}
 
+	var (
+		raikoL1Endpoint       string = c.String(flags.RaikoL1Endpoint.Name)
+		raikoL1BeaconEndpoint string = c.String(flags.RaikoL1BeaconEndpoint.Name)
+		raikoL2Endpoint       string = c.String(flags.RaikoL2Endpoint.Name)
+	)
+	if raikoL1Endpoint == "" {
+		raikoL1Endpoint = c.String(flags.L1HTTPEndpoint.Name)
+	}
+	if raikoL1BeaconEndpoint == "" {
+		raikoL1BeaconEndpoint = c.String(flags.L1BeaconEndpoint.Name)
+	}
+	if raikoL2Endpoint == "" {
+		raikoL2Endpoint = c.String(flags.L2HTTPEndpoint.Name)
+	}
+
 	return &Config{
 		L1WsEndpoint:                            c.String(flags.L1WSEndpoint.Name),
 		L1HttpEndpoint:                          c.String(flags.L1HTTPEndpoint.Name),
@@ -130,6 +148,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		AssignmentHookAddress:                   common.HexToAddress(c.String(flags.ProverAssignmentHookAddress.Name)),
 		L1ProverPrivKey:                         l1ProverPrivKey,
 		RaikoHostEndpoint:                       c.String(flags.RaikoHostEndpoint.Name),
+		RaikoL1Endpoint:                         raikoL1Endpoint,
+		RaikoL1BeaconEndpoint:                   raikoL1BeaconEndpoint,
+		RaikoL2Endpoint:                         raikoL2Endpoint,
 		StartingBlockID:                         startingBlockID,
 		Dummy:                                   c.Bool(flags.Dummy.Name),
 		GuardianProverAddress:                   common.HexToAddress(c.String(flags.GuardianProver.Name)),

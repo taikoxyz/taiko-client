@@ -35,6 +35,21 @@ var (
 		Usage:    "RPC endpoint of a Raiko host service",
 		Category: proverCategory,
 	}
+	RaikoL1Endpoint = &cli.StringFlag{
+		Name:     "raiko.l1Endpoint",
+		Usage:    "L1 RPC endpoint which will be sent to the Raiko service",
+		Category: proverCategory,
+	}
+	RaikoL1BeaconEndpoint = &cli.StringFlag{
+		Name:     "raiko.l1BeaconEndpoint",
+		Usage:    "L1 beacon RPC endpoint which will be sent to the Raiko service",
+		Category: proverCategory,
+	}
+	RaikoL2Endpoint = &cli.StringFlag{
+		Name:     "raiko.l2Endpoint",
+		Usage:    "L2 RPC endpoint which will be sent to the Raiko service",
+		Category: proverCategory,
+	}
 	StartingBlockID = &cli.Uint64Flag{
 		Name:     "prover.startingBlockID",
 		Usage:    "If set, prover will start proving blocks from the block with this ID",
@@ -177,6 +192,9 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	L2WSEndpoint,
 	L2HTTPEndpoint,
 	RaikoHostEndpoint,
+	RaikoL1Endpoint,
+	RaikoL1BeaconEndpoint,
+	RaikoL2Endpoint,
 	L1ProverPrivKey,
 	MinOptimisticTierFee,
 	MinSgxTierFee,
