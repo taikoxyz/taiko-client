@@ -14,14 +14,23 @@ import (
 
 type DriverStateTestSuite struct {
 	testutils.ClientTestSuite
-	s *State
+	ctx    context.Context
+	cancel context.CancelFunc
+	s      *State
 }
 
 func (s *DriverStateTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
-	state, err := New(context.Background(), s.RPCClient)
+	s.ctx, s.cancel = context.WithCancel(context.Background())
+	state, err := New(s.ctx, s.RPCClient)
 	s.Nil(err)
 	s.s = state
+}
+
+func (s *DriverStateTestSuite) TearDownTest() {
+	if s.ctx.Err() == nil {
+		s.cancel()
+	}
 }
 
 func (s *DriverStateTestSuite) TestGetL1Head() {
@@ -34,6 +43,7 @@ func (s *DriverStateTestSuite) TestGetHeadBlockID() {
 }
 
 func (s *DriverStateTestSuite) TestClose() {
+	s.cancel()
 	s.NotPanics(s.s.Close)
 }
 
