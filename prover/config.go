@@ -122,9 +122,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	var (
-		raikoL1Endpoint       string = c.String(flags.RaikoL1Endpoint.Name)
-		raikoL1BeaconEndpoint string = c.String(flags.RaikoL1BeaconEndpoint.Name)
-		raikoL2Endpoint       string = c.String(flags.RaikoL2Endpoint.Name)
+		raikoL1Endpoint       = c.String(flags.RaikoL1Endpoint.Name)
+		raikoL1BeaconEndpoint = c.String(flags.RaikoL1BeaconEndpoint.Name)
+		raikoL2Endpoint       = c.String(flags.RaikoL2Endpoint.Name)
 	)
 	if raikoL1Endpoint == "" {
 		raikoL1Endpoint = c.String(flags.L1HTTPEndpoint.Name)
