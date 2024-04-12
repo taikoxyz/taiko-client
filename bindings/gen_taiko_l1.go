@@ -29,36 +29,6 @@ var (
 	_ = abi.ConvertType
 )
 
-// TaikoDataBlock is an auto generated low-level Go binding around an user-defined struct.
-type TaikoDataBlock struct {
-	MetaHash             [32]byte
-	AssignedProver       common.Address
-	LivenessBond         *big.Int
-	BlockId              uint64
-	ProposedAt           uint64
-	ProposedIn           uint64
-	NextTransitionId     uint32
-	VerifiedTransitionId uint32
-}
-
-// TaikoDataBlockMetadata is an auto generated low-level Go binding around an user-defined struct.
-type TaikoDataBlockMetadata struct {
-	L1Hash         [32]byte
-	Difficulty     [32]byte
-	BlobHash       [32]byte
-	ExtraData      [32]byte
-	DepositsHash   [32]byte
-	Coinbase       common.Address
-	Id             uint64
-	GasLimit       uint32
-	Timestamp      uint64
-	L1Height       uint64
-	MinTier        uint16
-	BlobUsed       bool
-	ParentMetaHash [32]byte
-	Sender         common.Address
-}
-
 // TaikoDataConfig is an auto generated low-level Go binding around an user-defined struct.
 type TaikoDataConfig struct {
 	ChainId                      uint64
@@ -70,38 +40,12 @@ type TaikoDataConfig struct {
 	BlockSyncThreshold           uint8
 }
 
-// TaikoDataEthDeposit is an auto generated low-level Go binding around an user-defined struct.
-type TaikoDataEthDeposit struct {
-	Recipient common.Address
-	Amount    *big.Int
-	Id        uint64
-}
-
 // TaikoDataSlotA is an auto generated low-level Go binding around an user-defined struct.
 type TaikoDataSlotA struct {
 	GenesisHeight     uint64
 	GenesisTimestamp  uint64
 	LastSyncedBlockId uint64
 	LastSynecdAt      uint64
-}
-
-// TaikoDataSlotB is an auto generated low-level Go binding around an user-defined struct.
-type TaikoDataSlotB struct {
-	NumBlocks           uint64
-	LastVerifiedBlockId uint64
-	ProvingPaused       bool
-	ReservedB1          uint8
-	ReservedB2          uint16
-	ReservedB3          uint32
-	LastUnpausedAt      uint64
-}
-
-// TaikoDataTransition is an auto generated low-level Go binding around an user-defined struct.
-type TaikoDataTransition struct {
-	ParentHash [32]byte
-	BlockHash  [32]byte
-	StateRoot  [32]byte
-	Graffiti   [32]byte
 }
 
 // TaikoDataTransitionState is an auto generated low-level Go binding around an user-defined struct.

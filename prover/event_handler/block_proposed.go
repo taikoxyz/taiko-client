@@ -93,8 +93,8 @@ func (h *BlockProposedEventHandler) Handle(
 	}
 
 	// Wait for the corresponding L2 block being mined in node.
-	if _, err := h.rpc.WaitL1Origin(ctx, e.BlockId); err != nil {
-		return fmt.Errorf("failed to wait L1Origin (eventID %d): %w", e.BlockId, err)
+	if _, err := h.rpc.WaitL2Header(ctx, e.BlockId); err != nil {
+		return fmt.Errorf("failed to wait L2 header (eventID %d): %w", e.BlockId, err)
 	}
 
 	// Check if the L1 chain has reorged at first.

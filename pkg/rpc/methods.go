@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/miner"
@@ -24,10 +23,10 @@ import (
 
 var (
 	// errSyncing is returned when the L2 execution engine is syncing.
-	errSyncing                  = errors.New("syncing")
-	errEmptyTiersList           = errors.New("empty proof tiers list in protocol")
-	waitL1OriginPollingInterval = 3 * time.Second
-	defaultWaitL1OriginTimeout  = 3 * time.Minute
+	errSyncing         = errors.New("syncing")
+	errEmptyTiersList  = errors.New("empty proof tiers list in protocol")
+	rpcPollingInterval = 3 * time.Second
+	defaultWaitTimeout = 3 * time.Minute
 )
 
 // ensureGenesisMatched fetches the L2 genesis block from TaikoL1 contract,
@@ -203,45 +202,47 @@ func (c *Client) L2ParentByBlockID(ctx context.Context, blockID *big.Int) (*type
 	return c.L2.HeaderByHash(ctxWithTimeout, parentHash)
 }
 
-// WaitL1Origin keeps waiting until the L1Origin with given block ID appears on the L2 execution engine.
-func (c *Client) WaitL1Origin(ctx context.Context, blockID *big.Int) (*rawdb.L1Origin, error) {
-	var (
-		l1Origin *rawdb.L1Origin
-		err      error
-	)
-
-	ticker := time.NewTicker(waitL1OriginPollingInterval)
-	defer ticker.Stop()
-
+func (c *Client) WaitL2Header(ctx context.Context, blockID *big.Int) (*types.Header, error) {
 	var (
 		ctxWithTimeout = ctx
 		cancel         context.CancelFunc
+		header         *types.Header
+		err            error
 	)
+
+	ticker := time.NewTicker(rpcPollingInterval)
+	defer ticker.Stop()
+
 	if _, ok := ctx.Deadline(); !ok {
-		ctxWithTimeout, cancel = context.WithTimeout(ctx, defaultWaitL1OriginTimeout)
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, defaultWaitTimeout)
 		defer cancel()
 	}
 
-	log.Debug("Start fetching L1Origin from L2 execution engine", "blockID", blockID)
+	log.Debug("Start fetching block header from L2 execution engine", "blockID", blockID)
+
 	for ; true; <-ticker.C {
 		if ctxWithTimeout.Err() != nil {
 			return nil, ctxWithTimeout.Err()
 		}
 
-		l1Origin, err = c.L2.L1OriginByID(ctxWithTimeout, blockID)
+		header, err = c.L2.HeaderByNumber(ctxWithTimeout, blockID)
 		if err != nil {
-			log.Debug("L1Origin from L2 execution engine not found, keep retrying", "blockID", blockID, "error", err)
+			log.Debug(
+				"Fetch block header from L2 execution engine not found, keep retrying",
+				"blockID", blockID,
+				"error", err,
+			)
 			continue
 		}
 
-		if l1Origin == nil {
+		if header == nil {
 			continue
 		}
 
-		return l1Origin, nil
+		return header, nil
 	}
 
-	return nil, fmt.Errorf("failed to fetch L1Origin from L2 execution engine, blockID: %d", blockID)
+	return nil, fmt.Errorf("failed to fetch block header from L2 execution engine, blockID: %d", blockID)
 }
 
 // GetPoolContent fetches the transactions list from L2 execution engine's transactions pool with given

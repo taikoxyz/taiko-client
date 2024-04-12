@@ -197,7 +197,7 @@ func (s *GuardianProverHeartBeater) signBlock(ctx context.Context, blockID *big.
 			"eventBlockID", blockID.Uint64(),
 		)
 
-		if _, err := s.rpc.WaitL1Origin(ctx, blockID); err != nil {
+		if _, err := s.rpc.WaitL2Header(ctx, blockID); err != nil {
 			return nil, nil, err
 		}
 
