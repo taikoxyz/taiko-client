@@ -119,7 +119,10 @@ func GetBlockProofStatus(
 	defer cancel()
 
 	// Get the local L2 parent header.
-	var parent *types.Header
+	var (
+		parent *types.Header
+		err    error
+	)
 	if id.Cmp(common.Big1) == 0 {
 		header, err := cli.L2.HeaderByNumber(ctxWithTimeout, common.Big0)
 		if err != nil {
@@ -128,12 +131,7 @@ func GetBlockProofStatus(
 
 		parent = header
 	} else {
-		parentL1Origin, err := cli.WaitL1Origin(ctxWithTimeout, new(big.Int).Sub(id, common.Big1))
-		if err != nil {
-			return nil, err
-		}
-
-		if parent, err = cli.L2.HeaderByHash(ctxWithTimeout, parentL1Origin.L2BlockHash); err != nil {
+		if parent, err = cli.L2.HeaderByNumber(ctxWithTimeout, new(big.Int).Sub(id, common.Big1)); err != nil {
 			return nil, err
 		}
 	}
@@ -153,20 +151,15 @@ func GetBlockProofStatus(
 		return &BlockProofStatus{IsSubmitted: false, ParentHeader: parent}, nil
 	}
 
-	l1Origin, err := cli.WaitL1Origin(ctxWithTimeout, id)
+	header, err := cli.WaitL2Header(ctxWithTimeout, id)
 	if err != nil {
 		return nil, err
 	}
 
-	header, err := cli.L2.HeaderByHash(ctxWithTimeout, l1Origin.L2BlockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	if l1Origin.L2BlockHash != transition.BlockHash || transition.StateRoot != header.Root {
+	if header.Hash() != transition.BlockHash || transition.StateRoot != header.Root {
 		log.Info(
 			"Different block hash or state root detected, try submitting a contest",
-			"localBlockHash", common.BytesToHash(l1Origin.L2BlockHash[:]),
+			"localBlockHash", header.Hash(),
 			"protocolTransitionBlockHash", common.BytesToHash(transition.BlockHash[:]),
 			"localStateRoot", header.Root,
 			"protocolTransitionStateRoot", common.BytesToHash(transition.StateRoot[:]),
