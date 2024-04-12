@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -65,24 +66,18 @@ func NewProofSubmitter(
 
 // RequestProof implements the Submitter interface.
 func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.TaikoL1ClientBlockProposed) error {
-	l1Origin, err := s.rpc.WaitL1Origin(ctx, event.BlockId)
+	header, err := s.rpc.WaitL2Header(ctx, event.BlockId)
 	if err != nil {
-		return fmt.Errorf("failed to fetch l1Origin, blockID: %d, error: %w", event.BlockId, err)
+		return fmt.Errorf("failed to fetch l2 Header, blockID: %d, error: %w", event.BlockId, err)
 	}
 
-	// Get the header of the block to prove from L2 execution engine.
-	block, err := s.rpc.L2.BlockByHash(ctx, l1Origin.L2BlockHash)
-	if err != nil {
-		return fmt.Errorf("failed to get the current L2 block by hash (%s): %w", l1Origin.L2BlockHash, err)
-	}
-
-	if block.Transactions().Len() == 0 {
+	if header.TxHash == types.EmptyTxsHash {
 		return errors.New("no transaction in block")
 	}
 
-	parent, err := s.rpc.L2.BlockByHash(ctx, block.ParentHash())
+	parent, err := s.rpc.L2.BlockByHash(ctx, header.ParentHash)
 	if err != nil {
-		return fmt.Errorf("failed to get the L2 parent block by hash (%s): %w", block.ParentHash(), err)
+		return fmt.Errorf("failed to get the L2 parent block by hash (%s): %w", header.ParentHash, err)
 	}
 
 	blockInfo, err := s.rpc.GetL2BlockInfo(ctx, event.BlockId)
@@ -92,17 +87,17 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 
 	// Request proof.
 	opts := &proofProducer.ProofRequestOptions{
-		BlockID:            block.Number(),
+		BlockID:            header.Number,
 		ProverAddress:      s.proverAddress,
 		ProposeBlockTxHash: event.Raw.TxHash,
 		TaikoL2:            s.taikoL2Address,
 		MetaHash:           blockInfo.MetaHash,
-		BlockHash:          block.Hash(),
-		ParentHash:         block.ParentHash(),
-		StateRoot:          block.Root(),
+		BlockHash:          header.Hash(),
+		ParentHash:         header.ParentHash,
+		StateRoot:          header.Root,
 		EventL1Hash:        event.Raw.BlockHash,
 		Graffiti:           common.Bytes2Hex(s.graffiti[:]),
-		GasUsed:            block.GasUsed(),
+		GasUsed:            header.GasUsed,
 		ParentGasUsed:      parent.GasUsed(),
 	}
 
@@ -112,7 +107,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 		opts,
 		event.BlockId,
 		&event.Meta,
-		block.Header(),
+		header,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to request proof (id: %d): %w", event.BlockId, err)
