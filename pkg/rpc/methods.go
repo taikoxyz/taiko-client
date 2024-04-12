@@ -167,7 +167,10 @@ func (c *Client) L2ParentByBlockID(ctx context.Context, blockID *big.Int) (*type
 	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
 	defer cancel()
 
-	parentBlockID := new(big.Int).Sub(blockID, common.Big1)
+	var (
+		parentHash    common.Hash
+		parentBlockID = new(big.Int).Sub(blockID, common.Big1)
+	)
 
 	log.Debug("Get parent block by block ID", "parentBlockID", parentBlockID)
 
@@ -177,12 +180,27 @@ func (c *Client) L2ParentByBlockID(ctx context.Context, blockID *big.Int) (*type
 
 	l1Origin, err := c.L2.L1OriginByID(ctxWithTimeout, parentBlockID)
 	if err != nil {
-		return nil, err
+		if err.Error() != ethereum.NotFound.Error() {
+			return nil, err
+		}
+
+		// In some cases, the L1Origin data is not found in the L2 execution engine, we will try to fetch the parent
+		// by the parent block ID.
+		log.Warn("L1Origin not found, try to fetch parent by ID", "blockID", parentBlockID)
+
+		parent, err := c.L2.BlockByNumber(ctxWithTimeout, parentBlockID)
+		if err != nil {
+			return nil, err
+		}
+
+		parentHash = parent.Hash()
+	} else {
+		parentHash = l1Origin.L2BlockHash
 	}
 
 	log.Debug("Parent block L1 origin", "l1Origin", l1Origin, "parentBlockID", parentBlockID)
 
-	return c.L2.HeaderByHash(ctxWithTimeout, l1Origin.L2BlockHash)
+	return c.L2.HeaderByHash(ctxWithTimeout, parentHash)
 }
 
 // WaitL1Origin keeps waiting until the L1Origin with given block ID appears on the L2 execution engine.
