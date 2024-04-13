@@ -103,7 +103,7 @@ func (ds *BlobDataSource) getBlobFromServer(ctx context.Context, blobHash common
 	}
 	if !resp.IsSuccess() {
 		return nil, fmt.Errorf(
-			"unable to contect blob server endpoint, status code: %v",
+			"unable to connect blob server endpoint, status code: %v",
 			resp.StatusCode(),
 		)
 	}
