@@ -100,6 +100,9 @@ func (s *L2ChainSyncer) Sync() error {
 			"p2pOutOfSync", s.progressTracker.OutOfSync(),
 		)
 
+		// Mark the beacon sync progress as finished.
+		s.progressTracker.MarkFinished()
+
 		// Get the execution engine's chain head.
 		l2Head, err := s.rpc.L2.HeaderByNumber(s.ctx, nil)
 		if err != nil {
@@ -162,13 +165,13 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead(verifiedHeightToCompare uint
 // 3. The L2 execution engine's chain is behind of the protocol's latest verified block head.
 // 4. The L2 execution engine's chain have met a sync timeout issue.
 func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (uint64, bool, error) {
-	// If the flag is not set, we simply return false.
-	if !s.p2pSyncVerifiedBlocks {
+	// If the flag is not set or there was a finished beacon sync, we simply return false.
+	if !s.p2pSyncVerifiedBlocks || s.progressTracker.Finished() {
 		return 0, false, nil
 	}
 
-	// full sync mode will use the verified block head.
-	// snap sync mode will use the latest block head.
+	// For full sync mode, we will use the verified block head,
+	// And for snap sync mode, we will use the latest block head.
 	var (
 		blockID uint64
 		err     error
