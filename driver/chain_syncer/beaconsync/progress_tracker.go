@@ -250,11 +250,11 @@ func syncProgressed(last *ethereum.SyncProgress, new *ethereum.SyncProgress) boo
 }
 
 // MarkFinished marks the current beacon sync as finished.
-func (s *SyncProgressTracker) MarkFinished() {
-	s.finished = true
+func (t *SyncProgressTracker) MarkFinished() {
+	t.finished = true
 }
 
 // Finished returns whether the current beacon sync has been finished.
-func (s *SyncProgressTracker) Finished() bool {
-	return s.finished
+func (t *SyncProgressTracker) Finished() bool {
+	return t.finished
 }
