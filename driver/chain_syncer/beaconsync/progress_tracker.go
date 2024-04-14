@@ -36,6 +36,9 @@ type SyncProgressTracker struct {
 	outOfSync          bool
 	ticker             *time.Ticker
 
+	// A marker to indicate whether the beacon sync has been finished.
+	finished bool
+
 	// Read-write mutex
 	mutex sync.RWMutex
 }
@@ -244,4 +247,14 @@ func syncProgressed(last *ethereum.SyncProgress, new *ethereum.SyncProgress) boo
 	}
 
 	return false
+}
+
+// MarkFinished marks the current beacon sync as finished.
+func (t *SyncProgressTracker) MarkFinished() {
+	t.finished = true
+}
+
+// Finished returns whether the current beacon sync has been finished.
+func (t *SyncProgressTracker) Finished() bool {
+	return t.finished
 }
