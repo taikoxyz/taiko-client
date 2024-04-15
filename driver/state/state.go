@@ -171,7 +171,7 @@ func (s *State) GetL1Head() *types.Header {
 	return s.l1Head.Load().(*types.Header)
 }
 
-// setL1Head sets the L2 head concurrent safely.
+// setL2Head sets the L2 head concurrent safely.
 func (s *State) setL2Head(l2Head *types.Header) {
 	if l2Head == nil {
 		log.Warn("Empty new L2 head")
