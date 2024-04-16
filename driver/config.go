@@ -32,10 +32,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	// Defaults config
 	cfg := Config{
 		ClientConfig: &rpc.ClientConfig{
-			// TODO: To be confirmed whether taiko addresses in L1 or L2 are constant
-			TaikoL1Address: common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
-			TaikoL2Address: common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
-			Timeout:        12 * time.Second,
+			Timeout: 12 * time.Second,
 		},
 		RetryInterval:         backoff.DefaultMaxInterval,
 		P2PSyncVerifiedBlocks: false,
@@ -51,13 +48,13 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		}
 	}
 	// Apply flag value
-	err := ApplyFlagValue(c, &cfg)
 	if err := ApplyFlagValue(c, &cfg); err != nil {
 		return nil, err
 	}
 	return &cfg, nil
 }
 
+// ApplyFlagValue applies command line flags to the config
 func ApplyFlagValue(c *cli.Context, cfg *Config) error {
 	if c.IsSet(flags.L1WSEndpoint.Name) {
 		cfg.ClientConfig.L1Endpoint = c.String(flags.L1WSEndpoint.Name)
@@ -111,6 +108,7 @@ func ApplyFlagValue(c *cli.Context, cfg *Config) error {
 		cfg.BlobServerEndpoint = blobServerEndpoint
 	}
 
+	// Must be defined via flags
 	jwtSecret, err := jwt.ParseSecretFromFile(c.String(flags.JWTSecret.Name))
 	if err != nil {
 		return fmt.Errorf("invalid JWT secret file: %w", err)

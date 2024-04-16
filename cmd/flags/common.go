@@ -128,10 +128,10 @@ var (
 		Category: commonCategory,
 		Value:    12 * time.Second,
 	}
-	// ConfigFile Path to a config file
+	// ConfigFile TOML configuration file path
 	ConfigFile = &cli.StringFlag{
-		Name:     "config.file",
-		Usage:    "Path to a config file to use for setting up application",
+		Name:     "config",
+		Usage:    "TOML configuration file",
 		Category: commonCategory,
 	}
 )
