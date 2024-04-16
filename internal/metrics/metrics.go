@@ -42,15 +42,6 @@ var (
 	ProverSubmissionErrorCounter     = metrics.NewRegisteredCounter("prover/proof/submission/error", nil)
 	ProverSgxProofGeneratedCounter   = metrics.NewRegisteredCounter("prover/proof/sgx/generated", nil)
 	ProverSubmissionRevertedCounter  = metrics.NewRegisteredCounter("prover/proof/submission/reverted", nil)
-
-	// Transaction sender
-	TxSenderSentCounter                = metrics.NewRegisteredCounter("sender/sent/txs", nil)
-	TxSenderConfirmedSuccessfulCounter = metrics.NewRegisteredCounter("sender/confirmed/successful/txs", nil)
-	TxSenderConfirmedFailedCounter     = metrics.NewRegisteredCounter("sender/confirmed/failed/txs", nil)
-	TxSenderUnconfirmedCounter         = metrics.NewRegisteredCounter("sender/unconfirmed/txs", nil)
-	TxSenderGasPriceGauge              = metrics.NewRegisteredGauge("sender/gasPrice", nil)
-	TxSenderBlobGasPriceGauge          = metrics.NewRegisteredGauge("sender/blob/gasPrice", nil)
-	TxSenderTxIncludedTimeGauge        = metrics.NewRegisteredGauge("sender/tx/includedTime", nil)
 )
 
 // Serve starts the metrics server on the given address, will be closed when the given
