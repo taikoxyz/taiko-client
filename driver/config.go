@@ -52,7 +52,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 	// Apply flag value
 	err := ApplyFlagValue(c, &cfg)
-	if err != nil {
+	if err := ApplyFlagValue(c, &cfg); err != nil {
 		return nil, err
 	}
 	return &cfg, nil
