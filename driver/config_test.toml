@@ -1,0 +1,3 @@
+P2PSyncVerifiedBlocks = false
+[ClientConfig]
+L1Endpoint = "ws://localhost:10000"

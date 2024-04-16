@@ -128,6 +128,12 @@ var (
 		Category: commonCategory,
 		Value:    12 * time.Second,
 	}
+	// ConfigFile Path to a config file
+	ConfigFile = &cli.StringFlag{
+		Name:     "config.file",
+		Usage:    "Path to a config file to use for setting up application",
+		Category: commonCategory,
+	}
 )
 
 // CommonFlags All common flags.
@@ -145,6 +151,7 @@ var CommonFlags = []cli.Flag{
 	BackOffMaxRetrys,
 	BackOffRetryInterval,
 	RPCTimeout,
+	ConfigFile,
 }
 
 // MergeFlags merges the given flag slices.

@@ -21,6 +21,42 @@ var (
 	rpcTimeout       = 5 * time.Second
 )
 
+func (s *DriverTestSuite) TestNewConfigFromFile() {
+	app := s.SetupApp()
+	app.Action = func(ctx *cli.Context) error {
+		c, err := NewConfigFromCliContext(ctx)
+		s.Nil(err)
+		s.Equal("ws://localhost:10000", c.L1Endpoint)
+		return err
+	}
+
+	s.Nil(app.Run([]string{
+		"TestNewConfigFromFile",
+		"--" + flags.L1BeaconEndpoint.Name, l1BeaconEndpoint,
+		"--" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
+		"--" + flags.ConfigFile.Name, "config_test.toml",
+	}))
+}
+
+func (s *DriverTestSuite) TestDefaultOverwrite() {
+	app := s.SetupApp()
+	app.Action = func(ctx *cli.Context) error {
+		c, err := NewConfigFromCliContext(ctx)
+		s.Nil(err)
+		s.Equal(true, c.P2PSyncVerifiedBlocks)
+		return err
+	}
+
+	s.Nil(app.Run([]string{
+		"TestDefaultOverwrite",
+		"--" + flags.L1BeaconEndpoint.Name, l1BeaconEndpoint,
+		"--" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
+		"--" + flags.P2PSyncVerifiedBlocks.Name,
+		"--" + flags.CheckPointSyncURL.Name, os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT"),
+		"--" + flags.ConfigFile.Name, "config_test.toml",
+	}))
+}
+
 func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 	app := s.SetupApp()
 
@@ -63,6 +99,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContextJWTError() {
 	app := s.SetupApp()
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
+		"--" + flags.L1BeaconEndpoint.Name, l1BeaconEndpoint,
 		"--" + flags.JWTSecret.Name, "wrongsecretfile.txt",
 	}), "invalid JWT secret file")
 }
@@ -71,6 +108,7 @@ func (s *DriverTestSuite) TestNewConfigFromCliContextEmptyL2CheckPoint() {
 	app := s.SetupApp()
 	s.ErrorContains(app.Run([]string{
 		"TestNewConfigFromCliContext",
+		"--" + flags.L1BeaconEndpoint.Name, l1BeaconEndpoint,
 		"--" + flags.JWTSecret.Name, os.Getenv("JWT_SECRET"),
 		"--" + flags.P2PSyncVerifiedBlocks.Name,
 		"--" + flags.L2WSEndpoint.Name, "",
@@ -91,6 +129,7 @@ func (s *DriverTestSuite) SetupApp() *cli.App {
 		&cli.DurationFlag{Name: flags.P2PSyncTimeout.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
 		&cli.StringFlag{Name: flags.CheckPointSyncURL.Name},
+		&cli.StringFlag{Name: flags.ConfigFile.Name},
 	}
 	app.Action = func(ctx *cli.Context) error {
 		_, err := NewConfigFromCliContext(ctx)
