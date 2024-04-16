@@ -11,6 +11,7 @@ import (
 	"github.com/naoina/toml"
 )
 
+// These settings ensure that TOML keys use the same names as Go struct fields.
 var tomlSettings = toml.Config{
 	NormFieldName: func(_ reflect.Type, key string) string {
 		return key
