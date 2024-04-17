@@ -128,7 +128,6 @@ var (
 		Category: commonCategory,
 		Value:    12 * time.Second,
 	}
-	// ConfigFile TOML configuration file path
 	ConfigFile = &cli.StringFlag{
 		Name:     "config",
 		Usage:    "TOML configuration file",
