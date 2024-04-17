@@ -252,6 +252,6 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.13.14 => github.com/taikoxyz/taiko-geth v0.0.0-20240410071954-9b71845e4aeb
+replace github.com/ethereum/go-ethereum v1.13.14 => github.com/taikoxyz/taiko-geth v0.0.0-20240417125434-12bb8478618f
 
 replace github.com/ethereum-optimism/optimism v1.7.0 => github.com/taikoxyz/optimism v0.0.0-20240416123445-221ef09b4132
