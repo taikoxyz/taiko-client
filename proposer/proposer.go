@@ -314,6 +314,9 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			continue
 		}
 
+		metrics.ProposerProposedTxListsCounter.Inc(1)
+		metrics.ProposerProposedTxsCounter.Inc(int64(len(txLists[i])))
+
 		log.Info("📝 Propose transactions succeeded", "txs", len(txLists[i]))
 		p.lastProposedAt = time.Now()
 	}
