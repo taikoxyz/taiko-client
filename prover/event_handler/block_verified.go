@@ -12,7 +12,7 @@ type BlockVerifiedEventHandler struct{}
 
 // Handle handles the BlockVerified event.
 func (h *BlockVerifiedEventHandler) Handle(e *bindings.TaikoL1ClientBlockVerified) {
-	metrics.ProverLatestVerifiedIDGauge.Update(e.BlockId.Int64())
+	metrics.ProverLatestVerifiedIDGauge.Set(float64(e.BlockId.Uint64()))
 
 	log.Info(
 		"New verified block",

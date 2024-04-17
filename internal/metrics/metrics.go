@@ -2,14 +2,12 @@ package metrics
 
 import (
 	"context"
-	"net"
-	"net/http"
-	"strconv"
-	"time"
 
+	opMetrics "github.com/ethereum-optimism/optimism/op-service/metrics"
+	"github.com/ethereum-optimism/optimism/op-service/opio"
+	txmgrMetrics "github.com/ethereum-optimism/optimism/op-service/txmgr/metrics"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/metrics/prometheus"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
@@ -17,31 +15,45 @@ import (
 
 // Metrics
 var (
+	registry = opMetrics.NewRegistry()
+	factory  = opMetrics.With(registry)
+
 	// Driver
-	DriverL1HeadHeightGauge     = metrics.NewRegisteredGauge("driver/l1Head/height", nil)
-	DriverL2HeadHeightGauge     = metrics.NewRegisteredGauge("driver/l2Head/height", nil)
-	DriverL1CurrentHeightGauge  = metrics.NewRegisteredGauge("driver/l1Current/height", nil)
-	DriverL2HeadIDGauge         = metrics.NewRegisteredGauge("driver/l2Head/id", nil)
-	DriverL2VerifiedHeightGauge = metrics.NewRegisteredGauge("driver/l2Verified/id", nil)
+	DriverL1HeadHeightGauge     = factory.NewGauge(prometheus.GaugeOpts{Name: "driver_l1Head_height"})
+	DriverL2HeadHeightGauge     = factory.NewGauge(prometheus.GaugeOpts{Name: "driver_l2Head_height"})
+	DriverL1CurrentHeightGauge  = factory.NewGauge(prometheus.GaugeOpts{Name: "driver_l1Current_height"})
+	DriverL2HeadIDGauge         = factory.NewGauge(prometheus.GaugeOpts{Name: "driver_l2Head_id"})
+	DriverL2VerifiedHeightGauge = factory.NewGauge(prometheus.GaugeOpts{Name: "driver_l2Verified_id"})
 
 	// Proposer
-	ProposerProposeEpochCounter    = metrics.NewRegisteredCounter("proposer/epoch", nil)
-	ProposerProposedTxListsCounter = metrics.NewRegisteredCounter("proposer/proposed/txLists", nil)
-	ProposerProposedTxsCounter     = metrics.NewRegisteredCounter("proposer/proposed/txs", nil)
+	ProposerProposeEpochCounter    = factory.NewCounter(prometheus.CounterOpts{Name: "proposer_epoch"})
+	ProposerProposedTxListsCounter = factory.NewCounter(prometheus.CounterOpts{Name: "proposer_proposed_txLists"})
+	ProposerProposedTxsCounter     = factory.NewCounter(prometheus.CounterOpts{Name: "proposer_proposed_txs"})
 
 	// Prover
-	ProverLatestVerifiedIDGauge      = metrics.NewRegisteredGauge("prover/latestVerified/id", nil)
-	ProverLatestProvenBlockIDGauge   = metrics.NewRegisteredGauge("prover/latestProven/id", nil)
-	ProverQueuedProofCounter         = metrics.NewRegisteredCounter("prover/proof/all/queued", nil)
-	ProverReceivedProofCounter       = metrics.NewRegisteredCounter("prover/proof/all/received", nil)
-	ProverSentProofCounter           = metrics.NewRegisteredCounter("prover/proof/all/sent", nil)
-	ProverProofsAssigned             = metrics.NewRegisteredCounter("prover/proof/assigned", nil)
-	ProverReceivedProposedBlockGauge = metrics.NewRegisteredGauge("prover/proposed/received", nil)
-	ProverReceivedProvenBlockGauge   = metrics.NewRegisteredGauge("prover/proven/received", nil)
-	ProverSubmissionAcceptedCounter  = metrics.NewRegisteredCounter("prover/proof/submission/accepted", nil)
-	ProverSubmissionErrorCounter     = metrics.NewRegisteredCounter("prover/proof/submission/error", nil)
-	ProverSgxProofGeneratedCounter   = metrics.NewRegisteredCounter("prover/proof/sgx/generated", nil)
-	ProverSubmissionRevertedCounter  = metrics.NewRegisteredCounter("prover/proof/submission/reverted", nil)
+	ProverLatestVerifiedIDGauge      = factory.NewGauge(prometheus.GaugeOpts{Name: "prover_latestVerified_id"})
+	ProverLatestProvenBlockIDGauge   = factory.NewGauge(prometheus.GaugeOpts{Name: "prover_latestProven_id"})
+	ProverQueuedProofCounter         = factory.NewCounter(prometheus.CounterOpts{Name: "prover_proof_all_queued"})
+	ProverReceivedProofCounter       = factory.NewCounter(prometheus.CounterOpts{Name: "prover_proof_all_received"})
+	ProverSentProofCounter           = factory.NewCounter(prometheus.CounterOpts{Name: "prover_proof_all_sent"})
+	ProverProofsAssigned             = factory.NewCounter(prometheus.CounterOpts{Name: "prover_proof_assigned"})
+	ProverReceivedProposedBlockGauge = factory.NewGauge(prometheus.GaugeOpts{Name: "prover_proposed_received"})
+	ProverReceivedProvenBlockGauge   = factory.NewGauge(prometheus.GaugeOpts{Name: "prover_proven_received"})
+	ProverSubmissionAcceptedCounter  = factory.NewCounter(prometheus.CounterOpts{
+		Name: "prover_proof_submission_accepted",
+	})
+	ProverSubmissionErrorCounter = factory.NewCounter(prometheus.CounterOpts{
+		Name: "prover_proof_submission_error",
+	})
+	ProverSgxProofGeneratedCounter = factory.NewCounter(prometheus.CounterOpts{
+		Name: "prover_proof_sgx_generated",
+	})
+	ProverSubmissionRevertedCounter = factory.NewCounter(prometheus.CounterOpts{
+		Name: "prover_proof_submission_reverted",
+	})
+
+	// TxManager
+	TxMgrMetrics = txmgrMetrics.MakeTxMetrics("client", factory)
 )
 
 // Serve starts the metrics server on the given address, will be closed when the given
@@ -51,25 +63,28 @@ func Serve(ctx context.Context, c *cli.Context) error {
 		return nil
 	}
 
-	address := net.JoinHostPort(
-		c.String(flags.MetricsAddr.Name),
-		strconv.Itoa(c.Int(flags.MetricsPort.Name)),
+	log.Info(
+		"Starting metrics server",
+		"host", c.String(flags.MetricsAddr.Name),
+		"port", c.Int(flags.MetricsPort.Name),
 	)
 
-	server := http.Server{
-		ReadHeaderTimeout: time.Minute,
-		Addr:              address,
-		Handler:           prometheus.Handler(metrics.DefaultRegistry),
+	server, err := opMetrics.StartServer(
+		registry,
+		c.String(flags.MetricsAddr.Name),
+		c.Int(flags.MetricsPort.Name),
+	)
+	if err != nil {
+		return err
 	}
 
-	go func() {
-		<-ctx.Done()
-		if err := server.Close(); err != nil {
+	defer func() {
+		if err := server.Stop(ctx); err != nil {
 			log.Error("Failed to close metrics server", "error", err)
 		}
 	}()
 
-	log.Info("Starting metrics server", "address", address)
+	opio.BlockOnInterruptsContext(ctx)
 
-	return server.ListenAndServe()
+	return nil
 }
