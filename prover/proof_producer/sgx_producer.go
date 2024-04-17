@@ -99,7 +99,7 @@ func (s *SGXProofProducer) RequestProof(
 		return nil, err
 	}
 
-	metrics.ProverSgxProofGeneratedCounter.Inc(1)
+	metrics.ProverSgxProofGeneratedCounter.Add(1)
 
 	return &ProofWithHeader{
 		BlockID: blockID,

@@ -66,7 +66,7 @@ func (s *Sender) Send(
 			"tier", proofWithHeader.Tier,
 			"txHash", receipt.TxHash,
 		)
-		metrics.ProverSubmissionRevertedCounter.Inc(1)
+		metrics.ProverSubmissionRevertedCounter.Add(1)
 		return ErrUnretryableSubmission
 	}
 
@@ -81,7 +81,7 @@ func (s *Sender) Send(
 		"isContest", len(proofWithHeader.Proof) == 0,
 	)
 
-	metrics.ProverSubmissionAcceptedCounter.Inc(1)
+	metrics.ProverSubmissionAcceptedCounter.Add(1)
 
 	return nil
 }
