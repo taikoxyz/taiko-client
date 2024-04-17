@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	opMetrics "github.com/ethereum-optimism/optimism/op-service/metrics"
+	txmgrMetrics "github.com/ethereum-optimism/optimism/op-service/txmgr/metrics"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/metrics/prometheus"
@@ -42,6 +44,9 @@ var (
 	ProverSubmissionErrorCounter     = metrics.NewRegisteredCounter("prover/proof/submission/error", nil)
 	ProverSgxProofGeneratedCounter   = metrics.NewRegisteredCounter("prover/proof/sgx/generated", nil)
 	ProverSubmissionRevertedCounter  = metrics.NewRegisteredCounter("prover/proof/submission/reverted", nil)
+
+	// TxManager
+	TxMgrMetrics = txmgrMetrics.MakeTxMetrics("client", opMetrics.With(opMetrics.NewRegistry()))
 )
 
 // Serve starts the metrics server on the given address, will be closed when the given

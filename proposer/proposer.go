@@ -10,7 +10,6 @@ import (
 
 	"github.com/ethereum-optimism/optimism/op-challenger/sender"
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
-	txmgrMetrics "github.com/ethereum-optimism/optimism/op-service/txmgr/metrics"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -107,7 +106,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	txmgr, err := txmgr.NewSimpleTxManager(
 		"proposer",
 		log.Root(),
-		new(txmgrMetrics.NoopTxMetrics),
+		&metrics.TxMgrMetrics,
 		*cfg.TxmgrConfigs,
 	)
 	if err != nil {
