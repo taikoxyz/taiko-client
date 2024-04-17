@@ -181,7 +181,7 @@ func (p *Proposer) eventLoop() {
 			return
 		// proposing interval timer has been reached
 		case <-p.proposingTimer.C:
-			metrics.ProposerProposeEpochCounter.Inc(1)
+			metrics.ProposerProposeEpochCounter.Add(1)
 
 			// Attempt a proposing operation
 			if err := p.ProposeOp(p.ctx); err != nil {
@@ -323,8 +323,8 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			continue
 		}
 
-		metrics.ProposerProposedTxListsCounter.Inc(1)
-		metrics.ProposerProposedTxsCounter.Inc(int64(len(txLists[i])))
+		metrics.ProposerProposedTxListsCounter.Add(1)
+		metrics.ProposerProposedTxsCounter.Add(float64(len(txLists[i])))
 
 		log.Info("📝 Propose transactions succeeded", "txs", len(txLists[i]))
 		p.lastProposedAt = time.Now()

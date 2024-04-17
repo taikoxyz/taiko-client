@@ -124,7 +124,7 @@ func (h *BlockProposedEventHandler) Handle(
 		"minTier", e.Meta.MinTier,
 		"blobUsed", e.Meta.BlobUsed,
 	)
-	metrics.ProverReceivedProposedBlockGauge.Update(e.BlockId.Int64())
+	metrics.ProverReceivedProposedBlockGauge.Set(float64(e.BlockId.Uint64()))
 
 	// Move l1Current cursor.
 	newL1Current, err := h.rpc.L1.HeaderByHash(ctx, e.Raw.BlockHash)
@@ -323,7 +323,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 		"tier", tier,
 	)
 
-	metrics.ProverProofsAssigned.Inc(1)
+	metrics.ProverProofsAssigned.Add(1)
 
 	h.proofSubmissionCh <- &proofProducer.ProofRequestBody{Tier: tier, Event: e}
 
