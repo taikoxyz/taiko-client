@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-client/cmd/utils"
@@ -32,13 +31,13 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	// Defaults config
 	cfg := Config{
 		ClientConfig: &rpc.ClientConfig{
-			Timeout: 12 * time.Second,
+			Timeout: flags.RPCTimeout.Value,
 		},
-		RetryInterval:         backoff.DefaultMaxInterval,
-		P2PSyncVerifiedBlocks: false,
-		P2PSyncTimeout:        1 * time.Hour,
-		RPCTimeout:            12 * time.Second,
-		MaxExponent:           0,
+		RetryInterval:         flags.BackOffRetryInterval.Value,
+		P2PSyncVerifiedBlocks: flags.P2PSyncVerifiedBlocks.Value,
+		P2PSyncTimeout:        flags.P2PSyncTimeout.Value,
+		RPCTimeout:            flags.RPCTimeout.Value,
+		MaxExponent:           flags.MaxExponent.Value,
 	}
 
 	// Load config file
