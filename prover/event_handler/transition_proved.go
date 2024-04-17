@@ -33,7 +33,7 @@ func (h *TransitionProvedEventHandler) Handle(
 	ctx context.Context,
 	e *bindings.TaikoL1ClientTransitionProved,
 ) error {
-	metrics.ProverReceivedProvenBlockGauge.Update(e.BlockId.Int64())
+	metrics.ProverReceivedProvenBlockGauge.Set(float64(e.BlockId.Uint64()))
 
 	// If this prover is in contest mode, we check the validity of this proof and if it's invalid,
 	// contest it with a higher tier proof.

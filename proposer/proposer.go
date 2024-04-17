@@ -10,7 +10,6 @@ import (
 
 	"github.com/ethereum-optimism/optimism/op-challenger/sender"
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
-	txmgrMetrics "github.com/ethereum-optimism/optimism/op-service/txmgr/metrics"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -107,7 +106,7 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 	txmgr, err := txmgr.NewSimpleTxManager(
 		"proposer",
 		log.Root(),
-		new(txmgrMetrics.NoopTxMetrics),
+		&metrics.TxMgrMetrics,
 		*cfg.TxmgrConfigs,
 	)
 	if err != nil {
@@ -182,7 +181,7 @@ func (p *Proposer) eventLoop() {
 			return
 		// proposing interval timer has been reached
 		case <-p.proposingTimer.C:
-			metrics.ProposerProposeEpochCounter.Inc(1)
+			metrics.ProposerProposeEpochCounter.Add(1)
 
 			// Attempt a proposing operation
 			if err := p.ProposeOp(p.ctx); err != nil {
@@ -231,6 +230,11 @@ func (p *Proposer) fetchPoolContent(filterPoolContent bool) ([]types.Transaction
 	}
 	// If the pool content is empty and the checkPoolContent flag is not set, return an empty list.
 	if !filterPoolContent && len(txLists) == 0 {
+		log.Info(
+			"Pool content is empty, proposing an empty block",
+			"lastProposedAt", p.lastProposedAt,
+			"minProposingInternal", p.MinProposingInternal,
+		)
 		txLists = append(txLists, types.Transactions{})
 	}
 
@@ -294,6 +298,11 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return err
 	}
 
+	// If the pool content is empty, return.
+	if len(txLists) == 0 {
+		return nil
+	}
+
 	// Propose all L2 transactions lists.
 	for i, txs := range txLists {
 		if i >= int(p.MaxProposedTxListsPerEpoch) {
@@ -314,8 +323,8 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			continue
 		}
 
-		metrics.ProposerProposedTxListsCounter.Inc(1)
-		metrics.ProposerProposedTxsCounter.Inc(int64(len(txLists[i])))
+		metrics.ProposerProposedTxListsCounter.Add(1)
+		metrics.ProposerProposedTxsCounter.Add(float64(len(txLists[i])))
 
 		log.Info("📝 Propose transactions succeeded", "txs", len(txLists[i]))
 		p.lastProposedAt = time.Now()

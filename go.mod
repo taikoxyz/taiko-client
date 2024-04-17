@@ -14,6 +14,7 @@ require (
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
+	github.com/prometheus/client_golang v1.19.0
 	github.com/prysmaticlabs/prysm/v4 v4.2.0
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/swag v1.16.2
@@ -174,7 +175,6 @@ require (
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.19.0 // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect

@@ -161,7 +161,7 @@ func (s *State) setL1Head(l1Head *types.Header) {
 	}
 
 	log.Debug("New L1 head", "height", l1Head.Number, "hash", l1Head.Hash(), "timestamp", l1Head.Time)
-	metrics.DriverL1HeadHeightGauge.Update(l1Head.Number.Int64())
+	metrics.DriverL1HeadHeightGauge.Set(float64(l1Head.Number.Int64()))
 
 	s.l1Head.Store(l1Head)
 }
@@ -179,7 +179,7 @@ func (s *State) setL2Head(l2Head *types.Header) {
 	}
 
 	log.Debug("New L2 head", "height", l2Head.Number, "hash", l2Head.Hash(), "timestamp", l2Head.Time)
-	metrics.DriverL2HeadHeightGauge.Update(l2Head.Number.Int64())
+	metrics.DriverL2HeadHeightGauge.Set(float64(l2Head.Number.Uint64()))
 
 	s.l2Head.Store(l2Head)
 }
@@ -192,7 +192,7 @@ func (s *State) GetL2Head() *types.Header {
 // setHeadBlockID sets the last pending block ID concurrent safely.
 func (s *State) setHeadBlockID(id *big.Int) {
 	log.Debug("New head block ID", "ID", id)
-	metrics.DriverL2HeadIDGauge.Update(id.Int64())
+	metrics.DriverL2HeadIDGauge.Set(float64(id.Uint64()))
 	s.l2HeadBlockID.Store(id)
 }
 
