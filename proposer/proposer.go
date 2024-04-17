@@ -230,6 +230,11 @@ func (p *Proposer) fetchPoolContent(filterPoolContent bool) ([]types.Transaction
 	}
 	// If the pool content is empty and the checkPoolContent flag is not set, return an empty list.
 	if !filterPoolContent && len(txLists) == 0 {
+		log.Info(
+			"Pool content is empty, proposing an empty block",
+			"lastProposedAt", p.lastProposedAt,
+			"minProposingInternal", p.MinProposingInternal,
+		)
 		txLists = append(txLists, types.Transactions{})
 	}
 
@@ -291,6 +296,11 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	txLists, err := p.fetchPoolContent(filterPoolContent)
 	if err != nil {
 		return err
+	}
+
+	// If the pool content is empty, return.
+	if len(txLists) == 0 {
+		return nil
 	}
 
 	// Propose all L2 transactions lists.
