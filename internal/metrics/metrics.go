@@ -45,7 +45,7 @@ var (
 	ProverSgxProofGeneratedCounter   = metrics.NewRegisteredCounter("prover/proof/sgx/generated", nil)
 	ProverSubmissionRevertedCounter  = metrics.NewRegisteredCounter("prover/proof/submission/reverted", nil)
 
-	// TxManager
+	// TxManager Metrics
 	TxMgrMetrics = txmgrMetrics.MakeTxMetrics("client", opMetrics.With(opMetrics.NewRegistry()))
 )
 
