@@ -3,6 +3,7 @@ services:
     container_name: l1_node
     image: ghcr.io/foundry-rs/foundry:nightly
     restart: unless-stopped
+    platform: linux/amd64
     pull_policy: always
     ports:
       - "8545"

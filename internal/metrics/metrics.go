@@ -19,37 +19,37 @@ var (
 	factory  = opMetrics.With(registry)
 
 	// Driver
-	DriverL1HeadHeightGauge     = factory.NewGauge(prometheus.GaugeOpts{Name: "driver/l1Head/height"})
-	DriverL2HeadHeightGauge     = factory.NewGauge(prometheus.GaugeOpts{Name: "driver/l2Head/height"})
-	DriverL1CurrentHeightGauge  = factory.NewGauge(prometheus.GaugeOpts{Name: "driver/l1Current/height"})
-	DriverL2HeadIDGauge         = factory.NewGauge(prometheus.GaugeOpts{Name: "driver/l2Head/id"})
-	DriverL2VerifiedHeightGauge = factory.NewGauge(prometheus.GaugeOpts{Name: "driver/l2Verified/id"})
+	DriverL1HeadHeightGauge     = factory.NewGauge(prometheus.GaugeOpts{Name: "driver_l1Head_height"})
+	DriverL2HeadHeightGauge     = factory.NewGauge(prometheus.GaugeOpts{Name: "driver_l2Head_height"})
+	DriverL1CurrentHeightGauge  = factory.NewGauge(prometheus.GaugeOpts{Name: "driver_l1Current_height"})
+	DriverL2HeadIDGauge         = factory.NewGauge(prometheus.GaugeOpts{Name: "driver_l2Head_id"})
+	DriverL2VerifiedHeightGauge = factory.NewGauge(prometheus.GaugeOpts{Name: "driver_l2Verified_id"})
 
 	// Proposer
-	ProposerProposeEpochCounter    = factory.NewCounter(prometheus.CounterOpts{Name: "proposer/epoch"})
-	ProposerProposedTxListsCounter = factory.NewCounter(prometheus.CounterOpts{Name: "proposer/proposed/txLists"})
-	ProposerProposedTxsCounter     = factory.NewCounter(prometheus.CounterOpts{Name: "proposer/proposed/txs"})
+	ProposerProposeEpochCounter    = factory.NewCounter(prometheus.CounterOpts{Name: "proposer_epoch"})
+	ProposerProposedTxListsCounter = factory.NewCounter(prometheus.CounterOpts{Name: "proposer_proposed_txLists"})
+	ProposerProposedTxsCounter     = factory.NewCounter(prometheus.CounterOpts{Name: "proposer_proposed_txs"})
 
 	// Prover
-	ProverLatestVerifiedIDGauge      = factory.NewGauge(prometheus.GaugeOpts{Name: "prover/latestVerified/id"})
-	ProverLatestProvenBlockIDGauge   = factory.NewGauge(prometheus.GaugeOpts{Name: "prover/latestProven/id"})
-	ProverQueuedProofCounter         = factory.NewCounter(prometheus.CounterOpts{Name: "prover/proof/all/queued"})
-	ProverReceivedProofCounter       = factory.NewCounter(prometheus.CounterOpts{Name: "prover/proof/all/received"})
-	ProverSentProofCounter           = factory.NewCounter(prometheus.CounterOpts{Name: "prover/proof/all/sent"})
-	ProverProofsAssigned             = factory.NewCounter(prometheus.CounterOpts{Name: "prover/proof/assigned"})
-	ProverReceivedProposedBlockGauge = factory.NewGauge(prometheus.GaugeOpts{Name: "prover/proposed/received"})
-	ProverReceivedProvenBlockGauge   = factory.NewGauge(prometheus.GaugeOpts{Name: "prover/proven/received"})
+	ProverLatestVerifiedIDGauge      = factory.NewGauge(prometheus.GaugeOpts{Name: "prover_latestVerified_id"})
+	ProverLatestProvenBlockIDGauge   = factory.NewGauge(prometheus.GaugeOpts{Name: "prover_latestProven_id"})
+	ProverQueuedProofCounter         = factory.NewCounter(prometheus.CounterOpts{Name: "prover_proof_all_queued"})
+	ProverReceivedProofCounter       = factory.NewCounter(prometheus.CounterOpts{Name: "prover_proof_all_received"})
+	ProverSentProofCounter           = factory.NewCounter(prometheus.CounterOpts{Name: "prover_proof_all_sent"})
+	ProverProofsAssigned             = factory.NewCounter(prometheus.CounterOpts{Name: "prover_proof_assigned"})
+	ProverReceivedProposedBlockGauge = factory.NewGauge(prometheus.GaugeOpts{Name: "prover_proposed_received"})
+	ProverReceivedProvenBlockGauge   = factory.NewGauge(prometheus.GaugeOpts{Name: "prover_proven_received"})
 	ProverSubmissionAcceptedCounter  = factory.NewCounter(prometheus.CounterOpts{
-		Name: "prover/proof/submission/accepted",
+		Name: "prover_proof_submission_accepted",
 	})
 	ProverSubmissionErrorCounter = factory.NewCounter(prometheus.CounterOpts{
-		Name: "prover/proof/submission/error",
+		Name: "prover_proof_submission_error",
 	})
 	ProverSgxProofGeneratedCounter = factory.NewCounter(prometheus.CounterOpts{
-		Name: "prover/proof/sgx/generated",
+		Name: "prover_proof_sgx_generated",
 	})
 	ProverSubmissionRevertedCounter = factory.NewCounter(prometheus.CounterOpts{
-		Name: "prover/proof/submission/reverted",
+		Name: "prover_proof_submission_reverted",
 	})
 
 	// TxManager
