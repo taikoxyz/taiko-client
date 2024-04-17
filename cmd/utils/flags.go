@@ -28,7 +28,7 @@ var tomlSettings = toml.Config{
 	},
 }
 
-// LoadConfigFile loads toml config file
+// LoadConfigFile loads TOML config file.
 func LoadConfigFile(file string, cfg interface{}) error {
 	f, err := os.Open(file)
 	if err != nil {
