@@ -278,7 +278,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	// Check if it's time to propose unfiltered pool content.
 	var (
 		filterPoolContent = time.Now().Before(p.lastProposedAt.Add(p.MinProposingInternal))
-		txListsBytes      = make([][]byte, p.MaxProposedTxListsPerEpoch)
+		txListsBytes      = make([][]byte, 0)
 	)
 
 	// Wait until L2 execution engine is synced at first.
@@ -314,7 +314,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			return fmt.Errorf("failed to encode transactions: %w", err)
 		}
 
-		txListsBytes[i] = txListBytes
+		txListsBytes = append(txListsBytes, txListBytes)
 	}
 
 	for i, err := range p.ProposeTxLists(ctx, txListsBytes) {
