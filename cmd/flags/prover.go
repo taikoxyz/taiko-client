@@ -96,18 +96,6 @@ var (
 		Usage:    "Minimum accepted fee for generating a SGX + zkVM proof",
 		Category: proverCategory,
 	}
-	// Guardian prover related.
-	GuardianProver = &cli.StringFlag{
-		Name:     "guardianProver",
-		Usage:    "GuardianProver contract `address`",
-		Category: proverCategory,
-	}
-	GuardianProofSubmissionDelay = &cli.DurationFlag{
-		Name:     "guardian.submissionDelay",
-		Usage:    "Guardian proof submission delay",
-		Value:    0 * time.Second,
-		Category: proverCategory,
-	}
 	// Running mode
 	ContesterMode = &cli.BoolFlag{
 		Name:     "mode.contester",
@@ -160,6 +148,17 @@ var (
 		Category: proverCategory,
 	}
 	// Guardian prover specific flag
+	GuardianProver = &cli.StringFlag{
+		Name:     "guardianProver",
+		Usage:    "GuardianProver contract `address`",
+		Category: proverCategory,
+	}
+	GuardianProofSubmissionDelay = &cli.DurationFlag{
+		Name:     "guardian.submissionDelay",
+		Usage:    "Guardian proof submission delay",
+		Value:    1 * time.Hour,
+		Category: proverCategory,
+	}
 	EnableLivenessBondProof = &cli.BoolFlag{
 		Name:     "prover.enableLivenessBondProof",
 		Usage:    "Toggles whether the proof is a dummy proof or returns keccak256(RETURN_LIVENESS_BOND) as proof",

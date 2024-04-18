@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"math/big"
@@ -22,8 +23,9 @@ import (
 )
 
 var (
-	errL1Reorged         = errors.New("L1 reorged")
-	proofExpirationDelay = 1 * time.Minute
+	errL1Reorged                           = errors.New("L1 reorged")
+	proofExpirationDelay                   = 1 * time.Minute
+	submissionDelayRandomBumpRange float64 = 20
 )
 
 // BlockProposedEventHandler is responsible for handling the BlockProposed event as a prover.
@@ -41,6 +43,7 @@ type BlockProposedEventHandler struct {
 	contesterMode         bool
 	proveUnassignedBlocks bool
 	tierToOverride        uint16
+	submissionDelay       time.Duration
 }
 
 // NewBlockProposedEventHandlerOps is the options for creating a new BlockProposedEventHandler.
@@ -57,6 +60,7 @@ type NewBlockProposedEventHandlerOps struct {
 	BackOffMaxRetrys      uint64
 	ContesterMode         bool
 	ProveUnassignedBlocks bool
+	SubmissionDelay       time.Duration
 }
 
 // NewBlockProposedEventHandler creates a new BlockProposedEventHandler instance.
@@ -75,6 +79,7 @@ func NewBlockProposedEventHandler(opts *NewBlockProposedEventHandlerOps) *BlockP
 		opts.ContesterMode,
 		opts.ProveUnassignedBlocks,
 		0,
+		opts.SubmissionDelay,
 	}
 }
 
@@ -216,6 +221,23 @@ func (h *BlockProposedEventHandler) checkL1Reorg(
 	return nil
 }
 
+// getRandomBumpedSubmissionDelay returns a random bumped submission delay.
+func (h *BlockProposedEventHandler) getRandomBumpedSubmissionDelay() (time.Duration, error) {
+	if h.submissionDelay == 0 {
+		return h.submissionDelay, nil
+	}
+
+	randomBump, err := rand.Int(
+		rand.Reader,
+		new(big.Int).SetUint64(uint64(h.submissionDelay.Seconds()*submissionDelayRandomBumpRange/100)),
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return time.Duration(h.submissionDelay.Seconds()+float64(randomBump.Uint64())) * time.Second, nil
+}
+
 // checkExpirationAndSubmitProof checks whether the proposed block's proving window is expired,
 // and submits a new proof if necessary.
 func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
@@ -311,6 +333,13 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 	// The current prover is the assigned prover, or the proving window is expired,
 	// try to submit a proof for this proposed block.
 	tier := e.Meta.MinTier
+
+	// Get a random bumped submission delay, if necessary.
+	submissionDelay, err := h.getRandomBumpedSubmissionDelay()
+	if err != nil {
+		return err
+	}
+
 	if h.tierToOverride != 0 {
 		tier = h.tierToOverride
 	}
@@ -320,12 +349,15 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 		"blockID", e.BlockId,
 		"assignProver", e.AssignedProver,
 		"minTier", e.Meta.MinTier,
+		"submissionDelay", submissionDelay,
 		"tier", tier,
 	)
 
 	metrics.ProverProofsAssigned.Add(1)
 
-	h.proofSubmissionCh <- &proofProducer.ProofRequestBody{Tier: tier, Event: e}
+	time.AfterFunc(submissionDelay, func() {
+		h.proofSubmissionCh <- &proofProducer.ProofRequestBody{Tier: tier, Event: e}
+	})
 
 	return nil
 }
