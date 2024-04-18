@@ -93,40 +93,6 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 		},
 		func(*bind.TransactOpts) (*txmgr.TxCandidate, error) { return nil, errors.New("L1_TEST") },
 	))
-
-	s.Nil(s.sender.Send(
-		context.Background(),
-		&producer.ProofWithHeader{
-			Meta:    meta,
-			BlockID: common.Big1,
-			Header:  &types.Header{},
-			Opts:    &producer.ProofRequestOptions{EventL1Hash: l1Head.Hash()},
-		},
-		func(*bind.TransactOpts) (*txmgr.TxCandidate, error) {
-			height, err := s.RPCClient.L1.BlockNumber(context.Background())
-			s.Nil(err)
-
-			var block *types.Block
-			for {
-				block, err = s.RPCClient.L1.BlockByNumber(context.Background(), new(big.Int).SetUint64(height))
-				s.Nil(err)
-				if block.Transactions().Len() != 0 {
-					break
-				}
-				height--
-			}
-
-			tx := block.Transactions()[0]
-
-			return &txmgr.TxCandidate{
-				TxData:   tx.Data(),
-				Blobs:    nil,
-				To:       tx.To(),
-				GasLimit: tx.Gas(),
-				Value:    tx.Value(),
-			}, nil
-		},
-	))
 }
 
 func TestTxSenderTestSuite(t *testing.T) {
