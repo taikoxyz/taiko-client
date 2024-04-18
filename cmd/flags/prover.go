@@ -105,7 +105,7 @@ var (
 	GuardianProofSubmissionDelay = &cli.DurationFlag{
 		Name:     "guardian.submissionDelay",
 		Usage:    "Guardian proof submission delay",
-		Value:    0 * time.Second,
+		Value:    1 * time.Hour,
 		Category: proverCategory,
 	}
 	// Running mode
