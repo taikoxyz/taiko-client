@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"strings"
 
@@ -41,6 +42,15 @@ func (s *Sender) Send(
 	proofWithHeader *producer.ProofWithHeader,
 	buildTx TxBuilder,
 ) error {
+	// Check if the proof has already been submitted.
+	proofStatus, err := rpc.GetBlockProofStatus(ctx, s.rpc, proofWithHeader.BlockID, proofWithHeader.Opts.ProverAddress)
+	if err != nil {
+		return err
+	}
+	if proofStatus.IsSubmitted && !proofStatus.Invalid {
+		return fmt.Errorf("a valid proof for block %d is already submitted", proofWithHeader.BlockID)
+	}
+
 	// Check if this proof is still needed to be submitted.
 	ok, err := s.validateProof(ctx, proofWithHeader)
 	if err != nil || !ok {
