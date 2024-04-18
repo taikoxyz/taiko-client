@@ -29,13 +29,6 @@ var (
 		Category: proposerCategory,
 		EnvVars:  []string{"L2_SUGGESTED_FEE_RECIPIENT"},
 	}
-	ProposerAssignmentHookAddress = &cli.StringFlag{
-		Name:     "assignmentHookAddress",
-		Usage:    "Address of the AssignmentHook contract",
-		Required: true,
-		Category: proposerCategory,
-		EnvVars:  []string{"PROPOSER_ASSIGNMENT_HOOK_ADDRESS"},
-	}
 )
 
 // Optional flags used by proposer.
@@ -170,7 +163,7 @@ var ProposerFlags = MergeFlags(CommonFlags, []cli.Flag{
 	TierFeePriceBump,
 	MaxTierFeePriceBumps,
 	ProposeBlockIncludeParentMetaHash,
-	ProposerAssignmentHookAddress,
+	AssignmentHookAddress,
 	BlobAllowed,
 	L1BlockBuilderTip,
 }, TxmgrFlags)

@@ -171,7 +171,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		TaikoL1Address:                          common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                          common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		TaikoTokenAddress:                       common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
-		AssignmentHookAddress:                   common.HexToAddress(c.String(flags.ProverAssignmentHookAddress.Name)),
+		AssignmentHookAddress:                   common.HexToAddress(c.String(flags.AssignmentHookAddress.Name)),
 		L1ProverPrivKey:                         l1ProverPrivKey,
 		RaikoHostEndpoint:                       c.String(flags.RaikoHostEndpoint.Name),
 		RaikoL1Endpoint:                         raikoL1Endpoint,

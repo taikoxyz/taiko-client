@@ -146,6 +146,13 @@ var (
 		Value:    12 * time.Second,
 		EnvVars:  []string{"RPC_TIMEOUT"},
 	}
+	AssignmentHookAddress = &cli.StringFlag{
+		Name:     "assignmentHookAddress",
+		Usage:    "Address of the AssignmentHook contract",
+		Required: true,
+		Category: proposerCategory,
+		EnvVars:  []string{"ASSIGNMENT_HOOK_ADDRESS"},
+	}
 )
 
 // CommonFlags All common flags.

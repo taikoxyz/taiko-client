@@ -22,13 +22,6 @@ var (
 		Category: proverCategory,
 		EnvVars:  []string{"PROVER_CAPACITY"},
 	}
-	ProverAssignmentHookAddress = &cli.StringFlag{
-		Name:     "assignmentHook",
-		Usage:    "Address of the AssignmentHook contract",
-		Required: true,
-		Category: proverCategory,
-		EnvVars:  []string{"PROVER_ASSIGNMENT_HOOK_ADDRESS"},
-	}
 )
 
 // Optional flags used by prover.
@@ -244,7 +237,7 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MaxProposedIn,
 	TaikoTokenAddress,
 	MaxAcceptableBlockSlippage,
-	ProverAssignmentHookAddress,
+	AssignmentHookAddress,
 	Allowance,
 	L1NodeVersion,
 	L2NodeVersion,

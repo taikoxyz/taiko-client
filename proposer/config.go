@@ -106,7 +106,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			TaikoTokenAddress: common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
 			Timeout:           c.Duration(flags.RPCTimeout.Name),
 		},
-		AssignmentHookAddress:      common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
+		AssignmentHookAddress:      common.HexToAddress(c.String(flags.AssignmentHookAddress.Name)),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:    common.HexToAddress(l2SuggestedFeeRecipient),
 		ExtraData:                  c.String(flags.ExtraData.Name),
