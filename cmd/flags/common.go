@@ -150,7 +150,7 @@ var (
 		Name:     "assignmentHookAddress",
 		Usage:    "Address of the AssignmentHook contract",
 		Required: true,
-		Category: proposerCategory,
+		Category: commonCategory,
 		EnvVars:  []string{"ASSIGNMENT_HOOK_ADDRESS"},
 	}
 )
