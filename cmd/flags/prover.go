@@ -104,20 +104,6 @@ var (
 		Category: proverCategory,
 		EnvVars:  []string{"MIN_SGX_AND_ZKVM_TIER_FEE"},
 	}
-	// Guardian prover related.
-	GuardianProver = &cli.StringFlag{
-		Name:     "guardianProver",
-		Usage:    "GuardianProver contract `address`",
-		Category: proverCategory,
-		EnvVars:  []string{"GUARDIAN_PROVER"},
-	}
-	GuardianProofSubmissionDelay = &cli.DurationFlag{
-		Name:     "guardian.submissionDelay",
-		Usage:    "Guardian proof submission delay",
-		Value:    0 * time.Second,
-		Category: proverCategory,
-		EnvVars:  []string{"GUARDIAN_PROOF_SUBMISSION_DELAY"},
-	}
 	// Running mode
 	ContesterMode = &cli.BoolFlag{
 		Name:     "mode.contester",
@@ -178,6 +164,19 @@ var (
 		EnvVars:  []string{"GUARDIAN_PROVER_HEALTH_CHECK_SERVER_ENDPOINT"},
 	}
 	// Guardian prover specific flag
+	GuardianProver = &cli.StringFlag{
+		Name:     "guardianProver",
+		Usage:    "GuardianProver contract `address`",
+		Category: proverCategory,
+    EnvVars:  []string{"GUARDIAN_PROVER"},
+	}
+	GuardianProofSubmissionDelay = &cli.DurationFlag{
+		Name:     "guardian.submissionDelay",
+		Usage:    "Guardian proof submission delay",
+		Value:    1 * time.Hour,
+		Category: proverCategory,
+    EnvVars:  []string{"GUARDIAN_PROOF_SUBMISSION_DELAY"},
+	}
 	EnableLivenessBondProof = &cli.BoolFlag{
 		Name:     "prover.enableLivenessBondProof",
 		Usage:    "Toggles whether the proof is a dummy proof or returns keccak256(RETURN_LIVENESS_BOND) as proof",
