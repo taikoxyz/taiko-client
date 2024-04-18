@@ -98,7 +98,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	p.backoff = backoff.WithContext(
 		backoff.WithMaxRetries(
 			backoff.NewConstantBackOff(p.cfg.BackOffRetryInterval),
-			p.cfg.BackOffMaxRetrys,
+			p.cfg.BackOffMaxRetries,
 		),
 		p.ctx,
 	)

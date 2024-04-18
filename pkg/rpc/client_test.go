@@ -12,7 +12,7 @@ import (
 
 func newTestClient(t *testing.T) *Client {
 	client, err := NewClient(context.Background(), &ClientConfig{
-		L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1Endpoint:        os.Getenv("L1_WS_ENDPOINT"),
 		L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
@@ -29,7 +29,7 @@ func newTestClient(t *testing.T) *Client {
 
 func newTestClientWithTimeout(t *testing.T) *Client {
 	client, err := NewClient(context.Background(), &ClientConfig{
-		L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+		L1Endpoint:        os.Getenv("L1_WS_ENDPOINT"),
 		L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 		TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),

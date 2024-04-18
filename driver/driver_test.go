@@ -38,7 +38,7 @@ func (s *DriverTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.Background())
 	s.Nil(d.InitFromConfig(ctx, &Config{
 		ClientConfig: &rpc.ClientConfig{
-			L1Endpoint:       os.Getenv("L1_NODE_WS_ENDPOINT"),
+			L1Endpoint:       os.Getenv("L1_WS_ENDPOINT"),
 			L2Endpoint:       os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 			L2EngineEndpoint: os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 			TaikoL1Address:   common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
@@ -297,7 +297,7 @@ func (s *DriverTestSuite) InitProposer() {
 
 	s.Nil(p.InitFromConfig(context.Background(), &proposer.Config{
 		ClientConfig: &rpc.ClientConfig{
-			L1Endpoint:        os.Getenv("L1_NODE_WS_ENDPOINT"),
+			L1Endpoint:        os.Getenv("L1_WS_ENDPOINT"),
 			L2Endpoint:        os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT"),
 			L2EngineEndpoint:  os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT"),
 			JwtSecret:         string(jwtSecret),
@@ -317,7 +317,7 @@ func (s *DriverTestSuite) InitProposer() {
 		TierFeePriceBump:           common.Big2,
 		L1BlockBuilderTip:          common.Big0,
 		TxmgrConfigs: &txmgr.CLIConfig{
-			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
+			L1RPCURL:                  os.Getenv("L1_WS_ENDPOINT"),
 			NumConfirmations:          0,
 			SafeAbortNonceTooLowCount: txmgr.DefaultBatcherFlagValues.SafeAbortNonceTooLowCount,
 			PrivateKey:                common.Bytes2Hex(crypto.FromECDSA(l1ProposerPrivKey)),

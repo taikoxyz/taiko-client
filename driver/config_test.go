@@ -11,14 +11,13 @@ import (
 )
 
 var (
-	l1Endpoint       = os.Getenv("L1_NODE_WS_ENDPOINT")
+	l1Endpoint       = os.Getenv("L1_WS_ENDPOINT")
 	l1BeaconEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
 	l2Endpoint       = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
 	l2CheckPoint     = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
 	l2EngineEndpoint = os.Getenv("L2_EXECUTION_ENGINE_AUTH_ENDPOINT")
 	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
-	rpcTimeout       = 5 * time.Second
 )
 
 func (s *DriverTestSuite) TestNewConfigFromCliContext() {
@@ -34,7 +33,6 @@ func (s *DriverTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(taikoL1, c.TaikoL1Address.String())
 		s.Equal(taikoL2, c.TaikoL2Address.String())
 		s.Equal(120*time.Second, c.P2PSyncTimeout)
-		s.Equal(rpcTimeout, c.RPCTimeout)
 		s.NotEmpty(c.JwtSecret)
 		s.True(c.P2PSyncVerifiedBlocks)
 		s.Equal(l2CheckPoint, c.L2CheckPoint)
