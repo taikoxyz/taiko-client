@@ -42,7 +42,7 @@ func (s *Sender) Send(
 	proofWithHeader *producer.ProofWithHeader,
 	buildTx TxBuilder,
 ) error {
-	// Check if we still need to generate a new proof for that block.
+	// Check if the proof has already been submitted.
 	proofStatus, err := rpc.GetBlockProofStatus(ctx, s.rpc, proofWithHeader.BlockID, proofWithHeader.Opts.ProverAddress)
 	if err != nil {
 		return err
