@@ -82,9 +82,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 
 	var allowance = common.Big0
 	if c.IsSet(flags.Allowance.Name) {
-		amt, ok := new(big.Int).SetString(c.String(flags.Allowance.Name), 10)
-		if !ok {
-			return nil, fmt.Errorf("invalid setting allowance config value: %v", c.String(flags.Allowance.Name))
+		amt, err := utils.EtherToWei(c.Float64(flags.Allowance.Name))
+		if err != nil {
+			return nil, fmt.Errorf("invalid setting allowance config value: %v", c.Float64(flags.Allowance.Name))
 		}
 
 		allowance = amt

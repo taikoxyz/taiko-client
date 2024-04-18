@@ -23,7 +23,7 @@ source integration_test/test_env.sh
 # make sure environment variables are set
 check_env "TAIKO_MONO_DIR"
 check_env "L1_NODE_HTTP_ENDPOINT"
-check_env "L1_WS_ENDPOINT"
+check_env "L1_NODE_WS_ENDPOINT"
 check_env "L2_EXECUTION_ENGINE_HTTP_ENDPOINT"
 check_env "L2_EXECUTION_ENGINE_WS_ENDPOINT"
 check_env "L2_EXECUTION_ENGINE_AUTH_ENDPOINT"

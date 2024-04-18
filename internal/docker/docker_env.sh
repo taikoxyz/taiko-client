@@ -16,7 +16,7 @@ done
 
 L1_NODE_PORT=$(docker port l1_node | grep '0.0.0.0' | awk -F ':' '{print $2}')
 export L1_NODE_HTTP_ENDPOINT=http://localhost:$L1_NODE_PORT
-export L1_WS_ENDPOINT=ws://localhost:$L1_NODE_PORT
+export L1_NODE_WS_ENDPOINT=ws://localhost:$L1_NODE_PORT
 
 export L2_EXECUTION_ENGINE_HTTP_ENDPOINT=http://localhost:$(docker port l2_node | grep "0.0.0.0" | awk -F ':' 'NR==1 {print $2}')
 export L2_EXECUTION_ENGINE_WS_ENDPOINT=ws://localhost:$(docker port l2_node | grep "0.0.0.0" | awk -F ':' 'NR==2 {print $2}')
@@ -27,7 +27,7 @@ echo -e "L1_NODE PORTS: \n$(docker port l1_node)"
 echo -e "L2_NODE PORTS: \n$(docker port l2_node)"
 
 echo "L1_NODE_HTTP_ENDPOINT: $L1_NODE_HTTP_ENDPOINT"
-echo "L1_WS_ENDPOINT: $L1_NODE_WS_ENDPOINT"
+echo "L1_NODE_WS_ENDPOINT: $L1_NODE_WS_ENDPOINT"
 echo "L2_EXECUTION_ENGINE_HTTP_ENDPOINT: $L2_EXECUTION_ENGINE_HTTP_ENDPOINT"
 echo "L2_EXECUTION_ENGINE_WS_ENDPOINT: $L2_EXECUTION_ENGINE_WS_ENDPOINT"
 echo "L2_EXECUTION_ENGINE_AUTH_ENDPOINT: $L2_EXECUTION_ENGINE_AUTH_ENDPOINT"

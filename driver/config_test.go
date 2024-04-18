@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	l1Endpoint       = os.Getenv("L1_WS_ENDPOINT")
+	l1Endpoint       = os.Getenv("L1_NODE_WS_ENDPOINT")
 	l1BeaconEndpoint = os.Getenv("L1_NODE_HTTP_ENDPOINT")
 	l2Endpoint       = os.Getenv("L2_EXECUTION_ENGINE_WS_ENDPOINT")
 	l2CheckPoint     = os.Getenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT")
