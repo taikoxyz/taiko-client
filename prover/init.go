@@ -209,6 +209,7 @@ func (p *Prover) initEventHandlers() {
 		ProveUnassignedBlocks: p.cfg.ProveUnassignedBlocks,
 	}
 	if p.IsGuardianProver() {
+		opts.SubmissionDelay = p.cfg.GuardianProofSubmissionDelay
 		p.blockProposedHandler = handler.NewBlockProposedEventGuardianHandler(
 			&handler.NewBlockProposedGuardianEventHandlerOps{
 				NewBlockProposedEventHandlerOps: opts,
