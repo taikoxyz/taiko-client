@@ -3,7 +3,6 @@ package prover
 import (
 	"context"
 	"fmt"
-	"github.com/taikoxyz/taiko-client/internal/utils"
 	"os"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 var (
