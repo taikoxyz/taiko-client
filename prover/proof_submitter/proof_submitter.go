@@ -114,7 +114,7 @@ func (s *ProofSubmitter) RequestProof(ctx context.Context, event *bindings.Taiko
 	}
 	s.resultCh <- result
 
-	metrics.ProverQueuedProofCounter.Inc(1)
+	metrics.ProverQueuedProofCounter.Add(1)
 
 	return nil
 }
@@ -135,7 +135,7 @@ func (s *ProofSubmitter) SubmitProof(
 		"tier", proofWithHeader.Tier,
 	)
 
-	metrics.ProverReceivedProofCounter.Inc(1)
+	metrics.ProverReceivedProofCounter.Add(1)
 
 	// Get the corresponding L2 block.
 	block, err := s.rpc.L2.BlockByHash(ctx, proofWithHeader.Header.Hash())
@@ -176,12 +176,12 @@ func (s *ProofSubmitter) SubmitProof(
 		if err.Error() == transaction.ErrUnretryableSubmission.Error() {
 			return nil
 		}
-		metrics.ProverSubmissionErrorCounter.Inc(1)
+		metrics.ProverSubmissionErrorCounter.Add(1)
 		return err
 	}
 
-	metrics.ProverSentProofCounter.Inc(1)
-	metrics.ProverLatestProvenBlockIDGauge.Update(proofWithHeader.BlockID.Int64())
+	metrics.ProverSentProofCounter.Add(1)
+	metrics.ProverLatestProvenBlockIDGauge.Set(float64(proofWithHeader.BlockID.Uint64()))
 
 	return nil
 }

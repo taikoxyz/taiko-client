@@ -148,7 +148,7 @@ func (s *Syncer) processL1Blocks(ctx context.Context) error {
 	// If there is a L1 reorg, we don't update the L1Current cursor.
 	if !s.reorgDetectedFlag {
 		s.state.SetL1Current(l1End)
-		metrics.DriverL1CurrentHeightGauge.Update(s.state.GetL1Current().Number.Int64())
+		metrics.DriverL1CurrentHeightGauge.Set(float64(s.state.GetL1Current().Number.Uint64()))
 	}
 
 	return nil
@@ -300,7 +300,7 @@ func (s *Syncer) onBlockProposed(
 		"withdrawals", len(payloadData.Withdrawals),
 	)
 
-	metrics.DriverL1CurrentHeightGauge.Update(int64(event.Raw.BlockNumber))
+	metrics.DriverL1CurrentHeightGauge.Set(float64(event.Raw.BlockNumber))
 	s.lastInsertedBlockID = event.BlockId
 
 	if s.progressTracker.Triggered() {
