@@ -63,14 +63,14 @@ var (
 		Usage:    "Timeout for sending transactions. If 0 it is disabled.",
 		Value:    0,
 		Category: txmgrCategory,
-		EnvVars:  []string{"TX_SEND_TIMEOUT"},
+		EnvVars:  []string{"SEND_TIMEOUT"},
 	}
 	TxNotInMempoolTimeout = &cli.DurationFlag{
 		Name:     "tx.notInMempoolTimeout",
 		Usage:    "Timeout for aborting a tx send if the tx does not make it to the mempool.",
 		Value:    2 * time.Minute,
 		Category: txmgrCategory,
-		EnvVars:  []string{"TX_NOT_IN_MEMPOOL_TIMEOUT"},
+		EnvVars:  []string{"NOT_IN_MEMPOOL_TIMEOUT"},
 	}
 	ReceiptQueryInterval = &cli.DurationFlag{
 		Name:     "tx.receiptQueryInterval",

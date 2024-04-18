@@ -11,9 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/labstack/echo/v4"
-	"github.com/taikoxyz/taiko-client/pkg/utils"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 

@@ -44,7 +44,7 @@ var (
 		Name:     "blob.server",
 		Usage:    "Blob sidecar storage server",
 		Category: driverCategory,
-		EnvVars:  []string{"BLOB_SERVER_ENDPOINT"},
+		EnvVars:  []string{"BLOB_SERVER"},
 	}
 )
 

@@ -34,17 +34,17 @@ var (
 // Optional flags used by proposer.
 var (
 	// Tier fee related.
-	OptimisticTierFee = &cli.Uint64Flag{
+	OptimisticTierFee = &cli.Float64Flag{
 		Name:     "tierFee.optimistic",
 		Usage:    "Initial tier fee (in GWei) paid to prover to generate an optimistic proofs",
 		Category: proposerCategory,
-		EnvVars:  []string{"OPTIMISTIC_TIER_FEE"},
+		EnvVars:  []string{"TIER_FEE_OPTIMISTIC"},
 	}
-	SgxTierFee = &cli.Uint64Flag{
+	SgxTierFee = &cli.Float64Flag{
 		Name:     "tierFee.sgx",
 		Usage:    "Initial tier fee (in GWei) paid to prover to generate a SGX proofs",
 		Category: proposerCategory,
-		EnvVars:  []string{"SGX_TIER_FEE"},
+		EnvVars:  []string{"TIER_FEE_SGX"},
 	}
 	TierFeePriceBump = &cli.Uint64Flag{
 		Name:     "tierFee.pricebump",
@@ -58,7 +58,7 @@ var (
 		Usage:    "If nobody accepts block at initial tier fee, how many iterations to increase tier fee before giving up",
 		Category: proposerCategory,
 		Value:    3,
-		EnvVars:  []string{"MAX_TIER_FEE_PRICE_BUMPS"},
+		EnvVars:  []string{"TIER_FEE_MAX_PRICE_BUMPS"},
 	}
 	// Proposing epoch related.
 	ProposeInterval = &cli.DurationFlag{
@@ -66,7 +66,7 @@ var (
 		Usage:    "Time interval to propose L2 pending transactions",
 		Category: proposerCategory,
 		Value:    0,
-		EnvVars:  []string{"PROPOSE_INTERVAL"},
+		EnvVars:  []string{"EPOCH_INTERVAL"},
 	}
 	MinGasUsed = &cli.Uint64Flag{
 		Name:     "epoch.minGasUsed",
@@ -116,14 +116,14 @@ var (
 		Usage:    "Maximum number of transaction lists which will be proposed inside one proposing epoch",
 		Value:    1,
 		Category: proposerCategory,
-		EnvVars:  []string{"MAX_PROPOSED_TX_LISTS_PER_EPOCH"},
+		EnvVars:  []string{"MAX_TX_LISTS_PER_EPOCH"},
 	}
 	ProposeBlockIncludeParentMetaHash = &cli.BoolFlag{
 		Name:     "includeParentMetaHash",
 		Usage:    "Include parent meta hash when proposing block",
 		Value:    false,
 		Category: proposerCategory,
-		EnvVars:  []string{"PROPOSE_BLOCK_INCLUDE_PARENT_METAHASH"},
+		EnvVars:  []string{"INCLUDE_PARENT_METAHASH"},
 	}
 	// Transaction related.
 	BlobAllowed = &cli.BoolFlag{
@@ -137,7 +137,7 @@ var (
 		Usage:    "Amount you wish to tip the L1 block builder",
 		Value:    0,
 		Category: proposerCategory,
-		EnvVars:  []string{"L1_BLOCK_BUILDER_TIP"},
+		EnvVars:  []string{"BLOCK_BUILDER_TIP"},
 	}
 )
 

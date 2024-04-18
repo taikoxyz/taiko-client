@@ -11,10 +11,11 @@ import (
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/taikoxyz/taiko-client/pkg/utils"
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/internal/utils"
+
 	pkgFlags "github.com/taikoxyz/taiko-client/pkg/flags"
 )
 

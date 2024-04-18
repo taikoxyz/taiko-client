@@ -27,28 +27,28 @@ var (
 // Optional flags used by prover.
 var (
 	RaikoHostEndpoint = &cli.StringFlag{
-		Name:     "raiko.hostEndpoint",
+		Name:     "raiko.host",
 		Usage:    "RPC endpoint of a Raiko host service",
 		Category: proverCategory,
-		EnvVars:  []string{"RAIKO_HOST_ENDPOINT"},
+		EnvVars:  []string{"RAIKO_HOST"},
 	}
 	RaikoL1Endpoint = &cli.StringFlag{
-		Name:     "raiko.l1Endpoint",
+		Name:     "raiko.l1",
 		Usage:    "L1 RPC endpoint which will be sent to the Raiko service",
 		Category: proverCategory,
-		EnvVars:  []string{"RAIKO_L1_ENDPOINT"},
+		EnvVars:  []string{"RAIKO_L1"},
 	}
 	RaikoL1BeaconEndpoint = &cli.StringFlag{
-		Name:     "raiko.l1BeaconEndpoint",
+		Name:     "raiko.l1Beacon",
 		Usage:    "L1 beacon RPC endpoint which will be sent to the Raiko service",
 		Category: proverCategory,
-		EnvVars:  []string{"RAIKO_L1_BEACON_ENDPOINT"},
+		EnvVars:  []string{"RAIKO_L1_BEACON"},
 	}
 	RaikoL2Endpoint = &cli.StringFlag{
-		Name:     "raiko.l2Endpoint",
+		Name:     "raiko.l2",
 		Usage:    "L2 RPC endpoint which will be sent to the Raiko service",
 		Category: proverCategory,
-		EnvVars:  []string{"RAIKO_L2_ENDPOINT"},
+		EnvVars:  []string{"RAIKO_L2"},
 	}
 	StartingBlockID = &cli.Uint64Flag{
 		Name:     "prover.startingBlockID",
@@ -80,7 +80,7 @@ var (
 	}
 	MinTaikoTokenBalance = &cli.Float64Flag{
 		Name:     "prover.minTaikoTokenBalance",
-		Usage:    "Minimum Taiko token balance (in Ether) a prover wants to keep",
+		Usage:    "Minimum Taiko token balance without decimal a prover wants to keep",
 		Category: proverCategory,
 		Value:    0,
 		EnvVars:  []string{"MIN_TAIKO_TOKEN_BALANCE"},
@@ -90,19 +90,19 @@ var (
 		Name:     "minTierFee.optimistic",
 		Usage:    "Minimum accepted fee for generating an optimistic proof",
 		Category: proverCategory,
-		EnvVars:  []string{"MIN_OPTIMISTIC_TIER_FEE"},
+		EnvVars:  []string{"MIN_TIER_FEE_OPTIMISTIC"},
 	}
 	MinSgxTierFee = &cli.Uint64Flag{
 		Name:     "minTierFee.sgx",
 		Usage:    "Minimum accepted fee for generating a SGX proof",
 		Category: proverCategory,
-		EnvVars:  []string{"MIN_SGX_TIER_FEE"},
+		EnvVars:  []string{"MIN_TIER_FEE_SGX"},
 	}
 	MinSgxAndZkVMTierFee = &cli.Uint64Flag{
 		Name:     "minTierFee.sgxAndZkvm",
 		Usage:    "Minimum accepted fee for generating a SGX + zkVM proof",
 		Category: proverCategory,
-		EnvVars:  []string{"MIN_SGX_AND_ZKVM_TIER_FEE"},
+		EnvVars:  []string{"MIN_TIER_FEE_SGX_AND_ZKVM"},
 	}
 	// Running mode
 	ContesterMode = &cli.BoolFlag{
@@ -110,7 +110,7 @@ var (
 		Usage:    "Whether you want to contest wrong transitions with higher tier proofs",
 		Category: proverCategory,
 		Value:    false,
-		EnvVars:  []string{"CONTESTER_MODE"},
+		EnvVars:  []string{"MODE_CONTESTER"},
 	}
 	// HTTP server related.
 	ProverHTTPServerPort = &cli.Uint64Flag{
@@ -118,7 +118,7 @@ var (
 		Usage:    "Port to expose for http server",
 		Category: proverCategory,
 		Value:    9876,
-		EnvVars:  []string{"PROVER_HTTP_SERVER_PORT"},
+		EnvVars:  []string{"PROVER_HTTP_PORT"},
 	}
 	MaxExpiry = &cli.DurationFlag{
 		Name:     "http.maxExpiry",
@@ -141,7 +141,7 @@ var (
 		Usage:    "Maximum accepted slippage difference for blockID for accepting proving a block",
 		Value:    1024,
 		Category: proverCategory,
-		EnvVars:  []string{"MAX_ACCEPTABLE_BLOCK_SLIPPAGE"},
+		EnvVars:  []string{"BLOCK_SLIPPAGE"},
 	}
 	// Max amount of L1 blocks that can pass before block is invalid
 	MaxProposedIn = &cli.Uint64Flag{
@@ -153,7 +153,7 @@ var (
 	}
 	Allowance = &cli.Float64Flag{
 		Name:     "prover.allowance",
-		Usage:    "Amount (in Ether) to approve AssignmentHook contract for TaikoToken usage",
+		Usage:    "Amount without decimal to approve AssignmentHook contract for TaikoToken usage",
 		Category: proverCategory,
 		EnvVars:  []string{"ALLOWANCE"},
 	}
@@ -168,14 +168,14 @@ var (
 		Name:     "guardianProver",
 		Usage:    "GuardianProver contract `address`",
 		Category: proverCategory,
-    EnvVars:  []string{"GUARDIAN_PROVER"},
+		EnvVars:  []string{"GUARDIAN_PROVER"},
 	}
 	GuardianProofSubmissionDelay = &cli.DurationFlag{
 		Name:     "guardian.submissionDelay",
 		Usage:    "Guardian proof submission delay",
 		Value:    1 * time.Hour,
 		Category: proverCategory,
-    EnvVars:  []string{"GUARDIAN_PROOF_SUBMISSION_DELAY"},
+		EnvVars:  []string{"GUARDIAN_SUBMISSION_DELAY"},
 	}
 	EnableLivenessBondProof = &cli.BoolFlag{
 		Name:     "prover.enableLivenessBondProof",

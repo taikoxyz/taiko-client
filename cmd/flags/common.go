@@ -24,41 +24,41 @@ var (
 		Usage:    "Websocket RPC endpoint of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
-		EnvVars:  []string{"L1_WS_ENDPOINT"},
+		EnvVars:  []string{"L1_WS"},
 	}
 	L2WSEndpoint = &cli.StringFlag{
 		Name:     "l2.ws",
 		Usage:    "Websocket RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
-		EnvVars:  []string{"L2_WS_ENDPOINT"},
+		EnvVars:  []string{"L2_WS"},
 	}
 	L1HTTPEndpoint = &cli.StringFlag{
 		Name:     "l1.http",
 		Usage:    "HTTP RPC endpoint of a L1 ethereum node",
 		Required: true,
 		Category: commonCategory,
-		EnvVars:  []string{"L1_HTTP_ENDPOINT"},
+		EnvVars:  []string{"L1_HTTP"},
 	}
 	L1BeaconEndpoint = &cli.StringFlag{
 		Name:     "l1.beacon",
 		Usage:    "HTTP RPC endpoint of a L1 beacon node",
 		Category: commonCategory,
-		EnvVars:  []string{"L1_BEACON_ENDPOINT"},
+		EnvVars:  []string{"L1_BEACON"},
 	}
 	L2HTTPEndpoint = &cli.StringFlag{
 		Name:     "l2.http",
 		Usage:    "HTTP RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
-		EnvVars:  []string{"L2_HTTP_ENDPOINT"},
+		EnvVars:  []string{"L2_HTTP"},
 	}
 	L2AuthEndpoint = &cli.StringFlag{
 		Name:     "l2.auth",
 		Usage:    "Authenticated HTTP RPC endpoint of a L2 taiko-geth execution engine",
 		Required: true,
 		Category: commonCategory,
-		EnvVars:  []string{"L2_AUTH_ENDPOINT"},
+		EnvVars:  []string{"L2_AUTH"},
 	}
 	JWTSecret = &cli.StringFlag{
 		Name:     "jwtSecret",
@@ -72,21 +72,21 @@ var (
 		Usage:    "TaikoL1 contract `address`",
 		Required: true,
 		Category: commonCategory,
-		EnvVars:  []string{"TAIKO_L1_ADDRESS"},
+		EnvVars:  []string{"TAIKO_L1"},
 	}
 	TaikoL2Address = &cli.StringFlag{
 		Name:     "taikoL2",
 		Usage:    "TaikoL2 contract `address`",
 		Required: true,
 		Category: commonCategory,
-		EnvVars:  []string{"TAIKO_L2_ADDRESS"},
+		EnvVars:  []string{"TAIKO_L2"},
 	}
 	TaikoTokenAddress = &cli.StringFlag{
 		Name:     "taikoToken",
 		Usage:    "TaikoToken contract `address`",
 		Required: true,
 		Category: commonCategory,
-		EnvVars:  []string{"TAIKO_TOKEN_ADDRESS"},
+		EnvVars:  []string{"TAIKO_TOKEN"},
 	}
 	// Optional flags used by all client software.
 	// Logging
@@ -109,7 +109,7 @@ var (
 		Usage:    "Enable metrics collection and reporting",
 		Category: metricsCategory,
 		Value:    false,
-		EnvVars:  []string{"METRICS_ENABLED"},
+		EnvVars:  []string{"METRICS"},
 	}
 	MetricsAddr = &cli.StringFlag{
 		Name:     "metrics.addr",
@@ -149,7 +149,6 @@ var (
 	AssignmentHookAddress = &cli.StringFlag{
 		Name:     "assignmentHookAddress",
 		Usage:    "Address of the AssignmentHook contract",
-		Required: true,
 		Category: commonCategory,
 		EnvVars:  []string{"ASSIGNMENT_HOOK_ADDRESS"},
 	}

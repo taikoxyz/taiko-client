@@ -11,13 +11,14 @@ import (
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/taikoxyz/taiko-client/pkg/utils"
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
-	pkgFlags "github.com/taikoxyz/taiko-client/pkg/flags"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+
+	pkgFlags "github.com/taikoxyz/taiko-client/pkg/flags"
 )
 
 // Config contains all configurations to initialize a Taiko proposer.

@@ -3,6 +3,7 @@ package prover
 import (
 	"context"
 	"fmt"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"os"
 	"time"
 
@@ -22,9 +23,9 @@ var (
 	l2NodeVersion    = "0.1.0"
 	taikoL1          = os.Getenv("TAIKO_L1_ADDRESS")
 	taikoL2          = os.Getenv("TAIKO_L2_ADDRESS")
-	allowance        = "10000000000000000000000000000000000000000000000000"
+	allowance        = 10.0
 	rpcTimeout       = 5 * time.Second
-	minTierFee       = 1024
+	minTierFee       = 1024.0
 )
 
 func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
@@ -49,15 +50,19 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		s.True(c.ContesterMode)
 		s.Equal(rpcTimeout, c.RPCTimeout)
 		s.Equal(uint64(8), c.Capacity)
-		s.Equal(uint64(minTierFee), c.MinOptimisticTierFee.Uint64())
-		s.Equal(uint64(minTierFee), c.MinSgxTierFee.Uint64())
+		tierFeeGWei, err := utils.GWeiToWei(minTierFee)
+		s.Nil(err)
+		s.Equal(tierFeeGWei.Uint64(), c.MinOptimisticTierFee.Uint64())
+		s.Equal(tierFeeGWei.Uint64(), c.MinSgxTierFee.Uint64())
 		s.Equal(c.L1NodeVersion, l1NodeVersion)
 		s.Equal(c.L2NodeVersion, l2NodeVersion)
 		s.Nil(new(Prover).InitFromCli(context.Background(), ctx))
 		s.True(c.ProveUnassignedBlocks)
 		s.Equal(uint64(100), c.MaxProposedIn)
 		s.Equal(os.Getenv("ASSIGNMENT_HOOK_ADDRESS"), c.AssignmentHookAddress.String())
-		s.Equal(allowance, c.Allowance.String())
+		allowanceWithDecimal, err := utils.EtherToWei(allowance)
+		s.Nil(err)
+		s.Equal(allowanceWithDecimal.Uint64(), c.Allowance.Uint64())
 
 		return err
 	}
@@ -84,7 +89,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.ProveUnassignedBlocks.Name,
 		"--" + flags.MaxProposedIn.Name, "100",
-		"--" + flags.Allowance.Name, allowance,
+		"--" + flags.Allowance.Name, fmt.Sprint(allowance),
 		"--" + flags.L1NodeVersion.Name, l1NodeVersion,
 		"--" + flags.L2NodeVersion.Name, l2NodeVersion,
 	}))
