@@ -2,10 +2,10 @@ package handler
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"math/big"
-	"math/rand"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -23,9 +23,9 @@ import (
 )
 
 var (
-	errL1Reorged                   = errors.New("L1 reorged")
-	proofExpirationDelay           = 1 * time.Minute
-	submissionDelayRandomBumpRange = 20
+	errL1Reorged                           = errors.New("L1 reorged")
+	proofExpirationDelay                   = 1 * time.Minute
+	submissionDelayRandomBumpRange float64 = 20
 )
 
 // BlockProposedEventHandler is responsible for handling the BlockProposed event as a prover.
@@ -222,15 +222,20 @@ func (h *BlockProposedEventHandler) checkL1Reorg(
 }
 
 // getRandomBumpedSubmissionDelay returns a random bumped submission delay.
-func (h *BlockProposedEventHandler) getRandomBumpedSubmissionDelay() time.Duration {
+func (h *BlockProposedEventHandler) getRandomBumpedSubmissionDelay() (time.Duration, error) {
 	if h.submissionDelay == 0 {
-		return h.submissionDelay
+		return h.submissionDelay, nil
 	}
 
-	randomBump := rand.Intn(
-		int(h.submissionDelay.Seconds() * float64(submissionDelayRandomBumpRange) / 100),
+	randomBump, err := rand.Int(
+		rand.Reader,
+		new(big.Int).SetUint64(uint64(h.submissionDelay.Seconds()*submissionDelayRandomBumpRange/100)),
 	)
-	return time.Duration(h.submissionDelay.Seconds()+float64(randomBump)) * time.Second
+	if err != nil {
+		return 0, err
+	}
+
+	return time.Duration(h.submissionDelay.Seconds()+float64(randomBump.Uint64())) * time.Second, nil
 }
 
 // checkExpirationAndSubmitProof checks whether the proposed block's proving window is expired,
@@ -327,10 +332,13 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 
 	// The current prover is the assigned prover, or the proving window is expired,
 	// try to submit a proof for this proposed block.
-	var (
-		tier            = e.Meta.MinTier
-		submissionDelay = h.getRandomBumpedSubmissionDelay()
-	)
+	tier := e.Meta.MinTier
+
+	// Get a random bumped submission delay, if necessary.
+	submissionDelay, err := h.getRandomBumpedSubmissionDelay()
+	if err != nil {
+		return err
+	}
 
 	if h.tierToOverride != 0 {
 		tier = h.tierToOverride
