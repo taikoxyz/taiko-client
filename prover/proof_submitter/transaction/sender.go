@@ -47,8 +47,8 @@ func (s *Sender) Send(
 	if err != nil {
 		return err
 	}
-	if proofStatus.IsSubmitted {
-		return fmt.Errorf("proof for block %d is already submitted", proofWithHeader.BlockID)
+	if proofStatus.IsSubmitted && !proofStatus.Invalid {
+		return fmt.Errorf("a valid proof for block %d is already submitted", proofWithHeader.BlockID)
 	}
 
 	// Check if this proof is still needed to be submitted.
