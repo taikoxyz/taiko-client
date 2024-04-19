@@ -19,6 +19,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 var (
@@ -277,7 +278,7 @@ func (c *Client) GetPoolContent(
 		return nil, err
 	}
 
-	log.Info("Current base fee", "fee", baseFeeInfo.Basefee)
+	log.Info("Current base fee", "fee", utils.WeiToGWei(baseFeeInfo.Basefee))
 
 	var localsArg []string
 	for _, local := range locals {
