@@ -391,8 +391,8 @@ func (p *Proposer) initTierFees() error {
 			"Protocol tier",
 			"id", tier.ID,
 			"name", string(bytes.TrimRight(tier.VerifierName[:], "\x00")),
-			"validityBond", tier.ValidityBond,
-			"contestBond", tier.ContestBond,
+			"validityBond", utils.WeiToEther(tier.ValidityBond),
+			"contestBond", utils.WeiToEther(tier.ContestBond),
 			"provingWindow", tier.ProvingWindow,
 			"cooldownWindow", tier.CooldownWindow,
 		)

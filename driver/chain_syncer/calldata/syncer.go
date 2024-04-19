@@ -296,7 +296,7 @@ func (s *Syncer) onBlockProposed(
 		"height", payloadData.Number,
 		"hash", payloadData.BlockHash,
 		"transactions", len(payloadData.Transactions),
-		"baseFee", payloadData.BaseFeePerGas,
+		"baseFee", utils.WeiToGWei(payloadData.BaseFeePerGas),
 		"withdrawals", len(payloadData.Withdrawals),
 	)
 
@@ -350,7 +350,7 @@ func (s *Syncer) insertNewHead(
 	log.Info(
 		"L2 baseFee",
 		"blockID", event.BlockId,
-		"baseFee", baseFeeInfo.Basefee,
+		"baseFee", utils.WeiToGWei(baseFeeInfo.Basefee),
 		"syncedL1Height", event.Meta.L1Height,
 		"parentGasUsed", parent.GasUsed,
 	)
@@ -483,7 +483,7 @@ func (s *Syncer) createExecutionPayloads(
 		"gasLimit", attributes.BlockMetadata.GasLimit,
 		"timestamp", attributes.BlockMetadata.Timestamp,
 		"mixHash", attributes.BlockMetadata.MixHash,
-		"baseFee", attributes.BaseFeePerGas,
+		"baseFee", utils.WeiToGWei(attributes.BaseFeePerGas),
 		"extraData", string(attributes.BlockMetadata.ExtraData),
 		"l1OriginHeight", attributes.L1Origin.L1BlockHeight,
 		"l1OriginHash", attributes.L1Origin.L1BlockHash,
@@ -510,7 +510,7 @@ func (s *Syncer) createExecutionPayloads(
 	log.Debug(
 		"Payload",
 		"blockID", event.BlockId,
-		"baseFee", payload.BaseFeePerGas,
+		"baseFee", utils.WeiToGWei(payload.BaseFeePerGas),
 		"number", payload.Number,
 		"hash", payload.BlockHash,
 		"gasLimit", payload.GasLimit,

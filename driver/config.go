@@ -19,7 +19,6 @@ type Config struct {
 	*rpc.ClientConfig
 	P2PSyncVerifiedBlocks bool
 	P2PSyncTimeout        time.Duration
-	RPCTimeout            time.Duration
 	RetryInterval         time.Duration
 	MaxExponent           uint64
 	BlobServerEndpoint    *url.URL
@@ -71,7 +70,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		RetryInterval:         c.Duration(flags.BackOffRetryInterval.Name),
 		P2PSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
 		P2PSyncTimeout:        c.Duration(flags.P2PSyncTimeout.Name),
-		RPCTimeout:            timeout,
 		MaxExponent:           c.Uint64(flags.MaxExponent.Name),
 		BlobServerEndpoint:    blobServerEndpoint,
 	}, nil

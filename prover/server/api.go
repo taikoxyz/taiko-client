@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -244,7 +245,7 @@ func (s *ProverServer) checkMinEthAndToken(ctx context.Context) (bool, error) {
 
 	log.Info(
 		"Prover's ETH balance",
-		"balance", ethBalance,
+		"balance", utils.WeiToEther(ethBalance),
 		"address", s.proverAddress.Hex(),
 	)
 
@@ -252,8 +253,8 @@ func (s *ProverServer) checkMinEthAndToken(ctx context.Context) (bool, error) {
 		log.Warn(
 			"Prover does not have required minimum on-chain ETH balance",
 			"providedProver", s.proverAddress.Hex(),
-			"ethBalance", ethBalance,
-			"minEthBalance", s.minEthBalance,
+			"ethBalance", utils.WeiToEther(ethBalance),
+			"minEthBalance", utils.WeiToEther(s.minEthBalance),
 		)
 		return false, nil
 	}
@@ -266,7 +267,7 @@ func (s *ProverServer) checkMinEthAndToken(ctx context.Context) (bool, error) {
 
 	log.Info(
 		"Prover's Taiko token balance",
-		"balance", balance.String(),
+		"balance", utils.WeiToEther(balance),
 		"address", s.proverAddress.Hex(),
 	)
 
@@ -274,8 +275,8 @@ func (s *ProverServer) checkMinEthAndToken(ctx context.Context) (bool, error) {
 		log.Warn(
 			"Prover does not have required on-chain Taiko token balance",
 			"providedProver", s.proverAddress.Hex(),
-			"taikoTokenBalance", balance,
-			"minTaikoTokenBalance", s.minTaikoTokenBalance,
+			"taikoTokenBalance", utils.WeiToEther(balance),
+			"minTaikoTokenBalance", utils.WeiToEther(s.minTaikoTokenBalance),
 		)
 		return false, nil
 	}
