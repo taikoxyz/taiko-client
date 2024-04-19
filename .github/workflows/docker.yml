@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [main]
+    branches: [main,switch-to-use-gar]
     tags:
       - "v*"
 
@@ -20,7 +20,7 @@ jobs:
         with:
           registry: us-central1-docker.pkg.dev
           username: _json_key
-          password: ${{ secrets.GCR_JSON_KEY }}
+          password: ${{ secrets.GAR_JSON_KEY }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
