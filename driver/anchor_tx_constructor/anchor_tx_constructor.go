@@ -13,6 +13,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/driver/signer"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
@@ -69,7 +70,7 @@ func (c *AnchorTxConstructor) AssembleAnchorTx(
 		"l1Height", l1Height,
 		"l1Hash", l1Hash,
 		"stateRoot", l1Header.Root,
-		"baseFee", baseFee,
+		"baseFee", utils.WeiToGWei(baseFee),
 		"gasUsed", parentGasUsed,
 	)
 

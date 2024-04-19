@@ -14,9 +14,11 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
-	pkgFlags "github.com/taikoxyz/taiko-client/pkg/flags"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+
+	pkgFlags "github.com/taikoxyz/taiko-client/pkg/flags"
 )
 
 // Config contains all configurations to initialize a Taiko proposer.
@@ -84,6 +86,16 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		proverEndpoints = append(proverEndpoints, endpoint)
 	}
 
+	optimisticTierFee, err := utils.GWeiToWei(c.Float64(flags.OptimisticTierFee.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	sgxTierFee, err := utils.GWeiToWei(c.Float64(flags.SgxTierFee.Name))
+	if err != nil {
+		return nil, err
+	}
+
 	return &Config{
 		ClientConfig: &rpc.ClientConfig{
 			L1Endpoint:        c.String(flags.L1WSEndpoint.Name),
@@ -95,7 +107,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 			TaikoTokenAddress: common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
 			Timeout:           c.Duration(flags.RPCTimeout.Name),
 		},
-		AssignmentHookAddress:      common.HexToAddress(c.String(flags.ProposerAssignmentHookAddress.Name)),
+		AssignmentHookAddress:      common.HexToAddress(c.String(flags.AssignmentHookAddress.Name)),
 		L1ProposerPrivKey:          l1ProposerPrivKey,
 		L2SuggestedFeeRecipient:    common.HexToAddress(l2SuggestedFeeRecipient),
 		ExtraData:                  c.String(flags.ExtraData.Name),
@@ -108,8 +120,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		MaxProposedTxListsPerEpoch: c.Uint64(flags.MaxProposedTxListsPerEpoch.Name),
 		ProposeBlockTxGasLimit:     c.Uint64(flags.TxGasLimit.Name),
 		ProverEndpoints:            proverEndpoints,
-		OptimisticTierFee:          new(big.Int).SetUint64(c.Uint64(flags.OptimisticTierFee.Name)),
-		SgxTierFee:                 new(big.Int).SetUint64(c.Uint64(flags.SgxTierFee.Name)),
+		OptimisticTierFee:          optimisticTierFee,
+		SgxTierFee:                 sgxTierFee,
 		TierFeePriceBump:           new(big.Int).SetUint64(c.Uint64(flags.TierFeePriceBump.Name)),
 		MaxTierFeePriceBumps:       c.Uint64(flags.MaxTierFeePriceBumps.Name),
 		IncludeParentMetaHash:      c.Bool(flags.ProposeBlockIncludeParentMetaHash.Name),
