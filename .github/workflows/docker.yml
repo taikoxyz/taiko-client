@@ -1,8 +1,8 @@
-name: "Push docker image to GCR"
+name: "Push docker image to GAR"
 
 on:
   push:
-    branches: [main]
+    branches: [main,switch-to-use-gar]
     tags:
       - "v*"
 
@@ -33,7 +33,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            us-central1-docker.pkg.dev/evmchain/taiko-client
+            us-central1-docker.pkg.dev/evmchain/evmchain/taiko-client
           tags: |
             type=ref,event=branch
             type=ref,event=pr
