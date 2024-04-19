@@ -18,7 +18,7 @@ jobs:
       - name: Login to GCR
         uses: docker/login-action@v2
         with:
-          registry: gcr.io
+          registry: us-central1-docker.pkg.dev
           username: _json_key
           password: ${{ secrets.GCR_JSON_KEY }}
 
@@ -33,7 +33,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            gcr.io/evmchain/taiko-client
+            us-central1-docker.pkg.dev/evmchain/taiko-client
           tags: |
             type=ref,event=branch
             type=ref,event=pr
