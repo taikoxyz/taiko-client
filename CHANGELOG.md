@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.22.0](https://github.com/taikoxyz/taiko-client/compare/v0.21.0...v0.22.0) (2024-04-19)
+
+
+### Features
+
+* **bindings:** update Go contract bindings && bump `taiko-geth` version ([#727](https://github.com/taikoxyz/taiko-client/issues/727)) ([1003687](https://github.com/taikoxyz/taiko-client/commit/1003687d909fe72936834ba345deeb294fa06d8e))
+* **cmd:** default unit for all related flags / logs ([#729](https://github.com/taikoxyz/taiko-client/issues/729)) ([ec7ba9d](https://github.com/taikoxyz/taiko-client/commit/ec7ba9d696fe1b051de5e12878553fe035c046fa))
+* **driver:** only allow one successful beacon sync ([#718](https://github.com/taikoxyz/taiko-client/issues/718)) ([e6d48ab](https://github.com/taikoxyz/taiko-client/commit/e6d48abb4308c93e7bc3e0d070e7934bb5cfe9b6))
+* **metrics:** collect `txmgr` metrics ([#725](https://github.com/taikoxyz/taiko-client/issues/725)) ([7fb762a](https://github.com/taikoxyz/taiko-client/commit/7fb762a6cf101b905f1d3bcb8c0adacd77467518))
+* **metrics:** remove an unused metric ([#712](https://github.com/taikoxyz/taiko-client/issues/712)) ([76f4003](https://github.com/taikoxyz/taiko-client/commit/76f40038cef70e4736f87c9568c8a70779b47d98))
+* **metrics:** remove some unused metrics ([#724](https://github.com/taikoxyz/taiko-client/issues/724)) ([bce8ebb](https://github.com/taikoxyz/taiko-client/commit/bce8ebbdffd7144be3d54b75efdae2c08e74d455))
+* **proposer:** introduce `TxSender` for proposer ([#723](https://github.com/taikoxyz/taiko-client/issues/723)) ([c71155e](https://github.com/taikoxyz/taiko-client/commit/c71155e1fa2d0ba0359d36ab98d450855e022dfa))
+* **prover:** check proof status before sending the transaction ([#731](https://github.com/taikoxyz/taiko-client/issues/731)) ([a9d637a](https://github.com/taikoxyz/taiko-client/commit/a9d637a2fd086d6dfc0236c6f13c918c7eb7816c))
+* **prover:** introduce three `raiko` related flags ([#711](https://github.com/taikoxyz/taiko-client/issues/711)) ([7540be2](https://github.com/taikoxyz/taiko-client/commit/7540be21d88a4689f03aa866d93475843f798770))
+* **prover:** use `--guardian.submissionDelay` flag ([#730](https://github.com/taikoxyz/taiko-client/issues/730)) ([c7db741](https://github.com/taikoxyz/taiko-client/commit/c7db7419a66ffa3cfd21b28a32ac3a1528e09b48))
+* **rpc:** improve `L2ParentByBlockID` ([#715](https://github.com/taikoxyz/taiko-client/issues/715)) ([036f8e6](https://github.com/taikoxyz/taiko-client/commit/036f8e643b09c0125a7cf4a0da265463289596df))
+* **rpc:** keep retrying when connecting to endpoints ([#708](https://github.com/taikoxyz/taiko-client/issues/708)) ([771f133](https://github.com/taikoxyz/taiko-client/commit/771f1334e7efacc17e6ff0f5768a5cf54eecafb3))
+* **rpc:** remove `WaitL1Origin()` method ([#716](https://github.com/taikoxyz/taiko-client/issues/716)) ([70913c6](https://github.com/taikoxyz/taiko-client/commit/70913c60edc87bb93cbc185277f4862c5420cade))
+
+
+### Bug Fixes
+
+* **proposer:** fix an issue in `ProposeOp` ([#728](https://github.com/taikoxyz/taiko-client/issues/728)) ([24a8e1d](https://github.com/taikoxyz/taiko-client/commit/24a8e1d52270c9f1681a2e1d6ca376d7c1faf4a7))
+
 ## [0.21.0](https://github.com/taikoxyz/taiko-client/compare/v0.20.0...v0.21.0) (2024-04-10)
 
 
