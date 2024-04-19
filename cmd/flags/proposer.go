@@ -47,7 +47,7 @@ var (
 		EnvVars:  []string{"TIER_FEE_SGX"},
 	}
 	TierFeePriceBump = &cli.Uint64Flag{
-		Name:     "tierFee.pricebump",
+		Name:     "tierFee.priceBump",
 		Usage:    "Price bump percentage when no prover wants to accept the block at initial fee",
 		Value:    10,
 		Category: proposerCategory,
@@ -73,21 +73,21 @@ var (
 		Usage:    "Minimum gas used for a transactions list to propose",
 		Category: proposerCategory,
 		Value:    0,
-		EnvVars:  []string{"MIN_GAS_USED"},
+		EnvVars:  []string{"EPOCH_MIN_GAS_USED"},
 	}
 	MinTxListBytes = &cli.Uint64Flag{
 		Name:     "epoch.minTxListBytes",
 		Usage:    "Minimum bytes for a transactions list to propose",
 		Category: proposerCategory,
 		Value:    0,
-		EnvVars:  []string{"MIN_TX_LIST_BYTES"},
+		EnvVars:  []string{"EPOCH_MIN_TX_LIST_BYTES"},
 	}
 	MinProposingInternal = &cli.DurationFlag{
 		Name:     "epoch.minProposingInterval",
 		Usage:    "Minimum time interval to force proposing a block, even if there are no transaction in mempool",
 		Category: proposerCategory,
 		Value:    0,
-		EnvVars:  []string{"MIN_PROPOSING_INTERNAL"},
+		EnvVars:  []string{"EPOCH_MIN_PROPOSING_INTERNAL"},
 	}
 	// Proposing metadata related.
 	ExtraData = &cli.StringFlag{
@@ -99,45 +99,45 @@ var (
 	}
 	// Transactions pool related.
 	TxPoolLocals = &cli.StringSliceFlag{
-		Name:     "txpool.locals",
+		Name:     "txPool.locals",
 		Usage:    "Comma separated accounts to treat as locals (priority inclusion)",
 		Category: proposerCategory,
 		EnvVars:  []string{"TX_POOL_LOCALS"},
 	}
 	TxPoolLocalsOnly = &cli.BoolFlag{
-		Name:     "txpool.localsOnly",
+		Name:     "txPool.localsOnly",
 		Usage:    "If set to true, proposer will only propose transactions of local accounts",
 		Value:    false,
 		Category: proposerCategory,
 		EnvVars:  []string{"TX_POOL_LOCALS_ONLY"},
 	}
 	MaxProposedTxListsPerEpoch = &cli.Uint64Flag{
-		Name:     "txpool.maxTxListsPerEpoch",
+		Name:     "txPool.maxTxListsPerEpoch",
 		Usage:    "Maximum number of transaction lists which will be proposed inside one proposing epoch",
 		Value:    1,
 		Category: proposerCategory,
-		EnvVars:  []string{"MAX_TX_LISTS_PER_EPOCH"},
+		EnvVars:  []string{"TX_POOL_MAX_TX_LISTS_PER_EPOCH"},
 	}
 	ProposeBlockIncludeParentMetaHash = &cli.BoolFlag{
 		Name:     "includeParentMetaHash",
 		Usage:    "Include parent meta hash when proposing block",
 		Value:    false,
 		Category: proposerCategory,
-		EnvVars:  []string{"INCLUDE_PARENT_METAHASH"},
+		EnvVars:  []string{"INCLUDE_PARENT_META_HASH"},
 	}
 	// Transaction related.
 	BlobAllowed = &cli.BoolFlag{
 		Name:    "l1.blobAllowed",
 		Usage:   "Send EIP-4844 blob transactions when proposing blocks",
 		Value:   false,
-		EnvVars: []string{"BLOB_ALLOWED"},
+		EnvVars: []string{"L1_BLOB_ALLOWED"},
 	}
 	L1BlockBuilderTip = &cli.Uint64Flag{
 		Name:     "l1.blockBuilderTip",
 		Usage:    "Amount you wish to tip the L1 block builder",
 		Value:    0,
 		Category: proposerCategory,
-		EnvVars:  []string{"BLOCK_BUILDER_TIP"},
+		EnvVars:  []string{"L1_BLOCK_BUILDER_TIP"},
 	}
 )
 

@@ -28,7 +28,7 @@ var (
 		Name:     "p2p.checkPointSyncUrl",
 		Usage:    "HTTP RPC endpoint of another synced L2 execution engine node",
 		Category: driverCategory,
-		EnvVars:  []string{"CHECK_POINT_SYNC_URL"},
+		EnvVars:  []string{"P2P_CHECK_POINT_SYNC_URL"},
 	}
 	// syncer specific flag
 	MaxExponent = &cli.Uint64Flag{
@@ -37,7 +37,7 @@ var (
 			"0 means that it is reset to the genesis height",
 		Value:    0,
 		Category: driverCategory,
-		EnvVars:  []string{"MAX_EXPONENT"},
+		EnvVars:  []string{"SYNCER_MAX_EXPONENT"},
 	}
 	// blob server endpoint
 	BlobServerEndpoint = &cli.StringFlag{

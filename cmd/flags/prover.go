@@ -54,14 +54,14 @@ var (
 		Name:     "prover.startingBlockID",
 		Usage:    "If set, prover will start proving blocks from the block with this ID",
 		Category: proverCategory,
-		EnvVars:  []string{"STARTING_BLOCK_ID"},
+		EnvVars:  []string{"PROVER_STARTING_BLOCK_ID"},
 	}
 	Graffiti = &cli.StringFlag{
 		Name:     "prover.graffiti",
 		Usage:    "When string is passed, adds additional graffiti info to proof evidence",
 		Category: proverCategory,
 		Value:    "",
-		EnvVars:  []string{"GRAFFITI"},
+		EnvVars:  []string{"PROVER_GRAFFITI"},
 	}
 	// Proving strategy.
 	ProveUnassignedBlocks = &cli.BoolFlag{
@@ -69,21 +69,21 @@ var (
 		Usage:    "Whether you want to prove unassigned blocks, or only work on assigned proofs",
 		Category: proverCategory,
 		Value:    false,
-		EnvVars:  []string{"PROVE_UNASSIGNED_BLOCKS"},
+		EnvVars:  []string{"PROVER_PROVE_UNASSIGNED_BLOCKS"},
 	}
 	MinEthBalance = &cli.Float64Flag{
 		Name:     "prover.minEthBalance",
 		Usage:    "Minimum ETH balance (in Ether) a prover wants to keep",
 		Category: proverCategory,
 		Value:    0,
-		EnvVars:  []string{"MIN_ETH_BALANCE"},
+		EnvVars:  []string{"PROVER_MIN_ETH_BALANCE"},
 	}
 	MinTaikoTokenBalance = &cli.Float64Flag{
 		Name:     "prover.minTaikoTokenBalance",
 		Usage:    "Minimum Taiko token balance without decimal a prover wants to keep",
 		Category: proverCategory,
 		Value:    0,
-		EnvVars:  []string{"MIN_TAIKO_TOKEN_BALANCE"},
+		EnvVars:  []string{"PROVER_MIN_TAIKO_TOKEN_BALANCE"},
 	}
 	// Tier fee related.
 	MinOptimisticTierFee = &cli.Uint64Flag{
@@ -114,18 +114,18 @@ var (
 	}
 	// HTTP server related.
 	ProverHTTPServerPort = &cli.Uint64Flag{
-		Name:     "http.port",
+		Name:     "prover.port",
 		Usage:    "Port to expose for http server",
 		Category: proverCategory,
 		Value:    9876,
-		EnvVars:  []string{"PROVER_HTTP_PORT"},
+		EnvVars:  []string{"PROVER_PORT"},
 	}
 	MaxExpiry = &cli.DurationFlag{
 		Name:     "http.maxExpiry",
 		Usage:    "Maximum accepted expiry in seconds for accepting proving a block",
 		Value:    1 * time.Hour,
 		Category: proverCategory,
-		EnvVars:  []string{"MAX_EXPIRY"},
+		EnvVars:  []string{"HTTP_MAX_EXPIRY"},
 	}
 	// Special flags for testing.
 	Dummy = &cli.BoolFlag{
@@ -133,7 +133,7 @@ var (
 		Usage:    "Produce dummy proofs, testing purposes only",
 		Value:    false,
 		Category: proverCategory,
-		EnvVars:  []string{"DUMMY"},
+		EnvVars:  []string{"PROVER_DUMMY"},
 	}
 	// Max slippage allowed
 	MaxAcceptableBlockSlippage = &cli.Uint64Flag{
@@ -141,7 +141,7 @@ var (
 		Usage:    "Maximum accepted slippage difference for blockID for accepting proving a block",
 		Value:    1024,
 		Category: proverCategory,
-		EnvVars:  []string{"BLOCK_SLIPPAGE"},
+		EnvVars:  []string{"PROVER_BLOCK_SLIPPAGE"},
 	}
 	// Max amount of L1 blocks that can pass before block is invalid
 	MaxProposedIn = &cli.Uint64Flag{
@@ -149,19 +149,19 @@ var (
 		Usage:    "Maximum amount of L1 blocks that can pass before block can not be proposed. 0 means no limit.",
 		Value:    0,
 		Category: proverCategory,
-		EnvVars:  []string{"MAX_PROPOSED_IN"},
+		EnvVars:  []string{"PROVER_MAX_PROPOSED_IN"},
 	}
 	Allowance = &cli.Float64Flag{
 		Name:     "prover.allowance",
 		Usage:    "Amount without decimal to approve AssignmentHook contract for TaikoToken usage",
 		Category: proverCategory,
-		EnvVars:  []string{"ALLOWANCE"},
+		EnvVars:  []string{"PROVER_ALLOWANCE"},
 	}
 	GuardianProverHealthCheckServerEndpoint = &cli.StringFlag{
 		Name:     "prover.guardianProverHealthCheckServerEndpoint",
 		Usage:    "HTTP endpoint for main guardian prover health check server",
 		Category: proverCategory,
-		EnvVars:  []string{"GUARDIAN_PROVER_HEALTH_CHECK_SERVER_ENDPOINT"},
+		EnvVars:  []string{"PROVER_GUARDIAN_PROVER_HEALTH_CHECK_SERVER_ENDPOINT"},
 	}
 	// Guardian prover specific flag
 	GuardianProver = &cli.StringFlag{
@@ -182,19 +182,19 @@ var (
 		Usage:    "Toggles whether the proof is a dummy proof or returns keccak256(RETURN_LIVENESS_BOND) as proof",
 		Value:    false,
 		Category: proverCategory,
-		EnvVars:  []string{"ENABLE_LIVENESS_BOND_PROOF"},
+		EnvVars:  []string{"PROVER_ENABLE_LIVENESS_BOND_PROOF"},
 	}
 	L1NodeVersion = &cli.StringFlag{
 		Name:     "prover.l1NodeVersion",
 		Usage:    "Version or tag or the L1 Node Version used as an L1 RPC Url by this guardian prover",
 		Category: proverCategory,
-		EnvVars:  []string{"L1_NODE_VERSION"},
+		EnvVars:  []string{"PROVER_L1_NODE_VERSION"},
 	}
 	L2NodeVersion = &cli.StringFlag{
 		Name:     "prover.l2NodeVersion",
 		Usage:    "Version or tag or the L2 Node Version used as an L2 RPC Url by this guardian prover",
 		Category: proverCategory,
-		EnvVars:  []string{"L2_NODE_VERSION"},
+		EnvVars:  []string{"PROVER_L2_NODE_VERSION"},
 	}
 	// Confirmations specific flag
 	BlockConfirmations = &cli.Uint64Flag{
@@ -202,7 +202,7 @@ var (
 		Usage:    "Confirmations to the latest L1 block before submitting a proof for a L2 block",
 		Value:    6,
 		Category: proverCategory,
-		EnvVars:  []string{"BLOCK_CONFIRMATIONS"},
+		EnvVars:  []string{"PROVER_BLOCK_CONFIRMATIONS"},
 	}
 )
 
