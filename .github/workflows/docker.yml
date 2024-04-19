@@ -2,7 +2,7 @@ name: "Push docker image to GCR"
 
 on:
   push:
-    branches: [main,switch-to-use-gar]
+    branches: [main]
     tags:
       - "v*"
 
@@ -15,7 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Login to GCR
+      - name: Login to GAR
         uses: docker/login-action@v2
         with:
           registry: us-central1-docker.pkg.dev
