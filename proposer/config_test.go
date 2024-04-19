@@ -13,6 +13,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 var (
@@ -22,7 +23,7 @@ var (
 	taikoL2         = os.Getenv("TAIKO_L2_ADDRESS")
 	taikoToken      = os.Getenv("TAIKO_TOKEN_ADDRESS")
 	proverEndpoints = "http://localhost:9876,http://localhost:1234"
-	tierFee         = 102400000000
+	tierFee         = 100.0
 	proposeInterval = "10s"
 	rpcTimeout      = "5s"
 )
@@ -47,8 +48,10 @@ func (s *ProposerTestSuite) TestNewConfigFromCliContext() {
 		s.Equal(1, len(c.LocalAddresses))
 		s.Equal(goldenTouchAddress, c.LocalAddresses[0])
 		s.Equal(5*time.Second, c.Timeout)
-		s.Equal(uint64(tierFee), c.OptimisticTierFee.Uint64())
-		s.Equal(uint64(tierFee), c.SgxTierFee.Uint64())
+		tierFeeGWei, err := utils.GWeiToWei(tierFee)
+		s.Nil(err)
+		s.Equal(tierFeeGWei.Uint64(), c.OptimisticTierFee.Uint64())
+		s.Equal(tierFeeGWei.Uint64(), c.SgxTierFee.Uint64())
 		s.Equal(uint64(15), c.TierFeePriceBump.Uint64())
 		s.Equal(uint64(5), c.MaxTierFeePriceBumps)
 		s.Equal(true, c.IncludeParentMetaHash)
@@ -140,7 +143,7 @@ func (s *ProposerTestSuite) SetupApp() *cli.App {
 		&cli.Uint64Flag{Name: flags.TierFeePriceBump.Name},
 		&cli.Uint64Flag{Name: flags.MaxTierFeePriceBumps.Name},
 		&cli.BoolFlag{Name: flags.ProposeBlockIncludeParentMetaHash.Name},
-		&cli.StringFlag{Name: flags.ProposerAssignmentHookAddress.Name},
+		&cli.StringFlag{Name: flags.AssignmentHookAddress.Name},
 	}
 	app.Flags = append(app.Flags, flags.TxmgrFlags...)
 	app.Action = func(ctx *cli.Context) error {

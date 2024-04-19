@@ -204,7 +204,7 @@ func (p *Prover) initEventHandlers() {
 		ProofSubmissionCh:     p.proofSubmissionCh,
 		ProofContestCh:        p.proofContestCh,
 		BackOffRetryInterval:  p.cfg.BackOffRetryInterval,
-		BackOffMaxRetrys:      p.cfg.BackOffMaxRetrys,
+		BackOffMaxRetrys:      p.cfg.BackOffMaxRetries,
 		ContesterMode:         p.cfg.ContesterMode,
 		ProveUnassignedBlocks: p.cfg.ProveUnassignedBlocks,
 	}

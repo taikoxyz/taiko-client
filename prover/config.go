@@ -14,6 +14,8 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-client/internal/utils"
+
 	pkgFlags "github.com/taikoxyz/taiko-client/pkg/flags"
 )
 
@@ -34,7 +36,7 @@ type Config struct {
 	GuardianProverAddress                   common.Address
 	GuardianProofSubmissionDelay            time.Duration
 	Graffiti                                string
-	BackOffMaxRetrys                        uint64
+	BackOffMaxRetries                       uint64
 	BackOffRetryInterval                    time.Duration
 	ProveUnassignedBlocks                   bool
 	ContesterMode                           bool
@@ -81,9 +83,9 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 
 	var allowance = common.Big0
 	if c.IsSet(flags.Allowance.Name) {
-		amt, ok := new(big.Int).SetString(c.String(flags.Allowance.Name), 10)
-		if !ok {
-			return nil, fmt.Errorf("invalid setting allowance config value: %v", c.String(flags.Allowance.Name))
+		amt, err := utils.EtherToWei(c.Float64(flags.Allowance.Name))
+		if err != nil {
+			return nil, fmt.Errorf("invalid setting allowance config value: %v", c.Float64(flags.Allowance.Name))
 		}
 
 		allowance = amt
@@ -136,6 +138,31 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		raikoL2Endpoint = c.String(flags.L2HTTPEndpoint.Name)
 	}
 
+	minOptimisticTierFee, err := utils.GWeiToWei(c.Float64(flags.MinOptimisticTierFee.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	minSgxTierFee, err := utils.GWeiToWei(c.Float64(flags.MinSgxTierFee.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	minSgxAndZkVMTierFee, err := utils.GWeiToWei(c.Float64(flags.MinSgxAndZkVMTierFee.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	minEthBalance, err := utils.EtherToWei(c.Float64(flags.MinEthBalance.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	minTaikoTokenBalance, err := utils.EtherToWei(c.Float64(flags.MinTaikoTokenBalance.Name))
+	if err != nil {
+		return nil, err
+	}
+
 	return &Config{
 		L1WsEndpoint:                            c.String(flags.L1WSEndpoint.Name),
 		L1HttpEndpoint:                          c.String(flags.L1HTTPEndpoint.Name),
@@ -145,7 +172,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		TaikoL1Address:                          common.HexToAddress(c.String(flags.TaikoL1Address.Name)),
 		TaikoL2Address:                          common.HexToAddress(c.String(flags.TaikoL2Address.Name)),
 		TaikoTokenAddress:                       common.HexToAddress(c.String(flags.TaikoTokenAddress.Name)),
-		AssignmentHookAddress:                   common.HexToAddress(c.String(flags.ProverAssignmentHookAddress.Name)),
+		AssignmentHookAddress:                   common.HexToAddress(c.String(flags.AssignmentHookAddress.Name)),
 		L1ProverPrivKey:                         l1ProverPrivKey,
 		RaikoHostEndpoint:                       c.String(flags.RaikoHostEndpoint.Name),
 		RaikoL1Endpoint:                         raikoL1Endpoint,
@@ -157,7 +184,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		GuardianProofSubmissionDelay:            c.Duration(flags.GuardianProofSubmissionDelay.Name),
 		GuardianProverHealthCheckServerEndpoint: guardianProverHealthCheckServerEndpoint,
 		Graffiti:                                c.String(flags.Graffiti.Name),
-		BackOffMaxRetrys:                        c.Uint64(flags.BackOffMaxRetrys.Name),
+		BackOffMaxRetries:                       c.Uint64(flags.BackOffMaxRetries.Name),
 		BackOffRetryInterval:                    c.Duration(flags.BackOffRetryInterval.Name),
 		ProveUnassignedBlocks:                   c.Bool(flags.ProveUnassignedBlocks.Name),
 		ContesterMode:                           c.Bool(flags.ContesterMode.Name),
@@ -166,11 +193,11 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		ProveBlockGasLimit:                      c.Uint64(flags.TxGasLimit.Name),
 		Capacity:                                c.Uint64(flags.ProverCapacity.Name),
 		HTTPServerPort:                          c.Uint64(flags.ProverHTTPServerPort.Name),
-		MinOptimisticTierFee:                    new(big.Int).SetUint64(c.Uint64(flags.MinOptimisticTierFee.Name)),
-		MinSgxTierFee:                           new(big.Int).SetUint64(c.Uint64(flags.MinSgxTierFee.Name)),
-		MinSgxAndZkVMTierFee:                    new(big.Int).SetUint64(c.Uint64(flags.MinSgxAndZkVMTierFee.Name)),
-		MinEthBalance:                           new(big.Int).SetUint64(c.Uint64(flags.MinEthBalance.Name)),
-		MinTaikoTokenBalance:                    new(big.Int).SetUint64(c.Uint64(flags.MinTaikoTokenBalance.Name)),
+		MinOptimisticTierFee:                    minOptimisticTierFee,
+		MinSgxTierFee:                           minSgxTierFee,
+		MinSgxAndZkVMTierFee:                    minSgxAndZkVMTierFee,
+		MinEthBalance:                           minEthBalance,
+		MinTaikoTokenBalance:                    minTaikoTokenBalance,
 		MaxExpiry:                               c.Duration(flags.MaxExpiry.Name),
 		MaxBlockSlippage:                        c.Uint64(flags.MaxAcceptableBlockSlippage.Name),
 		MaxProposedIn:                           c.Uint64(flags.MaxProposedIn.Name),

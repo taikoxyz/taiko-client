@@ -14,6 +14,7 @@ var (
 			"will be helpful to bring a new node online quickly",
 		Value:    false,
 		Category: driverCategory,
+		EnvVars:  []string{"P2P_SYNC_VERIFIED_BLOCKS"},
 	}
 	P2PSyncTimeout = &cli.DurationFlag{
 		Name: "p2p.syncTimeout",
@@ -21,11 +22,13 @@ var (
 			"driver will stop the P2P sync and insert all remaining L2 blocks one by one",
 		Value:    1 * time.Hour,
 		Category: driverCategory,
+		EnvVars:  []string{"P2P_SYNC_TIMEOUT"},
 	}
 	CheckPointSyncURL = &cli.StringFlag{
 		Name:     "p2p.checkPointSyncUrl",
 		Usage:    "HTTP RPC endpoint of another synced L2 execution engine node",
 		Category: driverCategory,
+		EnvVars:  []string{"P2P_CHECK_POINT_SYNC_URL"},
 	}
 	// syncer specific flag
 	MaxExponent = &cli.Uint64Flag{
@@ -34,12 +37,14 @@ var (
 			"0 means that it is reset to the genesis height",
 		Value:    0,
 		Category: driverCategory,
+		EnvVars:  []string{"SYNCER_MAX_EXPONENT"},
 	}
 	// blob server endpoint
 	BlobServerEndpoint = &cli.StringFlag{
 		Name:     "blob.server",
 		Usage:    "Blob sidecar storage server",
 		Category: driverCategory,
+		EnvVars:  []string{"BLOB_SERVER"},
 	}
 )
 

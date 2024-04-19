@@ -139,7 +139,7 @@ func (s *ProverTestSuite) TestInitError() {
 		ProveUnassignedBlocks: true,
 		RPCTimeout:            10 * time.Minute,
 		BackOffRetryInterval:  3 * time.Second,
-		BackOffMaxRetrys:      12,
+		BackOffMaxRetries:     12,
 		TxmgrConfigs: &txmgr.CLIConfig{
 			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
 			NumConfirmations:          0,
@@ -511,7 +511,7 @@ func (s *ProverTestSuite) initProver(
 		Allowance:             new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil),
 		RPCTimeout:            3 * time.Second,
 		BackOffRetryInterval:  3 * time.Second,
-		BackOffMaxRetrys:      12,
+		BackOffMaxRetries:     12,
 		L1NodeVersion:         "1.0.0",
 		L2NodeVersion:         "0.1.0",
 		TxmgrConfigs: &txmgr.CLIConfig{
