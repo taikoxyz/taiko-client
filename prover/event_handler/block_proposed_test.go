@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/taikoxyz/taiko-client/bindings"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	state "github.com/taikoxyz/taiko-client/prover/shared_state"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/taikoxyz/taiko-client/bindings"
 )
 
 func (s *EventHandlerTestSuite) TestBlockProposedHandle() {

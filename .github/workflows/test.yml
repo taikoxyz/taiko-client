@@ -23,6 +23,25 @@ jobs:
       - name: Lint
         run: make lint
 
+  sort-import-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.21
+          cache: true
+
+      - name: Sort Import Lint
+        run: make sort-import
+
+      - name: Check for changes
+        run: |
+          git diff --exit-code || { echo "Go imports revisions detected. Please run make sort-import and commit changes."; exit 1; }
+
   integration_tests:
     name: Integration tests
     runs-on: ubuntu-latest

@@ -15,10 +15,9 @@ import (
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-client/internal/utils"
+	pkgFlags "github.com/taikoxyz/taiko-client/pkg/flags"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
-
-	pkgFlags "github.com/taikoxyz/taiko-client/pkg/flags"
 )
 
 // Config contains all configurations to initialize a Taiko proposer.

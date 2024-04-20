@@ -32,9 +32,13 @@ gen_bindings:
 	TAIKO_GETH_DIR=${TAIKO_GETH_DIR} \
 		./scripts/gen_bindings.sh
 
+sort-import:
+	@./scripts/goimports-reviser.sh
+
 .PHONY: build \
 				clean \
 				lint \
 				test \
 				dev_net \
-				gen_bindings
+				gen_bindings \
+				sort-import

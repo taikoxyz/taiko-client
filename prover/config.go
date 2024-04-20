@@ -15,7 +15,6 @@ import (
 
 	"github.com/taikoxyz/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-client/internal/utils"
-
 	pkgFlags "github.com/taikoxyz/taiko-client/pkg/flags"
 )
 
