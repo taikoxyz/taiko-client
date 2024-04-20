@@ -15,7 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Login to GAR
+      - name: Login to GAR 
         uses: docker/login-action@v2
         with:
           registry: us-central1-docker.pkg.dev
