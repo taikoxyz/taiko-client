@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/stretchr/testify/require"
+
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
