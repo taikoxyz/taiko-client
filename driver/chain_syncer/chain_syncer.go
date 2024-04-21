@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
-	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/blob"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
@@ -24,8 +24,8 @@ type L2ChainSyncer struct {
 	rpc   *rpc.Client  // L1/L2 RPC clients
 
 	// Syncers
-	beaconSyncer   *beaconsync.Syncer
-	calldataSyncer *calldata.Syncer
+	beaconSyncer *beaconsync.Syncer
+	blobSyncer   *blob.Syncer
 
 	// Monitors
 	progressTracker *beaconsync.SyncProgressTracker
@@ -57,7 +57,7 @@ func New(
 		return nil, err
 	}
 	beaconSyncer := beaconsync.NewSyncer(ctx, rpc, state, syncMode, tracker)
-	calldataSyncer, err := calldata.NewSyncer(ctx, rpc, state, tracker, maxRetrieveExponent, blobServerEndpoint)
+	blobSyncer, err := blob.NewSyncer(ctx, rpc, state, tracker, maxRetrieveExponent, blobServerEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func New(
 		rpc:                   rpc,
 		state:                 state,
 		beaconSyncer:          beaconSyncer,
-		calldataSyncer:        calldataSyncer,
+		blobSyncer:            blobSyncer,
 		progressTracker:       tracker,
 		syncMode:              syncMode,
 		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
@@ -127,7 +127,7 @@ func (s *L2ChainSyncer) Sync() error {
 	}
 
 	// Insert the proposed block one by one.
-	return s.calldataSyncer.ProcessL1Blocks(s.ctx)
+	return s.blobSyncer.ProcessL1Blocks(s.ctx)
 }
 
 // AheadOfProtocolVerifiedHead checks whether the L2 chain is ahead of verified head in protocol.
@@ -205,7 +205,7 @@ func (s *L2ChainSyncer) BeaconSyncer() *beaconsync.Syncer {
 	return s.beaconSyncer
 }
 
-// CalldataSyncer returns the inner calldata syncer.
-func (s *L2ChainSyncer) CalldataSyncer() *calldata.Syncer {
-	return s.calldataSyncer
+// BlobSyncer returns the inner blob syncer.
+func (s *L2ChainSyncer) BlobSyncer() *blob.Syncer {
+	return s.blobSyncer
 }

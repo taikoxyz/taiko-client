@@ -61,10 +61,10 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	l2Head1, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background()))
+	s.Nil(s.d.ChainSyncer().BlobSyncer().ProcessL1Blocks(context.Background()))
 
 	// Propose a valid L2 block
-	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().BlobSyncer())
 
 	l2Head2, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -72,7 +72,7 @@ func (s *DriverTestSuite) TestProcessL1Blocks() {
 	s.Greater(l2Head2.Number.Uint64(), l2Head1.Number.Uint64())
 
 	// Empty blocks
-	s.ProposeAndInsertEmptyBlocks(s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertEmptyBlocks(s.p, s.d.ChainSyncer().BlobSyncer())
 	s.Nil(err)
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
@@ -107,9 +107,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().BlobSyncer())
 
-	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().BlobSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -141,7 +141,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToHigherFork() {
 
 	s.Greater(l1Head4.Number.Uint64(), l1Head2.Number.Uint64())
 
-	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background()))
+	s.Nil(s.d.ChainSyncer().BlobSyncer().ProcessL1Blocks(context.Background()))
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -164,9 +164,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().BlobSyncer())
 	time.Sleep(3 * time.Second)
-	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().BlobSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -199,7 +199,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToLowerFork() {
 	s.Greater(l1Head4.Number.Uint64(), l1Head3.Number.Uint64())
 	s.Less(l1Head4.Number.Uint64(), l1Head2.Number.Uint64())
 
-	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background()))
+	s.Nil(s.d.ChainSyncer().BlobSyncer().ProcessL1Blocks(context.Background()))
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -220,9 +220,9 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 	s.Nil(err)
 
 	// Propose two L2 blocks
-	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().BlobSyncer())
 	time.Sleep(3 * time.Second)
-	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertValidBlock(s.p, s.d.ChainSyncer().BlobSyncer())
 
 	l1Head2, err := s.d.rpc.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -256,7 +256,7 @@ func (s *DriverTestSuite) TestCheckL1ReorgToSameHeightFork() {
 
 	s.Greater(l1Head4.Number.Uint64(), l1Head3.Number.Uint64())
 
-	s.Nil(s.d.ChainSyncer().CalldataSyncer().ProcessL1Blocks(context.Background()))
+	s.Nil(s.d.ChainSyncer().BlobSyncer().ProcessL1Blocks(context.Background()))
 
 	l2Head3, err := s.d.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -280,7 +280,7 @@ func (s *DriverTestSuite) TestStartClose() {
 
 func (s *DriverTestSuite) TestL1Current() {
 	// propose and insert a block
-	s.ProposeAndInsertEmptyBlocks(s.p, s.d.ChainSyncer().CalldataSyncer())
+	s.ProposeAndInsertEmptyBlocks(s.p, s.d.ChainSyncer().BlobSyncer())
 	// reset L1 current with increased height
 	s.Nil(s.d.state.ResetL1Current(s.d.ctx, common.Big1))
 }
