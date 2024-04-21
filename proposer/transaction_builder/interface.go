@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
+
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 

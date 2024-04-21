@@ -17,6 +17,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/suite"
+
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
