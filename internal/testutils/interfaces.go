@@ -6,7 +6,7 @@ import (
 	"github.com/taikoxyz/taiko-client/cmd/utils"
 )
 
-type CalldataSyncer interface {
+type BlobSyncer interface {
 	ProcessL1Blocks(ctx context.Context) error
 }
 

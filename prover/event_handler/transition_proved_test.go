@@ -14,7 +14,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
-	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/blob"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
@@ -25,9 +25,9 @@ import (
 
 type EventHandlerTestSuite struct {
 	testutils.ClientTestSuite
-	d              *driver.Driver
-	proposer       *proposer.Proposer
-	calldataSyncer *calldata.Syncer
+	d          *driver.Driver
+	proposer   *proposer.Proposer
+	blobSyncer *blob.Syncer
 }
 
 func (s *EventHandlerTestSuite) SetupTest() {
@@ -57,7 +57,7 @@ func (s *EventHandlerTestSuite) SetupTest() {
 	s.Nil(testState.ResetL1Current(context.Background(), common.Big0))
 
 	tracker := beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 30*time.Second)
-	s.calldataSyncer, err = calldata.NewSyncer(
+	s.blobSyncer, err = blob.NewSyncer(
 		context.Background(),
 		s.RPCClient,
 		testState,
@@ -120,7 +120,7 @@ func (s *EventHandlerTestSuite) TestTransitionProvedHandle() {
 		make(chan *proofProducer.ContestRequestBody),
 		true,
 	)
-	e := s.ProposeAndInsertValidBlock(s.proposer, s.calldataSyncer)
+	e := s.ProposeAndInsertValidBlock(s.proposer, s.blobSyncer)
 	err := handler.Handle(context.Background(), &bindings.TaikoL1ClientTransitionProved{
 		BlockId: e.BlockId,
 		Tier:    e.Meta.MinTier,

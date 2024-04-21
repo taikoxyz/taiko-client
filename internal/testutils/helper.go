@@ -45,7 +45,7 @@ func (s *ClientTestSuite) proposeEmptyBlockOp(ctx context.Context, proposer Prop
 
 func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 	proposer Proposer,
-	calldataSyncer CalldataSyncer,
+	blobSyncer BlobSyncer,
 ) []*bindings.TaikoL1ClientBlockProposed {
 	var events []*bindings.TaikoL1ClientBlockProposed
 
@@ -89,7 +89,7 @@ func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 	defer cancel()
 
 	s.Nil(backoff.Retry(func() error {
-		return calldataSyncer.ProcessL1Blocks(ctx)
+		return blobSyncer.ProcessL1Blocks(ctx)
 	}, backoff.NewExponentialBackOff()))
 
 	s.Nil(s.RPCClient.WaitTillL2ExecutionEngineSynced(context.Background()))
@@ -101,7 +101,7 @@ func (s *ClientTestSuite) ProposeAndInsertEmptyBlocks(
 // into L2 execution engine's local chain.
 func (s *ClientTestSuite) ProposeAndInsertValidBlock(
 	proposer Proposer,
-	calldataSyncer CalldataSyncer,
+	blobSyncer BlobSyncer,
 ) *bindings.TaikoL1ClientBlockProposed {
 	l1Head, err := s.RPCClient.L1.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
@@ -157,7 +157,7 @@ func (s *ClientTestSuite) ProposeAndInsertValidBlock(
 	defer cancel()
 
 	s.Nil(backoff.Retry(func() error {
-		return calldataSyncer.ProcessL1Blocks(ctx)
+		return blobSyncer.ProcessL1Blocks(ctx)
 	}, backoff.NewExponentialBackOff()))
 
 	s.Nil(s.RPCClient.WaitTillL2ExecutionEngineSynced(context.Background()))

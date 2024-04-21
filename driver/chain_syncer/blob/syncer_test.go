@@ -1,4 +1,4 @@
-package calldata
+package blob
 
 import (
 	"context"
@@ -23,13 +23,13 @@ import (
 	"github.com/taikoxyz/taiko-client/proposer"
 )
 
-type CalldataSyncerTestSuite struct {
+type BlobSyncerTestSuite struct {
 	testutils.ClientTestSuite
 	s *Syncer
 	p testutils.Proposer
 }
 
-func (s *CalldataSyncerTestSuite) SetupTest() {
+func (s *BlobSyncerTestSuite) SetupTest() {
 	s.ClientTestSuite.SetupTest()
 
 	state2, err := state.New(context.Background(), s.RPCClient)
@@ -48,7 +48,7 @@ func (s *CalldataSyncerTestSuite) SetupTest() {
 
 	s.initProposer()
 }
-func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
+func (s *BlobSyncerTestSuite) TestCancelNewSyncer() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	syncer, err := NewSyncer(
@@ -63,16 +63,16 @@ func (s *CalldataSyncerTestSuite) TestCancelNewSyncer() {
 	s.NotNil(err)
 }
 
-func (s *CalldataSyncerTestSuite) TestProcessL1Blocks() {
+func (s *BlobSyncerTestSuite) TestProcessL1Blocks() {
 	s.Nil(s.s.ProcessL1Blocks(context.Background()))
 }
 
-func (s *CalldataSyncerTestSuite) TestProcessL1BlocksReorg() {
+func (s *BlobSyncerTestSuite) TestProcessL1BlocksReorg() {
 	s.ProposeAndInsertEmptyBlocks(s.p, s.s)
 	s.Nil(s.s.ProcessL1Blocks(context.Background()))
 }
 
-func (s *CalldataSyncerTestSuite) TestOnBlockProposed() {
+func (s *BlobSyncerTestSuite) TestOnBlockProposed() {
 	s.Nil(s.s.onBlockProposed(
 		context.Background(),
 		&bindings.TaikoL1ClientBlockProposed{BlockId: common.Big0},
@@ -85,7 +85,7 @@ func (s *CalldataSyncerTestSuite) TestOnBlockProposed() {
 	))
 }
 
-func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
+func (s *BlobSyncerTestSuite) TestInsertNewHead() {
 	parent, err := s.s.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 	l1Head, err := s.s.rpc.L1.BlockByNumber(context.Background(), nil)
@@ -117,7 +117,7 @@ func (s *CalldataSyncerTestSuite) TestInsertNewHead() {
 	s.Nil(err)
 }
 
-func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
+func (s *BlobSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())
 
@@ -139,7 +139,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncomeAllAnchors() {
 	s.Zero(balanceAfter.Cmp(balance))
 }
 
-func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
+func (s *BlobSyncerTestSuite) TestTreasuryIncome() {
 	treasury := common.HexToAddress(os.Getenv("TREASURY"))
 	s.NotZero(treasury.Big().Uint64())
 
@@ -187,7 +187,7 @@ func (s *CalldataSyncerTestSuite) TestTreasuryIncome() {
 	s.Zero(balanceAfter.Cmp(balance))
 }
 
-func (s *CalldataSyncerTestSuite) initProposer() {
+func (s *BlobSyncerTestSuite) initProposer() {
 	prop := new(proposer.Proposer)
 	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	s.Nil(err)
@@ -237,6 +237,6 @@ func (s *CalldataSyncerTestSuite) initProposer() {
 	s.p = prop
 }
 
-func TestCalldataSyncerTestSuite(t *testing.T) {
-	suite.Run(t, new(CalldataSyncerTestSuite))
+func TestBlobSyncerTestSuite(t *testing.T) {
+	suite.Run(t, new(BlobSyncerTestSuite))
 }

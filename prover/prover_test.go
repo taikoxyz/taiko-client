@@ -164,7 +164,7 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	s.Nil(err)
 	s.p.cfg.L1ProverPrivKey = l1ProverPrivKey
 	// Valid block
-	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().BlobSyncer())
 	s.Nil(s.p.blockProposedHandler.Handle(context.Background(), e, func() {}))
 	req := <-s.p.proofSubmissionCh
 	s.Nil(s.p.requestProofOp(req.Event, req.Tier))
@@ -173,7 +173,7 @@ func (s *ProverTestSuite) TestOnBlockProposed() {
 	// Empty blocks
 	for _, e = range s.ProposeAndInsertEmptyBlocks(
 		s.proposer,
-		s.d.ChainSyncer().CalldataSyncer(),
+		s.d.ChainSyncer().BlobSyncer(),
 	) {
 		s.Nil(s.p.blockProposedHandler.Handle(context.Background(), e, func() {}))
 		req := <-s.p.proofSubmissionCh
@@ -234,7 +234,7 @@ func (s *ProverTestSuite) TestOnBlockVerified() {
 func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.p.cfg.ContesterMode = false
 	s.p.initEventHandlers()
-	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().BlobSyncer())
 	s.Nil(s.p.transitionProvedHandler.Handle(context.Background(), &bindings.TaikoL1ClientTransitionProved{
 		BlockId: e.BlockId,
 		Tier:    e.Meta.MinTier,
@@ -325,7 +325,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 }
 
 func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
-	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().BlobSyncer())
 	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
 
 	header, err := s.p.rpc.L2.HeaderByNumber(context.Background(), e.BlockId)
@@ -370,7 +370,7 @@ func (s *ProverTestSuite) TestGetSubmitterByTier() {
 }
 
 func (s *ProverTestSuite) TestProveOp() {
-	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().BlobSyncer())
 	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
 
 	header, err := s.p.rpc.L2.HeaderByNumber(context.Background(), e.BlockId)
@@ -398,7 +398,7 @@ func (s *ProverTestSuite) TestGetBlockProofStatus() {
 	parent, err := s.p.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().BlobSyncer())
 
 	// No proof submitted
 	status, err := rpc.GetBlockProofStatus(context.Background(), s.p.rpc, e.BlockId, s.p.ProverAddress())
@@ -432,7 +432,7 @@ func (s *ProverTestSuite) TestGetBlockProofStatus() {
 	parent, err = s.p.rpc.L2.HeaderByNumber(context.Background(), nil)
 	s.Nil(err)
 
-	e = s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().CalldataSyncer())
+	e = s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().BlobSyncer())
 
 	status, err = rpc.GetBlockProofStatus(context.Background(), s.p.rpc, e.BlockId, s.p.ProverAddress())
 	s.Nil(err)
