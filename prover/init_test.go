@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
