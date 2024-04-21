@@ -2,7 +2,7 @@ package state
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -29,7 +29,7 @@ func (s *State) SetL1Current(h *types.Header) {
 // BlockProposed event with given blockID / blockHash.
 func (s *State) ResetL1Current(ctx context.Context, blockID *big.Int) error {
 	if blockID == nil {
-		return fmt.Errorf("empty block ID")
+		return errors.New("empty block ID")
 	}
 
 	log.Info("Reset L1 current cursor", "blockID", blockID)
