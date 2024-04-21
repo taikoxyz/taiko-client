@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/beacon/engine"
@@ -22,7 +22,7 @@ type EngineClient struct {
 func NewJWTEngineClient(url, jwtSecret string) (*EngineClient, error) {
 	var jwt = StringToBytes32(jwtSecret)
 	if jwt == (common.Hash{}) || url == "" {
-		return nil, fmt.Errorf("url is empty or jwt secret is illegal")
+		return nil, errors.New("url is empty or jwt secret is illegal")
 	}
 	authClient, err := rpc.DialOptions(context.Background(), url, rpc.WithHTTPAuth(node.NewJWTAuth(jwt)))
 	if err != nil {
