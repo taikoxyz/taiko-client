@@ -14,6 +14,7 @@ clean:
 
 lint:
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.56.2 \
+	&& goimports -local "github.com/taikoxyz/taiko-client" -w ./ \
 	&& golangci-lint run
 
 test:
