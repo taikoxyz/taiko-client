@@ -18,7 +18,7 @@ import (
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
-	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/blob"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	txlistfetcher "github.com/taikoxyz/taiko-client/driver/txlist_fetcher"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
@@ -29,7 +29,7 @@ import (
 
 type ProposerTestSuite struct {
 	testutils.ClientTestSuite
-	s      *calldata.Syncer
+	s      *blob.Syncer
 	p      *Proposer
 	cancel context.CancelFunc
 }
@@ -40,7 +40,7 @@ func (s *ProposerTestSuite) SetupTest() {
 	state2, err := state.New(context.Background(), s.RPCClient)
 	s.Nil(err)
 
-	syncer, err := calldata.NewSyncer(
+	syncer, err := blob.NewSyncer(
 		context.Background(),
 		s.RPCClient,
 		state2,

@@ -92,7 +92,7 @@ func (s *ChainSyncerTestSuite) SetupTest() {
 
 func (s *ChainSyncerTestSuite) TestGetInnerSyncers() {
 	s.NotNil(s.s.BeaconSyncer())
-	s.NotNil(s.s.CalldataSyncer())
+	s.NotNil(s.s.BlobSyncer())
 }
 
 func (s *ChainSyncerTestSuite) TestSync() {
@@ -102,7 +102,7 @@ func (s *ChainSyncerTestSuite) TestSync() {
 func (s *ChainSyncerTestSuite) TestAheadOfProtocolVerifiedHead2() {
 	s.TakeSnapshot()
 	// propose a couple blocks
-	s.ProposeAndInsertEmptyBlocks(s.p, s.s.calldataSyncer)
+	s.ProposeAndInsertEmptyBlocks(s.p, s.s.blobSyncer)
 
 	// NOTE: need to prove the proposed blocks to be verified, writing helper function
 	// generate transactopts to interact with TaikoL1 contract with.
