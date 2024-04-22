@@ -17,6 +17,8 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 
+	"github.com/urfave/cli/v2"
+
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
@@ -24,7 +26,6 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	selector "github.com/taikoxyz/taiko-client/proposer/prover_selector"
 	builder "github.com/taikoxyz/taiko-client/proposer/transaction_builder"
-	"github.com/urfave/cli/v2"
 )
 
 var (

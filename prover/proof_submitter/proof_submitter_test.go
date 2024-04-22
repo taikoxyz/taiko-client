@@ -18,7 +18,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
-	"github.com/taikoxyz/taiko-client/driver/chain_syncer/calldata"
+	"github.com/taikoxyz/taiko-client/driver/chain_syncer/blob"
 	"github.com/taikoxyz/taiko-client/driver/state"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
@@ -29,11 +29,11 @@ import (
 
 type ProofSubmitterTestSuite struct {
 	testutils.ClientTestSuite
-	submitter      *ProofSubmitter
-	contester      *ProofContester
-	calldataSyncer *calldata.Syncer
-	proposer       *proposer.Proposer
-	proofCh        chan *producer.ProofWithHeader
+	submitter  *ProofSubmitter
+	contester  *ProofContester
+	blobSyncer *blob.Syncer
+	proposer   *proposer.Proposer
+	proofCh    chan *producer.ProofWithHeader
 }
 
 func (s *ProofSubmitterTestSuite) SetupTest() {
@@ -98,7 +98,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 
 	tracker := beaconsync.NewSyncProgressTracker(s.RPCClient.L2, 30*time.Second)
 
-	s.calldataSyncer, err = calldata.NewSyncer(
+	s.blobSyncer, err = blob.NewSyncer(
 		context.Background(),
 		s.RPCClient,
 		testState,
@@ -177,7 +177,7 @@ func (s *ProofSubmitterTestSuite) TestProofSubmitterSubmitProofMetadataNotFound(
 }
 
 func (s *ProofSubmitterTestSuite) TestSubmitProofs() {
-	events := s.ProposeAndInsertEmptyBlocks(s.proposer, s.calldataSyncer)
+	events := s.ProposeAndInsertEmptyBlocks(s.proposer, s.blobSyncer)
 
 	for _, e := range events {
 		s.Nil(s.submitter.RequestProof(context.Background(), e))
@@ -187,7 +187,7 @@ func (s *ProofSubmitterTestSuite) TestSubmitProofs() {
 }
 
 func (s *ProofSubmitterTestSuite) TestGuardianSubmitProofs() {
-	events := s.ProposeAndInsertEmptyBlocks(s.proposer, s.calldataSyncer)
+	events := s.ProposeAndInsertEmptyBlocks(s.proposer, s.blobSyncer)
 
 	for _, e := range events {
 		s.Nil(s.submitter.RequestProof(context.Background(), e))

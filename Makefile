@@ -13,7 +13,9 @@ clean:
 	@rm -rf bin/*
 
 lint:
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.56.2 \
+	@go install golang.org/x/tools/cmd/goimports@latest \
+	&& go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.56.2 \
+	&& goimports -local "github.com/taikoxyz/taiko-client" -w ./ \
 	&& golangci-lint run
 
 test:

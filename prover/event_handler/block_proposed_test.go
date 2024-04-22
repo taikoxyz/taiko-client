@@ -8,6 +8,7 @@ import (
 	state "github.com/taikoxyz/taiko-client/prover/shared_state"
 
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/taikoxyz/taiko-client/bindings"
 )
 
@@ -27,7 +28,7 @@ func (s *EventHandlerTestSuite) TestBlockProposedHandle() {
 		ProveUnassignedBlocks: true,
 	}
 	handler := NewBlockProposedEventHandler(opts)
-	e := s.ProposeAndInsertValidBlock(s.proposer, s.calldataSyncer)
+	e := s.ProposeAndInsertValidBlock(s.proposer, s.blobSyncer)
 	err := handler.Handle(context.Background(), e, func() {})
 	s.Nil(err)
 }
