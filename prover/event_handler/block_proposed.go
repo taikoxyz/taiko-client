@@ -24,7 +24,7 @@ import (
 
 var (
 	errL1Reorged                           = errors.New("L1 reorged")
-	proofExpirationDelay                   = 1 * time.Minute
+	proofExpirationDelay                   = 6 * 12 * time.Second // 6 ethereum blocks
 	submissionDelayRandomBumpRange float64 = 20
 )
 
@@ -222,7 +222,7 @@ func (h *BlockProposedEventHandler) checkL1Reorg(
 }
 
 // getRandomBumpedSubmissionDelay returns a random bumped submission delay.
-func (h *BlockProposedEventHandler) getRandomBumpedSubmissionDelay() (time.Duration, error) {
+func (h *BlockProposedEventHandler) getRandomBumpedSubmissionDelay(expiredAt time.Time) (time.Duration, error) {
 	if h.submissionDelay == 0 {
 		return h.submissionDelay, nil
 	}
@@ -235,7 +235,13 @@ func (h *BlockProposedEventHandler) getRandomBumpedSubmissionDelay() (time.Durat
 		return 0, err
 	}
 
-	return time.Duration(h.submissionDelay.Seconds()+float64(randomBump.Uint64())) * time.Second, nil
+	delay := time.Duration(h.submissionDelay.Seconds()+float64(randomBump.Uint64())) * time.Second
+
+	if time.Since(expiredAt) >= delay {
+		return 0, nil
+	}
+
+	return delay - time.Since(expiredAt), nil
 }
 
 // checkExpirationAndSubmitProof checks whether the proposed block's proving window is expired,
@@ -298,7 +304,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 		return nil
 	}
 
-	windowExpired, timeToExpire, err := isProvingWindowExpired(e, h.sharedState.GetTiers())
+	windowExpired, expiredAt, timeToExpire, err := isProvingWindowExpired(e, h.sharedState.GetTiers())
 	if err != nil {
 		return fmt.Errorf("failed to check if the proving window is expired: %w", err)
 	}
@@ -335,7 +341,7 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 	tier := e.Meta.MinTier
 
 	// Get a random bumped submission delay, if necessary.
-	submissionDelay, err := h.getRandomBumpedSubmissionDelay()
+	submissionDelay, err := h.getRandomBumpedSubmissionDelay(expiredAt)
 	if err != nil {
 		return err
 	}

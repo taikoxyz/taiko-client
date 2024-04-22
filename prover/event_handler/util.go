@@ -68,6 +68,7 @@ func getProvingWindow(
 	return 0, errTierNotFound
 }
 
+// getBlockProposedEventFromBlockID fetches the BlockProposed event by the given block id.
 func getBlockProposedEventFromBlockID(
 	ctx context.Context,
 	rpc *rpc.Client,
@@ -132,10 +133,10 @@ func getMetadataFromBlockID(
 func isProvingWindowExpired(
 	e *bindings.TaikoL1ClientBlockProposed,
 	tiers []*rpc.TierProviderTierWithID,
-) (bool, time.Duration, error) {
+) (bool, time.Time, time.Duration, error) {
 	provingWindow, err := getProvingWindow(e, tiers)
 	if err != nil {
-		return false, 0, fmt.Errorf("failed to get proving window: %w", err)
+		return false, time.Time{}, 0, fmt.Errorf("failed to get proving window: %w", err)
 	}
 
 	var (
@@ -143,5 +144,5 @@ func isProvingWindowExpired(
 		expiredAt = e.Meta.Timestamp + uint64(provingWindow.Seconds())
 	)
 
-	return now > expiredAt, time.Duration(expiredAt-now) * time.Second, nil
+	return now > expiredAt, time.Unix(int64(expiredAt), 0), time.Duration(expiredAt-now) * time.Second, nil
 }
