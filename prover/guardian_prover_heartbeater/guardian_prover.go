@@ -105,8 +105,8 @@ func (s *GuardianProverHeartBeater) SignAndSendBlock(ctx context.Context, blockI
 	return nil
 }
 
-// SendStartup sends the startup message to the health check server.
-func (s *GuardianProverHeartBeater) SendStartup(
+// SendStartupMessage sends the startup message to the health check server.
+func (s *GuardianProverHeartBeater) SendStartupMessage(
 	ctx context.Context,
 	revision string,
 	version string,
@@ -114,7 +114,7 @@ func (s *GuardianProverHeartBeater) SendStartup(
 	l2NodeVersion string,
 ) error {
 	if s.healthCheckServerEndpoint == nil {
-		log.Info("No health check server endpoint set, returning early")
+		log.Warn("No health check server endpoint set, returning early")
 		return nil
 	}
 
@@ -131,23 +131,21 @@ func (s *GuardianProverHeartBeater) SendStartup(
 		return err
 	}
 
-	req := &startupReq{
+	if err := s.post(ctx, "startup", &startupReq{
 		Revision:        revision,
 		GuardianVersion: version,
 		L1NodeVersion:   l1NodeVersion,
 		L2NodeVersion:   l2NodeVersion,
 		ProverAddress:   s.proverAddress.Hex(),
 		Signature:       sig,
-	}
-
-	if err := s.post(ctx, "startup", req); err != nil {
+	}); err != nil {
 		return err
 	}
 
 	log.Info(
-		"Guardian prover successfully sent startup",
-		"revision", revision,
-		"version", version,
+		"Guardian prover successfully sent the startup message",
+		"l1NodeVersion", l1NodeVersion,
+		"l2NodeVersion", l2NodeVersion,
 	)
 
 	return nil
