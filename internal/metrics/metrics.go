@@ -48,6 +48,9 @@ var (
 	ProverSgxProofGeneratedCounter = factory.NewCounter(prometheus.CounterOpts{
 		Name: "prover_proof_sgx_generated",
 	})
+	ProverZkProofGeneratedCounter = factory.NewCounter(prometheus.CounterOpts{
+		Name: "prover_proof_zk_generated",
+	})
 	ProverSubmissionRevertedCounter = factory.NewCounter(prometheus.CounterOpts{
 		Name: "prover_proof_submission_reverted",
 	})

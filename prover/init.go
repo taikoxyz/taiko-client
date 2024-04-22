@@ -111,6 +111,21 @@ func (p *Prover) initProofSubmitters(
 				L2Endpoint:        p.cfg.RaikoL2Endpoint,
 				Dummy:             p.cfg.Dummy,
 			}
+		case encoding.TierSgxAndZkVMID:
+			producer = &proofProducer.SGXAndZKProofProducer{
+				RaikoHostEndpoint: p.cfg.RaikoHostEndpoint,
+				L1Endpoint:        p.cfg.RaikoL1Endpoint,
+				L1BeaconEndpoint:  p.cfg.RaikoL1BeaconEndpoint,
+				L2Endpoint:        p.cfg.RaikoL2Endpoint,
+				Dummy:             p.cfg.Dummy,
+				SGXProducer: &proofProducer.SGXProofProducer{
+					RaikoHostEndpoint: p.cfg.RaikoHostEndpoint,
+					L1Endpoint:        p.cfg.RaikoL1Endpoint,
+					L1BeaconEndpoint:  p.cfg.RaikoL1BeaconEndpoint,
+					L2Endpoint:        p.cfg.RaikoL2Endpoint,
+					Dummy:             p.cfg.Dummy,
+				},
+			}
 		case encoding.TierGuardianID:
 			producer = proofProducer.NewGuardianProofProducer(p.cfg.EnableLivenessBondProof)
 		default:

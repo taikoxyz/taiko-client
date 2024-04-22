@@ -21,7 +21,7 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 )
 
-// SGXProofProducer generates a SGX proof for the given block.
+// SGXProofProducer generates an SGX proof for the given block.
 type SGXProofProducer struct {
 	RaikoHostEndpoint string // a proverd RPC endpoint
 	L1Endpoint        string // a L1 node RPC endpoint
@@ -31,35 +31,36 @@ type SGXProofProducer struct {
 	DummyProofProducer
 }
 
-// SGXRequestProofBody represents the JSON body for requesting the proof.
-type SGXRequestProofBody struct {
-	JsonRPC string                      `json:"jsonrpc"` //nolint:revive,stylecheck
-	ID      *big.Int                    `json:"id"`
-	Method  string                      `json:"method"`
-	Params  []*SGXRequestProofBodyParam `json:"params"`
+// RaikoRequestProofBody represents the JSON body for requesting the proof.
+type RaikoRequestProofBody struct {
+	JsonRPC string                        `json:"jsonrpc"` //nolint:revive,stylecheck
+	ID      *big.Int                      `json:"id"`
+	Method  string                        `json:"method"`
+	Params  []*RaikoRequestProofBodyParam `json:"params"`
 }
 
-// SGXRequestProofBodyParam represents the JSON body of RequestProofBody's `param` field.
-type SGXRequestProofBodyParam struct {
-	Type        string      `json:"proof_type"`
-	Block       *big.Int    `json:"block_number"`
-	L2RPC       string      `json:"rpc"`
-	L1RPC       string      `json:"l1_rpc"`
-	L1BeaconRPC string      `json:"beacon_rpc"`
-	Prover      string      `json:"prover"`
-	Graffiti    string      `json:"graffiti"`
-	ProofParam  *ProofParam `json:"sgx"`
+// RaikoRequestProofBodyParam represents the JSON body of RequestProofBody's `param` field.
+type RaikoRequestProofBodyParam struct {
+	Type          string         `json:"proof_type"`
+	Block         *big.Int       `json:"block_number"`
+	L2RPC         string         `json:"rpc"`
+	L1RPC         string         `json:"l1_rpc"`
+	L1BeaconRPC   string         `json:"beacon_rpc"`
+	Prover        string         `json:"prover"`
+	Graffiti      string         `json:"graffiti"`
+	SgxProofParam *SGXProofParam `json:"sgx"`
+	R0ProofParam  *R0ProofParam  `json:"risc0"`
 }
 
-// ProofParam represents the JSON body of SGXRequestProofBodyParam's `sgx` field.
-type ProofParam struct {
+// SGXProofParam represents the JSON body of RaikoRequestProofBodyParam's `sgx` field.
+type SGXProofParam struct {
 	Setup     bool `json:"setup"`
 	Bootstrap bool `json:"bootstrap"`
 	Prove     bool `json:"prove"`
 }
 
-// SGXRequestProofBodyResponse represents the JSON body of the response of the proof requests.
-type SGXRequestProofBodyResponse struct {
+// RaikoRequestProofBodyResponse represents the JSON body of the response of the proof requests.
+type RaikoRequestProofBodyResponse struct {
 	JsonRPC string           `json:"jsonrpc"` //nolint:revive,stylecheck
 	ID      *big.Int         `json:"id"`
 	Result  *RaikoHostOutput `json:"result"`
@@ -69,7 +70,7 @@ type SGXRequestProofBodyResponse struct {
 	} `json:"error,omitempty"`
 }
 
-// RaikoHostOutput represents the JSON body of SGXRequestProofBodyResponse's `result` field.
+// RaikoHostOutput represents the JSON body of RaikoRequestProofBodyResponse's `result` field.
 type RaikoHostOutput struct {
 	Proof string `json:"proof"`
 }
@@ -83,7 +84,7 @@ func (s *SGXProofProducer) RequestProof(
 	header *types.Header,
 ) (*ProofWithHeader, error) {
 	log.Info(
-		"Request proof from raiko-host service",
+		"Request SGX proof from raiko-host service",
 		"blockID", blockID,
 		"coinbase", meta.Coinbase,
 		"height", header.Number,
@@ -129,7 +130,7 @@ func (s *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 
 		if output == nil {
 			log.Info(
-				"Proof generating",
+				"SGX proof generating",
 				"height", opts.BlockID,
 				"time", time.Since(start),
 				"producer", "SGXProofProducer",
@@ -137,11 +138,11 @@ func (s *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 			return errProofGenerating
 		}
 
-		log.Debug("Proof generation output", "output", output)
+		log.Debug("SGX proof generation output", "output", output)
 
 		proof = common.Hex2Bytes(output.Proof[2:])
 		log.Info(
-			"Proof generated",
+			"SGX proof generated",
 			"height", opts.BlockID,
 			"time", time.Since(start),
 			"producer", "SGXProofProducer",
@@ -154,13 +155,13 @@ func (s *SGXProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequ
 	return proof, nil
 }
 
-// requestProof sends a RPC request to proverd to try to get the requested proof.
+// requestProof sends an RPC request to proverd to try to get the requested proof.
 func (s *SGXProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOutput, error) {
-	reqBody := SGXRequestProofBody{
+	reqBody := RaikoRequestProofBody{
 		JsonRPC: "2.0",
 		ID:      common.Big1,
 		Method:  "proof",
-		Params: []*SGXRequestProofBodyParam{{
+		Params: []*RaikoRequestProofBodyParam{{
 			Type:        "sgx",
 			Block:       opts.BlockID,
 			L2RPC:       s.L2Endpoint,
@@ -168,7 +169,7 @@ func (s *SGXProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOu
 			L1BeaconRPC: s.L1BeaconEndpoint,
 			Prover:      opts.ProverAddress.Hex()[2:],
 			Graffiti:    opts.Graffiti,
-			ProofParam: &ProofParam{
+			SgxProofParam: &SGXProofParam{
 				Setup:     false,
 				Bootstrap: false,
 				Prove:     true,
@@ -196,7 +197,7 @@ func (s *SGXProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOu
 		return nil, err
 	}
 
-	var output SGXRequestProofBodyResponse
+	var output RaikoRequestProofBodyResponse
 	if err := json.Unmarshal(resBytes, &output); err != nil {
 		return nil, err
 	}
