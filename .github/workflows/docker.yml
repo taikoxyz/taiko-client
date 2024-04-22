@@ -33,7 +33,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            us-docker.pkg.dev/evmchain/images/taiko-client
+            us-docker.pkg.dev/evmchain/hekla/taiko-client
           tags: |
             type=ref,event=branch
             type=ref,event=pr
