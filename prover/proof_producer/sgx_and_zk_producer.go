@@ -30,7 +30,7 @@ type R0ProofParam struct {
 	ExecutionPo2 *big.Int `json:"execution_po2"`
 }
 
-// SGXAndZKProofProducer generates an SGX + ZK proof for the given block.
+// SGXAndZkVMProofProducer generates an SGX + ZK proof for the given block.
 type SGXAndZkVMProofProducer struct {
 	RaikoHostEndpoint string // a proverd RPC endpoint
 	L1Endpoint        string // a L1 node RPC endpoint
@@ -42,7 +42,7 @@ type SGXAndZkVMProofProducer struct {
 }
 
 // RequestProof implements the ProofProducer interface.
-func (o *SGXAndZKProofProducer) RequestProof(
+func (o *SGXAndZkVMProofProducer) RequestProof(
 	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
@@ -87,7 +87,7 @@ func (o *SGXAndZKProofProducer) RequestProof(
 	}, nil
 }
 
-func (o *SGXAndZKProofProducer) requestZKProof(
+func (o *SGXAndZkVMProofProducer) requestZKProof(
 	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
@@ -124,7 +124,7 @@ func (o *SGXAndZKProofProducer) requestZKProof(
 }
 
 // callProverDaemon keeps polling the proverd service to get the requested proof.
-func (o *SGXAndZKProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequestOptions) ([]byte, error) {
+func (o *SGXAndZkVMProofProducer) callProverDaemon(ctx context.Context, opts *ProofRequestOptions) ([]byte, error) {
 	var (
 		proof []byte
 		start = time.Now()
@@ -144,7 +144,7 @@ func (o *SGXAndZKProofProducer) callProverDaemon(ctx context.Context, opts *Proo
 				"ZK proof generating",
 				"height", opts.BlockID,
 				"time", time.Since(start),
-				"producer", "SGXAndZKProofProducer",
+				"producer", "SGXAndZkVMProofProducer",
 			)
 			return errProofGenerating
 		}
@@ -156,7 +156,7 @@ func (o *SGXAndZKProofProducer) callProverDaemon(ctx context.Context, opts *Proo
 			"ZK proof generated",
 			"height", opts.BlockID,
 			"time", time.Since(start),
-			"producer", "SGXAndZKProofProducer",
+			"producer", "SGXAndZkVMProofProducer",
 		)
 		return nil
 	}, backoff.WithContext(backoff.NewConstantBackOff(proofPollingInterval), ctx)); err != nil {
@@ -167,7 +167,7 @@ func (o *SGXAndZKProofProducer) callProverDaemon(ctx context.Context, opts *Proo
 }
 
 // requestProof sends an RPC request to proverd to try to get the requested proof.
-func (o *SGXAndZKProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOutput, error) {
+func (o *SGXAndZkVMProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOutput, error) {
 	reqBody := RaikoRequestProofBody{
 		JsonRPC: "2.0",
 		ID:      common.Big1,
@@ -222,6 +222,6 @@ func (o *SGXAndZKProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoH
 }
 
 // Tier implements the ProofProducer interface.
-func (o *SGXAndZKProofProducer) Tier() uint16 {
+func (o *SGXAndZkVMProofProducer) Tier() uint16 {
 	return encoding.TierSgxAndZkVMID
 }

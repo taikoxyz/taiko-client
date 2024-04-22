@@ -32,7 +32,7 @@ func TestSGXAndZKProducerRequestProof(t *testing.T) {
 	}
 
 	var (
-		producer = &SGXAndZKProofProducer{Dummy: true, SGXProducer: &SGXProofProducer{
+		producer = &SGXAndZkVMProofProducer{Dummy: true, SGXProducer: &SGXProofProducer{
 			Dummy: true,
 		}}
 		blockID = common.Big32

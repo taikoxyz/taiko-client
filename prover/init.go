@@ -112,7 +112,7 @@ func (p *Prover) initProofSubmitters(
 				Dummy:             p.cfg.Dummy,
 			}
 		case encoding.TierSgxAndZkVMID:
-			producer = &proofProducer.SGXAndZKProofProducer{
+			producer = &proofProducer.SGXAndZkVMProofProducer{
 				RaikoHostEndpoint: p.cfg.RaikoHostEndpoint,
 				L1Endpoint:        p.cfg.RaikoL1Endpoint,
 				L1BeaconEndpoint:  p.cfg.RaikoL1BeaconEndpoint,
