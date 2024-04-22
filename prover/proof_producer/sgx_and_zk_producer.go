@@ -31,7 +31,7 @@ type R0ProofParam struct {
 }
 
 // SGXAndZKProofProducer generates an SGX + ZK proof for the given block.
-type SGXAndZKProofProducer struct {
+type SGXAndZkVMProofProducer struct {
 	RaikoHostEndpoint string // a proverd RPC endpoint
 	L1Endpoint        string // a L1 node RPC endpoint
 	L1BeaconEndpoint  string // a L1 beacon node RPC endpoint
