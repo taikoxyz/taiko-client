@@ -8,7 +8,7 @@ import (
 // BlockSigner defines an interface that communicates with a central Guardian Prover server, sending signed blocks.
 type BlockSigner interface {
 	SignAndSendBlock(ctx context.Context, blockID *big.Int) error
-	SendStartup(
+	SendStartupMessage(
 		ctx context.Context,
 		revision string,
 		version string,
