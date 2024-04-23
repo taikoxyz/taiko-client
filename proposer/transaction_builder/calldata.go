@@ -109,7 +109,7 @@ func (b *CalldataTransactionBuilder) Build(
 	// Send the transaction to the L1 node.
 	data, err := encoding.TaikoL1ABI.Pack("proposeBlock", encodedParams, txListBytes)
 	if err != nil {
-		return nil, encoding.TryParsingCustomError(err)
+		return nil, err
 	}
 
 	return &txmgr.TxCandidate{
