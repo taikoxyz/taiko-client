@@ -22,15 +22,9 @@ func TryParsingCustomError(originalError error) error {
 
 	for _, customErrors := range customErrorMaps {
 		for _, customError := range customErrors {
-			if strings.HasPrefix(customError.ID.Hex(), errData) {
+			if strings.HasPrefix(customError.ID.Hex(), errData) || strings.Contains(errData, customError.Name) {
 				return errors.New(customError.Name)
 			}
-		}
-	}
-
-	for _, hookCustomError := range AssignmentHookABI.Errors {
-		if strings.HasPrefix(hookCustomError.ID.Hex(), errData) {
-			return errors.New(hookCustomError.Name)
 		}
 	}
 

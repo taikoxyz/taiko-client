@@ -83,7 +83,7 @@ func (s *TransactionTestSuite) TestSendTxWithBackoff() {
 	l1HeadChild, err := s.RPCClient.L1.HeaderByNumber(context.Background(), new(big.Int).Sub(l1Head.Number, common.Big1))
 	s.Nil(err)
 	meta := &bindings.TaikoDataBlockMetadata{L1Height: l1HeadChild.Number.Uint64(), L1Hash: l1HeadChild.Hash()}
-	s.NotNil(s.sender.Send(
+	s.Error(s.sender.Send(
 		context.Background(),
 		&producer.ProofWithHeader{
 			Meta:    meta,

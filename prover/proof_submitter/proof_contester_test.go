@@ -11,7 +11,7 @@ import (
 )
 
 func (s *ProofSubmitterTestSuite) TestSubmitContestNoTransition() {
-	s.NotNil(
+	s.Error(
 		s.contester.SubmitContest(
 			context.Background(),
 			common.Big256,
