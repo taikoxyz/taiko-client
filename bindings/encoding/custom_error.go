@@ -2,8 +2,9 @@ package encoding
 
 import (
 	"errors"
-	"github.com/ethereum/go-ethereum/common"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // TryParsingCustomError tries to checks whether the given error is one of the
