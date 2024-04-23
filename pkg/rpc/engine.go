@@ -14,7 +14,7 @@ import (
 
 // EngineClient represents a RPC client connecting to an Ethereum Engine API
 // endpoint.
-// ref: https://github.com/ethereum/execution-apis/blob/main/src/engine/specification.md
+// ref: https://github.com/ethereum/execution-apis/blob/main/src/engine/shanghai.md
 type EngineClient struct {
 	*rpc.Client
 }
