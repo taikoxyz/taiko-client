@@ -320,7 +320,11 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	for i, err := range p.ProposeTxLists(ctx, txListsBytes) {
 		if err != nil {
-			log.Error("Failed to send TaikoL1.proposeBlock transaction", "index", i, "error", err)
+			log.Error(
+				"Failed to send TaikoL1.proposeBlock transaction",
+				"index", i,
+				"error", encoding.TryParsingCustomError(err),
+			)
 			continue
 		}
 
