@@ -49,13 +49,13 @@ func (s *EventHandlerTestSuite) TestGetRandomBumpedSubmissionDelay() {
 	}
 	handler1 := NewBlockProposedEventHandler(opts)
 
-	delay, err := handler1.getRandomBumpedSubmissionDelay()
+	delay, err := handler1.getRandomBumpedSubmissionDelay(time.Now())
 	s.Nil(err)
 	s.Zero(delay)
 
 	opts.SubmissionDelay = 1 * time.Hour
 	handler2 := NewBlockProposedEventHandler(opts)
-	delay, err = handler2.getRandomBumpedSubmissionDelay()
+	delay, err = handler2.getRandomBumpedSubmissionDelay(time.Now())
 	s.Nil(err)
 	s.NotZero(delay)
 	s.Greater(delay.Seconds(), opts.SubmissionDelay.Seconds())
