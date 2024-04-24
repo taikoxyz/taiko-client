@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -319,11 +320,23 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	}
 
 	for i, err := range p.ProposeTxLists(ctx, txListsBytes) {
+		var errMsg error = err
 		if err != nil {
+			// If a transaction is reverted on chain, the error string will like this:
+			// fmt.Errorf("%w purpose: %v hash: %v", ErrTransactionReverted, txPurpose, rcpt.Receipt.TxHash)
+			// Then we try parsing the custom error for more details in log.
+			if strings.Contains("purpose: ", err.Error()) && strings.Contains("hash: ", err.Error()) {
+				txHash := strings.Split(err.Error(), "hash: ")[1]
+				receipt, err := p.rpc.L1.TransactionReceipt(ctx, common.HexToHash(txHash))
+				if err != nil {
+					return err
+				}
+				errMsg = encoding.TryParsingCustomErrorFromReceipt(ctx, p.rpc.L1, p.proposerAddress, receipt)
+			}
 			log.Error(
 				"Failed to send TaikoL1.proposeBlock transaction",
 				"index", i,
-				"error", err,
+				"error", errMsg,
 			)
 			continue
 		}
