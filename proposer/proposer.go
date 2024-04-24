@@ -320,7 +320,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	}
 
 	for i, err := range p.ProposeTxLists(ctx, txListsBytes) {
-		var errMsg error = err
+		var errMsg = err
 		if err != nil {
 			// If a transaction is reverted on chain, the error string will like this:
 			// fmt.Errorf("%w purpose: %v hash: %v", ErrTransactionReverted, txPurpose, rcpt.Receipt.TxHash)
