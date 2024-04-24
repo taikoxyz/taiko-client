@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
-
 	"github.com/urfave/cli/v2"
 
 	"github.com/taikoxyz/taiko-client/bindings"
@@ -375,7 +374,7 @@ func (p *Proposer) ProposeTxLists(ctx context.Context, txListsBytes [][]byte) []
 		// If a transaction is reverted on chain, the error string returned by txSender will like this:
 		// fmt.Errorf("%w purpose: %v hash: %v", ErrTransactionReverted, txPurpose, rcpt.Receipt.TxHash)
 		// Then we try parsing the custom error for more details in log.
-		if strings.Contains("purpose: ", err.Error()) && strings.Contains("hash: ", err.Error()) {
+		if strings.Contains(err.Error(), "purpose: ") && strings.Contains(err.Error(), "hash: ") {
 			txHash := strings.Split(err.Error(), "hash: ")[1]
 			receipt, err := p.rpc.L1.TransactionReceipt(ctx, common.HexToHash(txHash))
 			if err != nil {
