@@ -154,7 +154,7 @@ func (s *ProofSubmitter) SubmitProof(
 	}
 
 	// Build the TaikoL1.proveBlock transaction and send it to the L1 node.
-	if err = encoding.TryParsingCustomError(s.sender.Send(
+	if err = s.sender.Send(
 		ctx,
 		proofWithHeader,
 		s.txBuilder.Build(
@@ -172,7 +172,7 @@ func (s *ProofSubmitter) SubmitProof(
 			},
 			proofWithHeader.Tier == encoding.TierGuardianID,
 		),
-	)); err != nil {
+	); err != nil {
 		if err.Error() == transaction.ErrUnretryableSubmission.Error() {
 			return nil
 		}

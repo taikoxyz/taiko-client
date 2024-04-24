@@ -1,9 +1,49 @@
 package encoding
 
 import (
+	"context"
 	"errors"
 	"strings"
+
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 )
+
+// BlockHashContractCallerAndTransactionReader represents a contract caller and transaction reader.
+type BlockHashContractCallerAndTransactionReader interface {
+	bind.BlockHashContractCaller
+	ethereum.TransactionReader
+}
+
+// TryParsingCustomErrorFromReceipt tries to parse the custom error from the given receipt.
+func TryParsingCustomErrorFromReceipt(
+	ctx context.Context,
+	rpc BlockHashContractCallerAndTransactionReader,
+	from common.Address,
+	receipt *types.Receipt,
+) error {
+	// Fetch the raw transaction.
+	tx, _, err := rpc.TransactionByHash(ctx, receipt.TxHash)
+	if err != nil {
+		return err
+	}
+
+	// Call the contract at the block hash.
+	_, err = rpc.CallContractAtHash(ctx, ethereum.CallMsg{
+		From:      from,
+		To:        tx.To(),
+		Gas:       tx.Gas(),
+		GasPrice:  tx.GasPrice(),
+		GasFeeCap: tx.GasFeeCap(),
+		GasTipCap: tx.GasTipCap(),
+		Value:     tx.Value(),
+		Data:      tx.Data(),
+	}, receipt.BlockHash)
+
+	return TryParsingCustomError(err)
+}
 
 // TryParsingCustomError tries to checks whether the given error is one of the
 // custom errors defined the protocol ABIs, if so, it will return

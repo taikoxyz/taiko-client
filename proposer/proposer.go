@@ -323,7 +323,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			log.Error(
 				"Failed to send TaikoL1.proposeBlock transaction",
 				"index", i,
-				"error", encoding.TryParsingCustomError(err),
+				"error", err,
 			)
 			continue
 		}
