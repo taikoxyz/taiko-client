@@ -9,12 +9,12 @@ import (
 // Optional flags used by driver.
 var (
 	P2PSyncVerifiedBlocks = &cli.BoolFlag{
-		Name: "p2p.syncVerifiedBlocks",
-		Usage: "Try P2P syncing verified blocks between L2 execution engines, " +
+		Name: "p2p.sync",
+		Usage: "Try P2P syncing blocks between L2 execution engines, " +
 			"will be helpful to bring a new node online quickly",
 		Value:    false,
 		Category: driverCategory,
-		EnvVars:  []string{"P2P_SYNC_VERIFIED_BLOCKS"},
+		EnvVars:  []string{"P2P_SYNC"},
 	}
 	P2PSyncTimeout = &cli.DurationFlag{
 		Name: "p2p.syncTimeout",
