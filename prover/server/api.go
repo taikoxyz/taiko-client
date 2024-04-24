@@ -82,7 +82,7 @@ type ProposeBlockResponse struct {
 // can submit onchain.
 //
 //	@Summary		Try to accept a block proof assignment
-//	@Param          body        body    CreateAssignmentRequestBody   true    "assignment request body"
+//	@Param          	body            CreateAssignmentRequestBody   true    "assignment request body"
 //	@Accept			json
 //	@Produce		json
 //	@Success		200		{object} ProposeBlockResponse
