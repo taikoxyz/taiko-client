@@ -32,14 +32,17 @@ func TryParsingCustomErrorFromReceipt(
 
 	// Call the contract at the block hash.
 	_, err = rpc.CallContractAtHash(ctx, ethereum.CallMsg{
-		From:      from,
-		To:        tx.To(),
-		Gas:       tx.Gas(),
-		GasPrice:  tx.GasPrice(),
-		GasFeeCap: tx.GasFeeCap(),
-		GasTipCap: tx.GasTipCap(),
-		Value:     tx.Value(),
-		Data:      tx.Data(),
+		From:          from,
+		To:            tx.To(),
+		Gas:           tx.Gas(),
+		GasPrice:      tx.GasPrice(),
+		GasFeeCap:     tx.GasFeeCap(),
+		GasTipCap:     tx.GasTipCap(),
+		Value:         tx.Value(),
+		Data:          tx.Data(),
+		AccessList:    tx.AccessList(),
+		BlobGasFeeCap: tx.BlobGasFeeCap(),
+		BlobHashes:    tx.BlobHashes(),
 	}, receipt.BlockHash)
 
 	return TryParsingCustomError(err)
