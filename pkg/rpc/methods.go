@@ -638,7 +638,7 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 			common.Hash{},
 			0,
 			0,
-			fmt.Errorf("failed to parse l1BlockHash from anchor transaction calldata")
+			errors.New("failed to parse l1BlockHash from anchor transaction calldata")
 	}
 	l1StateRoot, ok = args["_l1StateRoot"].([32]byte)
 	if !ok {
@@ -646,7 +646,7 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 			common.Hash{},
 			0,
 			0,
-			fmt.Errorf("failed to parse l1StateRoot from anchor transaction calldata")
+			errors.New("failed to parse l1StateRoot from anchor transaction calldata")
 	}
 	l1Height, ok = args["_l1BlockId"].(uint64)
 	if !ok {
@@ -654,7 +654,7 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 			common.Hash{},
 			0,
 			0,
-			fmt.Errorf("failed to parse l1Height from anchor transaction calldata")
+			errors.New("failed to parse l1Height from anchor transaction calldata")
 	}
 	parentGasUsed, ok = args["_parentGasUsed"].(uint32)
 	if !ok {
@@ -662,7 +662,7 @@ func (c *Client) getSyncedL1SnippetFromAnchor(
 			common.Hash{},
 			0,
 			0,
-			fmt.Errorf("failed to parse parentGasUsed from anchor transaction calldata")
+			errors.New("failed to parse parentGasUsed from anchor transaction calldata")
 	}
 
 	return l1BlockHash, l1StateRoot, l1Height, parentGasUsed, nil
