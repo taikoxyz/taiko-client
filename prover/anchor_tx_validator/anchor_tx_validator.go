@@ -2,6 +2,7 @@ package anchortxvalidator
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -69,7 +70,7 @@ func (v *AnchorTxValidator) GetAndValidateAnchorTxReceipt(
 	}
 
 	if len(receipt.Logs) == 0 {
-		return nil, fmt.Errorf("no event found in TaikoL2.anchor transaction receipt")
+		return nil, errors.New("no event found in TaikoL2.anchor transaction receipt")
 	}
 
 	return receipt, nil
