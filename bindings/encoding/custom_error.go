@@ -71,12 +71,6 @@ func TryParsingCustomError(originalError error) error {
 		}
 	}
 
-	for _, hookCustomError := range AssignmentHookABI.Errors {
-		if strings.HasPrefix(hookCustomError.ID.Hex(), errData) {
-			return errors.New(hookCustomError.Name)
-		}
-	}
-
 	return originalError
 }
 
