@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	producer "github.com/taikoxyz/taiko-client/prover/proof_producer"
@@ -75,6 +76,7 @@ func (s *Sender) Send(
 			"blockID", proofWithHeader.BlockID,
 			"tier", proofWithHeader.Tier,
 			"txHash", receipt.TxHash,
+			"error", encoding.TryParsingCustomErrorFromReceipt(ctx, s.rpc.L1, s.txmgr.From(), receipt),
 		)
 		metrics.ProverSubmissionRevertedCounter.Add(1)
 		return ErrUnretryableSubmission

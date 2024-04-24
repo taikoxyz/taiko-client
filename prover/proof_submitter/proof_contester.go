@@ -92,35 +92,33 @@ func (c *ProofContester) SubmitContest(
 		return err
 	}
 
-	return encoding.TryParsingCustomError(
-		c.sender.Send(
-			ctx,
-			&proofProducer.ProofWithHeader{
-				BlockID: blockID,
-				Meta:    meta,
-				Header:  header,
-				Proof:   []byte{},
-				Opts: &proofProducer.ProofRequestOptions{
-					EventL1Hash: l1HeaderProposedIn.Hash(),
-					StateRoot:   header.Root,
-				},
-				Tier: tier,
+	return c.sender.Send(
+		ctx,
+		&proofProducer.ProofWithHeader{
+			BlockID: blockID,
+			Meta:    meta,
+			Header:  header,
+			Proof:   []byte{},
+			Opts: &proofProducer.ProofRequestOptions{
+				EventL1Hash: l1HeaderProposedIn.Hash(),
+				StateRoot:   header.Root,
 			},
-			c.txBuilder.Build(
-				blockID,
-				meta,
-				&bindings.TaikoDataTransition{
-					ParentHash: header.ParentHash,
-					BlockHash:  header.Hash(),
-					StateRoot:  header.Root,
-					Graffiti:   c.graffiti,
-				},
-				&bindings.TaikoDataTierProof{
-					Tier: transition.Tier,
-					Data: []byte{},
-				},
-				false,
-			),
+			Tier: tier,
+		},
+		c.txBuilder.Build(
+			blockID,
+			meta,
+			&bindings.TaikoDataTransition{
+				ParentHash: header.ParentHash,
+				BlockHash:  header.Hash(),
+				StateRoot:  header.Root,
+				Graffiti:   c.graffiti,
+			},
+			&bindings.TaikoDataTierProof{
+				Tier: transition.Tier,
+				Data: []byte{},
+			},
+			false,
 		),
 	)
 }
