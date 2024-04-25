@@ -1,24 +1,17 @@
 definitions:
-  big.Int:
-    type: object
-  encoding.TierFee:
-    properties:
-      fee:
-        $ref: '#/definitions/big.Int'
-      tier:
-        type: integer
-    type: object
   server.CreateAssignmentRequestBody:
     properties:
+      blobHash:
+        items:
+          type: integer
+        type: array
       expiry:
         type: integer
       feeToken:
         type: string
+      proposer:
+        type: string
       tierFees:
-        items:
-          $ref: '#/definitions/encoding.TierFee'
-        type: array
-      txListHash:
         items:
           type: integer
         type: array
@@ -41,6 +34,8 @@ definitions:
       maxExpiry:
         type: integer
       minOptimisticTierFee:
+        type: integer
+      minSgxAndZkVMTierFee:
         type: integer
       minSgxTierFee:
         type: integer
