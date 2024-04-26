@@ -15,6 +15,7 @@ import (
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	guardianProverHeartbeater "github.com/taikoxyz/taiko-client/prover/guardian_prover_heartbeater"
@@ -125,7 +126,7 @@ func (h *BlockProposedEventHandler) Handle(
 		"removed", e.Raw.Removed,
 		"assignedProver", e.AssignedProver,
 		"blobHash", common.Bytes2Hex(e.Meta.BlobHash[:]),
-		"livenessBond", e.LivenessBond,
+		"livenessBond", utils.WeiToEther(e.LivenessBond),
 		"minTier", e.Meta.MinTier,
 		"blobUsed", e.Meta.BlobUsed,
 	)
