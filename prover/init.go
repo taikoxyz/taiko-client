@@ -40,7 +40,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return err
 	}
 
-	log.Info("Existing allowance for the contract", "allowance", allowance, "contract", contract)
+	log.Info("Existing allowance for the contract", "allowance", utils.WeiToEther(allowance), "contract", contract)
 
 	// If the existing allowance is greater or equal to the configured allowance, skip setting allowance.
 	if allowance.Cmp(p.cfg.Allowance) >= 0 {
