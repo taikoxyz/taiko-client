@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 )
@@ -41,7 +42,7 @@ func (h *TransitionContestedEventHandler) Handle(
 		"hash", common.Bytes2Hex(e.Tran.BlockHash[:]),
 		"stateRoot", common.BytesToHash(e.Tran.StateRoot[:]),
 		"contester", e.Contester,
-		"bond", e.ContestBond,
+		"bond", utils.WeiToEther(e.ContestBond),
 	)
 
 	// If this prover is not in contester mode, we simply output a log and return.
@@ -78,7 +79,7 @@ func (h *TransitionContestedEventHandler) Handle(
 			"hash", common.Bytes2Hex(contestedTransition.BlockHash[:]),
 			"stateRoot", common.BytesToHash(contestedTransition.StateRoot[:]),
 			"contester", e.Contester,
-			"bond", e.ContestBond,
+			"bond", utils.WeiToEther(e.ContestBond),
 		)
 		return nil
 	}
