@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 	handler "github.com/taikoxyz/taiko-client/prover/event_handler"
 	proofProducer "github.com/taikoxyz/taiko-client/prover/proof_producer"
 	proofSubmitter "github.com/taikoxyz/taiko-client/prover/proof_submitter"
@@ -39,20 +40,20 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return err
 	}
 
-	log.Info("Existing allowance for the contract", "allowance", allowance.String(), "contract", contract)
+	log.Info("Existing allowance for the contract", "allowance", utils.WeiToEther(allowance), "contract", contract)
 
 	// If the existing allowance is greater or equal to the configured allowance, skip setting allowance.
 	if allowance.Cmp(p.cfg.Allowance) >= 0 {
 		log.Info(
 			"Skipping setting allowance, allowance already greater or equal",
-			"allowance", allowance.String(),
-			"approvalAmount", p.cfg.Allowance.String(),
+			"allowance", utils.WeiToEther(allowance),
+			"approvalAmount", p.cfg.Allowance,
 			"contract", contract,
 		)
 		return nil
 	}
 
-	log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance.String(), "contract", contract)
+	log.Info("Approving the contract for taiko token", "allowance", p.cfg.Allowance, "contract", contract)
 	data, err := encoding.TaikoTokenABI.Pack("approve", contract, p.cfg.Allowance)
 	if err != nil {
 		return err
@@ -84,7 +85,7 @@ func (p *Prover) setApprovalAmount(ctx context.Context, contract common.Address)
 		return err
 	}
 
-	log.Info("New allowance for the contract", "allowance", allowance.String(), "contract", contract)
+	log.Info("New allowance for the contract", "allowance", utils.WeiToEther(allowance), "contract", contract)
 
 	return nil
 }
