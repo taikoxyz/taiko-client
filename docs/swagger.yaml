@@ -1,48 +1,10 @@
-definitions:
-  server.CreateAssignmentRequestBody:
-    properties:
-      blobHash:
-        items:
-          type: integer
-        type: array
-      expiry:
-        type: integer
-      feeToken:
-        type: string
-      proposer:
-        type: string
-      tierFees:
-        items:
-          type: integer
-        type: array
-    type: object
-  server.ProposeBlockResponse:
-    properties:
-      maxBlockID:
-        type: integer
-      maxProposedIn:
-        type: integer
-      prover:
-        type: string
-      signedPayload:
-        items:
-          type: integer
-        type: array
-    type: object
-  server.Status:
-    properties:
-      maxExpiry:
-        type: integer
-      minOptimisticTierFee:
-        type: integer
-      minSgxAndZkVMTierFee:
-        type: integer
-      minSgxTierFee:
-        type: integer
-      prover:
-        type: string
-    type: object
+swagger: "2.0"
 info:
+  title: Taiko Prover Server API
+  version: "1.0"
+  description: |
+    The Taiko Prover Server API facilitates the creation and management of block proof assignments.
+    Contributions are welcome.
   contact:
     email: info@taiko.xyz
     name: API Support
@@ -51,43 +13,94 @@ info:
     name: MIT
     url: https://github.com/taikoxyz/taiko-client/blob/main/LICENSE.md
   termsOfService: http://swagger.io/terms/
-  title: Taiko Prover Server API
-  version: "1.0"
+  x-github:
+    - name: GitHub Sponsors
+      url: https://github.com/sponsors
+    - name: GitHub Actions
+      url: https://github.com/features/actions
+    - name: GitHub Packages
+      url: https://github.com/features/packages
 paths:
   /assignment:
     post:
+      summary: Try to accept a block proof assignment
       consumes:
-      - application/json
-      parameters:
-      - description: assignment request body
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/server.CreateAssignmentRequestBody'
+        - application/json
       produces:
-      - application/json
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Assignment request body
+          required: true
+          schema:
+            $ref: '#/definitions/server.CreateAssignmentRequestBody'
       responses:
         "200":
           description: OK
           schema:
             $ref: '#/definitions/server.ProposeBlockResponse'
         "422":
-          description: prover does not have capacity
+          description: Prover does not have capacity
           schema:
             type: string
-      summary: Try to accept a block proof assignment
   /status:
     get:
+      summary: Get current prover server status
       consumes:
-      - application/json
-      operationId: get-status
+        - application/json
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             $ref: '#/definitions/server.Status'
-      summary: Get current prover server status
-swagger: "2.0"
+definitions:
+  big.Int:
+    type: object
+  encoding.TierFee:
+    properties:
+      fee:
+        $ref: '#/definitions/big.Int'
+      tier:
+        type: integer
+  server.CreateAssignmentRequestBody:
+    type: object
+    properties:
+      expiry:
+        type: integer
+      feeToken:
+        type: string
+      tierFees:
+        type: array
+        items:
+          $ref: '#/definitions/encoding.TierFee'
+      txListHash:
+        type: array
+        items:
+          type: integer
+  server.ProposeBlockResponse:
+    type: object
+    properties:
+      maxBlockID:
+        type: integer
+      maxProposedIn:
+        type: integer
+      prover:
+        type: string
+      signedPayload:
+        type: array
+        items:
+          type: integer
+  server.Status:
+    type: object
+    properties:
+      maxExpiry:
+        type: integer
+      minOptimisticTierFee:
+        type: integer
+      minSgxTierFee:
+        type: integer
+      prover:
+        type: string
