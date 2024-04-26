@@ -82,36 +82,25 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "big.Int": {
-            "type": "object"
-        },
-        "encoding.TierFee": {
-            "type": "object",
-            "properties": {
-                "fee": {
-                    "$ref": "#/definitions/big.Int"
-                },
-                "tier": {
-                    "type": "integer"
-                }
-            }
-        },
         "server.CreateAssignmentRequestBody": {
             "type": "object",
             "properties": {
+                "blobHash": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "expiry": {
                     "type": "integer"
                 },
                 "feeToken": {
                     "type": "string"
                 },
-                "tierFees": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/encoding.TierFee"
-                    }
+                "proposer": {
+                    "type": "string"
                 },
-                "txListHash": {
+                "tierFees": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -146,6 +135,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "minOptimisticTierFee": {
+                    "type": "integer"
+                },
+                "minSgxAndZkVMTierFee": {
                     "type": "integer"
                 },
                 "minSgxTierFee": {

@@ -34,11 +34,11 @@ const (
 
 // CreateAssignmentRequestBody represents a request body when handling assignment creation request.
 type CreateAssignmentRequestBody struct {
-	Proposer common.Address
-	FeeToken common.Address
-	TierFees []encoding.TierFee
-	Expiry   uint64
-	BlobHash common.Hash
+	Proposer common.Address     `json:"proposer"`
+	FeeToken common.Address     `json:"feeToken"`
+	TierFees []encoding.TierFee `json:"tierFees"`
+	Expiry   uint64             `json:"expiry"`
+	BlobHash common.Hash        `json:"blobHash"`
 }
 
 // Status represents the current prover server status.
@@ -82,7 +82,7 @@ type ProposeBlockResponse struct {
 // can submit onchain.
 //
 //	@Summary		Try to accept a block proof assignment
-//	@Param          	body            CreateAssignmentRequestBody   true    "assignment request body"
+//	@Param          body	body	server.CreateAssignmentRequestBody   true    "assignment request body"
 //	@Accept			json
 //	@Produce		json
 //	@Success		200		{object} ProposeBlockResponse
