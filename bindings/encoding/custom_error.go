@@ -35,7 +35,6 @@ func TryParsingCustomErrorFromReceipt(
 		From:          from,
 		To:            tx.To(),
 		Gas:           tx.Gas(),
-		GasPrice:      tx.GasPrice(),
 		GasFeeCap:     tx.GasFeeCap(),
 		GasTipCap:     tx.GasTipCap(),
 		Value:         tx.Value(),
