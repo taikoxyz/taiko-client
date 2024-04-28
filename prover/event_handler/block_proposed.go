@@ -377,8 +377,8 @@ type NewBlockProposedGuardianEventHandlerOps struct {
 	GuardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater
 }
 
-// BlockProposedGuaridanEventHandler is responsible for handling the BlockProposed event as a guardian prover.
-type BlockProposedGuaridanEventHandler struct {
+// BlockProposedGuardianEventHandler is responsible for handling the BlockProposed event as a guardian prover.
+type BlockProposedGuardianEventHandler struct {
 	*BlockProposedEventHandler
 	GuardianProverHeartbeater guardianProverHeartbeater.BlockSenderHeartbeater
 }
@@ -386,19 +386,19 @@ type BlockProposedGuaridanEventHandler struct {
 // NewBlockProposedEventGuardianHandler creates a new BlockProposedEventHandler instance.
 func NewBlockProposedEventGuardianHandler(
 	opts *NewBlockProposedGuardianEventHandlerOps,
-) *BlockProposedGuaridanEventHandler {
+) *BlockProposedGuardianEventHandler {
 	blockProposedEventHandler := NewBlockProposedEventHandler(opts.NewBlockProposedEventHandlerOps)
 	// For guardian provers, we only send top tier proofs.
 	blockProposedEventHandler.tierToOverride = encoding.TierGuardianID
 
-	return &BlockProposedGuaridanEventHandler{
+	return &BlockProposedGuardianEventHandler{
 		BlockProposedEventHandler: blockProposedEventHandler,
 		GuardianProverHeartbeater: opts.GuardianProverHeartbeater,
 	}
 }
 
 // Handle implements the BlockProposedHandler interface.
-func (h *BlockProposedGuaridanEventHandler) Handle(
+func (h *BlockProposedGuardianEventHandler) Handle(
 	ctx context.Context,
 	event *bindings.TaikoL1ClientBlockProposed,
 	end eventIterator.EndBlockProposedEventIterFunc,
