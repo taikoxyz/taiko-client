@@ -145,7 +145,7 @@
 * **all:** changes based on protocol `TaikoL1.getBlock()` update ([#558](https://github.com/taikoxyz/taiko-client/issues/558)) ([c853370](https://github.com/taikoxyz/taiko-client/commit/c853370c7ec85d1fea058b667097430f13b744fd))
 * **all:** sync state root rather than signal service's storage root ([#549](https://github.com/taikoxyz/taiko-client/issues/549)) ([b05c0d6](https://github.com/taikoxyz/taiko-client/commit/b05c0d6d2f1bf94051297df15330ccce669eb63e))
 * **bindings:** try parsing more custom errors ([#531](https://github.com/taikoxyz/taiko-client/issues/531)) ([025d985](https://github.com/taikoxyz/taiko-client/commit/025d9852ba5c06983b50836c21e7ad5a8f8c04b2))
-* **bindings:** update `AssigmentHook` signing based on protocol updates ([#519](https://github.com/taikoxyz/taiko-client/issues/519)) ([73a6047](https://github.com/taikoxyz/taiko-client/commit/73a604757995460fdc481548e56111766b63b307))
+* **bindings:** update `AssignmentHook` signing based on protocol updates ([#519](https://github.com/taikoxyz/taiko-client/issues/519)) ([73a6047](https://github.com/taikoxyz/taiko-client/commit/73a604757995460fdc481548e56111766b63b307))
 * **bindings:** update Go contract bindings ([#471](https://github.com/taikoxyz/taiko-client/issues/471)) ([23ce311](https://github.com/taikoxyz/taiko-client/commit/23ce3119478eaa025d05890a5b1c8188216beb29))
 * **bindings:** update Go contract bindings ([#520](https://github.com/taikoxyz/taiko-client/issues/520)) ([386e848](https://github.com/taikoxyz/taiko-client/commit/386e848f33157ef63ff58919eb7ecf4c4fb4b1c5))
 * **bindings:** update Go contract bindings ([#551](https://github.com/taikoxyz/taiko-client/issues/551)) ([4ace57c](https://github.com/taikoxyz/taiko-client/commit/4ace57c1d1f4bcc3473a341eaa5f16918a84aea3))
