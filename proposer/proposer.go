@@ -385,7 +385,7 @@ func (p *Proposer) ProposeTxLists(ctx context.Context, txListsBytes [][]byte) []
 				log.Error("Failed to fetch receipt", "txHash", txHash, "error", err)
 				continue
 			}
-			errors[i] = encoding.TryParsingCustomErrorFromReceipt(ctx, p.rpc.L1, p.proposerAddress, receipt)
+			errors[i] = encoding.TryParsingCustomErrorFromReceipt(ctx, p.rpc.L1, receipt)
 		}
 	}
 

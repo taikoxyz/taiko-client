@@ -75,8 +75,8 @@ func (s *Sender) Send(
 			"Failed to submit proof",
 			"blockID", proofWithHeader.BlockID,
 			"tier", proofWithHeader.Tier,
-			"txHash", receipt.TxHash,
-			"error", encoding.TryParsingCustomErrorFromReceipt(ctx, s.rpc.L1, s.txmgr.From(), receipt),
+			"txHash", receipt.TxHash.String(),
+			"error", encoding.TryParsingCustomErrorFromReceipt(ctx, s.rpc.L1, receipt),
 		)
 		metrics.ProverSubmissionRevertedCounter.Add(1)
 		return ErrUnretryableSubmission

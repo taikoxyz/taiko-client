@@ -7,7 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -21,7 +20,6 @@ type BlockHashContractCallerAndTransactionReader interface {
 func TryParsingCustomErrorFromReceipt(
 	ctx context.Context,
 	rpc BlockHashContractCallerAndTransactionReader,
-	from common.Address,
 	receipt *types.Receipt,
 ) error {
 	// Fetch the raw transaction.
@@ -32,7 +30,6 @@ func TryParsingCustomErrorFromReceipt(
 
 	// Call the contract at the block hash.
 	_, err = rpc.CallContractAtHash(ctx, ethereum.CallMsg{
-		From:          from,
 		To:            tx.To(),
 		Gas:           tx.Gas(),
 		GasFeeCap:     tx.GasFeeCap(),
