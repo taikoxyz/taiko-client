@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/go-resty/resty/v2"
 	"github.com/phayes/freeport"
@@ -130,7 +131,7 @@ func (s *ClientTestSuite) ProposeAndInsertValidBlock(
 		common.BytesToAddress(RandomBytes(32)),
 		common.Big1,
 		100000,
-		baseFeeInfo.Basefee,
+		new(big.Int).SetUint64(uint64(10*params.GWei)+baseFeeInfo.Basefee.Uint64()),
 		[]byte{},
 	)
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L2.ChainID), s.TestAddrPrivKey)
@@ -198,7 +199,7 @@ func (s *ClientTestSuite) ProposeValidBlock(
 		common.BytesToAddress(RandomBytes(32)),
 		common.Big1,
 		100000,
-		baseFeeInfo.Basefee,
+		new(big.Int).SetUint64(uint64(10*params.GWei)+baseFeeInfo.Basefee.Uint64()),
 		[]byte{},
 	)
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(s.RPCClient.L2.ChainID), s.TestAddrPrivKey)
