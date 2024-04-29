@@ -306,6 +306,10 @@ func (s *ProposerTestSuite) TestProposeTxLists() {
 		cfg.ExtraData,
 	)
 
+	// set gas limit
+	gasLimit := uint64(200000000)
+	s.SetL1BlockGasLimit(gasLimit)
+
 	emptyTxListBytes, err := rlp.EncodeToBytes(types.Transactions{})
 	s.Nil(err)
 	txListsBytes := [][]byte{emptyTxListBytes}
@@ -330,7 +334,7 @@ func (s *ProposerTestSuite) TestProposeTxLists() {
 
 		// trigger the error
 		candidate.Blobs = []*eth.Blob{}
-		candidate.GasLimit = 10000000
+		candidate.GasLimit = gasLimit / 20
 
 		txCandidates[i] = *candidate
 	}

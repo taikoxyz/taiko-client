@@ -188,3 +188,9 @@ func (s *ClientTestSuite) RevertL1Snapshot(snapshotID string) {
 	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &revertRes, "evm_revert", snapshotID))
 	s.True(revertRes)
 }
+
+func (s *ClientTestSuite) SetL1BlockGasLimit(gasLimit uint64) {
+	var success bool
+	s.Nil(s.RPCClient.L1.CallContext(context.Background(), &success, "evm_setBlockGasLimit", gasLimit))
+	s.True(success)
+}
