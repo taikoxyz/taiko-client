@@ -124,6 +124,6 @@ func waitSubErr(ctx context.Context, sub event.Subscription) (event.Subscription
 	case err := <-sub.Err():
 		return sub, err
 	case <-ctx.Done():
-		return sub, nil
+		return sub, ctx.Err()
 	}
 }

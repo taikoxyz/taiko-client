@@ -78,8 +78,7 @@ func (ds *BlobDataSource) GetBlobs(
 			}
 		}
 	}
-	err = nil
-	return sidecars, err
+	return sidecars, nil
 }
 
 // getBlobFromServer get blob data from server path `/getBlob`.
