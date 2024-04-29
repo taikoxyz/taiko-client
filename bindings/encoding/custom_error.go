@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// BlockHashContractCallerAndTransactionReader represents a contract caller and transaction reader.
+// BlockHashContractCallerAndChainReader represents a contract caller and chain reader.
 type BlockHashContractCallerAndChainReader interface {
 	bind.BlockHashContractCaller
 	ethereum.TransactionReader
