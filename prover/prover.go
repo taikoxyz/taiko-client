@@ -110,7 +110,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 		TaikoL1Address:        cfg.TaikoL1Address,
 		TaikoL2Address:        cfg.TaikoL2Address,
 		TaikoTokenAddress:     cfg.TaikoTokenAddress,
-		GuardianProverAddress: cfg.GuardianProverAddress,
+		GuardianProverAddress: cfg.GuardianProverMajorityAddress,
 		Timeout:               cfg.RPCTimeout,
 	}); err != nil {
 		return err
@@ -143,7 +143,7 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 	p.sharedState.SetTiers(tiers)
 
-	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc, p.cfg.TaikoL1Address, p.cfg.GuardianProverAddress)
+	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc, p.cfg.TaikoL1Address, p.cfg.GuardianProverMajorityAddress)
 
 	if p.txmgr, err = txmgr.NewSimpleTxManager(
 		"prover",
@@ -375,7 +375,7 @@ func (p *Prover) contestProofOp(req *proofProducer.ContestRequestBody) error {
 // requestProofOp requests a new proof generation operation.
 func (p *Prover) requestProofOp(e *bindings.TaikoL1ClientBlockProposed, minTier uint16) error {
 	if p.IsGuardianProver() {
-		minTier = encoding.TierGuardianID
+		minTier = encoding.TierGuardianMajorityID
 	}
 	if submitter := p.selectSubmitter(minTier); submitter != nil {
 		if err := submitter.RequestProof(p.ctx, e); err != nil {
@@ -453,7 +453,7 @@ func (p *Prover) getSubmitterByTier(tier uint16) proofSubmitter.Submitter {
 
 // IsGuardianProver returns true if the current prover is a guardian prover.
 func (p *Prover) IsGuardianProver() bool {
-	return p.cfg.GuardianProverAddress != common.Address{}
+	return p.cfg.GuardianProverMajorityAddress != common.Address{}
 }
 
 // ProverAddress returns the current prover account address.

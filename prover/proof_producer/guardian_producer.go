@@ -56,5 +56,5 @@ func (g *GuardianProofProducer) RequestProof(
 
 // Tier implements the ProofProducer interface.
 func (g *GuardianProofProducer) Tier() uint16 {
-	return encoding.TierGuardianID
+	return encoding.TierGuardianMajorityID
 }

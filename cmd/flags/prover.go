@@ -3,6 +3,7 @@ package flags
 import (
 	"time"
 
+	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
 )
 
@@ -164,11 +165,18 @@ var (
 		EnvVars:  []string{"PROVER_GUARDIAN_PROVER_HEALTH_CHECK_SERVER_ENDPOINT"},
 	}
 	// Guardian prover specific flag
-	GuardianProver = &cli.StringFlag{
-		Name:     "guardianProver",
-		Usage:    "GuardianProver contract `address`",
+	GuardianProverMinority = &cli.StringFlag{
+		Name:     "guardianProverMinority",
+		Usage:    "GuardianProverMinority contract `address`",
+		Value:    rpc.ZeroAddress.Hex(),
 		Category: proverCategory,
-		EnvVars:  []string{"GUARDIAN_PROVER"},
+		EnvVars:  []string{"GUARDIAN_PROVER_MINORITY"},
+	}
+	GuardianProverMajority = &cli.StringFlag{
+		Name:     "guardianProverMajority",
+		Usage:    "GuardianProverMajority contract `address`",
+		Category: proverCategory,
+		EnvVars:  []string{"GUARDIAN_PROVER_MAJORITY"},
 	}
 	GuardianProofSubmissionDelay = &cli.DurationFlag{
 		Name:     "guardian.submissionDelay",
@@ -224,7 +232,8 @@ var ProverFlags = MergeFlags(CommonFlags, []cli.Flag{
 	MinTaikoTokenBalance,
 	StartingBlockID,
 	Dummy,
-	GuardianProver,
+	GuardianProverMinority,
+	GuardianProverMajority,
 	GuardianProofSubmissionDelay,
 	GuardianProverHealthCheckServerEndpoint,
 	Graffiti,

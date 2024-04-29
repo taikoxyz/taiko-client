@@ -10,15 +10,17 @@ import (
 
 // Tier IDs defined in protocol.
 var (
-	TierOptimisticID uint16 = 100
-	TierSgxID        uint16 = 200
-	TierSgxAndZkVMID uint16 = 300
-	TierGuardianID   uint16 = 1000
-	ProtocolTiers           = []uint16{
+	TierOptimisticID       uint16 = 100
+	TierSgxID              uint16 = 200
+	TierSgxAndZkVMID       uint16 = 300
+	TierGuardianMinorityID uint16 = 900
+	TierGuardianMajorityID uint16 = 1000
+	ProtocolTiers                 = []uint16{
 		TierOptimisticID,
 		TierSgxID,
 		TierSgxAndZkVMID,
-		TierGuardianID,
+		TierGuardianMinorityID,
+		TierGuardianMajorityID,
 	}
 	GoldenTouchPrivKey = "92954368afd3caa1f3ce3ead0069c1af414054aefe1ef9aeacc1bf426222ce38"
 )

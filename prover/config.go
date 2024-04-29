@@ -33,7 +33,8 @@ type Config struct {
 	L1ProverPrivKey                         *ecdsa.PrivateKey
 	StartingBlockID                         *big.Int
 	Dummy                                   bool
-	GuardianProverAddress                   common.Address
+	GuardianProverMinorityAddress           common.Address
+	GuardianProverMajorityAddress           common.Address
 	GuardianProofSubmissionDelay            time.Duration
 	Graffiti                                string
 	BackOffMaxRetries                       uint64
@@ -101,7 +102,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	// If we are running a guardian prover, we need to prove unassigned blocks and run in contester mode by default.
-	if c.IsSet(flags.GuardianProver.Name) {
+	if c.IsSet(flags.GuardianProverMajority.Name) {
 		if err := c.Set(flags.ProveUnassignedBlocks.Name, "true"); err != nil {
 			return nil, err
 		}
@@ -119,7 +120,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	// If we are not running a guardian prover, a raiko host endpoint is required.
-	if !c.IsSet(flags.GuardianProver.Name) && !c.IsSet(flags.RaikoHostEndpoint.Name) {
+	if !c.IsSet(flags.GuardianProverMajority.Name) && !c.IsSet(flags.RaikoHostEndpoint.Name) {
 		return nil, errors.New("raiko host not provided")
 	}
 
@@ -180,7 +181,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		RaikoL2Endpoint:                         raikoL2Endpoint,
 		StartingBlockID:                         startingBlockID,
 		Dummy:                                   c.Bool(flags.Dummy.Name),
-		GuardianProverAddress:                   common.HexToAddress(c.String(flags.GuardianProver.Name)),
+		GuardianProverMinorityAddress:           common.HexToAddress(c.String(flags.GuardianProverMinority.Name)),
+		GuardianProverMajorityAddress:           common.HexToAddress(c.String(flags.GuardianProverMajority.Name)),
 		GuardianProofSubmissionDelay:            c.Duration(flags.GuardianProofSubmissionDelay.Name),
 		GuardianProverHealthCheckServerEndpoint: guardianProverHealthCheckServerEndpoint,
 		Graffiti:                                c.String(flags.Graffiti.Name),

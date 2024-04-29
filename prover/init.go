@@ -112,7 +112,7 @@ func (p *Prover) initProofSubmitters(
 				L2Endpoint:        p.cfg.RaikoL2Endpoint,
 				Dummy:             p.cfg.Dummy,
 			}
-		case encoding.TierGuardianID:
+		case encoding.TierGuardianMajorityID:
 			producer = proofProducer.NewGuardianProofProducer(p.cfg.EnableLivenessBondProof)
 		default:
 			return fmt.Errorf("unsupported tier: %d", tier.ID)

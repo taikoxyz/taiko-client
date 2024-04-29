@@ -192,7 +192,7 @@ func (s *ProofSubmitterTestSuite) TestGuardianSubmitProofs() {
 	for _, e := range events {
 		s.Nil(s.submitter.RequestProof(context.Background(), e))
 		proofWithHeader := <-s.proofCh
-		proofWithHeader.Tier = encoding.TierGuardianID
+		proofWithHeader.Tier = encoding.TierGuardianMajorityID
 		s.Nil(s.submitter.SubmitProof(context.Background(), proofWithHeader))
 	}
 }

@@ -170,7 +170,7 @@ func (s *ProofSubmitter) SubmitProof(
 				Tier: proofWithHeader.Tier,
 				Data: proofWithHeader.Proof,
 			},
-			proofWithHeader.Tier == encoding.TierGuardianID,
+			proofWithHeader.Tier == encoding.TierGuardianMajorityID,
 		),
 	); err != nil {
 		if err.Error() == transaction.ErrUnretryableSubmission.Error() {

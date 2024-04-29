@@ -298,14 +298,14 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 
 	s.Nil(s.p.transitionContestedHandler.Handle(context.Background(), contestedEvent))
 
-	s.p.cfg.GuardianProverAddress = common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"))
+	s.p.cfg.GuardianProverMajorityAddress = common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"))
 	s.True(s.p.IsGuardianProver())
 
-	txBuilder := transaction.NewProveBlockTxBuilder(s.p.rpc, s.p.cfg.TaikoL1Address, s.p.cfg.GuardianProverAddress)
+	txBuilder := transaction.NewProveBlockTxBuilder(s.p.rpc, s.p.cfg.TaikoL1Address, s.p.cfg.GuardianProverMajorityAddress)
 	s.p.proofSubmitters = nil
 	s.Nil(s.p.initProofSubmitters(s.p.txmgr, txBuilder))
 
-	s.p.rpc.GuardianProver, err = bindings.NewGuardianProver(s.p.cfg.GuardianProverAddress, s.p.rpc.L1)
+	s.p.rpc.GuardianProver, err = bindings.NewGuardianProver(s.p.cfg.GuardianProverMajorityAddress, s.p.rpc.L1)
 	s.Nil(err)
 
 	approvedSink := make(chan *bindings.GuardianProverGuardianApproval)
@@ -319,7 +319,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	}()
 	req = <-s.p.proofSubmissionCh
 	s.Nil(s.p.requestProofOp(req.Event, req.Tier))
-	s.Nil(s.p.selectSubmitter(encoding.TierGuardianID).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
+	s.Nil(s.p.selectSubmitter(encoding.TierGuardianMajorityID).SubmitProof(context.Background(), <-s.p.proofGenerationCh))
 	approvedEvent := <-approvedSink
 
 	s.Equal(header.Number.Uint64(), approvedEvent.BlockId.Uint64())
@@ -340,7 +340,7 @@ func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
 	}()
 
 	e.AssignedProver = common.BytesToAddress(testutils.RandomHash().Bytes())
-	s.p.cfg.GuardianProverAddress = common.Address{}
+	s.p.cfg.GuardianProverMajorityAddress = common.Address{}
 	s.Nil(s.p.assignmentExpiredHandler.Handle(context.Background(), e))
 	req := <-s.p.proofSubmissionCh
 	s.Nil(s.p.requestProofOp(req.Event, req.Tier))
@@ -353,21 +353,21 @@ func (s *ProverTestSuite) TestProveExpiredUnassignedBlock() {
 }
 
 func (s *ProverTestSuite) TestSelectSubmitter() {
-	submitter := s.p.selectSubmitter(encoding.TierGuardianID - 1)
+	submitter := s.p.selectSubmitter(encoding.TierGuardianMajorityID - 1)
 	s.NotNil(submitter)
-	s.Equal(encoding.TierGuardianID, submitter.Tier())
+	s.Equal(encoding.TierGuardianMajorityID, submitter.Tier())
 }
 
 func (s *ProverTestSuite) TestSelectSubmitterNotFound() {
-	submitter := s.p.selectSubmitter(encoding.TierGuardianID + 1)
+	submitter := s.p.selectSubmitter(encoding.TierGuardianMajorityID + 1)
 	s.Nil(submitter)
 }
 
 func (s *ProverTestSuite) TestGetSubmitterByTier() {
-	submitter := s.p.getSubmitterByTier(encoding.TierGuardianID)
+	submitter := s.p.getSubmitterByTier(encoding.TierGuardianMajorityID)
 	s.NotNil(submitter)
-	s.Equal(encoding.TierGuardianID, submitter.Tier())
-	s.Nil(s.p.getSubmitterByTier(encoding.TierGuardianID + 1))
+	s.Equal(encoding.TierGuardianMajorityID, submitter.Tier())
+	s.Nil(s.p.getSubmitterByTier(encoding.TierGuardianMajorityID + 1))
 }
 
 func (s *ProverTestSuite) TestProveOp() {
