@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"math/big"
 	"os"
 	"strconv"
 	"testing"
@@ -9,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,7 +44,7 @@ func TestL1ContentFrom(t *testing.T) {
 		testAddr,
 		common.Big1,
 		100000,
-		baseFeeInfo.Basefee,
+		new(big.Int).SetUint64(uint64(10*params.GWei)+baseFeeInfo.Basefee.Uint64()),
 		[]byte{},
 	)
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(client.L2.ChainID), testAddrPrivKey)
