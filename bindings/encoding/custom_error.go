@@ -15,6 +15,7 @@ import (
 type BlockHashContractCallerAndTransactionReader interface {
 	bind.BlockHashContractCaller
 	ethereum.TransactionReader
+	HeaderByHash(context.Context, common.Hash) (*types.Header, error)
 }
 
 // TryParsingCustomErrorFromReceipt tries to parse the custom error from the given receipt.
@@ -24,6 +25,11 @@ func TryParsingCustomErrorFromReceipt(
 	from common.Address,
 	receipt *types.Receipt,
 ) error {
+	// get header
+	header, err := rpc.HeaderByHash(ctx, receipt.BlockHash)
+	if err != nil {
+		return err
+	}
 	// Fetch the raw transaction.
 	tx, _, err := rpc.TransactionByHash(ctx, receipt.TxHash)
 	if err != nil {
@@ -42,7 +48,7 @@ func TryParsingCustomErrorFromReceipt(
 		AccessList:    tx.AccessList(),
 		BlobGasFeeCap: tx.BlobGasFeeCap(),
 		BlobHashes:    tx.BlobHashes(),
-	}, receipt.BlockHash)
+	}, header.ParentHash)
 
 	return TryParsingCustomError(err)
 }
