@@ -12,24 +12,25 @@ import (
 )
 
 // BlockHashContractCallerAndTransactionReader represents a contract caller and transaction reader.
-type BlockHashContractCallerAndTransactionReader interface {
+type BlockHashContractCallerAndChainReader interface {
 	bind.BlockHashContractCaller
 	ethereum.TransactionReader
-	HeaderByHash(context.Context, common.Hash) (*types.Header, error)
+	ethereum.ChainReader
 }
 
 // TryParsingCustomErrorFromReceipt tries to parse the custom error from the given receipt.
 func TryParsingCustomErrorFromReceipt(
 	ctx context.Context,
-	rpc BlockHashContractCallerAndTransactionReader,
+	rpc BlockHashContractCallerAndChainReader,
 	from common.Address,
 	receipt *types.Receipt,
 ) error {
-	// get header
+	// Get the block header of the receipt.
 	header, err := rpc.HeaderByHash(ctx, receipt.BlockHash)
 	if err != nil {
 		return err
 	}
+
 	// Fetch the raw transaction.
 	tx, _, err := rpc.TransactionByHash(ctx, receipt.TxHash)
 	if err != nil {
