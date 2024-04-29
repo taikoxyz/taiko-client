@@ -91,7 +91,7 @@ func rlpEncodedTransactionBytes(l int, signed bool) []byte {
 
 			tx = types.MustSignNewTx(testKey, types.LatestSigner(genesis.Config), txData)
 		} else {
-			tx = types.NewTransaction(1, testAddr, common.Big1, 10, common.Big256, nil)
+			tx = types.NewTransaction(1, testAddr, common.Big1, 10, new(big.Int).SetUint64(10*params.GWei), nil)
 		}
 		txs = append(
 			txs,
