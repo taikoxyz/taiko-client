@@ -13,6 +13,8 @@ services:
       - "0.0.0.0"
       - --hardfork
       - cancun
+      - --block-gas-limit
+      - "200000000"
 
   l2_execution_engine:
     container_name: l2_node
