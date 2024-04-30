@@ -152,6 +152,10 @@ func (s *ProverServer) CreateAssignment(c echo.Context) error {
 			continue
 		}
 
+		if tier.Tier == encoding.TierGuardianMinorityID {
+			continue
+		}
+
 		var minTierFee *big.Int
 		switch tier.Tier {
 		case encoding.TierOptimisticID:

@@ -13,7 +13,7 @@ func (s *TransactionTestSuite) TestBuildTxs() {
 		&bindings.TaikoDataBlockMetadata{},
 		&bindings.TaikoDataTransition{},
 		&bindings.TaikoDataTierProof{},
-		false,
+		1,
 	)(&bind.TransactOpts{Nonce: common.Big0, GasLimit: 0, GasTipCap: common.Big0})
 	s.Nil(err)
 }

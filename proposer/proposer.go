@@ -433,6 +433,8 @@ func (p *Proposer) initTierFees() error {
 			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.OptimisticTierFee})
 		case encoding.TierSgxID:
 			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: p.SgxTierFee})
+		case encoding.TierGuardianMinorityID:
+			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: common.Big0})
 		case encoding.TierGuardianMajorityID:
 			// Guardian prover should not charge any fee.
 			p.tierFees = append(p.tierFees, encoding.TierFee{Tier: tier.ID, Fee: common.Big0})

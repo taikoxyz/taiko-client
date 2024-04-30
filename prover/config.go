@@ -102,7 +102,7 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	// If we are running a guardian prover, we need to prove unassigned blocks and run in contester mode by default.
-	if c.IsSet(flags.GuardianProverMajority.Name) {
+	if c.IsSet(flags.GuardianProverMajority.Name) && c.IsSet(flags.GuardianProverMinority.Name) {
 		if err := c.Set(flags.ProveUnassignedBlocks.Name, "true"); err != nil {
 			return nil, err
 		}
@@ -120,7 +120,8 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 	}
 
 	// If we are not running a guardian prover, a raiko host endpoint is required.
-	if !c.IsSet(flags.GuardianProverMajority.Name) && !c.IsSet(flags.RaikoHostEndpoint.Name) {
+	if (!c.IsSet(flags.GuardianProverMajority.Name) || !c.IsSet(flags.GuardianProverMinority.Name)) &&
+		!c.IsSet(flags.RaikoHostEndpoint.Name) {
 		return nil, errors.New("raiko host not provided")
 	}
 

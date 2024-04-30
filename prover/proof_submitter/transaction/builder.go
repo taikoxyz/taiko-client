@@ -23,18 +23,20 @@ type TxBuilder func(txOpts *bind.TransactOpts) (*txmgr.TxCandidate, error)
 
 // ProveBlockTxBuilder is responsible for building ProveBlock transactions.
 type ProveBlockTxBuilder struct {
-	rpc                   *rpc.Client
-	taikoL1Address        common.Address
-	guardianProverAddress common.Address
+	rpc                           *rpc.Client
+	taikoL1Address                common.Address
+	majorityGuardianProverAddress common.Address
+	minorityGuardianProverAddress common.Address
 }
 
 // NewProveBlockTxBuilder creates a new ProveBlockTxBuilder instance.
 func NewProveBlockTxBuilder(
 	rpc *rpc.Client,
 	taikoL1Address common.Address,
-	guardianProverAddress common.Address,
+	majorityGuardianProverAddress common.Address,
+	minorityGuardianProverAddress common.Address,
 ) *ProveBlockTxBuilder {
-	return &ProveBlockTxBuilder{rpc, taikoL1Address, guardianProverAddress}
+	return &ProveBlockTxBuilder{rpc, taikoL1Address, majorityGuardianProverAddress, minorityGuardianProverAddress}
 }
 
 // Build creates a new TaikoL1.ProveBlock transaction with the given nonce.
@@ -43,13 +45,14 @@ func (a *ProveBlockTxBuilder) Build(
 	meta *bindings.TaikoDataBlockMetadata,
 	transition *bindings.TaikoDataTransition,
 	tierProof *bindings.TaikoDataTierProof,
-	guardian bool,
+	tier uint16,
 ) TxBuilder {
 	return func(txOpts *bind.TransactOpts) (*txmgr.TxCandidate, error) {
 		var (
-			data []byte
-			to   common.Address
-			err  error
+			data     []byte
+			to       common.Address
+			err      error
+			guardian = tier >= encoding.TierGuardianMinorityID
 		)
 
 		log.Info(
@@ -73,8 +76,11 @@ func (a *ProveBlockTxBuilder) Build(
 				return nil, ErrUnretryableSubmission
 			}
 		} else {
-			to = a.guardianProverAddress
-
+			if tier > encoding.TierGuardianMinorityID {
+				to = a.majorityGuardianProverAddress
+			} else {
+				to = a.minorityGuardianProverAddress
+			}
 			if data, err = encoding.GuardianProverABI.Pack("approve", *meta, *transition, *tierProof); err != nil {
 				if isSubmitProofTxErrorRetryable(err, blockID) {
 					return nil, err

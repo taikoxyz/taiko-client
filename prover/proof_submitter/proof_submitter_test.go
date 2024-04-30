@@ -45,6 +45,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		s.RPCClient,
 		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
+		common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
 	)
 
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))

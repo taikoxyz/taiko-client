@@ -112,6 +112,8 @@ func (p *Prover) initProofSubmitters(
 				L2Endpoint:        p.cfg.RaikoL2Endpoint,
 				Dummy:             p.cfg.Dummy,
 			}
+		case encoding.TierGuardianMinorityID:
+			producer = proofProducer.NewMinorityGuardianProofProducer(p.cfg.EnableLivenessBondProof)
 		case encoding.TierGuardianMajorityID:
 			producer = proofProducer.NewGuardianProofProducer(p.cfg.EnableLivenessBondProof)
 		default:
