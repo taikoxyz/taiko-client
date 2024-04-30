@@ -35,7 +35,7 @@ type L2ChainSyncer struct {
 
 	// If this flag is activated, will try P2P beacon sync if current node is behind of the protocol's
 	// the latest verified block head
-	p2pSyncVerifiedBlocks bool
+	p2pSync bool
 }
 
 // New creates a new chain syncer instance.
@@ -43,7 +43,7 @@ func New(
 	ctx context.Context,
 	rpc *rpc.Client,
 	state *state.State,
-	p2pSyncVerifiedBlocks bool,
+	p2pSync bool,
 	p2pSyncTimeout time.Duration,
 	maxRetrieveExponent uint64,
 	blobServerEndpoint *url.URL,
@@ -63,14 +63,14 @@ func New(
 	}
 
 	return &L2ChainSyncer{
-		ctx:                   ctx,
-		rpc:                   rpc,
-		state:                 state,
-		beaconSyncer:          beaconSyncer,
-		blobSyncer:            blobSyncer,
-		progressTracker:       tracker,
-		syncMode:              syncMode,
-		p2pSyncVerifiedBlocks: p2pSyncVerifiedBlocks,
+		ctx:             ctx,
+		rpc:             rpc,
+		state:           state,
+		beaconSyncer:    beaconSyncer,
+		blobSyncer:      blobSyncer,
+		progressTracker: tracker,
+		syncMode:        syncMode,
+		p2pSync:         p2pSync,
 	}, nil
 }
 
@@ -81,7 +81,7 @@ func (s *L2ChainSyncer) Sync() error {
 		return err
 	}
 	// If current L2 execution engine's chain is behind of the protocol's latest verified block head, and the
-	// `P2PSyncVerifiedBlocks` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
+	// `P2PSync` flag is set, try triggering a beacon sync in L2 execution engine to catch up the
 	// latest verified block head.
 	if needNewBeaconSyncTriggered {
 		if err := s.beaconSyncer.TriggerBeaconSync(blockID); err != nil {
@@ -96,7 +96,7 @@ func (s *L2ChainSyncer) Sync() error {
 	if s.progressTracker.Triggered() {
 		log.Info(
 			"Switch to insert pending blocks one by one",
-			"p2pEnabled", s.p2pSyncVerifiedBlocks,
+			"p2pEnabled", s.p2pSync,
 			"p2pOutOfSync", s.progressTracker.OutOfSync(),
 		)
 
@@ -160,13 +160,13 @@ func (s *L2ChainSyncer) AheadOfProtocolVerifiedHead(verifiedHeightToCompare uint
 
 // needNewBeaconSyncTriggered checks whether the current L2 execution engine needs to trigger
 // another new beacon sync, the following conditions should be met:
-// 1. The `P2PSyncVerifiedBlocks` flag is set.
+// 1. The `P2PSync` flag is set.
 // 2. The protocol's latest verified block head is not zero.
 // 3. The L2 execution engine's chain is behind of the protocol's latest verified block head.
 // 4. The L2 execution engine's chain have met a sync timeout issue.
 func (s *L2ChainSyncer) needNewBeaconSyncTriggered() (uint64, bool, error) {
 	// If the flag is not set or there was a finished beacon sync, we simply return false.
-	if !s.p2pSyncVerifiedBlocks || s.progressTracker.Finished() {
+	if !s.p2pSync || s.progressTracker.Finished() {
 		return 0, false, nil
 	}
 
