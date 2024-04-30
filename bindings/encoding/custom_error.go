@@ -11,19 +11,26 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// BlockHashContractCallerAndTransactionReader represents a contract caller and transaction reader.
-type BlockHashContractCallerAndTransactionReader interface {
+// BlockHashContractCallerAndChainReader represents a contract caller and chain reader.
+type BlockHashContractCallerAndChainReader interface {
 	bind.BlockHashContractCaller
 	ethereum.TransactionReader
+	ethereum.ChainReader
 }
 
 // TryParsingCustomErrorFromReceipt tries to parse the custom error from the given receipt.
 func TryParsingCustomErrorFromReceipt(
 	ctx context.Context,
-	rpc BlockHashContractCallerAndTransactionReader,
+	rpc BlockHashContractCallerAndChainReader,
 	from common.Address,
 	receipt *types.Receipt,
 ) error {
+	// Get the block header of the receipt.
+	header, err := rpc.HeaderByHash(ctx, receipt.BlockHash)
+	if err != nil {
+		return err
+	}
+
 	// Fetch the raw transaction.
 	tx, _, err := rpc.TransactionByHash(ctx, receipt.TxHash)
 	if err != nil {
@@ -42,7 +49,7 @@ func TryParsingCustomErrorFromReceipt(
 		AccessList:    tx.AccessList(),
 		BlobGasFeeCap: tx.BlobGasFeeCap(),
 		BlobHashes:    tx.BlobHashes(),
-	}, receipt.BlockHash)
+	}, header.ParentHash)
 
 	return TryParsingCustomError(err)
 }
