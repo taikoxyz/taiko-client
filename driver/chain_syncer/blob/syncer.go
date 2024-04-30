@@ -262,10 +262,6 @@ func (s *Syncer) onBlockProposed(
 		}
 	}
 
-	if txListBytes, err = utils.Decompress(txListBytes); err != nil {
-		return fmt.Errorf("failed to decompress tx list bytes: %w", err)
-	}
-
 	// If the transactions list is invalid, we simply insert an empty L2 block.
 	if !s.txListValidator.ValidateTxList(event.BlockId, txListBytes, event.Meta.BlobUsed) {
 		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", event.BlockId)

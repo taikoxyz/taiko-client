@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 // TxListValidator is responsible for validating the transactions list in a TaikoL1.proposeBlock transaction.
@@ -34,19 +35,28 @@ func (v *TxListValidator) ValidateTxList(
 	blockID *big.Int,
 	txListBytes []byte,
 	blobUsed bool,
-) (isValid bool) {
+) bool {
 	// If the transaction list is empty, it's valid.
 	if len(txListBytes) == 0 {
 		return true
 	}
 
 	if !blobUsed && (len(txListBytes) > int(v.maxBytesPerTxList)) {
-		log.Info("Transactions list binary too large", "length", len(txListBytes), "blockID", blockID)
+		log.Info("Compressed transactions list binary too large", "length", len(txListBytes), "blockID", blockID)
 		return false
 	}
 
-	var txs types.Transactions
-	if err := rlp.DecodeBytes(txListBytes, &txs); err != nil {
+	var (
+		txs types.Transactions
+		err error
+	)
+
+	if txListBytes, err = utils.Decompress(txListBytes); err != nil {
+		log.Info("Failed to decompress tx list bytes", "blockID", blockID, "error", err)
+		return false
+	}
+
+	if err = rlp.DecodeBytes(txListBytes, &txs); err != nil {
 		log.Info("Failed to decode transactions list bytes", "blockID", blockID, "error", err)
 		return false
 	}
