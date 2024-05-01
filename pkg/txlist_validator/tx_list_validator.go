@@ -30,7 +30,12 @@ func NewTxListValidator(
 }
 
 // ValidateTxList checks whether the transactions list in the TaikoL1.proposeBlock transaction's
-// input data is valid.
+// input data is valid, the rules are:
+// - If the transaction list is empty, it's valid.
+// - If the transaction list is not empty:
+//  1. If the transaction list is using calldata, the compressed bytes of the transaction list must be
+//     less than or equal to maxBytesPerTxList.
+//  2. The transaction list bytes must be able to be RLP decoded into a list of transactions.
 func (v *TxListValidator) ValidateTxList(
 	blockID *big.Int,
 	txListBytes []byte,
