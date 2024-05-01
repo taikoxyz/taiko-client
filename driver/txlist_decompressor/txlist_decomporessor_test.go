@@ -1,4 +1,4 @@
-package txlistvalidator
+package txlistdecompressor
 
 import (
 	"crypto/rand"
@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
+	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
 var (
@@ -30,48 +31,50 @@ var (
 	}
 )
 
-func TestIsTxListValid(t *testing.T) {
-	v := NewTxListValidator(
+func TestDecomporess(t *testing.T) {
+	d := NewTxListDecompressor(
 		maxBlocksGasLimit,
 		maxTxlistBytes,
 		chainID,
 	)
+	compressed, err := utils.Compress(rlpEncodedTransactionBytes(1, true))
+	require.NoError(t, err)
+
 	tests := []struct {
-		name        string
-		blockID     *big.Int
-		txListBytes []byte
-		isValid     bool
+		name         string
+		blockID      *big.Int
+		txListBytes  []byte
+		decompressed []byte
 	}{
 		{
 			"txListBytes binary too large",
 			chainID,
 			randBytes(maxTxlistBytes + 1),
-			false,
+			[]byte{},
 		},
 		{
 			"txListBytes not decodable to rlp",
 			chainID,
 			randBytes(0x1),
-			false,
+			[]byte{},
 		},
 		{
 			"success empty tx list",
 			chainID,
 			rlpEncodedTransactionBytes(0, true),
-			true,
+			[]byte{},
 		},
 		{
 			"success non-empty tx list",
 			chainID,
+			compressed,
 			rlpEncodedTransactionBytes(1, true),
-			true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			isValid := v.ValidateTxList(tt.blockID, tt.txListBytes, false)
-			require.Equal(t, tt.isValid, isValid)
+			require.Equal(t, tt.decompressed, d.TryDecomporess(tt.blockID, tt.txListBytes, false))
 		})
 	}
 }

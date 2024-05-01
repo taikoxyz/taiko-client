@@ -26,20 +26,20 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
-	txlistfetcher "github.com/taikoxyz/taiko-client/driver/txlist_fetcher"
+	txListDecomporessor "github.com/taikoxyz/taiko-client/driver/txlist_decompressor"
+	txlistFetcher "github.com/taikoxyz/taiko-client/driver/txlist_fetcher"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
-	txListValidator "github.com/taikoxyz/taiko-client/pkg/txlist_validator"
 )
 
 // Syncer responsible for letting the L2 execution engine catching up with protocol's latest
 // pending block through deriving L1 calldata.
 type Syncer struct {
-	ctx               context.Context
-	rpc               *rpc.Client
-	state             *state.State
-	progressTracker   *beaconsync.SyncProgressTracker          // Sync progress tracker
-	anchorConstructor *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
-	txListValidator   *txListValidator.TxListValidator         // Transactions list validator
+	ctx                context.Context
+	rpc                *rpc.Client
+	state              *state.State
+	progressTracker    *beaconsync.SyncProgressTracker          // Sync progress tracker
+	anchorConstructor  *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
+	txListDecompressor *txListDecomporessor.TxListDecompressor  // Transactions list decompressor
 	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
 	reorgDetectedFlag   bool
@@ -72,7 +72,7 @@ func NewSyncer(
 		state:             state,
 		progressTracker:   progressTracker,
 		anchorConstructor: constructor,
-		txListValidator: txListValidator.NewTxListValidator(
+		txListDecompressor: txListDecomporessor.NewTxListDecompressor(
 			uint64(configs.BlockMaxGasLimit),
 			rpc.BlockMaxTxListBytes,
 			client.L2.ChainID,
@@ -246,11 +246,11 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	// Decode transactions list.
-	var txListDecoder txlistfetcher.TxListFetcher
+	var txListDecoder txlistFetcher.TxListFetcher
 	if event.Meta.BlobUsed {
-		txListDecoder = txlistfetcher.NewBlobTxListFetcher(s.rpc.L1Beacon, s.blobDatasource)
+		txListDecoder = txlistFetcher.NewBlobTxListFetcher(s.rpc.L1Beacon, s.blobDatasource)
 	} else {
-		txListDecoder = new(txlistfetcher.CalldataFetcher)
+		txListDecoder = new(txlistFetcher.CalldataFetcher)
 	}
 	txListBytes, err := txListDecoder.Fetch(ctx, tx, &event.Meta)
 	if err != nil {
@@ -262,18 +262,13 @@ func (s *Syncer) onBlockProposed(
 		}
 	}
 
-	// If the transactions list is invalid, we simply insert an empty L2 block.
-	if !s.txListValidator.ValidateTxList(event.BlockId, txListBytes, event.Meta.BlobUsed) {
-		log.Info("Invalid transactions list, insert an empty L2 block instead", "blockID", event.BlockId)
-		txListBytes = []byte{}
-	}
-
+	// Decompress the transactions list and try to insert a new head block to L2 EE.
 	payloadData, err := s.insertNewHead(
 		ctx,
 		event,
 		parent,
 		s.state.GetHeadBlockID(),
-		txListBytes,
+		s.txListDecompressor.TryDecomporess(event.BlockId, txListBytes, event.Meta.BlobUsed),
 		&rawdb.L1Origin{
 			BlockID:       event.BlockId,
 			L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.

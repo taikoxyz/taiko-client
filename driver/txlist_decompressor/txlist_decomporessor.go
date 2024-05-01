@@ -1,4 +1,4 @@
-package txlistvalidator
+package txlistdecompressor
 
 import (
 	"math/big"
@@ -9,46 +9,49 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
-// TxListValidator is responsible for validating the transactions list in a TaikoL1.proposeBlock transaction.
-type TxListValidator struct {
+// TxListDecompressor is responsible for validating and decompressing
+// the transactions list in a TaikoL1.proposeBlock transaction.
+type TxListDecompressor struct {
 	blockMaxGasLimit  uint64
 	maxBytesPerTxList uint64
 	chainID           *big.Int
 }
 
-// NewTxListValidator creates a new TxListValidator instance based on giving configurations.
-func NewTxListValidator(
+// NewTxListDecompressor creates a new TxListDecompressor instance based on giving configurations.
+func NewTxListDecompressor(
 	blockMaxGasLimit uint64,
 	maxBytesPerTxList uint64,
 	chainID *big.Int,
-) *TxListValidator {
-	return &TxListValidator{
+) *TxListDecompressor {
+	return &TxListDecompressor{
 		blockMaxGasLimit:  blockMaxGasLimit,
 		maxBytesPerTxList: maxBytesPerTxList,
 		chainID:           chainID,
 	}
 }
 
-// ValidateTxList checks whether the transactions list in the TaikoL1.proposeBlock transaction's
+// TryDecomporess validates and decompresses whether the transactions list in the TaikoL1.proposeBlock transaction's
 // input data is valid, the rules are:
 // - If the transaction list is empty, it's valid.
 // - If the transaction list is not empty:
 //  1. If the transaction list is using calldata, the compressed bytes of the transaction list must be
 //     less than or equal to maxBytesPerTxList.
 //  2. The transaction list bytes must be able to be RLP decoded into a list of transactions.
-func (v *TxListValidator) ValidateTxList(
+func (v *TxListDecompressor) TryDecomporess(
 	blockID *big.Int,
 	txListBytes []byte,
 	blobUsed bool,
-) bool {
+) []byte {
 	// If the transaction list is empty, it's valid.
 	if len(txListBytes) == 0 {
-		return true
+		return []byte{}
 	}
 
+	// If calldata is used, the compressed bytes of the transaction list must be
+	// less than or equal to maxBytesPerTxList.
 	if !blobUsed && (len(txListBytes) > int(v.maxBytesPerTxList)) {
 		log.Info("Compressed transactions list binary too large", "length", len(txListBytes), "blockID", blockID)
-		return false
+		return []byte{}
 	}
 
 	var (
@@ -56,16 +59,18 @@ func (v *TxListValidator) ValidateTxList(
 		err error
 	)
 
+	// Decompress the transaction list bytes.
 	if txListBytes, err = utils.Decompress(txListBytes); err != nil {
 		log.Info("Failed to decompress tx list bytes", "blockID", blockID, "error", err)
-		return false
+		return []byte{}
 	}
 
+	// Try to RLP decode the transaction list bytes.
 	if err = rlp.DecodeBytes(txListBytes, &txs); err != nil {
 		log.Info("Failed to decode transactions list bytes", "blockID", blockID, "error", err)
-		return false
+		return []byte{}
 	}
 
 	log.Info("Transaction list is valid", "blockID", blockID)
-	return true
+	return txListBytes
 }
