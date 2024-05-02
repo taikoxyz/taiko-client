@@ -17,30 +17,27 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 )
 
-// Each TaikoL2.anchor transaction should use this value as it's gas limit.
-const AnchorGasLimit = 250_000
+var (
+	// Each TaikoL2.anchor transaction should use this value as it's gas limit.
+	AnchorGasLimit     uint64 = 250_000
+	GoldenTouchAddress        = common.HexToAddress("0x0000777735367b36bC9B61C50022d9D0700dB4Ec")
+)
 
 // AnchorTxConstructor is responsible for assembling the anchor transaction (TaikoL2.anchor) in
 // each L2 block, which must be the first transaction, and its sender must be the golden touch account.
 type AnchorTxConstructor struct {
-	rpc                *rpc.Client
-	goldenTouchAddress common.Address
-	signer             *signer.FixedKSigner
+	rpc    *rpc.Client
+	signer *signer.FixedKSigner
 }
 
 // New creates a new AnchorConstructor instance.
 func New(rpc *rpc.Client) (*AnchorTxConstructor, error) {
-	goldenTouchAddress, err := rpc.TaikoL2.GOLDENTOUCHADDRESS(nil)
-	if err != nil {
-		return nil, err
-	}
-
 	signer, err := signer.NewFixedKSigner("0x" + encoding.GoldenTouchPrivKey)
 	if err != nil {
 		return nil, fmt.Errorf("invalid golden touch private key %s", encoding.GoldenTouchPrivKey)
 	}
 
-	return &AnchorTxConstructor{rpc, goldenTouchAddress, signer}, nil
+	return &AnchorTxConstructor{rpc, signer}, nil
 }
 
 // AssembleAnchorTx assembles a signed TaikoL2.anchor transaction.
@@ -90,22 +87,22 @@ func (c *AnchorTxConstructor) transactOpts(
 	)
 
 	// Get the nonce of golden touch account at the specified parentHeight.
-	nonce, err := c.rpc.L2AccountNonce(ctx, c.goldenTouchAddress, parentHeight)
+	nonce, err := c.rpc.L2AccountNonce(ctx, GoldenTouchAddress, parentHeight)
 	if err != nil {
 		return nil, err
 	}
 
 	log.Info(
 		"Golden touch account nonce",
-		"address", c.goldenTouchAddress,
+		"address", GoldenTouchAddress,
 		"nonce", nonce,
 		"parent", parentHeight,
 	)
 
 	return &bind.TransactOpts{
-		From: c.goldenTouchAddress,
+		From: GoldenTouchAddress,
 		Signer: func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-			if address != c.goldenTouchAddress {
+			if address != GoldenTouchAddress {
 				return nil, bind.ErrNotAuthorized
 			}
 			signature, err := c.signTxPayload(signer.Hash(tx).Bytes())
