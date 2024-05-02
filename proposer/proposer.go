@@ -5,11 +5,9 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/ethereum-optimism/optimism/op-challenger/sender"
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -60,7 +58,7 @@ type Proposer struct {
 
 	lastProposedAt time.Time
 
-	txSender *sender.TxSender
+	txmgr *txmgr.SimpleTxManager
 
 	ctx context.Context
 	wg  sync.WaitGroup
@@ -104,16 +102,14 @@ func (p *Proposer) InitFromConfig(ctx context.Context, cfg *Config) (err error) 
 		return err
 	}
 
-	txmgr, err := txmgr.NewSimpleTxManager(
+	if p.txmgr, err = txmgr.NewSimpleTxManager(
 		"proposer",
 		log.Root(),
 		&metrics.TxMgrMetrics,
 		*cfg.TxmgrConfigs,
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
-	p.txSender = sender.NewTxSender(p.ctx, log.Root(), txmgr, p.Config.MaxProposedTxListsPerEpoch)
 
 	if p.proverSelector, err = selector.NewETHFeeEOASelector(
 		&protocolConfigs,
@@ -277,10 +273,7 @@ func (p *Proposer) fetchPoolContent(filterPoolContent bool) ([]types.Transaction
 // and then proposing them to TaikoL1 contract.
 func (p *Proposer) ProposeOp(ctx context.Context) error {
 	// Check if it's time to propose unfiltered pool content.
-	var (
-		filterPoolContent = time.Now().Before(p.lastProposedAt.Add(p.MinProposingInternal))
-		txListsBytes      = make([][]byte, 0)
-	)
+	filterPoolContent := time.Now().Before(p.lastProposedAt.Add(p.MinProposingInternal))
 
 	// Wait until L2 execution engine is synced at first.
 	if err := p.rpc.WaitTillL2ExecutionEngineSynced(ctx); err != nil {
@@ -293,7 +286,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		"lastProposedAt", p.lastProposedAt,
 	)
 
-	// Fetch the pool content with the given limits.
 	txLists, err := p.fetchPoolContent(filterPoolContent)
 	if err != nil {
 		return err
@@ -315,81 +307,54 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			return fmt.Errorf("failed to encode transactions: %w", err)
 		}
 
-		txListsBytes = append(txListsBytes, txListBytes)
-	}
-
-	for i, err := range p.ProposeTxLists(ctx, txListsBytes) {
-		if err != nil {
-			log.Error(
-				"Failed to send TaikoL1.proposeBlock transaction",
-				"index", i,
-				"error", err,
-			)
-			continue
+		if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len())); err != nil {
+			return fmt.Errorf("failed to send TaikoL1.proposeBlock transactions: %w", err)
 		}
 
-		metrics.ProposerProposedTxListsCounter.Add(1)
-		metrics.ProposerProposedTxsCounter.Add(float64(len(txLists[i])))
-
-		log.Info("📝 Propose transactions succeeded", "txs", len(txLists[i]))
 		p.lastProposedAt = time.Now()
 	}
 
 	return nil
 }
 
-// ProposeTxLists proposes the given transaction lists to TaikoL1 contract.
-func (p *Proposer) ProposeTxLists(ctx context.Context, txListsBytes [][]byte) []error {
-	txCandidates := make([]txmgr.TxCandidate, 0)
-
-	for i, txListBytes := range txListsBytes {
-		compressedTxListBytes, err := utils.Compress(txListBytes)
-		if err != nil {
-			log.Error("Failed to compress transactions list", "index", i, "error", err)
-			break
-		}
-
-		candidate, err := p.txBuilder.Build(
-			ctx,
-			p.tierFees,
-			p.IncludeParentMetaHash,
-			compressedTxListBytes,
-		)
-		if err != nil {
-			log.Error("Failed to build TaikoL1.proposeBlock transaction", "error", err)
-			break
-		}
-
-		txCandidates = append(txCandidates, *candidate)
+// ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
+func (p *Proposer) ProposeTxList(
+	ctx context.Context,
+	txListBytes []byte,
+	txNum uint,
+) error {
+	compressedTxListBytes, err := utils.Compress(txListBytes)
+	if err != nil {
+		return err
 	}
 
-	if len(txCandidates) == 0 {
-		return []error{}
+	txCandidate, err := p.txBuilder.Build(
+		ctx,
+		p.tierFees,
+		p.IncludeParentMetaHash,
+		compressedTxListBytes,
+	)
+	if err != nil {
+		log.Warn("Failed to build TaikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
+		return err
 	}
 
-	// Send the transactions to the TaikoL1 contract, and if any of them fails, try
-	// to parse the custom error.
-	errors := p.txSender.SendAndWaitDetailed("proposeBlock", txCandidates...)
-	for i, err := range errors {
-		if err == nil {
-			continue
-		}
-
-		// If a transaction is reverted on chain, the error string returned by txSender will like this:
-		// fmt.Errorf("%w purpose: %v hash: %v", ErrTransactionReverted, txPurpose, rcpt.Receipt.TxHash)
-		// Then we try parsing the custom error for more details in log.
-		if strings.Contains(err.Error(), "purpose: ") && strings.Contains(err.Error(), "hash: ") {
-			txHash := strings.Split(err.Error(), "hash: ")[1]
-			receipt, err := p.rpc.L1.TransactionReceipt(ctx, common.HexToHash(txHash))
-			if err != nil {
-				log.Error("Failed to fetch receipt", "txHash", txHash, "error", err)
-				continue
-			}
-			errors[i] = encoding.TryParsingCustomErrorFromReceipt(ctx, p.rpc.L1, p.proposerAddress, receipt)
-		}
+	receipt, err := p.txmgr.Send(p.ctx, *txCandidate)
+	if err != nil {
+		log.Warn("Failed to send TaikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
+		return err
 	}
 
-	return errors
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return fmt.Errorf("failed to propose block: %s", receipt.TxHash.Hex())
+	}
+
+	log.Info("📝 Propose transactions succeeded", "txs", txNum)
+
+	metrics.ProposerProposedTxListsCounter.Add(1)
+	metrics.ProposerProposedTxsCounter.Add(float64(txNum))
+
+	return nil
 }
 
 // updateProposingTicker updates the internal proposing timer.

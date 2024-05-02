@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   l1_node:
     container_name: l1_node
