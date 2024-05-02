@@ -300,7 +300,6 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 	g, gCtx := errgroup.WithContext(ctx)
 	// Propose all L2 transactions lists.
 	for _, txs := range txLists[:utils.Min(p.MaxProposedTxListsPerEpoch, uint64(len(txLists)-1))] {
-
 		var nonce uint64
 		nonce, err = p.rpc.L1.PendingNonceAt(ctx, p.proposerAddress)
 		if err != nil {
