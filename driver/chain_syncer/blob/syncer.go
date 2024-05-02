@@ -26,7 +26,7 @@ import (
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 
 	anchorTxConstructor "github.com/taikoxyz/taiko-client/driver/anchor_tx_constructor"
-	txListDecomporessor "github.com/taikoxyz/taiko-client/driver/txlist_decompressor"
+	txListDecompressor "github.com/taikoxyz/taiko-client/driver/txlist_decompressor"
 	txlistFetcher "github.com/taikoxyz/taiko-client/driver/txlist_fetcher"
 	eventIterator "github.com/taikoxyz/taiko-client/pkg/chain_iterator/event_iterator"
 )
@@ -39,7 +39,7 @@ type Syncer struct {
 	state              *state.State
 	progressTracker    *beaconsync.SyncProgressTracker          // Sync progress tracker
 	anchorConstructor  *anchorTxConstructor.AnchorTxConstructor // TaikoL2.anchor transactions constructor
-	txListDecompressor *txListDecomporessor.TxListDecompressor  // Transactions list decompressor
+	txListDecompressor *txListDecompressor.TxListDecompressor   // Transactions list decompressor
 	// Used by BlockInserter
 	lastInsertedBlockID *big.Int
 	reorgDetectedFlag   bool
@@ -72,7 +72,7 @@ func NewSyncer(
 		state:             state,
 		progressTracker:   progressTracker,
 		anchorConstructor: constructor,
-		txListDecompressor: txListDecomporessor.NewTxListDecompressor(
+		txListDecompressor: txListDecompressor.NewTxListDecompressor(
 			uint64(configs.BlockMaxGasLimit),
 			rpc.BlockMaxTxListBytes,
 			client.L2.ChainID,
@@ -246,13 +246,13 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	// Decode transactions list.
-	var txListFecher txlistFetcher.TxListFetcher
+	var txlistFetcher txlistFetcher.TxListFetcher
 	if event.Meta.BlobUsed {
-		txListFecher = txlistFetcher.NewBlobTxListFetcher(s.rpc.L1Beacon, s.blobDatasource)
+		txlistFetcher = txlistFetcher.NewBlobTxListFetcher(s.rpc.L1Beacon, s.blobDatasource)
 	} else {
-		txListFecher = new(txlistFetcher.CalldataFetcher)
+		txlistFetcher = new(txlistFetcher.CalldataFetcher)
 	}
-	txListBytes, err := txListFecher.Fetch(ctx, tx, &event.Meta)
+	txListBytes, err := txlistFetcher.Fetch(ctx, tx, &event.Meta)
 	if err != nil {
 		if errors.Is(err, rpc.ErrBlobInvalid) {
 			log.Info("Invalid blob detected", "blockID", event.BlockId)
@@ -268,7 +268,7 @@ func (s *Syncer) onBlockProposed(
 		event,
 		parent,
 		s.state.GetHeadBlockID(),
-		s.txListDecompressor.TryDecomporess(event.BlockId, txListBytes, event.Meta.BlobUsed),
+		s.txListDecompressor.TryDecompress(event.BlockId, txListBytes, event.Meta.BlobUsed),
 		&rawdb.L1Origin{
 			BlockID:       event.BlockId,
 			L2BlockHash:   common.Hash{}, // Will be set by taiko-geth.
