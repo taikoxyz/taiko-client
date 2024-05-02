@@ -297,25 +297,24 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return nil
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
+	g, gCtx := errgroup.WithContext(ctx)
 	// Propose all L2 transactions lists.
-	for i, txs := range txLists {
-		if i >= int(p.MaxProposedTxListsPerEpoch) {
-			return nil
-		}
+	for _, txs := range txLists[:utils.Min(p.MaxProposedTxListsPerEpoch, uint64(len(txLists)-1))] {
 
-		txListBytes, err := rlp.EncodeToBytes(txs)
+		var nonce uint64
+		nonce, err = p.rpc.L1.PendingNonceAt(ctx, p.proposerAddress)
 		if err != nil {
-			return fmt.Errorf("failed to encode transactions: %w", err)
+			err = fmt.Errorf("failed to get proposer nonce: %w", err)
+			break
 		}
 
-		nonce, err := p.rpc.L1.PendingNonceAt(ctx, p.proposerAddress)
-		if err != nil {
-			return fmt.Errorf("failed to get proposer nonce: %w", err)
-		}
-
+		txs := txs
 		g.Go(func() error {
-			if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len())); err != nil {
+			txListBytes, err := rlp.EncodeToBytes(txs)
+			if err != nil {
+				return fmt.Errorf("failed to encode transactions: %w", err)
+			}
+			if err := p.ProposeTxList(gCtx, txListBytes, uint(txs.Len())); err != nil {
 				return err
 			}
 			p.lastProposedAt = time.Now()
@@ -326,8 +325,11 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			log.Error("Failed to wait for new pending transaction", "error", err)
 		}
 	}
+	if gErr := g.Wait(); gErr != nil {
+		return gErr
+	}
 
-	return g.Wait()
+	return err
 }
 
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
