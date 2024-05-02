@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/taikoxyz/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-client/bindings/encoding"
@@ -296,6 +297,7 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 		return nil
 	}
 
+	g, ctx := errgroup.WithContext(ctx)
 	// Propose all L2 transactions lists.
 	for i, txs := range txLists {
 		if i >= int(p.MaxProposedTxListsPerEpoch) {
@@ -307,14 +309,25 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 			return fmt.Errorf("failed to encode transactions: %w", err)
 		}
 
-		if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len())); err != nil {
-			return fmt.Errorf("failed to send TaikoL1.proposeBlock transactions: %w", err)
+		nonce, err := p.rpc.L1.PendingNonceAt(ctx, p.proposerAddress)
+		if err != nil {
+			return fmt.Errorf("failed to get proposer nonce: %w", err)
 		}
 
-		p.lastProposedAt = time.Now()
+		g.Go(func() error {
+			if err := p.ProposeTxList(ctx, txListBytes, uint(txs.Len())); err != nil {
+				return err
+			}
+			p.lastProposedAt = time.Now()
+			return nil
+		})
+
+		if err := p.rpc.WaitL1NewPendingTransaction(ctx, p.proposerAddress, nonce); err != nil {
+			log.Error("Failed to wait for new pending transaction", "error", err)
+		}
 	}
 
-	return nil
+	return g.Wait()
 }
 
 // ProposeTxList proposes the given transactions list to TaikoL1 smart contract.
