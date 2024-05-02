@@ -354,7 +354,7 @@ func (p *Proposer) ProposeTxList(
 		return err
 	}
 
-	receipt, err := p.txmgr.Send(p.ctx, *txCandidate)
+	receipt, err := p.txmgr.Send(ctx, *txCandidate)
 	if err != nil {
 		log.Warn("Failed to send TaikoL1.proposeBlock transaction", "error", encoding.TryParsingCustomError(err))
 		return err
