@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -17,6 +18,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/taikoxyz/taiko-client/bindings"
+	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/blob"
 	"github.com/taikoxyz/taiko-client/driver/state"
@@ -25,6 +27,7 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
+	builder "github.com/taikoxyz/taiko-client/proposer/transaction_builder"
 )
 
 type ProposerTestSuite struct {
@@ -134,6 +137,64 @@ func parseTxs(client *rpc.Client, event *bindings.TaikoL1ClientBlockProposed) (t
 
 	var txs types.Transactions
 	return txs, rlp.DecodeBytes(txListBytes, &txs)
+}
+func (s *ProposerTestSuite) TestProposeTxLists() {
+	p := s.p
+	ctx := p.ctx
+	cfg := s.p.Config
+
+	txBuilder := builder.NewBlobTransactionBuilder(
+		p.rpc,
+		p.L1ProposerPrivKey,
+		p.proverSelector,
+		p.Config.L1BlockBuilderTip,
+		cfg.TaikoL1Address,
+		cfg.L2SuggestedFeeRecipient,
+		cfg.AssignmentHookAddress,
+		cfg.ProposeBlockTxGasLimit,
+		cfg.ExtraData,
+	)
+
+	emptyTxListBytes, err := rlp.EncodeToBytes(types.Transactions{})
+	s.Nil(err)
+	txListsBytes := [][]byte{emptyTxListBytes}
+	txCandidates := make([]txmgr.TxCandidate, len(txListsBytes))
+	for i, txListBytes := range txListsBytes {
+		compressedTxListBytes, err := utils.Compress(txListBytes)
+		if err != nil {
+			log.Warn("Failed to compress transactions list", "index", i, "error", err)
+			break
+		}
+
+		candidate, err := txBuilder.Build(
+			p.ctx,
+			p.tierFees,
+			p.IncludeParentMetaHash,
+			compressedTxListBytes,
+		)
+		if err != nil {
+			log.Warn("Failed to build TaikoL1.proposeBlock transaction", "error", err)
+			break
+		}
+
+		// trigger the error
+		candidate.Blobs = []*eth.Blob{}
+		candidate.GasLimit = 10000000
+
+		txCandidates[i] = *candidate
+	}
+
+	var errors []error
+	for _, txCandidate := range txCandidates {
+		receipt, err := p.txmgr.Send(ctx, txCandidate)
+		s.Nil(err)
+		errors = append(errors, encoding.TryParsingCustomErrorFromReceipt(ctx, p.rpc.L1, p.proposerAddress, receipt))
+	}
+
+	// confirm errors handled
+	for _, err := range errors {
+		s.Equal("L1_BLOB_NOT_AVAILABLE", err.Error())
+	}
 }
 
 func (s *ProposerTestSuite) getLatestProposedTxs(
