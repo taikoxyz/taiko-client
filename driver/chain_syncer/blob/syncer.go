@@ -246,13 +246,13 @@ func (s *Syncer) onBlockProposed(
 	}
 
 	// Decode transactions list.
-	var txlistFetcher txlistFetcher.TxListFetcher
+	var txListFetcher txlistFetcher.TxListFetcher
 	if event.Meta.BlobUsed {
-		txlistFetcher = txlistFetcher.NewBlobTxListFetcher(s.rpc.L1Beacon, s.blobDatasource)
+		txListFetcher = txlistFetcher.NewBlobTxListFetcher(s.rpc.L1Beacon, s.blobDatasource)
 	} else {
-		txlistFetcher = new(txlistFetcher.CalldataFetcher)
+		txListFetcher = new(txlistFetcher.CalldataFetcher)
 	}
-	txListBytes, err := txlistFetcher.Fetch(ctx, tx, &event.Meta)
+	txListBytes, err := txListFetcher.Fetch(ctx, tx, &event.Meta)
 	if err != nil {
 		if errors.Is(err, rpc.ErrBlobInvalid) {
 			log.Info("Invalid blob detected", "blockID", event.BlockId)
