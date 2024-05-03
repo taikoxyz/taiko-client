@@ -265,7 +265,6 @@ func (p *Proposer) fetchPoolContent(filterPoolContent bool) ([]types.Transaction
 	}
 
 	log.Info("Transactions lists count", "count", len(txLists))
-
 	return txLists, nil
 }
 
