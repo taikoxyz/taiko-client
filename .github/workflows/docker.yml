@@ -2,7 +2,7 @@ name: "Push docker image to GAR"
 
 on:
   push:
-    branches: [main]
+    branches: [main,build-cache]
     tags:
       - "v*"
 
@@ -47,3 +47,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
