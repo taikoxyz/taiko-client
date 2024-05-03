@@ -100,7 +100,7 @@ func (s *ETHFeeEOASelector) AssignProver(
 
 	// Deep copy the tierFees slice.
 	for i, fee := range tierFees {
-		fees[i] = encoding.TierFee{Tier: fee.Tier, Fee: fee.Fee}
+		fees[i] = encoding.TierFee{Tier: fee.Tier, Fee: new(big.Int).Set(fee.Fee)}
 	}
 
 	// Iterate over each configured endpoint, and see if someone wants to accept this block.
