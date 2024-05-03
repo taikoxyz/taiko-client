@@ -299,12 +299,14 @@ func (p *Proposer) ProposeOp(ctx context.Context) error {
 
 	g, gCtx := errgroup.WithContext(ctx)
 	// Propose all L2 transactions lists.
-	for _, txs := range txLists[:utils.Min(p.MaxProposedTxListsPerEpoch, uint64(len(txLists)-1))] {
+	for _, txs := range txLists[:utils.Min(p.MaxProposedTxListsPerEpoch, uint64(len(txLists)))-1] {
 		nonce, err := p.rpc.L1.PendingNonceAt(ctx, p.proposerAddress)
 		if err != nil {
 			log.Error("Failed to get proposer nonce", "error", err)
 			break
 		}
+
+		log.Debug("Proposer current pending nonce", "nonce", nonce)
 
 		g.Go(func() error {
 			txListBytes, err := rlp.EncodeToBytes(txs)
