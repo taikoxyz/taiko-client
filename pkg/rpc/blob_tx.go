@@ -122,11 +122,11 @@ func MakeSidecar(data []byte) (*types.BlobTxSidecar, error) {
 
 	sideCar := &types.BlobTxSidecar{Blobs: []kzg4844.Blob{*blob.KZGBlob()}}
 	for _, blob := range sideCar.Blobs {
-		commitment, err := kzg4844.BlobToCommitment(blob)
+		commitment, err := kzg4844.BlobToCommitment(&blob)
 		if err != nil {
 			return nil, err
 		}
-		proof, err := kzg4844.ComputeBlobProof(blob, commitment)
+		proof, err := kzg4844.ComputeBlobProof(&blob, commitment)
 		if err != nil {
 			return nil, err
 		}
