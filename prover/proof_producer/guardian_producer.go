@@ -15,11 +15,12 @@ import (
 // GuardianProofProducer always returns an optimistic (dummy) proof.
 type GuardianProofProducer struct {
 	returnLivenessBond bool
-	DummyProofProducer
+	*SGXProofProducer
 }
 
-func NewGuardianProofProducer(returnLivenessBond bool) *GuardianProofProducer {
+func NewGuardianProofProducer(sgxProofProducer *SGXProofProducer, returnLivenessBond bool) *GuardianProofProducer {
 	return &GuardianProofProducer{
+		SGXProofProducer:   sgxProofProducer,
 		returnLivenessBond: returnLivenessBond,
 	}
 }
@@ -49,6 +50,12 @@ func (g *GuardianProofProducer) RequestProof(
 			Opts:    opts,
 			Tier:    g.Tier(),
 		}, nil
+	}
+
+	// Each guardian prover should check the block hash with raiko at first,
+	// before submitting the guardian proof.
+	if _, err := g.SGXProofProducer.requestProof(opts); err != nil {
+		return nil, err
 	}
 
 	return g.DummyProofProducer.RequestProof(opts, blockID, meta, header, g.Tier())

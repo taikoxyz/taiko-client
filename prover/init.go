@@ -113,7 +113,13 @@ func (p *Prover) initProofSubmitters(
 				Dummy:             p.cfg.Dummy,
 			}
 		case encoding.TierGuardianID:
-			producer = proofProducer.NewGuardianProofProducer(p.cfg.EnableLivenessBondProof)
+			producer = proofProducer.NewGuardianProofProducer(&proofProducer.SGXProofProducer{
+				RaikoHostEndpoint: p.cfg.RaikoHostEndpoint,
+				L1Endpoint:        p.cfg.RaikoL1Endpoint,
+				L1BeaconEndpoint:  p.cfg.RaikoL1BeaconEndpoint,
+				L2Endpoint:        p.cfg.RaikoL2Endpoint,
+				Dummy:             p.cfg.Dummy,
+			}, p.cfg.EnableLivenessBondProof)
 		default:
 			return fmt.Errorf("unsupported tier: %d", tier.ID)
 		}
