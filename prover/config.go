@@ -118,11 +118,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		}
 	}
 
-	// If we are not running a guardian prover, a raiko host endpoint is required.
-	if !c.IsSet(flags.GuardianProver.Name) && !c.IsSet(flags.RaikoHostEndpoint.Name) {
-		return nil, errors.New("raiko host not provided")
-	}
-
 	var (
 		raikoL1Endpoint       = c.String(flags.RaikoL1Endpoint.Name)
 		raikoL1BeaconEndpoint = c.String(flags.RaikoL1BeaconEndpoint.Name)

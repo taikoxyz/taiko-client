@@ -21,12 +21,18 @@ import (
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 )
 
+const (
+	ProofTypeSgx = "sgx"
+	ProofTypeCPU = "native"
+)
+
 // SGXProofProducer generates a SGX proof for the given block.
 type SGXProofProducer struct {
 	RaikoHostEndpoint string // a proverd RPC endpoint
 	L1Endpoint        string // a L1 node RPC endpoint
 	L1BeaconEndpoint  string // a L1 beacon node RPC endpoint
 	L2Endpoint        string // a L2 execution engine's RPC endpoint
+	ProofType         string // Proof type
 	Dummy             bool
 	DummyProofProducer
 }
@@ -161,7 +167,7 @@ func (s *SGXProofProducer) requestProof(opts *ProofRequestOptions) (*RaikoHostOu
 		ID:      common.Big1,
 		Method:  "proof",
 		Params: []*SGXRequestProofBodyParam{{
-			Type:        "sgx",
+			Type:        s.ProofType,
 			Block:       opts.BlockID,
 			L2RPC:       s.L2Endpoint,
 			L1RPC:       s.L1Endpoint,
