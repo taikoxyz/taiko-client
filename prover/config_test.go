@@ -85,7 +85,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.MinSgxTierFee.Name, fmt.Sprint(minTierFee),
 		"--" + flags.ProverCapacity.Name, "8",
 		"--" + flags.GuardianProverMajority.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
-		"--" + flags.GuardianProverMinority.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
+		"--" + flags.GuardianProverMinority.Name, os.Getenv("GUARDIAN_PROVER_MINORITY_ADDRESS"),
 		"--" + flags.AssignmentHookAddress.Name, os.Getenv("ASSIGNMENT_HOOK_ADDRESS"),
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.ProveUnassignedBlocks.Name,

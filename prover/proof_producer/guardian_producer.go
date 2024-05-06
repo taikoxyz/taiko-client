@@ -18,8 +18,20 @@ type GuardianProofProducer struct {
 	DummyProofProducer
 }
 
+// MinorityGuardianProofProducer always returns an optimistic (dummy) proof.
+type MinorityGuardianProofProducer struct {
+	returnLivenessBond bool
+	DummyProofProducer
+}
+
 func NewGuardianProofProducer(returnLivenessBond bool) *GuardianProofProducer {
 	return &GuardianProofProducer{
+		returnLivenessBond: returnLivenessBond,
+	}
+}
+
+func NewMinorityGuardianProofProducer(returnLivenessBond bool) *MinorityGuardianProofProducer {
+	return &MinorityGuardianProofProducer{
 		returnLivenessBond: returnLivenessBond,
 	}
 }
@@ -54,7 +66,41 @@ func (g *GuardianProofProducer) RequestProof(
 	return g.DummyProofProducer.RequestProof(opts, blockID, meta, header, g.Tier())
 }
 
+func (m *MinorityGuardianProofProducer) RequestProof(
+	_ context.Context,
+	opts *ProofRequestOptions,
+	blockID *big.Int,
+	meta *bindings.TaikoDataBlockMetadata,
+	header *types.Header,
+) (*ProofWithHeader, error) {
+	log.Info(
+		"Request guardian proof",
+		"blockID", blockID,
+		"coinbase", meta.Coinbase,
+		"height", header.Number,
+		"hash", header.Hash(),
+	)
+
+	if m.returnLivenessBond {
+		return &ProofWithHeader{
+			BlockID: blockID,
+			Meta:    meta,
+			Header:  header,
+			Proof:   crypto.Keccak256([]byte("RETURN_LIVENESS_BOND")),
+			Opts:    opts,
+			Tier:    m.Tier(),
+		}, nil
+	}
+
+	return m.DummyProofProducer.RequestProof(opts, blockID, meta, header, m.Tier())
+}
+
 // Tier implements the ProofProducer interface.
 func (g *GuardianProofProducer) Tier() uint16 {
 	return encoding.TierGuardianMajorityID
+}
+
+// Tier returns TierGuardianMinorityID
+func (m *MinorityGuardianProofProducer) Tier() uint16 {
+	return encoding.TierGuardianMinorityID
 }
