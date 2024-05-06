@@ -724,3 +724,33 @@ func (c *Client) GetTaikoDataSlotBByNumber(ctx context.Context, number uint64) (
 
 	return nil, fmt.Errorf("failed to get state variables by block number %d", number)
 }
+
+// WaitL1NewPendingTransaction waits until the L1 account has a new pending transaction.
+func (c *Client) WaitL1NewPendingTransaction(
+	ctx context.Context,
+	address common.Address,
+	oldPendingNonce uint64,
+) error {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	ticker := time.NewTicker(rpcPollingInterval)
+	defer ticker.Stop()
+
+	for ; true; <-ticker.C {
+		if ctxWithTimeout.Err() != nil {
+			return ctxWithTimeout.Err()
+		}
+
+		nonce, err := c.L1.PendingNonceAt(ctxWithTimeout, address)
+		if err != nil {
+			return err
+		}
+
+		if nonce != oldPendingNonce {
+			break
+		}
+	}
+
+	return nil
+}

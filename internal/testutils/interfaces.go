@@ -13,5 +13,9 @@ type BlobSyncer interface {
 type Proposer interface {
 	utils.SubcommandApplication
 	ProposeOp(ctx context.Context) error
-	ProposeTxLists(ctx context.Context, txListsBytes [][]byte) []error
+	ProposeTxList(
+		ctx context.Context,
+		txListBytes []byte,
+		txNum uint,
+	) error
 }
