@@ -64,6 +64,8 @@ jobs:
       - uses: pnpm/action-setup@v2
         name: Install pnpm
         id: pnpm-install
+        with:
+          run_install: false
 
       - name: Install protocol dependencies
         working-directory: ${{ env.TAIKO_MONO_DIR }}
