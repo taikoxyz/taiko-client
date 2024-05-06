@@ -193,7 +193,7 @@ func (p *Prover) initL1Current(startingBlockID *big.Int) error {
 }
 
 // initEventHandlers initialize all event handlers which will be used by the current prover.
-func (p *Prover) initEventHandlers() {
+func (p *Prover) initEventHandlers() error {
 	// ------- BlockProposed -------
 	opts := &handler.NewBlockProposedEventHandlerOps{
 		SharedState:           p.sharedState,
@@ -240,6 +240,13 @@ func (p *Prover) initEventHandlers() {
 		p.proofContestCh,
 		p.cfg.ContesterMode,
 	)
+
 	// ------- BlockVerified -------
-	p.blockVerifiedHandler = new(handler.BlockVerifiedEventHandler)
+	guardianProverAddress, err := p.rpc.GetGuardianProverAddress(p.ctx)
+	if err != nil {
+		return err
+	}
+	p.blockVerifiedHandler = handler.NewBlockVerifiedEventHandler(guardianProverAddress)
+
+	return nil
 }

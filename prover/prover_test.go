@@ -234,14 +234,14 @@ func (s *ProverTestSuite) TestOnBlockVerified() {
 func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.T().Skip()
 	s.p.cfg.ContesterMode = false
-	s.p.initEventHandlers()
+	s.Nil(s.p.initEventHandlers())
 	e := s.ProposeAndInsertValidBlock(s.proposer, s.d.ChainSyncer().BlobSyncer())
 	s.Nil(s.p.transitionProvedHandler.Handle(context.Background(), &bindings.TaikoL1ClientTransitionProved{
 		BlockId: e.BlockId,
 		Tier:    e.Meta.MinTier,
 	}))
 	s.p.cfg.ContesterMode = true
-	s.p.initEventHandlers()
+	s.Nil(s.p.initEventHandlers())
 
 	// Submit a wrong proof at first.
 	sink := make(chan *bindings.TaikoL1ClientTransitionProved)
@@ -284,7 +284,7 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 		contesterKey,
 	))
 	s.p.cfg.ContesterMode = true
-	s.p.initEventHandlers()
+	s.Nil(s.p.initEventHandlers())
 
 	s.Greater(header.Number.Uint64(), uint64(0))
 	s.Nil(s.p.transitionProvedHandler.Handle(context.Background(), event))
