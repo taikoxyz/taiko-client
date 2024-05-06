@@ -119,7 +119,7 @@ func (p *Prover) initProofSubmitters(
 				L1Endpoint:        p.cfg.RaikoL1Endpoint,
 				L1BeaconEndpoint:  p.cfg.RaikoL1BeaconEndpoint,
 				L2Endpoint:        p.cfg.RaikoL2Endpoint,
-				ProofType:         proofProducer.ProofTypeCpu,
+				ProofType:         proofProducer.ProofTypeCPU,
 				Dummy:             p.cfg.Dummy,
 			}, p.cfg.EnableLivenessBondProof)
 		default:

@@ -23,7 +23,7 @@ import (
 
 const (
 	ProofTypeSgx = "sgx"
-	ProofTypeCpu = "native"
+	ProofTypeCPU = "native"
 )
 
 // SGXProofProducer generates a SGX proof for the given block.
