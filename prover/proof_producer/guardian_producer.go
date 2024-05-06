@@ -53,7 +53,8 @@ func (g *GuardianProofProducer) RequestProof(
 	}
 
 	// Each guardian prover should check the block hash with raiko at first,
-	// before submitting the guardian proof.
+	// before submitting the guardian proof, if raiko can return a proof without
+	// any error, which means the block hash is valid.
 	if _, err := g.SGXProofProducer.requestProof(opts); err != nil {
 		return nil, err
 	}
