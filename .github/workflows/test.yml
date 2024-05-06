@@ -36,6 +36,12 @@ jobs:
         with:
           access_token: ${{ github.token }}
 
+      - uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_KEY }}
+          name: id_rsa
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+
       - uses: actions/checkout@v3
         with:
           repository: taikoxyz/taiko-client
@@ -59,7 +65,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 20
 
       - uses: pnpm/action-setup@v2
         name: Install pnpm
@@ -85,6 +91,8 @@ jobs:
       - name: Install protocol dependencies
         working-directory: ${{ env.TAIKO_MONO_DIR }}
         run: cd ./packages/protocol && pnpm install
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Test
         working-directory: ${{ env.CLIENT_DIR }}
