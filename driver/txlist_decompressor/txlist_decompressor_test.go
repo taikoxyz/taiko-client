@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
+
 	"github.com/taikoxyz/taiko-client/internal/utils"
 )
 
