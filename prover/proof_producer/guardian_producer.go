@@ -27,7 +27,7 @@ func NewGuardianProofProducer(sgxProofProducer *SGXProofProducer, returnLiveness
 
 // RequestProof implements the ProofProducer interface.
 func (g *GuardianProofProducer) RequestProof(
-	_ context.Context,
+	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,
@@ -55,7 +55,7 @@ func (g *GuardianProofProducer) RequestProof(
 	// Each guardian prover should check the block hash with raiko at first,
 	// before submitting the guardian proof, if raiko can return a proof without
 	// any error, which means the block hash is valid.
-	if _, err := g.SGXProofProducer.requestProof(opts); err != nil {
+	if _, err := g.SGXProofProducer.RequestProof(ctx, opts, blockID, meta, header); err != nil {
 		return nil, err
 	}
 
