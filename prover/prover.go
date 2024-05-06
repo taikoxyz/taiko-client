@@ -212,7 +212,9 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 
 	// Initialize event handlers.
-	p.initEventHandlers()
+	if err := p.initEventHandlers(); err != nil {
+		return err
+	}
 
 	return nil
 }

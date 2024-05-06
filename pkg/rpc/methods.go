@@ -725,6 +725,14 @@ func (c *Client) GetTaikoDataSlotBByNumber(ctx context.Context, number uint64) (
 	return nil, fmt.Errorf("failed to get state variables by block number %d", number)
 }
 
+// GetGuardianProverAddress fetches the guardian prover address from the protocol.
+func (c *Client) GetGuardianProverAddress(ctx context.Context) (common.Address, error) {
+	ctxWithTimeout, cancel := ctxWithTimeoutOrDefault(ctx, defaultTimeout)
+	defer cancel()
+
+	return c.TaikoL1.Resolve0(&bind.CallOpts{Context: ctxWithTimeout}, StringToBytes32("tier_guardian"), false)
+}
+
 // WaitL1NewPendingTransaction waits until the L1 account has a new pending transaction.
 func (c *Client) WaitL1NewPendingTransaction(
 	ctx context.Context,
