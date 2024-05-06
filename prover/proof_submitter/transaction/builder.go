@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
@@ -16,6 +17,7 @@ import (
 
 var (
 	ErrUnretryableSubmission = errors.New("unretryable submission error")
+	ZeroAddress              common.Address
 )
 
 // TxBuilder will build a transaction with the given nonce.
@@ -78,8 +80,10 @@ func (a *ProveBlockTxBuilder) Build(
 		} else {
 			if tier > encoding.TierGuardianMinorityID {
 				to = a.majorityGuardianProverAddress
-			} else {
+			} else if tier == encoding.TierGuardianMinorityID && a.minorityGuardianProverAddress != ZeroAddress {
 				to = a.minorityGuardianProverAddress
+			} else {
+				return nil, fmt.Errorf("tier %d need set minorityGuardianProverAddress", tier)
 			}
 			if data, err = encoding.GuardianProverABI.Pack("approve", *meta, *transition, *tierProof); err != nil {
 				if isSubmitProofTxErrorRetryable(err, blockID) {

@@ -199,8 +199,10 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 			return fmt.Errorf("failed to get MinGuardians from majority guardian prover contract: %w", err)
 		}
 
-		if _, err := p.rpc.MinorityGuardianProver.MinGuardians(&bind.CallOpts{Context: ctx}); err != nil {
-			return fmt.Errorf("failed to get MinGuardians from minority guardian prover contract: %w", err)
+		if p.rpc.MinorityGuardianProver != nil {
+			if _, err := p.rpc.MinorityGuardianProver.MinGuardians(&bind.CallOpts{Context: ctx}); err != nil {
+				return fmt.Errorf("failed to get MinGuardians from minority guardian prover contract: %w", err)
+			}
 		}
 
 		p.guardianProverHeartbeater = guardianProverHeartbeater.New(
@@ -469,8 +471,7 @@ func (p *Prover) getSubmitterByTier(tier uint16) proofSubmitter.Submitter {
 
 // IsGuardianProver returns true if the current prover is a guardian prover.
 func (p *Prover) IsGuardianProver() bool {
-	return p.cfg.GuardianProverMajorityAddress != common.Address{} &&
-		p.cfg.GuardianProverMinorityAddress != common.Address{}
+	return p.cfg.GuardianProverMajorityAddress != common.Address{}
 }
 
 // ProverAddress returns the current prover account address.
