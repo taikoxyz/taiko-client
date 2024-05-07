@@ -87,7 +87,7 @@ func (s *ProposerTestSuite) SetupTest() {
 		ExtraData:                  "test",
 		L1BlockBuilderTip:          common.Big0,
 		BlobAllowed:                true,
-		ProposeBlockTxGasLimit:     10000000,
+		ProposeBlockTxGasLimit:     10_000_000,
 		TxmgrConfigs: &txmgr.CLIConfig{
 			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
 			NumConfirmations:          0,
