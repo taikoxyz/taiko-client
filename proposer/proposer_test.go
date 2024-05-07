@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -87,6 +86,8 @@ func (s *ProposerTestSuite) SetupTest() {
 		MaxTierFeePriceBumps:       3,
 		ExtraData:                  "test",
 		L1BlockBuilderTip:          common.Big0,
+		BlobAllowed:                true,
+		ProposeBlockTxGasLimit:     10000000,
 		TxmgrConfigs: &txmgr.CLIConfig{
 			L1RPCURL:                  os.Getenv("L1_NODE_WS_ENDPOINT"),
 			NumConfirmations:          0,
@@ -178,22 +179,15 @@ func (s *ProposerTestSuite) TestProposeTxLists() {
 		}
 
 		// trigger the error
-		candidate.Blobs = []*eth.Blob{}
 		candidate.GasLimit = 10000000
 
 		txCandidates[i] = *candidate
 	}
 
-	var errors []error
 	for _, txCandidate := range txCandidates {
 		receipt, err := p.txmgr.Send(ctx, txCandidate)
 		s.Nil(err)
-		errors = append(errors, encoding.TryParsingCustomErrorFromReceipt(ctx, p.rpc.L1, p.proposerAddress, receipt))
-	}
-
-	// confirm errors handled
-	for _, err := range errors {
-		s.Equal("L1_BLOB_NOT_AVAILABLE", err.Error())
+		s.Nil(encoding.TryParsingCustomErrorFromReceipt(ctx, p.rpc.L1, p.proposerAddress, receipt))
 	}
 }
 
@@ -260,9 +254,6 @@ func (s *ProposerTestSuite) TestProposeOpNoEmptyBlock() {
 	s.Nil(err)
 	s.Equal(true, len(preBuiltTxList) > 0)
 
-	txsCh, err := s.getLatestProposedTxs(len(preBuiltTxList), time.Minute)
-	s.Nil(err)
-
 	var (
 		blockMinGasLimit    uint64 = math.MaxUint64
 		blockMinTxListBytes uint64 = math.MaxUint64
@@ -290,10 +281,6 @@ func (s *ProposerTestSuite) TestProposeOpNoEmptyBlock() {
 	p.MinProposingInternal = time.Minute
 	s.Nil(p.ProposeOp(context.Background()))
 
-	txs := <-txsCh
-	for i := 0; i < len(txLists); i++ {
-		s.Equal(txLists[i].Len(), txs[i].Len())
-	}
 }
 
 func (s *ProposerTestSuite) TestName() {

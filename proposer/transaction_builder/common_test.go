@@ -64,7 +64,7 @@ func (s *TransactionBuilderTestSuite) SetupTest() {
 		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		common.HexToAddress(os.Getenv("TAIKO_L2_ADDRESS")),
 		common.HexToAddress(os.Getenv("ASSIGNMENT_HOOK_ADDRESS")),
-		0,
+		10000000,
 		"test",
 	)
 }
