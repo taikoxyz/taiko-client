@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
 	"github.com/taikoxyz/taiko-client/internal/metrics"
 	"github.com/taikoxyz/taiko-client/pkg/rpc"
 	validator "github.com/taikoxyz/taiko-client/prover/anchor_tx_validator"
@@ -170,7 +169,7 @@ func (s *ProofSubmitter) SubmitProof(
 				Tier: proofWithHeader.Tier,
 				Data: proofWithHeader.Proof,
 			},
-			proofWithHeader.Tier == encoding.TierGuardianID,
+			proofWithHeader.Tier,
 		),
 	); err != nil {
 		if err.Error() == transaction.ErrUnretryableSubmission.Error() {

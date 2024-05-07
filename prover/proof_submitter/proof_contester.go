@@ -118,7 +118,7 @@ func (c *ProofContester) SubmitContest(
 				Tier: transition.Tier,
 				Data: []byte{},
 			},
-			false,
+			tier,
 		),
 	)
 }

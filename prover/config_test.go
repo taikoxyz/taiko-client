@@ -84,7 +84,8 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.MinOptimisticTierFee.Name, fmt.Sprint(minTierFee),
 		"--" + flags.MinSgxTierFee.Name, fmt.Sprint(minTierFee),
 		"--" + flags.ProverCapacity.Name, "8",
-		"--" + flags.GuardianProver.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
+		"--" + flags.GuardianProverMajority.Name, os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS"),
+		"--" + flags.GuardianProverMinority.Name, os.Getenv("GUARDIAN_PROVER_MINORITY_ADDRESS"),
 		"--" + flags.AssignmentHookAddress.Name, os.Getenv("ASSIGNMENT_HOOK_ADDRESS"),
 		"--" + flags.Graffiti.Name, "",
 		"--" + flags.ProveUnassignedBlocks.Name,
@@ -92,6 +93,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.Allowance.Name, fmt.Sprint(allowance),
 		"--" + flags.L1NodeVersion.Name, l1NodeVersion,
 		"--" + flags.L2NodeVersion.Name, l2NodeVersion,
+		"--" + flags.RaikoHostEndpoint.Name, "https://dummy.raiko.xyz",
 	}))
 }
 
@@ -117,7 +119,8 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.L1ProverPrivKey.Name},
 		&cli.Uint64Flag{Name: flags.StartingBlockID.Name},
 		&cli.BoolFlag{Name: flags.Dummy.Name},
-		&cli.StringFlag{Name: flags.GuardianProver.Name},
+		&cli.StringFlag{Name: flags.GuardianProverMajority.Name},
+		&cli.StringFlag{Name: flags.GuardianProverMinority.Name},
 		&cli.StringFlag{Name: flags.Graffiti.Name},
 		&cli.BoolFlag{Name: flags.ProveUnassignedBlocks.Name},
 		&cli.DurationFlag{Name: flags.RPCTimeout.Name},
@@ -130,6 +133,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.ContesterMode.Name},
 		&cli.StringFlag{Name: flags.L1NodeVersion.Name},
 		&cli.StringFlag{Name: flags.L2NodeVersion.Name},
+		&cli.StringFlag{Name: flags.RaikoHostEndpoint.Name},
 	}
 	app.Flags = append(app.Flags, flags.TxmgrFlags...)
 	app.Action = func(ctx *cli.Context) error {

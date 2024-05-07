@@ -9,19 +9,24 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/taikoxyz/taiko-client/bindings"
-	"github.com/taikoxyz/taiko-client/bindings/encoding"
 )
 
 // GuardianProofProducer always returns an optimistic (dummy) proof.
 type GuardianProofProducer struct {
 	returnLivenessBond bool
+	tier               uint16
 	*SGXProofProducer
 }
 
-func NewGuardianProofProducer(sgxProofProducer *SGXProofProducer, returnLivenessBond bool) *GuardianProofProducer {
+func NewGuardianProofProducer(
+	sgxProofProducer *SGXProofProducer,
+	tier uint16,
+	returnLivenessBond bool,
+) *GuardianProofProducer {
 	return &GuardianProofProducer{
 		SGXProofProducer:   sgxProofProducer,
 		returnLivenessBond: returnLivenessBond,
+		tier:               tier,
 	}
 }
 
@@ -48,7 +53,7 @@ func (g *GuardianProofProducer) RequestProof(
 			Header:  header,
 			Proof:   crypto.Keccak256([]byte("RETURN_LIVENESS_BOND")),
 			Opts:    opts,
-			Tier:    g.Tier(),
+			Tier:    g.tier,
 		}, nil
 	}
 
@@ -64,5 +69,5 @@ func (g *GuardianProofProducer) RequestProof(
 
 // Tier implements the ProofProducer interface.
 func (g *GuardianProofProducer) Tier() uint16 {
-	return encoding.TierGuardianID
+	return g.tier
 }

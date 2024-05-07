@@ -113,7 +113,7 @@ func (p *Prover) initProofSubmitters(
 				ProofType:         proofProducer.ProofTypeSgx,
 				Dummy:             p.cfg.Dummy,
 			}
-		case encoding.TierGuardianID:
+		case encoding.TierGuardianMinorityID:
 			producer = proofProducer.NewGuardianProofProducer(&proofProducer.SGXProofProducer{
 				RaikoHostEndpoint: p.cfg.RaikoHostEndpoint,
 				L1Endpoint:        p.cfg.RaikoL1Endpoint,
@@ -121,7 +121,16 @@ func (p *Prover) initProofSubmitters(
 				L2Endpoint:        p.cfg.RaikoL2Endpoint,
 				ProofType:         proofProducer.ProofTypeCPU,
 				Dummy:             p.cfg.Dummy,
-			}, p.cfg.EnableLivenessBondProof)
+			}, encoding.TierGuardianMinorityID, p.cfg.EnableLivenessBondProof)
+		case encoding.TierGuardianMajorityID:
+			producer = proofProducer.NewGuardianProofProducer(&proofProducer.SGXProofProducer{
+				RaikoHostEndpoint: p.cfg.RaikoHostEndpoint,
+				L1Endpoint:        p.cfg.RaikoL1Endpoint,
+				L1BeaconEndpoint:  p.cfg.RaikoL1BeaconEndpoint,
+				L2Endpoint:        p.cfg.RaikoL2Endpoint,
+				ProofType:         proofProducer.ProofTypeCPU,
+				Dummy:             p.cfg.Dummy,
+			}, encoding.TierGuardianMajorityID, p.cfg.EnableLivenessBondProof)
 		default:
 			return fmt.Errorf("unsupported tier: %d", tier.ID)
 		}

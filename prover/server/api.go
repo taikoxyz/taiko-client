@@ -148,7 +148,11 @@ func (s *ProverServer) CreateAssignment(c echo.Context) error {
 
 	// 4. Check if the proof fee meets prover's minimum requirement for each tier.
 	for _, tier := range req.TierFees {
-		if tier.Tier == encoding.TierGuardianID {
+		if tier.Tier == encoding.TierGuardianMajorityID {
+			continue
+		}
+
+		if tier.Tier == encoding.TierGuardianMinorityID {
 			continue
 		}
 

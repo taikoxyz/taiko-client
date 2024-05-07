@@ -20,7 +20,7 @@ type ProverEventHandlerTestSuite struct {
 func (s *ProverEventHandlerTestSuite) TestGetProvingWindowNotFound() {
 	_, err := getProvingWindow(&bindings.TaikoL1ClientBlockProposed{
 		Meta: bindings.TaikoDataBlockMetadata{
-			MinTier: encoding.TierGuardianID + 1,
+			MinTier: encoding.TierGuardianMajorityID + 1,
 		},
 	}, []*rpc.TierProviderTierWithID{})
 	s.ErrorIs(err, errTierNotFound)

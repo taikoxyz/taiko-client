@@ -27,27 +27,29 @@ type Client struct {
 	// Beacon clients
 	L1Beacon *BeaconClient
 	// Protocol contracts clients
-	TaikoL1        *bindings.TaikoL1Client
-	TaikoL2        *bindings.TaikoL2Client
-	TaikoToken     *bindings.TaikoToken
-	GuardianProver *bindings.GuardianProver
+	TaikoL1                *bindings.TaikoL1Client
+	TaikoL2                *bindings.TaikoL2Client
+	TaikoToken             *bindings.TaikoToken
+	GuardianProverMajority *bindings.GuardianProver
+	GuardianProverMinority *bindings.GuardianProver
 }
 
 // ClientConfig contains all configs which will be used to initializing an
 // RPC client. If not providing L2EngineEndpoint or JwtSecret, then the L2Engine client
 // won't be initialized.
 type ClientConfig struct {
-	L1Endpoint            string
-	L2Endpoint            string
-	L1BeaconEndpoint      string
-	L2CheckPoint          string
-	TaikoL1Address        common.Address
-	TaikoL2Address        common.Address
-	TaikoTokenAddress     common.Address
-	GuardianProverAddress common.Address
-	L2EngineEndpoint      string
-	JwtSecret             string
-	Timeout               time.Duration
+	L1Endpoint                    string
+	L2Endpoint                    string
+	L1BeaconEndpoint              string
+	L2CheckPoint                  string
+	TaikoL1Address                common.Address
+	TaikoL2Address                common.Address
+	TaikoTokenAddress             common.Address
+	GuardianProverMinorityAddress common.Address
+	GuardianProverMajorityAddress common.Address
+	L2EngineEndpoint              string
+	JwtSecret                     string
+	Timeout                       time.Duration
 }
 
 // NewClient initializes all RPC clients used by Taiko client software.
@@ -110,16 +112,22 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	}
 
 	var (
-		taikoToken     *bindings.TaikoToken
-		guardianProver *bindings.GuardianProver
+		taikoToken             *bindings.TaikoToken
+		guardianProverMajority *bindings.GuardianProver
+		guardianProverMinority *bindings.GuardianProver
 	)
 	if cfg.TaikoTokenAddress.Hex() != ZeroAddress.Hex() {
 		if taikoToken, err = bindings.NewTaikoToken(cfg.TaikoTokenAddress, l1Client); err != nil {
 			return nil, err
 		}
 	}
-	if cfg.GuardianProverAddress.Hex() != ZeroAddress.Hex() {
-		if guardianProver, err = bindings.NewGuardianProver(cfg.GuardianProverAddress, l1Client); err != nil {
+	if cfg.GuardianProverMinorityAddress.Hex() != ZeroAddress.Hex() {
+		if guardianProverMinority, err = bindings.NewGuardianProver(cfg.GuardianProverMinorityAddress, l1Client); err != nil {
+			return nil, err
+		}
+	}
+	if cfg.GuardianProverMajorityAddress.Hex() != ZeroAddress.Hex() {
+		if guardianProverMajority, err = bindings.NewGuardianProver(cfg.GuardianProverMajorityAddress, l1Client); err != nil {
 			return nil, err
 		}
 	}
@@ -135,15 +143,16 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	}
 
 	client := &Client{
-		L1:             l1Client,
-		L1Beacon:       l1BeaconClient,
-		L2:             l2Client,
-		L2CheckPoint:   l2CheckPoint,
-		L2Engine:       l2AuthClient,
-		TaikoL1:        taikoL1,
-		TaikoL2:        taikoL2,
-		TaikoToken:     taikoToken,
-		GuardianProver: guardianProver,
+		L1:                     l1Client,
+		L1Beacon:               l1BeaconClient,
+		L2:                     l2Client,
+		L2CheckPoint:           l2CheckPoint,
+		L2Engine:               l2AuthClient,
+		TaikoL1:                taikoL1,
+		TaikoL2:                taikoL2,
+		TaikoToken:             taikoToken,
+		GuardianProverMajority: guardianProverMajority,
+		GuardianProverMinority: guardianProverMinority,
 	}
 
 	if err := client.ensureGenesisMatched(ctxWithTimeout); err != nil {

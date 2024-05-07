@@ -105,13 +105,14 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 
 	// Clients
 	if p.rpc, err = rpc.NewClient(p.ctx, &rpc.ClientConfig{
-		L1Endpoint:            cfg.L1WsEndpoint,
-		L2Endpoint:            cfg.L2WsEndpoint,
-		TaikoL1Address:        cfg.TaikoL1Address,
-		TaikoL2Address:        cfg.TaikoL2Address,
-		TaikoTokenAddress:     cfg.TaikoTokenAddress,
-		GuardianProverAddress: cfg.GuardianProverAddress,
-		Timeout:               cfg.RPCTimeout,
+		L1Endpoint:                    cfg.L1WsEndpoint,
+		L2Endpoint:                    cfg.L2WsEndpoint,
+		TaikoL1Address:                cfg.TaikoL1Address,
+		TaikoL2Address:                cfg.TaikoL2Address,
+		TaikoTokenAddress:             cfg.TaikoTokenAddress,
+		GuardianProverMinorityAddress: cfg.GuardianProverMinorityAddress,
+		GuardianProverMajorityAddress: cfg.GuardianProverMajorityAddress,
+		Timeout:                       cfg.RPCTimeout,
 	}); err != nil {
 		return err
 	}
@@ -143,7 +144,11 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	}
 	p.sharedState.SetTiers(tiers)
 
-	txBuilder := transaction.NewProveBlockTxBuilder(p.rpc, p.cfg.TaikoL1Address, p.cfg.GuardianProverAddress)
+	txBuilder := transaction.NewProveBlockTxBuilder(
+		p.rpc, p.cfg.TaikoL1Address,
+		p.cfg.GuardianProverMajorityAddress,
+		p.cfg.GuardianProverMinorityAddress,
+	)
 
 	if p.txmgr, err = txmgr.NewSimpleTxManager(
 		"prover",
@@ -190,8 +195,14 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	// Guardian prover heartbeat sender
 	if p.IsGuardianProver() && p.cfg.GuardianProverHealthCheckServerEndpoint != nil {
 		// Check guardian prover contract address is correct.
-		if _, err := p.rpc.GuardianProver.MinGuardians(&bind.CallOpts{Context: ctx}); err != nil {
-			return fmt.Errorf("failed to get MinGuardians from guardian prover contract: %w", err)
+		if _, err := p.rpc.GuardianProverMajority.MinGuardians(&bind.CallOpts{Context: ctx}); err != nil {
+			return fmt.Errorf("failed to get MinGuardians from majority guardian prover contract: %w", err)
+		}
+
+		if p.rpc.GuardianProverMinority != nil {
+			if _, err := p.rpc.GuardianProverMinority.MinGuardians(&bind.CallOpts{Context: ctx}); err != nil {
+				return fmt.Errorf("failed to get MinGuardians from minority guardian prover contract: %w", err)
+			}
 		}
 
 		p.guardianProverHeartbeater = guardianProverHeartbeater.New(
@@ -378,7 +389,11 @@ func (p *Prover) contestProofOp(req *proofProducer.ContestRequestBody) error {
 // requestProofOp requests a new proof generation operation.
 func (p *Prover) requestProofOp(e *bindings.TaikoL1ClientBlockProposed, minTier uint16) error {
 	if p.IsGuardianProver() {
-		minTier = encoding.TierGuardianID
+		if minTier > encoding.TierGuardianMinorityID {
+			minTier = encoding.TierGuardianMajorityID
+		} else {
+			minTier = encoding.TierGuardianMinorityID
+		}
 	}
 	if submitter := p.selectSubmitter(minTier); submitter != nil {
 		if err := submitter.RequestProof(p.ctx, e); err != nil {
@@ -456,7 +471,7 @@ func (p *Prover) getSubmitterByTier(tier uint16) proofSubmitter.Submitter {
 
 // IsGuardianProver returns true if the current prover is a guardian prover.
 func (p *Prover) IsGuardianProver() bool {
-	return p.cfg.GuardianProverAddress != common.Address{}
+	return p.cfg.GuardianProverMajorityAddress != common.Address{}
 }
 
 // ProverAddress returns the current prover account address.

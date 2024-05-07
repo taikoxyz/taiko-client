@@ -43,8 +43,9 @@ type BlockProposedEventHandler struct {
 	backOffMaxRetrys      uint64
 	contesterMode         bool
 	proveUnassignedBlocks bool
-	tierToOverride        uint16
-	submissionDelay       time.Duration
+	// Guardian prover related.
+	isGuardian      bool
+	submissionDelay time.Duration
 }
 
 // NewBlockProposedEventHandlerOps is the options for creating a new BlockProposedEventHandler.
@@ -79,7 +80,7 @@ func NewBlockProposedEventHandler(opts *NewBlockProposedEventHandlerOps) *BlockP
 		opts.BackOffMaxRetrys,
 		opts.ContesterMode,
 		opts.ProveUnassignedBlocks,
-		0,
+		false,
 		opts.SubmissionDelay,
 	}
 }
@@ -347,8 +348,8 @@ func (h *BlockProposedEventHandler) checkExpirationAndSubmitProof(
 		return err
 	}
 
-	if h.tierToOverride != 0 {
-		tier = h.tierToOverride
+	if h.isGuardian {
+		tier = encoding.TierGuardianMinorityID
 	}
 
 	log.Info(
@@ -388,8 +389,7 @@ func NewBlockProposedEventGuardianHandler(
 	opts *NewBlockProposedGuardianEventHandlerOps,
 ) *BlockProposedGuaridanEventHandler {
 	blockProposedEventHandler := NewBlockProposedEventHandler(opts.NewBlockProposedEventHandlerOps)
-	// For guardian provers, we only send top tier proofs.
-	blockProposedEventHandler.tierToOverride = encoding.TierGuardianID
+	blockProposedEventHandler.isGuardian = true
 
 	return &BlockProposedGuaridanEventHandler{
 		BlockProposedEventHandler: blockProposedEventHandler,

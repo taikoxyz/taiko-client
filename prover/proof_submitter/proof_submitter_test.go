@@ -45,6 +45,7 @@ func (s *ProofSubmitterTestSuite) SetupTest() {
 		s.RPCClient,
 		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 		common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT_ADDRESS")),
+		common.HexToAddress(os.Getenv("GUARDIAN_PROVER_MINORITY_ADDRESS")),
 	)
 
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIVATE_KEY")))
@@ -192,7 +193,7 @@ func (s *ProofSubmitterTestSuite) TestGuardianSubmitProofs() {
 	for _, e := range events {
 		s.Nil(s.submitter.RequestProof(context.Background(), e))
 		proofWithHeader := <-s.proofCh
-		proofWithHeader.Tier = encoding.TierGuardianID
+		proofWithHeader.Tier = encoding.TierGuardianMajorityID
 		s.Nil(s.submitter.SubmitProof(context.Background(), proofWithHeader))
 	}
 }
