@@ -148,7 +148,7 @@ func (s *ProposerTestSuite) TestProposeTxLists() {
 		}
 
 		// trigger the error
-		candidate.GasLimit = 10000000
+		candidate.GasLimit = 10_000_000
 
 		txCandidates[i] = *candidate
 	}
