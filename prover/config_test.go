@@ -93,6 +93,7 @@ func (s *ProverTestSuite) TestNewConfigFromCliContextGuardianProver() {
 		"--" + flags.Allowance.Name, fmt.Sprint(allowance),
 		"--" + flags.L1NodeVersion.Name, l1NodeVersion,
 		"--" + flags.L2NodeVersion.Name, l2NodeVersion,
+		"--" + flags.RaikoHostEndpoint.Name, "https://dummy.raiko.xyz",
 	}))
 }
 
@@ -132,6 +133,7 @@ func (s *ProverTestSuite) SetupApp() *cli.App {
 		&cli.StringFlag{Name: flags.ContesterMode.Name},
 		&cli.StringFlag{Name: flags.L1NodeVersion.Name},
 		&cli.StringFlag{Name: flags.L2NodeVersion.Name},
+		&cli.StringFlag{Name: flags.RaikoHostEndpoint.Name},
 	}
 	app.Flags = append(app.Flags, flags.TxmgrFlags...)
 	app.Action = func(ctx *cli.Context) error {

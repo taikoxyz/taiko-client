@@ -110,12 +110,27 @@ func (p *Prover) initProofSubmitters(
 				L1Endpoint:        p.cfg.RaikoL1Endpoint,
 				L1BeaconEndpoint:  p.cfg.RaikoL1BeaconEndpoint,
 				L2Endpoint:        p.cfg.RaikoL2Endpoint,
+				ProofType:         proofProducer.ProofTypeSgx,
 				Dummy:             p.cfg.Dummy,
 			}
 		case encoding.TierGuardianMinorityID:
-			producer = proofProducer.NewMinorityGuardianProofProducer(p.cfg.EnableLivenessBondProof)
+			producer = proofProducer.NewMinorityGuardianProofProducer(&proofProducer.SGXProofProducer{
+				RaikoHostEndpoint: p.cfg.RaikoHostEndpoint,
+				L1Endpoint:        p.cfg.RaikoL1Endpoint,
+				L1BeaconEndpoint:  p.cfg.RaikoL1BeaconEndpoint,
+				L2Endpoint:        p.cfg.RaikoL2Endpoint,
+				ProofType:         proofProducer.ProofTypeCPU,
+				Dummy:             p.cfg.Dummy,
+			}, p.cfg.EnableLivenessBondProof)
 		case encoding.TierGuardianMajorityID:
-			producer = proofProducer.NewGuardianProofProducer(p.cfg.EnableLivenessBondProof)
+			producer = proofProducer.NewGuardianProofProducer(&proofProducer.SGXProofProducer{
+				RaikoHostEndpoint: p.cfg.RaikoHostEndpoint,
+				L1Endpoint:        p.cfg.RaikoL1Endpoint,
+				L1BeaconEndpoint:  p.cfg.RaikoL1BeaconEndpoint,
+				L2Endpoint:        p.cfg.RaikoL2Endpoint,
+				ProofType:         proofProducer.ProofTypeCPU,
+				Dummy:             p.cfg.Dummy,
+			}, p.cfg.EnableLivenessBondProof)
 		default:
 			return fmt.Errorf("unsupported tier: %d", tier.ID)
 		}

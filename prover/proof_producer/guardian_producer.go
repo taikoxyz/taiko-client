@@ -15,30 +15,35 @@ import (
 // GuardianProofProducer always returns an optimistic (dummy) proof.
 type GuardianProofProducer struct {
 	returnLivenessBond bool
-	DummyProofProducer
+	*SGXProofProducer
 }
 
 // MinorityGuardianProofProducer always returns an optimistic (dummy) proof.
 type MinorityGuardianProofProducer struct {
 	returnLivenessBond bool
-	DummyProofProducer
+	*SGXProofProducer
 }
 
-func NewGuardianProofProducer(returnLivenessBond bool) *GuardianProofProducer {
+func NewGuardianProofProducer(sgxProofProducer *SGXProofProducer, returnLivenessBond bool) *GuardianProofProducer {
 	return &GuardianProofProducer{
+		SGXProofProducer:   sgxProofProducer,
 		returnLivenessBond: returnLivenessBond,
 	}
 }
 
-func NewMinorityGuardianProofProducer(returnLivenessBond bool) *MinorityGuardianProofProducer {
+func NewMinorityGuardianProofProducer(
+	sgxProofProducer *SGXProofProducer,
+	returnLivenessBond bool,
+) *MinorityGuardianProofProducer {
 	return &MinorityGuardianProofProducer{
+		SGXProofProducer:   sgxProofProducer,
 		returnLivenessBond: returnLivenessBond,
 	}
 }
 
 // RequestProof implements the ProofProducer interface.
 func (g *GuardianProofProducer) RequestProof(
-	_ context.Context,
+	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,
@@ -63,11 +68,18 @@ func (g *GuardianProofProducer) RequestProof(
 		}, nil
 	}
 
+	// Each guardian prover should check the block hash with raiko at first,
+	// before submitting the guardian proof, if raiko can return a proof without
+	// any error, which means the block hash is valid.
+	if _, err := g.SGXProofProducer.RequestProof(ctx, opts, blockID, meta, header); err != nil {
+		return nil, err
+	}
+
 	return g.DummyProofProducer.RequestProof(opts, blockID, meta, header, g.Tier())
 }
 
 func (m *MinorityGuardianProofProducer) RequestProof(
-	_ context.Context,
+	ctx context.Context,
 	opts *ProofRequestOptions,
 	blockID *big.Int,
 	meta *bindings.TaikoDataBlockMetadata,
@@ -90,6 +102,10 @@ func (m *MinorityGuardianProofProducer) RequestProof(
 			Opts:    opts,
 			Tier:    m.Tier(),
 		}, nil
+	}
+
+	if _, err := m.SGXProofProducer.RequestProof(ctx, opts, blockID, meta, header); err != nil {
+		return nil, err
 	}
 
 	return m.DummyProofProducer.RequestProof(opts, blockID, meta, header, m.Tier())
