@@ -27,18 +27,18 @@ type TxBuilder func(txOpts *bind.TransactOpts) (*txmgr.TxCandidate, error)
 type ProveBlockTxBuilder struct {
 	rpc                           *rpc.Client
 	taikoL1Address                common.Address
-	majorityGuardianProverAddress common.Address
-	minorityGuardianProverAddress common.Address
+	guardianProverMajorityAddress common.Address
+	guardianProverMinorityAddress common.Address
 }
 
 // NewProveBlockTxBuilder creates a new ProveBlockTxBuilder instance.
 func NewProveBlockTxBuilder(
 	rpc *rpc.Client,
 	taikoL1Address common.Address,
-	majorityGuardianProverAddress common.Address,
-	minorityGuardianProverAddress common.Address,
+	guardianProverMajorityAddress common.Address,
+	guardianProverMinorityAddress common.Address,
 ) *ProveBlockTxBuilder {
-	return &ProveBlockTxBuilder{rpc, taikoL1Address, majorityGuardianProverAddress, minorityGuardianProverAddress}
+	return &ProveBlockTxBuilder{rpc, taikoL1Address, guardianProverMajorityAddress, guardianProverMinorityAddress}
 }
 
 // Build creates a new TaikoL1.ProveBlock transaction with the given nonce.
@@ -79,11 +79,11 @@ func (a *ProveBlockTxBuilder) Build(
 			}
 		} else {
 			if tier > encoding.TierGuardianMinorityID {
-				to = a.majorityGuardianProverAddress
-			} else if tier == encoding.TierGuardianMinorityID && a.minorityGuardianProverAddress != ZeroAddress {
-				to = a.minorityGuardianProverAddress
+				to = a.guardianProverMajorityAddress
+			} else if tier == encoding.TierGuardianMinorityID && a.guardianProverMinorityAddress != ZeroAddress {
+				to = a.guardianProverMinorityAddress
 			} else {
-				return nil, fmt.Errorf("tier %d need set minorityGuardianProverAddress", tier)
+				return nil, fmt.Errorf("tier %d need set guardianProverMinorityAddress", tier)
 			}
 			if data, err = encoding.GuardianProverABI.Pack("approve", *meta, *transition, *tierProof); err != nil {
 				if isSubmitProofTxErrorRetryable(err, blockID) {

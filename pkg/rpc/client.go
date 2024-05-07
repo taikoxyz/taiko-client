@@ -30,8 +30,8 @@ type Client struct {
 	TaikoL1                *bindings.TaikoL1Client
 	TaikoL2                *bindings.TaikoL2Client
 	TaikoToken             *bindings.TaikoToken
-	MajorityGuardianProver *bindings.GuardianProver
-	MinorityGuardianProver *bindings.GuardianProver
+	GuardianProverMajority *bindings.GuardianProver
+	GuardianProverMinority *bindings.GuardianProver
 }
 
 // ClientConfig contains all configs which will be used to initializing an
@@ -113,8 +113,8 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 
 	var (
 		taikoToken             *bindings.TaikoToken
-		majorityGuardianProver *bindings.GuardianProver
-		minorityGuardianProver *bindings.GuardianProver
+		guardianProverMajority *bindings.GuardianProver
+		guardianProverMinority *bindings.GuardianProver
 	)
 	if cfg.TaikoTokenAddress.Hex() != ZeroAddress.Hex() {
 		if taikoToken, err = bindings.NewTaikoToken(cfg.TaikoTokenAddress, l1Client); err != nil {
@@ -122,12 +122,12 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		}
 	}
 	if cfg.GuardianProverMinorityAddress.Hex() != ZeroAddress.Hex() {
-		if minorityGuardianProver, err = bindings.NewGuardianProver(cfg.GuardianProverMinorityAddress, l1Client); err != nil {
+		if guardianProverMinority, err = bindings.NewGuardianProver(cfg.GuardianProverMinorityAddress, l1Client); err != nil {
 			return nil, err
 		}
 	}
 	if cfg.GuardianProverMajorityAddress.Hex() != ZeroAddress.Hex() {
-		if majorityGuardianProver, err = bindings.NewGuardianProver(cfg.GuardianProverMajorityAddress, l1Client); err != nil {
+		if guardianProverMajority, err = bindings.NewGuardianProver(cfg.GuardianProverMajorityAddress, l1Client); err != nil {
 			return nil, err
 		}
 	}
@@ -151,8 +151,8 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		TaikoL1:                taikoL1,
 		TaikoL2:                taikoL2,
 		TaikoToken:             taikoToken,
-		MajorityGuardianProver: majorityGuardianProver,
-		MinorityGuardianProver: minorityGuardianProver,
+		GuardianProverMajority: guardianProverMajority,
+		GuardianProverMinority: guardianProverMinority,
 	}
 
 	if err := client.ensureGenesisMatched(ctxWithTimeout); err != nil {

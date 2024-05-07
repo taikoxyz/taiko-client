@@ -310,11 +310,11 @@ func (s *ProverTestSuite) TestContestWrongBlocks() {
 	s.p.proofSubmitters = nil
 	s.Nil(s.p.initProofSubmitters(s.p.txmgr, txBuilder))
 
-	s.p.rpc.MajorityGuardianProver, err = bindings.NewGuardianProver(s.p.cfg.GuardianProverMajorityAddress, s.p.rpc.L1)
+	s.p.rpc.GuardianProverMajority, err = bindings.NewGuardianProver(s.p.cfg.GuardianProverMajorityAddress, s.p.rpc.L1)
 	s.Nil(err)
 
 	approvedSink := make(chan *bindings.GuardianProverGuardianApproval)
-	approvedSub, err := s.p.rpc.MajorityGuardianProver.WatchGuardianApproval(
+	approvedSub, err := s.p.rpc.GuardianProverMajority.WatchGuardianApproval(
 		nil, approvedSink, []common.Address{}, [](*big.Int){}, []([32]byte){},
 	)
 	s.Nil(err)

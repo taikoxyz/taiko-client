@@ -33,7 +33,7 @@ func TestGuardianProducerRequestProof(t *testing.T) {
 	}
 
 	var (
-		producer = NewGuardianProofProducer(&SGXProofProducer{Dummy: true}, false)
+		producer = NewGuardianProofProducer(&SGXProofProducer{Dummy: true}, encoding.TierGuardianMajorityID, false)
 		blockID  = common.Big32
 	)
 	res, err := producer.RequestProof(
@@ -70,7 +70,7 @@ func TestGuardianProducerRequestProofReturnLivenessBond(t *testing.T) {
 	}
 
 	var (
-		producer = NewGuardianProofProducer(&SGXProofProducer{Dummy: true}, true)
+		producer = NewGuardianProofProducer(&SGXProofProducer{Dummy: true}, encoding.TierGuardianMajorityID, true)
 		blockID  = common.Big32
 	)
 	res, err := producer.RequestProof(
@@ -85,6 +85,81 @@ func TestGuardianProducerRequestProofReturnLivenessBond(t *testing.T) {
 	require.Equal(t, res.BlockID, blockID)
 	require.Equal(t, res.Header, header)
 	require.Equal(t, res.Tier, encoding.TierGuardianMajorityID)
+	require.NotEmpty(t, res.Proof)
+	require.Equal(t, res.Proof, crypto.Keccak256([]byte("RETURN_LIVENESS_BOND")))
+}
+
+func TestMinorityRequestProof(t *testing.T) {
+	header := &types.Header{
+		ParentHash:  randHash(),
+		UncleHash:   randHash(),
+		Coinbase:    common.BytesToAddress(randHash().Bytes()),
+		Root:        randHash(),
+		TxHash:      randHash(),
+		ReceiptHash: randHash(),
+		Difficulty:  common.Big0,
+		Number:      common.Big256,
+		GasLimit:    1024,
+		GasUsed:     1024,
+		Time:        uint64(time.Now().Unix()),
+		Extra:       randHash().Bytes(),
+		MixDigest:   randHash(),
+		Nonce:       types.BlockNonce{},
+	}
+
+	var (
+		producer = NewGuardianProofProducer(&SGXProofProducer{Dummy: true}, encoding.TierGuardianMinorityID, false)
+		blockID  = common.Big32
+	)
+	res, err := producer.RequestProof(
+		context.Background(),
+		&ProofRequestOptions{},
+		blockID,
+		&bindings.TaikoDataBlockMetadata{},
+		header,
+	)
+	require.Nil(t, err)
+
+	require.Equal(t, res.BlockID, blockID)
+	require.Equal(t, res.Header, header)
+	require.Equal(t, res.Tier, encoding.TierGuardianMinorityID)
+	require.NotEmpty(t, res.Proof)
+}
+
+func TestRequestMinorityProofReturnLivenessBond(t *testing.T) {
+	header := &types.Header{
+		ParentHash:  randHash(),
+		UncleHash:   randHash(),
+		Coinbase:    common.BytesToAddress(randHash().Bytes()),
+		Root:        randHash(),
+		TxHash:      randHash(),
+		ReceiptHash: randHash(),
+		Difficulty:  common.Big0,
+		Number:      common.Big256,
+		GasLimit:    1024,
+		GasUsed:     1024,
+		Time:        uint64(time.Now().Unix()),
+		Extra:       randHash().Bytes(),
+		MixDigest:   randHash(),
+		Nonce:       types.BlockNonce{},
+	}
+
+	var (
+		producer = NewGuardianProofProducer(&SGXProofProducer{Dummy: true}, encoding.TierGuardianMinorityID, true)
+		blockID  = common.Big32
+	)
+	res, err := producer.RequestProof(
+		context.Background(),
+		&ProofRequestOptions{},
+		blockID,
+		&bindings.TaikoDataBlockMetadata{},
+		header,
+	)
+	require.Nil(t, err)
+
+	require.Equal(t, res.BlockID, blockID)
+	require.Equal(t, res.Header, header)
+	require.Equal(t, res.Tier, encoding.TierGuardianMinorityID)
 	require.NotEmpty(t, res.Proof)
 	require.Equal(t, res.Proof, crypto.Keccak256([]byte("RETURN_LIVENESS_BOND")))
 }

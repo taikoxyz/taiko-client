@@ -195,12 +195,12 @@ func InitFromConfig(ctx context.Context, p *Prover, cfg *Config) (err error) {
 	// Guardian prover heartbeat sender
 	if p.IsGuardianProver() && p.cfg.GuardianProverHealthCheckServerEndpoint != nil {
 		// Check guardian prover contract address is correct.
-		if _, err := p.rpc.MajorityGuardianProver.MinGuardians(&bind.CallOpts{Context: ctx}); err != nil {
+		if _, err := p.rpc.GuardianProverMajority.MinGuardians(&bind.CallOpts{Context: ctx}); err != nil {
 			return fmt.Errorf("failed to get MinGuardians from majority guardian prover contract: %w", err)
 		}
 
-		if p.rpc.MinorityGuardianProver != nil {
-			if _, err := p.rpc.MinorityGuardianProver.MinGuardians(&bind.CallOpts{Context: ctx}); err != nil {
+		if p.rpc.GuardianProverMinority != nil {
+			if _, err := p.rpc.GuardianProverMinority.MinGuardians(&bind.CallOpts{Context: ctx}); err != nil {
 				return fmt.Errorf("failed to get MinGuardians from minority guardian prover contract: %w", err)
 			}
 		}

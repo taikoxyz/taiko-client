@@ -117,11 +117,6 @@ func NewConfigFromCliContext(c *cli.Context) (*Config, error) {
 		if !c.IsSet(flags.L2NodeVersion.Name) {
 			return nil, errors.New("--prover.l2NodeVersion flag is required if guardian prover is set")
 		}
-
-		// If we are running a guardian prover, a raiko host endpoint is required.
-		if !c.IsSet(flags.RaikoHostEndpoint.Name) {
-			return nil, errors.New("raiko host not provided")
-		}
 	}
 	var (
 		raikoL1Endpoint       = c.String(flags.RaikoL1Endpoint.Name)
