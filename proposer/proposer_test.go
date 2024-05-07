@@ -21,7 +21,6 @@ import (
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/beaconsync"
 	"github.com/taikoxyz/taiko-client/driver/chain_syncer/blob"
 	"github.com/taikoxyz/taiko-client/driver/state"
-	txlistfetcher "github.com/taikoxyz/taiko-client/driver/txlist_fetcher"
 	"github.com/taikoxyz/taiko-client/internal/testutils"
 	"github.com/taikoxyz/taiko-client/internal/utils"
 	"github.com/taikoxyz/taiko-client/pkg/jwt"
@@ -109,36 +108,6 @@ func (s *ProposerTestSuite) SetupTest() {
 	s.cancel = cancel
 }
 
-func parseTxs(client *rpc.Client, event *bindings.TaikoL1ClientBlockProposed) (types.Transactions, error) {
-	tx, err := client.L1.TransactionInBlock(context.Background(), event.Raw.BlockHash, event.Raw.TxIndex)
-	if err != nil {
-		return nil, err
-	}
-
-	// Decode transactions list.
-	var txListDecoder txlistfetcher.TxListFetcher
-	if event.Meta.BlobUsed {
-		txListDecoder = txlistfetcher.NewBlobTxListFetcher(client.L1Beacon, rpc.NewBlobDataSource(
-			context.Background(),
-			client,
-			nil,
-		))
-	} else {
-		txListDecoder = new(txlistfetcher.CalldataFetcher)
-	}
-	txListBytes, err := txListDecoder.Fetch(context.Background(), tx, &event.Meta)
-	if err != nil {
-		return nil, err
-	}
-
-	txListBytes, err = utils.Decompress(txListBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	var txs types.Transactions
-	return txs, rlp.DecodeBytes(txListBytes, &txs)
-}
 func (s *ProposerTestSuite) TestProposeTxLists() {
 	p := s.p
 	ctx := p.ctx
@@ -191,40 +160,6 @@ func (s *ProposerTestSuite) TestProposeTxLists() {
 	}
 }
 
-func (s *ProposerTestSuite) getLatestProposedTxs(
-	n int,
-	timeout time.Duration,
-) (<-chan []types.Transactions, error) {
-	sink := make(chan *bindings.TaikoL1ClientBlockProposed)
-	sub, err := s.p.rpc.TaikoL1.WatchBlockProposed(nil, sink, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var resCh = make(chan []types.Transactions, 1)
-	go func() {
-		defer sub.Unsubscribe()
-
-		txLst := make([]types.Transactions, 0, n)
-		tick := time.After(timeout)
-		for len(txLst) < cap(txLst) {
-			select {
-			case event := <-sink:
-				txs, err := parseTxs(s.RPCClient, event)
-				if err != nil {
-					log.Error("failed to parse txs", "error", err)
-				}
-				txLst = append(txLst, txs)
-			case <-tick:
-				return
-			}
-		}
-		resCh <- txLst
-	}()
-
-	return resCh, nil
-}
-
 func (s *ProposerTestSuite) TestProposeOpNoEmptyBlock() {
 	defer s.Nil(s.s.ProcessL1Blocks(context.Background()))
 
@@ -257,7 +192,6 @@ func (s *ProposerTestSuite) TestProposeOpNoEmptyBlock() {
 	var (
 		blockMinGasLimit    uint64 = math.MaxUint64
 		blockMinTxListBytes uint64 = math.MaxUint64
-		txLists                    = make([]types.Transactions, 0, len(preBuiltTxList))
 	)
 	for _, txs := range preBuiltTxList {
 		if txs.EstimatedGasUsed <= blockMinGasLimit {
@@ -270,7 +204,6 @@ func (s *ProposerTestSuite) TestProposeOpNoEmptyBlock() {
 		} else {
 			break
 		}
-		txLists = append(txLists, txs.TxList)
 	}
 
 	// Start proposer
@@ -280,7 +213,6 @@ func (s *ProposerTestSuite) TestProposeOpNoEmptyBlock() {
 	p.ProposeInterval = time.Second
 	p.MinProposingInternal = time.Minute
 	s.Nil(p.ProposeOp(context.Background()))
-
 }
 
 func (s *ProposerTestSuite) TestName() {
