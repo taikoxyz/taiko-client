@@ -9,6 +9,8 @@ services:
       - "8545"
     entrypoint:
       - anvil
+      - --chain-id
+      - "32301"
       - --host
       - "0.0.0.0"
       - --hardfork
