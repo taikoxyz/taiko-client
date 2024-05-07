@@ -4,7 +4,8 @@ RUN apk update && apk add --no-cache --update gcc musl-dev linux-headers git mak
 
 WORKDIR /taiko-client
 COPY . .
-RUN make build
+RUN --mount=type=cache,target=/root/.cache/go-build,sharing=locked \
+    make build
 
 FROM alpine:latest
 
