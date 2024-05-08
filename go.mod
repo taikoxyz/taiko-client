@@ -228,4 +228,4 @@ require (
 
 replace github.com/ethereum/go-ethereum v1.13.15 => github.com/taikoxyz/taiko-geth v0.0.0-20240504072040-7e1b8b65a3f8
 
-replace github.com/ethereum-optimism/optimism v1.7.0 => github.com/taikoxyz/optimism v0.0.0-20240504104604-6c9729321b29
+replace github.com/ethereum-optimism/optimism v1.7.0 => github.com/taikoxyz/optimism v0.0.0-20240508063202-db34e8c760ea
