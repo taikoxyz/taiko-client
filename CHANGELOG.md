@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.23.0](https://github.com/taikoxyz/taiko-client/compare/v0.22.0...v0.23.0) (2024-05-07)
+
+
+### Features
+
+* **bindings:** bump bindings ([#754](https://github.com/taikoxyz/taiko-client/issues/754)) ([7d39f21](https://github.com/taikoxyz/taiko-client/commit/7d39f21e0ede32929e4b2fcb704221bd3ba77574))
+* **bindings:** bump bindings ([#766](https://github.com/taikoxyz/taiko-client/issues/766)) ([0a52771](https://github.com/taikoxyz/taiko-client/commit/0a5277184090c7c57b20fd0a941d140fd95fa3c3))
+* **bindings:** introduce `TryParsingCustomErrorFromReceipt` ([#755](https://github.com/taikoxyz/taiko-client/issues/755)) ([42af8ee](https://github.com/taikoxyz/taiko-client/commit/42af8ee8a9f4199c1edd48ce43f70f526ff35a9a))
+* **bindings:** update Go contract bindings ([#735](https://github.com/taikoxyz/taiko-client/issues/735)) ([ecf5bbd](https://github.com/taikoxyz/taiko-client/commit/ecf5bbd92d4a72f83edb4d4f53ea504b3aba9f95))
+* **bindings:** update Go contract bindings ([#751](https://github.com/taikoxyz/taiko-client/issues/751)) ([d357a05](https://github.com/taikoxyz/taiko-client/commit/d357a05c3025d22002d9900fa68acf96ce00aca4))
+* **bindings:** update Go contract bindings ([#774](https://github.com/taikoxyz/taiko-client/issues/774)) ([a352b40](https://github.com/taikoxyz/taiko-client/commit/a352b405d5f94248b923cff6de5d8da3d1b16e45))
+* **bindings:** update Go contract bindings ([#785](https://github.com/taikoxyz/taiko-client/issues/785)) ([613c7e4](https://github.com/taikoxyz/taiko-client/commit/613c7e4e692106c92951c9fd72c935c447c4a181))
+* **bindings:** update Go contract bindings ([#791](https://github.com/taikoxyz/taiko-client/issues/791)) ([2d52556](https://github.com/taikoxyz/taiko-client/commit/2d525566e17e7f549deb3d8f540b1117f69a376c))
+* **bindings:** update Go contract bindings ([#804](https://github.com/taikoxyz/taiko-client/issues/804)) ([10b4a35](https://github.com/taikoxyz/taiko-client/commit/10b4a3581af779574f34816369919356b94aced2))
+* **client:** update makefile ([#784](https://github.com/taikoxyz/taiko-client/issues/784)) ([d2e9667](https://github.com/taikoxyz/taiko-client/commit/d2e9667121f4d745526236a56fd958ac7fd7c9c2))
+* **driver:** check `maxBytesPerTxList` for compressed txlist bytes ([#783](https://github.com/taikoxyz/taiko-client/issues/783)) ([b41379e](https://github.com/taikoxyz/taiko-client/commit/b41379e323a1f38089a42c34a9b2f4420b81e4c7))
+* **driver:** do not fetch `GoldenTouchAddress` ([#786](https://github.com/taikoxyz/taiko-client/issues/786)) ([3a01470](https://github.com/taikoxyz/taiko-client/commit/3a0147010c333f5d333ae89710a1cedc2c97a8ec))
+* **driver:** rename `calldataSyncer` to `blobSyncer` ([#738](https://github.com/taikoxyz/taiko-client/issues/738)) ([811db1c](https://github.com/taikoxyz/taiko-client/commit/811db1c9702960ceab6a8c8cf55f57b5455ae698))
+* **driver:** rename a flag ([#760](https://github.com/taikoxyz/taiko-client/issues/760)) ([4c60ce1](https://github.com/taikoxyz/taiko-client/commit/4c60ce13c0eb4eef1df25cc5b6f2011b815cb7ea))
+* **driver:** rename some variables ([#782](https://github.com/taikoxyz/taiko-client/issues/782)) ([d4b1f4c](https://github.com/taikoxyz/taiko-client/commit/d4b1f4c9235b61514af94cd333919e7d34286f72))
+* **goimports:** fix goimport order ([#742](https://github.com/taikoxyz/taiko-client/issues/742)) ([d9b6c7c](https://github.com/taikoxyz/taiko-client/commit/d9b6c7c0f8e22342f96f5bdb5bf5de6b4e6e81b3))
+* **metrics:** introduce `ProverProvenByGuardianGauge` ([#794](https://github.com/taikoxyz/taiko-client/issues/794)) ([c0a5ddd](https://github.com/taikoxyz/taiko-client/commit/c0a5dddba06fcdd022d9e987748849441dfb1c49))
+* **pkg:** `TryParsingCustomErrorFromReceipt` returns `nil` ([#778](https://github.com/taikoxyz/taiko-client/issues/778)) ([57351e4](https://github.com/taikoxyz/taiko-client/commit/57351e4793385e33c288c1e016696e194e1ff7f7))
+* **pkg:** add more `utils.WeiToEther` in logs ([#764](https://github.com/taikoxyz/taiko-client/issues/764)) ([d2f88a1](https://github.com/taikoxyz/taiko-client/commit/d2f88a1cc4047d01e4c5687a0265995cd5fe0697))
+* **pkg:** fix a custom error parsing issue ([#763](https://github.com/taikoxyz/taiko-client/issues/763)) ([e170aba](https://github.com/taikoxyz/taiko-client/commit/e170abaf8a8dc07d0c67e95ef568b6fcf96b3ed0))
+* **proposer:** fix an issue in `ProposeTxLists` ([#765](https://github.com/taikoxyz/taiko-client/issues/765)) ([150217c](https://github.com/taikoxyz/taiko-client/commit/150217cf1cab2e2d016098fcde8014e1f3e7d2ec))
+* **proposer:** improve `ProposeOp` ([#787](https://github.com/taikoxyz/taiko-client/issues/787)) ([29ce28f](https://github.com/taikoxyz/taiko-client/commit/29ce28f43c13b9c94b742da4f561543e91ddcf7f))
+* **proposer:** improve proposer error messages ([#756](https://github.com/taikoxyz/taiko-client/issues/756)) ([e492321](https://github.com/taikoxyz/taiko-client/commit/e492321d25ae6709cb1f63c1ff8ec0538b4af7df))
+* **proposer:** try parsing custom error when sending transactions ([#752](https://github.com/taikoxyz/taiko-client/issues/752)) ([2cd1583](https://github.com/taikoxyz/taiko-client/commit/2cd1583a98eee1eddb85439f7a196cd923350817))
+* **prover:** improve `getRandomBumpedSubmissionDelay` && bump bindings ([#750](https://github.com/taikoxyz/taiko-client/issues/750)) ([570d8ff](https://github.com/taikoxyz/taiko-client/commit/570d8ff26607ebdb99ddf9358c4c4c59119237e0))
+* **prover:** improve guardian prover `SendStartup` logs ([#744](https://github.com/taikoxyz/taiko-client/issues/744)) ([391be20](https://github.com/taikoxyz/taiko-client/commit/391be2095ec12f27a00d9fbc9780af9f2ba80245))
+* **prover:** introduce `TierGuardianMinority` ([#777](https://github.com/taikoxyz/taiko-client/issues/777)) ([4ab635c](https://github.com/taikoxyz/taiko-client/commit/4ab635c552de26de3ec1943b948c002442ecb88f))
+* **prover:** make guardian provers connecting to their local `raiko` service ([#797](https://github.com/taikoxyz/taiko-client/issues/797)) ([da5ad24](https://github.com/taikoxyz/taiko-client/commit/da5ad2459a96243edff6a059455bdc0bda0cc615))
+
+
+### Bug Fixes
+
+* **docs:** update `swagger` github action  ([#761](https://github.com/taikoxyz/taiko-client/issues/761)) ([48f2b27](https://github.com/taikoxyz/taiko-client/commit/48f2b270f398d07277bd84e6c1731697a9af67a5))
+* error handling improvements ([#773](https://github.com/taikoxyz/taiko-client/issues/773)) ([c421f0f](https://github.com/taikoxyz/taiko-client/commit/c421f0f4fbf55787bdaac7bfc4b7f11318f37d6d))
+* **proposer:** fix tier fee in deep copy ([#788](https://github.com/taikoxyz/taiko-client/issues/788)) ([90411c9](https://github.com/taikoxyz/taiko-client/commit/90411c9c25b109d2b2ad661384b5e2eb181aeb4d))
+* **prover:** fix `nil` of `MinSgxAndZkVMTierFee` in Prover Server ([#780](https://github.com/taikoxyz/taiko-client/issues/780)) ([48d3cf4](https://github.com/taikoxyz/taiko-client/commit/48d3cf46643cf8e1bf4d44ff898f15b2a2f89f98))
+
 ## [0.22.0](https://github.com/taikoxyz/taiko-client/compare/v0.21.0...v0.22.0) (2024-04-19)
 
 
